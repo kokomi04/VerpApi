@@ -70,7 +70,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long? InventoryRequirementDetailId { get; set; }
         public string InventoryRequirementCode { set; get; }
 
-        public bool? IsSubCalculationId { get; set; }
+        public bool? IsSubCalculation { get; set; }
 
         public IList<InventoryDetailSubCalculationModel> InProductSubs { get; set; } = new List<InventoryDetailSubCalculationModel>();
     }

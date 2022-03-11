@@ -484,7 +484,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementCode = inventoryRequirementCode,
                         InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
-                        IsSubCalculationId = detail.IsSubCalculationId
+                        IsSubCalculation = detail.IsSubCalculation
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))

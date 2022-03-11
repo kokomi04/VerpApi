@@ -1043,7 +1043,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //AccountancyAccountNumberDu = detail.AccountancyAccountNumberDu,
                     //InventoryRequirementCode = detail.InventoryRequirementCode,
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
-                    IsSubCalculationId = detail.IsSubCalculationId
+                    IsSubCalculation = detail.IsSubCalculation
                 };
 
                 var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
