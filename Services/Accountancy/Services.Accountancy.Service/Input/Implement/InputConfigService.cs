@@ -43,7 +43,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly IInputActionConfigService _inputActionConfigService;
 
         public InputConfigService(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
@@ -55,7 +55,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IRoleHelperService roleHelperService
-            , IActionButtonHelperService actionButtonHelperService
+            , IInputActionConfigService inputActionConfigService
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -67,7 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _roleHelperService = roleHelperService;
-            _actionButtonHelperService = actionButtonHelperService;
+            _inputActionConfigService = inputActionConfigService;
         }
 
         #region InputType
@@ -171,10 +171,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var inputTypes = await _accountancyDBContext.InputType.Where(x => !x.IsHide).ProjectTo<InputTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
-            var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.InputType, null)).OrderBy(t => t.SortOrder).ToList()
-                .GroupBy(a => a.ObjectId)
-                .ToDictionary(a => a.Key, a => a.ToList());
-
             var areaFields = await (
               from a in _accountancyDBContext.InputArea
               join af in _accountancyDBContext.InputAreaField on a.InputAreaId equals af.InputAreaId
@@ -206,10 +202,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var item in inputTypes)
             {
-                if (actions.TryGetValue(item.InputTypeId, out var _actions))
-                {
-                    item.ActionObjects = _actions.Cast<ActionButtonSimpleModel>().ToList();
-                }
+               
 
                 if (typeFields.TryGetValue(item.InputTypeId, out var _fields))
                 {
@@ -450,7 +443,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             try
             {
-                await _actionButtonHelperService.DeleteActionButtonsByType(EnumObjectType.InputType, inputTypeId, inputType.Title);
+                await _inputActionConfigService.RemoveAllByBillType(inputTypeId, inputType.Title);
             }
             catch (Exception ex)
             {

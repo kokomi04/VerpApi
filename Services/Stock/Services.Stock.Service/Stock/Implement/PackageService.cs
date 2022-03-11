@@ -140,7 +140,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     //var (isSuccess, priQuantity) = Utils.GetPrimaryQuantityFromProductUnitConversionQuantity(package.ProductUnitConversionQuantity, packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining, package.PrimaryQuantity, defaulUnitConversionInfo?.DecimalPlace ?? 11);
 
-                    var (isSuccess, priQuantity, puQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+                    var (isSuccess, priQuantity, puQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
 
                     if (isSuccess)
                     {

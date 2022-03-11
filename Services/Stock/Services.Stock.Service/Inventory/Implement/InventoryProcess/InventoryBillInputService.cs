@@ -867,9 +867,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     };
 
 
-                    //  var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+                    //  var (isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(details.PrimaryQuantity, puInfo.FactorExpression, details.ProductUnitConversionQuantity, puInfo.DecimalPlace);
 
-                    var (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+                    var (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
 
                     if (isSuccess)
                     {

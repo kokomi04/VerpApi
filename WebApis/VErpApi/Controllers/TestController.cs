@@ -66,7 +66,7 @@ namespace VErp.WebApis.VErpApi.Controllers
         public async Task<string> TestChange([FromQuery] UnitOutput oldUnit, [FromBody] UnitOutput newUnit)
         {
             await Task.CompletedTask;
-            return Utils.GetJsonDiff(Newtonsoft.Json.JsonConvert.SerializeObject(oldUnit), newUnit);
+            return JsonUtils.GetJsonDiff(Newtonsoft.Json.JsonConvert.SerializeObject(oldUnit), newUnit);
         }
 
         public async Task<int> RunAbc(int a)

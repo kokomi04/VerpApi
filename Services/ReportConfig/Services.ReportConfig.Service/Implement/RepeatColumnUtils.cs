@@ -147,7 +147,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var suffixKey = match[0].Groups["suffix"].Value;
 
-                        var newColumn = Utils.DeepClone(column);
+                        var newColumn = ObjectUtils.DeepClone(column);
 
                         var nameColumn = $"{column.ColGroupName}{suffixKey}";
 

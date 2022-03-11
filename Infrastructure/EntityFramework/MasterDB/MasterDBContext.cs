@@ -19,6 +19,7 @@ namespace VErp.Infrastructure.EF.MasterDB
 
         public virtual DbSet<Action> Action { get; set; }
         public virtual DbSet<ActionButton> ActionButton { get; set; }
+        public virtual DbSet<ActionButtonBillType> ActionButtonBillType { get; set; }
         public virtual DbSet<ActionType> ActionType { get; set; }
         public virtual DbSet<ApiEndpoint> ApiEndpoint { get; set; }
         public virtual DbSet<BackupStorage> BackupStorage { get; set; }
@@ -91,6 +92,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.IconName).HasMaxLength(25);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ActionButtonBillType>(entity =>
+            {
+                entity.HasKey(e => new { e.ActionButtonId, e.BillTypeObjectId });
+
+                entity.HasOne(d => d.ActionButton)
+                    .WithMany(p => p.ActionButtonBillType)
+                    .HasForeignKey(d => d.ActionButtonId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ActionButtonBillType_ActionButton");
             });
 
             modelBuilder.Entity<ActionType>(entity =>

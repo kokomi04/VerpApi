@@ -747,9 +747,9 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                             IsDefault = false
                         };
 
-                        if (Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(0, newProductUnitConversion.FactorExpression) != 0
+                        if (EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(0, newProductUnitConversion.FactorExpression) != 0
                             ||
-                            Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, newProductUnitConversion.FactorExpression) <= 0
+                            EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, newProductUnitConversion.FactorExpression) <= 0
                             )
                         {
                             return ProductUnitConversionErrorCode.SecondaryUnitConversionError;

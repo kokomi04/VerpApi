@@ -732,7 +732,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 {
                     try
                     {
-                        var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
+                        var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
                         if (!(eval > 0))
                         {
                             throw PuConversionExpressionInvalid.BadRequestFormat(exp, row.ProductCode);

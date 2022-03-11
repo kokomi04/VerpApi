@@ -651,7 +651,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<BaseCustomerImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>();
             result.Fields = fields;
             return result;
         }

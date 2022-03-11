@@ -7,7 +7,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Master.Service.Category
 {
-    public interface ICategoryActionService: IActionButtonHelper
+    public interface ICategoryActionExecService : IActionButtonExecHelper
     {
       
     }

@@ -7,9 +7,14 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class ActionButton
     {
+        public ActionButton()
+        {
+            ActionButtonBillType = new HashSet<ActionButtonBillType>();
+        }
+
         public int ActionButtonId { get; set; }
-        public int ObjectTypeId { get; set; }
-        public int ObjectId { get; set; }
+        public int BillTypeObjectTypeId { get; set; }
+        //public int ObjectId { get; set; }
         public string ActionButtonCode { get; set; }
         public string Title { get; set; }
         public int SortOrder { get; set; }
@@ -26,5 +31,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string JsVisible { get; set; }
         public int? ActionTypeId { get; set; }
         public int ActionPositionId { get; set; }
+
+        public virtual ICollection<ActionButtonBillType> ActionButtonBillType { get; set; }
     }
 }

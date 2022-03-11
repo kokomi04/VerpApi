@@ -8,7 +8,7 @@ using VErp.Services.PurchaseOrder.Model.Voucher;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher
 {
-    public interface IVoucherActionService: IActionButtonHelper
+    public interface IVoucherActionConfigService: IActionButtonConfigHelper
     {
 
     }

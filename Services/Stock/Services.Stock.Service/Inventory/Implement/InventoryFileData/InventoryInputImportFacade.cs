@@ -223,7 +223,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         //{
                         //    var factor = item.Factor.ToString();
 
-                        //    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, factor);
+                        //    var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, factor);
                         //    if (!(eval > 0))
                         //    {
                         //        throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
@@ -525,7 +525,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 foreach (var pu in newPus)
                 {
-                    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
+                    var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
                     if (!(eval > 0))
                     {
                         throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
