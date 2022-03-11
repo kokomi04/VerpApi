@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             var categoryId = billTypeObjectId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await ActionButtonInfo(billTypeObjectId, billTypeObjectId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
 
             if (!_masterDBContext.Category.Any(b => b.CategoryId == categoryId))

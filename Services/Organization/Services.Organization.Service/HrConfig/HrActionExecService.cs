@@ -56,7 +56,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await ActionButtonInfo(actionButtonId, hrTypeId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(HrErrorCode.HrActionNotFound);
 
             if (!_organizationDBContext.HrBill.Any(b => b.HrTypeId == hrTypeId && b.FId == hrBillId))

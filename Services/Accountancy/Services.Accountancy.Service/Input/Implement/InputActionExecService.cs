@@ -49,7 +49,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await ActionButtonInfo(billTypeObjectId, actionButtonId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
 
             if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == inputTypeId && b.FId == inputBillId))

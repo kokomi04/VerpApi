@@ -50,7 +50,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await ActionButtonInfo(billTypeObjectId, actionButtonId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
 
             if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherBillId))
