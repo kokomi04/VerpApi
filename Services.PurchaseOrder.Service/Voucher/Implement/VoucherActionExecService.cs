@@ -41,12 +41,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _currentContextService = currentContextService;
             _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
-     
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int billTypeObjectId, int actionButtonId, long billId, BillInfoModel data)
+
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
             var voucherTypeId = billTypeObjectId;
-         
+
             var voucherBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;

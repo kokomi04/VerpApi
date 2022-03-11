@@ -48,9 +48,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             _organizationDBContext = organizationDBContext;
             _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
         }
-      
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int billTypeObjectId, int actionButtonId, long billId, BillInfoModel data)
+
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
             var hrTypeId = billTypeObjectId;
             var hrBillId = billId;
@@ -94,11 +94,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
-         
+
             await _hrDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, hrTypeId);
 
             return result;
         }
- 
+
     }
 }

@@ -41,9 +41,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;
             _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
-        }     
+        }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int billTypeObjectId, int actionButtonId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
             var inputTypeId = billTypeObjectId;
             var inputBillId = billId;

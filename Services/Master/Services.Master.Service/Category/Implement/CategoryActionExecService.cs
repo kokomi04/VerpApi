@@ -33,7 +33,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             _masterDBContext = masterDBContext;
         }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int billTypeObjectId, int actionButtonId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
             var categoryId = billTypeObjectId;
 

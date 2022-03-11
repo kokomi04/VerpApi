@@ -34,7 +34,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Action
         [ActionButtonDataApi("actionButtonId")]
         public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int hrTypeId, [FromRoute] int actionButtonId, [FromRoute] long hrBillId, [FromBody] BillInfoModel data)
         {
-            return await _hrActionExecService.ExecActionButton(hrTypeId, actionButtonId, hrBillId, data).ConfigureAwait(true);
+            return await _hrActionExecService.ExecActionButton(actionButtonId, hrTypeId, hrBillId, data).ConfigureAwait(true);
         }
     }
 }
