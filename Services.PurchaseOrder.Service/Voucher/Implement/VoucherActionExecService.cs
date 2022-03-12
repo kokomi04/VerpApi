@@ -23,49 +23,37 @@ using VErp.Infrastructure.ServiceCore.Facade;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
-    public class VoucherActionService : ActionButtonHelperServiceAbstract, IVoucherActionService
+    public class VoucherActionExecService : ActionButtonExecHelperServiceAbstract, IVoucherActionExecService
     {
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly ObjectActivityLogFacade _voucherDataActivityLog;
 
-        public VoucherActionService(PurchaseOrderDBContext purchaseOrderDBContext
+        public VoucherActionExecService(PurchaseOrderDBContext purchaseOrderDBContext
             , IActivityLogService activityLogService
             , IMapper mapper
             , IRoleHelperService roleHelperService
-            , IActionButtonHelperService actionButtonHelperService
+            , IActionButtonExecHelperService actionButtonExecHelperService
             , ICurrentContextService currentContextService
-            ) : base(actionButtonHelperService, EnumObjectType.VoucherType)
+            ) : base(actionButtonExecHelperService, EnumObjectType.VoucherType)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _actionButtonHelperService = actionButtonHelperService;
             _currentContextService = currentContextService;
             _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
-        protected override async Task<string> GetObjectTitle(int objectId)
-        {
-            var info = await _purchaseOrderDBContext.VoucherType.FirstOrDefaultAsync(v => v.VoucherTypeId == objectId);
-            if (info == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-            return info.Title;
-        }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
-            var voucherTypeId = objectId;
-            var voucherActionId = inputActionId;
+            var voucherTypeId = billTypeObjectId;
+
             var voucherBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await _actionButtonHelperService.ActionButtonInfo(inputActionId, EnumObjectType.VoucherType, voucherTypeId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(VoucherErrorCode.VoucherActionNotFound);
 
-            if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == action.ObjectId && b.FId == voucherBillId))
+            if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
             var fields = _purchaseOrderDBContext.VoucherField
                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
@@ -102,11 +90,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             await _voucherDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
 
             return result;
-        }
-
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
-        {
-            throw new NotImplementedException();
         }
     }
 }

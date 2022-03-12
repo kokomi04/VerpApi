@@ -147,16 +147,20 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
                 return;
             }
-            
+
 
             var (isValidateObject, objectTypeId, objectId, actionButtonId) = GetValidateObjectData(context);
 
             if (actionButtonId > 0 && objectTypeId.HasValue && objectId.HasValue)
             {
 
-                if ((await _authDataCacheService.ActionButtons()).TryGetValue(actionButtonId, out var actionInfo) && actionInfo.ObjectTypeId == (int)objectTypeId.Value && actionInfo.ObjectId == (int)objectId.Value)
+                if ((await _authDataCacheService.ActionButtons()).TryGetValue(actionButtonId, out var actionDatas))
                 {
-                    apiInfo.ActionId = actionInfo.ActionTypeId ?? 1;
+                    var actionInfo = actionDatas.FirstOrDefault(m => m.BillTypeObjectTypeId == objectTypeId.Value && m.BillTypeObjectId == (int)objectId.Value);
+                    if (actionInfo != null)
+                    {
+                        apiInfo.ActionId = actionInfo.ActionType;
+                    }
                 }
             }
 
@@ -283,6 +287,6 @@ namespace VErp.Infrastructure.ApiCore.Filters
         private Task<T> TryGetSet<T>(string key, Func<Task<T>> queryData)
         {
             return _cachingService.TryGetSet(AUTH_TAG, key, AUTHORIZED_CACHING_TIMEOUT, queryData);
-        }       
+        }
     }
 }

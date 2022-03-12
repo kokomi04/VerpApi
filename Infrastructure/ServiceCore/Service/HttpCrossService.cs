@@ -21,11 +21,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 {
     public interface IHttpCrossService
     {
-        Task<T> Post<T>(string relativeUrl, object postData);
-        Task<T> Put<T>(string relativeUrl, object postData);
-        Task<T> Deleted<T>(string relativeUrl, object postData);
-        Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null);
-        Task<T> Get<T>(string relativeUrl, object queries);
+        Task<T> Post<T>(string relativeUrl, object postData, object queries = null);
+        Task<T> Put<T>(string relativeUrl, object postData, object queries = null);
+        Task<T> Deleted<T>(string relativeUrl, object postData, object queries = null);
+        Task<T> Get<T>(string relativeUrl, object queries = null);
     }
 
     public class HttpCrossService : IHttpCrossService
@@ -43,14 +42,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _currentContext = currentContext;
         }
 
-        public async Task<T> Post<T>(string relativeUrl, object postData)
+        public async Task<T> Post<T>(string relativeUrl, object postData, object queries = null)
         {
             try
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
                 var body = postData.JsonSerialize();
 
-                return await _httpClient.Post<T>(uri, postData, request => SetContextHeaders(request));
+                return await _httpClient.Post<T>(uri, postData, request => SetContextHeaders(request), null, null, queries);
             }
             catch (Exception ex)
             {
@@ -60,14 +59,14 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<T> Put<T>(string relativeUrl, object postData)
+        public async Task<T> Put<T>(string relativeUrl, object postData, object queries = null)
         {
             try
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
                 var body = postData.JsonSerialize();
 
-                return await _httpClient.Put<T>(uri, postData, request => SetContextHeaders(request));
+                return await _httpClient.Put<T>(uri, postData, request => SetContextHeaders(request), null, queries);
             }
             catch (Exception ex)
             {
@@ -77,7 +76,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<T> Deleted<T>(string relativeUrl, object postData)
+        public async Task<T> Deleted<T>(string relativeUrl, object postData, object queries = null)
         {
             try
             {
@@ -85,7 +84,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 var body = postData.JsonSerialize();
 
 
-                return await _httpClient.Deleted<T>(uri, postData, request => SetContextHeaders(request));
+                return await _httpClient.Deleted<T>(uri, postData, request => SetContextHeaders(request), queries);
             }
             catch (Exception ex)
             {
@@ -94,12 +93,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null)
+        public async Task<T> Get<T>(string relativeUrl, object queries = null)
         {
             try
             {
                 var uri = $"{_appSetting.ServiceUrls.ApiService.Endpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
-                
+
                 return await _httpClient.Get<T>(uri, queries, request => SetContextHeaders(request));
             }
             catch (Exception ex)
@@ -107,20 +106,6 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 _logger.LogError(ex, "HttpCrossService:Get");
                 throw;
             }
-        }
-
-        public async Task<T> Get<T>(string relativeUrl, object queries)
-        {
-            var dicQueries = new Dictionary<string, object>();
-            if (!queries.IsNullObject())
-            {
-                var props = queries.GetType().GetProperties();
-                foreach (var prop in props)
-                {
-                    dicQueries.Add(prop.Name, prop.GetValue(queries));
-                }
-            }
-            return await Get<T>(relativeUrl, dicQueries);
         }
 
         private void SetContextHeaders(HttpRequestMessage request)

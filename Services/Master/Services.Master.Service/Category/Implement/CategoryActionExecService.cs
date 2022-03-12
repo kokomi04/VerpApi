@@ -22,39 +22,23 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Service.Category.Implement
 {
-    public class CategoryActionService : ActionButtonHelperServiceAbstract, ICategoryActionService
+    public class CategoryActionExecService : ActionButtonExecHelperServiceAbstract, ICategoryActionExecService
     {
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDBContext;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
 
-        public CategoryActionService(MasterDBContext masterDBContext
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , IRoleHelperService roleHelperService
-            , IActionButtonHelperService actionButtonHelperService
-            ) : base(actionButtonHelperService, EnumObjectType.Category)
+        public CategoryActionExecService(MasterDBContext masterDBContext
+            , IActionButtonExecHelperService actionButtonExecHelperService
+            ) : base(actionButtonExecHelperService, EnumObjectType.Category)
         {
             _masterDBContext = masterDBContext;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _actionButtonHelperService = actionButtonHelperService;
         }
 
-        protected override async Task<string> GetObjectTitle(int objectId)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
-            var info = await _masterDBContext.Category.FirstOrDefaultAsync(v => v.CategoryId == objectId);
-            if (info == null) throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
-            return info.Title;
-        }
-
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
-        {
-            var categoryId = objectId;
+            var categoryId = billTypeObjectId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await _actionButtonHelperService.ActionButtonInfo(categoryActionId, EnumObjectType.Category, categoryId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
 
             if (!_masterDBContext.Category.Any(b => b.CategoryId == categoryId))
@@ -77,7 +61,8 @@ namespace VErp.Services.Master.Service.Category.Implement
 
                 foreach (var field in fields)
                 {
-                    data.TryGetValue(field.Key, out var celValue);
+                    object celValue = null;
+                    data?.Info?.TryGetValue(field.Key, out celValue);
                     parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
 
@@ -93,11 +78,6 @@ namespace VErp.Services.Master.Service.Category.Implement
             }
 
             return result;
-        }
-
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
-        {
-            throw new NotImplementedException();
         }
     }
 }

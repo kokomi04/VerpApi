@@ -953,9 +953,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         FactorExpressionRate = fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining
                     };
 
-                    //var (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity, puInfo.DecimalPlace);
+                    //var (isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(detail.PrimaryQuantity, fromPackageInfo.ProductUnitConversionRemaining / fromPackageInfo.PrimaryQuantityRemaining, detail.ProductUnitConversionQuantity, puInfo.DecimalPlace);
 
-                    var (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+                    var (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
 
                     if (isSuccess)
                     {

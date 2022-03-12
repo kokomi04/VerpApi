@@ -42,7 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IHttpCrossService _httpCrossService;
         private readonly IRoleHelperService _roleHelperService;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly IVoucherActionConfigService _voucherActionConfigService;
 
         public VoucherConfigService(PurchaseOrderDBContext purchaseOrderDBContext
             , IOptions<AppSetting> appSetting
@@ -54,7 +54,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , ICurrentContextService currentContextService
             , IHttpCrossService httpCrossService
             , IRoleHelperService roleHelperService
-            , IActionButtonHelperService actionButtonHelperService
+            , IVoucherActionConfigService voucherActionConfigService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -66,7 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _currentContextService = currentContextService;
             _httpCrossService = httpCrossService;
             _roleHelperService = roleHelperService;
-            _actionButtonHelperService = actionButtonHelperService;
+            _voucherActionConfigService = voucherActionConfigService;
         }
 
 
@@ -229,10 +229,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var voucherTypes = await _purchaseOrderDBContext.VoucherType.Where(x => !x.IsHide).ProjectTo<VoucherTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
-            var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.VoucherType, null)).OrderBy(t => t.SortOrder).ToList()
-                 .GroupBy(a => a.ObjectId)
-                 .ToDictionary(a => a.Key, a => a.ToList());
-
 
             var areaFields = await (
                 from a in _purchaseOrderDBContext.VoucherArea
@@ -265,11 +261,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             foreach (var item in voucherTypes)
             {
-                if (actions.TryGetValue(item.VoucherTypeId, out var _actions))
-                {
-                    item.ActionObjects = _actions.Cast<ActionButtonSimpleModel>().ToList();
-                }
-
+               
                 if (typeFields.TryGetValue(item.VoucherTypeId, out var _fields))
                 {
                     item.AreaFields = _fields;
@@ -493,7 +485,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             try
             {
-                await _actionButtonHelperService.DeleteActionButtonsByType(EnumObjectType.VoucherType, voucherTypeId, voucherType.Title);
+                await _voucherActionConfigService.RemoveAllByBillType(voucherTypeId, voucherType.Title);
             }
             catch (Exception ex)
             {

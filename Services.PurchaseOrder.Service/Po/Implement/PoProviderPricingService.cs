@@ -941,7 +941,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<PoPricingDetailRow>();
+            var fields = ExcelUtils.GetFieldNameModels<PoPricingDetailRow>();
             result.Fields = fields;
             return result;
         }

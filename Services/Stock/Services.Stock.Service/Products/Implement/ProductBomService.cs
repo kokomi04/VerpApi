@@ -342,7 +342,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<ProductBomImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ProductBomImportModel>();
             result.Fields = fields;
             var properties = await _propertyService.GetProperties();
             foreach (var p in properties)

@@ -297,7 +297,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<TimeSheetImportFieldModel>().ToList();
+            var fields = ExcelUtils.GetFieldNameModels<TimeSheetImportFieldModel>().ToList();
 
             var fieldsAbsenceTypeSymbols = (_organizationDBContext.AbsenceTypeSymbol.ToList()).Select(x => new CategoryFieldNameModel
             {

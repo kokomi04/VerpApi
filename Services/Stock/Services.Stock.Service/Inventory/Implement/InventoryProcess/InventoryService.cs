@@ -611,7 +611,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 CategoryCode = "Output",
                 CategoryTitle = InventoryAbstractMessage.InventoryOuput,
                 IsTreeView = false,
-                Fields = Utils.GetFieldNameModels<InventoryOutExcelParseModel>()
+                Fields = ExcelUtils.GetFieldNameModels<InventoryOutExcelParseModel>()
             };
             return result;
         }
@@ -628,7 +628,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<InventoryInputExcelParseModel>();
+            var fields = ExcelUtils.GetFieldNameModels<InventoryInputExcelParseModel>();
 
 
             var packageField = fields.First(f => f.FieldName.StartsWith(nameof(InventoryInputExcelParseModel.ToPackgeInfo)));
@@ -688,7 +688,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<ImportInvInputModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ImportInvInputModel>();
 
 
             var packageField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvInputModel.ToPackgeInfo)));
@@ -727,7 +727,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<ImportInvOutputModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ImportInvOutputModel>();
 
             result.Fields = fields;
             return result;

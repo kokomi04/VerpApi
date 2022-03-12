@@ -20,53 +20,46 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
-    public interface IHrActionService : IActionButtonHelper
+    public interface IHrActionExecService : IActionButtonExecHelper
     {
 
     }
 
-    public class HrActionService : ActionButtonHelperServiceAbstract, IHrActionService
+    public class HrActionExecService : ActionButtonExecHelperServiceAbstract, IHrActionExecService
     {
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
 
-        private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly IActionButtonExecHelperService _actionButtonExecHelperService;
         private readonly ObjectActivityLogFacade _hrDataActivityLog;
-        public HrActionService(
-            ILogger<HrActionService> logger,
+        public HrActionExecService(
+            ILogger<HrActionExecService> logger,
             IActivityLogService activityLogService,
             IMapper mapper,
-            IActionButtonHelperService actionButtonHelperService,
+            IActionButtonExecHelperService actionButtonExecHelperService,
             OrganizationDBContext organizationDBContext)
-            : base(actionButtonHelperService, EnumObjectType.HrType)
+            : base(actionButtonExecHelperService, EnumObjectType.HrType)
         {
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
-            _actionButtonHelperService = actionButtonHelperService;
             _organizationDBContext = organizationDBContext;
             _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
         }
 
-        protected override async Task<string> GetObjectTitle(int objectId)
-        {
-            var info = await _organizationDBContext.HrType.FirstOrDefaultAsync(v => v.HrTypeId == objectId);
-            if (info == null) throw new BadRequestException(HrErrorCode.HrTypeNotFound);
-            return info.Title;
-        }
 
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int hrActionId, long billId, BillInfoModel data)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
-            var hrTypeId = objectId;
+            var hrTypeId = billTypeObjectId;
             var hrBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await _actionButtonHelperService.ActionButtonInfo(hrActionId, EnumObjectType.HrType, hrTypeId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(HrErrorCode.HrActionNotFound);
 
-            if (!_organizationDBContext.HrBill.Any(b => b.HrTypeId == action.ObjectId && b.FId == hrBillId))
+            if (!_organizationDBContext.HrBill.Any(b => b.HrTypeId == hrTypeId && b.FId == hrBillId))
                 throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
 
             var fields = _organizationDBContext.HrField
@@ -81,7 +74,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
                     messageParam,
-                    new SqlParameter("@HrTypeId", action.ObjectId),
+                    new SqlParameter("@HrTypeId", hrTypeId),
                     new SqlParameter("@HrBill_F_Id", hrBillId),
                 };
 
@@ -101,15 +94,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
-         
+
             await _hrDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, hrTypeId);
 
             return result;
         }
 
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
-        {
-            throw new NotImplementedException();
-        }
     }
 }

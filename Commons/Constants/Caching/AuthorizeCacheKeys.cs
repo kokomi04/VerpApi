@@ -35,7 +35,7 @@ namespace VErp.Commons.Constants.Caching
 
         public static string ActionButtonsCacheKey()
         {
-            return $"AUTH_ACTION_BUTTONS";
+            return $"AUTH_ACTION_BUTTONS_MAPPING";
         }
 
         public static string RoleModulePermissionCacheKey(int roleId, int moduleId)

@@ -115,7 +115,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<TimeSheetRawImportFieldModel>();
+            var fields = ExcelUtils.GetFieldNameModels<TimeSheetRawImportFieldModel>();
             result.Fields = fields;
             return result;
         }

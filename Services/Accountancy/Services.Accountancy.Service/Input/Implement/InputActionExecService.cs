@@ -26,48 +26,33 @@ using Verp.Resources.Accountancy.InputData;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputActionService : ActionButtonHelperServiceAbstract, IInputActionService
+    public class InputActionExecService : ActionButtonExecHelperServiceAbstract, IInputActionExecService
     {
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly ObjectActivityLogFacade _inputDataActivityLog;
 
-        public InputActionService(AccountancyDBContext accountancyDBContext
+        public InputActionExecService(AccountancyDBContext accountancyDBContext
             , IActivityLogService activityLogService
-            , IMapper mapper
-            , IRoleHelperService roleHelperService
-            , IActionButtonHelperService actionButtonHelperService
+            , IActionButtonExecHelperService actionButtonExecHelperService
             , ICurrentContextService currentContextService
-            ) : base(actionButtonHelperService, EnumObjectType.InputType)
+            ) : base(actionButtonExecHelperService, EnumObjectType.InputType)
         {
             _accountancyDBContext = accountancyDBContext;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _actionButtonHelperService = actionButtonHelperService;
             _currentContextService = currentContextService;
             _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
-        protected override async Task<string> GetObjectTitle(int objectId)
+        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
         {
-            var info = await _accountancyDBContext.InputType.FirstOrDefaultAsync(v => v.InputTypeId == objectId);
-            if (info == null) throw new BadRequestException(InputErrorCode.InputTypeNotFound);
-            return info.Title;
-        }
-
-        public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int inputActionId, long billId, BillInfoModel data)
-        {
-            var inputTypeId = objectId;
+            var inputTypeId = billTypeObjectId;
             var inputBillId = billId;
 
             List<NonCamelCaseDictionary> result = null;
-            var action = await _actionButtonHelperService.ActionButtonInfo(inputActionId, EnumObjectType.InputType, inputTypeId);
+            var action = await ActionButtonInfo(actionButtonId, billTypeObjectId);
             if (action == null) throw new BadRequestException(InputErrorCode.InputActionNotFound);
 
-            if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == action.ObjectId && b.FId == inputBillId))
+            if (!_accountancyDBContext.InputBill.Any(b => b.InputTypeId == inputTypeId && b.FId == inputBillId))
                 throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
 
             var fields = _accountancyDBContext.InputField
@@ -82,7 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     resultParam,
                     messageParam,
-                    new SqlParameter("@InputTypeId", action.ObjectId),
+                    new SqlParameter("@InputTypeId", inputTypeId),
                     new SqlParameter("@InputBill_F_Id", inputBillId),
                     new SqlParameter("@UserId", _currentContextService.UserId)
                 };
@@ -107,11 +92,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             await _inputDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
 
             return result;
-        }
-
-        public override Task<List<NonCamelCaseDictionary>> ExecActionButton(int objectId, int categoryActionId, NonCamelCaseDictionary data)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -20,8 +20,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public int SortOrder { get; set; }
         public int? HrTypeGroupId { get; set; }
-
-        public IList<ActionButtonSimpleModel> ActionObjects { get; set; }
+        
         public IList<HrAreaFieldSimpleModel> AreaFields { get; set; }
     }
 

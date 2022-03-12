@@ -669,7 +669,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<UserImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<UserImportModel>();
             result.Fields = fields;
             return result;
         }
