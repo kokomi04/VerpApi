@@ -18,5 +18,6 @@ namespace VErp.Commons.Enums.MasterEnum
         SalesBill = 902,
 
         Hr = 111001,
+        DashboardView = 120002,
     }
 }

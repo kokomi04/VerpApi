@@ -398,6 +398,12 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Thiết lập lịch trình làm việc")]
         WorkSchedule = 53009,
         [Description("Thiết lập ca làm việc")]
-        ShiftConfiguration = 53010
+        ShiftConfiguration = 53010,
+        [Description("Nhóm biểu đồ báo cáo")]
+        DashboardTypeGroup = 60503,
+        [Description("Biểu đồ báo cáo")]
+        DashboardType = 60504,
+        [Description("Bộ lọc biểu đồ báo cáo")]
+        DashboardTypeView = 60505
     }
 }

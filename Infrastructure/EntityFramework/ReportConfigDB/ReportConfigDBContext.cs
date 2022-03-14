@@ -17,6 +17,10 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         {
         }
 
+        public virtual DbSet<DashboardType> DashboardType { get; set; }
+        public virtual DbSet<DashboardTypeGroup> DashboardTypeGroup { get; set; }
+        public virtual DbSet<DashboardTypeView> DashboardTypeView { get; set; }
+        public virtual DbSet<DashboardTypeViewField> DashboardTypeViewField { get; set; }
         public virtual DbSet<ReportType> ReportType { get; set; }
         public virtual DbSet<ReportTypeGroup> ReportTypeGroup { get; set; }
         public virtual DbSet<ReportTypeView> ReportTypeView { get; set; }
@@ -28,6 +32,78 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
+
+            modelBuilder.Entity<DashboardType>(entity =>
+            {
+                entity.Property(e => e.DashboardTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.BodySql).IsRequired();
+
+                entity.Property(e => e.Columns).IsRequired();
+
+                entity.Property(e => e.DashboardTypeName)
+                    .IsRequired()
+                    .HasMaxLength(256);
+
+                entity.Property(e => e.JsProcessedChart).IsRequired();
+
+                entity.HasOne(d => d.DashboardTypeGroup)
+                    .WithMany(p => p.DashboardType)
+                    .HasForeignKey(d => d.DashboardTypeGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DashboardType_DashboardTypeGroup");
+            });
+
+            modelBuilder.Entity<DashboardTypeGroup>(entity =>
+            {
+                entity.Property(e => e.DashboardTypeGroupName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<DashboardTypeView>(entity =>
+            {
+                entity.Property(e => e.DashboardTypeViewName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.HasOne(d => d.DashboardType)
+                    .WithMany(p => p.DashboardTypeView)
+                    .HasForeignKey(d => d.DashboardTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DashboardTypeView_DashboardType");
+            });
+
+            modelBuilder.Entity<DashboardTypeViewField>(entity =>
+            {
+                entity.Property(e => e.DefaultValue).HasMaxLength(512);
+
+                entity.Property(e => e.HelpText).HasMaxLength(512);
+
+                entity.Property(e => e.ParamerterName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Placeholder).HasMaxLength(128);
+
+                entity.Property(e => e.RefFilters).HasMaxLength(512);
+
+                entity.Property(e => e.RefTableCode).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField).HasMaxLength(128);
+
+                entity.Property(e => e.RefTableTitle).HasMaxLength(512);
+
+                entity.Property(e => e.RegularExpression).HasMaxLength(256);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.HasOne(d => d.DashboardTypeView)
+                    .WithMany(p => p.DashboardTypeViewField)
+                    .HasForeignKey(d => d.DashboardTypeViewId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_DashboardTypeViewField_DashboardTypeView");
+            });
 
             modelBuilder.Entity<ReportType>(entity =>
             {
