@@ -68,5 +68,13 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionPlanService.GetWorkloadPlanByDate(startDate, endDate);
         }
+
+        [HttpGet]
+        [Route("monthlyImportStock")]
+        public async Task<IDictionary<long, List<MonthlyImportStockModel>>> GetMonthlyImportStock([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionPlanService.GetMonthlyImportStock(startDate, endDate);
+        }
+
     }
 }

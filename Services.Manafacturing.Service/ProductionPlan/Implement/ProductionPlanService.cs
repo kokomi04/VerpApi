@@ -287,6 +287,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return await GetWorkloadPlan(productionOrderIds);
         }
 
+
         public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds)
         {
             var result = new Dictionary<long, WorkloadPlanModel>();
@@ -470,6 +471,96 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
                 result.Add(productionOrderId, workloadPlanModel);
+            }
+
+            return result;
+        }
+
+        public async Task<IDictionary<long, List<MonthlyImportStockModel>>> GetMonthlyImportStock(long startDate, long endDate)
+        {
+            var startDateTime = startDate.UnixToDateTime();
+            var endDateTime = endDate.UnixToDateTime();
+
+            var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                .Include(pd => pd.ProductionOrder)
+                .Where(pd => pd.ProductionOrder.PlanEndDate >= startDateTime && pd.ProductionOrder.StartDate <= endDateTime)
+                .ToList();
+
+            var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();
+
+            var groupSteps = (await (from po in _manufacturingDBContext.ProductionOrder
+                                     join ps in _manufacturingDBContext.ProductionStep on new { po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder } equals new { ProductionOrderId = ps.ContainerId, ps.ContainerTypeId }
+                                     join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                     join sg in _manufacturingDBContext.StepGroup on s.StepGroupId equals sg.StepGroupId
+                                     where productOderIds.Contains(po.ProductionOrderId)
+                                     select new
+                                     {
+                                         sg.StepGroupId,
+                                         po.ProductionOrderId
+                                     }).ToListAsync())
+                             .GroupBy(sg => sg.StepGroupId)
+                             .ToDictionary(g => g.Key, g => g.Select(sg => sg.ProductionOrderId).ToList());
+
+
+            var finishStepIds = _manufacturingDBContext.ProductionStep
+                 .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                 && productOderIds.Contains(ps.ContainerId)
+                 && ps.IsFinish
+                 && !ps.IsGroup.Value)
+                 .Select(ps => ps.ProductionStepId)
+                 .Distinct()
+                 .ToList();
+
+            var linkDataIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && finishStepIds.Contains(lr.ProductionStepId))
+                .Select(lr => lr.ProductionStepLinkDataId)
+                .Distinct()
+                .ToList();
+
+            var lastestStepIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && linkDataIds.Contains(lr.ProductionStepLinkDataId))
+                .Select(lr => lr.ProductionStepId)
+                .Distinct()
+                .ToList();
+
+            var importStockObjects = _manufacturingDBContext.ProductionHistory
+                .Where(ph => lastestStepIds.Contains(ph.ProductionStepId) && ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                .ToList();
+
+            var result = new Dictionary<long, List<MonthlyImportStockModel>>();
+
+            foreach (var groupStep in groupSteps)
+            {
+                result.Add(groupStep.Key, new List<MonthlyImportStockModel>());
+
+                foreach (var productionOrderId in groupStep.Value)
+                {
+
+                    var productDatas = productionOrderDetails
+                        .Where(pod => pod.ProductionOrderId == productionOrderId)
+                        .GroupBy(pod => pod.ProductId)
+                        .Select(g => new
+                        {
+                            ProductId = g.Key,
+                            Quantity = g.Sum(pod => pod.Quantity)
+                        })
+                        .ToList();
+                    foreach (var productData in productDatas)
+                    {
+                        var importQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var monthlyImportStock = new MonthlyImportStockModel
+                        {
+                            ProductId = productData.ProductId,
+                            PlanQuantity = productData.Quantity.Value,
+                            ImportQuantity = importQuantity
+                        };
+
+                        result[groupStep.Key].Add(monthlyImportStock);
+                    }
+                }
             }
 
             return result;
