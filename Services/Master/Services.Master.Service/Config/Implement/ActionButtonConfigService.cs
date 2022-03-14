@@ -142,16 +142,27 @@ namespace VErp.Services.Master.Service.Config.Implement
                 if (info == null) throw new BadRequestException(GeneralCode.ItemNotFound);
             }
 
-            var mapping = (await MappingInfoByBillType(data)).FirstOrDefault(m => m.Button.ActionButtonId == data.ActionButtonId);
-            if (mapping != null) return mapping.Button.ActionButtonId;
 
             try
             {
-                await _masterDBContext.ActionButtonBillType.AddAsync(new ActionButtonBillType()
+                var mapping = await _masterDBContext.ActionButtonBillType.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.ActionButtonId == data.ActionButtonId && m.BillTypeObjectId == data.BillTypeObjectId);
+                if (mapping != null && !mapping.IsDeleted)
                 {
-                    ActionButtonId = data.ActionButtonId,
-                    BillTypeObjectId = data.BillTypeObjectId
-                });
+                    return mapping.ActionButtonId;
+                }
+
+                if (mapping == null)
+                {
+                    await _masterDBContext.ActionButtonBillType.AddAsync(new ActionButtonBillType()
+                    {
+                        ActionButtonId = data.ActionButtonId,
+                        BillTypeObjectId = data.BillTypeObjectId
+                    });
+                }
+                else
+                {
+                    mapping.IsDeleted = false;
+                }
 
                 await _masterDBContext.SaveChangesAsync();
 
