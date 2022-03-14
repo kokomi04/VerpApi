@@ -19,5 +19,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan
 
         Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds);
         Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate);
+
+        Task<IDictionary<long, List<MonthlyImportStockModel>>> GetMonthlyImportStock(long startDate, long endDate);
     }
 }
