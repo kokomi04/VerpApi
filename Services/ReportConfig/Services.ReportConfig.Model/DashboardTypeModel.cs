@@ -17,6 +17,8 @@ namespace Verp.Services.ReportConfig.Model
         public string BodySql { get; set; }
         public string Columns { get; set; }
         public string JsProcessedChart { get; set; }
+        public int ModuleTypeId { get; set; }
+        public bool IsHide { get; set; }
 
     }
 }

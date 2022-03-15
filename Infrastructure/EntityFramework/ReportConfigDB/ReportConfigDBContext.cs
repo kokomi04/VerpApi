@@ -35,17 +35,9 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
 
             modelBuilder.Entity<DashboardType>(entity =>
             {
-                entity.Property(e => e.DashboardTypeId).ValueGeneratedNever();
-
-                entity.Property(e => e.BodySql).IsRequired();
-
-                entity.Property(e => e.Columns).IsRequired();
-
                 entity.Property(e => e.DashboardTypeName)
                     .IsRequired()
                     .HasMaxLength(256);
-
-                entity.Property(e => e.JsProcessedChart).IsRequired();
 
                 entity.HasOne(d => d.DashboardTypeGroup)
                     .WithMany(p => p.DashboardType)
