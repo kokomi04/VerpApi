@@ -102,6 +102,19 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     await _organizationDBContext.SaveChangesAsync();
                 }
 
+                if (model.TimeSheetOvertimes.Count > 0)
+                {
+                    foreach (var overtime in model.TimeSheetOvertimes)
+                    {
+                        var eOvertime = _mapper.Map<TimeSheetOvertime>(overtime);
+                        eOvertime.TimeSheetId = entity.TimeSheetId;
+
+                        await _organizationDBContext.TimeSheetOvertime.AddAsync(eOvertime);
+                    }
+
+                    await _organizationDBContext.SaveChangesAsync();
+                }
+
                 await trans.CommitAsync();
 
                 return entity.TimeSheetId;
@@ -125,6 +138,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetOvertimes = await _organizationDBContext.TimeSheetOvertime.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
 
                 model.TimeSheetId = timeSheet.TimeSheetId;
                 model.IsApprove = false;
@@ -163,6 +177,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         eAggregate.IsDeleted = true;
                 }
 
+                foreach (var eOvertime in timeSheetOvertimes)
+                {
+                    var mOvertime = model.TimeSheetOvertimes.FirstOrDefault(x => x.TimeSheetOvertimeId == eOvertime.TimeSheetOvertimeId);
+                    if (mOvertime != null)
+                        _mapper.Map(mOvertime, eOvertime);
+                    else
+                        eOvertime.IsDeleted = true;
+                }
+
                 foreach (var aggregate in model.TimeSheetAggregates.Where(x => x.TimeSheetAggregateId <= 0))
                 {
                     var eAggregate = _mapper.Map<TimeSheetAggregate>(aggregate);
@@ -186,6 +209,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     eDayOff.TimeSheetId = timeSheet.TimeSheetId;
 
                     await _organizationDBContext.TimeSheetDayOff.AddAsync(eDayOff);
+                }
+
+                foreach (var overtime in model.TimeSheetOvertimes.Where(x => x.TimeSheetOvertimeId <= 0))
+                {
+                    var eOvertime = _mapper.Map<TimeSheetOvertime>(overtime);
+                    eOvertime.TimeSheetId = timeSheet.TimeSheetId;
+
+                    await _organizationDBContext.TimeSheetOvertime.AddAsync(eOvertime);
                 }
 
 
@@ -215,10 +246,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
+                var timeSheetOvertimes = await _organizationDBContext.TimeSheetOvertime.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
 
                 timeSheetDayOffs.ForEach(x => x.IsDeleted = true);
                 timeSheetAggregates.ForEach(x => x.IsDeleted = true);
                 timeSheetDetails.ForEach(x => x.IsDeleted = true);
+                timeSheetOvertimes.ForEach(x => x.IsDeleted = true);
                 timeSheet.IsDeleted = true;
 
                 await _organizationDBContext.SaveChangesAsync();
@@ -263,11 +296,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetOvertimes = await _organizationDBContext.TimeSheetOvertime.Where(x => x.TimeSheetId == timeSheet.TimeSheetId && x.EmployeeId == employeeId).ProjectTo<TimeSheetOvertimeModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             var result = _mapper.Map<TimeSheetModel>(timeSheet);
             result.TimeSheetAggregates = timeSheetAggregates;
             result.TimeSheetDayOffs = timeSheetDayOffs;
             result.TimeSheetDetails = timeSheetDetails;
+            result.TimeSheetOvertimes = timeSheetOvertimes;
             return result;
         }
 
@@ -304,15 +339,21 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 FieldName = x.SymbolCode,
                 FieldTitle = x.TypeSymbolDescription,
                 GroupName = "Ngày nghỉ",
-            }
-            );
+            });
+
+            var fieldsOvertimeLevel = (_organizationDBContext.OvertimeLevel.ToList()).Select(x => new CategoryFieldNameModel
+            {
+                FieldName = $"Overtime{x.OrdinalNumber}",
+                FieldTitle = $"Tổng thời gian(giờ) làm tăng ca {x.OrdinalNumber}",
+                GroupName = "Tăng ca(giờ)",
+            });
 
             for (long unixTime = beginDate; unixTime <= endDate; unixTime +=86400)
             {
                 var date = unixTime.UnixToDateTime().Value;
                 fields.Add(new CategoryFieldNameModel{
                     FieldName = $"TimeKeepingDay{unixTime}",
-                    FieldTitle = $"Thời gian chấm công ngày {date.ToString("dd/MM/yyyy")}",
+                    FieldTitle = $"Thời gian chấm công ngày {date.ToString("dd/MM/yyyy")} (hh:mm)",
                     GroupName = "TT chấm công",
                 });
             }
@@ -332,12 +373,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         public async Task<bool> ImportTimeSheetFromMapping(int month, int year, long beginDate, long endDate, ImportExcelMapping mapping, Stream stream)
         {
             string timeKeepingDayPropPrefix = "TimeKeepingDay";
+            string timeKeepingOvertimePropPrefix = "Overtime";
             Type typeInfo = typeof(TimeSheetImportFieldModel);
 
             var reader = new ExcelReader(stream);
 
             var employees = await _organizationDBContext.Employee.ToListAsync();
             var absenceTypeSymbols = await _organizationDBContext.AbsenceTypeSymbol.ToListAsync();
+            var overtimeLevels = await _organizationDBContext.OvertimeLevel.ToListAsync();
             var absentSymbol = await _organizationDBContext.CountedSymbol.FirstOrDefaultAsync(x => x.CountedSymbolType == (int)EnumCountedSymbol.AbsentSymbol);
 
             var _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
@@ -388,6 +431,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var timeSheetDetails = new List<TimeSheetDetail>();
             var timeSheetAggregates = new List<TimeSheetAggregateModel>();
             var timeSheetDayOffs = new List<TimeSheetDayOffModel>();
+            var timeSheetOvertimes = new List<TimeSheetOvertimeModel>();
             foreach (var (key, rows) in dataTimeSheetWithPrimaryKey.GroupBy(x => x.EmployeeCode).ToDictionary(k => k.Key, v => v.ToList()))
             {
                 var employeeCode = key.NormalizeAsInternalName();
@@ -455,9 +499,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         EmployeeId = employee.UserId,
                         MinsEarly = rowIn.timeSheetImportModel.MinsEarly,
                         MinsLate = rowIn.timeSheetImportModel.MinsLate,
-                        Overtime1 = rowIn.timeSheetImportModel.Overtime1,
-                        Overtime2 = rowIn.timeSheetImportModel.Overtime2,
-                        Overtime3 = rowIn.timeSheetImportModel.Overtime3,
+                        // Overtime1 = rowIn.timeSheetImportModel.Overtime1,
+                        // Overtime2 = rowIn.timeSheetImportModel.Overtime2,
+                        // Overtime3 = rowIn.timeSheetImportModel.Overtime3,
                     };
 
                     var timeSheetDayOffForPerson = absenceTypeSymbols.Select(absence =>
@@ -480,10 +524,32 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         };
                     }).Where(x => x.CountedDayOff > 0).ToList();
 
+                    var timeSheetOvertimeForPerson = overtimeLevels.Select(overtimeLevel =>
+                    {
+                        var timeKeepingOvertimeProp = $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}";
+                        var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == timeKeepingOvertimeProp);
+                        if (mappingField == null)
+                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {timeKeepingOvertimeProp}");
+
+                        string minsOvertimeAsString = null;
+                        if (rowIn.row.ContainsKey(mappingField.Column))
+                            minsOvertimeAsString = rowIn.row[mappingField.Column]?.ToString();
+
+                        var minsOvertime =  decimal.Parse(string.IsNullOrWhiteSpace(minsOvertimeAsString) ? "0" : minsOvertimeAsString);
+
+                        return new TimeSheetOvertimeModel
+                        {
+                            OvertimeLevelId = overtimeLevel.OvertimeLevelId,
+                            EmployeeId = employee.UserId,
+                            MinsOvertime = minsOvertime
+                        };
+                    }).Where(x => x.MinsOvertime > 0).ToList();
+
 
                     timeSheetAggregates.Add(timeSheetAggregate);
                     timeSheetDayOffs.AddRange(timeSheetDayOffForPerson);
                     timeSheetDetails.Add(timeSheetDetail);
+                    timeSheetOvertimes.AddRange(timeSheetOvertimeForPerson);
                 }
             }
 
@@ -506,6 +572,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var existsTimeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToArrayAsync();
                 var existsTimeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToArrayAsync();
                 var existsTimeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToArrayAsync();
+                var existsTimeSheetOvertimes = await _organizationDBContext.TimeSheetOvertime.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToArrayAsync();
 
                 foreach (var timeSheetDetail in timeSheetDetails)
                 {
@@ -573,6 +640,29 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         timeSheetDayOff.TimeSheetDayOffId = oldTimeSheetDayOff.TimeSheetDayOffId;
                         timeSheetDayOff.TimeSheetId = oldTimeSheetDayOff.TimeSheetId;
                         _mapper.Map(timeSheetDayOff, oldTimeSheetDayOff);
+                    }
+
+                    await _organizationDBContext.SaveChangesAsync();
+                }
+
+                foreach (var timeSheetDayOvertime in timeSheetOvertimes)
+                {
+                    var oldTimeSheetOvertime = existsTimeSheetOvertimes.FirstOrDefault(x => x.EmployeeId == timeSheetDayOvertime.EmployeeId && x.OvertimeLevelId == timeSheetDayOvertime.OvertimeLevelId);
+                    var employee = employees.FirstOrDefault(x => x.UserId == timeSheetDayOvertime.EmployeeId);
+                    if (oldTimeSheetOvertime != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tồn tại chấm công của nhân viên có mã {employee.EmployeeCode}");
+
+                    if (oldTimeSheetOvertime == null)
+                    {
+                        var entity = _mapper.Map<TimeSheetOvertime>(timeSheetDayOvertime);
+                        entity.TimeSheetId = timeSheet.TimeSheetId;
+                        await _organizationDBContext.TimeSheetOvertime.AddAsync(entity);
+                    }
+                    else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        timeSheetDayOvertime.TimeSheetOvertimeId = oldTimeSheetOvertime.TimeSheetOvertimeId;
+                        timeSheetDayOvertime.TimeSheetId = oldTimeSheetOvertime.TimeSheetId;
+                        _mapper.Map(timeSheetDayOvertime, oldTimeSheetOvertime);
                     }
 
                     await _organizationDBContext.SaveChangesAsync();

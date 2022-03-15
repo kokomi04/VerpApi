@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class OvertimeLevel
     {
+        public OvertimeLevel()
+        {
+            TimeSheetOvertime = new HashSet<TimeSheetOvertime>();
+        }
+
         public int OvertimeLevelId { get; set; }
         public int OrdinalNumber { get; set; }
         public decimal OvertimeRate { get; set; }
@@ -15,5 +20,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime CreatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+
+        public virtual ICollection<TimeSheetOvertime> TimeSheetOvertime { get; set; }
     }
 }

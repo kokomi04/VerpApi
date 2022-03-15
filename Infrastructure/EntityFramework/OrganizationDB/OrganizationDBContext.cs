@@ -65,6 +65,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
         public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
+        public virtual DbSet<TimeSheetOvertime> TimeSheetOvertime { get; set; }
         public virtual DbSet<TimeSheetRaw> TimeSheetRaw { get; set; }
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
@@ -823,6 +824,21 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.TimeSheetId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_TimeSheetDetail_TimeSheet");
+            });
+
+            modelBuilder.Entity<TimeSheetOvertime>(entity =>
+            {
+                entity.HasOne(d => d.OvertimeLevel)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.OvertimeLevelId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_OvertimeLevel");
+
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
             });
 
             modelBuilder.Entity<TimeSortConfiguration>(entity =>

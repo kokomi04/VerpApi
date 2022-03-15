@@ -32,6 +32,7 @@ namespace Services.Organization.Model.TimeKeeping
         public IList<TimeSheetDetailModel> TimeSheetDetails { get; set; }
         public IList<TimeSheetAggregateModel> TimeSheetAggregates { get; set; }
         public IList<TimeSheetDayOffModel> TimeSheetDayOffs { get; set; }
+        public IList<TimeSheetOvertimeModel> TimeSheetOvertimes { get; set; }
 
 
         public void Mapping(Profile profile)
@@ -40,6 +41,7 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.TimeSheetDetails, v => v.MapFrom(m => m.TimeSheetDetail))
             .ForMember(m => m.TimeSheetDayOffs, v => v.MapFrom(m => m.TimeSheetDayOff))
             .ForMember(m => m.TimeSheetAggregates, v => v.MapFrom(m => m.TimeSheetAggregate))
+            .ForMember(m => m.TimeSheetOvertimes, v => v.MapFrom(m => m.TimeSheetOvertime))
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.GetUnix()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
             .ReverseMap()
@@ -47,7 +49,8 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.TimeSheetDayOff, v => v.Ignore())
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.UnixToDateTime()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.UnixToDateTime()))
-            .ForMember(m => m.TimeSheetAggregate, v => v.Ignore());
+            .ForMember(m => m.TimeSheetAggregate, v => v.Ignore())
+            .ForMember(m => m.TimeSheetOvertime, v => v.Ignore());
         }
     }
 
@@ -177,14 +180,14 @@ namespace Services.Organization.Model.TimeKeeping
         [Display(Name = "Tổng thời gian(giờ) ngày công cuối tuần", GroupName = "Giờ công")]
         public decimal CountedWeekendHour { get; set; }
         
-        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 1", GroupName = "Tăng ca(giờ)")]
-        public decimal Overtime1 { get; set; }
+        // [Display(Name = "Tổng thời gian(giờ) làm tăng ca 1", GroupName = "Tăng ca(giờ)")]
+        // public decimal Overtime1 { get; set; }
         
-        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 2", GroupName = "Tăng ca(giờ)")]
-        public decimal Overtime2 { get; set; }
+        // [Display(Name = "Tổng thời gian(giờ) làm tăng ca 2", GroupName = "Tăng ca(giờ)")]
+        // public decimal Overtime2 { get; set; }
         
-        [Display(Name = "Tổng thời gian(giờ) làm tăng ca 3", GroupName = "Tăng ca(giờ)")]
-        public decimal Overtime3 { get; set; }
+        // [Display(Name = "Tổng thời gian(giờ) làm tăng ca 3", GroupName = "Tăng ca(giờ)")]
+        // public decimal Overtime3 { get; set; }
         
         [Display(Name = "Tổng số buổi vắng không phép", GroupName = "Vắng KP")]
         public int CountedAbsence { get; set; }
