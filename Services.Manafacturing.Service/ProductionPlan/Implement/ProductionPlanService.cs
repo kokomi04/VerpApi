@@ -476,14 +476,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return result;
         }
 
-        public async Task<IDictionary<long, List<MonthlyImportStockModel>>> GetMonthlyImportStock(long startDate, long endDate)
+        public async Task<IDictionary<long, List<ImportProductModel>>> GetMonthlyImportStock(int monthPlanId)
         {
-            var startDateTime = startDate.UnixToDateTime();
-            var endDateTime = endDate.UnixToDateTime();
+            var monthPlan = _manufacturingDBContext.MonthPlan.FirstOrDefault(p => p.MonthPlanId == monthPlanId);
+            if (monthPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tháng");
+
+            var lastestDate = DateTime.UtcNow.Date;
+
+            if (lastestDate > monthPlan.EndDate) lastestDate = monthPlan.EndDate;
+            if (lastestDate < monthPlan.StartDate) lastestDate = monthPlan.StartDate;
+
+            var currentWeekPlan = _manufacturingDBContext.WeekPlan.Where(w => w.StartDate <= lastestDate).OrderBy(w => w.StartDate).LastOrDefault();
+            if (currentWeekPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tuần");
 
             var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
                 .Include(pd => pd.ProductionOrder)
-                .Where(pd => pd.ProductionOrder.PlanEndDate >= startDateTime && pd.ProductionOrder.StartDate <= endDateTime)
+                .Where(pd => pd.ProductionOrder.PlanEndDate >= monthPlan.StartDate && pd.ProductionOrder.StartDate <= monthPlan.EndDate)
                 .ToList();
 
             var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();
@@ -527,37 +535,51 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 .Where(ph => lastestStepIds.Contains(ph.ProductionStepId) && ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                 .ToList();
 
-            var result = new Dictionary<long, List<MonthlyImportStockModel>>();
+            var result = new Dictionary<long, List<ImportProductModel>>();
 
             foreach (var groupStep in groupSteps)
             {
-                result.Add(groupStep.Key, new List<MonthlyImportStockModel>());
+                result.Add(groupStep.Key, new List<ImportProductModel>());
 
                 foreach (var productionOrderId in groupStep.Value)
                 {
 
                     var productDatas = productionOrderDetails
                         .Where(pod => pod.ProductionOrderId == productionOrderId)
-                        .GroupBy(pod => pod.ProductId)
+                        .GroupBy(pod => new { pod.ProductId, pod.OrderCode })
                         .Select(g => new
                         {
-                            ProductId = g.Key,
-                            Quantity = g.Sum(pod => pod.Quantity)
+                            ProductId = g.Key.ProductId,
+                            OrderCode = g.Key.OrderCode,
+                            Quantity = g.Sum(pod => pod.Quantity),
                         })
                         .ToList();
+
                     foreach (var productData in productDatas)
                     {
-                        var importQuantity = importStockObjects
+                        var totalPlanQuantity = productDatas.Where(p => p.ProductId == productData.ProductId).Sum(p => p.Quantity);
+
+                        var totalImportQuantity = importStockObjects
                             .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId)
                             .Sum(imp => imp.ProductionQuantity);
 
-                        var monthlyImportStock = new MonthlyImportStockModel
+                        var totalLastestDateImportQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date == lastestDate)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var totalLastestWeekImportQuantity = importStockObjects
+                           .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date >= currentWeekPlan.StartDate && imp.Date <= currentWeekPlan.EndDate)
+                           .Sum(imp => imp.ProductionQuantity);
+
+                        var monthlyImportStock = new ImportProductModel
                         {
                             ProductId = productData.ProductId,
                             PlanQuantity = productData.Quantity.Value,
-                            ImportQuantity = importQuantity
+                            ImportQuantity = totalPlanQuantity.HasValue ? totalImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestDateImportQuantity = totalPlanQuantity.HasValue ? totalLastestDateImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestWeekImportQuantity = totalPlanQuantity.HasValue ? totalLastestWeekImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            OrderCode = productData.OrderCode
                         };
-
                         result[groupStep.Key].Add(monthlyImportStock);
                     }
                 }
