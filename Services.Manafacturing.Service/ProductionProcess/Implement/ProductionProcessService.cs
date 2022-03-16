@@ -1800,5 +1800,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return data;
         }
 
+        public async Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId)
+        {
+            var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
+                .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId)
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ToListAsync();
+
+            var roles = productionSteps.SelectMany(x => x.ProductionStepLinkDataRole, (s, d) => new ProductionStepLinkDataRoleInput
+            {
+                ProductionStepId = s.ProductionStepId,
+                ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+                ProductionStepCode = s.ProductionStepCode,
+                ProductionStepLinkDataCode = d.ProductionStepLinkData.ProductionStepLinkDataCode,
+                ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
+                ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId,
+                //ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
+            }).ToList();
+
+            //Lấy thông tin dữ liệu của steplinkdata
+            var lsProductionStepLinkDataId = roles.Select(x => x.ProductionStepLinkDataId).Distinct().ToList();
+            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
+            if (lsProductionStepLinkDataId.Count > 0)
+            {
+                var sql = new StringBuilder(@$"
+                    SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
+                    WHERE v.LinkDataObjectTypeId = 1 AND v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
+                ");
+                var parammeters = new List<SqlParameter>()
+                {
+                    lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
+                };
+
+                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+            }
+
+            return stepLinkDatas.GroupBy(x => x.LinkDataObjectId)
+            .Select(x =>
+            {
+                var result = x.First();
+                result.QuantityOrigin = x.Sum(s => s.QuantityOrigin);
+                return result;
+            }).ToList();
+        }
+
     }
 }
