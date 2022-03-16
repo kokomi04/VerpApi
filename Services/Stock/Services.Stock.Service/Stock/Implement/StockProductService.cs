@@ -1203,11 +1203,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var openingStockQuery = (
                 from id in inventoryDetails
                 group id by id.ProductUnitConversionId into pu
-                select new
+                select new SumQuantity
                 {
                     ProductUnitConversionId = pu.Key,
                     TotalPrimaryUnit = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.PrimaryQuantity : -v.PrimaryQuantity),
-                    TotalProductUnitConversion = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.ProductUnitConversionQuantity : -v.ProductUnitConversionQuantity),
+                    TotalPu = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.ProductUnitConversionQuantity : -v.ProductUnitConversionQuantity),
                 }).ToList();
 
             #endregion
@@ -1275,7 +1275,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             resultData.Details = new List<StockProductDetailsModel>();
 
             var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-            var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
+            var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o);
+
             var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
             foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.InventoryTypeId).ThenBy(q => q.InventoryDetailId).ToList())
@@ -1287,17 +1288,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!totalByTimes.ContainsKey(item.ProductUnitConversionId))
                 {
-                    totalByTimes.Add(item.ProductUnitConversionId, 0);
+                    totalByTimes.Add(item.ProductUnitConversionId, new SumQuantity() { ProductUnitConversionId = item.ProductUnitConversionId, TotalPrimaryUnit = 0, TotalPu = 0 });
                 }
+
+                var currentSum = totalByTimes[item.ProductUnitConversionId];
 
                 if (item.InventoryTypeId == (int)EnumInventoryType.Input)
                 {
-                    totalByTimes[item.ProductUnitConversionId] += item.ProductUnitConversionQuantity;
+                    currentSum.Add(item.PrimaryQuantity, item.ProductUnitConversionQuantity);
                     totalPrimary += item.PrimaryQuantity;
                 }
                 else
                 {
-                    totalByTimes[item.ProductUnitConversionId] = totalByTimes[item.ProductUnitConversionId].SubDecimal(item.ProductUnitConversionQuantity);
+                    currentSum.Sub(item.PrimaryQuantity, item.ProductUnitConversionQuantity);
+
                     totalPrimary = totalPrimary.SubDecimal(item.PrimaryQuantity);
                 }
 
@@ -1321,8 +1325,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     SecondaryQuantity = item.ProductUnitConversionQuantity,
                     ProductUnitConversionId = item.ProductUnitConversionId,
                     ProductUnitConversion = productUnitConversionObj,
-                    EndOfPerdiodPrimaryQuantity = totalPrimary,
-                    EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
+                    EndPrimaryQuantityForAllPus = totalPrimary,
+                    EndOfPerdiodPrimaryQuantity = currentSum.TotalPrimaryUnit,
+                    EndOfPerdiodProductUnitConversionQuantity = currentSum.TotalPu,
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Pocode = item.Pocode
@@ -1332,6 +1337,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return resultData;
         }
+
+        
 
         /// <summary>
         /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - Mẫu báo cáo kho 03
@@ -1840,11 +1847,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #endregion
 
-        private class ProductAltUnitModel
-        {
-            public int ProductId { get; set; }
+        //private class ProductAltUnitModel
+        //{
+        //    public int ProductId { get; set; }
 
+        //    public int ProductUnitConversionId { get; set; }
+        //}
+
+        class SumQuantity
+        {
             public int ProductUnitConversionId { get; set; }
+            public decimal TotalPrimaryUnit { get; set; }
+            public decimal TotalPu { get; set; }
+
+            public void Add(decimal primaryQuantity, decimal puQuantity)
+            {
+                TotalPrimaryUnit = TotalPrimaryUnit.AddDecimal(primaryQuantity);
+                TotalPu = TotalPu.AddDecimal(puQuantity);
+            }
+
+            public void Sub(decimal primaryQuantity, decimal puQuantity)
+            {
+                TotalPrimaryUnit = TotalPrimaryUnit.SubDecimal(primaryQuantity);
+                TotalPu = TotalPu.SubDecimal(puQuantity);
+            }
         }
     }
 }
