@@ -20,6 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal AllocationQuantity { get; set; }
         public int? SourceProductId { get; set; }
         public decimal? SourceQuantity { get; set; }
+        public long? InventoryDetailId { get; set; }
     }
 
     public class AllocationModel
