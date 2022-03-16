@@ -97,7 +97,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var _dbContext = GetDbContext((EnumModuleType)dashboardTypeInfo.DashboardTypeGroup.ModuleTypeId);
 
-            var reportViewInfo = await _dashboardConfigService.DashboardTypeViewGetInfo(dashboardTypeInfo.DashboardTypeId);
+            var reportViewInfo = await _dashboardConfigService.DashboardTypeViewGetInfo(dashboardTypeInfo.DashboardTypeId, isConfig: true);
 
             var sqlParams = new List<SqlParameter>();
 
