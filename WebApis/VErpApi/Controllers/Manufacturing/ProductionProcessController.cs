@@ -229,5 +229,15 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionProcessService.GroupProductionStepInOutToOutsource(containerTypeId, containerId, productionOrderId);
         }
+
+        /// <summary>
+        /// Trả về tất cả các product có trong quy trình kèm số lượng định mức
+        /// </summary>
+        /// <param name="containerTypeId"></param>
+        /// <param name="containerId"></param>
+        /// <returns></returns>
+        public async Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId){
+            return await _productionProcessService.GetAllProductInProductionProcess(containerTypeId, containerId);
+        }
     }
 }
