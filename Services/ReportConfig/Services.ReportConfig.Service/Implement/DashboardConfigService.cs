@@ -260,17 +260,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _reportConfigContext.ReportType.AsQueryable();
+            var query = _reportConfigContext.DashboardType.AsQueryable();
 
             if (!string.IsNullOrEmpty(keyword))
             {
-                query = query.Where(r => r.ReportPath.Contains(keyword) || r.ReportTypeName.Contains(keyword));
+                query = query.Where(r => r.DashboardTypeName.Contains(keyword));
             }
             if (moduleTypeId.HasValue)
             {
-                query = query.Where(r => r.ReportTypeGroup.ModuleTypeId == moduleTypeId.Value);
+                query = query.Where(r => r.DashboardTypeGroup.ModuleTypeId == moduleTypeId.Value);
             }
-            query = query.OrderBy(r => r.ReportTypeName);
+            query = query.OrderBy(r => r.DashboardTypeName);
             var total = await query.CountAsync();
             if (size > 0)
             {

@@ -19,6 +19,7 @@ namespace Verp.Services.ReportConfig.Model
         public string JsProcessedChart { get; set; }
         public int ModuleTypeId { get; set; }
         public bool IsHide { get; set; }
+        public string MenuContextChart { get; set; }
 
     }
 }
