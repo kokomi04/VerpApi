@@ -278,11 +278,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDetailModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetDayOffs = await _organizationDBContext.TimeSheetDayOff.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetDayOffModel>(_mapper.ConfigurationProvider).ToListAsync();
             var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetAggregateModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var timeSheetOvertimes = await _organizationDBContext.TimeSheetOvertime.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ProjectTo<TimeSheetOvertimeModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             var result = _mapper.Map<TimeSheetModel>(timeSheet);
             result.TimeSheetAggregates = timeSheetAggregates;
             result.TimeSheetDayOffs = timeSheetDayOffs;
             result.TimeSheetDetails = timeSheetDetails;
+            result.TimeSheetOvertimes = timeSheetOvertimes;
             return result;
         }
         
