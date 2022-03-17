@@ -31,5 +31,7 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
 
         [Description("Kí hiệu ngày không xếp ca")]
         OffSymbol = 9,
+        [Description("Kí hiệu làm nửa công")]
+        HalfWorkOnTimeSymbol = 10,
     }
 }
