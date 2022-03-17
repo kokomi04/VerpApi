@@ -828,6 +828,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSheetOvertime>(entity =>
             {
+                entity.Property(e => e.MinsOvertime).HasColumnType("decimal(18, 5)");
+
                 entity.HasOne(d => d.OvertimeLevel)
                     .WithMany(p => p.TimeSheetOvertime)
                     .HasForeignKey(d => d.OvertimeLevelId)
