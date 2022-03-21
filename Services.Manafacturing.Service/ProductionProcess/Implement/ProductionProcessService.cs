@@ -1812,10 +1812,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepId = s.ProductionStepId,
                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                 ProductionStepCode = s.ProductionStepCode,
-                ProductionStepLinkDataCode = d.ProductionStepLinkData.ProductionStepLinkDataCode,
-                ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)d.ProductionStepLinkDataRoleTypeId,
-                ProductionStepLinkTypeId = d.ProductionStepLinkData.ProductionStepLinkTypeId,
-                //ProductionStepLinkDataGroup = d.ProductionStepLinkDataGroup
             }).ToList();
 
             //Lấy thông tin dữ liệu của steplinkdata
