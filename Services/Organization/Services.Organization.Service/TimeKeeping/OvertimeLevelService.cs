@@ -89,7 +89,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 OvertimeLevelId = x.OvertimeLevelId,
                 OrdinalNumber = x.OrdinalNumber,
-                OvertimeRate = x.OvertimeRate
+                OvertimeRate = x.OvertimeRate,
+                Note = x.Note,
+                Title = x.Title
             }).ToListAsync();
         }
     }

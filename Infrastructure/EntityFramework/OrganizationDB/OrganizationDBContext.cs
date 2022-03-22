@@ -711,7 +711,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<OvertimeLevel>(entity =>
             {
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
                 entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Title).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<ShiftConfiguration>(entity =>
