@@ -559,6 +559,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.IsProductSemi, row.IsProductSemi);
 
             product.UpdateIfAvaiable(p => p.IsProduct, row.IsProduct);
+            product.UpdateIfAvaiable(p => p.IsMaterials, row.IsMaterials);
+            product.UpdateIfAvaiable(p => p.IsProductSemi, row.IsProductSemi);
 
             product.UpdateIfAvaiable(p => p.PackingQuantitative, row.PackingQuantitative);
             product.UpdateIfAvaiable(p => p.PackingHeight, row.PackingHeight);
