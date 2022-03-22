@@ -169,11 +169,26 @@ namespace VErp.Infrastructure.EF.EFExtensions
                      */
                     var type = obj.GetType();
                     var ps = type.GetProperties();
+
+                    var exceptCodeFields = new[]
+                    {
+                        "jscode",
+                        "lastcode",
+                        "reftablecode",
+                        "generatecode",
+                        "categorycode",
+                        "symbolcode",
+                        "areacode",
+                        "typecode",
+                        "actionbuttoncode",
+                        "tempcode",
+                        "generatecode"
+                    };
+
                     foreach (var prop in ps)
                     {
                         var propName = prop.Name.ToLower();
-                        if (propName.EndsWith("code") && !propName.EndsWith("jscode") && !propName.EndsWith("lastcode") && !propName.EndsWith("reftablecode")
-                            && !propName.EndsWith("generatecode") && !propName.EndsWith("categorycode") && !propName.EndsWith("symbolcode"))
+                        if (propName.EndsWith("code") && !exceptCodeFields.Any(c => propName.EndsWith(c)))
                         {
                             var code = prop.GetValue(obj) as string;
                             Utils.ValidateCodeSpecialCharactors(code);
