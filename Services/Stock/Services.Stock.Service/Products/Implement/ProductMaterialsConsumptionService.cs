@@ -369,7 +369,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<ImportProductMaterialsConsumptionExcelMapping>();
+            var fields = ExcelUtils.GetFieldNameModels<ImportProductMaterialsConsumptionExcelMapping>();
             result.Fields = fields;
             return result;
         }

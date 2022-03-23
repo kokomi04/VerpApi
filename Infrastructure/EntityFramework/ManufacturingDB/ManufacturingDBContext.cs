@@ -573,7 +573,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
+                // entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.OutsourcePartQuantity).HasColumnType("decimal(32, 12)");
 

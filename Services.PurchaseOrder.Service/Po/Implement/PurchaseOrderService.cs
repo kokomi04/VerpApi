@@ -1188,7 +1188,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<PoDetailRowValue>();
+            var fields = ExcelUtils.GetFieldNameModels<PoDetailRowValue>();
             result.Fields = fields;
             return result;
         }

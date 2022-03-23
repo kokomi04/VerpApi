@@ -18,9 +18,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string VoucherTypeCode { get; set; }
 
         public int SortOrder { get; set; }
-        public int? VoucherTypeGroupId { get; set; }
-
-        public IList<ActionButtonSimpleModel> ActionObjects { get; set; }
+        public int? VoucherTypeGroupId { get; set; }     
 
         public IList<VoucherAreaFieldSimpleModel> AreaFields { get; set; }
     }

@@ -204,4 +204,7 @@
   <data name="CanNotUpdateUnitProductWhichInUsed" xml:space="preserve">
     <value>Không thể thay đổi đơn vị tính mặt hàng "{0}" do mặt hàng đã vào dữ liệu</value>
   </data>
+  <data name="TargetProductivityWithCodeNotFound" xml:space="preserve">
+    <value>Không tìm thấy năng suất mục tiêu "{0}"</value>
+  </data>
 </root>

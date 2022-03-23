@@ -240,8 +240,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                           ProductionOrderId = ps.ContainerId,
                                           StepId = ps.StepId.Value,
                                           Quantity = ld.QuantityOrigin - ld.OutsourcePartQuantity.GetValueOrDefault(),
-                                          ObjectId = ld.ObjectId,
-                                          ObjectTypeId = ld.ObjectTypeId,
+                                          ObjectId = ld.LinkDataObjectId,
+                                          ObjectTypeId = ld.LinkDataObjectTypeId,
                                           WorkloadConvertRate = ld.WorkloadConvertRate
                                       }).ToListAsync();
 
@@ -716,10 +716,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         join ps in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals ps.ProductionStepId
                         where ps.ContainerId == productionOrderId
                         && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
-                        && ld.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
-                        && productIds.Contains(ld.ObjectId)
+                        && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                        && productIds.Contains(ld.LinkDataObjectId)
                         && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
-                        select ld.ObjectId
+                        select ld.LinkDataObjectId
                     )
                     .Distinct()
                     .ToList();

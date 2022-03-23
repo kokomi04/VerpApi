@@ -147,7 +147,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var suffixKey = match[0].Groups["suffix"].Value;
 
-                        var newColumn = Utils.DeepClone(column);
+                        var newColumn = ObjectUtils.DeepClone(column);
 
                         var nameColumn = $"{column.ColGroupName}{suffixKey}";
 
@@ -156,7 +156,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             newColumn.ColGroupName = firstRow[nameColumn]?.ToString();
                         }
 
-                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && !string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
                         {
                             newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
                         }

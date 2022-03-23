@@ -483,13 +483,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         Description = detail.Description,
                         //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
                         InventoryRequirementCode = inventoryRequirementCode,
-                        InventoryRequirementDetailId = detail.InventoryRequirementDetailId
+                        InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
+                        IsSubCalculation = detail.IsSubCalculation
                     };
 
                     //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
                     //{
                     //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
                     //}
+
+                    var subs = await _stockDbContext.InventoryDetailSubCalculation.Where(x=>x.InventoryDetailId == detailModel.InventoryDetailId).
+                    Select(x=> new InventoryDetailSubCalculationModel
+                    {
+                        InventoryDetailId = x.InventoryDetailId,
+                        InventoryDetailSubCalculationId = x.InventoryDetailSubCalculationId,
+                        ProductBomId = x.ProductBomId,
+                        UnitConversionId = x.UnitConversionId,
+                        PrimaryUnitPrice = x.PrimaryUnitPrice,
+                        PrimaryQuantity = x.PrimaryQuantity
+                    }).ToListAsync();
+
+                    detailModel.InventoryDetailSubCalculations = subs;
 
                     listInventoryDetailsOutput.Add(detailModel);
                 }
@@ -597,7 +611,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 CategoryCode = "Output",
                 CategoryTitle = InventoryAbstractMessage.InventoryOuput,
                 IsTreeView = false,
-                Fields = Utils.GetFieldNameModels<InventoryOutExcelParseModel>()
+                Fields = ExcelUtils.GetFieldNameModels<InventoryOutExcelParseModel>()
             };
             return result;
         }
@@ -614,7 +628,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<InventoryInputExcelParseModel>();
+            var fields = ExcelUtils.GetFieldNameModels<InventoryInputExcelParseModel>();
 
 
             var packageField = fields.First(f => f.FieldName.StartsWith(nameof(InventoryInputExcelParseModel.ToPackgeInfo)));
@@ -674,7 +688,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<ImportInvInputModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ImportInvInputModel>();
 
 
             var packageField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvInputModel.ToPackgeInfo)));
@@ -713,7 +727,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<ImportInvOutputModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ImportInvOutputModel>();
 
             result.Fields = fields;
             return result;

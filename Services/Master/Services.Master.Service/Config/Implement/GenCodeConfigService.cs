@@ -127,7 +127,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             }
 
-            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
+            var newCode = StringUtils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
             //var lastValues = await _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking()
             //    .Select(l => new CustomGenCodeBaseValueModel
@@ -189,7 +189,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             }
 
-            var newCode = Utils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
+            var newCode = StringUtils.FormatStyle(obj.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
             var query = _masterDbContext.CustomGenCodeValue.Where(c => customGenCodeId == c.CustomGenCodeId).AsNoTracking().OrderBy(c => c.BaseValue).AsQueryable();
 
@@ -459,7 +459,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private async Task<(bool isFound, CustomGenCodeValue data)> FindBaseValue(int customGenCodeId, string baseFormat, long? fId = null, string code = "", long? date = null)
         {
-            var baseValue = Utils.FormatStyle(baseFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), null);
+            var baseValue = StringUtils.FormatStyle(baseFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), null);
             baseValue ??= string.Empty;
             var baseValueEntity = await _masterDbContext.CustomGenCodeValue.FirstOrDefaultAsync(c => c.CustomGenCodeId == customGenCodeId && c.BaseValue == baseValue);
             if (baseValueEntity == null)
@@ -534,7 +534,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
                     date = date.HasValue ? date : _currentContextService.GetNowUtc().GetUnix();
 
-                    newCode = Utils.FormatStyle(config.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
+                    newCode = StringUtils.FormatStyle(config.CodeFormat, code, fId, date.UnixToDateTime(_currentContextService.TimeZoneOffset), stringNumber);
 
 
                     if (!(newId < maxId))

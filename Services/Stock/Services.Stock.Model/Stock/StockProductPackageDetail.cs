@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Stock
@@ -45,6 +46,7 @@ namespace VErp.Services.Stock.Model.Stock
 
         public string ProductionOrderCode { get; set; }
 
+        public IDictionary<int,object> CustomPropertyValue { get; set; }
      
        
     }

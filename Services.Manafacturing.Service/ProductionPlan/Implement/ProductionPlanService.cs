@@ -287,6 +287,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return await GetWorkloadPlan(productionOrderIds);
         }
 
+
         public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds)
         {
             var result = new Dictionary<long, WorkloadPlanModel>();
@@ -393,8 +394,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         if (outputLinkData.ExportOutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId > 0 && toStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
                         {
                             var ousourceOutput = outputDatas
-                                .Where(d => d.ObjectId == outputLinkData.ObjectId
-                                && (int)d.ObjectTypeId == outputLinkData.ObjectTypeId
+                                .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                                && (int)d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                                 && d.ToStepId == toStepId
                                 && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
                                 .FirstOrDefault();
@@ -408,8 +409,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                             {
                                 outputDatas.Add(new StepInOutData
                                 {
-                                    ObjectId = outputLinkData.ObjectId,
-                                    ObjectTypeId = outputLinkData.ObjectTypeId,
+                                    ObjectId = outputLinkData.LinkDataObjectId,
+                                    ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                                     RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                     TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                     ReceivedQuantity = 0,
@@ -421,8 +422,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         }
 
                         var item = outputDatas
-                            .Where(d => d.ObjectId == outputLinkData.ObjectId
-                            && d.ObjectTypeId == outputLinkData.ObjectTypeId
+                            .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
                             && d.ToStepId == toStepId
                             && !d.OutsourceStepRequestId.HasValue)
                             .FirstOrDefault();
@@ -436,8 +437,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         {
                             outputDatas.Add(new StepInOutData
                             {
-                                ObjectId = outputLinkData.ObjectId,
-                                ObjectTypeId = outputLinkData.ObjectTypeId,
+                                ObjectId = outputLinkData.LinkDataObjectId,
+                                ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
                                 RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
                                 ReceivedQuantity = 0,
@@ -470,6 +471,118 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
                 result.Add(productionOrderId, workloadPlanModel);
+            }
+
+            return result;
+        }
+
+        public async Task<IDictionary<long, List<ImportProductModel>>> GetMonthlyImportStock(int monthPlanId)
+        {
+            var monthPlan = _manufacturingDBContext.MonthPlan.FirstOrDefault(p => p.MonthPlanId == monthPlanId);
+            if (monthPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tháng");
+
+            var lastestDate = DateTime.UtcNow.Date;
+
+            if (lastestDate > monthPlan.EndDate) lastestDate = monthPlan.EndDate;
+            if (lastestDate < monthPlan.StartDate) lastestDate = monthPlan.StartDate;
+
+            var currentWeekPlan = _manufacturingDBContext.WeekPlan.Where(w => w.StartDate <= lastestDate).OrderBy(w => w.StartDate).LastOrDefault();
+            if (currentWeekPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tuần");
+
+            var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                .Include(pd => pd.ProductionOrder)
+                .Where(pd => pd.ProductionOrder.PlanEndDate >= monthPlan.StartDate && pd.ProductionOrder.StartDate <= monthPlan.EndDate)
+                .ToList();
+
+            var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();
+
+            var groupSteps = (await (from po in _manufacturingDBContext.ProductionOrder
+                                     join ps in _manufacturingDBContext.ProductionStep on new { po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder } equals new { ProductionOrderId = ps.ContainerId, ps.ContainerTypeId }
+                                     join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                     join sg in _manufacturingDBContext.StepGroup on s.StepGroupId equals sg.StepGroupId
+                                     where productOderIds.Contains(po.ProductionOrderId)
+                                     select new
+                                     {
+                                         sg.StepGroupId,
+                                         po.ProductionOrderId
+                                     }).ToListAsync())
+                             .GroupBy(sg => sg.StepGroupId)
+                             .ToDictionary(g => g.Key, g => g.Select(sg => sg.ProductionOrderId).ToList());
+
+
+            var finishStepIds = _manufacturingDBContext.ProductionStep
+                 .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                 && productOderIds.Contains(ps.ContainerId)
+                 && ps.IsFinish
+                 && !ps.IsGroup.Value)
+                 .Select(ps => ps.ProductionStepId)
+                 .Distinct()
+                 .ToList();
+
+            var linkDataIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && finishStepIds.Contains(lr.ProductionStepId))
+                .Select(lr => lr.ProductionStepLinkDataId)
+                .Distinct()
+                .ToList();
+
+            var lastestStepIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && linkDataIds.Contains(lr.ProductionStepLinkDataId))
+                .Select(lr => lr.ProductionStepId)
+                .Distinct()
+                .ToList();
+
+            var importStockObjects = _manufacturingDBContext.ProductionHistory
+                .Where(ph => lastestStepIds.Contains(ph.ProductionStepId) && ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                .ToList();
+
+            var result = new Dictionary<long, List<ImportProductModel>>();
+
+            foreach (var groupStep in groupSteps)
+            {
+                result.Add(groupStep.Key, new List<ImportProductModel>());
+
+                foreach (var productionOrderId in groupStep.Value)
+                {
+
+                    var productDatas = productionOrderDetails
+                        .Where(pod => pod.ProductionOrderId == productionOrderId)
+                        .GroupBy(pod => new { pod.ProductId, pod.OrderCode })
+                        .Select(g => new
+                        {
+                            ProductId = g.Key.ProductId,
+                            OrderCode = g.Key.OrderCode,
+                            Quantity = g.Sum(pod => pod.Quantity),
+                        })
+                        .ToList();
+
+                    foreach (var productData in productDatas)
+                    {
+                        var totalPlanQuantity = productDatas.Where(p => p.ProductId == productData.ProductId).Sum(p => p.Quantity);
+
+                        var totalImportQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var totalLastestDateImportQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date == lastestDate)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var totalLastestWeekImportQuantity = importStockObjects
+                           .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date >= currentWeekPlan.StartDate && imp.Date <= currentWeekPlan.EndDate)
+                           .Sum(imp => imp.ProductionQuantity);
+
+                        var monthlyImportStock = new ImportProductModel
+                        {
+                            ProductId = productData.ProductId,
+                            PlanQuantity = productData.Quantity.Value,
+                            ImportQuantity = totalPlanQuantity.HasValue ? totalImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestDateImportQuantity = totalPlanQuantity.HasValue ? totalLastestDateImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestWeekImportQuantity = totalPlanQuantity.HasValue ? totalLastestWeekImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            OrderCode = productData.OrderCode
+                        };
+                        result[groupStep.Key].Add(monthlyImportStock);
+                    }
+                }
             }
 
             return result;

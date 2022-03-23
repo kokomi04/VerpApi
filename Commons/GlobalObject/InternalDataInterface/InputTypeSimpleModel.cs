@@ -20,7 +20,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int SortOrder { get; set; }
         public int? InputTypeGroupId { get; set; }
 
-        public IList<ActionButtonSimpleModel> ActionObjects { get; set; }
         public IList<InputAreaFieldSimpleModel> AreaFields { get; set; }
     }
 

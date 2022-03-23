@@ -26,10 +26,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
     public interface IHttpClientFactoryService
     {
-        Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
-        Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
-        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null);
-        Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
+        Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, object queries = null);
+        Task<T> Get<T>(string relativeUrl, object queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null);
+        Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null, object queries = null);
+        Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, object queries = null);
         Task<Stream> Download(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null);
     }
 
@@ -44,11 +44,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger = logger;
         }
 
-        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null)
+        public async Task<T> Post<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, Func<string, ApiErrorResponse> errorHandler = null, object queries = null)
         {
             try
             {
-                var uri = relativeUrl;
+                var uri = AppendQueryData(relativeUrl, queries);
+
                 var body = postData.JsonSerialize();
 
 
@@ -85,11 +86,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
+        public async Task<T> Put<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null, object queries = null)
         {
             try
             {
-                var uri = relativeUrl;
+                var uri = AppendQueryData(relativeUrl, queries);
+
                 var body = postData.JsonSerialize();
 
 
@@ -122,11 +124,12 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null)
+        public async Task<T> Deleted<T>(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null, object queries = null)
         {
             try
             {
-                var uri = relativeUrl;
+                var uri = AppendQueryData(relativeUrl, queries);
+
                 var body = postData.JsonSerialize();
 
 
@@ -158,34 +161,11 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<T> Get<T>(string relativeUrl, IDictionary<string, object> queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
+        public async Task<T> Get<T>(string relativeUrl, object queries = null, OptionHttpRequestDelegate optionRequest = null, JsonSerializerSettings settings = null)
         {
             try
             {
-                var uri = relativeUrl;
-                var queryData = new Dictionary<string, string>();
-                if (queries != null && queries.Count > 0)
-                {
-                    foreach (var (k, v) in queries)
-                    {
-                        if (!v.IsNullObject())
-                        {
-                            if (v.GetType().IsEnum)
-                            {
-                                queryData.Add(k, ((int)v).ToString());
-                            }
-                            else
-                            {
-                                if (v != null)
-                                    queryData.Add(k, v.ToString());
-                            }
-                        }
-                    }
-                }
-                if (queryData.Count > 0)
-                {
-                    uri = QueryHelpers.AddQueryString(uri, queryData);
-                }
+                var uri = AppendQueryData(relativeUrl, queries);
 
                 var request = new HttpRequestMessage
                 {
@@ -213,6 +193,8 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 throw;
             }
         }
+
+
 
         public async Task<Stream> Download(string relativeUrl, object postData, OptionHttpRequestDelegate optionRequest = null)
         {
@@ -254,7 +236,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         {
             try
             {
-                if(result == null)
+                if (result == null)
                     result = response.JsonDeserialize<ApiErrorResponse>();
             }
             catch (Exception)
@@ -279,6 +261,40 @@ namespace VErp.Infrastructure.ServiceCore.Service
             _logger.LogError($"HttpClientFactoryService:{method} {uri} {{0}} Error {(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {{1}}", body, response);
 
             throw new Exception($"{(int)responseMessage.StatusCode} {responseMessage.ReasonPhrase} {response}");
+        }
+
+        private string AppendQueryData(string relativeUrl, object queries = null)
+        {
+            var uri = relativeUrl;
+            var queryData = new Dictionary<string, string>();
+            if (queries != null)
+            {
+                var props = queries.GetType().GetProperties();
+                foreach (var prop in props)
+                {
+                    var v = prop.GetValue(queries, null);
+
+                    if (!v.IsNullObject())
+                    {
+                        if (v.GetType().IsEnum)
+                        {
+                            queryData.Add(prop.Name, ((int)v).ToString());
+                        }
+                        else
+                        {
+                            if (v != null)
+                                queryData.Add(prop.Name, v.ToString());
+                        }
+                    }
+                }
+            }
+
+            if (queryData.Count > 0)
+            {
+                uri = QueryHelpers.AddQueryString(uri, queryData);
+            }
+
+            return uri;
         }
     }
 }

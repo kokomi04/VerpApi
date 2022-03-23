@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<InventoryChange> InventoryChange { get; set; }
         public virtual DbSet<InventoryDetail> InventoryDetail { get; set; }
         public virtual DbSet<InventoryDetailChange> InventoryDetailChange { get; set; }
+        public virtual DbSet<InventoryDetailSubCalculation> InventoryDetailSubCalculation { get; set; }
         public virtual DbSet<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
         public virtual DbSet<InventoryFile> InventoryFile { get; set; }
         public virtual DbSet<InventoryRequirement> InventoryRequirement { get; set; }
@@ -51,6 +52,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<Property> Property { get; set; }
         public virtual DbSet<RefCustomerBasic> RefCustomerBasic { get; set; }
         public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
+        public virtual DbSet<RefTargetProductivity> RefTargetProductivity { get; set; }
         public virtual DbSet<Stock> Stock { get; set; }
         public virtual DbSet<StockProduct> StockProduct { get; set; }
         public virtual DbSet<StockTake> StockTake { get; set; }
@@ -256,6 +258,19 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.UpdatedByUserId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            });
+
+            modelBuilder.Entity<InventoryDetailSubCalculation>(entity =>
+            {
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.InventoryDetail)
+                    .WithMany(p => p.InventoryDetailSubCalculation)
+                    .HasForeignKey(d => d.InventoryDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_InventoryDetailSubCalculation_InventoryDetail");
             });
 
             modelBuilder.Entity<InventoryDetailToPackage>(entity =>
@@ -872,6 +887,21 @@ namespace VErp.Infrastructure.EF.StockDB
                 entity.Property(e => e.SoCt)
                     .HasMaxLength(512)
                     .HasColumnName("so_ct");
+            });
+
+            modelBuilder.Entity<RefTargetProductivity>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefTargetProductivity");
+
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.TargetProductivityCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TargetProductivityId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<Stock>(entity =>

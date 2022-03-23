@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public WorkSchedule()
         {
             ArrangeShift = new HashSet<ArrangeShift>();
+            WorkScheduleMark = new HashSet<WorkScheduleMark>();
         }
 
         public int WorkScheduleId { get; set; }
@@ -40,5 +41,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         public virtual TimeSortConfiguration TimeSortConfiguration { get; set; }
         public virtual ICollection<ArrangeShift> ArrangeShift { get; set; }
+        public virtual ICollection<WorkScheduleMark> WorkScheduleMark { get; set; }
     }
 }

@@ -56,6 +56,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
+        public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
         public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
         public virtual DbSet<SplitHour> SplitHour { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
@@ -64,9 +65,12 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
         public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
+        public virtual DbSet<TimeSheetOvertime> TimeSheetOvertime { get; set; }
+        public virtual DbSet<TimeSheetRaw> TimeSheetRaw { get; set; }
         public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
         public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
+        public virtual DbSet<WorkScheduleMark> WorkScheduleMark { get; set; }
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
@@ -705,6 +709,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_ObjectProcessStepUser_ObjectProcessStep");
             });
 
+            modelBuilder.Entity<OvertimeLevel>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Title).HasMaxLength(1024);
+            });
+
             modelBuilder.Entity<ShiftConfiguration>(entity =>
             {
                 entity.Property(e => e.ConfirmationUnit).HasColumnType("decimal(18, 3)");
@@ -817,6 +830,23 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_TimeSheetDetail_TimeSheet");
             });
 
+            modelBuilder.Entity<TimeSheetOvertime>(entity =>
+            {
+                entity.Property(e => e.MinsOvertime).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.OvertimeLevel)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.OvertimeLevelId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_OvertimeLevel");
+
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
+            });
+
             modelBuilder.Entity<TimeSortConfiguration>(entity =>
             {
                 entity.Property(e => e.TimeSortCode)
@@ -851,6 +881,21 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.TimeSortConfigurationId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_WorkSchedule_TimeSortConfiguration");
+            });
+
+            modelBuilder.Entity<WorkScheduleMark>(entity =>
+            {
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleHistory_WorkScheduleHistory");
+
+                entity.HasOne(d => d.WorkSchedule)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.WorkScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleMark_WorkSchedule");
             });
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>

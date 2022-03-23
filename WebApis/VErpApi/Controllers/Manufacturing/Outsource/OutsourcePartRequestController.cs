@@ -52,6 +52,13 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             return await _outsourcePartRequestService.CreateOutsourcePartRequest(req);
         }
 
+        [HttpPost]
+        [Route("v2")]
+        public async Task<long> CreateRequestOutsourcePartV2([FromBody] OutsourcePartRequestModel req)
+        {
+            return await _outsourcePartRequestService.CreateOutsourcePartRequest(req, false);
+        }
+
         [HttpPut]
         [Route("{outsourcePartRequestId}")]
         public async Task<bool> UpdateRequestOutsourcePart([FromRoute] long outsourcePartRequestId, [FromBody] OutsourcePartRequestModel req)

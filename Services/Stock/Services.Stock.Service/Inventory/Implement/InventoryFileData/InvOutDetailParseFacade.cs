@@ -17,7 +17,7 @@ using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailPar
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InvOutDetailParseFacade
+    internal class InvOutDetailParseFacade
     {
         private IProductService productService;
         private StockDBContext stockDbContext;

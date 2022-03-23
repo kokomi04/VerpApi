@@ -15,6 +15,7 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.AppSettings;
 using Microsoft.Extensions.DependencyInjection;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -22,7 +23,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
     {
         Task<User> UserInfo(int userId);
 
-        Task<IDictionary<int, ActionButton>> ActionButtons();
+        Task<IDictionary<int, List<ActionButtonActionType>>> ActionButtons();
 
         Task<IDictionary<Guid, ApiEndpoint>> ApiEndpoints();
     }
@@ -64,7 +65,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             });
         }
 
-        public async Task<IDictionary<int, ActionButton>> ActionButtons()
+        public async Task<IDictionary<int, List<ActionButtonActionType>>> ActionButtons()
         {
             var t = AUTHORIZED_PRODUCTION_LONG_CACHING_TIMEOUT;
             if (!EnviromentConfig.IsProduction)
@@ -77,7 +78,19 @@ namespace VErp.Infrastructure.ServiceCore.Service
                {
                    var masterDBContext = scope.ServiceProvider.GetRequiredService<UnAuthorizeMasterDBContext>();
 
-                   return (await masterDBContext.ActionButton.AsNoTracking().ToListAsync()).ToDictionary(e => e.ActionButtonId, e => e);
+                   return (await (from m in masterDBContext.ActionButtonBillType
+                                  join b in masterDBContext.ActionButton on m.ActionButtonId equals b.ActionButtonId
+                                  select new ActionButtonActionType
+                                  {
+                                      ActionButtonId = m.ActionButtonId,
+                                      BillTypeObjectTypeId = (EnumObjectType)b.BillTypeObjectTypeId,
+                                      BillTypeObjectId = m.BillTypeObjectId,
+                                      ActionType = b.ActionTypeId ?? (int)EnumActionType.View
+                                  }
+                            ).ToListAsync())
+                            .GroupBy(m => m.ActionButtonId)
+                            .ToDictionary(m => m.Key, m => m.ToList());
+
                }
            });
         }

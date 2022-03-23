@@ -164,7 +164,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     newPrimaryQuantity = 0;
                 }
 
-                var newDetail = updateDetail.Data.FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
+                var newDetail = updateDetail.Data.Select(x => x.Detail).ToList().FirstOrDefault(id => id.InventoryDetailId == d.InventoryDetailId);
                 if (newDetail != null)
                 {
                     newProductUnitConversionQuantity = newDetail.ProductUnitConversionQuantity;
@@ -205,7 +205,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             }
 
-            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data };
+            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x=>x.Detail).ToList() };
         }
 
         private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
@@ -339,7 +339,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                             //if (obj.OldPrimaryQuantity != 0)
                             //{
-                            //    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
+                            //    (isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, obj.OldProductUnitConversionQuantity / obj.OldPrimaryQuantity, obj.NewProductUnitConversionQuantity);
 
                             //}
                             //else
@@ -364,9 +364,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                         FactorExpressionRate = null
                                     };
 
-                                    //(isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+                                    //(isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(obj.NewPrimaryQuantity, productUnitConversionInfo.FactorExpression, obj.NewProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
 
-                                    (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+                                    (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
                                 }
                             }
 
@@ -438,7 +438,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                                     //if (c.OldTransferPrimaryQuantity != 0)
                                     //{
-                                    //    (isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
+                                    //    (isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, c.OldTransferProductUnitConversionQuantity / c.OldTransferPrimaryQuantity, c.NewTransferProductUnitConversionQuantity);
 
                                     //}
                                     //else
@@ -462,9 +462,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                                 FactorExpressionRate = null
                                             };
 
-                                            //(isSuccess, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
+                                            //(isSuccess, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(c.NewTransferPrimaryQuantity, productUnitConversionInfo.FactorExpression, c.NewTransferProductUnitConversionQuantity, productUnitConversionInfo.DecimalPlace);
 
-                                            (isSuccess, primaryQuantity, pucQuantity) = Utils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+                                            (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
                                         }
                                     }
 

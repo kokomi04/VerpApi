@@ -53,7 +53,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
 
-            fields = Utils.GetFieldNameModels<BaseCustomerImportModel>().Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
+            fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>().Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
             groups = fields.Select(g => g.GroupName).Distinct().ToList();
         }
 

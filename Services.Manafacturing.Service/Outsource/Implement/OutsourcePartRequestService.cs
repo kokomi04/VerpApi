@@ -56,22 +56,26 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _purchaseOrderHelperService = purchaseOrderHelperService;
         }
 
-        public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model)
+        
+
+        public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model, bool isValidate = true)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
                 IList<int> partInBoms = new int[] {};
-                
-                if (model.ProductionOrderDetailId.HasValue)
+                if (isValidate)
                 {
-                    var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId.GetValueOrDefault())?.ProductId;
-                    partInBoms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
-                }
-                else
-                {
-                   var arrProductId = _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == model.ProductionOrderId).Select(x=>x.ProductId).ToArray();
-                    partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Values.SelectMany(x => x).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
+                    if (model.ProductionOrderDetailId.HasValue)
+                    {
+                        var productId = _manufacturingDBContext.ProductionOrderDetail.FirstOrDefault(x => x.ProductionOrderDetailId == model.ProductionOrderDetailId.GetValueOrDefault())?.ProductId;
+                        partInBoms = (await _productBomHelperService.GetBOM(productId.GetValueOrDefault())).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
+                    }
+                    else
+                    {
+                        var arrProductId = _manufacturingDBContext.ProductionOrderDetail.Where(x => x.ProductionOrderId == model.ProductionOrderId).Select(x => x.ProductId).ToArray();
+                        partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Values.SelectMany(x => x).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
+                    }
                 }
                 
                 // Cấu hình sinh mã
@@ -87,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var requestDetails = new List<OutsourcePartRequestDetail>();
                 foreach (var element in model.Detail)
                 {
-                    if(!partInBoms.Contains(element.ProductId))
+                    if(isValidate && !partInBoms.Contains(element.ProductId))
                         throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
 
                     element.OutsourcePartRequestId = request.OutsourcePartRequestId;
@@ -512,7 +516,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     var productionStepId = roles.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
 
                     var linkDataOrigin = roles.Where(x => x.ProductionStepId == productionStepId
-                                                        && x.ProductionStepLinkData.ObjectId == ld.ObjectId
+                                                        && x.ProductionStepLinkData.LinkDataObjectId == ld.LinkDataObjectId
                                                         && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
                                              .Select(x => x.ProductionStepLinkDataId)
                                              .ToList();
@@ -565,11 +569,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                         var materials = roles.Where(x => f_3.Value.Contains(x.ProductionStepId) && x.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
                                         .Select(x => x.ProductionStepLinkData)
-                                        .Where(x => x.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                                        .Where(x => x.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                                         .Select(x => new MaterialsForProductOutsource
                                         {
                                             RootProductId = rootProductId,
-                                            ProductId = x.ObjectId,
+                                            ProductId = x.LinkDataObjectId,
                                             OutsourcePartRequestId = outsourcePartRequestId,
                                             Quantity = percent * x.QuantityOrigin /*số lượng định mức (chưa nhân với số lượng của chi tiết gia công tương ứng trên PO) */
                                         }).ToArray();

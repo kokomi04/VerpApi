@@ -380,7 +380,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 if (!pu.IsDefault)
                 {
-                    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
+                    var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
                     if (!(eval > 0))
                     {
                         throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();

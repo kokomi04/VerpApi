@@ -99,7 +99,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                select ld;
                 foreach(var ld in linkData)
                 {
-                    var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.ObjectId);
+                    var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.LinkDataObjectId);
                     if(p == null)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
@@ -164,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         });
                     }
 
-                    if (linkData.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    if (linkData.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
@@ -451,7 +451,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             foreach (var l in ldFinishInvalid)
             {
                 var ld = productionProcess.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == l.ProductionStepLinkDataCode);
-                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder && productIds.Contains(ld.ObjectId))
+                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder && productIds.Contains(ld.LinkDataObjectId))
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
                         Message = $"Chi tiết đầu ra \"{ld.ObjectTitle}\" chưa được kết nối công đoạn \"Kết thúc\"",
@@ -473,7 +473,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var productionStepLinkDatas = productionProcess.ProductionStepLinkDatas
                 .Where(x => productionStepLinkDataCodes.Contains(x.ProductionStepLinkDataCode)
-                    && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    && x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 .ToList();
             foreach (var linkData in productionStepLinkDatas)
             {
@@ -550,9 +550,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var OutputInStep = from l in req.ProductionStepLinkDatas
                                    join r in req.ProductionStepLinkDataRoles
                                       on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                   where r.ProductionStepCode == productionStepCode && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                   where r.ProductionStepCode == productionStepCode && l.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                                    select l;
-                if (OutputInStep.Select(x => x.ObjectId).Contains(linkData.ObjectId))
+                if (OutputInStep.Select(x => x.LinkDataObjectId).Contains(linkData.LinkDataObjectId))
                     return new ProductionProcessWarningMessage
                     {
                         Message = $"Xuất hiện nhiều chi tiết \"{linkData.ObjectTitle}\" là đầu ra của các công đoạn có quan hệ với nhau.",

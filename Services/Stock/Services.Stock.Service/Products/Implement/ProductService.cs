@@ -1112,7 +1112,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<ProductImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>();
             result.Fields = fields;
             return result;
         }
@@ -1137,7 +1137,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         if (!unitConversion.IsDefault)
                         {
-                            var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
+                            var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, unitConversion.FactorExpression);
                             if (!(eval > 0))
                             {
                                 return ProductErrorCode.InvalidUnitConversionExpression;

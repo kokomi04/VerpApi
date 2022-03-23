@@ -12,11 +12,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             TimeSheetAggregate = new HashSet<TimeSheetAggregate>();
             TimeSheetDayOff = new HashSet<TimeSheetDayOff>();
             TimeSheetDetail = new HashSet<TimeSheetDetail>();
+            TimeSheetOvertime = new HashSet<TimeSheetOvertime>();
         }
 
         public long TimeSheetId { get; set; }
         public int Month { get; set; }
         public int Year { get; set; }
+        public DateTime? BeginDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public string Note { get; set; }
         public bool IsApprove { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -29,5 +32,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual ICollection<TimeSheetAggregate> TimeSheetAggregate { get; set; }
         public virtual ICollection<TimeSheetDayOff> TimeSheetDayOff { get; set; }
         public virtual ICollection<TimeSheetDetail> TimeSheetDetail { get; set; }
+        public virtual ICollection<TimeSheetOvertime> TimeSheetOvertime { get; set; }
     }
 }

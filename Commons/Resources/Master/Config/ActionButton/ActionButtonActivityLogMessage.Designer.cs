@@ -19,7 +19,7 @@ namespace Verp.Resources.Master.Config.ActionButton {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class ActionButtonActivityLogMessage {
@@ -61,6 +61,15 @@ namespace Verp.Resources.Master.Config.ActionButton {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Thêm nút chứng năng &quot;{0}&quot; vào chứng từ &quot;{1}&quot;.
+        /// </summary>
+        public static string AddMappingBillTypeObject {
+            get {
+                return ResourceManager.GetString("AddMappingBillTypeObject", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Thêm mới nút chức năng {0}.
         /// </summary>
         public static string Create {
@@ -75,6 +84,15 @@ namespace Verp.Resources.Master.Config.ActionButton {
         public static string Delete {
             get {
                 return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Xóa nút chứng năng &quot;{0}&quot; khỏi chứng từ &quot;{1}&quot;.
+        /// </summary>
+        public static string RemoveMappingBillTypeObject {
+            get {
+                return ResourceManager.GetString("RemoveMappingBillTypeObject", resourceCulture);
             }
         }
         

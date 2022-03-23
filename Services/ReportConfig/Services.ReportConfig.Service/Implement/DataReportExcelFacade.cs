@@ -26,7 +26,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
-    public class DataReportExcelFacade
+    internal class DataReportExcelFacade
     {
         private const int CONDITION_VALUE = 1;
         private ISheet sheet = null;
@@ -136,7 +136,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = Utils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
+            var fileName = StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
             return (stream, fileName, contentType);
         }
 

@@ -20,7 +20,7 @@ using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
-    public class InvInputDetailParseFacade
+    internal class InvInputDetailParseFacade
     {
         private IProductService productService;
         private StockDBContext stockDbContext;
