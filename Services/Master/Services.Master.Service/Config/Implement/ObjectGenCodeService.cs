@@ -39,6 +39,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
+        private readonly IOrganizationHelperService _organizationHelperService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
@@ -50,7 +51,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IStockHelperService stockHelperService
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
-        )
+            , IOrganizationHelperService organizationHelperService)
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
@@ -62,6 +63,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _inputTypeHelperService = inputTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
+            _organizationHelperService = organizationHelperService;
         }
 
 
@@ -396,10 +398,29 @@ namespace VErp.Services.Master.Service.Config.Implement
         }
 
 
-        private Task<IList<ObjectGenCodeMappingTypeModel>> OrganizationMappingTypeModels()
+        private async  Task<IList<ObjectGenCodeMappingTypeModel>> OrganizationMappingTypeModels()
         {
 
+            var hrTypes = await _organizationHelperService.GetHrTypeSimpleList();
+
             IList<ObjectGenCodeMappingTypeModel> result = new List<ObjectGenCodeMappingTypeModel>();
+
+
+            foreach (var hrType in hrTypes)
+            {
+                foreach (var areaField in hrType.AreaFields.Where(f => f.FormTypeId == EnumFormType.Generate))
+                {
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.Organization,
+                        targeObjectTypeId: EnumObjectType.HrTypeRow,
+                        configObjectTypeId: EnumObjectType.HrAreaField,
+                        configObjectId: areaField.HrAreaFieldId,
+                        targetObjectName: hrType.Title,
+                        fieldName: areaField.HrAreaFieldTitle)
+                    );
+                }
+            }
 
             result.Add(
                  GetObjectGenCodeMappingTypeModel(
@@ -423,7 +444,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 fieldName: "Mã bộ phận")
             );
 
-            return Task.FromResult(result);
+            return await Task.FromResult(result);
         }
 
         private Task<IList<ObjectGenCodeMappingTypeModel>> PurchasingOrderMappingTypeModels()
