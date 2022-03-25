@@ -228,6 +228,21 @@ namespace VErp.Commons.Library
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
         }
 
+        public static bool EqualityBetweenTwoNomCamelWithFields(this NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, string[] u)
+        {
+            bool isEqual = false;
+            for (int i = 0; i < u.Length; i++)
+            {
+                var key = u[i];
+
+                var f1Value = f1[key].ToString().ToLower();
+                var f2Value = f2[key].ToString().ToLower();
+
+                isEqual = string.Compare(f1Value, f2Value, true) == 0;
+            }
+
+            return isEqual;
+        }
 
     }
 }

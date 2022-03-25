@@ -1967,7 +1967,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefCategory = null,
                     IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters),
                     GroupName = field.AreaTitle,
-                    DataTypeId = (EnumDataType)field.DataTypeId
+                    DataTypeId = (EnumDataType)field.DataTypeId,
+                    IsMultiRow = field.IsMultiRow
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -2018,26 +2019,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             var reader = new ExcelReader(stream);
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
             // Lấy thông tin field
             var fields = await GetInputFields(inputTypeId);
 
-            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+            // var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
-            var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
-
-            if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
+            // if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-
             var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
 
             var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
             if (columnKey == null)
-            {
-                throw BillCodeError.BadRequest();
-            }
+                throw FieldRequired.BadRequestFormat("Số chứng từ");
 
             var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
 
@@ -2120,7 +2117,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
                 if (mappingField == null) continue;
 
-                var values = field.IsMultiRow ? createGroups.SelectMany(b => b.Value.Select(r => r.Data[mappingField.Column]?.ToString())).ToList() : createGroups.Where(b => b.Value.Count() > 0).Select(b => b.Value.First().Data[mappingField.Column]?.ToString()).ToList();
+                var values = field.IsMultiRow 
+                ? createGroups.SelectMany(b => b.Value.Select(r => r.Data[mappingField.Column]?.ToString())).ToList() 
+                : createGroups.Where(b => b.Value.Count() > 0).Select(b => b.Value.First().Data[mappingField.Column]?.ToString()).ToList();
 
                 // Check unique trong danh sách values thêm mới
                 if (values.Distinct().Count() < values.Count)
@@ -2158,11 +2157,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", dupValues.ToArray()), "" });
                 }
             }
-
-            foreach (var bill in createGroups)
+            if(createGroups.Count > 0)
             {
-                var billInfo = await GetBillFromRows(bill, mapping, fields, referFields);
-                createBills.Add(billInfo);
+                var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
+
+                if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
+                
+                foreach (var bill in createGroups)
+                {
+                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields);
+                    createBills.Add(billInfo);
+                }
             }
 
             foreach (var bill in updateGroups)
@@ -2238,34 +2243,80 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     // Cập nhật chứng từ
                     foreach (var bill in updateBills)
                     {
-                        // Get changed info
-                        var infoSQL = new StringBuilder("SELECT TOP 1 ");
-                        var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
-                        AppendSelectFields(ref infoSQL, singleFields);
-                        infoSQL.Append($" FROM vInputValueRow r WHERE InputTypeId={inputTypeId} AND InputBill_F_Id = {bill.Key} AND {GlobalFilter()}");
-                        var currentInfo = (await _accountancyDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
+                        var oldBillInfo= await GetBillInfo(inputTypeId, bill.Key);
 
-                        if (currentInfo == null)
+                        var newBillInfo = oldBillInfo;
+
+                        foreach (var item in bill.Value.Info)
                         {
-                            throw BillNotFound.BadRequest();
+                            if (newBillInfo.Info.ContainsKey(item.Key))
+                            {
+                                newBillInfo.Info[item.Key] = item.Value;
+                            }
                         }
 
-                        await ValidateAccountantConfig(bill.Value.Info, currentInfo);
+                        var fieldIdentityDetails = mapping.MappingFields.Where(x => fields.Where(f => f.IsMultiRow).Any(f => f.FieldName == x.FieldName) && x.IsIdentityDetail)
+                            .Select(x=>x.FieldName)
+                            .Distinct()
+                            .ToArray();
+                        var validateFieldInfos = fields.Where(x=> fieldIdentityDetails.Contains(x.FieldName)).ToArray();
+
+                        bool EqualityBetweenTwoNomCamel(NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, ValidateField[] u)
+                        {
+                            bool isEqual = false;
+                            for (int i = 0; i < u.Length; i++)
+                            {
+                                var key = u[i].FieldName;
+
+                                var f1Value =  f1[key].ToString().ToLower();
+                                var f2Value = f2[key].ToString().ToLower();
+
+                                isEqual = ((EnumDataType)u[i].DataTypeId).CompareValue(f1Value, f2Value) == 0;
+                            }
+
+                            return isEqual;
+                        }
+
+                        foreach (var row in bill.Value.Rows)
+                        {
+                            var existsRows = newBillInfo.Rows.Where(x => EqualityBetweenTwoNomCamel(x, row, validateFieldInfos)).ToList();
+                            if (existsRows.Count > 1)
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
+
+                            if (existsRows.Count == 0)
+                            {
+                                newBillInfo.Rows.Add(row);
+                            }
+                            else
+                            {
+                                var existsRow = existsRows.First();
+
+                                foreach (var item in row)
+                                {
+                                    if (existsRow.ContainsKey(item.Key))
+                                    {
+                                        existsRow[item.Key] = item.Value;
+                                    }
+                                }
+                            }
+
+                        }
+
+                        // Get changed info
+                        var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
+                        
+                        await ValidateAccountantConfig(bill.Value.Info, oldBillInfo.Info);
 
                         NonCamelCaseDictionary futureInfo = bill.Value.Info;
-                        ValidateRowModel checkInfo = new ValidateRowModel(bill.Value.Info, CompareRow(currentInfo, futureInfo, singleFields));
+                        ValidateRowModel checkInfo = new ValidateRowModel(bill.Value.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields));
 
                         // Get changed rows
                         List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
-                        var rowsSQL = new StringBuilder("SELECT F_Id,");
                         var multiFields = fields.Where(f => f.IsMultiRow).ToList();
-                        AppendSelectFields(ref rowsSQL, multiFields);
-                        rowsSQL.Append($" FROM vInputValueRow r WHERE InputBill_F_Id = {bill.Key} AND {GlobalFilter()}");
-                        var currentRows = (await _accountancyDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                         foreach (var futureRow in bill.Value.Rows)
                         {
                             futureRow.TryGetValue("F_Id", out string futureValue);
-                            NonCamelCaseDictionary curRow = currentRows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
+                            NonCamelCaseDictionary curRow = oldBillInfo.Rows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
                             if (curRow == null)
                             {
                                 checkRows.Add(new ValidateRowModel(futureRow, null));
@@ -2278,7 +2329,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         }
 
                         // Lấy thông tin field
-                        var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+                        var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire && (f.IsMultiRow || f.FieldName == AccountantConstants.BILL_CODE)).ToList();
                         var uniqueFields = fields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
                         var selectFields = fields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
@@ -2307,7 +2358,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         billInfo.LatestBillVersion++;
 
-                        await CreateBillVersion(inputTypeId, billInfo, bill.Value, generateTypeLastValues);
+                        await CreateBillVersion(inputTypeId, billInfo, newBillInfo, generateTypeLastValues);
 
                         await _accountancyDBContext.SaveChangesAsync();
 
@@ -2357,7 +2408,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (row.Data.ContainsKey(mappingField.Column))
                         value = row.Data[mappingField.Column]?.ToString();
                     // Validate require
-                    if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+                    if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) 
+                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                     if (string.IsNullOrWhiteSpace(value)) continue;
                     value = value.Trim();
@@ -2477,7 +2529,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 Rows = rows.ToArray()
             };
 
-            await ValidateAccountantConfig(billInfo?.Info, null);
+            // await ValidateAccountantConfig(billInfo?.Info, null);
 
             return billInfo;
         }

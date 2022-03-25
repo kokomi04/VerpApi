@@ -28,6 +28,7 @@ namespace VErp.Commons.Library.Model
         public string RefFieldName { get; set; }
         public string Column { get; set; }
         public bool IsIgnoredIfEmpty { get; set; }
+        public bool IsIdentityDetail { get; set; }
     }
 
     public class ImportExcelRowData
