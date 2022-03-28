@@ -1,32 +1,33 @@
 ﻿using ActivityLogDB;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Microsoft.AspNetCore.Http;
+using Lib.Net.Http.WebPush;
+using Lib.Net.Http.WebPush.Authentication;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Resources;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ServiceCore.SignalR;
 using VErp.Services.Master.Model.Activity;
 using VErp.Services.Master.Model.Notification;
+using VErp.Services.Master.Model.WebPush;
 using VErp.Services.Master.Service.Users;
+using static VErp.Services.Master.Model.WebPush.AngularPushNotification;
 using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
@@ -41,6 +42,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
+        private readonly IPrincipalBroadcasterService _principalBroadcaster;
+        private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
+        private readonly PushServiceClient _pushClient;
 
         public ActivityService(ActivityLogDBContext activityLogContext
             , IUserService userService
@@ -49,7 +53,9 @@ namespace VErp.Services.Master.Service.Activity.Implement
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
-            , IMapper mapper)
+            , IMapper mapper, IPrincipalBroadcasterService principalBroadcaster
+            , IHubContext<BroadcastSignalRHub, IBroadcastHubClient> hubNotifyContext
+            , PushServiceClient pushClient)
         {
             _activityLogContext = activityLogContext;
             _userService = userService;
@@ -59,6 +65,12 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _activityLogService = activityLogService;
             _currentContextService = currentContextService;
             _mapper = mapper;
+            _principalBroadcaster = principalBroadcaster;
+            _hubNotifyContext = hubNotifyContext;
+            _pushClient = pushClient;
+
+            if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
+                _pushClient.DefaultAuthentication = new VapidAuthentication(_appSetting.WebPush.PublicKey, _appSetting.WebPush.PrivateKey);
         }
 
         public void CreateActivityAsync(ActivityInput input)
@@ -110,7 +122,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     UserActivityLogId = activity.UserActivityLogId
                 };
 
-                await AddNotification(bodyNotification, input.UserId);
+                await AddNotification(bodyNotification, input.UserId, input);
 
                 await _activityLogContext.SaveChangesAsync();
 
@@ -308,7 +320,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return results;
         }
 
-        private async Task<bool> AddNotification(NotificationAdditionalModel model, int userId)
+        private async Task AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
         {
             var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
             if (model.BillTypeId.HasValue)
@@ -326,7 +338,52 @@ namespace VErp.Services.Master.Service.Activity.Implement
             _activityLogContext.Notification.AddRange(lsNewNotification);
             await _activityLogContext.SaveChangesAsync();
 
-            return true;
+            await PushNotification(lsSubscription, log.Message, model);
+        }
+
+        private async Task PushNotification(IList<SubscriptionModel> lsSubscription, string message, NotificationAdditionalModel data)
+        {
+            try
+            {
+                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
+                    && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{data.ObjectTypeId}/{data.ObjectId}/{data.BillTypeId}" : "";
+                foreach (var sub in lsSubscription)
+                {
+                    var subUserId = sub.UserId;
+                    if (_principalBroadcaster.IsUserConnected(subUserId.ToString()))
+                        await _hubNotifyContext.Clients.Clients(_principalBroadcaster.GetAllConnectionId(new[] { subUserId.ToString() })).BroadcastMessage();
+                    else if (_appSetting.WebPush != null && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey) && !string.IsNullOrWhiteSpace(_appSetting.WebPush.PrivateKey))
+                    {
+                        var pushSubscriptions = await _activityLogContext.PushSubscription.AsNoTracking().Where(x => x.UserId == subUserId).ToListAsync();
+                        foreach (var pushSubscription in pushSubscriptions)
+                        {
+                            PushMessage notification = new AngularPushNotification
+                            {
+                                Title = "VERP Thông Báo",
+                                Body = message,
+                                NotifyData = data,
+                                Actions = !string.IsNullOrWhiteSpace(actionUrl) ? new NotificationAction[] { new NotificationAction(actionUrl, "Xem") } : new NotificationAction[] { },
+                                Icon = "https://verp.vn/pic/Settings/log_63712_637654394979921899.png"
+                            }.ToPushMessage();
+
+                            var keys = new Dictionary<string, string>();
+                            keys.Add("auth", pushSubscription.Auth);
+                            keys.Add("p256dh", pushSubscription.P256dh);
+
+                            // Fire-and-forget 
+                            await _pushClient.RequestPushMessageDeliveryAsync(new Lib.Net.Http.WebPush.PushSubscription()
+                            {
+                                Endpoint = pushSubscription.Endpoint,
+                                Keys = keys,
+                            }, notification);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AddNotification");
+            }
         }
     }
 }

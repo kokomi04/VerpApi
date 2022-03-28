@@ -30,7 +30,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductionOrderHelperService _productionOrderHelperService;
         private readonly IProductionHandoverHelperService _productionHandoverHelperService;
         private readonly ICurrentContextService _currentContextService;
-        public InventoryServiceAbstract(StockDBContext stockContext
+        internal InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService

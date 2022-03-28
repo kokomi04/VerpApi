@@ -6,17 +6,38 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
+    public class ActionButtonBillTypeMappingModel
+    {
+        public int ActionButtonId { get; set; }
+    }
+
     public class ActionButtonIdentity
     {
         public int ActionButtonId { get; set; }
-        public EnumObjectType ObjectTypeId { get; set; }
-        public int ObjectId { get; set; }
-        //Addition
-        public string ObjectTitle { get; set; }
-
+        public EnumObjectType BillTypeObjectTypeId { get; set; }
     }
-    public class ActionButtonSimpleModel : ActionButtonIdentity
+
+    public class ActionButtonBillTypeMapping
     {
+        public int ActionButtonId { get; set; }
+        public EnumObjectType BillTypeObjectTypeId { get; set; }
+        public long BillTypeObjectId { get; set; }
+    }
+
+
+    public class ActionButtonActionType
+    {
+        public int ActionButtonId { get; set; }
+        public EnumObjectType BillTypeObjectTypeId { get; set; }
+        public long BillTypeObjectId { get; set; }
+
+        public int ActionType { get; set; }
+    }
+
+    public class ActionButtonBaseModel
+    {
+        public int ActionButtonId { get; set; }
+
         public string ActionButtonCode { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập tên chức năng")]
         [MaxLength(256, ErrorMessage = "Tên chức năng quá dài")]
@@ -28,16 +49,23 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string JsVisible { get; set; }
         public int ActionTypeId { get; set; }
         public EnumActionPosition ActionPositionId { get; set; }
-
-
-    }
-
-    public class ActionButtonModel : ActionButtonSimpleModel
-    {
         public string SqlAction { get; set; }
+
     }
 
-    public class BillInfoModel 
+
+    public class ActionButtonModel : ActionButtonBaseModel
+    {
+        public EnumObjectType BillTypeObjectTypeId { get; set; }
+    }
+
+    public class ActionButtonUpdateModel : ActionButtonBaseModel, IMapFrom<ActionButtonModel>
+    {
+
+
+    }
+
+    public class BillInfoModel
     {
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }
@@ -49,4 +77,5 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string MappingFunctionKey { get; set; }
         public string ObjectId { get; set; }
     }
+
 }

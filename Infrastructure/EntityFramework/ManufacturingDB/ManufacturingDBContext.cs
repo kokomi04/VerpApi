@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
+        public virtual DbSet<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual DbSet<ProductionMaterialsRequirementDetail> ProductionMaterialsRequirementDetail { get; set; }
         public virtual DbSet<ProductionOrder> ProductionOrder { get; set; }
@@ -66,6 +68,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<Step> Step { get; set; }
         public virtual DbSet<StepDetail> StepDetail { get; set; }
         public virtual DbSet<StepGroup> StepGroup { get; set; }
+        public virtual DbSet<TargetProductivity> TargetProductivity { get; set; }
+        public virtual DbSet<TargetProductivityDetail> TargetProductivityDetail { get; set; }
         public virtual DbSet<WeekPlan> WeekPlan { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
@@ -308,6 +312,20 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
+            });
+
+            modelBuilder.Entity<ProductionHistory>(entity =>
+            {
+                entity.Property(e => e.OvertimeProductionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.ProductionQuantity).HasColumnType("decimal(32, 12)");
+            });
+
+            modelBuilder.Entity<ProductionHumanResource>(entity =>
+            {
+                entity.Property(e => e.OfficeWorkDay).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.OvertimeWorkDay).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<ProductionMaterialsRequirement>(entity =>
@@ -555,7 +573,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ExportOutsourceQuantity).HasColumnType("decimal(32, 12)");
 
-                entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
+                // entity.Property(e => e.ObjectTypeId).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.OutsourcePartQuantity).HasColumnType("decimal(32, 12)");
 
@@ -583,7 +601,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepLinkDataId, e.ProductionStepId })
                     .HasName("PK_InOutStepMapping");
 
-                entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
+                //entity.Property(e => e.ProductionStepLinkDataGroup).HasMaxLength(50);
 
                 entity.Property(e => e.ProductionStepLinkDataRoleTypeId).HasComment("1: Input\r\n2: Output");
 
@@ -866,9 +884,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.Quantity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasComment("Nang suat/nguoi-may");
+                //entity.Property(e => e.Quantity)
+                //    .HasColumnType("decimal(18, 5)")
+                //    .HasComment("Nang suat/nguoi-may");
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
@@ -884,6 +902,26 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.StepGroupName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<TargetProductivity>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.TargetProductivityCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<TargetProductivityDetail>(entity =>
+            {
+                entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.TargetProductivityNavigation)
+                    .WithMany(p => p.TargetProductivityDetail)
+                    .HasForeignKey(d => d.TargetProductivityId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TargetProductivityDetail_TargetProductivityDetail");
             });
 
             modelBuilder.Entity<WeekPlan>(entity =>

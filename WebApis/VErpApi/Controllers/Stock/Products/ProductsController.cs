@@ -46,7 +46,7 @@ namespace VErpApi.Controllers.Stock.Products
             _productPartialService = productPartialService;
         }
 
-     
+
         [HttpPost]
         [Route("Search")]
         [GlobalApi]
@@ -82,7 +82,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("importFromMapping")]
         public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null|| mapping==null)
+            if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -181,6 +181,23 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productPartialService.UpdateSellInfo(productId, model);
         }
 
+
+        [HttpGet]
+        [Route("{productId}/ProcessInfo")]
+        public async Task<ProductProcessModel> ProcessInfo([FromRoute] int productId)
+        {
+            return await _productPartialService.ProcessInfo(productId);
+        }
+
+
+        [HttpPut]
+        [Route("{productId}/ProcessInfo")]
+        public async Task<bool> ProcessInfo([FromRoute] int productId, [FromBody] ProductProcessModel model)
+        {
+            return await _productPartialService.UpdateProcessInfo(productId, model);
+        }
+
+
         /// <summary>
         /// Cập nhật sản phẩm
         /// </summary>
@@ -206,7 +223,7 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productService.DeleteProduct(productId);
         }
 
-       
+
         [HttpPost]
         [Route("File/{fileTypeId}")]
         public async Task<long> UploadImage([FromRoute] EnumFileType? fileTypeId, [FromForm] IFormFile file)
@@ -234,6 +251,13 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<long> CopyProductMaterialConsumption([FromQuery] int sourceProductId, [FromQuery] int destProductId)
         {
             return await _productService.CopyProductMaterialConsumption(sourceProductId, destProductId);
+        }
+
+        [HttpGet]
+        [Route("{productId}/productionProcessVersion")]
+        public async Task<long> GetProductionProcessVersion([FromRoute] int productId)
+        {
+            return await _productService.GetProductionProcessVersion(productId);
         }
     }
 }

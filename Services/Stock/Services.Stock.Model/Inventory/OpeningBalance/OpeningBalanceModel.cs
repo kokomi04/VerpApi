@@ -4,12 +4,13 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
+using VErp.Services.Stock.Model.Package;
 
 namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 {
     public class OpeningBalanceModel
     {
-        [Display(Name ="Danh mục mặt hàng", GroupName ="Sản phẩm")]
+        [Display(Name = "Danh mục mặt hàng", GroupName = "Sản phẩm")]
         public string CateName { set; get; }
 
         [Display(Name = "Loại mã mặt hàng", GroupName = "Sản phẩm")]
@@ -53,16 +54,31 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public decimal Factor { set; get; }
 
 
-        [Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
-        public string AccountancyAccountNumber { set; get; }
+        //[Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
+        //public string AccountancyAccountNumber { set; get; }
 
         //[Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
         //public string AccountancyAccountNumberDu { set; get; }
 
-        [Display(Name = "Mã kiện (Bỏ chọn nếu là mặc định)", GroupName = "Thẻ Kho")]
+        //[Display(Name = "Mã kiện (Bỏ chọn nếu là mặc định)", GroupName = "Thẻ Kho")]
 
-        [FieldDataType((int)EnumInventoryType.Output)]
-        public string PackageCode { set; get; }
+        //[FieldDataType((int)EnumInventoryType.Output)]
+        //public string PackageCode { set; get; }
 
+    }
+
+
+    public class ImportInvInputModel : OpeningBalanceModel
+    {
+        [Display(Name = "Thông tin kiện", GroupName = "Thông tin kiện")]
+        [FieldDataNestedObject]
+        public PackageInputModel ToPackgeInfo { get; set; }
+    }
+
+    public class ImportInvOutputModel : OpeningBalanceModel
+    {
+        //[FieldDataType((int)EnumInventoryType.Output)]
+        [Display(Name = "Kiện xuất", GroupName = "Thẻ Kho")]
+        public string FromPackageCode { set; get; }
     }
 }

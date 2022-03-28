@@ -24,17 +24,19 @@ namespace VErp.Commons.Library.Model
         public string FieldTitle { get; set; }
         public bool IsRequired { get; set; }
         public int? Type { get; set; }
+
+        public EnumDataType? DataTypeId { get; set; }
         public CategoryNameModel RefCategory { get; set; }
     }
 
-    public class FieldDataTypeAttribute : Attribute
-    {
-        public int Type { get; private set; }
-        public FieldDataTypeAttribute(int type)
-        {
-            Type = type;
-        }
-    }
+    //public class FieldDataTypeAttribute : Attribute
+    //{
+    //    public int Type { get; private set; }
+    //    public FieldDataTypeAttribute(int type)
+    //    {
+    //        Type = type;
+    //    }
+    //}
 
     public class FieldDataIgnoreAttribute : Attribute
     {
@@ -48,6 +50,14 @@ namespace VErp.Commons.Library.Model
         public FieldDataIgnoreExportAttribute()
         {
         }
+    }
+
+    /// <summary>
+    /// Mark object as flat fields, nested object (not ref object)
+    /// </summary>
+    public class FieldDataNestedObjectAttribute : Attribute
+    {
+       
     }
 
     public abstract class MappingDataRowAbstract

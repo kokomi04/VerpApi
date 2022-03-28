@@ -8,13 +8,14 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Commons.GlobalObject;
+using System.IO;
 
 namespace VErp.Services.Stock.Service.Stock
 
 {
     public interface IStockProductService
     {
-       
+
         Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null);
 
         Task<IList<StockWarning>> StockWarnings();
@@ -23,7 +24,9 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<Dictionary<int, RemainStock[]>> GetRemainStockByProducts(int[] productIds);
 
-        Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size);
+        Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(IList<int> stockIds, int productId, int page, int size);
+
+        Task<(Stream stream, string fileName, string contentType)> StockProductPackageDetailsExport(IList<int> stockIds, int productId, int page, int size);
 
         Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, IList<int> productTypeIds, IList<int> productCateIds, int page, int size);
 

@@ -78,7 +78,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
         }
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -113,7 +113,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
-           
+
 
             int suffix = 0;
             if (filters != null)
@@ -158,7 +158,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 columnsFilters.FilterClauseProcess(INPUTVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
-            var mainColumns = fields.Values.Where(f => !f.IsMultiRow).SelectMany(f =>
+
+            string totalSql;
+
+            var fieldToSelect = fields.Values.ToList();
+
+            if (isMultirow)
+            {
+                totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
+            }
+            else
+            {
+                totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
+                fieldToSelect = fieldToSelect.Where(f => !f.IsMultiRow).ToList();
+            }
+
+
+            var selectColumns = fieldToSelect.SelectMany(f =>
             {
                 var refColumns = new List<string>()
                 {
@@ -174,13 +190,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 return refColumns;
             }).ToList();
 
-            if (!mainColumns.Contains(orderByFieldName))
+            if (!selectColumns.Contains(orderByFieldName))
             {
-                orderByFieldName = mainColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
+                orderByFieldName = selectColumns.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
-            var totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
 
@@ -190,9 +205,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
             }
 
-            var selectColumn = string.Join(",", mainColumns.Select(c => $"r.[{c}]"));
+            var selectColumn = string.Join(",", selectColumns.Select(c => $"r.[{c}]"));
 
-            var dataSql = @$"
+            string dataSql;
+            if (isMultirow)
+            {
+                dataSql = @$"
+                 
+                    SELECT r.InputBill_F_Id, r.F_Id {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
+                    FROM {INPUTVALUEROW_VIEW} r
+                    WHERE {whereCondition}
+               
+                    ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
+                ";
+            }
+            else
+            {
+                dataSql = @$"
                  ;WITH tmp AS (
                     SELECT r.InputBill_F_Id, MAX(F_Id) as F_Id
                     FROM {INPUTVALUEROW_VIEW} r
@@ -205,6 +234,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
+            }
 
             if (size >= 0)
             {
@@ -393,7 +423,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Add);
+                var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (result.Code != 0)
                 {
@@ -422,7 +452,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
 
                 if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
                 {
@@ -622,7 +652,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return isRequire.Value;
         }
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long inputValueBillId = 0)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(int inputTypeId, string script, BillInfoModel data, Dictionary<string, EnumDataType> fields, EnumActionType action, long inputValueBillId = 0)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -633,6 +663,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     new SqlParameter("@BillF_Id", inputValueBillId),
+                      new SqlParameter("@InputTypeId", inputTypeId),
                     resultParam,
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
@@ -1103,7 +1134,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
+                var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
                 if (result.Code != 0)
                 {
                     if (string.IsNullOrWhiteSpace(result.Message))
@@ -1133,7 +1164,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1431,7 +1462,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
@@ -1442,7 +1473,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
-                await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
+                await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
 
@@ -1863,13 +1894,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        private async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null)
+        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null)
         {
             var area = _accountancyDBContext.InputArea.AsQueryable();
             if (areaId > 0)
             {
                 area = area.Where(a => a.InputAreaId == areaId);
             }
+           
             return await (from af in _accountancyDBContext.InputAreaField
                           join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                           join a in area on af.InputAreaId equals a.InputAreaId
@@ -1893,7 +1925,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                               RefTableTitle = f.RefTableTitle,
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
-                              RequireFilters = af.RequireFilters
+                              RequireFilters = af.RequireFilters,
+                              AreaTitle = a.Title,
                           }).ToListAsync();
         }
 
@@ -1932,7 +1965,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
-                    IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters)
+                    IsRequired = field.IsRequire && string.IsNullOrEmpty(field.RequireFilters),
+                    GroupName = field.AreaTitle,
+                    DataTypeId = (EnumDataType)field.DataTypeId
                 };
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode))
@@ -1957,7 +1992,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             FieldName = f.CategoryFieldName,
                             FieldTitle = GetTitleCategoryField(f),
                             RefCategory = null,
-                            IsRequired = false
+                            IsRequired = false,
+
+                            DataTypeId = (EnumDataType)f.DataTypeId
                         }).ToList()
                     };
                 }
@@ -2167,7 +2204,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
                         // Before saving action (SQL)
-                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, bill, inputFields, EnumActionType.Add);
                         if (result.Code != 0)
                         {
                             if (string.IsNullOrWhiteSpace(result.Message))
@@ -2194,7 +2231,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await CreateBillVersion(inputTypeId, billInfo, bill, generateTypeLastValues);
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
+                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
                     }
 
 
@@ -2255,7 +2292,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (billInfo == null) throw BillNotFound.BadRequest();
 
                         // Before saving action (SQL)
-                        var result = await ProcessActionAsync(inputTypeInfo.BeforeSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
                         if (result.Code != 0)
                         {
                             if (string.IsNullOrWhiteSpace(result.Message))
@@ -2275,7 +2312,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await _accountancyDBContext.SaveChangesAsync();
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputTypeInfo.AfterSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);
@@ -2735,7 +2772,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public int Index { get; set; }
         }
 
-        protected class ValidateField
+        public class ValidateField
         {
             public int InputAreaFieldId { get; set; }
             public string Title { get; set; }
@@ -2755,6 +2792,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
             public string RequireFilters { get; set; }
+
+            public string AreaTitle { get; set; }
         }
     }
 }

@@ -13,7 +13,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string UserName { get; set; }
         public EnumUserStatus UserStatusId { get; set; }
         public int? RoleId { get; set; }
-
+        public int? LeaveConfigId { get; set; }
         public IList<UserDepartmentInfoModel> Departments { get; set; }
     }
 

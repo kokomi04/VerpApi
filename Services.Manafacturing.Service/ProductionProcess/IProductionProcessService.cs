@@ -14,6 +14,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProcessService
     {
+        Task<bool> CheckHasAssignment(long productionOrderId);
+        Task<bool> DismissUpdateQuantity(long productionOrderId);
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
         Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
 
@@ -51,5 +53,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<InternalProductionStepSimpleModel>> GetAllProductionStep(EnumContainerType containerTypeId, long containerId);
 
         Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep(EnumContainerType containerType, long containerId, long[] productionStepIds);
+        Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId);
     }
 }

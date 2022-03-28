@@ -99,7 +99,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                select ld;
                 foreach(var ld in linkData)
                 {
-                    var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.ObjectId);
+                    var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.LinkDataObjectId);
                     if(p == null)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
@@ -164,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         });
                     }
 
-                    if (linkData.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    if (linkData.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
@@ -350,29 +350,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     });
                 }
 
-                if (inputs.Count() > 0 && outputs.Count() > 0)
-                {
-                    var inputLinkDataInfos = productionProcess.ProductionStepLinkDatas
-                        .Where(l => inputs.Select(x => x.ProductionStepLinkDataCode).Contains(l.ProductionStepLinkDataCode)
-                            && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product);
-                    var outputLinkDataInfos = productionProcess.ProductionStepLinkDatas
-                        .Where(l => outputs.Select(x => x.ProductionStepLinkDataCode).Contains(l.ProductionStepLinkDataCode)
-                         && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product);
+                // if (inputs.Count() > 0 && outputs.Count() > 0)
+                // {
+                //     var inputLinkDataInfos = productionProcess.ProductionStepLinkDatas
+                //         .Where(l => inputs.Select(x => x.ProductionStepLinkDataCode).Contains(l.ProductionStepLinkDataCode)
+                //             && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product);
+                //     var outputLinkDataInfos = productionProcess.ProductionStepLinkDatas
+                //         .Where(l => outputs.Select(x => x.ProductionStepLinkDataCode).Contains(l.ProductionStepLinkDataCode)
+                //          && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product);
 
-                    var duplicates = from i in inputLinkDataInfos
-                                     join o in outputLinkDataInfos
-                                        on new { i.ObjectId, i.ObjectTypeId } equals new { o.ObjectId, o.ObjectTypeId }
-                                     select i;
-                    foreach (var d in duplicates)
-                        lsWarning.Add(new ProductionProcessWarningMessage
-                        {
-                            Message = $"Công đoạn \"{step.Title}\" có nhóm (đầu ra đầu vào) có chi tiết \"{d.ObjectTitle}\" xuất hiện ở đầu vào và đầu ra.",
-                            ObjectCode = step.ProductionStepCode,
-                            ObjectId = step.ProductionStepId,
-                            GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
-                            WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
-                        });
-                }
+                //     var duplicates = from i in inputLinkDataInfos
+                //                      join o in outputLinkDataInfos
+                //                         on new { i.ObjectId, i.ObjectTypeId } equals new { o.ObjectId, o.ObjectTypeId }
+                //                      select i;
+                //     foreach (var d in duplicates)
+                //         lsWarning.Add(new ProductionProcessWarningMessage
+                //         {
+                //             Message = $"Công đoạn \"{step.Title}\" có nhóm (đầu ra đầu vào) có chi tiết \"{d.ObjectTitle}\" xuất hiện ở đầu vào và đầu ra.",
+                //             ObjectCode = step.ProductionStepCode,
+                //             ObjectId = step.ProductionStepId,
+                //             GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
+                //             WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                //         });
+                // }
             }
 
             return Task.FromResult(lsWarning);
@@ -451,7 +451,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             foreach (var l in ldFinishInvalid)
             {
                 var ld = productionProcess.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == l.ProductionStepLinkDataCode);
-                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder && productIds.Contains(ld.ObjectId))
+                if (ld != null && productionProcess.ContainerTypeId == EnumContainerType.ProductionOrder && productIds.Contains(ld.LinkDataObjectId))
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
                         Message = $"Chi tiết đầu ra \"{ld.ObjectTitle}\" chưa được kết nối công đoạn \"Kết thúc\"",
@@ -473,7 +473,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var productionStepLinkDatas = productionProcess.ProductionStepLinkDatas
                 .Where(x => productionStepLinkDataCodes.Contains(x.ProductionStepLinkDataCode)
-                    && x.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                    && x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 .ToList();
             foreach (var linkData in productionStepLinkDatas)
             {
@@ -512,30 +512,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepCode == linkData.ProductionStepCode).Count() > 0).ToList();
                     TraceProductionStepRelationship(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
                 }
-
-                var productionStepLinkData = from l in productionProcess.ProductionStepLinkDatas
-                                             join r in productionProcess.ProductionStepLinkDataRoles
-                                                on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                             where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
-                                             select l;
-                var productionLinkDataDuplicate = productionStepLinkData
-                                                .GroupBy(x => x.ObjectId)
-                                                .Where(x => x.Count() > 1)
-                                                .SelectMany(x => x)
-                                                .ToList();
-                if (productionLinkDataDuplicate.Count > 0)
-                {
-                    foreach (var linkData in productionLinkDataDuplicate)
-                    {
-                        var currentRole = productionProcess.ProductionStepLinkDataRoles
-                                       .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
-                                        && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
-                                       .ToList();
-                        var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData/*, linkDataInProcess*/);
-                        if (warning != null)
-                            lsWarning.Add(warning);
-                    }
-                }
+                
+                
+                // var productionStepLinkData = from l in productionProcess.ProductionStepLinkDatas
+                //                              join r in productionProcess.ProductionStepLinkDataRoles
+                //                                 on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
+                //                              where lsProductionStepIdInGroup.Contains(r.ProductionStepCode) && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                //                              select l;
+                // var productionLinkDataDuplicate = productionStepLinkData
+                //                                 .GroupBy(x => x.ObjectId)
+                //                                 .Where(x => x.Count() > 1)
+                //                                 .SelectMany(x => x)
+                //                                 .ToList();
+                // if (productionLinkDataDuplicate.Count > 0)
+                // {
+                //     foreach (var linkData in productionLinkDataDuplicate)
+                //     {
+                //         var currentRole = productionProcess.ProductionStepLinkDataRoles
+                //                        .Where(x => x.ProductionStepLinkDataCode == linkData.ProductionStepLinkDataCode
+                //                         && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input)
+                //                        .ToList();
+                //         var warning = SeekingLinkDataInRelationship(productionProcess, currentRole, linkData/*, linkDataInProcess*/);
+                //         if (warning != null)
+                //             lsWarning.Add(warning);
+                //     }
+                // }
             }
 
             return Task.FromResult(lsWarning);
@@ -549,9 +550,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var OutputInStep = from l in req.ProductionStepLinkDatas
                                    join r in req.ProductionStepLinkDataRoles
                                       on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode
-                                   where r.ProductionStepCode == productionStepCode && l.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                                   where r.ProductionStepCode == productionStepCode && l.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                                    select l;
-                if (OutputInStep.Select(x => x.ObjectId).Contains(linkData.ObjectId))
+                if (OutputInStep.Select(x => x.LinkDataObjectId).Contains(linkData.LinkDataObjectId))
                     return new ProductionProcessWarningMessage
                     {
                         Message = $"Xuất hiện nhiều chi tiết \"{linkData.ObjectTitle}\" là đầu ra của các công đoạn có quan hệ với nhau.",

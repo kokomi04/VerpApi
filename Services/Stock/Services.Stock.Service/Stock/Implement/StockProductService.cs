@@ -25,6 +25,10 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Constants;
 using Microsoft.Data.SqlClient;
+using VErp.Commons.Library.Excel;
+using System.IO;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Services.Stock.Service.Products;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -34,17 +38,26 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly StockDBContext _stockContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IProductService productService;
+        private readonly IProductUnitConversionService puService;
+        private readonly IPackageCustomPropertyService packageCustomPropertyService;
+
         public StockProductService(
             MasterDBContext masterDBContext,
             OrganizationDBContext organizationDBContext,
             StockDBContext stockContext,
-            ICurrentContextService currentContextService
-            )
+            ICurrentContextService currentContextService,
+            IProductService productService,
+            IPackageCustomPropertyService packageCustomPropertyService,
+            IProductUnitConversionService puService)
         {
             _organizationDBContext = organizationDBContext;
             _masterDBContext = masterDBContext;
             _stockContext = stockContext;
             _currentContextService = currentContextService;
+            this.productService = productService;
+            this.packageCustomPropertyService = packageCustomPropertyService;
+            this.puService = puService;
         }
 
         public async Task<PageData<StockOutput>> StockGetListByPermission(string keyword, int page, int size, Clause filters = null)
@@ -355,24 +368,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return remainStocks;
         }
 
-        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(int stockId, int productId, int page, int size)
+        public async Task<PageData<StockProductPackageDetail>> StockProductPackageDetails(IList<int> stockIds, int productId, int page, int size)
         {
             var productStockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+            var packages = _stockContext.Package.AsQueryable();
+            if (stockIds?.Count > 0)
+            {
+                packages = packages.Where(p => stockIds.Contains(p.StockId));
+            }
             var query = (
-                from pk in _stockContext.Package
+                from pk in packages
+                join st in _stockContext.Stock on pk.StockId equals st.StockId
                 join p in _stockContext.Product on pk.ProductId equals p.ProductId
-                join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
-                from c in cs.DefaultIfEmpty()
+                //join c in _stockContext.ProductUnitConversion on pk.ProductUnitConversionId equals c.ProductUnitConversionId into cs
+                //from c in cs.DefaultIfEmpty()
                 join l in _stockContext.Location on pk.LocationId equals l.LocationId into ls
                 from l in ls.DefaultIfEmpty()
-                where pk.StockId == stockId && pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
+                where pk.ProductId == productId && pk.PrimaryQuantityRemaining > 0
                 select new
                 {
                     PackageId = pk.PackageId,
                     PackageCode = pk.PackageCode,
+                    pk.StockId,
+                    st.StockName,
                     pk.OrderCode,
                     pk.ProductionOrderCode,
                     pk.Pocode,
+                    pk.ProductId,
                     LocationId = pk.LocationId,
                     LocationName = l == null ? null : l.Name,
                     Date = pk.Date,
@@ -380,13 +402,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     pk.Description,
                     PrimaryUnitId = p.UnitId,
                     PrimaryQuantity = pk.PrimaryQuantityRemaining,
-                    SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
+                    //SecondaryUnitId = c == null ? (int?)null : c.SecondaryUnitId,
                     ProductUnitConversionId = pk.ProductUnitConversionId,
-                    ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
+                    //ProductUnitConversionName = c == null ? null : c.ProductUnitConversionName,
                     ProductUnitConversionQualtity = pk.ProductUnitConversionRemaining,
                     PackageTypeId = (EnumPackageType)pk.PackageTypeId,
                     RefObjectCode = "",
-                    c.DecimalPlace
+                    pk.CustomPropertyValue
+                    //c.DecimalPlace
                 }
                 );
             var total = await query.CountAsync();
@@ -406,35 +429,166 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var lstData = size > 0 ? await query.Skip((page - 1) * size).Take(size).ToListAsync() : await query.ToListAsync();
+            var productIds = lstData.Select(d => d.ProductId).ToList();
+            var pus = await _stockContext.ProductUnitConversion.Where(pu => productIds.Contains(pu.ProductId)).ToListAsync();
 
-            var data = lstData.Select(pk => new StockProductPackageDetail()
+            var data = lstData.Select(pk =>
             {
-                PackageId = pk.PackageId,
-                PackageCode = pk.PackageCode,
+                var pu = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.ProductUnitConversionId == pk.ProductUnitConversionId);
+                var puDefault = pus.FirstOrDefault(u => u.ProductId == pk.ProductId && u.IsDefault);
+                return new StockProductPackageDetail()
+                {
+                    ProductId = pk.ProductId,
+                    PackageId = pk.PackageId,
+                    PackageCode = pk.PackageCode,
+                    StockId = pk.StockId,
+                    StockName = pk.StockName,
+                    LocationId = pk.LocationId,
+                    LocationName = pk.LocationName,
+                    Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
+                    ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
+                    Description = pk.Description,
 
-                LocationId = pk.LocationId,
-                LocationName = pk.LocationName,
-                Date = pk.Date.HasValue ? pk.Date.Value.GetUnix() : (long?)null,
-                ExpriredDate = pk.ExpriredDate.HasValue ? pk.ExpriredDate.Value.GetUnix() : (long?)null,
-                Description = pk.Description,
-                PrimaryUnitId = pk.PrimaryUnitId,
-                PrimaryQuantity = pk.PrimaryQuantity,
-                SecondaryUnitId = pk.SecondaryUnitId,
-                ProductUnitConversionId = pk.ProductUnitConversionId,
-                ProductUnitConversionName = pk.ProductUnitConversionName,
-                ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
-                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
-                RefObjectId = null,
-                RefObjectCode = "",
-                OrderCode = pk.OrderCode,
-                POCode = pk.Pocode,
-                ProductionOrderCode = pk.ProductionOrderCode,
-                DecimalPlace = pk.DecimalPlace
+                    PrimaryUnitId = pk.PrimaryUnitId,
+                    PrimaryQuantity = pk.PrimaryQuantity,
+                    DefaultUnitConversionId = puDefault.ProductUnitConversionId,
+                    DefaultUnitConversionName = puDefault.ProductUnitConversionId,
+                    DefaultDecimalPlace = puDefault.DecimalPlace,
+
+                    ProductUnitConversionId = pk.ProductUnitConversionId,
+                    ProductUnitConversionName = pu.ProductUnitConversionName,
+                    DecimalPlace = pu.DecimalPlace,
+
+                    ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
+
+                    PackageTypeId = pk.PackageTypeId,
+                    RefObjectId = null,
+                    RefObjectCode = "",
+                    OrderCode = pk.OrderCode,
+                    POCode = pk.Pocode,
+                    ProductionOrderCode = pk.ProductionOrderCode,
+                    CustomPropertyValue = pk.CustomPropertyValue?.JsonDeserialize<Dictionary<int, object>>()
+                };
             })
             .ToList();
 
             return (data, total);
         }
+
+
+        public async Task<(Stream stream, string fileName, string contentType)> StockProductPackageDetailsExport(IList<int> stockIds, int productId, int page, int size)
+        {
+            var data = await StockProductPackageDetails(stockIds, productId, 1, 0);
+
+
+            var columns = new List<ExelExportColumn>()
+            {
+                new ExelExportColumn
+                {
+                    Title="Kho",
+                    FieldName = nameof(StockProductPackageDetail.StockName)
+                },
+                 new ExelExportColumn
+                {
+                    Title="Vị trí",
+                    FieldName = nameof(StockProductPackageDetail.LocationName)
+                },
+
+                new ExelExportColumn
+                {
+                    Title="Mã kiện",
+                    FieldName = nameof(StockProductPackageDetail.PackageCode)
+                },
+                new ExelExportColumn
+                {
+                    Title="Mô tả",
+                    FieldName = nameof(StockProductPackageDetail.Description)
+                },
+                 new ExelExportColumn
+                {
+                    Title="ĐVCĐ",
+                    FieldName = nameof(StockProductPackageDetail.ProductUnitConversionName)
+                },
+                  new ExelExportColumn
+                {
+                    Title="Số lượng ĐVC",
+                    FieldName = nameof(StockProductPackageDetail.PrimaryQuantity),
+                    DataTypeId = EnumDataType.Decimal,
+                    DecimalPlace = data.List.FirstOrDefault()?.DefaultDecimalPlace
+                }, new ExelExportColumn
+                {
+                    Title="Số lượng ĐVCĐ",
+                    FieldName = nameof(StockProductPackageDetail.ProductUnitConversionQualtity),
+                    DataTypeId = EnumDataType.Decimal,
+                    DecimalPlace = data.List.FirstOrDefault()?.DecimalPlace
+                },
+                  new ExelExportColumn
+                {
+                    Title="Ngày nhập",
+                    FieldName = nameof(StockProductPackageDetail.Date),
+                    DataTypeId = EnumDataType.Date,
+                },
+                  new ExelExportColumn
+                {
+                    Title="Hạn sử dụng",
+                    FieldName = nameof(StockProductPackageDetail.ExpriredDate),
+                    DataTypeId = EnumDataType.Date,
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã mua hàng",
+                    FieldName = nameof(StockProductPackageDetail.POCode),
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã lsx",
+                    FieldName = nameof(StockProductPackageDetail.ProductionOrderCode),
+                },
+                   new ExelExportColumn
+                {
+                    Title="Mã đơn hàng",
+                    FieldName = nameof(StockProductPackageDetail.OrderCode),
+                }
+            };
+
+            var packageProps = await packageCustomPropertyService.Get();
+
+            foreach (var p in packageProps)
+            {
+                columns.Add(new ExelExportColumn
+                {
+                    Title = p.Title,
+                    FieldName = nameof(StockProductPackageDetail.CustomPropertyValue) + p.PackageCustomPropertyId,
+                });
+            }
+
+            var productInfo = await productService.ProductInfo(productId);
+
+            var pus = await puService.GetListByProducts(new[] { productId });
+
+            var headerData = new NonCamelCaseDictionary
+            {
+                {"Mã mặt hàng", productInfo.ProductCode },
+                {"Tên mặt hàng", productInfo.ProductName },
+                {"Quy cách", productInfo.Extra?.Specification },
+                {"Đơn vị tính", pus?.List?.FirstOrDefault(u=>u.IsDefault)?.ProductUnitConversionName },
+            };
+
+            var excelData = data.List.ToNonCamelCaseDictionaryList((model, row, result) =>
+            {
+                foreach (var p in packageProps)
+                {
+                    var value = model.CustomPropertyValue?.ContainsKey(p.PackageCustomPropertyId.Value) == true ? model.CustomPropertyValue[p.PackageCustomPropertyId.Value] : null;
+
+                    row.Add(nameof(StockProductPackageDetail.CustomPropertyValue) + p.PackageCustomPropertyId, value);
+                }
+
+            });
+
+            var util = new ExcelExportUtils("Danh sách kiện của mặt hàng " + productInfo.ProductCode, _currentContextService, excelData, columns, headerData, 2);
+            return await util.WriteExcel();
+        }
+
 
         public async Task<PageData<LocationProductPackageOuput>> LocationProductPackageDetails(int stockId, int? locationId, IList<int> productTypeIds, IList<int> productCateIds, int page, int size)
         {
@@ -503,7 +657,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 ProductUnitConversionName = pk.ProductUnitConversionName,
                 ProductUnitConversionQualtity = pk.ProductUnitConversionQualtity,
                 RefObjectId = null,
-                PackageTypeId = (EnumPackageType)pk.PackageTypeId,
+                PackageTypeId = pk.PackageTypeId,
                 RefObjectCode = "",
                 DecimalPlace = pk.DecimalPlace
 
@@ -651,8 +805,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
             var total = productInfoQuery.Count();
-            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();         
-          
+            var productInfoPaged = productInfoQuery.Skip((page - 1) * size).Take(size).ToList();
+
             var stockProductDataList = (from sp in stockProductAsQueryable
                                         join s in _stockContext.Stock.AsQueryable() on sp.StockId equals s.StockId
                                         select new
@@ -1049,11 +1203,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var openingStockQuery = (
                 from id in inventoryDetails
                 group id by id.ProductUnitConversionId into pu
-                select new
+                select new SumQuantity
                 {
                     ProductUnitConversionId = pu.Key,
                     TotalPrimaryUnit = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.PrimaryQuantity : -v.PrimaryQuantity),
-                    TotalProductUnitConversion = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.ProductUnitConversionQuantity : -v.ProductUnitConversionQuantity),
+                    TotalPu = pu.Sum(v => v.InventoryTypeId == (int)EnumInventoryType.Input ? v.ProductUnitConversionQuantity : -v.ProductUnitConversionQuantity),
                 }).ToList();
 
             #endregion
@@ -1121,7 +1275,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             resultData.Details = new List<StockProductDetailsModel>();
 
             var stocks = await _stockContext.Stock.AsNoTracking().ToListAsync();
-            var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o.TotalProductUnitConversion);
+            var totalByTimes = openingStockQuery.ToDictionary(o => o.ProductUnitConversionId, o => o);
+
             var totalPrimary = openingStockQuery.Sum(o => o.TotalPrimaryUnit);
 
             foreach (var item in inPeriodData.OrderBy(q => q.Date).ThenBy(q => q.InventoryTypeId).ThenBy(q => q.InventoryDetailId).ToList())
@@ -1133,17 +1288,20 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 if (!totalByTimes.ContainsKey(item.ProductUnitConversionId))
                 {
-                    totalByTimes.Add(item.ProductUnitConversionId, 0);
+                    totalByTimes.Add(item.ProductUnitConversionId, new SumQuantity() { ProductUnitConversionId = item.ProductUnitConversionId, TotalPrimaryUnit = 0, TotalPu = 0 });
                 }
+
+                var currentSum = totalByTimes[item.ProductUnitConversionId];
 
                 if (item.InventoryTypeId == (int)EnumInventoryType.Input)
                 {
-                    totalByTimes[item.ProductUnitConversionId] += item.ProductUnitConversionQuantity;
+                    currentSum.Add(item.PrimaryQuantity, item.ProductUnitConversionQuantity);
                     totalPrimary += item.PrimaryQuantity;
                 }
                 else
                 {
-                    totalByTimes[item.ProductUnitConversionId] = totalByTimes[item.ProductUnitConversionId].SubDecimal(item.ProductUnitConversionQuantity);
+                    currentSum.Sub(item.PrimaryQuantity, item.ProductUnitConversionQuantity);
+
                     totalPrimary = totalPrimary.SubDecimal(item.PrimaryQuantity);
                 }
 
@@ -1167,8 +1325,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     SecondaryQuantity = item.ProductUnitConversionQuantity,
                     ProductUnitConversionId = item.ProductUnitConversionId,
                     ProductUnitConversion = productUnitConversionObj,
-                    EndOfPerdiodPrimaryQuantity = totalPrimary,
-                    EndOfPerdiodProductUnitConversionQuantity = totalByTimes[item.ProductUnitConversionId],
+                    EndPrimaryQuantityForAllPus = totalPrimary,
+                    EndOfPerdiodPrimaryQuantity = currentSum.TotalPrimaryUnit,
+                    EndOfPerdiodProductUnitConversionQuantity = currentSum.TotalPu,
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
                     Pocode = item.Pocode
@@ -1178,6 +1337,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             return resultData;
         }
+
+        
 
         /// <summary>
         /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - Mẫu báo cáo kho 03
@@ -1686,11 +1847,30 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #endregion
 
-        private class ProductAltUnitModel
-        {
-            public int ProductId { get; set; }
+        //private class ProductAltUnitModel
+        //{
+        //    public int ProductId { get; set; }
 
+        //    public int ProductUnitConversionId { get; set; }
+        //}
+
+        class SumQuantity
+        {
             public int ProductUnitConversionId { get; set; }
+            public decimal TotalPrimaryUnit { get; set; }
+            public decimal TotalPu { get; set; }
+
+            public void Add(decimal primaryQuantity, decimal puQuantity)
+            {
+                TotalPrimaryUnit = TotalPrimaryUnit.AddDecimal(primaryQuantity);
+                TotalPu = TotalPu.AddDecimal(puQuantity);
+            }
+
+            public void Sub(decimal primaryQuantity, decimal puQuantity)
+            {
+                TotalPrimaryUnit = TotalPrimaryUnit.SubDecimal(primaryQuantity);
+                TotalPu = TotalPu.SubDecimal(puQuantity);
+            }
         }
     }
 }

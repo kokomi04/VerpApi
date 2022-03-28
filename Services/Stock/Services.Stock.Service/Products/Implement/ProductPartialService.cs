@@ -90,6 +90,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Quantitative = productInfo.Quantitative,
                 QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)productInfo.QuantitativeUnitTypeId,
 
+                ProductPurity = productInfo.ProductPurity,
+
                 Specification = extraInfo.Specification,
 
                 EstimatePrice = productInfo.EstimatePrice,
@@ -97,7 +99,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 IsProductSemi = productInfo.IsProductSemi,
                 IsProduct = productInfo.IsProduct,
 
-                IsMaterials = productInfo.IsMaterials
+                IsMaterials = productInfo.IsMaterials,
+                TargetProductivityId = productInfo.TargetProductivityId
             };
         }
 
@@ -195,6 +198,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.Quantitative = model.Quantitative;
                 productInfo.QuantitativeUnitTypeId = (int?)model.QuantitativeUnitTypeId;
 
+                productInfo.ProductPurity = model.ProductPurity;
+
                 extraInfo.Specification = model.Specification;
 
                 productInfo.EstimatePrice = model.EstimatePrice;
@@ -204,6 +209,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.IsProduct = model.IsProduct;
 
                 productInfo.IsMaterials = model.IsMaterials;
+                productInfo.TargetProductivityId = model.TargetProductivityId;
 
                 await _stockContext.SaveChangesAsync();
 
@@ -374,7 +380,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 if (!pu.IsDefault)
                 {
-                    var eval = Utils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
+                    var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
                     if (!(eval > 0))
                     {
                         throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
@@ -478,6 +484,50 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await trans.CommitAsync();
 
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateSellInfo)
+                   .MessageResourceFormatDatas(productInfo.ProductCode)
+                   .ObjectId(productId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
+                return true;
+            }
+        }
+
+
+
+        public async Task<ProductProcessModel> ProcessInfo(int productId)
+        {
+            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            if (productInfo == null)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            }
+
+            var productCustomers = await _stockContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+
+            return new ProductProcessModel()
+            {
+              Coefficient = productInfo.Coefficient
+            };
+        }
+
+        public async Task<bool> UpdateProcessInfo(int productId, ProductProcessModel model)
+        {
+            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            {
+                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                if (productInfo == null)
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                productInfo.Coefficient = model.Coefficient;
+
+
+                await _stockContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
                    .MessageResourceFormatDatas(productInfo.ProductCode)
                    .ObjectId(productId)
                    .JsonData(model.JsonSerialize())

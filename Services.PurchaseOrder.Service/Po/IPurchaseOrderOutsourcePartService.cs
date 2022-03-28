@@ -8,7 +8,7 @@ namespace VErp.Services.PurchaseOrder.Service
     {
         Task<long> CreatePurchaseOrderOutsourcePart(PurchaseOrderInput model);
         Task<bool> DeletePurchaseOrderOutsourcePart(long purchaseOrderId);
-        Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] arrOutsourcePartId);
+        Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] arrOutsourcePartId, string productionOrderCode, int? productId, bool ignoreOutsourceAllocateCompeleted = false);
         Task<bool> UpdatePurchaseOrderOutsourcePart(long purchaseOrderId, PurchaseOrderInput model);
         Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePart(long purchaseOrderId);
         Task<bool> UpdateStatusForOutsourceRequestInPurcharOrder(long purchaseOrderId);

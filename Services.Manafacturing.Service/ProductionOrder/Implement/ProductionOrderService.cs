@@ -57,6 +57,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _draftDataHelperService = draftDataHelperService;
         }
 
+        public async Task<bool> UpdateProductionProcessVersion(long productionOrderId, int productId)
+        {
+            var details = _manufacturingDBContext.ProductionOrderDetail
+                .Where(o => o.ProductionOrderId == productionOrderId && o.ProductId == productId)
+                .ToList();
+
+            if (details.Count == 0)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh SX không tồn tại");
+
+            var version = await _productHelperService.GetProductionProcessVersion(productId);
+
+            details.ForEach(x => x.ProductionProcessVersion = version);
+
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            return true;
+        }
+
         public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
         {
             if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderListModel>();
@@ -68,11 +86,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderCodes
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, filter);
+            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate,bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -86,6 +104,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
                 whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+
+            if(hasNewProductionProcessVersion.HasValue)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" v.HasNewProductionProcessVersion = @HasNewProductionProcessVersion ");
+                parammeters.Add(new SqlParameter("@HasNewProductionProcessVersion", hasNewProductionProcessVersion.Value));
             }
 
             if (fromDate > 0 && toDate > 0)
@@ -214,8 +240,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                           ProductionOrderId = ps.ContainerId,
                                           StepId = ps.StepId.Value,
                                           Quantity = ld.QuantityOrigin - ld.OutsourcePartQuantity.GetValueOrDefault(),
-                                          ObjectId = ld.ObjectId,
-                                          ObjectTypeId = ld.ObjectTypeId,
+                                          ObjectId = ld.LinkDataObjectId,
+                                          ObjectTypeId = ld.LinkDataObjectTypeId,
                                           WorkloadConvertRate = ld.WorkloadConvertRate
                                       }).ToListAsync();
 
@@ -380,7 +406,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId)
         {
             var productOrder = _manufacturingDBContext.ProductionOrder
-                .Include(x=>x.ProductionOrderAttachment)
+                .Include(x => x.ProductionOrderAttachment)
                 .FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
 
             ProductionOrderOutputModel model = null;
@@ -470,7 +496,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.PlanEndDate > data.EndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
                 if (data.Date <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày chứng từ.");
 
-                if(data.ProductionOrderDetail.Count == 0)
+                if (data.ProductionOrderDetail.Count == 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
 
                 if (data.ProductionOrderDetail.GroupBy(x => new { x.ProductId, x.OrderCode })
@@ -540,8 +566,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 item.ProductionOrderDetailId = 0;
                 item.ProductionOrderId = productionOrder.ProductionOrderId;
+
                 // Tạo mới
                 var entity = _mapper.Map<ProductionOrderDetail>(item);
+                entity.ProductionProcessVersion = await _productHelperService.GetProductionProcessVersion(entity.ProductId);
+                
                 if (monthPlanId.HasValue && item.SortOrder.HasValue) extraPlans.Add((entity, item.SortOrder.Value));
                 _manufacturingDBContext.ProductionOrderDetail.Add(entity);
             }
@@ -687,10 +716,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         join ps in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals ps.ProductionStepId
                         where ps.ContainerId == productionOrderId
                         && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
-                        && ld.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
-                        && productIds.Contains(ld.ObjectId)
+                        && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                        && productIds.Contains(ld.LinkDataObjectId)
                         && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
-                        select ld.ObjectId
+                        select ld.LinkDataObjectId
                     )
                     .Distinct()
                     .ToList();
@@ -702,6 +731,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
                 var oldDetailIds = oldDetail.Select(d => d.ProductionOrderDetailId).ToList();
+                // Biến kiểm tra thay đổi số lượng
+                bool? isUpdateQuantity = productionOrder.IsUpdateQuantity;
 
                 foreach (var item in data.ProductionOrderDetail)
                 {
@@ -709,6 +740,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var oldItem = oldDetail.Where(od => od.ProductionOrderDetailId == item.ProductionOrderDetailId).FirstOrDefault();
                     if (oldItem != null)
                     {
+                        if (oldItem.ProductId != item.ProductId || oldItem.Quantity != item.Quantity || oldItem.ReserveQuantity != item.ReserveQuantity)
+                        {
+                            isUpdateQuantity = true;
+                        }
                         // Cập nhật
                         invalidPlan = invalidPlan || oldItem.ProductId != item.ProductId || oldItem.Quantity != item.Quantity || oldItem.ReserveQuantity != item.ReserveQuantity;
                         _mapper.Map(item, oldItem);
@@ -717,6 +752,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                     else
                     {
+                        isUpdateQuantity = true;
                         invalidPlan = true;
                         item.ProductionOrderDetailId = 0;
                         // Tạo mới
@@ -724,6 +760,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         _manufacturingDBContext.ProductionOrderDetail.Add(entity);
                     }
                 }
+
+                productionOrder.IsUpdateQuantity = isUpdateQuantity;
 
                 var oldAttach = _manufacturingDBContext.ProductionOrderAttachment.Where(att => att.ProductionOrderId == productionOrderId).ToList();
 
@@ -759,6 +797,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 // Xóa chi tiết
                 foreach (var item in oldDetail)
                 {
+                    if (_manufacturingDBContext.OutsourcePartRequest.Any(x => x.ProductionOrderDetailId == item.ProductionOrderDetailId))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại đơn gia công chi tiết của mặt hàng bị xóa bỏ. Phải xóa yêu cầu gia công liên quan trước.");
+
                     item.IsDeleted = true;
                 }
 
@@ -991,7 +1032,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (planEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
             if (startDate > planEndDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày bắt đầu không được lớn hơn ngày kết thúc hàng trắng. Vui lòng chọn lại kế hoạch sản xuất!");
             if (planEndDate > endDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
-          
+
             var productionOrderDetails = await _manufacturingDBContext.ProductionOrderDetail
                 .Where(pod => productionOrderDetailId.Contains(pod.ProductionOrderDetailId))
                 .ToListAsync();
@@ -1004,14 +1045,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
             // Validate trạng thái
-            if (productionOrders.Any(po => po.ProductionOrderStatus == (int)EnumProductionStatus.Processing 
+            if (productionOrders.Any(po => po.ProductionOrderStatus == (int)EnumProductionStatus.Processing
             || po.ProductionOrderStatus == (int)EnumProductionStatus.OverDeadline
             || po.ProductionOrderStatus == (int)EnumProductionStatus.Finished))
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất đã đi vào sản xuất");
 
             try
             {
-                foreach(var productionOrder in productionOrders)
+                foreach (var productionOrder in productionOrders)
                 {
                     productionOrder.StartDate = startDate.UnixToDateTime().Value;
                     productionOrder.EndDate = endDate.UnixToDateTime().Value;

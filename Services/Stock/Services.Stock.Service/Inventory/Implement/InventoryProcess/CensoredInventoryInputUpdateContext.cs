@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
 using static Verp.Resources.Stock.InventoryProcess.CensoredInventoryInputUpdateContextTitle;
@@ -10,7 +10,7 @@ using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public class CensoredInventoryInputUpdateContext
+    internal class CensoredInventoryInputUpdateContext
     {
         //private StockDBContext stockDbContext;
         private readonly IQueryable<Package> _packages;

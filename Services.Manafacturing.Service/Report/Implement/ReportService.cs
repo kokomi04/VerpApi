@@ -90,8 +90,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         {
                             r.ProductionStepId,
                             r.ProductionStepLinkDataRoleTypeId,
-                            d.ObjectTypeId,
-                            d.ObjectId,
+                            d.LinkDataObjectTypeId,
+                            d.LinkDataObjectId,
                             d.QuantityOrigin,
                             d.OutsourcePartQuantity,
                             d.OutsourceQuantity,
@@ -163,21 +163,21 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             var stepData = data[productionStepId];
                             stepProductionProgressModel.InputData = stepData
                             .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
-                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                             .Select(g => new StepProgressDataModel
                             {
-                                ObjectId = g.Key.ObjectId,
-                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                ObjectId = g.Key.LinkDataObjectId,
+                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.LinkDataObjectTypeId,
                                 TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - (d.ExportOutsourceQuantity ?? d.OutsourceQuantity.GetValueOrDefault()))
                             }).ToList();
 
                             stepProductionProgressModel.OutputData = stepData
                                 .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
-                                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                                .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                                 .Select(g => new StepProgressDataModel
                                 {
-                                    ObjectId = g.Key.ObjectId,
-                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                    ObjectId = g.Key.LinkDataObjectId,
+                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.LinkDataObjectTypeId,
                                     TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
                                 }).ToList();
 
@@ -271,8 +271,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         {
                             r.ProductionStepId,
                             r.ProductionStepLinkDataRoleTypeId,
-                            d.ObjectTypeId,
-                            d.ObjectId,
+                            d.LinkDataObjectTypeId,
+                            d.LinkDataObjectId,
                             d.QuantityOrigin,
                             d.OutsourcePartQuantity,
                             d.OutsourceQuantity,
@@ -326,21 +326,21 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                             var stepData = data[productionStepId];
                             var inputData = stepData
                             .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
-                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                             .Select(g => new StepProgressDataModel
                             {
-                                ObjectId = g.Key.ObjectId,
-                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                ObjectId = g.Key.LinkDataObjectId,
+                                ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.LinkDataObjectId,
                                 TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - (d.ExportOutsourceQuantity ?? d.OutsourceQuantity.GetValueOrDefault()))
                             }).ToList();
 
                             var outputData = stepData
                                 .Where(d => d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
-                                .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                                .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                                 .Select(g => new StepProgressDataModel
                                 {
-                                    ObjectId = g.Key.ObjectId,
-                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.ObjectTypeId,
+                                    ObjectId = g.Key.LinkDataObjectId,
+                                    ObjectTypeId = (EnumProductionStepLinkDataObjectType)g.Key.LinkDataObjectTypeId,
                                     TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
                                 }).ToList();
 
@@ -461,8 +461,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                               select new
                               {
                                   r.ProductionStepId,
-                                  d.ObjectTypeId,
-                                  d.ObjectId,
+                                  d.LinkDataObjectTypeId,
+                                  d.LinkDataObjectId,
                                   d.QuantityOrigin,
                                   d.OutsourcePartQuantity,
                                   d.OutsourceQuantity
@@ -485,11 +485,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     var outputStepData = outputData[productionStep.ProductionStepId];
 
                     var output = outputStepData
-                            .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                            .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                             .Select(g => new
                             {
-                                g.Key.ObjectId,
-                                g.Key.ObjectTypeId,
+                                ObjectId = g.Key.LinkDataObjectId,
+                                ObjectTypeId = g.Key.LinkDataObjectTypeId,
                                 TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault() - d.OutsourceQuantity.GetValueOrDefault())
                             })
                             .ToList();
@@ -608,8 +608,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                select new
                                {
                                    r.ProductionStepId,
-                                   d.ObjectTypeId,
-                                   d.ObjectId,
+                                   d.LinkDataObjectTypeId,
+                                   d.LinkDataObjectId,
                                    d.QuantityOrigin,
                                    d.OutsourcePartQuantity,
                                    d.ProductionStepLinkDataId,
@@ -647,8 +647,8 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 .Select(r => new
                 {
                     r.ProductionStepId,
-                    r.ObjectTypeId,
-                    r.ObjectId,
+                    r.LinkDataObjectTypeId,
+                    r.LinkDataObjectId,
                     r.QuantityOrigin,
                     r.OutsourcePartQuantity,
                     r.ProductionStepLinkDataId
@@ -693,11 +693,11 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 var outputStepData = outputData[productionStepId];
 
                 var outputs = outputStepData
-                        .GroupBy(d => new { d.ObjectTypeId, d.ObjectId })
+                        .GroupBy(d => new { d.LinkDataObjectTypeId, d.LinkDataObjectId })
                         .Select(g => new
                         {
-                            g.Key.ObjectId,
-                            g.Key.ObjectTypeId,
+                            g.Key.LinkDataObjectId,
+                            g.Key.LinkDataObjectTypeId,
                             TotalQuantity = g.Sum(d => d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault())
                         }).ToList();
 
@@ -711,10 +711,10 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                 foreach (var output in outputs)
                 {
-                    var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                    if (output.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                    var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.LinkDataObjectId && h.ObjectTypeId == (int)output.LinkDataObjectTypeId).Sum(h => h.HandoverQuantity);
+                    if (output.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                     {
-                        receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity);
+                        receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity);
                     }
                     var stepProgressPercent = Math.Round(receivedQuantity * 100 / output.TotalQuantity, 2);
                     if (stepProgressPercent > stepReport.StepProgressPercent) stepReport.StepProgressPercent = stepProgressPercent;
@@ -734,10 +734,10 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                     foreach (var output in outputs)
                     {
-                        var receivedQuantity = stepOutputHandovers.Where(h => h.FromDepartmentId == stepAssignment.DepartmentId && h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
-                        if (output.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                        var receivedQuantity = stepOutputHandovers.Where(h => h.FromDepartmentId == stepAssignment.DepartmentId && h.ObjectId == output.LinkDataObjectId && h.ObjectTypeId == (int)output.LinkDataObjectTypeId).Sum(h => h.HandoverQuantity);
+                        if (output.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                         {
-                            receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity);
+                            receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity);
                         }
                         var departmentProgressPercent = Math.Round((receivedQuantity * 100 * totalQuantityAssign) / (stepAssignment.AssignmentQuantity * output.TotalQuantity), 2);
                         if (departmentProgressPercent > departmentProgress.DepartmentProgressPercent) departmentProgress.DepartmentProgressPercent = departmentProgressPercent;
@@ -894,5 +894,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
             return (lst, total);
         }
+
+
     }
 }

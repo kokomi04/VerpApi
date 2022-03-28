@@ -28,10 +28,18 @@ namespace VErpApi.Controllers.PurchaseOrder
     {
 
         private readonly IPurchaseOrderService _purchaseOrderService;
-        public PurchasingOrderController(IPurchaseOrderService purchaseOrderService)
+        private readonly IPurchaseOrderOutsourceStepService _purchaseOrderOutsourceStepService;
+        private readonly IPurchaseOrderOutsourcePartService _purchaseOrderOutsourcePartService;
+        private readonly IPurchaseOrderOutsourcePropertyService _purchaseOrderOutsourcePropertyService;
+        public PurchasingOrderController(IPurchaseOrderService purchaseOrderService,
+                                         IPurchaseOrderOutsourceStepService purchaseOrderOutsourceStepService,
+                                         IPurchaseOrderOutsourcePartService purchaseOrderOutsourcePartService,
+                                         IPurchaseOrderOutsourcePropertyService purchaseOrderOutsourcePropertyService)
         {
             _purchaseOrderService = purchaseOrderService;
-
+            _purchaseOrderOutsourceStepService = purchaseOrderOutsourceStepService;
+            _purchaseOrderOutsourcePartService = purchaseOrderOutsourcePartService;
+            _purchaseOrderOutsourcePropertyService = purchaseOrderOutsourcePropertyService;
         }
 
         /// <summary>
@@ -119,9 +127,19 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("")]
         public async Task<long> Create([FromBody] PurchaseOrderInput req)
         {
-            return await _purchaseOrderService
-                .Create(req)
-                .ConfigureAwait(true);
+            switch (req.PurchaseOrderType)
+            {
+                case EnumPurchasingOrderType.Default:
+                    return await _purchaseOrderService.Create(req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourcePart:
+                    return await _purchaseOrderOutsourcePartService.CreatePurchaseOrderOutsourcePart(req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceStep:
+                    return await _purchaseOrderOutsourceStepService.CreatePurchaseOrderOutsourceStep(req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceProperty:
+                    return await _purchaseOrderOutsourcePropertyService.CreatePurchaseOrderOutsourceProperty(req).ConfigureAwait(true);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại loại đơn đặt mua trông hệ thống");
+            }
         }
 
         [HttpGet]
@@ -153,9 +171,19 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}")]
         public async Task<bool> Update([FromRoute] long purchaseOrderId, [FromBody] PurchaseOrderInput req)
         {
-            return await _purchaseOrderService
-                .Update(purchaseOrderId, req)
-                .ConfigureAwait(true);
+            switch (req.PurchaseOrderType)
+            {
+                case EnumPurchasingOrderType.Default:
+                    return await _purchaseOrderService.Update(purchaseOrderId, req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourcePart:
+                    return await _purchaseOrderOutsourcePartService.UpdatePurchaseOrderOutsourcePart(purchaseOrderId, req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceStep:
+                    return await _purchaseOrderOutsourceStepService.UpdatePurchaseOrderOutsourceStep(purchaseOrderId, req).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceProperty:
+                    return await _purchaseOrderOutsourcePropertyService.UpdatePurchaseOrderOutsourceProperty(purchaseOrderId, req).ConfigureAwait(true);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại loại đơn đặt mua trông hệ thống");
+            }
         }
 
         /// <summary>
@@ -241,9 +269,20 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("{purchaseOrderId}")]
         public async Task<bool> Delete([FromRoute] long purchaseOrderId)
         {
-            return await _purchaseOrderService
-                .Delete(purchaseOrderId)
-                .ConfigureAwait(true);
+            var po = await _purchaseOrderService.GetInfo(purchaseOrderId);
+            switch ((EnumPurchasingOrderType)po.PurchaseOrderType)
+            {
+                case EnumPurchasingOrderType.Default:
+                    return await _purchaseOrderService.Delete(purchaseOrderId).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourcePart:
+                    return await _purchaseOrderOutsourcePartService.DeletePurchaseOrderOutsourcePart(purchaseOrderId).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceStep:
+                    return await _purchaseOrderOutsourceStepService.DeletePurchaseOrderOutsourceStep(purchaseOrderId).ConfigureAwait(true);
+                case EnumPurchasingOrderType.OutsourceProperty:
+                    return await _purchaseOrderOutsourcePropertyService.DeletePurchaseOrderOutsourceProperty(purchaseOrderId).ConfigureAwait(true);
+                default:
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại loại đơn đặt mua trông hệ thống");
+            }
         }
 
         /// <summary>
@@ -300,6 +339,28 @@ namespace VErpApi.Controllers.PurchaseOrder
         public async Task<bool> SendMailNotifyCheckAndCensor([FromRoute] long purchaseOrderId, [FromQuery] string mailCode, [FromBody] string[] mailTo)
         {
             return await _purchaseOrderService.SendMailNotifyCheckAndCensor(purchaseOrderId, mailCode, mailTo).ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Tổng hợp những chi tiết của PO gia công đã/chưa phân bổ
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("AggregatePurchaseOrderOutsourcePart")]
+        public async Task<IList<PurchaseOrderOutsourcePartAllocate>> GetAllPurchaseOrderOutsourcePart()
+        {
+            return await _purchaseOrderService.GetAllPurchaseOrderOutsourcePart();
+        }
+
+        /// <summary>
+        /// Get thông tin bổ sung cho PO gia công chi tiết (mã YCGC, mã LSX)
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        [Route("{purchaseOrderId}/EnrichDataForPurchaseOrderOutsourcePart")]
+        public async Task<IList<EnrichDataPurchaseOrderAllocate>> EnrichDataForPurchaseOrderOutsourcePart([FromRoute] long purchaseOrderId)
+        {
+            return await _purchaseOrderService.EnrichDataForPurchaseOrderAllocate(purchaseOrderId);
         }
     }
 }

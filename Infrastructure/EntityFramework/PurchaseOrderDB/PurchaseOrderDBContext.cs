@@ -47,9 +47,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<ProviderProductInfo> ProviderProductInfo { get; set; }
         public virtual DbSet<PurchaseOrder> PurchaseOrder { get; set; }
         public virtual DbSet<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual DbSet<PurchaseOrderDetailSubCalculation> PurchaseOrderDetailSubCalculation { get; set; }
         public virtual DbSet<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
         public virtual DbSet<PurchaseOrderFile> PurchaseOrderFile { get; set; }
         public virtual DbSet<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
+        public virtual DbSet<PurchaseOrderOutsourceMapping> PurchaseOrderOutsourceMapping { get; set; }
         public virtual DbSet<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
@@ -62,6 +64,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
         //public virtual DbSet<VoucherAction> VoucherAction { get; set; }
+        public virtual DbSet<RefProductionOrder> RefProductionOrder { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
         public virtual DbSet<VoucherBill> VoucherBill { get; set; }
@@ -591,6 +594,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
             });
 
+            modelBuilder.Entity<PurchaseOrderDetailSubCalculation>(entity =>
+            {
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.PurchaseOrderDetail)
+                    .WithMany(p => p.PurchaseOrderDetailSubCalculation)
+                    .HasForeignKey(d => d.PurchaseOrderDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchaseOrderDetailSubCalculation_PurchaseOrderDetail");
+            });
+
             modelBuilder.Entity<PurchaseOrderExcess>(entity =>
             {
                 entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((12))");
@@ -630,6 +646,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchaseOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderMaterials_PurchaseOrder");
+            });
+
+            modelBuilder.Entity<PurchaseOrderOutsourceMapping>(entity =>
+            {
+                entity.Property(e => e.OrderCode).HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<PurchaseOrderTracked>(entity =>
@@ -843,11 +870,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(50);
 
-                entity.Property(e => e.ProductionOrderCode)
-                    .IsRequired()
-                    .HasMaxLength(128);
+                entity.Property(e => e.ProductionOrderCode).HasMaxLength(128);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(38, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(38, 12)");
             });
 
             modelBuilder.Entity<RefOutsourceStepRequest>(entity =>
@@ -910,6 +935,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
+            });
+
+            modelBuilder.Entity<RefProductionOrder>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefProductionOrder");
+
+                entity.Property(e => e.ProductionOrderCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.ProductionOrderId).ValueGeneratedOnAdd();
             });
 
             //modelBuilder.Entity<VoucherAction>(entity =>

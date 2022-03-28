@@ -41,6 +41,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
 
         public decimal? Quantitative { get; set; }
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
+        public decimal? ProductPurity { get; set; }
 
         public string Specification { get; set; }
 
@@ -49,5 +50,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
+        public int? TargetProductivityId {get;set;}
     }
 }

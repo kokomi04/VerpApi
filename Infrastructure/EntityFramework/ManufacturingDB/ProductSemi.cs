@@ -27,6 +27,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
         public int? DecimalPlace { get; set; }
+        public long? RefProductId { get; set; }
 
         public virtual ICollection<ProductSemiConversion> ProductSemiConversion { get; set; }
     }

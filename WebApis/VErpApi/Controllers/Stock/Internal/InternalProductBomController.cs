@@ -39,5 +39,20 @@ namespace VErpApi.Controllers.Stock.Internal
         {
             return await _productBomService.GetProductElements(productIds);
         }
+
+        [HttpGet]
+        [Route("{productId}")]
+        [GlobalApi]
+        public async Task<IList<ProductBomOutput>> GetBOM([FromRoute] int productId)
+        {
+            return await _productBomService.GetBom(productId);
+        }
+
+        [HttpPost]
+        [Route("ByProductIds")]
+        public async Task<IDictionary<int, IList<ProductBomOutput>>> ByProductIds([FromBody] IList<int> productIds)
+        {
+            return await _productBomService.GetBoms(productIds);
+        }
     }
 }

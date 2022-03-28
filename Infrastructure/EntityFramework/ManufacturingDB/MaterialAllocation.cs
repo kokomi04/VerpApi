@@ -17,5 +17,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int? SourceProductId { get; set; }
         public decimal? SourceQuantity { get; set; }
         public int SubsidiaryId { get; set; }
+        public long? InventoryDetailId { get; set; }
     }
 }

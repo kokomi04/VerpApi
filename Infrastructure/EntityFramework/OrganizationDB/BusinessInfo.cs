@@ -10,8 +10,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int BusinessInfoId { get; set; }
         public int SubsidiaryId { get; set; }
         public string CompanyName { get; set; }
+        public string CompanyNameEng { get; set; }
         public string LegalRepresentative { get; set; }
         public string Address { get; set; }
+        public string AddressEng { get; set; }
         public string TaxIdNo { get; set; }
         public string Website { get; set; }
         public string PhoneNumber { get; set; }

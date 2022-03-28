@@ -29,5 +29,7 @@ namespace VErp.Infrastructure.AppSettings.Model
         public Developer Developer { get; set; }
 
         public PuppeteerPdfSetting PuppeteerPdf { get; set; }
+
+        public WebPushSetting WebPush{ get; set; }
     }
 }

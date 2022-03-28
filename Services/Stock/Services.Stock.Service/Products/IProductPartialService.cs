@@ -19,5 +19,10 @@ namespace VErp.Services.Stock.Service.Products
         Task<ProductPartialSellModel> SellInfo(int productId);
 
         Task<bool> UpdateSellInfo(int productId, ProductPartialSellModel model);
+
+
+        Task<ProductProcessModel> ProcessInfo(int productId);
+
+        Task<bool> UpdateProcessInfo(int productId, ProductProcessModel model);
     }
 }

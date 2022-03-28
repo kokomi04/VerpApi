@@ -600,7 +600,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<PurchasingRequestDetailRowValue>();
+            var fields = ExcelUtils.GetFieldNameModels<PurchasingRequestDetailRowValue>();
             result.Fields = fields;
             return result;
         }

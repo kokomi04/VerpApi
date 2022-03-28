@@ -5,32 +5,24 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
-using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Commons.Enums.Manafacturing;
-using Microsoft.Data.SqlClient;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Services.Manafacturing.Model.ProductionHandover;
-using VErp.Commons.Constants;
-using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
-    public class ProductionAssignmentService : IProductionAssignmentService
+    public class ProductionAssignmentService : StatusProcessService, IProductionAssignmentService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -43,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -53,6 +45,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _organizationHelperService = organizationHelperService;
         }
 
+        public async Task<bool> DismissUpdateWarning(long productionOrderId)
+        {
+            try
+            {
+                // Cập nhật lại trạng thái thay đổi số lượng LSX
+                var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+                if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+                if (productionOrder.IsUpdateProcessForAssignment == true)
+                {
+                    productionOrder.IsUpdateProcessForAssignment = false;
+                }
+                await _manufacturingDBContext.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DismissUpdateWarning");
+                throw;
+            }
+        }
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId)
         {
@@ -79,6 +91,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             // 
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
+
+            // Cập nhật trạng thái sau khi thay đổi phân công do update quy trình cho LSX
+            if (productionOrder.IsUpdateProcessForAssignment == true)
+            {
+                productionOrder.IsUpdateProcessForAssignment = false;
+            }
 
             // Validate
             var steps = _manufacturingDBContext.ProductionStep
@@ -354,6 +372,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Update reset process status
                 productionOrder.IsResetProductionProcess = true;
 
+                // Cập nhật trạng thái cho lệnh và phân công
+                await UpdateFullAssignedProgressStatus(productionOrderId);
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
@@ -587,6 +608,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Update reset process status
                 productionOrder.IsResetProductionProcess = true;
 
+                // Cập nhật trạng thái cho lệnh và phân công
+                await UpdateFullAssignedProgressStatus(productionOrderId);
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionStepId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
@@ -599,6 +623,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw;
             }
         }
+
 
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
@@ -755,10 +780,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     a.EndDate,
                     a.CreatedDatetimeUtc,
                     TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault(),
-                    d.ObjectId,
-                    d.ObjectTypeId,
+                    d.LinkDataObjectId,
+                    d.LinkDataObjectTypeId,
                     s.StepName,
-                    ProductivityPerPerson = sd.Quantity,
+                    ProductivityPerPerson = s.Productivity,
                     po.ProductionOrderCode,
                     po.ProductionOrderId,
                     Workload = (ld.Quantity - ld.OutsourcePartQuantity.GetValueOrDefault()) * ld.WorkloadConvertRate,
@@ -782,10 +807,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     CreatedDatetimeUtc = g.Max(a => a.CreatedDatetimeUtc),
                     TotalQuantity = g.Max(a => a.TotalQuantity),
                     Workload = g.Sum(a => a.Workload),
-                    ObjectId = g.Max(a => a.ObjectId),
-                    ObjectTypeId = g.Max(a => a.ObjectTypeId),
+                    ObjectId = g.Max(a => a.LinkDataObjectId),
+                    ObjectTypeId = g.Max(a => a.LinkDataObjectTypeId),
                     StepName = g.Max(a => a.StepName),
-                    ProductivityPerPerson = g.Max(a => a.ProductivityPerPerson),
+                    ProductivityPerPerson = g.Max(a => a.ProductivityPerPerson ?? 0),
                     ProductionOrderCode = g.Max(a => a.ProductionOrderCode),
                     ProductionOrderId = g.Max(a => a.ProductionOrderId),
                     OutputQuantity = g.Sum(a => a.OutputQuantity),

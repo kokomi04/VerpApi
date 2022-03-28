@@ -8,7 +8,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
     public interface IProductionScheduleTurnShiftService
     {
-        Task<IList<ProductionScheduleTurnShiftModel>> GetShifts(int departmentId, long productionOrderId, long productionStepId);
+        Task<IDictionary<long, List<ProductionScheduleTurnShiftModel>>> GetShifts(int departmentId, long productionOrderId, long[] productionStepIds);
         Task<long> CreateShift(int departmentId, long productionOrderId, long productionStepId, ProductionScheduleTurnShiftModel model);
         Task<bool> UpdateShift(int departmentId, long productionOrderId, long productionStepId, long productionScheduleTurnShiftId, ProductionScheduleTurnShiftModel model);
         Task<bool> DeleteShift(int departmentId, long productionOrderId, long productionStepId, long productionScheduleTurnShiftId);

@@ -197,6 +197,19 @@ namespace VErp.Services.Master.Service.Users.Implement
             }
 
             var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == ur.SubsidiaryId);
+            var departments = await (from m in _organizationContext.EmployeeDepartmentMapping
+                                     join d in _organizationContext.Department on m.DepartmentId equals d.DepartmentId
+                                     where m.UserId == userId
+                                     select new
+                                     {
+                                         DepartmentId = d.DepartmentId,
+                                         DepartmentCode = d.DepartmentCode,
+                                         DepartmentName = d.DepartmentName,
+                                         UserDepartmentMappingId = m.UserDepartmentMappingId,
+                                         EffectiveDate = m.EffectiveDate,
+                                         ExpirationDate = m.ExpirationDate
+                                     }).ToListAsync();
+
             var user = new UserInfoOutput
             {
                 UserId = ur.UserId,
@@ -209,8 +222,19 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
                 Phone = em.Phone,
+                LeaveConfigId = em.LeaveConfigId,
                 AvatarFileId = em.AvatarFileId,
-                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode)
+                IsDeveloper = _appSetting.Developer?.IsDeveloper(ur.UserName, sb.SubsidiaryCode),
+                Departments = departments.Select(d => new UserDepartmentInfoModel
+                {
+
+                    DepartmentId = d.DepartmentId,
+                    DepartmentCode = d.DepartmentCode,
+                    DepartmentName = d.DepartmentName,
+                    UserDepartmentMappingId = d.UserDepartmentMappingId,
+                    EffectiveDate = d.EffectiveDate.GetUnix(),
+                    ExpirationDate = d.ExpirationDate.GetUnix()
+                }).ToList()
             };
 
             await EnrichDepartments(new[] { user });
@@ -218,10 +242,16 @@ namespace VErp.Services.Master.Service.Users.Implement
             return user;
         }
 
+
         public async Task<bool> DeleteUser(int userId)
         {
             var userInfo = await GetUserFullInfo(userId);
             long? oldAvatarFileId = userInfo.Employee.AvatarFileId;
+
+            if (await IsDeveloper(userInfo.User.UserName))
+            {
+                throw UserErrorCode.UserNotFound.BadRequest();
+            }
 
             await using (var trans = new MultipleDbTransaction(_masterContext, _organizationContext))
             {
@@ -273,6 +303,10 @@ namespace VErp.Services.Master.Service.Users.Implement
             keyword = (keyword ?? "").Trim();
             var employees = _organizationContext.Employee.AsQueryable();
             var users = _masterContext.User.AsQueryable();
+            if (_appSetting.Developer?.Users?.Count() > 0)
+            {
+                users = users.Where(u => !_appSetting.Developer.Users.Contains(u.UserName));
+            }
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
@@ -286,7 +320,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
             if (userIds?.Count > 0)
             {
-                users = users.Where(u => userIds.Contains(u.UserId));
+                employees = employees.Where(u => userIds.Contains(u.UserId));
             }
 
             var total = await employees.CountAsync();
@@ -308,7 +342,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Address = em.Address,
                 Email = em.Email,
                 GenderId = (EnumGender?)em.GenderId,
-                Phone = em.Phone
+                Phone = em.Phone,
+                LeaveConfigId = em.LeaveConfigId
             })
             .ToList();
 
@@ -341,7 +376,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                            Address = e.Address,
                            Email = e.Email,
                            GenderId = (EnumGender?)e.GenderId,
-                           Phone = e.Phone
+                           Phone = e.Phone,
+                           LeaveConfigId = e.LeaveConfigId,
                        }).ToList();
 
             await EnrichDepartments(lst);
@@ -355,7 +391,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 return new List<UserInfoOutput>();
 
             var userInfos = await _masterContext.User.AsNoTracking().Where(u => roles.Contains(u.RoleId.GetValueOrDefault())).ToListAsync();
-            var userIds = userInfos.Select(x=>x.UserId).ToList();
+            var userIds = userInfos.Select(x => x.UserId).ToList();
 
             var employees = await _organizationContext.Employee.AsNoTracking().Where(u => userIds.Contains(u.UserId)).ToListAsync();
 
@@ -372,7 +408,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                            Address = e.Address,
                            Email = e.Email,
                            GenderId = (EnumGender?)e.GenderId,
-                           Phone = e.Phone
+                           Phone = e.Phone,
+                           LeaveConfigId = e.LeaveConfigId,
                        }).ToList();
 
             await EnrichDepartments(lst);
@@ -543,7 +580,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     keyword = (keyword ?? "").Trim();
 
-                    var users = (from u in _masterContext.User
+                    var userDbs = _masterContext.User.AsQueryable();
+                    if (_appSetting.Developer?.Users?.Count() > 0)
+                    {
+                        userDbs = userDbs.Where(u => !_appSetting.Developer.Users.Contains(u.UserName));
+                    }
+
+                    var users = (from u in userDbs
                                  join rp in _masterContext.RolePermission on u.RoleId equals rp.RoleId
                                  where rp.ModuleId == moduleId
                                  select u).AsEnumerable();
@@ -562,7 +605,8 @@ namespace VErp.Services.Master.Service.Users.Implement
                         Address = em.Address,
                         Email = em.Email,
                         GenderId = (EnumGender?)em.GenderId,
-                        Phone = em.Phone
+                        Phone = em.Phone,
+                        LeaveConfigId = em.LeaveConfigId,
                     });
 
                     if (!string.IsNullOrWhiteSpace(keyword))
@@ -625,7 +669,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = Utils.GetFieldNameModels<UserImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<UserImportModel>();
             result.Fields = fields;
             return result;
         }
@@ -835,7 +879,13 @@ namespace VErp.Services.Master.Service.Users.Implement
                 {
                     throw CannotChangeOwnerRole.BadRequest();
                 }
+
+                if (await IsDeveloper(req.UserName) && userInfo.UserName?.Equals(userInfo.UserName) != true)
+                {
+                    throw UserErrorCode.UserNotFound.BadRequest();
+                }
             }
+
 
 
             //if (!Enum.IsDefined(req.UserStatusId.GetType(), req.UserStatusId))
@@ -979,8 +1029,8 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             var genCodeContexts = new List<GenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
-            
-            foreach(var u in userInfos)
+
+            foreach (var u in userInfos)
                 genCodeContexts.Add(await GenerateEmployeeCode(null, u, baseValueChains));
 
 
@@ -996,6 +1046,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                 SubsidiaryId = _currentContextService.SubsidiaryId,
                 EmployeeTypeId = (int)employeeTypeId,
                 UserStatusId = (int)e.UserStatusId,
+                LeaveConfigId = e.LeaveConfigId
             }).ToList();
             await _organizationContext.Employee.AddRangeAsync(employees);
             await _organizationContext.SaveChangesAsync();
@@ -1057,7 +1108,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             employee.Phone = req.Phone;
             employee.AvatarFileId = req.AvatarFileId;
             employee.UserStatusId = (int)req.UserStatusId;
-
+            employee.LeaveConfigId = req.LeaveConfigId;
             await _organizationContext.SaveChangesAsync();
 
             return GeneralCode.Success;
@@ -1141,6 +1192,12 @@ namespace VErp.Services.Master.Service.Users.Implement
         {
             public User User { get; set; }
             public Employee Employee { get; set; }
+        }
+
+        private async Task<bool> IsDeveloper(string userName)
+        {
+            var sb = await _organizationContext.Subsidiary.FirstOrDefaultAsync(e => e.SubsidiaryId == _currentContextService.SubsidiaryId);
+            return _appSetting.Developer?.IsDeveloper(userName, sb.SubsidiaryCode) == true;
         }
 
         private async Task<GenerateCodeContext> GenerateEmployeeCode(int? userId, UserInfoInput model, Dictionary<string, int> baseValueChains)

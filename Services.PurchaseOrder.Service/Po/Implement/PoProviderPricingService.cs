@@ -56,11 +56,16 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             _mapper = mapper;
         }
 
-        public async Task<PageData<PoProviderPricingOutputList>> GetList(string keyword, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoProviderPricingOutputList>> GetList(string keyword, int? customerId, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = keyword?.Trim();
 
-            var query = from po in _purchaseOrderDBContext.PoProviderPricing
+            var poQuery = _purchaseOrderDBContext.PoProviderPricing.AsQueryable();
+            if (customerId > 0)
+            {
+                poQuery = poQuery.Where(po => po.CustomerId == customerId);
+            }
+            var query = from po in poQuery
                         join d in _purchaseOrderDBContext.PoProviderPricingDetail on po.PoProviderPricingId equals d.PoProviderPricingId
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId into ps
                         from p in ps.DefaultIfEmpty()
@@ -169,10 +174,10 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             }
 
 
-            var poQuery = _purchaseOrderDBContext.PoProviderPricing.Where(po => query.Select(p => p.PoProviderPricingId).Contains(po.PoProviderPricingId));
+            var poQueryDistinct = _purchaseOrderDBContext.PoProviderPricing.Where(po => query.Select(p => p.PoProviderPricingId).Contains(po.PoProviderPricingId));
 
-            var total = await poQuery.CountAsync();
-            var additionResult = await (from q in poQuery
+            var total = await poQueryDistinct.CountAsync();
+            var additionResult = await (from q in poQueryDistinct
                                         group q by 1 into g
                                         select new
                                         {
@@ -184,7 +189,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, IList<string> codes, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PoProviderPricingOutputListByProduct>> GetListByProduct(string keyword, int? customerId, IList<string> codes, IList<int> productIds, EnumPoProviderPricingStatus? poProviderPricingStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -193,6 +198,10 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             {
                 poQuery = poQuery.Where(po => codes.Contains(po.PoProviderPricingCode));
 
+            }
+            if (customerId > 0)
+            {
+                poQuery = poQuery.Where(po => po.CustomerId == customerId);
             }
             var query = from po in poQuery
                         join pod in _purchaseOrderDBContext.PoProviderPricingDetail on po.PoProviderPricingId equals pod.PoProviderPricingId
@@ -932,7 +941,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 IsTreeView = false,
                 Fields = new List<CategoryFieldNameModel>()
             };
-            var fields = Utils.GetFieldNameModels<PoPricingDetailRow>();
+            var fields = ExcelUtils.GetFieldNameModels<PoPricingDetailRow>();
             result.Fields = fields;
             return result;
         }

@@ -11,6 +11,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Service.ProductionPlan;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
+using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -53,5 +54,27 @@ namespace VErpApi.Controllers.Manufacturing
             return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
 
         }
+
+        [HttpPost]
+        [Route("workload")]
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionPlanService.GetWorkloadPlan(productionOrderIds);
+        }
+
+        [HttpGet]
+        [Route("workloadByDate")]
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate([FromQuery] long startDate, [FromQuery] long endDate)
+        {
+            return await _productionPlanService.GetWorkloadPlanByDate(startDate, endDate);
+        }
+
+        [HttpGet]
+        [Route("monthlyImportStock")]
+        public async Task<IDictionary<long, List<ImportProductModel>>> GetMonthlyImportStock([FromQuery] int monthPlanId)
+        {
+            return await _productionPlanService.GetMonthlyImportStock(monthPlanId);
+        }
+
     }
 }

@@ -168,4 +168,7 @@
   <data name="ImportUpdate" xml:space="preserve">
     <value>Cập nhật mặt hàng từ excel  "{0}"</value>
   </data>
+  <data name="UpdateProcessInfo" xml:space="preserve">
+    <value>Cập nhật TT quy trình sản xuất mặt hàng "{0}"</value>
+  </data>
 </root>

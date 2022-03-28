@@ -21,7 +21,7 @@ namespace VErp.Services.Master.Model.Dictionary
         [MaxLength(128, ErrorMessage = "Tiêu đề quá dài")]
         public string Title
         {
-            get { if (string.IsNullOrWhiteSpace(_title)) return Utils.SubStringMaxLength(Content, 64, true, true); return _title; }
+            get { if (string.IsNullOrWhiteSpace(_title)) return StringUtils.SubStringMaxLength(Content, 64, true, true); return _title; }
             set { _title = value?.Trim(); }
         }
 

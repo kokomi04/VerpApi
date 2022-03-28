@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29613.14
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Library", "Commons\Library\Library.csproj", "{C1BD209B-CD77-4A25-BFA8-4364CD3D79FB}"
 EndProject
@@ -134,7 +134,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ObjectExtensions", "Commons
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Caching", "Infrastructure\Cache\Caching\Caching.csproj", "{BCF3A8DF-7934-4532-8430-FD55EEF528C3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Resources", "Commons\Resources\Resources.csproj", "{D9EAC874-E87B-457F-9552-BF880C4A27AE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Resources", "Commons\Resources\Resources.csproj", "{D9EAC874-E87B-457F-9552-BF880C4A27AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ObjectDefineAlter", "ZTools\ObjectDefineAlter\ObjectDefineAlter.csproj", "{9B79BA79-94F1-4D57-A30A-B7EEB6E04217}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -322,6 +324,10 @@ Global
 		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9EAC874-E87B-457F-9552-BF880C4A27AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B79BA79-94F1-4D57-A30A-B7EEB6E04217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B79BA79-94F1-4D57-A30A-B7EEB6E04217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B79BA79-94F1-4D57-A30A-B7EEB6E04217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B79BA79-94F1-4D57-A30A-B7EEB6E04217}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -385,9 +391,10 @@ Global
 		{BC411162-1A60-4796-BBBB-38BBEC7227B7} = {FE26A100-80D3-4095-B513-AE3D39A2A216}
 		{BCF3A8DF-7934-4532-8430-FD55EEF528C3} = {6E047406-F8AF-40AD-804C-7B6EA4103D70}
 		{D9EAC874-E87B-457F-9552-BF880C4A27AE} = {FE26A100-80D3-4095-B513-AE3D39A2A216}
+		{9B79BA79-94F1-4D57-A30A-B7EEB6E04217} = {F9CC3F1A-C548-498E-9464-8F45EA648F2A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}
 		RESX_NeutralResourcesLanguage = vi-VN
+		SolutionGuid = {A3B36496-6632-40EE-B3B3-CACA47D5B3EF}
 	EndGlobalSection
 EndGlobal

@@ -18,7 +18,14 @@ namespace VErp.Commons.GlobalObject
 
     public class MappingProfile : Profile
     {
+        public MappingProfile()
+        {
+            CreateMap<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            CreateMap<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
+            CreateMap<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            CreateMap<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
+        }
     }
 
     public static class MappingProfileExtension

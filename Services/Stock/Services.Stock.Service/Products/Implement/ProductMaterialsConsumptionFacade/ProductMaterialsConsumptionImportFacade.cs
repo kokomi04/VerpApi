@@ -204,7 +204,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private void ReadExcelData(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
-            _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping, null);
+            _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping);
         }
 
         private async Task ImportProcess()

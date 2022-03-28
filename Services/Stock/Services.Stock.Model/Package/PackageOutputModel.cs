@@ -62,6 +62,8 @@ namespace VErp.Services.Stock.Model.Package
         public ProductUnitConversion ProductUnitConversionModel { set; get; }
 
         public ProductListOutput ProductOutputModel { set; get; }
+
+        public IDictionary<int, object> CustomPropertyValue { get; set; }
     }
 
     public class ProductPackageOutputModel
@@ -104,6 +106,8 @@ namespace VErp.Services.Stock.Model.Package
         public string POCode { get; set; }
 
         public string ProductionOrderCode { get; set; }
+
+        public Dictionary<int, object> CustomPropertyValue { get; set; }
 
     }
 }

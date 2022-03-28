@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.EF.StockDB
     {
         public InventoryDetail()
         {
+            InventoryDetailSubCalculation = new HashSet<InventoryDetailSubCalculation>();
             InventoryDetailToPackage = new HashSet<InventoryDetailToPackage>();
         }
 
@@ -25,6 +26,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public decimal? ProductUnitConversionPrice { get; set; }
         public long? FromPackageId { get; set; }
         public long? ToPackageId { get; set; }
+        public string ToPackageInfo { get; set; }
         public int? PackageOptionId { get; set; }
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }
@@ -43,12 +45,14 @@ namespace VErp.Infrastructure.EF.StockDB
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public string InventoryRequirementCode { get; set; }
+        public bool? IsSubCalculation { get; set; }
 
         public virtual Package FromPackage { get; set; }
         public virtual Inventory Inventory { get; set; }
         public virtual Product Product { get; set; }
         public virtual ProductUnitConversion ProductUnitConversion { get; set; }
         public virtual Package ToPackage { get; set; }
+        public virtual ICollection<InventoryDetailSubCalculation> InventoryDetailSubCalculation { get; set; }
         public virtual ICollection<InventoryDetailToPackage> InventoryDetailToPackage { get; set; }
     }
 }

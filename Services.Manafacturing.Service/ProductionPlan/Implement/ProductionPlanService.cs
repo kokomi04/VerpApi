@@ -19,8 +19,11 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
+using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
@@ -269,6 +272,320 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
             return lst;
+        }
+
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate)
+        {
+            var startDateTime = startDate.UnixToDateTime();
+            var endDateTime = endDate.UnixToDateTime();
+
+            var productionOrderIds = _manufacturingDBContext.ProductionOrder
+                .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime)
+                .Select(po => po.ProductionOrderId)
+                .ToList();
+
+            return await GetWorkloadPlan(productionOrderIds);
+        }
+
+
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlan(IList<long> productionOrderIds)
+        {
+            var result = new Dictionary<long, WorkloadPlanModel>();
+            productionOrderIds = productionOrderIds.Distinct().ToList();
+
+            var productionSteps = await _manufacturingDBContext.ProductionStep
+               .Where(ps => productionOrderIds.Contains(ps.ContainerId)
+               && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+               && ps.IsGroup.HasValue
+               && ps.IsGroup.Value
+               && !ps.IsFinish)
+               .ToListAsync();
+
+            if (productionSteps.Count == 0) return result;
+            var parentIds = productionSteps.Select(ps => ps.ProductionStepId).ToList();
+
+            var groups = _manufacturingDBContext.ProductionStep
+                .Where(ps => ps.ParentId.HasValue && parentIds.Contains(ps.ParentId.Value) && !ps.IsFinish)
+                .ToList();
+
+            var outsourceStepRequestIds = groups.Where(g => g.OutsourceStepRequestId.HasValue).Select(g => g.OutsourceStepRequestId).ToList();
+            var outsourceStepRequests = _manufacturingDBContext.OutsourceStepRequest.Where(o => outsourceStepRequestIds.Contains(o.OutsourceStepRequestId)).ToList();
+            var groupIds = groups.Select(g => g.ProductionStepId).ToList();
+
+            var allInputLinkDatas = (from ld in _manufacturingDBContext.ProductionStepLinkData
+                                     join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on ld.ProductionStepLinkDataId equals ldr.ProductionStepLinkDataId
+                                     where groupIds.Contains(ldr.ProductionStepId) && ldr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input
+                                     select new
+                                     {
+                                         ldr.ProductionStepId,
+                                         ProductionStepLinkData = ld
+                                     }).ToList();
+
+            var allOutputLinkDatas = (from ld in _manufacturingDBContext.ProductionStepLinkData
+                                      join ldr in _manufacturingDBContext.ProductionStepLinkDataRole on ld.ProductionStepLinkDataId equals ldr.ProductionStepLinkDataId
+                                      where groupIds.Contains(ldr.ProductionStepId) && ldr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                                      select new
+                                      {
+                                          ldr.ProductionStepId,
+                                          ProductionStepLinkData = ld
+                                      }).ToList();
+
+            var allLinkDataIds = (allInputLinkDatas.Select(ld => ld.ProductionStepLinkData.ProductionStepLinkDataId)
+             .Concat(allOutputLinkDatas.Select(ld => ld.ProductionStepLinkData.ProductionStepLinkDataId)).ToList());
+
+            var allStepLinkData = (from ldr in _manufacturingDBContext.ProductionStepLinkDataRole
+                                   join gps in _manufacturingDBContext.ProductionStep on ldr.ProductionStepId equals gps.ProductionStepId
+                                   join o in _manufacturingDBContext.OutsourceStepRequest on gps.OutsourceStepRequestId equals o.OutsourceStepRequestId into gos
+                                   from o in gos.DefaultIfEmpty()
+                                   join ps in _manufacturingDBContext.ProductionStep on gps.ParentId equals ps.ProductionStepId
+                                   join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                   where !ps.IsFinish && allLinkDataIds.Contains(ldr.ProductionStepLinkDataId)
+                                   select new StepLinkDataInfo
+                                   {
+                                       ProductionStepLinkDataId = ldr.ProductionStepLinkDataId,
+                                       ProductionStepId = gps.ProductionStepId,
+                                       StepName = s.StepName,
+                                       OutsourceStepRequestId = o.OutsourceStepRequestId,
+                                       OutsourceStepRequestCode = o.OutsourceStepRequestCode
+                                   })
+                                   .ToList();
+
+            foreach (var productionOrderId in productionOrderIds)
+            {
+                var workloadPlanModel = new WorkloadPlanModel();
+
+                var productionGroup = groups.Where(g => g.ContainerId == productionOrderId).ToList();
+
+                foreach (var inOutGroup in productionGroup)
+                {
+                    var parentStep = productionSteps.First(ps => ps.ProductionStepId == inOutGroup.ParentId);
+
+                    if (!workloadPlanModel.WorkloadOutput.ContainsKey(parentStep.StepId.Value))
+                    {
+                        workloadPlanModel.WorkloadOutput.Add(parentStep.StepId.Value, new List<WorkloadOutputModel>());
+                    }
+
+                    var outsourceStepRequest = outsourceStepRequests.FirstOrDefault(o => o.OutsourceStepRequestId == inOutGroup.OutsourceStepRequestId);
+
+                    var inputLinkDatas = allInputLinkDatas.Where(ld => ld.ProductionStepId == inOutGroup.ProductionStepId).Select(ld => ld.ProductionStepLinkData).ToList();
+                    var outputLinkDatas = allOutputLinkDatas.Where(ld => ld.ProductionStepId == inOutGroup.ProductionStepId).Select(ld => ld.ProductionStepLinkData).ToList();
+                    var linkDataIds = (inputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId).Concat(outputLinkDatas.Select(ldr => ldr.ProductionStepLinkDataId)).ToList());
+
+                    // Danh sách liên kết đầu vào / ra với công đoạn hiện tại
+                    var stepMap = allStepLinkData
+                        .Where(sld => sld.ProductionStepId != inOutGroup.ProductionStepId && linkDataIds.Contains(sld.ProductionStepLinkDataId))
+                        .GroupBy(ldr => ldr.ProductionStepLinkDataId)
+                        .ToDictionary(g => g.Key, g => g.First());
+
+                    // Lấy thông tin phân công các công đoạn liền kề
+                    var stepIds = stepMap.Select(m => m.Value.ProductionStepId).ToList();
+
+                    var outputDatas = new List<StepInOutData>();
+
+                    // Lấy thông tin đầu ra
+                    foreach (var outputLinkData in outputLinkDatas)
+                    {
+                        // Nếu có nguồn ra => vật tư bàn giao tới công đoạn sau
+                        // Nếu không có nguồn ra => vật tư được nhập vào kho
+                        var toStep = stepMap.ContainsKey(outputLinkData.ProductionStepLinkDataId) ? stepMap[outputLinkData.ProductionStepLinkDataId] : null;
+                        long? toStepId = toStep?.ProductionStepId ?? null;
+
+                        // Nếu công đoạn có đầu ra từ gia công và không cùng gia công với công đoạn sau
+                        if (outputLinkData.ExportOutsourceQuantity > 0 && toStep != null && toStep.OutsourceStepRequestId > 0 && toStep.OutsourceStepRequestId != (outsourceStepRequest?.OutsourceStepRequestId ?? 0))
+                        {
+                            var ousourceOutput = outputDatas
+                                .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                                && (int)d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
+                                && d.ToStepId == toStepId
+                                && d.OutsourceStepRequestId == toStep.OutsourceStepRequestId)
+                                .FirstOrDefault();
+
+                            if (ousourceOutput != null)
+                            {
+                                ousourceOutput.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
+                                ousourceOutput.TotalQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
+                            }
+                            else
+                            {
+                                outputDatas.Add(new StepInOutData
+                                {
+                                    ObjectId = outputLinkData.LinkDataObjectId,
+                                    ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
+                                    RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
+                                    TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
+                                    ReceivedQuantity = 0,
+                                    ToStepTitle = $"{toStep.StepName}(#{toStep.ProductionStepId}) - {toStep.OutsourceStepRequestCode}",
+                                    ToStepId = toStepId,
+                                    OutsourceStepRequestId = toStep.OutsourceStepRequestId
+                                });
+                            }
+                        }
+
+                        var item = outputDatas
+                            .Where(d => d.ObjectId == outputLinkData.LinkDataObjectId
+                            && d.ObjectTypeId == outputLinkData.LinkDataObjectTypeId
+                            && d.ToStepId == toStepId
+                            && !d.OutsourceStepRequestId.HasValue)
+                            .FirstOrDefault();
+
+                        if (item != null)
+                        {
+                            item.RequireQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
+                            item.TotalQuantity += outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault();
+                        }
+                        else
+                        {
+                            outputDatas.Add(new StepInOutData
+                            {
+                                ObjectId = outputLinkData.LinkDataObjectId,
+                                ObjectTypeId = outputLinkData.LinkDataObjectTypeId,
+                                RequireQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
+                                TotalQuantity = outputLinkData.QuantityOrigin - outputLinkData.OutsourcePartQuantity.GetValueOrDefault(),
+                                ReceivedQuantity = 0,
+                                ToStepTitle = toStepId.HasValue ? $"{toStep.StepName}(#{toStep.ProductionStepId})" : "Kho",
+                                ToStepId = toStepId,
+                            });
+                        }
+                    }
+
+                    foreach (var outputData in outputDatas)
+                    {
+                        var workloadOutput = workloadPlanModel.WorkloadOutput[parentStep.StepId.Value]
+                            .FirstOrDefault(wo => wo.ObjectId == outputData.ObjectId && wo.ObjectTypeId == outputData.ObjectTypeId);
+                        if (workloadOutput == null)
+                        {
+                            workloadOutput = new WorkloadOutputModel
+                            {
+                                ObjectId = outputData.ObjectId,
+                                ObjectTypeId = outputData.ObjectTypeId,
+                                Quantity = outputData.TotalQuantity,
+                            };
+                            workloadPlanModel.WorkloadOutput[parentStep.StepId.Value].Add(workloadOutput);
+                        }
+                        else
+                        {
+                            workloadOutput.Quantity += outputData.TotalQuantity;
+                        }
+                    }
+                }
+
+
+                result.Add(productionOrderId, workloadPlanModel);
+            }
+
+            return result;
+        }
+
+        public async Task<IDictionary<long, List<ImportProductModel>>> GetMonthlyImportStock(int monthPlanId)
+        {
+            var monthPlan = _manufacturingDBContext.MonthPlan.FirstOrDefault(p => p.MonthPlanId == monthPlanId);
+            if (monthPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tháng");
+
+            var lastestDate = DateTime.UtcNow.Date;
+
+            if (lastestDate > monthPlan.EndDate) lastestDate = monthPlan.EndDate;
+            if (lastestDate < monthPlan.StartDate) lastestDate = monthPlan.StartDate;
+
+            var currentWeekPlan = _manufacturingDBContext.WeekPlan.Where(w => w.StartDate <= lastestDate).OrderBy(w => w.StartDate).LastOrDefault();
+            if (currentWeekPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tuần");
+
+            var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                .Include(pd => pd.ProductionOrder)
+                .Where(pd => pd.ProductionOrder.PlanEndDate >= monthPlan.StartDate && pd.ProductionOrder.StartDate <= monthPlan.EndDate)
+                .ToList();
+
+            var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();
+
+            var groupSteps = (await (from po in _manufacturingDBContext.ProductionOrder
+                                     join ps in _manufacturingDBContext.ProductionStep on new { po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder } equals new { ProductionOrderId = ps.ContainerId, ps.ContainerTypeId }
+                                     join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                                     join sg in _manufacturingDBContext.StepGroup on s.StepGroupId equals sg.StepGroupId
+                                     where productOderIds.Contains(po.ProductionOrderId)
+                                     select new
+                                     {
+                                         sg.StepGroupId,
+                                         po.ProductionOrderId
+                                     }).ToListAsync())
+                             .GroupBy(sg => sg.StepGroupId)
+                             .ToDictionary(g => g.Key, g => g.Select(sg => sg.ProductionOrderId).ToList());
+
+
+            var finishStepIds = _manufacturingDBContext.ProductionStep
+                 .Where(ps => ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                 && productOderIds.Contains(ps.ContainerId)
+                 && ps.IsFinish
+                 && !ps.IsGroup.Value)
+                 .Select(ps => ps.ProductionStepId)
+                 .Distinct()
+                 .ToList();
+
+            var linkDataIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input && finishStepIds.Contains(lr.ProductionStepId))
+                .Select(lr => lr.ProductionStepLinkDataId)
+                .Distinct()
+                .ToList();
+
+            var lastestStepIds = _manufacturingDBContext.ProductionStepLinkDataRole
+                .Where(lr => lr.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && linkDataIds.Contains(lr.ProductionStepLinkDataId))
+                .Select(lr => lr.ProductionStepId)
+                .Distinct()
+                .ToList();
+
+            var importStockObjects = _manufacturingDBContext.ProductionHistory
+                .Where(ph => lastestStepIds.Contains(ph.ProductionStepId) && ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
+                .ToList();
+
+            var result = new Dictionary<long, List<ImportProductModel>>();
+
+            foreach (var groupStep in groupSteps)
+            {
+                result.Add(groupStep.Key, new List<ImportProductModel>());
+
+                foreach (var productionOrderId in groupStep.Value)
+                {
+
+                    var productDatas = productionOrderDetails
+                        .Where(pod => pod.ProductionOrderId == productionOrderId)
+                        .GroupBy(pod => new { pod.ProductId, pod.OrderCode })
+                        .Select(g => new
+                        {
+                            ProductId = g.Key.ProductId,
+                            OrderCode = g.Key.OrderCode,
+                            Quantity = g.Sum(pod => pod.Quantity),
+                        })
+                        .ToList();
+
+                    foreach (var productData in productDatas)
+                    {
+                        var totalPlanQuantity = productDatas.Where(p => p.ProductId == productData.ProductId).Sum(p => p.Quantity);
+
+                        var totalImportQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var totalLastestDateImportQuantity = importStockObjects
+                            .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date == lastestDate)
+                            .Sum(imp => imp.ProductionQuantity);
+
+                        var totalLastestWeekImportQuantity = importStockObjects
+                           .Where(imp => imp.ObjectId == productData.ProductId && imp.ProductionOrderId == productionOrderId && imp.Date >= currentWeekPlan.StartDate && imp.Date <= currentWeekPlan.EndDate)
+                           .Sum(imp => imp.ProductionQuantity);
+
+                        var monthlyImportStock = new ImportProductModel
+                        {
+                            ProductId = productData.ProductId,
+                            PlanQuantity = productData.Quantity.Value,
+                            ImportQuantity = totalPlanQuantity.HasValue ? totalImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestDateImportQuantity = totalPlanQuantity.HasValue ? totalLastestDateImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            LastestWeekImportQuantity = totalPlanQuantity.HasValue ? totalLastestWeekImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            OrderCode = productData.OrderCode
+                        };
+                        result[groupStep.Key].Add(monthlyImportStock);
+                    }
+                }
+            }
+
+            return result;
         }
     }
 }

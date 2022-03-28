@@ -20,8 +20,13 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductCate = 4,
         [Description("Loại mặt hàng")]
         ProductType = 5,
+
         [Description("Mặt hàng")]
         Product = 6,
+
+        [Description("Tính khối lượng tinh")]
+        ProductPurityCalc = 611,
+
         [Description("Đơn vị tính")]
         Unit = 7,
         [Description("Cấu hình barcode")]
@@ -44,6 +49,10 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         Package = 14,
 
+        [Description("Thuộc tính kiện")]
+        [GenCodeObject]
+        PackageCustomProperty = 14001,
+
         [Description("Sản phẩm kho")]
         StockProduct = 15,
 
@@ -53,6 +62,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Đối tác")]
         [GenCodeObject]
         Customer = 17,
+
+        [Description("Danh mục đối tác")]
+        CustomerCate = 170,
 
         [Description("BOM")]
         ProductBom = 18,
@@ -254,6 +266,10 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionProcess = 74,
         [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
         ProductionHandover = 75,
+        [Description("Lịch sử sản xuất")]
+        ProductionHistory = 76,
+        [Description("Nhân công sản xuất")]
+        ProductionHumanResource = 79,
 
         [Description("Khai báo nhân công và chi phí")]
         ProductionScheduleTurnShift = 77,
@@ -335,6 +351,13 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Lịch tăng ca của bộ phận")]
         DepartmentOverHour = 604,
 
+
+        [Description("Cấu hình nghỉ phép")]
+        LeaveConfig = 60501,
+
+        [Description("Đơn nghỉ phép")]
+        LeaveBill = 60502,
+
         [Description("Nhóm chứng từ hành chính nhân sự")]
         HrTypeGroup = 1036,
 
@@ -369,6 +392,18 @@ namespace VErp.Commons.Enums.MasterEnum
         MailTemplate = 53005,
         [Description("Cấu hình upload file")]
         FileConfiguration = 53006,
-        Notification = 53007
+        Notification = 53007,
+        [Description("Thiết lập thông số sắp xếp giờ")]
+        TimeSortConfiguration = 53008,
+        [Description("Thiết lập lịch trình làm việc")]
+        WorkSchedule = 53009,
+        [Description("Thiết lập ca làm việc")]
+        ShiftConfiguration = 53010,
+        [Description("Nhóm biểu đồ báo cáo")]
+        DashboardTypeGroup = 60503,
+        [Description("Biểu đồ báo cáo")]
+        DashboardType = 60504,
+        [Description("Bộ lọc biểu đồ báo cáo")]
+        DashboardTypeView = 60505
     }
 }

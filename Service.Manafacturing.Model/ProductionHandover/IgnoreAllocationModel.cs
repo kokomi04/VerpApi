@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ProductionOrderId { get; set; }
         public string InventoryCode { get; set; }
         public int ProductId { get; set; }
+        public long? InventoryDetailId { get; set; }
     }
 
     public class ConflictHandoverModel

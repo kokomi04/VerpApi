@@ -41,27 +41,41 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 mapper)
         {
         }
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId)
+
+        protected class CalcQuantityProcessedOfOutsourcePart
         {
+            public long OutsourceRequestId { get; set; }
+            public long ProductId { get; set; }
+            public decimal? TotalQuantity { get; set; }
+        }
+
+        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId, string productionOrderCode, int? productId, bool ignoreOutsourceAllocateCompeleted = false)
+        {
+            
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
             if(outsourcePartRequestId != null && outsourcePartRequestId.Length > 0 )
                 queryRefOutsourcePart = queryRefOutsourcePart.Where(x => outsourcePartRequestId.Contains(x.OutsourcePartRequestId));
 
-            var calculatorTotalQuantityByOutsourcePart = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
-                                                          join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourcePart } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
-                                                          group d by new { d.OutsourceRequestId, d.ProductId } into g
-                                                          select new
-                                                          {
-                                                              g.Key.OutsourceRequestId,
-                                                              g.Key.ProductId,
-                                                              TotalQuantity = (decimal?)g.Sum(x => x.PrimaryQuantity)
-                                                          });
 
-            var results = await (from o in queryRefOutsourcePart
-                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId.GetValueOrDefault(), c.ProductId } into gc
+
+            var calculatorTotalQuantityByOutsourcePart = from m in _purchaseOrderDBContext.PurchaseOrderOutsourceMapping
+                                                         join pod in _purchaseOrderDBContext.PurchaseOrderDetail on m.PurchaseOrderDetailId equals pod.PurchaseOrderDetailId
+                                                         join po in _purchaseOrderDBContext.PurchaseOrder on pod.PurchaseOrderId equals po.PurchaseOrderId
+                                                         where po.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourcePart
+                                                         group m by new { m.OutsourcePartRequestId, m.ProductId } into g
+                                                         select new CalcQuantityProcessedOfOutsourcePart
+                                                         {
+                                                             OutsourceRequestId = g.Key.OutsourcePartRequestId,
+                                                             ProductId = g.Key.ProductId,
+                                                             TotalQuantity = (decimal?)g.Sum(x => x.Quantity)
+                                                         };
+
+
+            var query = (from o in queryRefOutsourcePart
+                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId, ProductId = (int) c.ProductId } into gc
                                  from c in gc.DefaultIfEmpty()
-                                 where c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
+                                 where ignoreOutsourceAllocateCompeleted == false ? true :  c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
                                  select new RefOutsourcePartRequestModel
                                  {
                                      ProductId = o.ProductId,
@@ -74,8 +88,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                                      OutsourcePartRequestId = o.OutsourcePartRequestId,
                                      ProductionOrderDetailId = o.ProductionOrderDetailId,
                                      RootProductId = o.RootProductId
-                                 }).ToListAsync();
+                                 });
 
+            
+
+            if (!string.IsNullOrWhiteSpace(productionOrderCode))
+                query = query.Where(x => x.ProductionOrderCode == productionOrderCode);
+            if (productId.HasValue)
+                query = query.Where(x => x.ProductId == productId.GetValueOrDefault());
+
+            var results = await query.ToListAsync();
             return results.OrderByDescending(x => x.OutsourcePartRequestId).ToList();
         }
         
@@ -107,7 +129,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
         
         private async Task<RefOutsourcePartRequestModel> GetOutsourcePartRequest(long outsourcePartId)
         {
-            return (await GetOutsourcePartRequest(new [] { outsourcePartId })).FirstOrDefault();
+            return (await GetOutsourcePartRequest(new [] { outsourcePartId }, "", null)).FirstOrDefault();
         }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)
@@ -118,38 +140,38 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
                 if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
             }
 
-            var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
-            if (notExistsOutsourcePartId)
-                return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
+            // var notExistsOutsourcePartId = model.Details.Any(x => x.OutsourceRequestId.HasValue == false);
+            // if (notExistsOutsourcePartId)
+            //     return PurchaseOrderErrorCode.NotExistsOutsourceRequestId;
 
-            var arrOutsourcePartId = model.Details.Select(x => x.OutsourceRequestId.Value).ToArray();
-            var refOutsources = await GetOutsourcePartRequest(arrOutsourcePartId);
+            // var arrOutsourcePartId = model.Details.Where(x => x.OutsourceRequestId.HasValue == true).Select(x => x.OutsourceRequestId.Value).ToArray();
+            // var refOutsources = await GetOutsourcePartRequest(arrOutsourcePartId, string.Empty, null);
 
-            var isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == false)
-                                                                 join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, d.ProductId } equals new { OutsourceRequestId = r.OutsourcePartRequestId, r.ProductId }
-                                                                 select new
-                                                                 {
-                                                                     d.PrimaryQuantity,
-                                                                     QuantityRequirement = r.Quantity - r.QuantityProcessed
-                                                                 }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
+            // var isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == false && d.OutsourceRequestId.HasValue == true)
+            //                                                      join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, d.ProductId } equals new { OutsourceRequestId = r.OutsourcePartRequestId, r.ProductId }
+            //                                                      select new
+            //                                                      {
+            //                                                          d.PrimaryQuantity,
+            //                                                          QuantityRequirement = r.Quantity - r.QuantityProcessed
+            //                                                      }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
 
-            if (poId.HasValue)
-            {
-                var arrDetailId = model.Details.Where(d => d.PurchaseOrderDetailId > 0).Select(d => d.PurchaseOrderDetailId).Distinct().ToArray();
-                var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => arrDetailId.Contains(d.PurchaseOrderDetailId)).ToListAsync();
+            // if (poId.HasValue)
+            // {
+            //     var arrDetailId = model.Details.Where(d => d.PurchaseOrderDetailId > 0).Select(d => d.PurchaseOrderDetailId).Distinct().ToArray();
+            //     var details = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => arrDetailId.Contains(d.PurchaseOrderDetailId)).ToListAsync();
 
-                isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == true)
-                                                                 join o in details on d.PurchaseOrderDetailId equals o.PurchaseOrderDetailId
-                                                                 join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, d.ProductId } equals new { OutsourceRequestId = r.OutsourcePartRequestId, r.ProductId }
-                                                                 select new
-                                                                 {
-                                                                     d.PrimaryQuantity,
-                                                                     QuantityRequirement = r.Quantity - r.QuantityProcessed + o.PrimaryQuantity
-                                                                 }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
-            }
+            //     isPrimaryQuanityGreaterThanQuantityRequirment = (from d in model.Details.Where(d => d.PurchaseOrderDetailId.HasValue == true && d.OutsourceRequestId.HasValue == true)
+            //                                                      join o in details on d.PurchaseOrderDetailId equals o.PurchaseOrderDetailId
+            //                                                      join r in refOutsources on new { OutsourceRequestId = d.OutsourceRequestId.Value, d.ProductId } equals new { OutsourceRequestId = r.OutsourcePartRequestId, r.ProductId }
+            //                                                      select new
+            //                                                      {
+            //                                                          d.PrimaryQuantity,
+            //                                                          QuantityRequirement = r.Quantity - r.QuantityProcessed + o.PrimaryQuantity
+            //                                                      }).Any(x => x.PrimaryQuantity > x.QuantityRequirement);
+            // }
 
-            if (isPrimaryQuanityGreaterThanQuantityRequirment)
-                return PurchaseOrderErrorCode.PrimaryQuanityGreaterThanQuantityRequirment;
+            // if (isPrimaryQuanityGreaterThanQuantityRequirment)
+            //     return PurchaseOrderErrorCode.PrimaryQuanityGreaterThanQuantityRequirment;
 
             return GeneralCode.Success;
         }

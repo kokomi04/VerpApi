@@ -162,6 +162,9 @@
   <data name="UpdateMaterialConsumption" xml:space="preserve">
     <value>Updated consumption for product "{0}"</value>
   </data>
+  <data name="UpdateProcessInfo" xml:space="preserve">
+    <value>Updated production process product info "{0}"</value>
+  </data>
   <data name="UpdateSellInfo" xml:space="preserve">
     <value>Updated sell product info "{0}"</value>
   </data>

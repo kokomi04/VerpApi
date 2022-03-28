@@ -362,6 +362,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>CustomerActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Customer\CustomerCateActivityLogMessageLog.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>CustomerCateActivityLogMessageLog.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\Customer\CustomerValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -387,6 +392,21 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>HrDataValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Leave\LeaveActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Leave\LeaveConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Leave\LeaveLetterValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>LeaveLetterValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -401,6 +421,21 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>SystemParameterActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ShiftConfigurationActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TimeSortConfigurationActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>WorkScheduleActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -562,6 +597,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Stock\Package\PackageCustomPropertyActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>PackageCustomPropertyActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Product\ConsumptionGroupActivityLogMessage.Designer.cs">
       <DependentUpon>ConsumptionGroupActivityLogMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -581,6 +621,11 @@
       <DependentUpon>ProductBomImportValidationMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\Product\ProductPurityCalcActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductPurityCalcActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Stock\Product\ProductValidationMessage.Designer.cs">
       <DependentUpon>ProductValidationMessage.resx</DependentUpon>
@@ -904,6 +949,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>CustomerActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Customer\CustomerCateActivityLogMessageLog.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>CustomerCateActivityLogMessageLog.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\Customer\CustomerValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>CustomerValidationMessage.Designer.cs</LastGenOutput>
@@ -928,6 +977,18 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Leave\LeaveLetterValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>LeaveLetterValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\ObjectProcess\ObjectProcessActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ObjectProcessActivityLogMessage.Designer.cs</LastGenOutput>
@@ -939,6 +1000,30 @@
     <EmbeddedResource Update="Organization\SystemParameter\SystemParameterActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SystemParameterActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.en-Us.resx">
+      <LastGenOutput>ShiftConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\ShiftConfigurationActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ShiftConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.en-Us.resx">
+      <LastGenOutput>TimeSortConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>TimeSortConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.en-Us.resx">
+      <LastGenOutput>WorkScheduleActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>ResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>WorkScheduleActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Assignment\PoAssignmentActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1068,6 +1153,10 @@
       <LastGenOutput>LocationActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Package\PackageCustomPropertyActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>PackageCustomPropertyActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ConsumptionGroupActivityLogMessage.resx">
       <LastGenOutput>ConsumptionGroupActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1083,6 +1172,10 @@
     <EmbeddedResource Update="Stock\Product\ProductImport\ProductBomImportValidationMessage.resx">
       <LastGenOutput>ProductBomImportValidationMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\Product\ProductPurityCalcActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductPurityCalcActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Product\ProductValidationMessage.resx">
       <LastGenOutput>ProductValidationMessage.Designer.cs</LastGenOutput>

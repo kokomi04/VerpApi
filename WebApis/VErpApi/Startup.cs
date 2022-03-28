@@ -37,6 +37,8 @@ using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
 using VErp.WebApis.VErpApi.Validator;
 using VErp.Commons.Library;
+using VErp.Services.Master.Service.Webpush;
+using Lib.Net.Http.WebPush;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -101,6 +103,9 @@ namespace VErp.WebApis.VErpApi
 
             ConfigureAutoMaper(services);
 
+            services.AddHttpClient<PushServiceClient>();
+            // services.AddHostedService<WebPushNotificationsProducer>();
+
             return BuildService(services);
         }
         private static void ConfigureBussinessService(IServiceCollection services)
@@ -147,6 +152,7 @@ namespace VErp.WebApis.VErpApi
             ConfigureBase(app, env, loggerFactory, true);
 
             app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
+            app.UseSignalRHubEndpoints(ServiceCoreAssembly.Assembly);
 
             app.UseSwagger()
               .UseSwaggerUI(c =>

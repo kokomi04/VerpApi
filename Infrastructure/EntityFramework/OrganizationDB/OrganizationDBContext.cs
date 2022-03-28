@@ -17,11 +17,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
         }
 
+        public virtual DbSet<AbsenceTypeSymbol> AbsenceTypeSymbol { get; set; }
+        public virtual DbSet<ArrangeShift> ArrangeShift { get; set; }
+        public virtual DbSet<ArrangeShiftItem> ArrangeShiftItem { get; set; }
         public virtual DbSet<BusinessInfo> BusinessInfo { get; set; }
         public virtual DbSet<Calendar> Calendar { get; set; }
+        public virtual DbSet<CountedSymbol> CountedSymbol { get; set; }
         public virtual DbSet<Customer> Customer { get; set; }
         public virtual DbSet<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
+        public virtual DbSet<CustomerCate> CustomerCate { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
@@ -32,7 +37,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<Employee> Employee { get; set; }
         public virtual DbSet<EmployeeDepartmentMapping> EmployeeDepartmentMapping { get; set; }
         public virtual DbSet<EmployeeSubsidiary> EmployeeSubsidiary { get; set; }
-        //public virtual DbSet<HrAction> HrAction { get; set; }
         public virtual DbSet<HrArea> HrArea { get; set; }
         public virtual DbSet<HrAreaField> HrAreaField { get; set; }
         public virtual DbSet<HrBill> HrBill { get; set; }
@@ -42,14 +46,31 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<HrTypeGroup> HrTypeGroup { get; set; }
         public virtual DbSet<HrTypeView> HrTypeView { get; set; }
         public virtual DbSet<HrTypeViewField> HrTypeViewField { get; set; }
+        public virtual DbSet<Leave> Leave { get; set; }
+        public virtual DbSet<LeaveConfig> LeaveConfig { get; set; }
+        public virtual DbSet<LeaveConfigRole> LeaveConfigRole { get; set; }
+        public virtual DbSet<LeaveConfigSeniority> LeaveConfigSeniority { get; set; }
+        public virtual DbSet<LeaveConfigValidation> LeaveConfigValidation { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
+        public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
+        public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
+        public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
+        public virtual DbSet<SplitHour> SplitHour { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
         public virtual DbSet<SystemParameter> SystemParameter { get; set; }
         public virtual DbSet<TimeSheet> TimeSheet { get; set; }
+        public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
+        public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
+        public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
+        public virtual DbSet<TimeSheetOvertime> TimeSheetOvertime { get; set; }
+        public virtual DbSet<TimeSheetRaw> TimeSheetRaw { get; set; }
+        public virtual DbSet<TimeSortConfiguration> TimeSortConfiguration { get; set; }
         public virtual DbSet<UserData> UserData { get; set; }
+        public virtual DbSet<WorkSchedule> WorkSchedule { get; set; }
+        public virtual DbSet<WorkScheduleMark> WorkScheduleMark { get; set; }
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
@@ -60,15 +81,62 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
 
+            modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
+            {
+                entity.Property(e => e.SymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TypeSymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TypeSymbolDescription)
+                    .IsRequired()
+                    .HasMaxLength(256);
+            });
+
+            modelBuilder.Entity<ArrangeShift>(entity =>
+            {
+                entity.HasOne(d => d.WorkSchedule)
+                    .WithMany(p => p.ArrangeShift)
+                    .HasForeignKey(d => d.WorkScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ArrangeShift_WorkSchedule");
+            });
+
+            modelBuilder.Entity<ArrangeShiftItem>(entity =>
+            {
+                entity.HasOne(d => d.ArrangeShift)
+                    .WithMany(p => p.ArrangeShiftItem)
+                    .HasForeignKey(d => d.ArrangeShiftId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ArrangeShiftItem_ArrangeShift");
+
+                entity.HasOne(d => d.ParentArrangeShiftItem)
+                    .WithMany(p => p.InverseParentArrangeShiftItem)
+                    .HasForeignKey(d => d.ParentArrangeShiftItemId)
+                    .HasConstraintName("FK_ArrangeShiftItem_ArrangeShiftItem");
+
+                entity.HasOne(d => d.ShiftConfiguration)
+                    .WithMany(p => p.ArrangeShiftItem)
+                    .HasForeignKey(d => d.ShiftConfigurationId)
+                    .HasConstraintName("FK_ArrangeShiftItem_ShiftConfiguration");
+            });
+
             modelBuilder.Entity<BusinessInfo>(entity =>
             {
                 entity.Property(e => e.Address)
                     .IsRequired()
                     .HasMaxLength(128);
 
+                entity.Property(e => e.AddressEng).HasMaxLength(128);
+
                 entity.Property(e => e.CompanyName)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.CompanyNameEng).HasMaxLength(128);
 
                 entity.Property(e => e.CreatedTime).HasColumnType("datetime");
 
@@ -100,6 +168,17 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasMaxLength(25);
 
                 entity.Property(e => e.CalendarName).HasMaxLength(64);
+            });
+
+            modelBuilder.Entity<CountedSymbol>(entity =>
+            {
+                entity.Property(e => e.SymbolCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.SymbolDescription)
+                    .IsRequired()
+                    .HasMaxLength(256);
             });
 
             modelBuilder.Entity<Customer>(entity =>
@@ -137,6 +216,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.TaxIdNo).HasMaxLength(64);
 
                 entity.Property(e => e.Website).HasMaxLength(128);
+
+                entity.HasOne(d => d.CustomerCate)
+                    .WithMany(p => p.Customer)
+                    .HasForeignKey(d => d.CustomerCateId)
+                    .HasConstraintName("FK_Customer_CustomerCate");
             });
 
             modelBuilder.Entity<CustomerAttachment>(entity =>
@@ -188,6 +272,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.CustomerId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_BankAccount_Customer");
+            });
+
+            modelBuilder.Entity<CustomerCate>(entity =>
+            {
+                entity.Property(e => e.CustomerCateCode).HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Name).HasMaxLength(256);
             });
 
             modelBuilder.Entity<CustomerContact>(entity =>
@@ -286,6 +379,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.Phone).HasMaxLength(64);
 
                 entity.Property(e => e.UserStatusId).HasDefaultValueSql("((1))");
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.Employee)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .HasConstraintName("FK_Employee_LeaveConfig");
             });
 
             modelBuilder.Entity<EmployeeDepartmentMapping>(entity =>
@@ -324,26 +422,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_EmployeeSubsidiary_Employee");
             });
-
-            //modelBuilder.Entity<HrAction>(entity =>
-            //{
-            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
-
-            //    entity.Property(e => e.HractionCode)
-            //        .IsRequired()
-            //        .HasMaxLength(128)
-            //        .HasColumnName("HRActionCode");
-
-            //    entity.Property(e => e.IconName).HasMaxLength(25);
-
-            //    entity.Property(e => e.Title).HasMaxLength(128);
-
-            //    entity.HasOne(d => d.HrType)
-            //        .WithMany(p => p.HrAction)
-            //        .HasForeignKey(d => d.HrTypeId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_HRAction_HRType");
-            //});
 
             modelBuilder.Entity<HrArea>(entity =>
             {
@@ -512,6 +590,85 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_HrTypeViewField_HrTypeView");
             });
 
+            modelBuilder.Entity<Leave>(entity =>
+            {
+                entity.HasComment("Đơn xin nghỉ phép");
+
+                entity.Property(e => e.Description).HasMaxLength(1024);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.TotalDays).HasColumnType("decimal(4, 1)");
+
+                entity.Property(e => e.TotalDaysLastYearUsed).HasColumnType("decimal(4, 1)");
+
+                entity.HasOne(d => d.AbsenceTypeSymbol)
+                    .WithMany(p => p.Leave)
+                    .HasForeignKey(d => d.AbsenceTypeSymbolId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Leave_AbsenceTypeSymbol");
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.Leave)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_Leave_LeaveConfig");
+            });
+
+            modelBuilder.Entity<LeaveConfig>(entity =>
+            {
+                entity.HasComment("");
+
+                entity.Property(e => e.AdvanceDays).HasComment("Số ngày được ứng trước");
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.MaxAyear)
+                    .HasColumnName("MaxAYear")
+                    .HasComment("Số ngày phép tối đa 1 năm");
+
+                entity.Property(e => e.MonthRate)
+                    .HasColumnType("decimal(4, 1)")
+                    .HasComment("1 tháng làm việc được cho mấy ngày phép");
+
+                entity.Property(e => e.OldYearAppliedToDate).HasComment("Phép năm cũ sẽ áp dụng đến ngày tháng nào");
+
+                entity.Property(e => e.OldYearTransferMax).HasComment("Số phép tối đa mà năm cũ chuyển sang");
+
+                entity.Property(e => e.SeniorityMonthsStart).HasComment("Làm đến tháng thứ mấy thì bắt đầu tính thâm niên");
+
+                entity.Property(e => e.SeniorityOneYearRate).HasComment("Bắt đầu tính thâm niên từ tháng mấy của năm");
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<LeaveConfigRole>(entity =>
+            {
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.LeaveConfigRole)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LeaveConfigRole_LeaveConfig");
+            });
+
+            modelBuilder.Entity<LeaveConfigSeniority>(entity =>
+            {
+                entity.HasKey(e => new { e.LeaveConfigId, e.Months });
+            });
+
+            modelBuilder.Entity<LeaveConfigValidation>(entity =>
+            {
+                entity.HasKey(e => new { e.LeaveConfigId, e.TotalDays });
+
+                entity.HasOne(d => d.LeaveConfig)
+                    .WithMany(p => p.LeaveConfigValidation)
+                    .HasForeignKey(d => d.LeaveConfigId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_LeaveConfigValidation_LeaveConfig");
+            });
+
             modelBuilder.Entity<ObjectProcessObject>(entity =>
             {
                 entity.Property(e => e.Note).HasMaxLength(512);
@@ -550,6 +707,38 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.ObjectProcessStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ObjectProcessStepUser_ObjectProcessStep");
+            });
+
+            modelBuilder.Entity<OvertimeLevel>(entity =>
+            {
+                entity.Property(e => e.Note).HasMaxLength(1024);
+
+                entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Title).HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<ShiftConfiguration>(entity =>
+            {
+                entity.Property(e => e.ConfirmationUnit).HasColumnType("decimal(18, 3)");
+
+                entity.Property(e => e.ShiftCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.HasOne(d => d.OvertimeConfiguration)
+                    .WithMany(p => p.ShiftConfiguration)
+                    .HasForeignKey(d => d.OvertimeConfigurationId)
+                    .HasConstraintName("FK_ShiftConfiguration_OvertimeConfiguration");
+            });
+
+            modelBuilder.Entity<SplitHour>(entity =>
+            {
+                entity.HasOne(d => d.TimeSortConfiguration)
+                    .WithMany(p => p.SplitHour)
+                    .HasForeignKey(d => d.TimeSortConfigurationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SplitHour_SplitHour");
             });
 
             modelBuilder.Entity<Subsidiary>(entity =>
@@ -595,7 +784,78 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<TimeSheet>(entity =>
             {
-                entity.Property(e => e.Date).HasColumnType("date");
+                entity.Property(e => e.Note)
+                    .IsRequired()
+                    .HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<TimeSheetAggregate>(entity =>
+            {
+                entity.Property(e => e.CountedWeekday).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekdayHour).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekend).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.CountedWeekendHour).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime1).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime2).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.Overtime3).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetAggregate)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetAggregate_TimeSheet");
+            });
+
+            modelBuilder.Entity<TimeSheetDayOff>(entity =>
+            {
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetDayOff)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetDayOff_TimeSheetDayOff");
+            });
+
+            modelBuilder.Entity<TimeSheetDetail>(entity =>
+            {
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetDetail)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetDetail_TimeSheet");
+            });
+
+            modelBuilder.Entity<TimeSheetOvertime>(entity =>
+            {
+                entity.Property(e => e.MinsOvertime).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.OvertimeLevel)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.OvertimeLevelId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_OvertimeLevel");
+
+                entity.HasOne(d => d.TimeSheet)
+                    .WithMany(p => p.TimeSheetOvertime)
+                    .HasForeignKey(d => d.TimeSheetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
+            });
+
+            modelBuilder.Entity<TimeSortConfiguration>(entity =>
+            {
+                entity.Property(e => e.TimeSortCode)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.TimeSortDescription)
+                    .IsRequired()
+                    .HasMaxLength(50);
             });
 
             modelBuilder.Entity<UserData>(entity =>
@@ -603,6 +863,39 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasKey(e => new { e.UserId, e.DataKey });
 
                 entity.Property(e => e.DataKey).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<WorkSchedule>(entity =>
+            {
+                entity.Property(e => e.IsAbsenceForHoliday).HasColumnName("isAbsenceForHoliday");
+
+                entity.Property(e => e.IsAbsenceForSunday).HasColumnName("isAbsenceForSunday");
+
+                entity.Property(e => e.WorkScheduleTitle)
+                    .IsRequired()
+                    .HasMaxLength(256)
+                    .IsUnicode(false);
+
+                entity.HasOne(d => d.TimeSortConfiguration)
+                    .WithMany(p => p.WorkSchedule)
+                    .HasForeignKey(d => d.TimeSortConfigurationId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkSchedule_TimeSortConfiguration");
+            });
+
+            modelBuilder.Entity<WorkScheduleMark>(entity =>
+            {
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleHistory_WorkScheduleHistory");
+
+                entity.HasOne(d => d.WorkSchedule)
+                    .WithMany(p => p.WorkScheduleMark)
+                    .HasForeignKey(d => d.WorkScheduleId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_WorkScheduleMark_WorkSchedule");
             });
 
             modelBuilder.Entity<WorkingHourInfo>(entity =>

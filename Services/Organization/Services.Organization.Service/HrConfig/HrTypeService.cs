@@ -55,22 +55,23 @@ namespace VErp.Services.Organization.Service.HrConfig
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
-        private readonly IActionButtonHelperService _actionButtonHelperService;
+        private readonly IHrActionConfigService _hrActionConfigService;
         private readonly IRoleHelperService _roleHelperService;
+
 
         public HrTypeService(
             IMapper mapper,
             OrganizationDBContext organizationDBContext,
             ILogger<HrTypeService> logger,
             IActivityLogService activityLogService,
-            IActionButtonHelperService actionButtonHelperService,
+            IHrActionConfigService hrActionConfigService,
             IRoleHelperService roleHelperService)
         {
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
+            _hrActionConfigService = hrActionConfigService;
             _logger = logger;
             _activityLogService = activityLogService;
-            _actionButtonHelperService = actionButtonHelperService;
             _roleHelperService = roleHelperService;
         }
 
@@ -174,9 +175,6 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             var hrTypes = await _organizationDBContext.HrType.Where(x => !x.IsHide).ProjectTo<HrTypeSimpleProjectMappingModel>(_mapper.ConfigurationProvider).OrderBy(t => t.SortOrder).ToListAsync();
 
-            var actions = (await _actionButtonHelperService.GetActionButtonConfigs(EnumObjectType.HrType, null)).OrderBy(t => t.SortOrder).ToList()
-                .GroupBy(a => a.ObjectId)
-                .ToDictionary(a => a.Key, a => a.ToList());
 
             var areaFields = await (
               from a in _organizationDBContext.HrArea
@@ -209,10 +207,6 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             foreach (var item in hrTypes)
             {
-                if (actions.TryGetValue(item.HrTypeId, out var _actions))
-                {
-                    item.ActionObjects = _actions.Cast<ActionButtonSimpleModel>().ToList();
-                }
 
                 if (typeFields.TryGetValue(item.HrTypeId, out var _fields))
                 {
@@ -361,7 +355,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                             CustomButtonOnClick = field.CustomButtonOnClick,
                             MouseEnter = field.MouseEnter,
                             MouseLeave = field.MouseLeave,
-                    };
+                        };
 
                         await _organizationDBContext.HrField.AddAsync(cloneField);
                         await _organizationDBContext.SaveChangesAsync();
@@ -403,7 +397,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                             MouseLeave = field.MouseLeave,
                         };
                         await _organizationDBContext.HrAreaField.AddAsync(cloneAreaField);
-                        
+
 
                     }
                 }
@@ -447,8 +441,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                var oldHrTypeCode =  hrType.HrTypeCode; 
-                var newHrTypeCode =  data.HrTypeCode;
+                var oldHrTypeCode = hrType.HrTypeCode;
+                var newHrTypeCode = data.HrTypeCode;
 
                 hrType.HrTypeCode = data.HrTypeCode;
                 hrType.Title = data.Title;
@@ -506,7 +500,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             try
             {
-                await _actionButtonHelperService.DeleteActionButtonsByType(EnumObjectType.HrType, hrTypeId, hrType.Title);
+                await _hrActionConfigService.RemoveAllByBillType(hrTypeId, hrType.Title);
             }
             catch (Exception ex)
             {

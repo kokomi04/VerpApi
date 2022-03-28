@@ -313,6 +313,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy năng suất mục tiêu &quot;{0}&quot;.
+        /// </summary>
+        public static string TargetProductivityWithCodeNotFound {
+            get {
+                return ResourceManager.GetString("TargetProductivityWithCodeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy đơn vị tính mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UnitOfProductNotFound {

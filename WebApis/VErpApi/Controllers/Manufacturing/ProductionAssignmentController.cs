@@ -53,6 +53,13 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
+        [Route("productionOrder/{productionOrderId}/dismissWarning")]
+        public async Task<bool> DismissUpdateWarning([FromRoute] long productionOrderId)
+        {
+            return await _productionAssignmentService.DismissUpdateWarning(productionOrderId);
+        }
+
+        [HttpPut]
         [Route("productionOrder/{productionOrderId}")]
         public async Task<bool> UpdateProductionAssignment([FromRoute] long productionOrderId, [FromBody] GeneralAssignmentModel data)
         {

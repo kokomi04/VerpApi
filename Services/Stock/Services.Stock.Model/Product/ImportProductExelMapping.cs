@@ -25,6 +25,14 @@ namespace VErp.Services.Stock.Model.Product
         [MaxLength(128, ErrorMessage = "Tên mặt hàng quá dài")]
         public string ProductName { get; set; }
 
+        [Display(Name = "Tên tiếng Anh", GroupName = "Thông tin chung")]
+        [MaxLength(128, ErrorMessage = "Tên tiếng Anh mặt hàng quá dài")]
+        public string ProductNameEng { get; set; }
+
+        [Display(Name = "Màu sắc", GroupName = "Thông tin chung")]
+        [MaxLength(128, ErrorMessage = "Màu sắc mặt hàng quá dài")]
+        public string Color { get; set; }
+
         [Display(Name = "Mã loại", GroupName = "Thông tin chung")]
         public string ProductTypeCode { get; set; }
 
@@ -39,6 +47,11 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Barcode", GroupName = "Thông tin chung")]
         public string Barcode { get; set; }
+
+        [Display(Name = "Mã năng suất mục tiêu", GroupName = "Thông tin chung")]
+        public string TargetProductivityCode { get; set; }
+        [FieldDataIgnore]
+        public int? TargetProductivityId { get; set; }
 
 
 
@@ -61,7 +74,7 @@ namespace VErp.Services.Stock.Model.Product
         public bool? IsMaterials { get; set; }
 
         [Display(Name = "Cơ số sản phẩm", GroupName = "TT Sản xuất")]
-        public int? Coefficient { get; set; }
+        public decimal? Coefficient { get; set; }
 
 
 
@@ -101,6 +114,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Đơn vị Định lượng(g/m2, g/m3)", GroupName = "Thông số")]
         public EnumQuantitativeUnitType? QuantitativeUnitTypeId { get; set; }
 
+        [Display(Name = "Khối lượng tinh", GroupName = "Thông số")]
+        public decimal? ProductPurity { get; set; }
+
         [Display(Name = "Dài (mm)", GroupName = "Thông số")]
         public decimal? Long { get; set; }
 
@@ -122,6 +138,17 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Tải trọng (g)", GroupName = "Thông số")]
         public decimal? LoadAbility { get; set; }
 
+        [Display(Name = "Định lượng thùng carton (g)", GroupName = "Thông số")]
+        public decimal? PackingQuantitative { get; set; }
+
+
+        [Display(Name = "Đóng gói - Cao", GroupName = "Quy cách đóng gói")]
+        public decimal? PackingHeight { get; set; }
+        [Display(Name = "Đóng gói - Dài", GroupName = "Quy cách đóng gói")]
+        public decimal? PackingLong { get; set; }
+        [Display(Name = "Đóng gói - Rộng", GroupName = "Quy cách đóng gói")]
+        public decimal? PackingWidth { get; set; }
+
 
         // Stock info
         [Display(Name = "Quy tắc xuất", GroupName = "TT lưu kho")]
@@ -141,7 +168,9 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Danh sách kho chứa mặc định", GroupName = "TT lưu kho")]
         public ICollection<int> StockIds { get; set; }
-
+        
+        [Display(Name = "Ghi chú lưu kho", GroupName = "TT lưu kho")]
+        public string DescriptionToStock { get; set; }
         // UnitConversion       
 
 

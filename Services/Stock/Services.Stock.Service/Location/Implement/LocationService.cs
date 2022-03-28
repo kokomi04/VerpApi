@@ -41,8 +41,14 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
         public async Task<int> AddLocation(LocationInput req)
         {
+            if (req.StockId <= 0)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Stock not found!");
+            }
+
             var checkExisted = _stockDbContext.Location.Any(q =>
                 q.StockId == req.StockId && q.Name == req.Name);
+            
 
             if (checkExisted)
                 throw new BadRequestException(LocationErrorCode.LocationAlreadyExisted);
@@ -72,7 +78,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                         .JsonData(req.JsonSerialize())
                         .CreateLog();
 
-                    return locationInfo.StockId;
+                    return locationInfo.LocationId;
                 }
                 catch (Exception)
                 {

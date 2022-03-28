@@ -9,7 +9,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     {
         public HrType()
         {
-            //HrAction = new HashSet<HrAction>();
             HrArea = new HashSet<HrArea>();
             HrAreaField = new HashSet<HrAreaField>();
             HrBill = new HashSet<HrBill>();
@@ -38,7 +37,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public bool IsHide { get; set; }
 
         public virtual HrTypeGroup HrTypeGroup { get; set; }
-        //public virtual ICollection<HrAction> HrAction { get; set; }
         public virtual ICollection<HrArea> HrArea { get; set; }
         public virtual ICollection<HrAreaField> HrAreaField { get; set; }
         public virtual ICollection<HrBill> HrBill { get; set; }

@@ -31,7 +31,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public decimal Eval([FromBody] string expression)
         {
-            return Utils.Eval(expression);
+            return EvalUtils.Eval(expression);
         }
 
         [HttpPost("HttpRequest")]
