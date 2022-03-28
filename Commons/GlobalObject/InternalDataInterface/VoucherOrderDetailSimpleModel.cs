@@ -34,7 +34,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string PartnerName { get; set; }
         public string PartnerId { get; set; }
         public string CustomerPO { get; set; }
-        public int ContainerQuantity { get; set; }
+        public decimal ContainerQuantity { get; set; }
     }
 
     public class VoucherOrderDetailSimpleEntity : VoucherOrderDetailSimple
