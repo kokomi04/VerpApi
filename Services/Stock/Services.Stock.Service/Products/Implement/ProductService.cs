@@ -863,7 +863,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                   s.DescriptionToStock,
 
-                  p.Color
+                  p.Color,
+                  p.TargetProductivityId
               });
 
 
@@ -968,7 +969,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     UnitName = puDefault?.ProductUnitConversionName,
                     ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
                     Description = item.Description,
-                    Color = item.Color
+                    Color = item.Color,
+                    TargetProductivityId = item.TargetProductivityId
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
