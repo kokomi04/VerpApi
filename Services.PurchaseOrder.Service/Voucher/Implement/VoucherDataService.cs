@@ -33,6 +33,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Voucher;
 using static Verp.Resources.PurchaseOrder.Voucher.VoucherDataValidationMessage;
 using AutoMapper.QueryableExtensions;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -2074,6 +2076,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
+
+                        if (value.StartsWith(PREFIX_ERROR_CELL))
+                        {
+                            throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
+                        }
+
                         if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))

@@ -19,7 +19,7 @@ namespace Verp.Resources.GlobalObject {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class ValidatorResources {
@@ -57,6 +57,15 @@ namespace Verp.Resources.GlobalObject {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Lỗi dòng {0} cột {1} {2}, biểu thức excel lỗi hoặc hệ thống không hỗ trợ.
+        /// </summary>
+        public static string ExcelFormulaNotSupported {
+            get {
+                return ResourceManager.GetString("ExcelFormulaNotSupported", resourceCulture);
             }
         }
         

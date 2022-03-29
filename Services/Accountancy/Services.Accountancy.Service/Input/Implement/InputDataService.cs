@@ -35,6 +35,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.Accountancy;
 using Verp.Resources.Accountancy.InputData;
 using static Verp.Resources.Accountancy.InputData.InputDataValidationMessage;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -2413,6 +2415,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     if (string.IsNullOrWhiteSpace(value)) continue;
                     value = value.Trim();
+
+                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    {
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");                        
+                    }
+
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                     {
                         if (!DateTime.TryParse(value.ToString(), out DateTime date))
