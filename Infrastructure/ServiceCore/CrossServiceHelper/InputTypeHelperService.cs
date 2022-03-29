@@ -12,6 +12,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     {
         Task<bool> CheckReferFromCategory(ReferFromCategoryModel req);
         Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList();
+        Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId);
+        Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
     }
     public class InputTypeHelperService : IInputTypeHelperService
     {
@@ -31,6 +33,16 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<InputTypeSimpleModel>> GetInputTypeSimpleList()
         {
             return await _httpCrossService.Get<List<InputTypeSimpleModel>>($"api/internal/InternalInput/simpleList");
+        }
+
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
+        {
+            return await _httpCrossService.Get<List<BillSimpleInfoModel>>($"api/internal/InternalInput/{inputTypeId}/GetBillNotApprovedYet");
+        }
+
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
+        {
+            return await _httpCrossService.Get<List<BillSimpleInfoModel>>($"api/internal/InternalInput/{inputTypeId}/GetBillNotChekedYet");
         }
     }
 }

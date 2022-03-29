@@ -2718,6 +2718,66 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return false;
         }
 
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
+        {   
+            var sql = $"SELECT DISTINCT v.InputTypeId, v.InputBill_F_Id, v.so_ct InputBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId";
+            
+            return (await _accountancyDBContext.QueryDataTable(sql, new []{new SqlParameter("@InputTypeId", inputTypeId)}))
+                    .ConvertData<BillSimpleInfoModel>()
+                    .ToList();
+        }
+
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
+        {
+            var sql = $"SELECT DISTINCT v.InputTypeId, v.InputBill_F_Id, v.so_ct InputBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId";
+
+            return (await _accountancyDBContext.QueryDataTable(sql, new[] { new SqlParameter("@InputTypeId", inputTypeId) }))
+                    .ConvertData<BillSimpleInfoModel>()
+                    .ToList();
+        }
+
+        public async Task<bool> CheckAllBillInList(IList<BillSimpleInfoModel> models)
+        {
+            if (models.Count > 0)
+            {
+                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CheckStatusId = 1 WHERE InputBill_F_Id IN (";
+                var sqlParams = new List<SqlParameter>();
+                var prefixColumn = "@InputBill_F_Id_";
+                foreach (var item in models.Select((item, index) => new { item, index }))
+                {
+                    if (item.index > 0)
+                        sql += ", ";
+                    sql += prefixColumn + $"{item.index}";
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.InputBill_F_Id));
+                }
+                sql += ")";
+
+                await _accountancyDBContext.Database.ExecuteSqlRawAsync(sql, sqlParams);
+            }
+            return true;
+        }
+        
+        public async Task<bool> ApproveAllBillInList(IList<BillSimpleInfoModel> models)
+        {
+            if (models.Count > 0)
+            {
+                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CensorStatusId = 1 WHERE InputBill_F_Id IN (";
+                var sqlParams = new List<SqlParameter>();
+                var prefixColumn = "@InputBill_F_Id_";
+                foreach (var item in models.Select((item, index) => new { item, index }))
+                {
+                    if (item.index > 0)
+                        sql += ", ";
+                    sql += prefixColumn + $"{item.index}";
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.InputBill_F_Id));
+                }
+                sql += ")";
+
+                await _accountancyDBContext.Database.ExecuteSqlRawAsync(sql, sqlParams);
+            }
+            return true;
+        }
+
         private object ExtractBillDate(NonCamelCaseDictionary info)
         {
             object oldDateValue = null;
