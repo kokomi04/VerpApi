@@ -51,6 +51,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<LeaveConfigRole> LeaveConfigRole { get; set; }
         public virtual DbSet<LeaveConfigSeniority> LeaveConfigSeniority { get; set; }
         public virtual DbSet<LeaveConfigValidation> LeaveConfigValidation { get; set; }
+        public virtual DbSet<ObjectApprovalStep> ObjectApprovalStep { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }

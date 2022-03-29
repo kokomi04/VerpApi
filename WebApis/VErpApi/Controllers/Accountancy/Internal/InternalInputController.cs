@@ -40,5 +40,19 @@ namespace VErpApi.Controllers.Accountancy.Internal
         {
             return await _inputConfigService.GetInputTypeSimpleList().ConfigureAwait(true);
         }
+
+        [HttpGet]
+        [Route("{inputTypeId}/GetBillNotApprovedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
+        {
+            return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/GetBillNotChekedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
+        {
+            return await _inputDataService.GetBillNotChekedYet(inputTypeId);
+        }
     }
 }
