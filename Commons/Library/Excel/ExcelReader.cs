@@ -21,7 +21,7 @@ namespace VErp.Commons.Library
 {
     public class ExcelReader
     {
-        private IWorkbook _hssfwb;
+        private IWorkbook _xssfwb;
         private DataFormatter _dataFormatter = new DataFormatter(CultureInfo.CurrentCulture);
 
         public ExcelReader(string filePath) : this(new FileStream(filePath, FileMode.Open, FileAccess.Read))
@@ -32,7 +32,7 @@ namespace VErp.Commons.Library
         public ExcelReader(Stream file)
         {
             //hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
-            _hssfwb = new XSSFWorkbook(file);
+            _xssfwb = new XSSFWorkbook(file);
             file.Close();
         }
 
@@ -78,7 +78,7 @@ namespace VErp.Commons.Library
         public string[][] ReadFile(int collumnLength, int sheetAt = 0, int startRow = 0, int startCollumn = 0)
         {
             List<string[]> data = new List<string[]>();
-            ISheet sheet = _hssfwb.GetSheetAt(sheetAt);
+            ISheet sheet = _xssfwb.GetSheetAt(sheetAt);
             int rowIdx = startRow;
             IRow row;
             while ((row = sheet.GetRow(rowIdx)) != null)
@@ -115,9 +115,13 @@ namespace VErp.Commons.Library
             //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateAll();
             try
             {
-                BaseFormulaEvaluator.EvaluateAllFormulaCells(_hssfwb);
+                // BaseFormulaEvaluator.EvaluateAllFormulaCells(_xssfwb);
+
+                var eval = _xssfwb.GetCreationHelper().CreateFormulaEvaluator();
+                eval.IgnoreMissingWorkbooks = true;
+                eval.EvaluateAll();
             }
-            catch (Exception)
+            catch (Exception e)
             {
 
             }
@@ -137,10 +141,10 @@ namespace VErp.Commons.Library
 
             var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
 
-            for (int i = 0; i < _hssfwb.NumberOfSheets; i++)
+            for (int i = 0; i < _xssfwb.NumberOfSheets; i++)
             {
 
-                var sheet = _hssfwb.GetSheetAt(i);
+                var sheet = _xssfwb.GetSheetAt(i);
 
                 var sName = (sheet.SheetName ?? "").Trim();
                 sheetName = (sheetName ?? "").Trim();
@@ -547,7 +551,7 @@ namespace VErp.Commons.Library
 
                                 if (refField == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.RefFieldName} thuộc {mappingField.FieldName}");
                             }
-                           
+
 
                             fieldDisplay += " > " + displayNames[refField];
                         }
@@ -606,8 +610,19 @@ namespace VErp.Commons.Library
             var type = cell.CellType;
 
             string formulaMessage = "";
+            string cellFormular = "";
             if (cell.CellType == CellType.Formula)
             {
+                try
+                {
+                    cellFormular = cell.CellFormula;
+
+                }
+                catch (Exception _)
+                {
+
+                }
+
                 try
                 {
                     //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
@@ -615,8 +630,9 @@ namespace VErp.Commons.Library
                 }
                 catch (Exception ex)
                 {
-                    formulaMessage = cell.CellFormula + " => " + ex.Message;
+                    //formulaMessage = cellFormular + " => " + ex.Message;
                 }
+
 
 
             }
@@ -627,7 +643,7 @@ namespace VErp.Commons.Library
                     return cell.StringCellValue?.Trim();
 
                 case CellType.Formula:
-                    return formulaMessage;
+                    return PREFIX_ERROR_CELL + ((XSSFCell)cell).ErrorCellString + " => " + cell.Address.ToString() + " (" + cellFormular + ")";
 
                 case CellType.Numeric:
                     if (DateUtil.IsCellDateFormatted(cell))
@@ -655,6 +671,10 @@ namespace VErp.Commons.Library
                     {
                         return Convert.ToDecimal(cell.NumericCellValue).ToString();
                     }
+
+                case CellType.Error:
+
+                    return PREFIX_ERROR_CELL + ((XSSFCell)cell).ErrorCellString + " => " + cell.Address.ToString() + " (" + cellFormular + ")";
             }
 
             return _dataFormatter.FormatCellValue(cell);
@@ -677,5 +697,7 @@ namespace VErp.Commons.Library
 
             return columnName;
         }
+
+        public const string PREFIX_ERROR_CELL = "#ERROR#";
     }
 }

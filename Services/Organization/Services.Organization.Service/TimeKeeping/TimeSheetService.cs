@@ -9,6 +9,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using Verp.Resources.GlobalObject;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.TimeKeeping;
@@ -17,6 +18,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
+using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -388,6 +390,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
             var dataTimeSheetWithPrimaryKey = new List<RowDataImportTimeSheetModel>();
+            int i = 0;
             foreach (var row in _importData.Rows)
             {
                 var fieldCheckImportEmpty = mapping.MappingFields.FirstOrDefault(x => x.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
@@ -411,6 +414,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     if (row.ContainsKey(mappingField.Column))
                         value = row[mappingField.Column]?.ToString();
 
+                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    {
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(i + mapping.FromRow, mappingField.Column, $"{value}");
+                    }
+
                     prop.SetValue(timeSheetImportModel, value.ConvertValueByType(prop.PropertyType));
                 }
 
@@ -420,6 +428,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     row = row,
                     timeSheetImportModel = timeSheetImportModel
                 });
+                i++;
             }
 
 
