@@ -34,17 +34,20 @@ namespace Services.Organization.Service.BusinessInfo.Implement
         private readonly ObjectActivityLogFacade _objectProcessActivityLog;
         private readonly IMapper _mapper;
         private readonly IInputTypeHelperService _inputTypeHelperService;
-        
+        private readonly IVoucherTypeHelperService _voucherTypeHelperService;
+
 
         public ObjectApprovalStepService(OrganizationDBContext organizationContext
             , ILogger<ObjectApprovalStepService> logger
             , IMapper mapper
             , IActivityLogService activityLogService
-            , IInputTypeHelperService inputTypeHelperService)
+            , IInputTypeHelperService inputTypeHelperService
+            , IVoucherTypeHelperService voucherTypeHelperService)
         {
             _organizationContext = organizationContext;
             _mapper = mapper;
             _inputTypeHelperService = inputTypeHelperService;
+            _voucherTypeHelperService = voucherTypeHelperService;
 
             // _objectProcessActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectProcessStep);
         }
@@ -115,8 +118,10 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             var result = new List<ObjectApprovalStepItemModel>();
 
             var inputTask = InputMappingTypeModels();
+            var voucherTask = VoucherMappingTypeModels();
 
             result.AddRange(await inputTask);
+            result.AddRange(await voucherTask);
 
             return result;
         }
@@ -135,7 +140,30 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                     ObjectTypeId = EnumObjectType.InputType,
                     ObjectTypeName = EnumObjectType.InputType.GetEnumDescription(),
                     ObjectId = inputType.InputTypeId,
-                    ObjectName = inputType.Title
+                    ObjectName = inputType.Title,
+                    ObjectGroupId = inputType.InputTypeGroupId
+                });
+            }
+
+            return await Task.FromResult(result);
+        }
+
+        private async Task<IList<ObjectApprovalStepItemModel>> VoucherMappingTypeModels()
+        {
+            var inputTypes = await _voucherTypeHelperService.GetVoucherTypeSimpleList();
+
+            var result = new List<ObjectApprovalStepItemModel>();
+            foreach (var inputType in inputTypes)
+            {
+                result.Add(new ObjectApprovalStepItemModel
+                {
+                    ModuleTypeId = EnumModuleType.PurchaseOrder,
+                    ModuleTypeName = EnumModuleType.PurchaseOrder.GetEnumDescription(),
+                    ObjectTypeId = EnumObjectType.InputType,
+                    ObjectTypeName = EnumObjectType.InputType.GetEnumDescription(),
+                    ObjectId = inputType.VoucherTypeId,
+                    ObjectName = inputType.Title,
+                    ObjectGroupId = inputType.VoucherTypeGroupId
                 });
             }
 
