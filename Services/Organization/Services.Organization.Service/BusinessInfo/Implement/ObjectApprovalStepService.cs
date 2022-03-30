@@ -150,10 +150,10 @@ namespace Services.Organization.Service.BusinessInfo.Implement
 
         private async Task<IList<ObjectApprovalStepItemModel>> VoucherMappingTypeModels()
         {
-            var inputTypes = await _voucherTypeHelperService.GetVoucherTypeSimpleList();
+            var voucherTypes = await _voucherTypeHelperService.GetVoucherTypeSimpleList();
 
             var result = new List<ObjectApprovalStepItemModel>();
-            foreach (var inputType in inputTypes)
+            foreach (var voucherType in voucherTypes)
             {
                 result.Add(new ObjectApprovalStepItemModel
                 {
@@ -161,9 +161,9 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                     ModuleTypeName = EnumModuleType.PurchaseOrder.GetEnumDescription(),
                     ObjectTypeId = EnumObjectType.InputType,
                     ObjectTypeName = EnumObjectType.InputType.GetEnumDescription(),
-                    ObjectId = inputType.VoucherTypeId,
-                    ObjectName = inputType.Title,
-                    ObjectGroupId = inputType.VoucherTypeGroupId
+                    ObjectId = voucherType.VoucherTypeId,
+                    ObjectName = voucherType.Title,
+                    ObjectGroupId = voucherType.VoucherTypeGroupId
                 });
             }
 
