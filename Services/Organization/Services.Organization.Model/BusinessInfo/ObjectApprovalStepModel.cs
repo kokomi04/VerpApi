@@ -15,12 +15,13 @@ namespace VErp.Services.Organization.Model.BusinessInfo
 
     public class ObjectApprovalStepItemModel
     {
-        public EnumModuleType ModuleTypeId {get;set;}
-        public string ModuleTypeName {get;set;}
-        public EnumObjectType ObjectTypeId {get;set;}
-        public string ObjectTypeName {get;set;}
-        public int ObjectId {get;set;}
-        public string ObjectName {get;set;}
+        public EnumModuleType ModuleTypeId { get; set; }
+        public string ModuleTypeName { get; set; }
+        public EnumObjectType ObjectTypeId { get; set; }
+        public string ObjectTypeName { get; set; }
+        public int ObjectId { get; set; }
+        public string ObjectName { get; set; }
+        public int? ObjectGroupId { get; set; }
     }
 
 
