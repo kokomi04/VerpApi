@@ -2245,7 +2245,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         var oldBillInfo= await GetBillInfo(inputTypeId, bill.Key);
 
-                        var newBillInfo = oldBillInfo;
+                        var newBillInfo = new BillInfoModel {
+                            Info = oldBillInfo.Info,
+                            OutsideImportMappingData = oldBillInfo.OutsideImportMappingData,
+                            Rows = oldBillInfo.Rows
+                        };
 
                         foreach (var item in bill.Value.Info)
                         {
@@ -2279,6 +2283,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         foreach (var row in bill.Value.Rows)
                         {
+                            if (row.Count == 0) continue;
+
+                            if(validateFieldInfos.Count() == 0)
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Phải chọn cột làm định danh dòng chi tiết");
+
                             var existsRows = newBillInfo.Rows.Where(x => EqualityBetweenTwoNomCamel(x, row, validateFieldInfos)).ToList();
                             if (existsRows.Count > 1)
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
@@ -2305,15 +2314,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         // Get changed info
                         var singleFields = fields.Where(f => !f.IsMultiRow).ToList();
                         
-                        await ValidateAccountantConfig(bill.Value.Info, oldBillInfo.Info);
+                        await ValidateAccountantConfig(newBillInfo.Info, oldBillInfo.Info);
 
-                        NonCamelCaseDictionary futureInfo = bill.Value.Info;
-                        ValidateRowModel checkInfo = new ValidateRowModel(bill.Value.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields));
+                        NonCamelCaseDictionary futureInfo = newBillInfo.Info;
+                        ValidateRowModel checkInfo = new ValidateRowModel(newBillInfo.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields));
 
                         // Get changed rows
                         List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
                         var multiFields = fields.Where(f => f.IsMultiRow).ToList();
-                        foreach (var futureRow in bill.Value.Rows)
+                        foreach (var futureRow in newBillInfo.Rows)
                         {
                             futureRow.TryGetValue("F_Id", out string futureValue);
                             NonCamelCaseDictionary curRow = oldBillInfo.Rows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
@@ -2343,7 +2352,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (billInfo == null) throw BillNotFound.BadRequest();
 
                         // Before saving action (SQL)
-                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, newBillInfo, inputFields, EnumActionType.Update, billInfo.FId);
                         if (result.Code != 0)
                         {
                             if (string.IsNullOrWhiteSpace(result.Message))
@@ -2363,7 +2372,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await _accountancyDBContext.SaveChangesAsync();
 
                         // After saving action (SQL)
-                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill.Value, inputFields, EnumActionType.Update, billInfo.FId);
+                        await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, newBillInfo, inputFields, EnumActionType.Update, billInfo.FId);
                     }
 
                     await ConfirmCustomGenCode(generateTypeLastValues);
