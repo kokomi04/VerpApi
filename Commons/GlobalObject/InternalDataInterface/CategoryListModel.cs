@@ -20,4 +20,24 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         public int? CategoryGroupId { get; set; }
     }
+
+    public class CategoryFieldSimpleModel
+    {
+        public int CategoryFieldId { get; set; }
+        public int CategoryId { get; set; }
+        public string CategoryFieldName { get; set; }
+        public string Title { get; set; }
+        public int FormTypeId { get; set; }
+    }
+
+    public class CategoryFullSimpleModel : CategoryListModel
+    {
+        public ICollection<CategoryFieldSimpleModel> CategoryField { get; set; }
+
+        public CategoryFullSimpleModel()
+        {
+            CategoryField = new List<CategoryFieldSimpleModel>();
+        }
+
+    }
 }
