@@ -37,7 +37,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     public class BillSimpleInfoModel
     {
         public int InputTypeId { get; set; }
-        public int InputBill_F_Id { get; set; }
-        public int InputBillCode { get; set; }
+        public long InputBill_F_Id { get; set; }
+        public string InputBillCode { get; set; }
     }
 }
