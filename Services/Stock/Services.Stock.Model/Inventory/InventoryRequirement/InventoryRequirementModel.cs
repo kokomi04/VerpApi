@@ -55,6 +55,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public decimal PrimaryQuantityRemaining { get; set; }
         public decimal InventoryQuantity { get; set; }
         public decimal PrimaryQuantity { get; set; }
+        public int? ProductUnitConversionId { get; set; }
         public decimal? ProductUnitConversionQuantity { get; set; }
 
         public string OrderCode { get; set; }
