@@ -41,9 +41,9 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
 
-        Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId);
-        Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
-        Task<bool> CheckAllBillInList(IList<BillSimpleInfoModel> models);
-        Task<bool> ApproveAllBillInList(IList<BillSimpleInfoModel> models);
+        Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId);
+        Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
+        Task<bool> CheckAllBillInList(IList<ObjectBillSimpleInfoModel> models);
+        Task<bool> ApproveAllBillInList(IList<ObjectBillSimpleInfoModel> models);
     }
 }

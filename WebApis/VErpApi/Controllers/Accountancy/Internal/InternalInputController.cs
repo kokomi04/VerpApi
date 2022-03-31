@@ -43,14 +43,14 @@ namespace VErpApi.Controllers.Accountancy.Internal
 
         [HttpGet]
         [Route("{inputTypeId}/GetBillNotApprovedYet")]
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
         {
             return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/GetBillNotChekedYet")]
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
         {
             return await _inputDataService.GetBillNotChekedYet(inputTypeId);
         }
