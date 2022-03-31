@@ -507,7 +507,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                                          po.ProductionOrderId
                                      }).ToListAsync())
                              .GroupBy(sg => sg.StepGroupId)
-                             .ToDictionary(g => g.Key, g => g.Select(sg => sg.ProductionOrderId).ToList());
+                             .ToDictionary(g => g.Key, g => g.Select(sg => sg.ProductionOrderId).Distinct().ToList());
 
 
             var finishStepIds = _manufacturingDBContext.ProductionStep
@@ -546,11 +546,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                     var productDatas = productionOrderDetails
                         .Where(pod => pod.ProductionOrderId == productionOrderId)
-                        .GroupBy(pod => new { pod.ProductId, pod.OrderCode })
+                        .GroupBy(pod => new { pod.ProductId, pod.OrderCode, pod.PartnerId })
                         .Select(g => new
                         {
-                            ProductId = g.Key.ProductId,
-                            OrderCode = g.Key.OrderCode,
+                            g.Key.ProductId,
+                            g.Key.OrderCode,
+                            g.Key.PartnerId,
                             Quantity = g.Sum(pod => pod.Quantity),
                         })
                         .ToList();
@@ -575,6 +576,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         {
                             ProductId = productData.ProductId,
                             PlanQuantity = productData.Quantity.Value,
+                            PartnerId = productData.PartnerId,
                             ImportQuantity = totalPlanQuantity.HasValue ? totalImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
                             LastestDateImportQuantity = totalPlanQuantity.HasValue ? totalLastestDateImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
                             LastestWeekImportQuantity = totalPlanQuantity.HasValue ? totalLastestWeekImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
