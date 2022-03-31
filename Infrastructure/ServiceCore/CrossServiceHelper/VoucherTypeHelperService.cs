@@ -13,8 +13,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> CheckReferFromCategory(ReferFromCategoryModel req);
         Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList();
         Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IEnumerable<string> orderCodes);
-        Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int voucherTypeId);
-        Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int voucherTypeId);
+        Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int voucherTypeId);
+        Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int voucherTypeId);
     }
     public class VoucherTypeHelperService : IVoucherTypeHelperService
     {
@@ -41,14 +41,14 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Post<IList<VoucherOrderDetailSimpleModel>>($"api/internal/InternalVoucher/OrderByCodes", orderCodes);
         }
 
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int voucherTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int voucherTypeId)
         {
-            return await _httpCrossService.Get<List<BillSimpleInfoModel>>($"api/internal/InternalVoucher/{voucherTypeId}/GetBillNotApprovedYet");
+            return await _httpCrossService.Get<List<ObjectBillSimpleInfoModel>>($"api/internal/InternalVoucher/{voucherTypeId}/GetBillNotApprovedYet");
         }
 
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int voucherTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int voucherTypeId)
         {
-            return await _httpCrossService.Get<List<BillSimpleInfoModel>>($"api/internal/InternalVoucher/{voucherTypeId}/GetBillNotChekedYet");
+            return await _httpCrossService.Get<List<ObjectBillSimpleInfoModel>>($"api/internal/InternalVoucher/{voucherTypeId}/GetBillNotChekedYet");
         }
     }
 }

@@ -2735,25 +2735,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return false;
         }
 
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
         {   
-            var sql = $"SELECT DISTINCT v.InputTypeId, v.InputBill_F_Id, v.so_ct InputBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId";
             
             return (await _accountancyDBContext.QueryDataTable(sql, new []{new SqlParameter("@InputTypeId", inputTypeId)}))
-                    .ConvertData<BillSimpleInfoModel>()
+                    .ConvertData<ObjectBillSimpleInfoModel>()
                     .ToList();
         }
 
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.InputTypeId, v.InputBill_F_Id, v.so_ct InputBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId";
 
             return (await _accountancyDBContext.QueryDataTable(sql, new[] { new SqlParameter("@InputTypeId", inputTypeId) }))
-                    .ConvertData<BillSimpleInfoModel>()
+                    .ConvertData<ObjectBillSimpleInfoModel>()
                     .ToList();
         }
 
-        public async Task<bool> CheckAllBillInList(IList<BillSimpleInfoModel> models)
+        public async Task<bool> CheckAllBillInList(IList<ObjectBillSimpleInfoModel> models)
         {
             if (models.Count > 0)
             {
@@ -2765,7 +2765,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (item.index > 0)
                         sql += ", ";
                     sql += prefixColumn + $"{item.index}";
-                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.InputBill_F_Id));
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.ObjectBill_F_Id));
                 }
                 sql += ")";
 
@@ -2774,7 +2774,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return true;
         }
         
-        public async Task<bool> ApproveAllBillInList(IList<BillSimpleInfoModel> models)
+        public async Task<bool> ApproveAllBillInList(IList<ObjectBillSimpleInfoModel> models)
         {
             if (models.Count > 0)
             {
@@ -2786,7 +2786,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (item.index > 0)
                         sql += ", ";
                     sql += prefixColumn + $"{item.index}";
-                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.InputBill_F_Id));
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.ObjectBill_F_Id));
                 }
                 sql += ")";
 

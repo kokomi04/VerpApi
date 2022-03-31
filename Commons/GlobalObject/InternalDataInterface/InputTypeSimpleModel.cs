@@ -33,11 +33,4 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int InputFieldId { get; set; }
         public EnumFormType FormTypeId { get; set; }
     }
-
-    public class BillSimpleInfoModel
-    {
-        public int InputTypeId { get; set; }
-        public long InputBill_F_Id { get; set; }
-        public string InputBillCode { get; set; }
-    }
 }

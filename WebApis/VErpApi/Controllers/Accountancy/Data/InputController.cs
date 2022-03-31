@@ -273,28 +273,28 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/GetBillNotApprovedYet")]
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute]int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute]int inputTypeId)
         {
             return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
         }
 
         [HttpGet]
         [Route("{inputTypeId}/GetBillNotChekedYet")]
-        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
         {
         return await _inputDataService.GetBillNotChekedYet(inputTypeId);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/CheckAllBillInList")]
-        public async Task<bool> CheckAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<BillSimpleInfoModel> models)
+        public async Task<bool> CheckAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
         {
             return await _inputDataService.CheckAllBillInList(models);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/ApproveAllBillInList")]
-        public async Task<bool> ApproveAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<BillSimpleInfoModel> models)
+        public async Task<bool> ApproveAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
         {
             return await _inputDataService.ApproveAllBillInList(models);
         }
