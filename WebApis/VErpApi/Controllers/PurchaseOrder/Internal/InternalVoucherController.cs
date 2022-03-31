@@ -47,5 +47,19 @@ namespace VErpApi.Controllers.PurchaseOrder.Internal
         {
             return await _voucherDataService.OrderByCodes(orderCodes);
         }
+
+        [HttpGet]
+        [Route("{voucherTypeId}/GetBillNotApprovedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int voucherTypeId)
+        {
+            return await _voucherDataService.GetBillNotApprovedYet(voucherTypeId);
+        }
+
+        [HttpGet]
+        [Route("{voucherTypeId}/GetBillNotChekedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int voucherTypeId)
+        {
+            return await _voucherDataService.GetBillNotChekedYet(voucherTypeId);
+        }
     }
 }

@@ -51,5 +51,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<IList<NonCamelCaseDictionary>> OrderRowsByCodes(IList<string> orderCodes);
 
         Task<IList<NonCamelCaseDictionary>> OrderDetails(IList<long> fIds);
+
+        Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId);
+        Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
+        Task<bool> CheckAllBillInList(IList<BillSimpleInfoModel> models);
+        Task<bool> ApproveAllBillInList(IList<BillSimpleInfoModel> models);
     }
 }
