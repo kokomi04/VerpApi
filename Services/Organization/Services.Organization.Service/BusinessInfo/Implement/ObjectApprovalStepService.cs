@@ -86,6 +86,9 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                 case (int)EnumObjectType.InputType:
                     await ValidateAccountancyBill(model.ObjectId, model.ObjectApprovalStepTypeId);
                     break;
+                case (int)EnumObjectType.VoucherType:
+                    await ValidatePurchaseOrderBill(model.ObjectId, model.ObjectApprovalStepTypeId);
+                    break;
             }
         }
 
@@ -100,6 +103,22 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             else
             {
                 var data = await _inputTypeHelperService.GetBillNotChekedYet(inputTypeId);
+                if (data.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước kiểm tra chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được kiểm tra");
+            }
+        }
+
+        private async Task ValidatePurchaseOrderBill(int voucherTypeId, EnumObjectApprovalStepType type)
+        {
+            if (EnumObjectApprovalStepType.ApprovalStep == type)
+            {
+                var data = await _voucherTypeHelperService.GetBillNotApprovedYet(voucherTypeId);
+                if (data.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước duyệt chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được duyệt");
+            }
+            else
+            {
+                var data = await _voucherTypeHelperService.GetBillNotChekedYet(voucherTypeId);
                 if (data.Count > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước kiểm tra chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được kiểm tra");
             }
@@ -159,8 +178,8 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                 {
                     ModuleTypeId = EnumModuleType.PurchaseOrder,
                     ModuleTypeName = EnumModuleType.PurchaseOrder.GetEnumDescription(),
-                    ObjectTypeId = EnumObjectType.InputType,
-                    ObjectTypeName = EnumObjectType.InputType.GetEnumDescription(),
+                    ObjectTypeId = EnumObjectType.VoucherType,
+                    ObjectTypeName = EnumObjectType.VoucherType.GetEnumDescription(),
                     ObjectId = voucherType.VoucherTypeId,
                     ObjectName = voucherType.Title,
                     ObjectGroupId = voucherType.VoucherTypeGroupId

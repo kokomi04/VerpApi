@@ -174,5 +174,33 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             return await _voucherDataService.OrderRowsByCodes(orderCodes);
         }
+
+        [HttpGet]
+        [Route("{voucherTypeId}/GetBillNotApprovedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int voucherTypeId)
+        {
+            return await _voucherDataService.GetBillNotApprovedYet(voucherTypeId);
+        }
+
+        [HttpGet]
+        [Route("{voucherTypeId}/GetBillNotChekedYet")]
+        public async Task<IList<BillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int voucherTypeId)
+        {
+            return await _voucherDataService.GetBillNotChekedYet(voucherTypeId);
+        }
+
+        [HttpPut]
+        [Route("{voucherTypeId}/CheckAllBillInList")]
+        public async Task<bool> CheckAllBillInList([FromRoute] int voucherTypeId, [FromBody] IList<BillSimpleInfoModel> models)
+        {
+            return await _voucherDataService.CheckAllBillInList(models);
+        }
+
+        [HttpPut]
+        [Route("{voucherTypeId}/ApproveAllBillInList")]
+        public async Task<bool> ApproveAllBillInList([FromRoute] int voucherTypeId, [FromBody] IList<BillSimpleInfoModel> models)
+        {
+            return await _voucherDataService.ApproveAllBillInList(models);
+        }
     }
 }
