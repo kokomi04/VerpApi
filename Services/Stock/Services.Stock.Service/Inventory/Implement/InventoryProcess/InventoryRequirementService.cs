@@ -128,6 +128,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   ird.PrimaryQuantity,
                                                   ird.ProductUnitConversionQuantity,
 
+                                                  ird.ProductUnitConversionId,
+
 
                                                   s.InventoryQuantity,
                                                   PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining
@@ -182,6 +184,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                             ir.PrimaryQuantity,
                             ir.ProductUnitConversionQuantity,
+
+                            ir.ProductUnitConversionId,
+
                             ir.InventoryQuantity,
                             ir.PrimaryQuantityRemaining
                         };
@@ -232,6 +237,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     PrimaryQuantityRemaining = x.PrimaryQuantityRemaining??0,
                     InventoryQuantity = x.InventoryQuantity,
                     PrimaryQuantity = x.PrimaryQuantity,
+                    ProductUnitConversionId = x.ProductUnitConversionId,
                     ProductUnitConversionQuantity = x.ProductUnitConversionQuantity
 
                 }).ToList();
