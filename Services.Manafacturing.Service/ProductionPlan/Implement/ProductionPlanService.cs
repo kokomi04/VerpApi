@@ -296,8 +296,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var productionSteps = await _manufacturingDBContext.ProductionStep
                .Where(ps => productionOrderIds.Contains(ps.ContainerId)
                && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+               && ps.StepId.HasValue
                && ps.IsGroup.HasValue
-               && ps.IsGroup.Value
                && !ps.IsFinish)
                .ToListAsync();
 
