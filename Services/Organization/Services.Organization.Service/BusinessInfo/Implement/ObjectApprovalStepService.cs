@@ -62,7 +62,8 @@ namespace Services.Organization.Service.BusinessInfo.Implement
 
         public async Task<bool> UpdateObjectApprovalStep(ObjectApprovalStepModel model)
         {
-            await ValidateObjectApprovalStep(model);
+            if(!model.IsEnable)
+                await ValidateObjectApprovalStep(model);
 
             var entity = await _organizationContext.ObjectApprovalStep.FirstOrDefaultAsync(x => x.ObjectTypeId == model.ObjectTypeId && x.ObjectId == model.ObjectId && x.ObjectApprovalStepTypeId == (int)model.ObjectApprovalStepTypeId);
 
