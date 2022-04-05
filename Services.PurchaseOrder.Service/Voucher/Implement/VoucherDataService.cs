@@ -2600,7 +2600,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId";
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
             return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2609,7 +2609,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId";
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
             return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
