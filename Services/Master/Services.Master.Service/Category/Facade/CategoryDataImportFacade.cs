@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,6 +20,8 @@ using VErp.Services.Master.Model.Category;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using Verp.Resources.Master.Category;
 using VErp.Infrastructure.ServiceCore.Facade;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Services.Master.Service.Category
 {
@@ -236,6 +238,11 @@ namespace VErp.Services.Master.Service.Category
 
                     if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
                         continue;
+
+                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    {
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(i + mapping.FromRow, mf.Column, $"\"{mf.Title}\" {value}");
+                    }
 
                     if (!string.IsNullOrWhiteSpace(mf.RefFieldName))
                     {

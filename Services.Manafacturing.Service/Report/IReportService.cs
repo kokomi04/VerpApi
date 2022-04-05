@@ -20,5 +20,6 @@ namespace VErp.Services.Manafacturing.Service.Report
         Task<IList<StepReportModel>> GetProcessingStepReport(long productionOrderId, int[] stepIds);
         Task<IList<OutsourcePartRequestReportModel>> GetOursourcePartRequestReport(long fromDate, long toDate, long? productionOrderId);
         Task<PageData<OutsourceStepRequestReportModel>> GetOursourceStepRequestReport(int page, int size, string orderByFieldName, bool asc, Clause filters);
+        Task<IDictionary<long, DailyImportModel>> GetDailyImport(long monthPlanId, int stepId);
     }
 }

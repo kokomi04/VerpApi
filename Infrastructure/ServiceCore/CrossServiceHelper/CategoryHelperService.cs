@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
         
         Task<IList<CategoryListModel>> GetDynamicCates();
+        Task<IList<CategoryFullSimpleModel>> GetAllCategoryConfig();
     }
     public class CategoryHelperService : ICategoryHelperService
     {
@@ -61,6 +62,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request)
         {
             return await _httpCrossService.Post<PageData<NonCamelCaseDictionary>>($"api/internal/InternalCategory/{categoryCode}/data/Search", request);
+        }
+
+        public async Task<IList<CategoryFullSimpleModel>> GetAllCategoryConfig()
+        {
+            return await _httpCrossService.Get<IList<CategoryFullSimpleModel>>($"api/internal/InternalCategory/GetAllCategoryConfig");
         }
     }
 }

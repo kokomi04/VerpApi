@@ -23,6 +23,7 @@ namespace VErp.Commons.Library.Model
         public string FieldName { get; set; }
         public string FieldTitle { get; set; }
         public bool IsRequired { get; set; }
+        public bool IsMultiRow { get; set; }
         public int? Type { get; set; }
 
         public EnumDataType? DataTypeId { get; set; }

@@ -83,7 +83,12 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
 
-
+        [HttpGet]
+        [Route("DailyImport/month/{monthPlanId}/step/{stepId}")]
+        public async Task<IDictionary<long, DailyImportModel>> GetDailyImport([FromRoute] long monthPlanId, [FromRoute] int stepId)
+        {
+            return await _reportService.GetDailyImport(monthPlanId, stepId);
+        }
 
 
     }

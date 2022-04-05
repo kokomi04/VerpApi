@@ -40,6 +40,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly ICategoryHelperService _categoryHelperService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
@@ -51,7 +52,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IStockHelperService stockHelperService
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
-            , IOrganizationHelperService organizationHelperService)
+            , IOrganizationHelperService organizationHelperService
+            , ICategoryHelperService categoryHelperService)
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
@@ -64,6 +66,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _voucherTypeHelperService = voucherTypeHelperService;
             _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
             _organizationHelperService = organizationHelperService;
+            _categoryHelperService = categoryHelperService;
         }
 
 
@@ -260,6 +263,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             var inputTask = InputMappingTypeModels();
 
             var manufactureTask = ManufactureMappingTypeModels();
+            
+            var masterTask = MasterMappingTypeModels();
 
             result.AddRange(await organizationTask);
             result.AddRange(await stockTask);
@@ -267,6 +272,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
             result.AddRange(await manufactureTask);
+            result.AddRange(await masterTask);
 
             if (moduleTypeId.HasValue)
             {
@@ -516,6 +522,30 @@ namespace VErp.Services.Master.Service.Config.Implement
                         configObjectId: areaField.VoucherAreaFieldId,
                         targetObjectName: voucherType.Title,
                         fieldName: areaField.VoucherAreaFieldTitle)
+                    );
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> MasterMappingTypeModels()
+        {
+            var categories = _categoryHelperService.GetAllCategoryConfig();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+            foreach (var category in await categories)
+            {
+                foreach (var field in category.CategoryField.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
+                {
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.Master,
+                        targeObjectTypeId: EnumObjectType.Category,
+                        configObjectTypeId: EnumObjectType.CategoryField,
+                        configObjectId: field.CategoryFieldId,
+                        targetObjectName: category.Title,
+                        fieldName: field.CategoryFieldName)
                     );
                 }
             }
