@@ -156,15 +156,15 @@ namespace Services.Organization.Model.TimeKeeping
         // [Display(Name = "Thời gian chấm công ngày 31", GroupName = "TT chấm công")]
         // public string TimeKeepingDay31 { get; set; }
         
-        [Display(Name = "Tổng thời gian(phút) về muộn", GroupName = "Vào trễ")]
+        [Display(Name = "Tổng thời gian(phút) vào muộn", GroupName = "Vào trễ")]
         public long MinsLate { get; set; }
-        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Vào trễ")]
+        [Display(Name = "Số lần vào", GroupName = "Vào trễ")]
         public int CountedLate { get; set; }
         
         [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Ra sớm")]
         public long MinsEarly { get; set; }
 
-        [Display(Name = "Tổng thời gian(phút) về sớm", GroupName = "Ra sớm")]
+        [Display(Name = "Số lần về sớm", GroupName = "Ra sớm")]
         public int CountedEarly { get; set; }
 
         

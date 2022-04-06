@@ -363,6 +363,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
             fields.AddRange(fieldsAbsenceTypeSymbols);
+            fields.AddRange(fieldsOvertimeLevel);
 
             fields.Add(new CategoryFieldNameModel
             {
