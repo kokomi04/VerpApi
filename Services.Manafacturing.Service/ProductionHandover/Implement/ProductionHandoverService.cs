@@ -79,6 +79,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return await CreateProductionHandover(productionOrderId, data, EnumHandoverStatus.Waiting);
         }
 
+        public async Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverInputModel> datas)
+        {
+            var trans = await  _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var data in datas)
+                {
+                    await CreateProductionHandover(data.ProductionOrderId, data, EnumHandoverStatus.Waiting);
+                }
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
         private async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data, EnumHandoverStatus status)
         {
             try
