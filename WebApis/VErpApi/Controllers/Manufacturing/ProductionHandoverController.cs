@@ -98,5 +98,12 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionHandoverService.ConfirmProductionHandover(productionOrderId, productionHandoverId, EnumHandoverStatus.Rejected);
         }
+
+        [HttpPost]
+        [Route("patch")]
+        public async Task<bool> CreateProductionHandoverPatch([FromBody] IList<ProductionHandoverInputModel> data)
+        {
+            return await _productionHandoverService.CreateProductionHandoverPatch(data);
+        }
     }
 }
