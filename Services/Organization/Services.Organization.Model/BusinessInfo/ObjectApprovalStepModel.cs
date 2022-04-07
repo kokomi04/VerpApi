@@ -11,6 +11,7 @@ namespace VErp.Services.Organization.Model.BusinessInfo
         public int ObjectId { get; set; }
         public EnumObjectApprovalStepType ObjectApprovalStepTypeId { get; set; }
         public bool IsEnable { get; set; }
+        public string ObjectFieldEnable { get; set; }
     }
 
     public class ObjectApprovalStepItemModel

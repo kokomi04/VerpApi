@@ -670,6 +670,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_LeaveConfigValidation_LeaveConfig");
             });
 
+            modelBuilder.Entity<ObjectApprovalStep>(entity =>
+            {
+                entity.Property(e => e.ObjectFieldEnable).HasMaxLength(1024);
+            });
+
             modelBuilder.Entity<ObjectProcessObject>(entity =>
             {
                 entity.Property(e => e.Note).HasMaxLength(512);
