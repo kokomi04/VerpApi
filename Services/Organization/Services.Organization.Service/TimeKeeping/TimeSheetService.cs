@@ -462,8 +462,21 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     var timeKeepingDayProp = $"{timeKeepingDayPropPrefix}{unixTime}";
 
-                    var timeInAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowIn.timeSheetImportModel) as string;
-                    var timeOutAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowOut.timeSheetImportModel) as string;
+                    var mappingFieldTimeKeepingDay = mapping.MappingFields.FirstOrDefault(x => x.FieldName == timeKeepingDayProp);
+                    if (mappingFieldTimeKeepingDay == null)
+                        continue;
+
+                    string timeInAsString = null;
+                    string timeOutAsString = null;
+
+                    if (rowIn.row.ContainsKey(mappingFieldTimeKeepingDay.Column))
+                        timeInAsString = rowIn.row[mappingFieldTimeKeepingDay.Column]?.ToString();
+
+                    if (rowOut.row.ContainsKey(mappingFieldTimeKeepingDay.Column))
+                        timeInAsString = rowOut.row[mappingFieldTimeKeepingDay.Column]?.ToString();
+
+                    // var timeInAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowIn.timeSheetImportModel) as string;
+                    // var timeOutAsString = typeInfo.GetProperty(timeKeepingDayProp).GetValue(rowOut.timeSheetImportModel) as string;
 
                     if (timeInAsString == absentSymbol.SymbolCode) continue;
 
@@ -498,71 +511,73 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         TimeOut = TimeSpan.Parse(timeOutAsString),
                         EmployeeId = employee.UserId
                     };
-
-                    var timeSheetAggregate = new TimeSheetAggregateModel
-                    {
-                        CountedAbsence = rowIn.timeSheetImportModel.CountedAbsence,
-                        CountedEarly = rowIn.timeSheetImportModel.CountedEarly,
-                        CountedLate = rowIn.timeSheetImportModel.CountedLate,
-                        CountedWeekday = rowIn.timeSheetImportModel.CountedWeekday,
-                        CountedWeekdayHour = rowIn.timeSheetImportModel.CountedWeekdayHour,
-                        CountedWeekend = rowIn.timeSheetImportModel.CountedWeekend,
-                        CountedWeekendHour = rowIn.timeSheetImportModel.CountedWeekendHour,
-                        EmployeeId = employee.UserId,
-                        MinsEarly = rowIn.timeSheetImportModel.MinsEarly,
-                        MinsLate = rowIn.timeSheetImportModel.MinsLate,
-                        // Overtime1 = rowIn.timeSheetImportModel.Overtime1,
-                        // Overtime2 = rowIn.timeSheetImportModel.Overtime2,
-                        // Overtime3 = rowIn.timeSheetImportModel.Overtime3,
-                    };
-
-                    var timeSheetDayOffForPerson = absenceTypeSymbols.Select(absence =>
-                    {
-                        var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == absence.SymbolCode);
-                        if (mappingField == null)
-                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {absence.SymbolCode}");
-
-                        string countedDayOffAsString = null;
-                        if (rowIn.row.ContainsKey(mappingField.Column))
-                            countedDayOffAsString = rowIn.row[mappingField.Column]?.ToString();
-
-                        var countedDayOff = int.Parse(string.IsNullOrWhiteSpace(countedDayOffAsString) ? "0" : countedDayOffAsString);
-
-                        return new TimeSheetDayOffModel
-                        {
-                            AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId,
-                            EmployeeId = employee.UserId,
-                            CountedDayOff = countedDayOff
-                        };
-                    }).Where(x => x.CountedDayOff > 0).ToList();
-
-                    var timeSheetOvertimeForPerson = overtimeLevels.Select(overtimeLevel =>
-                    {
-                        var timeKeepingOvertimeProp = $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}";
-                        var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == timeKeepingOvertimeProp);
-                        if (mappingField == null)
-                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {timeKeepingOvertimeProp}");
-
-                        string minsOvertimeAsString = null;
-                        if (rowIn.row.ContainsKey(mappingField.Column))
-                            minsOvertimeAsString = rowIn.row[mappingField.Column]?.ToString();
-
-                        var minsOvertime =  decimal.Parse(string.IsNullOrWhiteSpace(minsOvertimeAsString) ? "0" : minsOvertimeAsString);
-
-                        return new TimeSheetOvertimeModel
-                        {
-                            OvertimeLevelId = overtimeLevel.OvertimeLevelId,
-                            EmployeeId = employee.UserId,
-                            MinsOvertime = minsOvertime
-                        };
-                    }).Where(x => x.MinsOvertime > 0).ToList();
-
-
-                    timeSheetAggregates.Add(timeSheetAggregate);
-                    timeSheetDayOffs.AddRange(timeSheetDayOffForPerson);
                     timeSheetDetails.Add(timeSheetDetail);
-                    timeSheetOvertimes.AddRange(timeSheetOvertimeForPerson);
                 }
+
+                var timeSheetAggregate = new TimeSheetAggregateModel
+                {
+                    CountedAbsence = rowIn.timeSheetImportModel.CountedAbsence,
+                    CountedEarly = rowIn.timeSheetImportModel.CountedEarly,
+                    CountedLate = rowIn.timeSheetImportModel.CountedLate,
+                    CountedWeekday = rowIn.timeSheetImportModel.CountedWeekday,
+                    CountedWeekdayHour = rowIn.timeSheetImportModel.CountedWeekdayHour,
+                    CountedWeekend = rowIn.timeSheetImportModel.CountedWeekend,
+                    CountedWeekendHour = rowIn.timeSheetImportModel.CountedWeekendHour,
+                    EmployeeId = employee.UserId,
+                    MinsEarly = rowIn.timeSheetImportModel.MinsEarly,
+                    MinsLate = rowIn.timeSheetImportModel.MinsLate,
+                    // Overtime1 = rowIn.timeSheetImportModel.Overtime1,
+                    // Overtime2 = rowIn.timeSheetImportModel.Overtime2,
+                    // Overtime3 = rowIn.timeSheetImportModel.Overtime3,
+                };
+
+                var timeSheetDayOffForPerson = absenceTypeSymbols.Where(absence => mapping.MappingFields.Any(x => x.FieldName == absence.SymbolCode))
+                .Select(absence =>
+                {
+                    var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == absence.SymbolCode);
+                    if (mappingField == null)
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {absence.SymbolCode}");
+
+                    string countedDayOffAsString = null;
+                    if (rowIn.row.ContainsKey(mappingField.Column))
+                        countedDayOffAsString = rowIn.row[mappingField.Column]?.ToString();
+
+                    var countedDayOff = int.Parse(string.IsNullOrWhiteSpace(countedDayOffAsString) ? "0" : countedDayOffAsString);
+
+                    return new TimeSheetDayOffModel
+                    {
+                        AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId,
+                        EmployeeId = employee.UserId,
+                        CountedDayOff = countedDayOff
+                    };
+                }).Where(x => x.CountedDayOff > 0).ToList();
+
+                var timeSheetOvertimeForPerson = overtimeLevels.Where(overtimeLevel => mapping.MappingFields.Any(x => x.FieldName == $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}"))
+                .Select(overtimeLevel =>
+                {
+                    var timeKeepingOvertimeProp = $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}";
+                    var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == timeKeepingOvertimeProp);
+                    if (mappingField == null)
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {timeKeepingOvertimeProp}");
+
+                    string minsOvertimeAsString = null;
+                    if (rowIn.row.ContainsKey(mappingField.Column))
+                        minsOvertimeAsString = rowIn.row[mappingField.Column]?.ToString();
+
+                    var minsOvertime = decimal.Parse(string.IsNullOrWhiteSpace(minsOvertimeAsString) ? "0" : minsOvertimeAsString);
+
+                    return new TimeSheetOvertimeModel
+                    {
+                        OvertimeLevelId = overtimeLevel.OvertimeLevelId,
+                        EmployeeId = employee.UserId,
+                        MinsOvertime = minsOvertime
+                    };
+                }).Where(x => x.MinsOvertime > 0).ToList();
+
+
+                timeSheetAggregates.Add(timeSheetAggregate);
+                timeSheetDayOffs.AddRange(timeSheetDayOffForPerson);
+                timeSheetOvertimes.AddRange(timeSheetOvertimeForPerson);
             }
 
             var trans = await _organizationDBContext.Database.BeginTransactionAsync();
