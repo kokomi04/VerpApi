@@ -43,18 +43,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }
     }
-
-    public class ProgressStatusInputModel
-    {
-        public string ProductionOrderCode { get; set; }
-        public string InventoryCode { get; set; }
-        public IList<ProductionInventoryRequirementEntity> Inventories { get; set; }
-        public ProgressStatusInputModel()
-        {
-            Inventories = new List<ProductionInventoryRequirementEntity>();
-        }
-    }
-
+ 
     public class ProductionInventoryRequirementEntity : ProductionInventoryRequirementBaseModel
     {
         public int Status { get; set; }

@@ -11,6 +11,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 
 namespace VErpApi.Controllers.Manufacturing.Internal
@@ -30,7 +31,7 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 
         [HttpPut]
         [Route("status")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProgressStatusInputModel data)
+        public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProductionOrderStatusDataModel data)
         {
             return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
         }

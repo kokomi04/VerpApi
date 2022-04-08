@@ -59,7 +59,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , IQueueProcessHelperService queueProcessHelperService
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
         {
             _asyncRunner = asyncRunner;
             _currentContextService = currentContextService;
@@ -437,9 +438,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Processing, inventoryObj.InventoryCode);
+                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.ProcessingLessStarted, inventoryObj.InventoryCode);
 
-                        await UpdateIgnoreAllocation(inventoryDetails);
+                        //await UpdateIgnoreAllocation(inventoryDetails);
 
                         return true;
                     }

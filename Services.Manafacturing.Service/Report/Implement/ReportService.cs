@@ -537,6 +537,14 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
         public async Task<IList<ProcessingOrderListModel>> GetProcessingOrderList()
         {
+            var statusIds = new[]
+            {
+                EnumProductionStatus.ProcessingLessStarted,
+                EnumProductionStatus.ProcessingFullStarted,
+                EnumProductionStatus.OverDeadline
+            };
+            var strStatusId = string.Join(",", statusIds.Select(s => (int)s).ToArray());
+
             var sql = @$"SELECT 
                     v.ProductionOrderId,
                     v.ProductionOrderCode,
@@ -544,7 +552,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     v.StartDate,
                     v.EndDate  
                 FROM vProductionOrder v 
-                WHERE v.ProductionOrderStatus = {(int)EnumProductionStatus.Processing} OR v.ProductionOrderStatus = {(int)EnumProductionStatus.OverDeadline}";
+                WHERE v.ProductionOrderStatus IN ({strStatusId})";
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
             var lst = resultData

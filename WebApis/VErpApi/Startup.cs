@@ -39,6 +39,15 @@ using VErp.WebApis.VErpApi.Validator;
 using VErp.Commons.Library;
 using VErp.Services.Master.Service.Webpush;
 using Lib.Net.Http.WebPush;
+using VErp.Commons.Library.Queue;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using System.Threading.Tasks;
+using System.Threading;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Service.ProductionOrder;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
+using VErp.Services.Stock.Service.Stock;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -68,7 +77,7 @@ namespace VErp.WebApis.VErpApi
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
             _cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
-            
+
             services
                 .AddIdentityServer()
                 .AddSigningCredential(_cert)
@@ -106,8 +115,26 @@ namespace VErp.WebApis.VErpApi
             services.AddHttpClient<PushServiceClient>();
             // services.AddHostedService<WebPushNotificationsProducer>();
 
+            AddBackgroundQueueProcess(services);
+
             return BuildService(services);
         }
+
+        private static void AddBackgroundQueueProcess(IServiceCollection services)
+        {
+            services.AddInProcessBackgroundQueuePublisher();
+
+            services.AddInProcessBackgroundConsummer<IInventoryService, string>(PRODUCTION_INVENTORY_STATITICS, async (_inventoryService, msg, calcelToken) =>
+            {
+                await _inventoryService.ProductionOrderInventory(new[] { msg.Data }, EnumProductionStatus.ProcessingLessStarted, string.Empty);
+            });
+
+            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderStatusDataModel>(PRODUCTION_INVENTORY_APPROVED, async (_productionOrderService, msg, calcelToken) =>
+            {
+                await _productionOrderService.CalcAbdUpdateProductionOrderStatus(msg.Data);
+            });
+        }
+
         private static void ConfigureBussinessService(IServiceCollection services)
         {
             services.AddScopedServices(ServiceCoreAssembly.Assembly);

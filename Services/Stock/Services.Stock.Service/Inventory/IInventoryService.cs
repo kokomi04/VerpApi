@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
@@ -38,6 +39,9 @@ namespace VErp.Services.Stock.Service.Stock
         IAsyncEnumerable<InvOutDetailRowValue> OutParseExcel(ImportExcelMapping mapping, Stream stream, int stockId);
 
         Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
+
+
+        Task ProductionOrderInventory(IList<string> productionOrderCodes, EnumProductionStatus status, string inventoryCode);
 
     }
 }

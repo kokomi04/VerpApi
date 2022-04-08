@@ -47,7 +47,7 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddMemoryCache();
             services.AddScoped<ICachingService, MemCacheCachingService>();
-            services.AddScoped<IAuthDataCacheService, AuthDataCacheService>();
+            services.AddSingleton<IAuthDataCacheService, AuthDataCacheService>();
 
             services.AddScoped<IMailFactoryService, MailFactoryService>();
             services.AddScoped<INotificationFactoryService, NotificationFactoryService>();
