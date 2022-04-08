@@ -34,6 +34,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
     public class ProductionHandoverService : StatusProcessService, IProductionHandoverService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
+        private readonly ICurrentContextService _currentContextService;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
@@ -41,12 +42,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public ProductionHandoverService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverService> logger
-            , IMapper mapper) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IMapper mapper
+            ,ICurrentContextService currentContextService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _currentContextService = currentContextService;
         }
 
         public async Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status)
@@ -57,6 +60,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             try
             {
                 productionHandover.Status = (int)status;
+
+                if(status == EnumHandoverStatus.Accepted)
+                    productionHandover.AcceptByUserId = _currentContextService.UserId;
+
                 _manufacturingDBContext.SaveChanges();
 
                 if (productionHandover.Status == (int)EnumHandoverStatus.Accepted)

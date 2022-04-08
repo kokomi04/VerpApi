@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? ProductionHandoverId { get; set; }
         public EnumHandoverStatus Status { get; set; }
         public int CreatedByUserId { get; set; }
+        public int AcceptByUserId { get; set; }
 
         public override void Mapping(Profile profile)
         {
