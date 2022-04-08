@@ -44,7 +44,7 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("{productionOrderId}/productionStep/byArrayProductionOrderId/department/{departmentId}")]
+        [Route("GetDetailByArrayProductionOrder/department/{departmentId}")]
         public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail([FromBody] IList<RequestObjectGetProductionOrderHandover> data, [FromRoute] int departmentId)
         {
             var lstDetail = await _productionHandoverService.GetDepartmentHandoverDetailByArrayProductionOrderId(data, departmentId);
