@@ -931,8 +931,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                              }).ToList());
 
             var resources = await (from hr in _manufacturingDBContext.ProductionHumanResource
-                                   join g in _manufacturingDBContext.ProductionStep on hr.ProductionStepId equals g.ProductionStepId
-                                   join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                   join ps in _manufacturingDBContext.ProductionStep on hr.ProductionStepId equals ps.ProductionStepId
                                    where productionOrderIds.Contains(hr.ProductionOrderId) && ps.StepId.HasValue && ps.StepId == stepId
                                    select new
                                    {
