@@ -2737,7 +2737,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
         {   
-            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
             
             return (await _accountancyDBContext.QueryDataTable(sql, new []{new SqlParameter("@InputTypeId", inputTypeId)}))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2746,7 +2746,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
 
             return (await _accountancyDBContext.QueryDataTable(sql, new[] { new SqlParameter("@InputTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()

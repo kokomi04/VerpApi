@@ -27,6 +27,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
         public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
+
+        public long ToProductionStepId { get; set; }
+        public long FromProductionStepId { get; set; }
+        
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()
@@ -52,6 +56,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
         public int AssignedProgressStatus { get; set; }
+
+        public long ToProductionStepId { get; set; }
+        public long FromProductionStepId { get; set; }
     }
 
     public class DepartmentHandoverDetailModel

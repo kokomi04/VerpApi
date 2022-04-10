@@ -396,6 +396,21 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)
                 .ToList();
 
+            var arrOutsourceRequestId = resultData.Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
+            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault())).ToListAsync();
+            foreach (var element in resultData)
+            {
+                element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductPartId && x.OutsourceRequestId == element.OutsourcePartRequestId)
+                    .Select(x => new PurchaseOrderSimple { PurchaseOrderCode = x.PurchaseOrderCode, PurchaseOrderId = x.PurchaseOrderId })
+                    .Aggregate(new List<PurchaseOrderSimple>(), (acc, value) =>
+                    {
+                        if (!acc.Any(a => a.PurchaseOrderId == value.PurchaseOrderId))
+                            acc.Add(value);
+                        return acc;
+                    })
+                    .ToList();
+            }
+
             return resultData;
         }
         

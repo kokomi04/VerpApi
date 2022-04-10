@@ -15,6 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? ProductionHandoverId { get; set; }
         public EnumHandoverStatus Status { get; set; }
         public int CreatedByUserId { get; set; }
+        public int AcceptByUserId { get; set; }
 
         public override void Mapping(Profile profile)
         {
@@ -36,6 +37,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ToProductionStepId { get; set; }
         public long? HandoverDatetime { get; set; }
         public string Note { get; set; }
+
+        public long ProductionOrderId { get; set; }
+
         public virtual void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionHandoverInputModel, ProductionHandoverEntity>()

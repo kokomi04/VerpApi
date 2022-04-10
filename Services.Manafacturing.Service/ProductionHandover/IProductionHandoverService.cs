@@ -19,5 +19,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data);
         Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status);
         Task<bool> DeleteProductionHandover(long productionHandoverId);
+        Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverInputModel> datas);
     }
 }

@@ -137,7 +137,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             IntoMoney = detail.IntoMoney,
 
                             ExchangedMoney = detail.ExchangedMoney,
-                            SortOrder = sortOrder++
+                            SortOrder = sortOrder++,
+                            IsSubCalculation = detail.IsSubCalculation
                         };
 
                         await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(entityDetail);
@@ -199,6 +200,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         }
                         await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync();
                     }
+                    
 
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
@@ -314,6 +316,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 detail.ExchangedMoney = item.ExchangedMoney;
 
                                 detail.SortOrder = item.SortOrder;
+                                detail.IsSubCalculation = item.IsSubCalculation;
 
                                 var arrAllocate = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
                                 foreach (var allocate in arrAllocate)
@@ -370,7 +373,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 IntoMoney = item.IntoMoney,
 
                                 ExchangedMoney = item.ExchangedMoney,
-                                SortOrder = item.SortOrder
+                                SortOrder = item.SortOrder,
+                                IsSubCalculation = item.IsSubCalculation
                             };
 
                             await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
