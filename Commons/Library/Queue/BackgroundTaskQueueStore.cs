@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using VErp.Commons.Library.Queue.Interfaces;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library.Queue
 {
@@ -25,12 +26,12 @@ namespace VErp.Commons.Library.Queue
 
         private ConcurrentDictionary<string, QueueStore> _queueStore = new ConcurrentDictionary<string, QueueStore>();
 
-        public Task EnqueueAsync(string queueName, string data, int userId)
-        {           
+        public Task EnqueueAsync(ICurrentContextService context, string queueName, string data, int userId)
+        {
 
             var queueStore = _queueStore.GetOrAdd(queueName, new QueueStore());
 
-            queueStore._workItems.Enqueue(new ProcessQueueMessage<string>() { QueueName = queueName, Data = data, CreatedByUserId = userId, CreatedDatetimeUtc = DateTime.UtcNow });
+            queueStore._workItems.Enqueue(new ProcessQueueMessage<string>() { Context = context, QueueName = queueName, Data = data, CreatedByUserId = userId, CreatedDatetimeUtc = DateTime.UtcNow });
             queueStore._signal.Release();
 
             return Task.CompletedTask;
@@ -53,5 +54,5 @@ namespace VErp.Commons.Library.Queue
             return msg;
         }
     }
- 
+
 }
