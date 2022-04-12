@@ -46,6 +46,7 @@ namespace VErp.Commons.Library.Queue
 
             var msg = new ProcessQueueMessage<T>()
             {
+                Context = item.Context,
                 QueueName = item.QueueName,
                 CreatedByUserId = item.CreatedByUserId,
                 CreatedDatetimeUtc = item.CreatedDatetimeUtc,
