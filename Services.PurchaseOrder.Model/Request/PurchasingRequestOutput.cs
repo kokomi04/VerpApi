@@ -29,6 +29,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? CensorDatetimeUtc { get; set; }
 
         public long? ProductionOrderId { get; set; }
+        public int? ProductMaterialsConsumptionGroupId { get; set; }
 
         public EnumPurchasingRequestType PurchasingRequestTypeId { get; set; }
 

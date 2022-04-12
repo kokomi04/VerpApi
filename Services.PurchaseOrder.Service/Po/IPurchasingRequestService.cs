@@ -42,7 +42,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<bool> Reject(long purchasingRequestId);
         Task<bool> UpdatePoProcessStatus(long purchasingRequestId, EnumPoProcessStatus poProcessStatusId);
 
-        Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId);
+        Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId, int? productMaterialsConsumptionGroupId);
 
     }
 }
