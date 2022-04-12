@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library.Queue
 {
@@ -10,6 +11,9 @@ namespace VErp.Commons.Library.Queue
         public T Data { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
+
+        public ICurrentContextService Context { get; set; }
+
     }
 
 }

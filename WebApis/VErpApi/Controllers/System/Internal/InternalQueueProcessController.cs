@@ -22,7 +22,8 @@ namespace VErpApi.Controllers.System.Internal
         [HttpPost("Enqueue")]
         public async Task<bool> Enqueue([FromBody] EnqueueModel model)
         {
-            await _messageQueuePublisher.EnqueueAsync(model.QueueName, model.Data, _currentContextService.UserId);
+            var scopeContext = new ScopeCurrentContextService(_currentContextService);
+            await _messageQueuePublisher.EnqueueAsync(scopeContext, model.QueueName, model.Data, _currentContextService.UserId);
             return true;
         }
 

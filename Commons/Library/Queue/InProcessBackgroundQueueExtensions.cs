@@ -22,10 +22,11 @@ namespace VErp.Commons.Library.Queue
         {
             services.AddSingleton<IHostedService>(s =>
             {
+                var serviceScopeFactory = s.GetRequiredService<IServiceScopeFactory>();
                 var store = s.GetRequiredService<IBackgroundTaskQueueStore>();
                 var loggerFactory = s.GetRequiredService<ILoggerFactory>();
-                var service = s.GetRequiredService<IService>();
-                return new InprocessBackgroundQueueConsumer<IService, T>(service, loggerFactory, store, queueName, _func);
+
+                return new InprocessBackgroundQueueConsumer<IService, T>(serviceScopeFactory, loggerFactory, store, queueName, _func);
             });
         }
     }

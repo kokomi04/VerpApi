@@ -1,33 +1,37 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.Library.Queue
 {
 
     internal class InprocessBackgroundQueueConsumer<IService, T> : BackgroundService
     {
-        private readonly IService _service;
         private readonly ILogger _logger;
         private readonly string _queueName;
         private readonly IBackgroundTaskQueueStore _store;
         private readonly Func<IService, ProcessQueueMessage<T>, CancellationToken, Task> _func;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public InprocessBackgroundQueueConsumer(IService service,
+        public InprocessBackgroundQueueConsumer(
+            IServiceScopeFactory serviceScopeFactory,
             ILoggerFactory loggerFactory,
             IBackgroundTaskQueueStore store,
             string queueName,
-            Func<IService, ProcessQueueMessage<T>, CancellationToken, Task> func)
+            Func<IService, ProcessQueueMessage<T>, CancellationToken, Task> func            
+            )
         {
-            _service = service;
+            _serviceScopeFactory = serviceScopeFactory;
             _logger = loggerFactory.CreateLogger<InprocessBackgroundQueueConsumer<IService, T>>();
             _queueName = queueName;
             _store = store;
-            _func = func;
+            _func = func;            
         }
 
         protected async override Task ExecuteAsync(CancellationToken cancellationToken)
@@ -40,7 +44,14 @@ namespace VErp.Commons.Library.Queue
 
                 try
                 {
-                    await _func(_service, msg, cancellationToken);
+                    using (var scope = _serviceScopeFactory.CreateScope())
+                    {
+                        var currentContextFactory = scope.ServiceProvider.GetRequiredService<ICurrentContextFactory>();
+                        var newContext = new ScopeCurrentContextService(msg.Context);
+                        currentContextFactory.SetCurrentContext(newContext);
+                        var service = scope.ServiceProvider.GetService<IService>();
+                        await _func(service, msg, cancellationToken);
+                    }
                 }
                 catch (Exception ex)
                 {
