@@ -20,6 +20,8 @@ using Verp.Resources.Stock.Inventory;
 using VErp.Commons.Library.Formaters;
 using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -30,12 +32,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IProductionOrderHelperService _productionOrderHelperService;
         private readonly IProductionHandoverHelperService _productionHandoverHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+
         internal InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoveHelperService
             , ICurrentContextService currentContextService
+            , IQueueProcessHelperService queueProcessHelperService
             ) : base(stockContext)
         {
             _logger = logger;
@@ -43,6 +48,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _productionOrderHelperService = productionOrderHelperService;
             _productionHandoverHelperService = productionHandoveHelperService;
             _currentContextService = currentContextService;
+            _queueProcessHelperService = queueProcessHelperService;
         }
 
 
@@ -177,22 +183,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        protected async Task UpdateIgnoreAllocation(IList<InventoryDetail> inventoryDetails)
-        {
-            try
-            {
-                var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToArray();
-                await _productionHandoverHelperService.UpdateIgnoreAllocation(productionOrderCodes);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "AutoIgnoreAllocation");
-            }
+        //protected async Task UpdateIgnoreAllocation(IList<InventoryDetail> inventoryDetails)
+        //{
+        //    try
+        //    {
+        //        var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToArray();
+        //        await _productionHandoverHelperService.UpdateIgnoreAllocation(productionOrderCodes);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "AutoIgnoreAllocation");
+        //    }
 
-        }
+        //}
 
         protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status, string inventoryCode)
         {
+            var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToList();
+
+            await ProductionOrderInventory(productionOrderCodes, status, inventoryCode);
+
+            /*
             var errorProductionOrderCode = "";
             try
             {
@@ -218,9 +229,44 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, UpdateProductionOrderStatusError);
                 throw new Exception(string.Format(UpdateProductionOrderStatusError, errorProductionOrderCode) + ": " + ex.Message, ex);
             }
+            */
 
         }
 
+        public async Task ProductionOrderInventory(IList<string> productionOrderCodes, EnumProductionStatus status, string inventoryCode)
+        {
+            var errorProductionOrderCode = "";
+            try
+            {
+                Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
+                foreach (var productionOrderCode in productionOrderCodes)
+                {
+                    errorProductionOrderCode = productionOrderCode;
+                    var parammeters = new SqlParameter[]
+                    {
+                        new SqlParameter("@ProductionOrderCode", productionOrderCode)
+                    };
+                    var resultData = await _stockDbContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
+
+                    var inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>();
+
+                    var data = new
+                    {
+                        ProductionOrderCode = productionOrderCode,
+                        InventoryCode = inventoryCode,
+                        ProductionOrderStatus = status,
+                        Inventories = inventories
+                    };
+
+                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_APPROVED, data);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, UpdateProductionOrderStatusError);
+                throw new Exception(string.Format(UpdateProductionOrderStatusError, errorProductionOrderCode) + ": " + ex.Message, ex);
+            }
+        }
 
         protected void ValidatePackage(Package package)
         {

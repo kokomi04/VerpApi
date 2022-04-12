@@ -506,7 +506,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             try
             {
                 // Update status cho chi tiết LSX
-                productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Waiting;
+                //productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Waiting;
 
                 var bottomStep = _manufacturingDBContext.ProductionStep
                     .Where(ps => ps.ContainerId == productionOrderId && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
