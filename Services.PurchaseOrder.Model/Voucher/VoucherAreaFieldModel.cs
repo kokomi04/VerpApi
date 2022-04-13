@@ -43,6 +43,9 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public string MouseLeave { get; set; }
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
+
+        public int? ObjectApprovalStepTypeId { get; set; }
+
         protected void MappingBase<T>(Profile profile) where T : VoucherFieldInputModel
         {
             profile.CreateMap<VoucherField, T>()
