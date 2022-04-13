@@ -928,7 +928,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size)
+        public async Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size, int? objectApprovalStepTypeId)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountancyDBContext.InputField
@@ -937,6 +937,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
+
+            if (objectApprovalStepTypeId.HasValue)
+            {
+                query = query.Where(f => (objectApprovalStepTypeId.Value & f.ObjectApprovalStepTypeId) == f.ObjectApprovalStepTypeId);
+            }
+
             var total = await query.CountAsync();
 
             query = query.OrderBy(f => f.SortOrder);

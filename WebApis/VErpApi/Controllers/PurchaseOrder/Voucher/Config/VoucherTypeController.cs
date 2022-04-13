@@ -75,9 +75,9 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
 
         [HttpGet]
         [Route("fields")]
-        public async Task<PageData<VoucherFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<VoucherFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? objectApprovalStepTypeId)
         {
-            return await _voucherConfigService.GetVoucherFields(keyword, page, size).ConfigureAwait(true);
+            return await _voucherConfigService.GetVoucherFields(keyword, page, size, objectApprovalStepTypeId).ConfigureAwait(true);
         }
 
         [HttpPost]
