@@ -43,13 +43,71 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverService> logger
             , IMapper mapper
-            ,ICurrentContextService currentContextService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , ICurrentContextService currentContextService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _currentContextService = currentContextService;
+        }
+
+        public async Task<bool> AcceptProductionHandoverBatch(IList<ProductionHandoverAcceptBatchInput> req)
+        {
+            var handoverIds = req.Select(h => h.productionHandoverId).Distinct().ToList();
+            var productionHandovers = await _manufacturingDBContext.ProductionHandover.Where(ho => handoverIds.Contains(ho.ProductionHandoverId)).ToListAsync();
+
+            foreach (var item in req)
+            {
+                var info = productionHandovers.FirstOrDefault(ho => ho.ProductionOrderId == item.ProductionOrderId && ho.ProductionHandoverId == item.productionHandoverId);
+
+                if (info == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                }
+                if (info.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+
+            }
+
+            using (var batchLog = _activityLogService.BeginBatchLog())
+            {
+                try
+                {
+
+                    foreach (var item in req)
+                    {
+                        var info = productionHandovers.FirstOrDefault(ho => ho.ProductionOrderId == item.ProductionOrderId && ho.ProductionHandoverId == item.productionHandoverId);
+
+                        if (info == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                        }
+                        if (info.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+                        info.Status = (int)EnumHandoverStatus.Accepted;
+                        info.AcceptByUserId = _currentContextService.UserId;
+
+                        _manufacturingDBContext.SaveChanges();
+
+                        if (info.Status == (int)EnumHandoverStatus.Accepted)
+                        {
+                            await ChangeAssignedProgressStatus(info.ProductionOrderId, info.FromProductionStepId, info.FromDepartmentId);
+                            await ChangeAssignedProgressStatus(info.ProductionOrderId, info.ToProductionStepId, info.ToDepartmentId);
+                        }
+
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, info.ProductionHandoverId, $"Xác nhận bàn giao công việc", info.JsonSerialize());
+
+                    }
+
+
+                    await batchLog.CommitAsync();
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "AcceptProductionHandoverBatch");
+                    throw;
+                }
+            }
         }
 
         public async Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status)
@@ -61,7 +119,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 productionHandover.Status = (int)status;
 
-                if(status == EnumHandoverStatus.Accepted)
+                if (status == EnumHandoverStatus.Accepted)
                     productionHandover.AcceptByUserId = _currentContextService.UserId;
 
                 _manufacturingDBContext.SaveChanges();
@@ -88,7 +146,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverInputModel> datas)
         {
-            var trans = await  _manufacturingDBContext.Database.BeginTransactionAsync();
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
                 foreach (var data in datas)
@@ -248,8 +306,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToListAsync();
 
         }
-       
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId)
+
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>()
@@ -261,7 +319,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 new SqlParameter("@StepId", stepId.GetValueOrDefault()),
-                new SqlParameter("@ProductId", productId.GetValueOrDefault())
+                new SqlParameter("@ProductId", productId.GetValueOrDefault()),
+                new SqlParameter("@ProductionStepLinkDataRoleTypeId", (int?)productionStepLinkDataRoleTypeId),                
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish)
             };
 
             var dataSet = await _manufacturingDBContext.ExecuteMultipleDataProcedure("asp_ProductionDepartmentHandover", parammeters.ToArray());

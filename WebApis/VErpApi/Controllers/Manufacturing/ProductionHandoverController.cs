@@ -13,6 +13,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -53,9 +54,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("DepartmentHandover/{departmentId}")]
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish, [FromQuery] EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)
         {
-            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId);
+            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId, isInFinish, isOutFinish, productionStepLinkDataRoleTypeId);
         }
 
         [HttpGet]
@@ -91,6 +92,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> DeleteProductionHandover([FromRoute] long productionHandoverId)
         {
             return await _productionHandoverService.DeleteProductionHandover(productionHandoverId);
+        }
+
+        [HttpPut]
+        [Route("AcceptBatch")]
+        public async Task<bool> AcceptBatch([FromBody] IList<ProductionHandoverAcceptBatchInput> req)
+        {
+            return await _productionHandoverService.AcceptProductionHandoverBatch(req);
         }
 
         [HttpPut]
