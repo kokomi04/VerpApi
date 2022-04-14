@@ -934,7 +934,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             if(objectApprovalStepTypeId.HasValue)
             {
-                query = query.Where(f => (objectApprovalStepTypeId.Value & f.ObjectApprovalStepTypeId) == f.ObjectApprovalStepTypeId);
+                query = query.Where(f => f.ObjectApprovalStepTypeId.HasValue && (f.ObjectApprovalStepTypeId & objectApprovalStepTypeId.Value) == objectApprovalStepTypeId.Value);
             }
 
             var total = await query.CountAsync();
