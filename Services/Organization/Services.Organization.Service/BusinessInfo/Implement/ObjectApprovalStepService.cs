@@ -74,6 +74,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             else
             {
                 entity.IsEnable = model.IsEnable;
+                entity.ObjectFieldEnable = model.ObjectFieldEnable;
                 await _organizationContext.SaveChangesAsync();
             }
 
