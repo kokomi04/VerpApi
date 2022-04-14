@@ -16,6 +16,7 @@ using VErp.Commons.Enums.Manafacturing;
 using Microsoft.Data.SqlClient;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -27,17 +28,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
         private const int STOCK_DEPARTMENT_ID = -1;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+
         public MaterialAllocationService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverService> logger
             , IMapper mapper
-            , IProductHelperService productHelperService)
+            , IProductHelperService productHelperService, IQueueProcessHelperService queueProcessHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
+            _queueProcessHelperService = queueProcessHelperService;
         }
 
         public async Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId)
@@ -51,6 +55,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<AllocationModel> UpdateMaterialAllocation(long productionOrderId, AllocationModel data)
         {
+            var productionOrderCode = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderId == o.ProductionOrderId).Select(o => o.ProductionOrderCode).FirstOrDefaultAsync();
+
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -103,6 +109,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .Where(ma => ma.ProductionOrderId == productionOrderId)
                     .ProjectTo<IgnoreAllocationModel>(_mapper.ConfigurationProvider)
                     .ToListAsync();
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderCode);
 
                 return data;
             }
@@ -489,6 +497,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 }
             }
             _manufacturingDBContext.SaveChanges();
+
+            foreach (var code in productionOrderCodes)
+            {
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+            }
+
             return true;
         }
     }
