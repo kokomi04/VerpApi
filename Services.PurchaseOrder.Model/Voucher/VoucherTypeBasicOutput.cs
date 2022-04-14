@@ -58,5 +58,8 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public int? decimalPlace { get; set; }
 
         public string ReferenceUrlExec { get; set; }
+
+        public int VoucherFieldId { get; set; }
+        public int? ObjectApprovalStepId { get; set; }
     }
 }

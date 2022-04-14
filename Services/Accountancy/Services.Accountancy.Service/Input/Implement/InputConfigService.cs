@@ -529,7 +529,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefTableTitle = f.RefTableTitle,
                     IsRequire = af.IsRequire,
                     DecimalPlace = f.DecimalPlace,
-                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl,
+                    InputFieldId = f.InputFieldId,
+                    ObjectApprovalStepId = f.ObjectApprovalStepTypeId
 
                 }).ToListAsync();
 
