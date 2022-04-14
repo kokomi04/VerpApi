@@ -530,7 +530,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     RefTableTitle = f.RefTableTitle,
                     IsRequire = af.IsRequire,
                     decimalPlace = f.DecimalPlace,
-                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl,
+                    ObjectApprovalStepId = f.ObjectApprovalStepTypeId,
+                    VoucherFieldId = f.VoucherFieldId
 
                 }).ToListAsync();
 
