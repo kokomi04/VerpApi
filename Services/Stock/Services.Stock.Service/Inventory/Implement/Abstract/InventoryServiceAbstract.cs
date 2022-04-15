@@ -125,6 +125,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <param name="inventoryId"></param>
         protected async Task ReCalculateRemainingAfterUpdate(long inventoryId, long? effecttedFromInventoryId = null)
         {
+
+
             //var errorInventoryId = new SqlParameter("@ErrorInventoryId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
             var errorIventoryDetailId = new SqlParameter("@ErrorIventoryDetailId", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
 
@@ -181,6 +183,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
+            var productionOrderCodes = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).Select(d => d.ProductionOrderCode).ToListAsync();
+            productionOrderCodes = productionOrderCodes.Where(c => !string.IsNullOrWhiteSpace(c)).ToList();
+            foreach (var code in productionOrderCodes)
+            {
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+            }
         }
 
         //protected async Task UpdateIgnoreAllocation(IList<InventoryDetail> inventoryDetails)
@@ -201,7 +209,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToList();
 
-            await ProductionOrderInventory(productionOrderCodes, status, inventoryCode);
+            //await ProductionOrderInventory(productionOrderCodes, status, inventoryCode);
+
+            foreach (var code in productionOrderCodes)
+            {
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+            }
 
             /*
             var errorProductionOrderCode = "";
