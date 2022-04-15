@@ -333,6 +333,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
+            var productionOutsourcePartMappings = await _manufacturingDBContext.ProductionOutsourcePartMapping.Where(x => x.ContainerId == containerId)
+            .ProjectTo<ProductionOutsourcePartMappingInput>(_mapper.ConfigurationProvider)
+            .ToListAsync();
+
+            foreach (var item in productionOutsourcePartMappings)
+            {
+                var linkData = stepLinkDatas.FirstOrDefault(x=>x.ProductionOutsourcePartMappingId == item.ProductionOutsourcePartMappingId);
+                if(linkData != null)
+                    item.ProductionStepLinkDataCode = linkData.ProductionStepLinkDataCode;
+            }
+
             // Tính toán quan hệ của quy trình con
             //var productionStepGroupLinkDataRoles = CalcInOutDataForGroup(stepInfos, roles);
 
@@ -347,6 +358,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 ProductionStepLinkDataRoles = roles,
                 ProductionStepLinkDatas = stepLinkDatas.ToList(),
                 ProductionStepLinks = productionStepLinks,
+                ProductionOutsourcePartMappings = productionOutsourcePartMappings
                 //ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles,
             };
         }
@@ -998,12 +1010,54 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Any(x => x.Count() > 1))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
+            if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionOutsourcePartMappings.Count > 0)
+            {
+                var sourceOutsourcePartMappings = await _manufacturingDBContext.ProductionOutsourcePartMapping.Where(x => x.ContainerId == containerId)
+                                                                                                              .ToListAsync();
+
+                foreach (var dest in sourceOutsourcePartMappings)
+                {
+                    var source = req.ProductionOutsourcePartMappings.FirstOrDefault(x => x.ProductionOutsourcePartMappingId == dest.ProductionOutsourcePartMappingId);
+                    if (source != null)
+                    {
+                        _mapper.Map(source, dest);
+                    }
+                    else
+                    {
+                        dest.IsDeleted = true;
+                    }
+
+                }
+
+                foreach (var item in req.ProductionOutsourcePartMappings)
+                {
+                    if (item.ProductionOutsourcePartMappingId <= 0)
+                    {
+                        var entity = _mapper.Map<ProductionOutsourcePartMapping>(item);
+                        await _manufacturingDBContext.ProductionOutsourcePartMapping.AddAsync(entity);
+                        await _manufacturingDBContext.SaveChangesAsync();
+
+                        item.ProductionOutsourcePartMappingId = entity.ProductionOutsourcePartMappingId;
+                    }
+
+                }                                                                                                 
+            }
+
             //Cập nhật, xóa và tạo mới steplinkdata
             var lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
                                     join r in _manufacturingDBContext.ProductionStepLinkDataRole on s.ProductionStepId equals r.ProductionStepId
                                     where s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId
                                     select r.ProductionStepLinkDataId).Distinct();
             var sourceStepLinkData = await _manufacturingDBContext.ProductionStepLinkData.Where(p => lsStepLinkDataId.Contains(p.ProductionStepLinkDataId)).ToListAsync();
+
+            foreach (var item in req.ProductionOutsourcePartMappings)
+            {
+                var linkData = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == item.ProductionStepLinkDataCode);
+
+                if (linkData != null)
+                    linkData.ProductionOutsourcePartMappingId = item.ProductionOutsourcePartMappingId;
+            }
+            
             foreach (var dest in sourceStepLinkData)
             {
                 var source = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataId == dest.ProductionStepLinkDataId);
