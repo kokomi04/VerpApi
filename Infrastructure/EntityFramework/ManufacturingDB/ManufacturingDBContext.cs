@@ -43,6 +43,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionOrderStatus> ProductionOrderStatus { get; set; }
+        public virtual DbSet<ProductionOutsourcePartMapping> ProductionOutsourcePartMapping { get; set; }
         public virtual DbSet<ProductionPlanExtraInfo> ProductionPlanExtraInfo { get; set; }
         public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }
         public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
@@ -458,6 +459,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Description).HasMaxLength(128);
 
                 entity.Property(e => e.ProductionOrderStatusName).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<ProductionOutsourcePartMapping>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<ProductionPlanExtraInfo>(entity =>
