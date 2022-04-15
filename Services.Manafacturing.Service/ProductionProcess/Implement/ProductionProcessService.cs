@@ -339,9 +339,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var item in productionOutsourcePartMappings)
             {
-                var linkData = stepLinkDatas.FirstOrDefault(x=>x.ProductionOutsourcePartMappingId == item.ProductionOutsourcePartMappingId);
-                if(linkData != null)
-                    item.ProductionStepLinkDataCode = linkData.ProductionStepLinkDataCode;
+                var linkDataCodes = stepLinkDatas.Where(x=>x.ProductionOutsourcePartMappingId == item.ProductionOutsourcePartMappingId)
+                                            .Select(x=>x.ProductionStepLinkDataCode)
+                                            .ToList();
+                if(linkDataCodes != null)
+                    item.ProductionStepLinkDataCodes.AddRange(linkDataCodes);
             }
 
             // Tính toán quan hệ của quy trình con
@@ -1052,10 +1054,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var item in req.ProductionOutsourcePartMappings)
             {
-                var linkData = req.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == item.ProductionStepLinkDataCode);
-
-                if (linkData != null)
-                    linkData.ProductionOutsourcePartMappingId = item.ProductionOutsourcePartMappingId;
+                var linkDatas = req.ProductionStepLinkDatas.Where(x =>  item.ProductionStepLinkDataCodes.Contains(x.ProductionStepLinkDataCode));
+                
+                foreach (var ld in linkDatas)
+                {
+                    ld.ProductionOutsourcePartMappingId = item.ProductionOutsourcePartMappingId;
+                }
             }
             
             foreach (var dest in sourceStepLinkData)
