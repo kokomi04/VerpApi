@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long OutsourcePartRequestDetailId { get; set; }
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
+        public bool IsDefault { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public bool IsDeleted { get; set; }
