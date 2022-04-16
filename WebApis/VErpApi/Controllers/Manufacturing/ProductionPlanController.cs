@@ -76,5 +76,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionPlanService.GetMonthlyImportStock(monthPlanId);
         }
 
+        [HttpGet]
+        [Route("workload/export")]
+        public async Task<FileStreamResult> ProductionWorkloadPlanExport([FromQuery] int monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] string monthPlanName)
+        {
+            var (stream, fileName, contentType) = await _productionPlanService.ProductionWorkloadPlanExport(monthPlanId, startDate, endDate, monthPlanName);
+
+            return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
+
+        }
     }
 }
