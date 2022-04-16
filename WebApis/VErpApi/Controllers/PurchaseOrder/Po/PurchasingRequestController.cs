@@ -274,6 +274,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Lấy thông tin phiếu yêu cầu vật tư theo LSX
         /// </summary>
         /// <param name="productionOrderId"></param>
+        /// <param name="productMaterialsConsumptionGroupId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]

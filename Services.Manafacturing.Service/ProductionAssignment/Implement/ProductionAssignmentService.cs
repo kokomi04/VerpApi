@@ -148,13 +148,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 List<ProductionAssignmentModel> CreateProductionStepAssignments)>();
 
             // Danh sách khai báo chi phí
-            var productionScheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
-                .Where(s => s.ProductionOrderId == productionOrderId)
-                .ToList();
+            //var productionScheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
+            //    .Where(s => s.ProductionOrderId == productionOrderId)
+            //    .ToList();
             // Danh sách khai báo vật tư tiêu hao
-            var scheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
-                .Where(s => s.ProductionOrderId == productionOrderId)
-                .ToList();
+            //var scheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
+            //    .Where(s => s.ProductionOrderId == productionOrderId)
+            //    .ToList();
 
             foreach (var productionStepAssignments in data.ProductionStepAssignment)
             {
@@ -222,17 +222,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
 
                 // Validate khai báo chi phí
-                var deleteAssignDepartmentIds = oldProductionStepAssignments.Select(a => a.DepartmentId).ToList();
-                if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
-                }
+                //var deleteAssignDepartmentIds = oldProductionStepAssignments.Select(a => a.DepartmentId).ToList();
+                //if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
+                //}
 
                 // Validate vật tư tiêu hao
-                if (scheduleTurnShifts.Any(m => m.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
-                }
+                //if (scheduleTurnShifts.Any(m => m.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
+                //{
+                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
+                //}
 
                 // Validate xóa tổ đã tham gia sản xuất
                 //var productIds = step.ProductionStepLinkDataRole
@@ -256,26 +256,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .Where(s => !productionStepIds.Contains(s.ProductionStepId))
                     .ToList();
 
-            foreach (var item in deletedProductionStepAssignments)
-            {
-                // Validate khai báo chi phí
-                if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == item.ProductionStepId && s.DepartmentId == item.DepartmentId))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
-                }
+            //foreach (var item in deletedProductionStepAssignments)
+            //{
+            //    // Validate khai báo chi phí
+            //    if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == item.ProductionStepId && s.DepartmentId == item.DepartmentId))
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
+            //    }
 
-                // Validate vật tư tiêu hao
-                if (scheduleTurnShifts.Any(m => m.ProductionStepId == item.ProductionStepId && m.DepartmentId == item.DepartmentId))
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
-                }
+            //    // Validate vật tư tiêu hao
+            //    if (scheduleTurnShifts.Any(m => m.ProductionStepId == item.ProductionStepId && m.DepartmentId == item.DepartmentId))
+            //    {
+            //        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
+            //    }
 
-                //Validate xóa tổ đã tham gia sản xuất
-                //if (inputInventorys.Any(r => handovers.Any(h => (h.FromProductionStepId == item.ProductionStepId || h.ToProductionStepId == item.ProductionStepId) && (h.FromDepartmentId == item.DepartmentId || h.ToDepartmentId == item.DepartmentId))))
-                //{
-                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-                //}
-            }
+            //    //Validate xóa tổ đã tham gia sản xuất
+            //    //if (inputInventorys.Any(r => handovers.Any(h => (h.FromProductionStepId == item.ProductionStepId || h.ToProductionStepId == item.ProductionStepId) && (h.FromDepartmentId == item.DepartmentId || h.ToDepartmentId == item.DepartmentId))))
+            //    //{
+            //    //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
+            //    //}
+            //}
 
             try
             {
@@ -492,11 +492,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             // Validate khai báo chi phí
             var deleteAssignDepartmentIds = oldProductionAssignments.Select(a => a.DepartmentId).ToList();
-            if (_manufacturingDBContext.ProductionScheduleTurnShift
-                .Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
-            }
+            //if (_manufacturingDBContext.ProductionScheduleTurnShift
+            //    .Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
+            //{
+            //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
+            //}
 
             // Validate vật tư tiêu hao
             if (_manufacturingDBContext.ProductionConsumMaterial
