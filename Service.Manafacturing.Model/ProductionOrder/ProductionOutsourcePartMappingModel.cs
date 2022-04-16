@@ -12,6 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long OutsourcePartRequestDetailId { get; set; }
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
+        public bool IsDefault { get; set; }
     }
 
     public partial class ProductionOutsourcePartMappingInput : ProductionOutsourcePartMappingModel
