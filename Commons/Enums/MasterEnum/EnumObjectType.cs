@@ -271,8 +271,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Nhân công sản xuất")]
         ProductionHumanResource = 79,
 
-        [Description("Khai báo nhân công và chi phí")]
-        ProductionScheduleTurnShift = 77,
+        //[Description("Khai báo nhân công và chi phí")]
+        //ProductionScheduleTurnShift = 77,
         [Description("Yêu cầu nhập kho")]
 
         OutsourceTrack = 78,
