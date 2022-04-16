@@ -18,5 +18,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public partial class ProductionOutsourcePartMappingInput : ProductionOutsourcePartMappingModel
     {
         public List<string> ProductionStepLinkDataCodes { get; set; }
+
+        public ProductionOutsourcePartMappingInput()
+        {
+            ProductionStepLinkDataCodes = new List<string> ();
+        }
     }
 }
