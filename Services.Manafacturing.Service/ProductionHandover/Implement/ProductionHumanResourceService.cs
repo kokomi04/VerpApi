@@ -63,9 +63,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var info = await _manufacturingDBContext.ProductionHumanResource.FirstOrDefaultAsync(p => p.ProductionHumanResourceId == productionHumanResourceId && p.ProductionOrderId == productionOrderId);
                 if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
 
-                _mapper.Map(info, data);
+                data.ProductionStepId = info.ProductionStepId;
+
+                _mapper.Map(data, info);
+
                 data.ProductionOrderId = productionOrderId;
-                
+
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data.JsonSerialize());
@@ -261,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             foreach (var productionOrder in productionOrders)
             {
-                if(productionSteps.ContainsKey(productionOrder.ProductionOrderId) && productionSteps[productionOrder.ProductionOrderId].Count > 0)
+                if (productionSteps.ContainsKey(productionOrder.ProductionOrderId) && productionSteps[productionOrder.ProductionOrderId].Count > 0)
                 {
                     result.Add(new UnFinishProductionInfo
                     {
