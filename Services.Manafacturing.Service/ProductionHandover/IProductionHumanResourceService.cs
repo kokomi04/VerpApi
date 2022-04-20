@@ -15,6 +15,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<ProductionHumanResourceModel>> GetByProductionOrder(long productionOrderId);
    
         Task<ProductionHumanResourceModel> Create(long productionOrderId, ProductionHumanResourceInputModel data);
+
+        Task<ProductionHumanResourceModel> Update(long productionOrderId, long productionHumanResourceId, ProductionHumanResourceInputModel data);
+
         Task<IList<ProductionHumanResourceModel>> CreateMultiple(long productionOrderId, IList<ProductionHumanResourceInputModel> data);
         Task<bool> Delete(long productionHumanResourceId);
 
