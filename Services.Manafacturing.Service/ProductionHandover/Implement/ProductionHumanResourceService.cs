@@ -56,6 +56,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
+        public async Task<ProductionHumanResourceModel> Update(long productionOrderId, long productionHumanResourceId, ProductionHumanResourceInputModel data)
+        {
+            try
+            {
+                var info = await _manufacturingDBContext.ProductionHumanResource.FirstOrDefaultAsync(p => p.ProductionHumanResourceId == productionHumanResourceId && p.ProductionOrderId == productionOrderId);
+                if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                _mapper.Map(info, data);
+                data.ProductionOrderId = productionOrderId;
+                
+                _manufacturingDBContext.SaveChanges();
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data.JsonSerialize());
+                return _mapper.Map<ProductionHumanResourceModel>(info);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update");
+                throw;
+            }
+        }
+
         public async Task<bool> Delete(long productionHumanResourceId)
         {
             try
