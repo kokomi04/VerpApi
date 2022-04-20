@@ -21,16 +21,16 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("{productionOrderId}")]
-        public async Task<IList<ProductionHumanResourceModel>> GetProductionHumanResources([FromRoute] long productionOrderId)
+        public async Task<IList<ProductionHumanResourceModel>> GetByProductionOrder([FromRoute] long productionOrderId)
         {
-            return await _productionHumanResourceService.GetProductionHumanResources(productionOrderId);
+            return await _productionHumanResourceService.GetByProductionOrder(productionOrderId);
         }
 
         [HttpGet]
         [Route("department/{departmentId}")]
-        public async Task<IList<ProductionHumanResourceModel>> GetProductionHumanResourceByDepartment([FromRoute] int departmentId, [FromQuery]long startDate, [FromQuery] long endDate)
+        public async Task<IList<ProductionHumanResourceModel>> GetByDepartment([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionHumanResourceService.GetProductionHumanResourceByDepartment(departmentId, startDate, endDate);
+            return await _productionHumanResourceService.GetByDepartment(departmentId, startDate, endDate);
         }
 
         [HttpGet]
@@ -43,30 +43,37 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("{productionOrderId}")]
-        public async Task<ProductionHumanResourceModel> CreateProductionHumanResource([FromRoute] long productionOrderId, [FromBody] ProductionHumanResourceInputModel data)
+        public async Task<ProductionHumanResourceModel> Create([FromRoute] long productionOrderId, [FromBody] ProductionHumanResourceInputModel data)
         {
-            return await _productionHumanResourceService.CreateProductionHumanResource(productionOrderId, data);
+            return await _productionHumanResourceService.Create(productionOrderId, data);
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/update/{productionHumanResourceId}")]
+        public async Task<ProductionHumanResourceModel> Update([FromRoute] long productionOrderId, [FromRoute] long productionHumanResourceId, [FromBody] ProductionHumanResourceInputModel data)
+        {
+            return await _productionHumanResourceService.Update(productionOrderId, productionHumanResourceId, data);
         }
 
         [HttpPost]
         [Route("multiple/{productionOrderId}")]
-        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource([FromRoute] long productionOrderId, [FromBody] IList<ProductionHumanResourceInputModel> data)
+        public async Task<IList<ProductionHumanResourceModel>> CreateMultiple([FromRoute] long productionOrderId, [FromBody] IList<ProductionHumanResourceInputModel> data)
         {
-            return await _productionHumanResourceService.CreateMultipleProductionHumanResource(productionOrderId, data);
+            return await _productionHumanResourceService.CreateMultiple(productionOrderId, data);
         }
 
         [HttpPost]
         [Route("multiple/department/{departmentId}")]
-        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate, [FromBody] IList<ProductionHumanResourceInputModel> data)
+        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleByDepartment([FromRoute] int departmentId, [FromQuery] long startDate, [FromQuery] long endDate, [FromBody] IList<ProductionHumanResourceInputModel> data)
         {
-            return await _productionHumanResourceService.CreateMultipleProductionHumanResourceByDepartment(departmentId, startDate, endDate, data);
+            return await _productionHumanResourceService.CreateMultipleByDepartment(departmentId, startDate, endDate, data);
         }
 
         [HttpDelete]
         [Route("{productionHumanResourceId}")]
-        public async Task<bool> DeleteProductionHumanResource([FromRoute] long productionHumanResourceId)
+        public async Task<bool> Delete([FromRoute] long productionHumanResourceId)
         {
-            return await _productionHumanResourceService.DeleteProductionHumanResource(productionHumanResourceId);
+            return await _productionHumanResourceService.Delete(productionHumanResourceId);
         }
     }
 }
