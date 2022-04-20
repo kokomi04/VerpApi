@@ -12,14 +12,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
     public interface IProductionHumanResourceService
     {
 
-        Task<IList<ProductionHumanResourceModel>> GetProductionHumanResources(long productionOrderId);
+        Task<IList<ProductionHumanResourceModel>> GetByProductionOrder(long productionOrderId);
    
-        Task<ProductionHumanResourceModel> CreateProductionHumanResource(long productionOrderId, ProductionHumanResourceInputModel data);
-        Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource(long productionOrderId, IList<ProductionHumanResourceInputModel> data);
-        Task<bool> DeleteProductionHumanResource(long productionHumanResourceId);
+        Task<ProductionHumanResourceModel> Create(long productionOrderId, ProductionHumanResourceInputModel data);
+        Task<IList<ProductionHumanResourceModel>> CreateMultiple(long productionOrderId, IList<ProductionHumanResourceInputModel> data);
+        Task<bool> Delete(long productionHumanResourceId);
 
-        Task<IList<ProductionHumanResourceModel>> GetProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate);
-        Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate, IList<ProductionHumanResourceInputModel> data);
+        Task<IList<ProductionHumanResourceModel>> GetByDepartment(int departmentId, long startDate, long endDate);
+        Task<IList<ProductionHumanResourceModel>> CreateMultipleByDepartment(int departmentId, long startDate, long endDate, IList<ProductionHumanResourceInputModel> data);
 
         Task<IList<UnFinishProductionInfo>> GetUnFinishProductionInfo(int departmentId, long startDate, long endDate);
     }
