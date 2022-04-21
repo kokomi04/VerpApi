@@ -449,7 +449,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
         private string GenerateTempFilePath(string uploadFileName)
         {
-            var relativeFolder = $"/_tmp_/{Guid.NewGuid().ToString()}";
+            var relativeFolder = $"/_tmp_/{DateTime.Now.ToString("yy/MM/dd")}/{Guid.NewGuid()}";
             var relativeFilePath = relativeFolder + "/" + uploadFileName;
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);
