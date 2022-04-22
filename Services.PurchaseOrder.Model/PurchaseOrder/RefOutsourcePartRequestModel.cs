@@ -9,7 +9,7 @@ namespace VErp.Services.PurchaseOrder.Model
     {
        public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }
-        public long ProductionOrderId { get; set; }
+        public long? ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public int RootProductId { get; set; }
