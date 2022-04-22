@@ -10,9 +10,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int PurchaseOrderDetailSubCalculationId { get; set; }
         public long PurchaseOrderDetailId { get; set; }
         public long ProductBomId { get; set; }
+        public int? UnitConversionId { get; set; }
         public decimal PrimaryUnitPrice { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public int? UnitConversionId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }

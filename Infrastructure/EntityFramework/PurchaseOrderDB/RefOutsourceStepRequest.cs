@@ -14,7 +14,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long ProductionStepId { get; set; }
         public int? StepId { get; set; }
         public long ProductionStepLinkDataId { get; set; }
-        public long ProductId { get; set; }
+        public long? ProductId { get; set; }
         public decimal Quantity { get; set; }
         public bool IsImportant { get; set; }
         public int ProductionStepLinkDataRoleTypeId { get; set; }
