@@ -24,11 +24,16 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public List<PurchasingRequestInputDetail> Details { set; get; }
 
+        public long? NeedDate { get; set; }
+
         public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequest, PurchasingRequestInput>()
            .ForMember(m => m.Details, m => m.Ignore())
+           .ForMember(m => m.Date, m => m.MapFrom(v=>v.Date.GetUnix()))
+           .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.GetUnix()))
            .ReverseMap()
            .ForMember(m => m.PurchasingRequestDetail, m => m.Ignore())
-           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.UnixToDateTime()));
+           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.UnixToDateTime()))
+           .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.UnixToDateTime()));
     }
 
     public class PurchasingRequestInputDetail : IMapFrom<PurchasingRequestDetail>

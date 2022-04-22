@@ -19,5 +19,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long? AvatarFileId { get; set; }
         public int EmployeeTypeId { get; set; }
         public int UserStatusId { get; set; }
+        public string PartnerId { get; set; }
     }
 }
