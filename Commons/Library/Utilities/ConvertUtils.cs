@@ -98,7 +98,7 @@ namespace VErp.Commons.Library
                     return boolValue;
                 case EnumDataType.Percentage:
                     float percentValue;
-                    if (!float.TryParse(value.ToString()?.Trim(), out percentValue) || percentValue < -100 || percentValue > 100)
+                    if (!float.TryParse(value.ToString()?.Trim(), out percentValue))// || percentValue < -100 || percentValue > 100)
                     {
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu phần trăm");
                     }

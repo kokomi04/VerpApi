@@ -1,11 +1,11 @@
 USE [msdb]
 GO
 
-/****** Object:  Job [Backup_ByDays]    Script Date: 12/15/2021 4:31:59 PM ******/
+/****** Object:  Job [Backup_ByDays]    Script Date: 4/23/2022 10:49:35 PM ******/
 BEGIN TRANSACTION
 DECLARE @ReturnCode INT
 SELECT @ReturnCode = 0
-/****** Object:  JobCategory [[Uncategorized (Local)]]    Script Date: 12/15/2021 4:31:59 PM ******/
+/****** Object:  JobCategory [[Uncategorized (Local)]]    Script Date: 4/23/2022 10:49:35 PM ******/
 IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
 BEGIN
 EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
@@ -23,10 +23,9 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'Backup_ByDays',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
-		--@owner_login_name=N'WIN-1IM5PTUG78E\Administrator',
-		@job_id = @jobId OUTPUT
+		@owner_login_name=N'WIN-1IM5PTUG78E\Administrator', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [ThucThi]    Script Date: 12/15/2021 4:32:00 PM ******/
+/****** Object:  Step [ThucThi]    Script Date: 4/23/2022 10:49:36 PM ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'ThucThi', 
 		@step_id=1, 
 		@cmdexec_success_code=0, 
@@ -39,10 +38,12 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'ThucThi'
 		@os_run_priority=0, @subsystem=N'TSQL', 
 		@command=N'DECLARE @DbName NVARCHAR(100) ,
     @path NVARCHAR(100) = ''F:\backup\Database_ByDays\'' ,
+    @pathFull NVARCHAR(100) = ''F:\backup\Database\'' ,
     @DayName NVARCHAR(128) ;
 SELECT  @DayName = CONCAT(CONVERT(VARCHAR, GETDATE(),102),''_'',REPLACE(CONVERT(VARCHAR, GETDATE(),108),'':'',''.''));
 SET @path = @path+@DayName +''\'';
 EXEC master.dbo.xp_create_subdir @path
+EXEC master.dbo.xp_create_subdir @pathFull
 DECLARE database_cursor CURSOR LOCAL
 FOR
     SELECT  name
@@ -58,8 +59,14 @@ BEGIN
 
         DECLARE @Sql NVARCHAR(200) = ''BACKUP DATABASE ['' + @DbName
             + ''] TO DISK = '''''' + @path + @DbName + ''.duoi_chong_ma_hoa''
+            + '''''' WITH INIT,COPY_ONLY'' ;
+        EXEC(@Sql) ;
+
+        SET @Sql = ''BACKUP DATABASE ['' + @DbName
+            + ''] TO DISK = '''''' + @pathFull  + @DbName + ''.duoi_chong_ma_hoa''
             + '''''' WITH INIT'' ;
         EXEC(@Sql) ;
+
         FETCH NEXT FROM database_cursor INTO @DbName ;
 END
 CLOSE database_cursor ;
