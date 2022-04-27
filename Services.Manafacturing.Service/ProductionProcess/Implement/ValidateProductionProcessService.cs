@@ -198,9 +198,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var productionOutsourcePartMappings = await (from m in _manufacturingDBContext.ProductionOutsourcePartMapping
                                                          join p in _manufacturingDBContext.RefProduct on m.ProductId equals p.ProductId into gp
+                                                         from p in gp.DefaultIfEmpty()
                                                          join od in _manufacturingDBContext.OutsourcePartRequestDetail on m.OutsourcePartRequestDetailId equals od.OutsourcePartRequestDetailId
                                                          join o in _manufacturingDBContext.OutsourcePartRequest on od.OutsourcePartRequestId equals o.OutsourcePartRequestId
-                                                         from p in gp.DefaultIfEmpty()
                                                          where m.ContainerId == productionProcess.ContainerId
                                                          select new
                                                          {
