@@ -131,7 +131,7 @@ namespace VErp.WebApis.VErpApi
 
             services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderStatusDataModel>(PRODUCTION_INVENTORY_APPROVED, async (_productionOrderService, msg, calcelToken) =>
             {
-                await _productionOrderService.CalcAbdUpdateProductionOrderStatus(msg.Data);
+                await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
             });
         }
 

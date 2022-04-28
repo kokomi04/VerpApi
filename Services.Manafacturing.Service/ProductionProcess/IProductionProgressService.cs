@@ -11,6 +11,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
     public interface IProductionProgressService
     {
-        Task<bool> CalcAbdUpdateProductionOrderStatus(ProductionOrderStatusDataModel data);
+        Task<bool> CalcAndUpdateProductionOrderStatus(ProductionOrderStatusDataModel data);
     }    
 }

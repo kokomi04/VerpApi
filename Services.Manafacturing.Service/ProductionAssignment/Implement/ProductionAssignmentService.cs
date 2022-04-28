@@ -19,6 +19,7 @@ using VErp.Commons.Enums.Manafacturing;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -30,12 +31,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+
         public ProductionAssignmentService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -43,6 +46,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _organizationHelperService = organizationHelperService;
+            _queueProcessHelperService = queueProcessHelperService;
         }
 
         public async Task<bool> DismissUpdateWarning(long productionOrderId)
@@ -1053,6 +1057,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 assignment.IsManualFinish = true;
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment.JsonSerialize());
+
+                var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+                
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderInfo?.ProductionOrderCode);
+
                 return true;
             }
             catch (Exception ex)

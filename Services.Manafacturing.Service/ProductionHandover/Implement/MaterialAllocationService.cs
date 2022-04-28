@@ -332,7 +332,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return materialsConsumptionIds;
         }
 
-        public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes)
+        public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes, bool ignoreEnqueueUpdateProductionOrderStatus = false)
         {
             var productionOrderIds = _manufacturingDBContext.ProductionOrder
                 .Where(po => productionOrderCodes.Contains(po.ProductionOrderCode))
@@ -498,9 +498,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
             _manufacturingDBContext.SaveChanges();
 
-            foreach (var code in productionOrderCodes)
+            if (!ignoreEnqueueUpdateProductionOrderStatus)
             {
-                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                foreach (var code in productionOrderCodes)
+                {
+                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                }
             }
 
             return true;
