@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -13,13 +14,17 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Service.ProductionAssignment;
+using VErp.Services.Manafacturing.Service.ProductionAssignment.Implement;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
+using VErp.Services.Manafacturing.Service.StatusProcess;
+using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
-    public class ProductionProgressService : IProductionProgressService
+    public class ProductionProgressService : StatusProcessService, IProductionProgressService
     {
 
         private readonly IProductionHandoverService _productionHandoverService;
@@ -27,28 +32,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IProductionOrderService _productionOrderService;
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
+        private readonly IProductionAssignmentService _productionAssignmentService;
+        private readonly IMapper _mapper;
         private readonly ILogger _logger;
 
-        public ProductionProgressService(IProductionHandoverService productionHandoverService, 
-            IMaterialAllocationService materialAllocationService, 
-            IProductionOrderService productionOrderService, 
-            ManufacturingDBContext manufacturingDBContext, 
-            IActivityLogService activityLogService, ILogger<ProductionProgressService> logger)
+        public ProductionProgressService(IProductionHandoverService productionHandoverService,
+            IMaterialAllocationService materialAllocationService,
+            IProductionOrderService productionOrderService,
+            ManufacturingDBContext manufacturingDBContext,
+            IActivityLogService activityLogService,
+             IMapper mapper,
+            ILogger<ProductionProgressService> logger,
+            IProductionAssignmentService productionAssignmentService) : base(manufacturingDBContext, activityLogService, logger, mapper)
         {
             _productionHandoverService = productionHandoverService;
             _materialAllocationService = materialAllocationService;
             _productionOrderService = productionOrderService;
             _manufacturingDBContext = manufacturingDBContext;
             _activityLogService = activityLogService;
+            _mapper = mapper;
             _logger = logger;
+            _productionAssignmentService = productionAssignmentService;
         }
 
 
         public async Task<bool> CalcAbdUpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
         {
+            await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode });
+
             await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
 
-            await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode });
 
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .Include(po => po.ProductionOrderDetail)
@@ -56,6 +69,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            var departmentHandoverDetails = await GetDepartmentHandoverDetail(productionOrder.ProductionOrderId, null, null, data.Inventories);
 
             var oldStatus = productionOrder.ProductionOrderStatus;
 
@@ -86,9 +101,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                          d
                                      }).ToListAsync();
 
-                var startSteps = steps.Where(s => inputs.All(p => p.ProductionStepId != s.ProductionStepId)).ToList();
 
-                var endSteps = steps.Where(s => outputs.All(p => p.ProductionStepId != s.ProductionStepId)).ToList();
+                /**
+                 * All output not have input
+                 */
+                var endSteps = steps.Where(s => s.ParentId != null &&
+                        outputs.Where(p => p.ProductionStepId == s.ProductionStepId)
+                                .All(d => !inputs.Any(o => o.d.ProductionStepLinkDataId == d.d.ProductionStepLinkDataId))
+                 ).ToList();
 
                 var assignments = await _manufacturingDBContext.ProductionAssignment.Where(s => s.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
 
@@ -107,7 +127,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingLessStarted;
                 }
 
-                if (startSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.All(a => a.ProductionStepId == s.StepId && (a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish))))
+
+
+                if (departmentHandoverDetails.All(s => s.InputDatas.Where(d => d.FromStepId == null).All(d => d.ReceivedQuantity >= d.RequireQuantity)))//startSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.All(a => a.ProductionStepId == s.StepId && (a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish))))
                 {
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
                 }
@@ -145,7 +167,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                     if (isFinish)
                     {
-                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;                        
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
                     }
                 }
 
@@ -155,7 +177,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
                 }
 
-               
+
                 return true;
             }
             catch (Exception ex)
