@@ -225,7 +225,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     })
                     .ToListAsync();
 
-            var productionOrderIds = productionAssignemts.Select(a => a.ProductionOrderId).Distinct().ToList();
+            var handoverSteps = await _manufacturingDBContext.ProductionHandover.Where(h => h.FromDepartmentId == departmentId && h.HandoverDatetime >= start && h.HandoverDatetime <= end)
+                .Select(h => new
+                {
+                    h.FromProductionStepId,
+                    h.ProductionOrderId
+                }).ToListAsync();
+
+            var productionOrderIds = productionAssignemts.Select(a => a.ProductionOrderId).Union(handoverSteps.Select(h => h.ProductionOrderId)).Distinct().ToList();
+
 
             var productionOrders = _manufacturingDBContext.ProductionOrder
                 .Where(po => productionOrderIds.Contains(po.ProductionOrderId) && po.ProductionOrderStatus != (int)EnumProductionStatus.Finished)
@@ -236,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 })
                 .ToList();
 
-            var groupIds = productionAssignemts.Select(a => a.ProductionStepId).Distinct().ToList();
+            var groupIds = productionAssignemts.Select(a => a.ProductionStepId).Union(handoverSteps.Select(h => h.FromProductionStepId)).Distinct().ToList();
             var productionStepIds = _manufacturingDBContext.ProductionStep
                .Where(ps => groupIds.Contains(ps.ProductionStepId) && ps.ParentId.HasValue)
                .Select(ps => ps.ParentId)
