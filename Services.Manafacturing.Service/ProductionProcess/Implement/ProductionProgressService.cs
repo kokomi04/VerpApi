@@ -56,9 +56,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        public async Task<bool> CalcAbdUpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
+        public async Task<bool> CalcAndUpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
         {
-            await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode });
+            await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode }, true);
 
             await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
 
