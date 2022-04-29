@@ -2737,7 +2737,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
         {   
-            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE (v.CensorStatusId IS NULL OR  v.CensorStatusId <> {(int)EnumCensorStatus.Approved}) AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
             
             return (await _accountancyDBContext.QueryDataTable(sql, new []{new SqlParameter("@InputTypeId", inputTypeId)}))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2746,7 +2746,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
+            var sql = $"SELECT DISTINCT v.InputTypeId ObjectTypeId, v.InputBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {INPUTVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCheckStatus.CheckedSuccess}) AND v.InputTypeId = @InputTypeId AND v.IsDeleted = 0";
 
             return (await _accountancyDBContext.QueryDataTable(sql, new[] { new SqlParameter("@InputTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2757,7 +2757,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             if (models.Count > 0)
             {
-                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CheckStatusId = 1 WHERE InputBill_F_Id IN (";
+                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CheckStatusId = {(int)EnumCheckStatus.CheckedSuccess} WHERE InputBill_F_Id IN (";
                 var sqlParams = new List<SqlParameter>();
                 var prefixColumn = "@InputBill_F_Id_";
                 foreach (var item in models.Select((item, index) => new { item, index }))
@@ -2778,7 +2778,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             if (models.Count > 0)
             {
-                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CensorStatusId = 1 WHERE InputBill_F_Id IN (";
+                var sql = $"UPDATE {INPUTVALUEROW_TABLE} SET CensorStatusId = {(int)EnumCensorStatus.Approved} WHERE InputBill_F_Id IN (";
                 var sqlParams = new List<SqlParameter>();
                 var prefixColumn = "@InputBill_F_Id_";
                 foreach (var item in models.Select((item, index) => new { item, index }))
