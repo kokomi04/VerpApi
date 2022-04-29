@@ -35,6 +35,7 @@ using static Verp.Resources.PurchaseOrder.Voucher.VoucherDataValidationMessage;
 using AutoMapper.QueryableExtensions;
 using static VErp.Commons.Library.ExcelReader;
 using Verp.Resources.GlobalObject;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -2609,7 +2610,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CensorStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCensorStatus.Approved}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
             return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2618,7 +2619,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
         {
-            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE v.CheckStatusId = 0 AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCheckStatus.CheckedSuccess}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
             return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
@@ -2629,7 +2630,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             if (models.Count > 0)
             {
-                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CheckStatusId = 1 WHERE VoucherBill_F_Id IN (";
+                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CheckStatusId = {(int)EnumCheckStatus.CheckedSuccess} WHERE VoucherBill_F_Id IN (";
                 var sqlParams = new List<SqlParameter>();
                 var prefixColumn = "@VoucherBill_F_Id_";
                 foreach (var item in models.Select((item, index) => new { item, index }))
@@ -2650,7 +2651,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             if (models.Count > 0)
             {
-                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CensorStatusId = 1 WHERE VoucherBill_F_Id IN (";
+                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CensorStatusId = {(int)EnumCensorStatus.Approved} WHERE VoucherBill_F_Id IN (";
                 var sqlParams = new List<SqlParameter>();
                 var prefixColumn = "@VoucherBill_F_Id_";
                 foreach (var item in models.Select((item, index) => new { item, index }))
