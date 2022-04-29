@@ -883,7 +883,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var inventoryDetailList = new List<CoupleDataInventoryDetail>();
 
-            var packageRemaining = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
+            var packageRemainingPrimary = fromPackages.ToDictionary(p => p.PackageId, p => p.PrimaryQuantityRemaining);
+
+            var packageRemainingPu = fromPackages.ToDictionary(p => p.PackageId, p => p.ProductUnitConversionRemaining);
 
             foreach (var detail in req.OutProducts)
             {
@@ -988,7 +990,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
-                if (packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity) < 0)
+               
+
+                packageRemainingPrimary[fromPackageInfo.PackageId] = packageRemainingPrimary[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
+                packageRemainingPu[fromPackageInfo.PackageId] = packageRemainingPu[fromPackageInfo.PackageId].SubDecimal(detail.ProductUnitConversionQuantity);
+
+                if (packageRemainingPrimary[fromPackageInfo.PackageId] == 0)
+                {
+                    packageRemainingPu[fromPackageInfo.PackageId] = 0;
+                }
+
+                if (packageRemainingPu[fromPackageInfo.PackageId] == 0)
+                {
+                    packageRemainingPrimary[fromPackageInfo.PackageId] = 0;
+                }
+
+                if (packageRemainingPrimary[fromPackageInfo.PackageId] < 0)
                 {
                     var primaryUnit = productUnitConversions.FirstOrDefault(c => c.IsDefault && c.ProductId == productInfo.ProductId);
                     var remaining = $"{fromPackageInfo.PrimaryQuantityRemaining.Format()} {primaryUnit?.ProductUnitConversionName}";
@@ -1003,9 +1020,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, remaining, totalOutMess);
                 }
-
-                packageRemaining[fromPackageInfo.PackageId] = packageRemaining[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
-
 
 
                 if (detail.ProductUnitConversionPrice == 0)
