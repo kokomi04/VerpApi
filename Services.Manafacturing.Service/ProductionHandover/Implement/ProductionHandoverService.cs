@@ -28,25 +28,99 @@ using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.Produc
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using Newtonsoft.Json;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
     public class ProductionHandoverService : StatusProcessService, IProductionHandoverService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
+        private readonly ICurrentContextService _currentContextService;
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private const int STOCK_DEPARTMENT_ID = -1;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+
         public ProductionHandoverService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverService> logger
-            , IMapper mapper) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IMapper mapper
+            , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _currentContextService = currentContextService;
+            _queueProcessHelperService = queueProcessHelperService;
+        }
+
+        public async Task<bool> AcceptProductionHandoverBatch(IList<ProductionHandoverAcceptBatchInput> req)
+        {
+            var handoverIds = req.Select(h => h.productionHandoverId).Distinct().ToList();
+            var productionHandovers = await _manufacturingDBContext.ProductionHandover.Where(ho => handoverIds.Contains(ho.ProductionHandoverId)).ToListAsync();
+
+            foreach (var item in req)
+            {
+                var info = productionHandovers.FirstOrDefault(ho => ho.ProductionOrderId == item.ProductionOrderId && ho.ProductionHandoverId == item.productionHandoverId);
+
+                if (info == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                }
+                if (info.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+
+            }
+
+            var productionOrderIds = req.Select(h => h.ProductionOrderId).Distinct().ToList();
+            var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
+
+            using (var batchLog = _activityLogService.BeginBatchLog())
+            {
+                try
+                {
+
+
+                    foreach (var item in req)
+                    {
+                        var info = productionHandovers.FirstOrDefault(ho => ho.ProductionOrderId == item.ProductionOrderId && ho.ProductionHandoverId == item.productionHandoverId);
+
+                        if (info == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                        }
+                        if (info.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+                        info.Status = (int)EnumHandoverStatus.Accepted;
+                        info.AcceptByUserId = _currentContextService.UserId;
+
+                        _manufacturingDBContext.SaveChanges();
+
+                        if (info.Status == (int)EnumHandoverStatus.Accepted)
+                        {
+                            await ChangeAssignedProgressStatus(info.ProductionOrderId, info.FromProductionStepId, info.FromDepartmentId);
+                            await ChangeAssignedProgressStatus(info.ProductionOrderId, info.ToProductionStepId, info.ToDepartmentId);
+                        }
+
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, info.ProductionHandoverId, $"Xác nhận bàn giao công việc", info.JsonSerialize());
+
+                    }
+
+
+                    await batchLog.CommitAsync();
+
+                    foreach (var code in productionOrderCodes)
+                    {
+                        await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "AcceptProductionHandoverBatch");
+                    throw;
+                }
+            }
         }
 
         public async Task<ProductionHandoverModel> ConfirmProductionHandover(long productionOrderId, long productionHandoverId, EnumHandoverStatus status)
@@ -54,9 +128,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var productionHandover = _manufacturingDBContext.ProductionHandover.FirstOrDefault(ho => ho.ProductionOrderId == productionOrderId && ho.ProductionHandoverId == productionHandoverId);
             if (productionHandover == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
             if (productionHandover.Status != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+
+            var productionOrderCode = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderId == o.ProductionOrderId).Select(o => o.ProductionOrderCode).FirstOrDefaultAsync();
+
             try
             {
                 productionHandover.Status = (int)status;
+
+                if (status == EnumHandoverStatus.Accepted)
+                    productionHandover.AcceptByUserId = _currentContextService.UserId;
+
                 _manufacturingDBContext.SaveChanges();
 
                 if (productionHandover.Status == (int)EnumHandoverStatus.Accepted)
@@ -65,6 +146,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await ChangeAssignedProgressStatus(productionOrderId, productionHandover.ToProductionStepId, productionHandover.ToDepartmentId);
                 }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Xác nhận bàn giao công việc", productionHandover.JsonSerialize());
+
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderCode);
+
+
                 return _mapper.Map<ProductionHandoverModel>(productionHandover);
             }
             catch (Exception ex)
@@ -77,6 +163,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data)
         {
             return await CreateProductionHandover(productionOrderId, data, EnumHandoverStatus.Waiting);
+        }
+
+        public async Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverInputModel> datas)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var data in datas)
+                {
+                    await CreateProductionHandover(data.ProductionOrderId, data, EnumHandoverStatus.Waiting);
+                }
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
         }
 
         private async Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data, EnumHandoverStatus status)
@@ -220,8 +327,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .ToListAsync();
 
         }
-       
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId)
+
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>()
@@ -233,7 +340,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 new SqlParameter("@StepId", stepId.GetValueOrDefault()),
-                new SqlParameter("@ProductId", productId.GetValueOrDefault())
+                new SqlParameter("@ProductId", productId.GetValueOrDefault()),
+                new SqlParameter("@ProductionStepLinkDataRoleTypeId", (int?)productionStepLinkDataRoleTypeId),
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish)
             };
 
             var dataSet = await _manufacturingDBContext.ExecuteMultipleDataProcedure("asp_ProductionDepartmentHandover", parammeters.ToArray());

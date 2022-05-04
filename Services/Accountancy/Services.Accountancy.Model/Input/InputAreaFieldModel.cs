@@ -45,6 +45,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public string CustomButtonHtml { get; set; }
         public string CustomButtonOnClick { get; set; }
         public ControlStructureModel Structure { get; set; }
+
+        public int? ObjectApprovalStepTypeId { get; set; }
+        
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
             profile.CreateMap<InputField, T>()

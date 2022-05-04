@@ -12,7 +12,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     {
         public int Status { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
-        public int InventoryTypeId { get; set; }
+        public EnumInventoryType InventoryTypeId { get; set; }
         public long InventoryRequirementDetailId { get; set; }
         public int ProductId { get; set; }
         public int CreatedByUserId { get; set; }

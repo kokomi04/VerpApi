@@ -73,7 +73,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 var monthDays = monthPlan.EndDate.Subtract(monthPlan.StartDate).TotalDays + 1;
                 var weekDays = data.WeekPlans.Sum(wp => wp.EndDate.UnixToDateTime().Value.Subtract(wp.StartDate.UnixToDateTime().Value).TotalDays + 1);
-                if(weekDays != monthDays) 
+                if (weekDays != monthDays)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian kế hoạch tháng chưa phân đủ vào kế hoạch tuần.");
 
                 foreach (var item in data.WeekPlans)
@@ -212,7 +212,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         public async Task<MonthPlanModel> GetMonthPlan(int monthPlanId)
         {
             var monthPlan = await _manufacturingDBContext.MonthPlan.Where(mp => mp.MonthPlanId == monthPlanId).FirstOrDefaultAsync();
-            if(monthPlan == null) return null;
+            if (monthPlan == null) return null;
             var model = _mapper.Map<MonthPlanModel>(monthPlan);
             model.WeekPlans = await _manufacturingDBContext.WeekPlan
                 .Where(wp => wp.MonthPlanId == monthPlanId)
@@ -227,7 +227,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             var monthPlan = await _manufacturingDBContext.MonthPlan.Where(mp => mp.MonthPlanName == monthPlanName).FirstOrDefaultAsync();
 
-            if (monthPlan == null) return null; 
+            if (monthPlan == null) return null;
             var model = _mapper.Map<MonthPlanModel>(monthPlan);
             model.WeekPlans = await _manufacturingDBContext.WeekPlan
                 .Where(wp => wp.MonthPlanId == monthPlan.MonthPlanId)
@@ -243,6 +243,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             var monthPlan = await _manufacturingDBContext.MonthPlan
                 .Where(mp => mp.StartDate <= endDate.UnixToDateTime() && mp.EndDate >= startDate.UnixToDateTime())
+                .OrderBy(mp => mp.StartDate)
                 .FirstOrDefaultAsync();
             if (monthPlan == null) return null;
             var model = _mapper.Map<MonthPlanModel>(monthPlan);
@@ -271,7 +272,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             {
                 monthPlans = monthPlans.InternalFilter(filters);
             }
-            if(string.IsNullOrEmpty(orderByFieldName))
+            if (string.IsNullOrEmpty(orderByFieldName))
             {
                 orderByFieldName = "StartDate";
                 asc = false;

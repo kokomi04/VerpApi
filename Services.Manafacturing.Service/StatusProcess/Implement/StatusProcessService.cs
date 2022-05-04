@@ -56,6 +56,17 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 .ToList();
         }
 
+        public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetailByArrayProductionOrderId(IList<RequestObjectGetProductionOrderHandover> requestObject, int? departmentId = null)
+        {
+            var result = new List<DepartmentHandoverDetailModel>();
+            foreach (var rq in requestObject)
+            {
+                var data = await GetDepartmentHandoverDetail(rq.ProductionOrderId, rq.ProductionStepId, departmentId);
+                result.AddRange(data);
+            }
+            return result;
+        }
+
         public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<ProductionInventoryRequirementEntity> inventories = null)
         {
             var result = new List<DepartmentHandoverDetailModel>();

@@ -24,6 +24,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
 using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
@@ -36,6 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IProductCateHelperService _productCateHelperService;
         private readonly IProductBomHelperService _productBomHelperService;
+        private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ICurrentContextService _currentContext;
         public ProductionPlanService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -44,6 +46,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IProductHelperService productHelperService
             , IProductCateHelperService productCateHelperService
             , IProductBomHelperService productBomHelperService
+            , IVoucherTypeHelperService voucherTypeHelperService
             , ICurrentContextService currentContext)
         {
             _manufacturingDBContext = manufacturingDB;
@@ -53,6 +56,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _productHelperService = productHelperService;
             _productCateHelperService = productCateHelperService;
             _productBomHelperService = productBomHelperService;
+            _voucherTypeHelperService = voucherTypeHelperService;
             _currentContext = currentContext;
         }
 
@@ -230,8 +234,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetProductCateHelperService(_productCateHelperService);
             productionPlanExport.SetProductBomHelperService(_productBomHelperService);
             productionPlanExport.SetCurrentContextService(_currentContext);
+            productionPlanExport.SetVoucherTypeHelperService(_voucherTypeHelperService);
             return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
         }
+
+
+        public async Task<(Stream stream, string fileName, string contentType)> ProductionWorkloadPlanExport(int monthPlanId, long startDate, long endDate, string monthPlanName, IList<string> mappingFunctionKeys = null)
+        {
+            var groupSteps = _manufacturingDBContext.StepGroup.ToList();
+            var steps = _manufacturingDBContext.Step.ToList();
+            var extraInfos = await _manufacturingDBContext.ProductionPlanExtraInfo
+                .Where(d => d.MonthPlanId == monthPlanId)
+                .ProjectTo<ProductionPlanExtraInfoModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var productionPlanExport = new ProductionPlanExportFacade();
+            productionPlanExport.SetProductionPlanService(this);
+            productionPlanExport.SetProductHelperService(_productHelperService);
+            productionPlanExport.SetProductCateHelperService(_productCateHelperService);
+            productionPlanExport.SetProductBomHelperService(_productBomHelperService);
+            productionPlanExport.SetCurrentContextService(_currentContext);
+            productionPlanExport.SetStepInfo(groupSteps, steps);
+
+
+
+            return await productionPlanExport.WorkloadExport(startDate, endDate, monthPlanName, extraInfos, mappingFunctionKeys);
+        }
+
+        public List<ProductSemiEntity> GetProductSemis(List<long> productSemiIds)
+        {
+            return _manufacturingDBContext.ProductSemi.Where(ps => productSemiIds.Contains(ps.ProductSemiId)).ToList();
+        }
+
 
         public async Task<IList<ProductionOrderListModel>> GetProductionPlans(long startDate, long endDate)
         {

@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private const int STOCK_DEPARTMENT_ID = -1;
+
         public ProductionHumanResourceService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHumanResourceService> logger
@@ -37,7 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         }
 
 
-        public async Task<ProductionHumanResourceModel> CreateProductionHumanResource(long productionOrderId, ProductionHumanResourceInputModel data)
+        public async Task<ProductionHumanResourceModel> Create(long productionOrderId, ProductionHumanResourceInputModel data)
         {
             try
             {
@@ -56,7 +56,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
-        public async Task<bool> DeleteProductionHumanResource(long productionHumanResourceId)
+        public async Task<ProductionHumanResourceModel> Update(long productionOrderId, long productionHumanResourceId, ProductionHumanResourceInputModel data)
+        {
+            try
+            {
+                var info = await _manufacturingDBContext.ProductionHumanResource.FirstOrDefaultAsync(p => p.ProductionHumanResourceId == productionHumanResourceId && p.ProductionOrderId == productionOrderId);
+                if (info == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                data.ProductionStepId = info.ProductionStepId;
+
+                _mapper.Map(data, info);
+
+                data.ProductionOrderId = productionOrderId;
+
+                _manufacturingDBContext.SaveChanges();
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data.JsonSerialize());
+                return _mapper.Map<ProductionHumanResourceModel>(info);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Update");
+                throw;
+            }
+        }
+
+        public async Task<bool> Delete(long productionHumanResourceId)
         {
             try
             {
@@ -78,7 +103,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
-        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResource(long productionOrderId, IList<ProductionHumanResourceInputModel> data)
+        public async Task<IList<ProductionHumanResourceModel>> CreateMultiple(long productionOrderId, IList<ProductionHumanResourceInputModel> data)
         {
             var insertData = new List<ProductionHumanResource>();
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
@@ -130,7 +155,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         }
 
 
-        public async Task<IList<ProductionHumanResourceModel>> GetProductionHumanResources(long productionOrderId)
+        public async Task<IList<ProductionHumanResourceModel>> GetByProductionOrder(long productionOrderId)
         {
             return await _manufacturingDBContext.ProductionHumanResource
                 .Where(h => h.ProductionOrderId == productionOrderId)
@@ -139,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         }
 
-        public async Task<IList<ProductionHumanResourceModel>> GetProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate)
+        public async Task<IList<ProductionHumanResourceModel>> GetByDepartment(int departmentId, long startDate, long endDate)
         {
             DateTime start = startDate.UnixToDateTime().Value;
             DateTime end = endDate.UnixToDateTime().Value;
@@ -200,7 +225,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     })
                     .ToListAsync();
 
-            var productionOrderIds = productionAssignemts.Select(a => a.ProductionOrderId).Distinct().ToList();
+            var handoverSteps = await _manufacturingDBContext.ProductionHandover.Where(h => h.FromDepartmentId == departmentId && h.HandoverDatetime >= start && h.HandoverDatetime <= end)
+                .Select(h => new
+                {
+                    h.FromProductionStepId,
+                    h.ProductionOrderId
+                }).ToListAsync();
+
+            var productionOrderIds = productionAssignemts.Select(a => a.ProductionOrderId).Union(handoverSteps.Select(h => h.ProductionOrderId)).Distinct().ToList();
+
 
             var productionOrders = _manufacturingDBContext.ProductionOrder
                 .Where(po => productionOrderIds.Contains(po.ProductionOrderId) && po.ProductionOrderStatus != (int)EnumProductionStatus.Finished)
@@ -211,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 })
                 .ToList();
 
-            var groupIds = productionAssignemts.Select(a => a.ProductionStepId).Distinct().ToList();
+            var groupIds = productionAssignemts.Select(a => a.ProductionStepId).Union(handoverSteps.Select(h => h.FromProductionStepId)).Distinct().ToList();
             var productionStepIds = _manufacturingDBContext.ProductionStep
                .Where(ps => groupIds.Contains(ps.ProductionStepId) && ps.ParentId.HasValue)
                .Select(ps => ps.ParentId)
@@ -239,7 +272,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             foreach (var productionOrder in productionOrders)
             {
-                if(productionSteps.ContainsKey(productionOrder.ProductionOrderId) && productionSteps[productionOrder.ProductionOrderId].Count > 0)
+                if (productionSteps.ContainsKey(productionOrder.ProductionOrderId) && productionSteps[productionOrder.ProductionOrderId].Count > 0)
                 {
                     result.Add(new UnFinishProductionInfo
                     {
@@ -252,7 +285,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleProductionHumanResourceByDepartment(int departmentId, long startDate, long endDate, IList<ProductionHumanResourceInputModel> data)
+        public async Task<IList<ProductionHumanResourceModel>> CreateMultipleByDepartment(int departmentId, long startDate, long endDate, IList<ProductionHumanResourceInputModel> data)
         {
             var insertData = new List<ProductionHumanResource>();
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();

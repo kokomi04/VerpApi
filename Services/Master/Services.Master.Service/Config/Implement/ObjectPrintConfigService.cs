@@ -223,6 +223,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 objectTitle: "Lệch sản xuất")
             );
 
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                objectTypeId: EnumObjectType.ProductionHandover,
+                objectTitle: "Bàn giao sản xuất")
+            );
+
             return result;
         }
 

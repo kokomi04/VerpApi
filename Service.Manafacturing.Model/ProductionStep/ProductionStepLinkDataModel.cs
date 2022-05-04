@@ -29,6 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumProductionStepLinkDataType ProductionStepLinkDataTypeId { get; set; }
         public EnumProductionStepLinkType ProductionStepLinkTypeId { get; set; }
         public long? ConverterId { get; set; }
+        public long? ProductionOutsourcePartMappingId { get; set; }
     }
 
     public class ProductionStepLinkDataInput : ProductionStepLinkDataModel

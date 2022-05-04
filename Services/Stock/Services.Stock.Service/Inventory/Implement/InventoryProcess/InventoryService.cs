@@ -85,7 +85,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService)
+            , IQueueProcessHelperService _queueProcessHelperService
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, _queueProcessHelperService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
@@ -492,8 +493,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
                     //}
 
-                    var subs = await _stockDbContext.InventoryDetailSubCalculation.Where(x=>x.InventoryDetailId == detailModel.InventoryDetailId).
-                    Select(x=> new InventoryDetailSubCalculationModel
+                    var subs = await _stockDbContext.InventoryDetailSubCalculation.Where(x => x.InventoryDetailId == detailModel.InventoryDetailId).
+                    Select(x => new InventoryDetailSubCalculationModel
                     {
                         InventoryDetailId = x.InventoryDetailId,
                         InventoryDetailSubCalculationId = x.InventoryDetailSubCalculationId,

@@ -40,6 +40,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long LinkDataObjectId { get; set; }
         public int LinkDataObjectTypeId { get; set; }
 
+        public long? ProductionOutsourcePartMappingId {get; set; }
+
         public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; }
         public virtual ICollection<ProductionAssignment> ProductionAssignment { get; set; }
         public virtual ICollection<ProductionStepLinkDataRole> ProductionStepLinkDataRole { get; set; }

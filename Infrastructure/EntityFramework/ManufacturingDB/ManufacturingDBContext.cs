@@ -43,10 +43,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionOrderStatus> ProductionOrderStatus { get; set; }
+        public virtual DbSet<ProductionOutsourcePartMapping> ProductionOutsourcePartMapping { get; set; }
         public virtual DbSet<ProductionPlanExtraInfo> ProductionPlanExtraInfo { get; set; }
-        public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }
-        public virtual DbSet<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
-        public virtual DbSet<ProductionScheduleTurnShiftUser> ProductionScheduleTurnShiftUser { get; set; }
+        public virtual DbSet<ProductionProcessMold> ProductionProcessMold { get; set; }       
         public virtual DbSet<ProductionStep> ProductionStep { get; set; }
         public virtual DbSet<ProductionStepCollection> ProductionStepCollection { get; set; }
         public virtual DbSet<ProductionStepInOutConverter> ProductionStepInOutConverter { get; set; }
@@ -460,6 +459,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductionOrderStatusName).HasMaxLength(128);
             });
 
+            modelBuilder.Entity<ProductionOutsourcePartMapping>(entity =>
+            {
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
+            });
+
             modelBuilder.Entity<ProductionPlanExtraInfo>(entity =>
             {
                 entity.HasKey(e => new { e.MonthPlanId, e.SubsidiaryId, e.ProductionOrderDetailId });
@@ -471,42 +475,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(256);
             });
-
-            modelBuilder.Entity<ProductionScheduleTurnShift>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Hours).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.ProductionAssignment)
-                    .WithMany(p => p.ProductionScheduleTurnShift)
-                    .HasForeignKey(d => new { d.ProductionStepId, d.DepartmentId, d.ProductionOrderId })
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionScheduleTurnShift_ProductionAssignment");
-            });
-
-            modelBuilder.Entity<ProductionScheduleTurnShiftUser>(entity =>
-            {
-                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
-
-                entity.Property(e => e.Money).HasColumnType("decimal(18, 5)");
-
-                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
-
-                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
-
-                entity.HasOne(d => d.ProductionScheduleTurnShift)
-                    .WithMany(p => p.ProductionScheduleTurnShiftUser)
-                    .HasForeignKey(d => d.ProductionScheduleTurnShiftId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_ProductionScheduleTurnShiftUser_ProductionScheduleTurnShift");
-            });
+           
 
             modelBuilder.Entity<ProductionStep>(entity =>
             {

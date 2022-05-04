@@ -2574,6 +2574,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes)
         {
             // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            if (orderCodes == null || orderCodes.Count == 0) return new List<VoucherOrderDetailSimpleModel>();
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderGetByCodes",
                 new[]
                 {

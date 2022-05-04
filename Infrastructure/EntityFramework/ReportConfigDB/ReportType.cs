@@ -53,6 +53,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public long? TemplateFileId { get; set; }
         public string GroupTitleSql { get; set; }
         public bool? IsDbPaging { get; set; }
+        public string DisplayConfig { get; set; }
 
         public virtual ReportTypeGroup ReportTypeGroup { get; set; }
         public virtual ICollection<ReportTypeView> ReportTypeView { get; set; }

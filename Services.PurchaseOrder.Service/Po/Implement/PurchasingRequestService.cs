@@ -191,6 +191,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.PurchasingRequestStatusId,
                             r.PurchasingRequestTypeId,
                             r.Date,
+                            r.NeedDate,
                             d.OrderCode,
                             d.ProductionOrderCode,
                             r.PurchasingRequestCode,
@@ -265,6 +266,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchasingRequestId = info.PurchasingRequestId,
                     PurchasingRequestCode = info.PurchasingRequestCode,
                     Date = info.Date.GetUnix(),
+                    NeedDate = info.NeedDate.GetUnix(),
                     OrderCode = info.OrderCode,
                     ProductionOrderCode = info.ProductionOrderCode,
                     PurchasingRequestStatusId = (EnumPurchasingRequestStatus)info.PurchasingRequestStatusId,
@@ -765,12 +767,18 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId)
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId, int? productMaterialsConsumptionGroupId)
         {
-            var info = await _purchaseOrderDBContext
+            var query = _purchaseOrderDBContext
                 .PurchasingRequest
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.ProductionOrderId == productionOrderId);
+                .Where(r => r.ProductionOrderId == productionOrderId);
+
+            if(productMaterialsConsumptionGroupId.HasValue)
+                query = query.Where(r => r.ProductMaterialsConsumptionGroupId == productMaterialsConsumptionGroupId);
+
+            var info = await query
+                .FirstOrDefaultAsync();
 
             if (info == null) return null;
 

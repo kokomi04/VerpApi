@@ -16,8 +16,10 @@ using VErpApi.Controllers;
 using VErp.Services.Master.Service.Activity;
 using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
-namespace VErp.WebApis.VErpApi.Controllers
+namespace VErpApi.Controllers.System
 {
     [Route("api/[controller]")]
     [AllowAnonymous]
@@ -27,17 +29,20 @@ namespace VErp.WebApis.VErpApi.Controllers
         private readonly AppSetting _appSetting;
         private readonly IActivityService _activityService;
         private readonly IAsyncRunnerService _asyncRunnerService;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+
         public TestController(
             MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , IActivityService activityService
             , IAsyncRunnerService asyncRunnerService
-            )
+            , IQueueProcessHelperService queueProcessHelperService)
         {
             _masterDBContext = masterDBContext;
             _appSetting = appSetting?.Value;
             _activityService = activityService;
             _asyncRunnerService = asyncRunnerService;
+            _queueProcessHelperService = queueProcessHelperService;
         }
 
         [HttpPost]
@@ -69,6 +74,7 @@ namespace VErp.WebApis.VErpApi.Controllers
             return JsonUtils.GetJsonDiff(Newtonsoft.Json.JsonConvert.SerializeObject(oldUnit), newUnit);
         }
 
+        [HttpPost]
         public async Task<int> RunAbc(int a)
         {
             Console.WriteLine(a);
@@ -81,8 +87,18 @@ namespace VErp.WebApis.VErpApi.Controllers
         {
             await RunAbc(1);
 
-            _asyncRunnerService.RunAsync<TestController>(c=>c.RunAbc(1));
+            _asyncRunnerService.RunAsync<TestController>(c => c.RunAbc(1));
 
+            return 0;
+        }
+
+
+        [HttpPost]
+        [Route("EnqueueProductionOrderStatus")]
+        public async Task<int> EnqueueProductionOrderStatus([FromBody] string productionOrderCode)
+        {
+
+            await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderCode);
             return 0;
         }
 

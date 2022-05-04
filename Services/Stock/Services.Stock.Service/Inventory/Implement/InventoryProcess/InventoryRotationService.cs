@@ -45,8 +45,11 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             ICurrentContextService currentContextService,
             IInventoryBillInputService inventoryBillInputService,
             IInventoryBillOutputService inventoryBillOutputService,
-            IActivityLogService activityLogService, ICurrentContextService contextService)
-            : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoveHelperService, currentContextService)
+            IActivityLogService activityLogService, 
+            ICurrentContextService contextService,
+            IQueueProcessHelperService queueProcessHelperService
+            )
+            : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoveHelperService, currentContextService, queueProcessHelperService)
         {
             _inventoryBillInputService = inventoryBillInputService;
             _inventoryBillOutputService = inventoryBillOutputService;
@@ -166,16 +169,16 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                     var outDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(outDetails, EnumProductionStatus.Processing, outputObj.InventoryCode);
+                    await UpdateProductionOrderStatus(outDetails, EnumProductionStatus.ProcessingLessStarted, outputObj.InventoryCode);
 
-                    await UpdateIgnoreAllocation(outDetails);
+                   // await UpdateIgnoreAllocation(outDetails);
 
 
                     var intDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inputObj.InventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(intDetails, EnumProductionStatus.Processing, inputObj.InventoryCode);
+                    await UpdateProductionOrderStatus(intDetails, EnumProductionStatus.ProcessingLessStarted, inputObj.InventoryCode);
 
-                    await UpdateIgnoreAllocation(intDetails);
+                   // await UpdateIgnoreAllocation(intDetails);
 
                     await ctx.ConfirmCode();
 

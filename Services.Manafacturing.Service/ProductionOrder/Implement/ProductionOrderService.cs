@@ -38,6 +38,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IDraftDataHelperService _draftDataHelperService;
+
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionOrderService> logger
@@ -90,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate,bool? hasNewProductionProcessVersion = null, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -106,7 +107,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
 
-            if(hasNewProductionProcessVersion.HasValue)
+            if (hasNewProductionProcessVersion.HasValue)
             {
                 if (whereCondition.Length > 0)
                     whereCondition.Append(" AND ");
@@ -570,7 +571,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 // Tạo mới
                 var entity = _mapper.Map<ProductionOrderDetail>(item);
                 entity.ProductionProcessVersion = await _productHelperService.GetProductionProcessVersion(entity.ProductId);
-                
+
                 if (monthPlanId.HasValue && item.SortOrder.HasValue) extraPlans.Add((entity, item.SortOrder.Value));
                 _manufacturingDBContext.ProductionOrderDetail.Add(entity);
             }
@@ -924,6 +925,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return rs;
         }
 
+
+
         public async Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
@@ -1044,10 +1047,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (productionOrders.Count == 0)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
+            var validStatuses = new[] {
+                EnumProductionStatus.NotReady,
+                EnumProductionStatus.Waiting
+            };
+
             // Validate trạng thái
-            if (productionOrders.Any(po => po.ProductionOrderStatus == (int)EnumProductionStatus.Processing
-            || po.ProductionOrderStatus == (int)EnumProductionStatus.OverDeadline
-            || po.ProductionOrderStatus == (int)EnumProductionStatus.Finished))
+            if (productionOrders.Any(po => !validStatuses.Contains((EnumProductionStatus)po.ProductionOrderStatus)))
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất đã đi vào sản xuất");
 
             try

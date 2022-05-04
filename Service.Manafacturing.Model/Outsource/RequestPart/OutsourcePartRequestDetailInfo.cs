@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
@@ -11,6 +12,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
     public class OutsourcePartRequestDetailInfo : OutsourcePartRequestDetailBase, IMapFrom<OutsourcePartRequestDetailExtractInfo>
     {
         public long OutsourcePartRequestDate { get; set; }
+        public List<PurchaseOrderSimple> PurchaseOrder { get; set; }
 
         public new void Mapping(Profile profile)
         {
