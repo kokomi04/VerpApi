@@ -56,6 +56,10 @@ namespace VErp.Services.Stock.Model.Inventory
 
     public class InventoryInputExcelParseModel
     {
+        public InventoryInputExcelParseModel()
+        {
+            ToPackgeInfo = new PackageInputModel();
+        }
 
         [Display(Name = "Mã mặt hàng", GroupName = "Sản phẩm")]
         public string ProductCode { set; get; }
