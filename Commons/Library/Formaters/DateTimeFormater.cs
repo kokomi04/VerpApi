@@ -9,7 +9,7 @@ namespace VErp.Commons.Library.Formaters
     {
         public static string Format(this DateTime date)
         {
-            return string.Format(DateTimeFormaterFormat.Date, date);
+            return string.Format($"{{0:{DateTimeFormaterFormat.Date}}}", date);
         }
     }
 }
