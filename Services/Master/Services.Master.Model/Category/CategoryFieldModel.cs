@@ -40,6 +40,8 @@ namespace VErp.Services.Master.Model.Category
         public string DefaultValue { get; set; }
         public bool? IsImage { get; set; }
 
+        public bool IsCalcSum { get; set; }
+
         public bool Compare(CategoryField curField)
         {
             return !curField.IsDeleted &&
@@ -65,7 +67,8 @@ namespace VErp.Services.Master.Model.Category
                 RefTableTitle == curField.RefTableTitle &&
                 DecimalPlace == curField.DecimalPlace &&
                 DefaultValue == curField.DefaultValue&&
-                IsImage == curField.IsImage;
+                IsImage == curField.IsImage &&
+                IsCalcSum == curField.IsCalcSum;
 
         }
     }
