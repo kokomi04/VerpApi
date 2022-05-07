@@ -56,14 +56,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _purchaseOrderHelperService = purchaseOrderHelperService;
         }
 
-        
+
 
         public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model, bool isValidate = true)
         {
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                IList<int> partInBoms = new int[] {};
+                IList<int> partInBoms = new int[] { };
                 if (isValidate)
                 {
                     if (model.ProductionOrderDetailId.HasValue)
@@ -77,7 +77,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         partInBoms = (await _productBomHelperService.GetBOMs(arrProductId)).Values.SelectMany(x => x).Where(x => x.IsIgnoreStep == false).Select(x => x.ProductId).Distinct().ToList();
                     }
                 }
-                
+
                 // Cấu hình sinh mã
                 var ctx = await GenerateOutsouceRequestCode(null, model);
 
@@ -91,7 +91,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 var requestDetails = new List<OutsourcePartRequestDetail>();
                 foreach (var element in model.Detail)
                 {
-                    if(isValidate && !partInBoms.Contains(element.ProductId))
+                    if (isValidate && !partInBoms.Contains(element.ProductId))
                         throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
 
                     element.OutsourcePartRequestId = request.OutsourcePartRequestId;
@@ -110,7 +110,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request.JsonSerialize());
 
-                
+
                 return request.OutsourcePartRequestId;
             }
             catch (Exception ex)
@@ -149,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductId)
                     .Select(x => new PurchaseOrderSimple { PurchaseOrderCode = x.PurchaseOrderCode, PurchaseOrderId = x.PurchaseOrderId })
                     .ToList();
-                element.QuantityProcessed = purchaseOrders.Where(x => x.ProductId == element.ProductId).Sum(x => x.PrimaryQuantity);
+                element.QuantityProcessed = purchaseOrders.Where(x => x.ProductId == element.ProductId).Sum(x => x.PrimaryQuantity) ?? 0;
             }
 
             var rs = _mapper.Map<OutsourcePartRequestModel>(request);
@@ -164,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
         public async Task<bool> UpdateOutsourcePartRequest(long OutsourcePartRequestId, OutsourcePartRequestModel model)
         {
-            
+
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -206,7 +206,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .AsQueryable()
                     .ProjectTo<OutsourcePartRequestDetail>(_mapper.ConfigurationProvider)
                     .ToList();
-                newRequestDetails.ForEach(x => {
+                newRequestDetails.ForEach(x =>
+                {
                     if (!partInBoms.Contains(x.ProductId))
                         throw new BadRequestException(OutsourceErrorCode.NotFoundPartInBom, "Không tìm thấy chi tiết gia công có trong BOM của mặt hàng");
                     x.OutsourcePartRequestId = request.OutsourcePartRequestId;
@@ -250,7 +251,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                             r.OutsourcePartRequestStatusId,
                             ProductionOrderId = po.ProductionOrderId,
                             po.ProductionOrderCode,
-                            OrderCode = r.ProductionOrderDetailId.HasValue ?  pod.OrderCode : string.Empty,
+                            OrderCode = r.ProductionOrderDetailId.HasValue ? pod.OrderCode : string.Empty,
                             RootProductId = r.ProductionOrderDetailId.HasValue ? pod.ProductId : 0,
                             RootProductCode = p1.ProductCode,
                             RootProductName = p1.ProductName,
@@ -277,7 +278,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (productionOrderId.HasValue)
                 query = query.Where(x => x.ProductionOrderId == productionOrderId);
 
-            if(fromDate > 0 && toDate > 0)
+            if (fromDate > 0 && toDate > 0)
             {
                 query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime() && x.CreatedDatetimeUtc < toDate.UnixToDateTime().Value.AddDays(1));
             }
@@ -312,7 +313,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         .ToListAsync();
 
             var arrOutsourceRequestId = lst.Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
-            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault())).ToListAsync();
+            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId)).ToListAsync();
             foreach (var element in lst)
             {
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductId && x.OutsourceRequestId == element.OutsourcePartRequestId)
@@ -348,7 +349,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                                                                             .ToArrayAsync();
 
                 await _purchaseOrderHelperService.RemoveOutsourcePart(arrPurchaseOrderId, outsourcePartRequestId);
-                                                                                                
+
                 /*
               var details = await _manufacturingDBContext.OutsourcePartRequestDetail
                   .Where(x => x.OutsourcePartRequestId == order.OutsourcePartRequestId)
@@ -397,7 +398,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ToList();
 
             var arrOutsourceRequestId = resultData.Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
-            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault())).ToListAsync();
+            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId)).ToListAsync();
             foreach (var element in resultData)
             {
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductPartId && x.OutsourceRequestId == element.OutsourcePartRequestId)
@@ -413,7 +414,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             return resultData;
         }
-        
+
         public async Task<IList<OutsourcePartRequestOutput>> GetOutsourcePartRequestByProductionOrderId(long productionOrderId)
         {
             var data = await _manufacturingDBContext.OutsourcePartRequest.AsNoTracking()
@@ -497,10 +498,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         {
             var outsourceDetails = await _manufacturingDBContext.OutsourcePartRequestDetail.AsNoTracking()
             .Where(x => x.OutsourcePartRequestId == outsourcePartRequestId && productId.Contains(x.ProductId))
-            .Select(x => new {
+            .Select(x => new
+            {
                 x.OutsourcePartRequestDetailId,
                 x.ProductId
-            } )
+            })
             .ToListAsync();
 
             var productionOrderId = await _manufacturingDBContext.OutsourcePartRequest.Where(x => x.OutsourcePartRequestId == outsourcePartRequestId)
@@ -522,7 +524,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     .GroupBy(g => g.OutsourceRequestDetailId);
 
             // Tìm các công đoạn đầu tiên
-            var requestDetailMap = new Dictionary<long, Dictionary<long, Dictionary<long, IList<long>>>>(); 
+            var requestDetailMap = new Dictionary<long, Dictionary<long, Dictionary<long, IList<long>>>>();
             foreach (var map in linkDataMap)
             {
                 var d_1 = new Dictionary<long, Dictionary<long, IList<long>>>();
@@ -588,7 +590,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                         .Select(x => new MaterialsForProductOutsource
                                         {
                                             RootProductId = rootProductId,
-                                            ProductId = x.LinkDataObjectId,
+                                            ProductId = x.LinkDataObjectId.Value,
                                             OutsourcePartRequestId = outsourcePartRequestId,
                                             Quantity = percent * x.QuantityOrigin /*số lượng định mức (chưa nhân với số lượng của chi tiết gia công tương ứng trên PO) */
                                         }).ToArray();

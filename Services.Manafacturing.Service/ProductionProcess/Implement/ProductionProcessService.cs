@@ -482,7 +482,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     where ps.ContainerId == productionOrderId
                     && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                     && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
-                    && productIds.Contains(ld.LinkDataObjectId)
+                    && productIds.Contains((int)ld.LinkDataObjectId)
                     && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
                     select ld.LinkDataObjectId
                 )
@@ -1763,7 +1763,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var objectTypeId = x.ProductionStepLinkData.LinkDataObjectTypeId;
                     if (objectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                         return productInfoMap.ContainsKey((int)objectId) ? productInfoMap[(int)objectId] : "";
-                    else return productSemiInfoMap.ContainsKey(objectId) ? productSemiInfoMap[objectId] : "";
+                    else return productSemiInfoMap.ContainsKey((int)objectId) ? productSemiInfoMap[(int)objectId] : "";
                 });
                 var title = string.IsNullOrEmpty(s.Title) ? s.Step?.StepName : s.Title;
                 return new InternalProductionStepSimpleModel
@@ -2098,8 +2098,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public class AllProductInProductionProcessNodeResult
         {
             public long ProductionStepLinkDataId {get;set;}
-            public long LinkDataObjectId {get;set;}
-            public int LinkDataObjectTypeId {get;set;}
+            public long? LinkDataObjectId {get;set;}
+            public int? LinkDataObjectTypeId {get;set;}
             public decimal Quantity {get;set;}
         }
 

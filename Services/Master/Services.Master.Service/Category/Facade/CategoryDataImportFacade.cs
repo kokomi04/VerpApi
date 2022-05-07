@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.Category
                             throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
                         else
                             continue;
-                    
+
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
@@ -96,7 +96,7 @@ namespace VErp.Services.Master.Service.Category
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         continue;
 
-                    if (!row.ContainsKey(CategoryFieldConstants.ParentId))
+                    if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
                     row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
@@ -172,7 +172,6 @@ namespace VErp.Services.Master.Service.Category
 
         private bool EqualityBetweenTwoCategory(Dictionary<string, string> f1, Dictionary<string, string> f2, CategoryField[] u)
         {
-            bool isEqual = false;
             for (int i = 0; i < u.Length; i++)
             {
                 var key = u[i].CategoryFieldName;
@@ -180,15 +179,15 @@ namespace VErp.Services.Master.Service.Category
                 var f1Value = f1[key].ToString().ToLower();
                 var f2Value = f2[key].ToString().ToLower();
 
-                isEqual = string.Compare(f1Value, f2Value, true) == 0;
+                if (string.Compare(f1Value, f2Value, true) != 0) return false;
             }
 
-            return isEqual;
+            return true;
         }
 
         private bool EqualityBetweenTwoCategory(NonCamelCaseDictionary f1, Dictionary<string, string> f2, CategoryField[] u)
         {
-            bool isEqual = false;
+
             for (int i = 0; i < u.Length; i++)
             {
                 var key = u[i].CategoryFieldName;
@@ -196,10 +195,10 @@ namespace VErp.Services.Master.Service.Category
                 var f1Value = f1[key].ToString().ToLower();
                 var f2Value = f2[key].ToString().ToLower();
 
-                isEqual = string.Compare(f1Value, f2Value, true) == 0;
+                if (string.Compare(f1Value, f2Value, true) != 0) return false;
             }
 
-            return isEqual;
+            return true;
         }
 
         private async Task MappingCategoryDate(ImportExcelMapping mapping)
