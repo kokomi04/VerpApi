@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class OutsourcePartRequestDetail
     {
+        public OutsourcePartRequestDetail()
+        {
+            ProductionStepLinkData = new HashSet<ProductionStepLinkData>();
+        }
+
         public long OutsourcePartRequestDetailId { get; set; }
         public long OutsourcePartRequestId { get; set; }
         public int ProductId { get; set; }
@@ -22,5 +27,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? OutsourcePartRequestDetailFinishDate { get; set; }
 
         public virtual OutsourcePartRequest OutsourcePartRequest { get; set; }
+        public virtual ICollection<ProductionStepLinkData> ProductionStepLinkData { get; set; }
     }
 }

@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime StartDate { get; set; }
         public decimal? ProductQuantity { get; set; }
 
+        public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
         public virtual ICollection<ProductionWeekPlanDetail> ProductionWeekPlanDetail { get; set; }
     }
 }

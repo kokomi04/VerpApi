@@ -12,5 +12,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SortOrder { get; set; }
         public int SubsidiaryId { get; set; }
         public string Note { get; set; }
+
+        public virtual ProductionOrderDetail ProductionOrderDetail { get; set; }
     }
 }
