@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.Category
                             throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
                         else
                             continue;
-                    
+
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
@@ -96,7 +96,7 @@ namespace VErp.Services.Master.Service.Category
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         continue;
 
-                    if (!row.ContainsKey(CategoryFieldConstants.ParentId))
+                    if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
                     row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
