@@ -33,6 +33,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
     {
         private AccountancyDBContext accountancyDBContext;
         private readonly IInputDataService inputDataService;
+        private readonly ICurrentContextService currentContextService;
         private ISheet sheet = null;
         private int currentRow = 0;
         //private int maxColumnIndex = 10;
@@ -42,10 +43,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
         private InputType typeInfo;
         private bool isMultirow;
 
-        public InpuDataExportFacadeService(AccountancyDBContext accountancyDBContext, IInputDataService inputDataService)
+        public InpuDataExportFacadeService(AccountancyDBContext accountancyDBContext, IInputDataService inputDataService, ICurrentContextService currentContextService)
         {
             this.accountancyDBContext = accountancyDBContext;
             this.inputDataService = inputDataService;
+            this.currentContextService = currentContextService;
         }
 
         private async Task LoadFields(int inputTypeId, InputTypeBillsExporttFilterModel req)
@@ -56,7 +58,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             //    && ((fieldNames?.Count ?? 0) == 0 || fieldNames.Contains(f.FieldName))
             //    )
             //    .ToList();
-            fields = (await inputDataService.GetInputFields(inputTypeId))              
+            fields = (await inputDataService.GetInputFields(inputTypeId))
                 .Where(f => ((req.FieldNames?.Count ?? 0) == 0 || req.FieldNames.Contains(f.FieldName))
                 ).ToList();
 
@@ -181,6 +183,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
 
+            var dateStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
+
             foreach (var p in data)
             {
                 var sColIndex = 1;
@@ -233,6 +237,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
                                 {
                                     sheet.EnsureCell(currentRow, sColIndex, decimalStyle);
                                 }
+                                break;
+                            case EnumDataType.DateRange:
+                            case EnumDataType.Date:
+                                if (!v.value.IsNullObject())
+                                {
+                                    sheet.EnsureCell(currentRow, sColIndex, dateStyle).SetCellValue(((long)v.value).UnixToDateTime(currentContextService.TimeZoneOffset));
+                                }
+
+                                else
+                                {
+                                    sheet.EnsureCell(currentRow, sColIndex, dateStyle);
+                                }
+
                                 break;
                             default:
                                 sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(v.value?.ToString());
