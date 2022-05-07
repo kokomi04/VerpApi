@@ -2294,6 +2294,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             return true;
                         }
 
+                        var excelRowNumbers = bill.Value.GetExcelRowNumbers();
+                        var newExcelRows = new Dictionary<NonCamelCaseDictionary, int>();
                         foreach (var row in bill.Value.Rows)
                         {
                             if (row.Count == 0) continue;
@@ -2305,13 +2307,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (existsRows.Count > 1)
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
 
+                            var excelRowNumber = excelRowNumbers[row];
                             if (existsRows.Count == 0)
                             {
                                 newBillInfo.Rows.Add(row);
+                                newExcelRows.Add(row, excelRowNumber);
                             }
                             else
                             {
                                 var existsRow = existsRows.First();
+                                newExcelRows.Add(existsRow, excelRowNumber);
 
                                 foreach (var item in row)
                                 {
@@ -2330,10 +2335,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await ValidateAccountantConfig(newBillInfo.Info, oldBillInfo.Info);
 
                         NonCamelCaseDictionary futureInfo = newBillInfo.Info;
+                     
 
-                        var excelRowsIndexs = newBillInfo.GetExcelRowNumbers();
-
-                        ValidateRowModel checkInfo = new ValidateRowModel(newBillInfo.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields), excelRowsIndexs?.Count > 0 ? (int?)excelRowsIndexs.First().Value : null);
+                        ValidateRowModel checkInfo = new ValidateRowModel(newBillInfo.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields), newExcelRows?.Count > 0 ? (int?)newExcelRows.First().Value : null);
 
                         // Get changed rows
                         List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
@@ -2343,7 +2347,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             futureRow.TryGetValue("F_Id", out string futureValue);
                             NonCamelCaseDictionary curRow = oldBillInfo.Rows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
 
-                            var exelRow = excelRowsIndexs?.ContainsKey(curRow) == true ? (int?)excelRowsIndexs[curRow] : null;
+                            var exelRow = newExcelRows?.ContainsKey(futureRow) == true ? (int?)newExcelRows[futureRow] : null;
 
                             if (curRow == null)
                             {
