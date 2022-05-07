@@ -39,7 +39,7 @@ namespace VErp.Services.Manafacturing.Model.Report
     public class StepProgressDataModel
     {
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
-        public long ObjectId { get; set; }
+        public long? ObjectId { get; set; }
         public decimal TotalQuantity { get; set; }
         public decimal ReceivedQuantity { get; set; }
     }

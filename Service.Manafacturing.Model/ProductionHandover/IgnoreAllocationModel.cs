@@ -45,8 +45,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class InOutMaterialModel
     {
-        public long ObjectId { get; set; }
-        public int ObjectTypeId { get; set; }
+        public long? ObjectId { get; set; }
+        public int? ObjectTypeId { get; set; }
     }
 
     public class InputStepObjectDepartmentModel

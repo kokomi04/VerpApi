@@ -938,8 +938,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         StartDate = otherAssignment.StartDate.GetUnix(),
                         EndDate = otherAssignment.EndDate.GetUnix(),
                         CreatedDatetimeUtc = otherAssignment.CreatedDatetimeUtc.GetUnix(),
-                        ObjectId = otherAssignment.ObjectId,
-                        ObjectTypeId = otherAssignment.ObjectTypeId,
+                        ObjectId = otherAssignment.ObjectId.Value,
+                        ObjectTypeId = otherAssignment.ObjectTypeId.Value,
                         //CompletedQuantity = completedQuantity
                     };
 
@@ -1083,8 +1083,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             public decimal AssignmentQuantity { get; set; }
             public decimal TotalQuantity { get; set; }
             public decimal Workload { get; set; }
-            public int ObjectTypeId { get; set; }
-            public long ObjectId { get; set; }
+            public int? ObjectTypeId { get; set; }
+            public long? ObjectId { get; set; }
             public string StepName { get; set; }
             public decimal ProductivityPerPerson { get; set; }
             public string ProductionOrderCode { get; set; }
