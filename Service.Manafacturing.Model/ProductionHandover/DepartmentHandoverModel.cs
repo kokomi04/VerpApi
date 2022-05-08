@@ -82,8 +82,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class StepInOutData
     {
-        public long? ObjectId { get; set; }
-        public int? ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
         public decimal ReceivedQuantity { get; set; }
         public decimal RequireQuantity { get; set; }
         public decimal TotalQuantity { get; set; }

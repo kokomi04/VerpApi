@@ -55,8 +55,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionCapacityDetailModel
     {
-        public long? ObjectId { get; set; }
-        public int? ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
 
         public decimal WorkloadQuantity { get; set; }

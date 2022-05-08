@@ -490,8 +490,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         {
                             workloadOutput = new WorkloadOutputModel
                             {
-                                ObjectId = outputData.ObjectId.Value,
-                                ObjectTypeId = outputData.ObjectTypeId.Value,
+                                ObjectId = outputData.ObjectId,
+                                ObjectTypeId = outputData.ObjectTypeId,
                                 Quantity = outputData.TotalQuantity,
                             };
                             workloadPlanModel.WorkloadOutput[parentStep.StepId.Value].Add(workloadOutput);

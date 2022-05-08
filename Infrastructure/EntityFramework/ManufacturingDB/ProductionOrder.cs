@@ -10,13 +10,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionOrder()
         {
             OutsourceStepRequest = new HashSet<OutsourceStepRequest>();
-            ProductionHandover = new HashSet<ProductionHandover>();
-            ProductionHumanResource = new HashSet<ProductionHumanResource>();
             ProductionMaterialsRequirement = new HashSet<ProductionMaterialsRequirement>();
             ProductionOrderAttachment = new HashSet<ProductionOrderAttachment>();
             ProductionOrderDetail = new HashSet<ProductionOrderDetail>();
             ProductionOrderMaterials = new HashSet<ProductionOrderMaterials>();
-            ProductionOrderMaterialsConsumption = new HashSet<ProductionOrderMaterialsConsumption>();
         }
 
         public long ProductionOrderId { get; set; }
@@ -39,16 +36,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool? InvalidPlan { get; set; }
         public DateTime? PlanEndDate { get; set; }
         public bool? IsUpdateQuantity { get; set; }
-        public string ProductionOrderProcessVersion { get; set; }
         public bool? IsUpdateProcessForAssignment { get; set; }
-
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
-        public virtual ICollection<ProductionHandover> ProductionHandover { get; set; }
-        public virtual ICollection<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual ICollection<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
         public virtual ICollection<ProductionOrderAttachment> ProductionOrderAttachment { get; set; }
         public virtual ICollection<ProductionOrderDetail> ProductionOrderDetail { get; set; }
         public virtual ICollection<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
-        public virtual ICollection<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
     }
 }
