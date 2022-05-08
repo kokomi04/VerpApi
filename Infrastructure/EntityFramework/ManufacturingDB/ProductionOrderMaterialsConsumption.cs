@@ -7,11 +7,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionOrderMaterialsConsumption
     {
-        public ProductionOrderMaterialsConsumption()
-        {
-            InverseParent = new HashSet<ProductionOrderMaterialsConsumption>();
-        }
-
         public long ProductionOrderMaterialsConsumptionId { get; set; }
         public long ProductionOrderId { get; set; }
         public int ProductMaterialsConsumptionGroupId { get; set; }
@@ -29,9 +24,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
-
-        public virtual ProductionOrderMaterialsConsumption Parent { get; set; }
-        public virtual ProductionOrder ProductionOrder { get; set; }
-        public virtual ICollection<ProductionOrderMaterialsConsumption> InverseParent { get; set; }
     }
 }

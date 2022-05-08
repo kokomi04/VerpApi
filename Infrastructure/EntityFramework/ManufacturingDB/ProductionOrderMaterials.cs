@@ -33,7 +33,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public virtual ProductionOrderMaterials Parent { get; set; }
         public virtual ProductionOrder ProductionOrder { get; set; }
-        public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionOrderMaterials> InverseParent { get; set; }
     }
 }

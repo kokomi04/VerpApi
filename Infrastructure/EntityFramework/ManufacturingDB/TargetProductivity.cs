@@ -15,8 +15,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int TargetProductivityId { get; set; }
         public string TargetProductivityCode { get; set; }
         public DateTime TargetProductivityDate { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
         public bool IsDefault { get; set; }
         public string Note { get; set; }
         public int CreatedByUserId { get; set; }

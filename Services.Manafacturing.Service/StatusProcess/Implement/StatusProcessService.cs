@@ -879,7 +879,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
         {
             public int DepartmentId { get; set; }
             public long ProductionStepId { get; set; }
-            public long? ObjectId { get; set; }
+            public long ObjectId { get; set; }
             public int ProductionStepLinkDataRoleTypeId { get; set; }
             public decimal HandoverStockQuantity { get; set; }
         }

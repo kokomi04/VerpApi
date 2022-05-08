@@ -27,7 +27,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionOrderId { get; set; }
 
         public virtual ProductionAssignment ProductionAssignment { get; set; }
-        public virtual ProductionStep ProductionStep { get; set; }
         public virtual ICollection<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
     }
 }

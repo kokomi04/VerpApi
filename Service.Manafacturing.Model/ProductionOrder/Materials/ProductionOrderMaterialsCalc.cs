@@ -18,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     public class ProductionOrderMaterialsCalcBase
     {
         public decimal? AssignmentQuantity { get; set; }
-        public long? ProductId { get; set; }
+        public long ProductId { get; set; }
         public decimal Quantity { get; set; }
         public decimal ConversionRate { get; set; }
         public int? DepartmentId { get; set; }

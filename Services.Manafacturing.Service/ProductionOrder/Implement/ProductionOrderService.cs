@@ -709,7 +709,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _mapper.Map(data, productionOrder);
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
-                var productIds = data.ProductionOrderDetail.Select(od => (long?)od.ProductId).ToList();
+                var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
                 // Lấy ra thông tin đầu ra nhập kho trong quy trình
                 var processProductIds = (
                         from ld in _manufacturingDBContext.ProductionStepLinkData
@@ -1113,8 +1113,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public long ProductionOrderId { get; set; }
         public int StepId { get; set; }
         public decimal Quantity { get; set; }
-        public long? ObjectId { get; set; }
-        public int? ObjectTypeId { get; set; }
+        public long ObjectId { get; set; }
+        public int ObjectTypeId { get; set; }
         public decimal WorkloadConvertRate { get; set; }
     }
 }
