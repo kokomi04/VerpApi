@@ -177,6 +177,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Manafacturing\TargetProductivity\TargetProductivityValidation.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>TargetProductivityValidation.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\Config\ActionButton\ActionButtonActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -800,6 +805,10 @@
     <EmbeddedResource Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.resx">
       <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\TargetProductivity\TargetProductivityValidation.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>TargetProductivityValidation.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Master\Config\ActionButton\ActionButtonActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
