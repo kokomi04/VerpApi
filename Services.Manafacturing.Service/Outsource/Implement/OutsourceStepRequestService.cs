@@ -144,7 +144,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                                             ProductionStepTile = v.Select(x => x.StepName).Distinct().ToArray()
                                         });
 
-            var mapPurchaseOrder = (await _manufacturingDBContext.RefOutsourceStepOrder.Where(x => arrOutsourceStepRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault()))
+            var mapPurchaseOrder = (await _manufacturingDBContext.RefOutsourceStepOrder.Where(x => arrOutsourceStepRequestId.Contains(x.OutsourceRequestId))
                             .ToListAsync())
                             .GroupBy(x => x.OutsourceRequestId)
                             .ToDictionary(k => k.Key, v => v.Select(x => new PurchaseOrderSimple
@@ -226,7 +226,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     {
                         ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                         Quantity = x.Quantity,
-                        TotalOutsourceOrderQuantity = purchaseOrderDetail.Sum(x => x.PrimaryQuantity),
+                        TotalOutsourceOrderQuantity = purchaseOrderDetail.Sum(x => x.PrimaryQuantity)??0,
                         RoleType = (int)EnumProductionStepLinkDataRoleType.Output,
                         ProductionStepTitle = productionStepParentInfo.Step?.StepName,
                         PurchaseOrderCode = string.Join(", ", purchaseOrderDetail.Select(x => x.PurchaseOrderCode)),
