@@ -41,6 +41,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
                     if (stepNames.ContainsKey(normalizeValue))
                     {
                         entity.ProductionStepId = stepNames[normalizeValue].OrderByDescending(s => s.StepName == value).First().StepId;
+                        return true;
                     }
                     else
                     {
