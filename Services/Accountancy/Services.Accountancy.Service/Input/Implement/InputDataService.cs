@@ -405,7 +405,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Validate info
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var uniqueFields = inputAreaFields.Where(f => (!f.IsAutoIncrement && f.IsUnique) || f.FieldName == AccountantConstants.BILL_CODE).ToList();
             var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
             // Check field required
@@ -1116,7 +1116,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Lấy thông tin field
             var requiredFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            var uniqueFields = inputAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+            var uniqueFields = inputAreaFields.Where(f => (!f.IsAutoIncrement && f.IsUnique) || f.FieldName == AccountantConstants.BILL_CODE).ToList();
             var selectFields = inputAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
             // Check field required
@@ -2114,7 +2114,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             // Validate unique field cho chứng từ tạo mới
-            foreach (var field in fields.Where(f => f.IsUnique))
+            foreach (var field in fields.Where(f => f.IsUnique || f.FieldName == AccountantConstants.BILL_CODE))
             {
                 var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
                 if (mappingField == null) continue;
@@ -2161,7 +2161,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         dupValues.Add(result.Rows[i][field.FieldName]?.ToString());
                         inputType_Title = result.Rows[i]["InputType_Title"]?.ToString();
                     }
-                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title + " " + inputType_Title, string.Join(", ", dupValues.ToArray()), "" });
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", dupValues.ToArray()), inputType_Title });
                 }
             }
 
@@ -2335,7 +2335,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         await ValidateAccountantConfig(newBillInfo.Info, oldBillInfo.Info);
 
                         NonCamelCaseDictionary futureInfo = newBillInfo.Info;
-                     
+
 
                         ValidateRowModel checkInfo = new ValidateRowModel(newBillInfo.Info, CompareRow(oldBillInfo.Info, futureInfo, singleFields), newExcelRows?.Count > 0 ? (int?)newExcelRows.First().Value : null);
 
@@ -2362,7 +2362,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                         // Lấy thông tin field
                         var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire && (f.IsMultiRow || f.FieldName == AccountantConstants.BILL_CODE)).ToList();
-                        var uniqueFields = fields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
+                        var uniqueFields = fields.Where(f => (!f.IsAutoIncrement && f.IsUnique) || f.FieldName == AccountantConstants.BILL_CODE).ToList();
                         var selectFields = fields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
 
                         // Check field required
