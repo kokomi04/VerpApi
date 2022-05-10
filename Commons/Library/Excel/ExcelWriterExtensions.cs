@@ -58,7 +58,7 @@ namespace VErp.Commons.Library
             return cell;
         }
 
-        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null, string dataFormat = "", byte[] color = null)
+        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null, string dataFormat = "", byte[] color = null, short? indention = null)
         {
             var style = sheet.Workbook.CreateCellStyle();
             if (vAlign.HasValue)
@@ -86,7 +86,7 @@ namespace VErp.Commons.Library
                 style.BorderTop = BorderStyle.Thin;
                 style.BorderRight = BorderStyle.Thin;
                 style.BorderBottom = BorderStyle.Thin;
-                style.BorderLeft = BorderStyle.Thin;                
+                style.BorderLeft = BorderStyle.Thin;
             }
 
             if (isWrap)
@@ -97,13 +97,17 @@ namespace VErp.Commons.Library
                 ((XSSFCellStyle)style).SetFillForegroundColor(new XSSFColor(rgb));
                 style.FillPattern = FillPattern.SolidForeground;
             }
-            
+
 
             if (!string.IsNullOrWhiteSpace(dataFormat))
             {
                 ((XSSFCellStyle)style).SetDataFormat(sheet.Workbook.GetCreationHelper().CreateDataFormat().GetFormat(dataFormat));
             }
 
+            if (indention.HasValue)
+            {
+                style.Indention = indention.Value;
+            }
 
 
             return style;

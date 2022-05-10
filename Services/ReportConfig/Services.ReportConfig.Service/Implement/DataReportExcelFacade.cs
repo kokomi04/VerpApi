@@ -812,6 +812,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             VerticalAlignment? vAlign = defaultColumnStyle?.VerticalAlignment;
             HorizontalAlignment? hAlign = defaultColumnStyle?.Alignment;
             string format = defaultColumnStyle?.GetDataFormatString();
+            short? indention = null;
             foreach (var styleConfig in styleConfigs)
             {
                 if (string.IsNullOrWhiteSpace(styleConfig)) continue;
@@ -836,7 +837,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 if (cfgs.ContainsKey("fontStyle"))
                 {
-                    var value = cfgs.Value<string>("fontWeight");
+                    var value = cfgs.Value<string>("fontStyle");
                     isBold = value.Contains("italic", StringComparison.OrdinalIgnoreCase);
                 }
 
@@ -870,9 +871,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     format = cfgs.Value<string>("format");
                 }
 
+
+
+                if (cfgs.ContainsKey("paddingLeft"))
+                {
+                    var value = cfgs.Value<string>("paddingLeft");
+                    if (value.Contains("px") || value.Contains("pt"))
+                    {
+                        var v = new Regex("[^0-9]");
+                        var nunber = v.Replace(value, "");
+                        int.TryParse(nunber, out var paddingLeft);
+
+                        indention = Convert.ToInt16(paddingLeft / 10);
+                    }
+
+                }
+
             }
 
-            var style = sheet.GetCellStyle(fontSize, isBold, isItalic, vAlign, hAlign, isBorder: true, rgb: bgColor, color: color, dataFormat: format);
+            var style = sheet.GetCellStyle(fontSize, isBold, isItalic, vAlign, hAlign, isBorder: true, rgb: bgColor, color: color, dataFormat: format, indention: indention);
             customCellStyles.Add(cached, style);
             return style;
         }
