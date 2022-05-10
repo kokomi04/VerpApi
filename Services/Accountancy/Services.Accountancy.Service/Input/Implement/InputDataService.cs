@@ -2195,16 +2195,59 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
 
+            bool EqualityBetweenTwoNomCamel(NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, ValidateField[] u)
+            {
+                for (int i = 0; i < u.Length; i++)
+                {
+                    var key = u[i].FieldName;
+
+                    var f1Value = f1[key].ToString().ToLower();
+                    var f2Value = f2[key].ToString().ToLower();
+                    if (((EnumDataType)u[i].DataTypeId).CompareValue(f1Value, f2Value) != 0) return false;
+                }
+
+                return true;
+            }
+
+            // Get all fields
+            var inputFields = _accountancyDBContext.InputField
+             .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+             .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
+            var fieldIdentityDetails = mapping.MappingFields.Where(x => fields.Where(f => f.IsMultiRow).Any(f => f.FieldName == x.FieldName) && x.IsIdentityDetail)
+                          .Select(x => x.FieldName)
+                          .Distinct()
+                          .ToArray();
+
+            var validateFieldInfos = fields.Where(x => fieldIdentityDetails.Contains(x.FieldName)).ToArray();
+
+
+            //Check duplicate rows in details
+            foreach (var bill in updateBills)
+            {
+                foreach (var row in bill.Value.Rows)
+                {
+                    var duplicateRows = bill.Value.Rows.Where(x => EqualityBetweenTwoNomCamel(x, row, validateFieldInfos)).ToList();
+                    if (duplicateRows.Count > 1)
+                    {
+                        var oldBillInfo = await GetBillInfo(inputTypeId, bill.Key);
+
+                        var excelRowNumbers = bill.Value.GetExcelRowNumbers();
+
+                        var excelRowNumber = excelRowNumbers[row];
+
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {excelRowNumber}. Định danh chi tiết chưa đúng, tìm thấy nhiều hơn 1 dòng chi tiết trong excel {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
+                    }
+                }
+            }
+
             using (var trans = await _accountancyDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                    // Get all fields
-                    var inputFields = _accountancyDBContext.InputField
-                     .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
-                     .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
+
 
                     // Thêm mới chứng từ
                     foreach (var bill in createBills)
@@ -2274,25 +2317,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                         }
 
-                        var fieldIdentityDetails = mapping.MappingFields.Where(x => fields.Where(f => f.IsMultiRow).Any(f => f.FieldName == x.FieldName) && x.IsIdentityDetail)
-                            .Select(x => x.FieldName)
-                            .Distinct()
-                            .ToArray();
-                        var validateFieldInfos = fields.Where(x => fieldIdentityDetails.Contains(x.FieldName)).ToArray();
 
-                        bool EqualityBetweenTwoNomCamel(NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, ValidateField[] u)
-                        {
-                            for (int i = 0; i < u.Length; i++)
-                            {
-                                var key = u[i].FieldName;
-
-                                var f1Value = f1[key].ToString().ToLower();
-                                var f2Value = f2[key].ToString().ToLower();
-                                if (((EnumDataType)u[i].DataTypeId).CompareValue(f1Value, f2Value) != 0) return false;
-                            }
-
-                            return true;
-                        }
 
                         var excelRowNumbers = bill.Value.GetExcelRowNumbers();
                         var newExcelRows = new Dictionary<NonCamelCaseDictionary, int>();
@@ -2304,10 +2329,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Phải chọn cột làm định danh dòng chi tiết");
 
                             var existsRows = newBillInfo.Rows.Where(x => EqualityBetweenTwoNomCamel(x, row, validateFieldInfos)).ToList();
-                            if (existsRows.Count > 1)
-                                throw new BadRequestException(GeneralCode.InvalidParams, $"Tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
 
                             var excelRowNumber = excelRowNumbers[row];
+
+                            if (existsRows.Count > 1)
+                                throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {excelRowNumber}. Định danh chi tiết chưa đúng, tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
+
+                           
                             if (existsRows.Count == 0)
                             {
                                 newBillInfo.Rows.Add(row);
@@ -2316,7 +2344,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             else
                             {
                                 var existsRow = existsRows.First();
-                                newExcelRows.Add(existsRow, excelRowNumber);
+                                if (!newExcelRows.ContainsKey(existsRow))
+                                {
+                                    newExcelRows.Add(existsRow, excelRowNumber);
+                                }
+                                else
+                                {
+                                    throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {excelRowNumber}. Định danh chi tiết chưa đúng, tìm thấy nhiều hơn 1 dòng chi tiết trong excel {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
+                                }
 
                                 foreach (var item in row)
                                 {
