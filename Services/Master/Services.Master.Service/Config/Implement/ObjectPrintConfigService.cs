@@ -109,7 +109,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .ToArray();
 
             var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigMapping
-                .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId && mapping.PrintConfigIds.Contains(x.PrintConfigCustomId))
+                .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId)
                 .ToArrayAsync();
             _masterDbContext.ObjectPrintConfigMapping.RemoveRange(oldObjectPrintConfigs);
             await _masterDbContext.SaveChangesAsync();
