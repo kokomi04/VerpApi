@@ -284,17 +284,17 @@ namespace VErp.Services.Master.Service.Category
 
                             _refCategoryDataForProperty.TryGetValue(mf.RefTableCode, out var _refTable);
 
-                            var refProperty = _refTable.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
+                            var refPropertyValues = _refTable.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
 
-                            var hasGreaterThanProperty = refProperty.Count() > 1;
-                            if (hasGreaterThanProperty)
+                            var hasGreaterThanRefPropertyValue = refPropertyValues.Count() > 1;
+                            if (hasGreaterThanRefPropertyValue)
                                 throw ImportFoundMoreThanOneRef.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
-                            var notFoundProperty = _refCategoryDataForProperty.Count() == 0;
-                            if (notFoundProperty)
+                            var notFoundRefPropertyValue = refPropertyValues.Count() == 0;
+                            if (notFoundRefPropertyValue)
                                 throw ImportFoundNoRefValue.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
-                            value = refProperty.FirstOrDefault()[CategoryFieldConstants.F_Id].ToString();
+                            value = refPropertyValues.First()[CategoryFieldConstants.F_Id].ToString();
                         }
                     }
                     else
