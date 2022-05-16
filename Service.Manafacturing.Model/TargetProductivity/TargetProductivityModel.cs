@@ -1,6 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using AutoMapper;
+using DocumentFormat.OpenXml.Wordprocessing;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model
@@ -10,6 +13,8 @@ namespace VErp.Services.Manafacturing.Model
         public int TargetProductivityId { get; set; }
         public string TargetProductivityCode { get; set; }
         public long TargetProductivityDate { get; set; }
+        public string Title { get; set; }
+        public string Description { get; set; }
         public bool IsDefault { get; set; } = false;
         public string Note { get; set; } = string.Empty;
 
@@ -25,11 +30,16 @@ namespace VErp.Services.Manafacturing.Model
         }
     }
 
-    public class TargetProductivityDetailModel: IMapFrom<TargetProductivityDetail>
+    [Display(Name = "Chi tiết năng suất mục tiêu")]
+    public class TargetProductivityDetailModel : MappingDataRowAbstract, IMapFrom<TargetProductivityDetail>
     {
+        [FieldDataIgnore]
         public int TargetProductivityDetailId { get; set; }
+        [FieldDataIgnore]
         public int TargetProductivityId { get; set; }
-        public decimal TargetProductivity { get; set; }
+        [Display(Name = "Công đoạn")]
         public int ProductionStepId { get; set; }
+        [Display(Name = "Năng suất mục tiêu")]
+        public decimal TargetProductivity { get; set; }        
     }
 }

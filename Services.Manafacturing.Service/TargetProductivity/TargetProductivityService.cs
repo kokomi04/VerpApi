@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -7,9 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model;
+using VErp.Services.Manafacturing.Service.Facade;
+using VErp.Services.Manafacturing.Service.Step;
 
 namespace VErp.Services.Manafacturing.Service
 {
@@ -20,6 +25,10 @@ namespace VErp.Services.Manafacturing.Service
         Task<TargetProductivityModel> GetTargetProductivity(int targetProductivityId);
         Task<IList<TargetProductivityModel>> Search(string keyword, int page, int size);
         Task<bool> UpdateTargetProductivity(int targetProductivityId, TargetProductivityModel model);
+
+        CategoryNameModel GetFieldDataForMapping();
+
+        Task<IList<TargetProductivityDetailModel>> ParseDetails(ImportExcelMapping mapping, Stream stream);
     }
 
     public class TargetProductivityService : ITargetProductivityService
@@ -28,14 +37,16 @@ namespace VErp.Services.Manafacturing.Service
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly IStepService _stepService;
 
         public TargetProductivityService(ManufacturingDBContext manufacturingDBContext, IActivityLogService activityLogService
-            , ILogger<TargetProductivityService> logger, IMapper mapper)
+            , ILogger<TargetProductivityService> logger, IMapper mapper, IStepService stepService)
         {
             _manufacturingDBContext = manufacturingDBContext;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _stepService = stepService;
         }
 
         public async Task<int> AddTargetProductivity(TargetProductivityModel model)
@@ -83,14 +94,19 @@ namespace VErp.Services.Manafacturing.Service
                 if (entity.TargetProductivityCode != model.TargetProductivityCode && _manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityCode == model.TargetProductivityCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Đã tồn tại mã năng suất mục tiêu trong hệ thống");
 
-                if(model.IsDefault)
+                if (model.IsDefault)
                     await RemoveDefaultTargetProductivity();
 
                 model.TargetProductivityId = targetProductivityId;
+                foreach(var d in model.TargetProductivityDetail)
+                {
+                    d.TargetProductivityId = targetProductivityId;
+                }
+
                 _mapper.Map(model, entity);
 
                 foreach (var detail in details)
-                {
+                {                    
                     var mDetail = model.TargetProductivityDetail.FirstOrDefault(x => x.TargetProductivityDetailId == detail.TargetProductivityDetailId);
                     if (mDetail != null)
                         _mapper.Map(mDetail, detail);
@@ -130,8 +146,8 @@ namespace VErp.Services.Manafacturing.Service
                 entity.IsDeleted = true;
 
                 await _manufacturingDBContext.SaveChangesAsync();
-                
-                if(entity.IsDefault)
+
+                if (entity.IsDefault)
                     await SetDefaultTargetProductivity();
 
                 await trans.CommitAsync();
@@ -178,6 +194,30 @@ namespace VErp.Services.Manafacturing.Service
 
             return await query.ProjectTo<TargetProductivityModel>(_mapper.ConfigurationProvider).ToListAsync();
         }
+
+
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "TargetProductivity",
+                CategoryTitle = "TargetProductivity",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = ExcelUtils.GetFieldNameModels<TargetProductivityDetailModel>();
+            result.Fields = fields;
+            return result;
+        }
+
+        public Task<IList<TargetProductivityDetailModel>> ParseDetails(ImportExcelMapping mapping, Stream stream)
+        {
+            return new TargetProductivityParseExcelFacade(_stepService)
+                 .ParseInvoiceDetails(mapping, stream);
+        }
+
+
 
         private async Task<bool> RemoveDefaultTargetProductivity()
         {

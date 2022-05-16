@@ -1688,6 +1688,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ContainerTypeId = containerTypeId,
                     ProductionStepLinkDatas = process.ProductionStepLinkDatas,
                     ProductionSteps = process.ProductionSteps,
+                    ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>()
                 });
 
                 var d1 = await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking().FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == fromContainerId);

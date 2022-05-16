@@ -149,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductId)
                     .Select(x => new PurchaseOrderSimple { PurchaseOrderCode = x.PurchaseOrderCode, PurchaseOrderId = x.PurchaseOrderId })
                     .ToList();
-                element.QuantityProcessed = purchaseOrders.Where(x => x.ProductId == element.ProductId).Sum(x => x.PrimaryQuantity);
+                element.QuantityProcessed = purchaseOrders.Where(x => x.ProductId == element.ProductId).Sum(x => x.PrimaryQuantity)??0;
             }
 
             var rs = _mapper.Map<OutsourcePartRequestModel>(request);
@@ -312,7 +312,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         .ToListAsync();
 
             var arrOutsourceRequestId = lst.Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
-            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault())).ToListAsync();
+            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId)).ToListAsync();
             foreach (var element in lst)
             {
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductId && x.OutsourceRequestId == element.OutsourcePartRequestId)
@@ -397,7 +397,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 .ToList();
 
             var arrOutsourceRequestId = resultData.Select(x => x.OutsourcePartRequestId).Distinct().ToArray();
-            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId.GetValueOrDefault())).ToListAsync();
+            var purchaseOrders = await _manufacturingDBContext.RefOutsourcePartOrder.Where(x => arrOutsourceRequestId.Contains(x.OutsourceRequestId)).ToListAsync();
             foreach (var element in resultData)
             {
                 element.PurchaseOrder = purchaseOrders.Where(x => x.ProductId == element.ProductPartId && x.OutsourceRequestId == element.OutsourcePartRequestId)
