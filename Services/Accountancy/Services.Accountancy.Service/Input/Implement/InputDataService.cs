@@ -44,7 +44,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
-        private const string EXCEL_ROW_INDEX_FIELD = "$EXCEL_ROW_INDEX_FIELD";
 
         private readonly ILogger _logger;
         //private readonly IActivityLogService _activityLogService;
@@ -855,7 +854,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private async Task ValidUniqueAsync(int inputTypeId, List<object> values, ValidateField field, long? inputValueBillId = null)
         {
-            var typeTitleField = "InputType_Title";
+            string typeTitleField = AccountantConstants.INPUT_TYPE_TITLE;
             var existSql = $"SELECT F_Id, {typeTitleField}, {field.FieldName} FROM vInputValueRow WHERE ";
             if (field.FieldName == AccountantConstants.BILL_CODE)
             {
@@ -2113,6 +2112,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 createGroups = groups;
             }
 
+            string typeTitleField = AccountantConstants.INPUT_TYPE_TITLE;
+
             // Validate unique field cho chứng từ tạo mới
             foreach (var field in fields.Where(f => f.IsUnique || f.FieldName == AccountantConstants.BILL_CODE))
             {
@@ -2130,10 +2131,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 // Checkin unique trong db
                 if (values.Count == 0) continue;
-                var existSql = $"SELECT F_Id, InputType_Title, {field.FieldName} FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
+                var existSql = $"SELECT F_Id, {typeTitleField}, {field.FieldName} FROM vInputValueRow WHERE InputTypeId = {inputTypeId} ";
 
                 if (field.FieldName == AccountantConstants.BILL_CODE)//ignore bill type
-                    existSql = $"SELECT F_Id, InputType_Title, {field.FieldName} FROM vInputValueRow WHERE 1 = 1";
+                    existSql = $"SELECT F_Id, {typeTitleField}, {field.FieldName} FROM vInputValueRow WHERE 1 = 1";
 
                 existSql += $" AND {field.FieldName} IN (";
                 List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -2158,8 +2159,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var inputType_Title = "";
                     for (var i = 0; i < result.Rows.Count; i++)
                     {
-                        dupValues.Add(result.Rows[i][field.FieldName]?.ToString());
-                        inputType_Title = result.Rows[i]["InputType_Title"]?.ToString();
+                        var value = result.Rows[i][field.FieldName]?.ToString();
+                        if (!dupValues.Contains(value))
+                            dupValues.Add(value);
+                        if (string.IsNullOrWhiteSpace(inputType_Title))
+                            inputType_Title = result.Rows[i][typeTitleField]?.ToString();
                     }
                     throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", dupValues.ToArray()), inputType_Title });
                 }
@@ -2335,7 +2339,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (existsRows.Count > 1)
                                 throw new BadRequestException(GeneralCode.InvalidParams, $"Dòng {excelRowNumber}. Định danh chi tiết chưa đúng, tìm thấy nhiều hơn 1 dòng chi tiết trong chứng từ {oldBillInfo.Info[AccountantConstants.BILL_CODE]}");
 
-                           
+
                             if (existsRows.Count == 0)
                             {
                                 newBillInfo.Rows.Add(row);
