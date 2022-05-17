@@ -296,7 +296,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
 
             var filePath = GetPhysicalFilePath(fileInfo.FilePath);
             var fileName = Path.GetFileNameWithoutExtension(filePath);
-            var ext = Path.GetExtension(fileName).ToLower();
+            var ext = Path.GetExtension(filePath).ToLower();
             if (!ImageFileExtensionTypes.ContainsKey(ext))
             {
                 return false;
