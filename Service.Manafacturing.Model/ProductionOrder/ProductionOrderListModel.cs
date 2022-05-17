@@ -22,6 +22,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Description { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public decimal UnitPrice { get; set; }
+        public long? CurrencyId { get; set; }
+        public decimal? CurrencyRate { get; set; }
+
         public bool HasAssignment { get; set; }
         public bool IsInvalid { get; set; }
 
@@ -57,6 +60,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string Description { get; set; }
         public int ProductionOrderStatus { get; set; }
         public decimal UnitPrice { get; set; }
+        public long? CurrencyId { get; set; }
+        public decimal? CurrencyRate { get; set; }
         public bool HasAssignment { get; set; }
         public bool IsInvalid { get; set; }
         public bool? IsUpdateQuantity { get; set; }
