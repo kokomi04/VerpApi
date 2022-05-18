@@ -589,8 +589,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         {
                             LinkDataObjectId = item.LinkDataObjectId,
                             LinkDataObjectTypeId = item.LinkDataObjectTypeId,
-                            Quantity = item.Quantity * (totalQuantity).GetValueOrDefault() / product.Coefficient,
-                            QuantityOrigin = item.QuantityOrigin * (totalQuantity).GetValueOrDefault() / product.Coefficient,
+                            Quantity = item.Quantity * totalQuantity / product.Coefficient,
+                            QuantityOrigin = item.QuantityOrigin * totalQuantity / product.Coefficient,
                             SortOrder = item.SortOrder,
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString(),
                             ProductionStepLinkTypeId = item.ProductionStepLinkTypeId,
@@ -1953,12 +1953,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
 
             var data = braches.SelectMany(b => b.GroupBy(p => new { p.LinkDataObjectId, p.LinkDataObjectTypeId }).Select(p => new
-                {
-                    p.Key.LinkDataObjectTypeId,
-                    p.Key.LinkDataObjectId,
-                    Quantity = p.Max(l => l.QuantityOrigin),
-                    p.First().ProductionStepLinkDataId
-                }))
+            {
+                p.Key.LinkDataObjectTypeId,
+                p.Key.LinkDataObjectId,
+                Quantity = p.Max(l => l.QuantityOrigin),
+                p.First().ProductionStepLinkDataId
+            }))
                 .GroupBy(p => new { p.LinkDataObjectId, p.LinkDataObjectTypeId })
                 .Select(p => new
                 {
