@@ -239,7 +239,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpGet]
         [Route("{containerTypeId}/{containerId}/getAllProductInProductionProcess")]
         public async Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess([FromRoute] EnumContainerType containerTypeId,[FromRoute] long containerId){
-            return await _productionProcessService.GetAllProductInProductionProcess(containerTypeId, containerId);
+            return await _productionProcessService.GetAllProductInProductionProcessV2(containerTypeId, containerId);
         }
     }
 }
