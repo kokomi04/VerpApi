@@ -609,11 +609,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         var monthlyImportStock = new ImportProductModel
                         {
                             ProductId = productData.ProductId,
-                            PlanQuantity = productData.Quantity.Value,
+                            PlanQuantity = productData.Quantity,
                             PartnerId = productData.PartnerId,
-                            ImportQuantity = totalPlanQuantity.HasValue ? totalImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
-                            LastestDateImportQuantity = totalPlanQuantity.HasValue ? totalLastestDateImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
-                            LastestWeekImportQuantity = totalPlanQuantity.HasValue ? totalLastestWeekImportQuantity * productData.Quantity.Value / totalPlanQuantity.Value : 0,
+                            ImportQuantity = totalImportQuantity * productData.Quantity / totalPlanQuantity,
+                            LastestDateImportQuantity = totalLastestDateImportQuantity * productData.Quantity / totalPlanQuantity,
+                            LastestWeekImportQuantity = totalLastestWeekImportQuantity * productData.Quantity / totalPlanQuantity,
                             OrderCode = productData.OrderCode
                         };
                         result[groupStep.Key].Add(monthlyImportStock);

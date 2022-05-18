@@ -673,7 +673,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 ProductId = d.ProductId,
                 StartDate = d.StartDate.GetUnix(),
                 EndDate = d.EndDate.GetUnix(),
-                ProductQuantity = d.TotalQuantity.Value,
+                ProductQuantity = d.TotalQuantity,
                 ProductionOrderStatus = (EnumProductionStatus)d.ProductionOrderStatus
             }).ToList(), total);
         }
