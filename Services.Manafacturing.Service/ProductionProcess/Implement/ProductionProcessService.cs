@@ -1012,7 +1012,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Any(x => x.Count() > 1))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
-            if (containerTypeId == EnumContainerType.ProductionOrder && req.ProductionOutsourcePartMappings.Count > 0)
+            if (req.ProductionOutsourcePartMappings == null)
+            {
+                req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
+            }
+
+            if (containerTypeId == EnumContainerType.ProductionOrder)
             {
                 var sourceOutsourcePartMappings = await _manufacturingDBContext.ProductionOutsourcePartMapping.Where(x => x.ContainerId == containerId)
                                                                                                               .ToListAsync();
