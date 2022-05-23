@@ -196,7 +196,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return materialsAssigned;
         }
 
-        public async Task<IList<ProductionOrderMaterialsCalc>> GetProductionOrderMaterialsConsumptionCalc(long productionOrderId, Dictionary<int, decimal?> productMap)
+        public async Task<IList<ProductionOrderMaterialsCalc>> GetProductionOrderMaterialsConsumptionCalc(long productionOrderId, Dictionary<int, decimal> productMap)
         {
             var materials = (await _productHelperService.GetProductMaterialsConsumptions(productMap.Keys.ToArray()))
                 .GroupBy(x => new { x.ProductMaterialsConsumptionGroupId, x.MaterialsConsumptionId, x.DepartmentId })
@@ -209,7 +209,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         DepartmentId = f.DepartmentId,
                         ProductId = f.MaterialsConsumptionId,
-                        Quantity = quantity.GetValueOrDefault(),
+                        Quantity = quantity,
                         InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
                         ConversionRate = 1,
                         AssignmentQuantity = quantity,

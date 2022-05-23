@@ -198,7 +198,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             item.SortOrder = sortOrder++;
                         }
-                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync();
+                        await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(lst);
                     }
                     
 
