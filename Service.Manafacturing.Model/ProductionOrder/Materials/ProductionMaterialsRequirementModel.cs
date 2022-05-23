@@ -41,6 +41,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 
     public class ProductionMaterialsRequirementDetailListModel : IMapFrom<ProductionMaterialsRequirementDetail>
     {
+        public long ProductionMaterialsRequirementId { get; set; }
         public long? RequirementDate { get; set; }
         public string RequirementContent { get; set; }
         public int CensorStatus { get; set; }
