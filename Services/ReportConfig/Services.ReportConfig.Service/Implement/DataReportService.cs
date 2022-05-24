@@ -106,7 +106,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var reportViewInfo = await _reportConfigService.ReportTypeViewGetInfo(reportInfo.ReportTypeId);
 
-            var sqlParams = new List<SqlParameter>();
+            var sqlParams = new List<SqlParameter>()
+            {
+                new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
+            };
 
             foreach (var filterFiled in reportViewInfo.Fields)
             {
@@ -590,7 +593,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             else
             {
                 totalRecord = data.Count;
-                
+
                 foreach (var row in data)
                 {
                     foreach (var column in calSumColumns)
