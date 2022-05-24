@@ -30,6 +30,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string OrderCode { get; set; }
         public int ProductId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
         public string PartnerCode { get; set; }
         public string PartnerName { get; set; }
         public string PartnerId { get; set; }
