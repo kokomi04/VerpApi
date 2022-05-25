@@ -1905,7 +1905,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         // }
 
 
-        public async Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId)
+        public async Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Where(s => s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId && !s.IsFinish && (!s.IsGroup.HasValue || !s.IsGroup.Value))
@@ -1925,7 +1925,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         .Distinct()
                         .ToList();
 
-            var braches = new List<List<ProductionStepLinkData>>();
+            var branches = new List<List<ProductionStepLinkData>>();
             var travledLinkDataIds = new HashSet<long>();
             foreach (var brach in lastLinkDatas)
             {
@@ -1954,10 +1954,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         }
                     }
                 }
-                braches.Add(brachItem);
+                branches.Add(brachItem);
             }
 
-            var data = braches.SelectMany(b => b.GroupBy(p => new { p.LinkDataObjectId, p.LinkDataObjectTypeId }).Select(p => new
+            return branches.SelectMany(b => b.GroupBy(p => new { p.LinkDataObjectId, p.LinkDataObjectTypeId }).Select(p => new
             {
                 p.Key.LinkDataObjectTypeId,
                 p.Key.LinkDataObjectId,
@@ -1965,38 +1965,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 p.First().ProductionStepLinkDataId
             }))
                 .GroupBy(p => new { p.LinkDataObjectId, p.LinkDataObjectTypeId })
-                .Select(p => new
+                .Select(p => new ProductionStepLinkDataObjectModel
                 {
-                    p.Key.LinkDataObjectTypeId,
-                    p.Key.LinkDataObjectId,
-                    Quantity = p.Sum(l => l.Quantity),
-                    p.First().ProductionStepLinkDataId
-                });
+                    LinkDataObjectTypeId = (EnumProductionStepLinkDataObjectType)p.Key.LinkDataObjectTypeId,
+                    LinkDataObjectId = p.Key.LinkDataObjectId,
+                    Quantity = p.Sum(l => l.Quantity)
+                })
+                .ToList();
 
-
-            var lsProductionStepLinkDataId = data.Select(x => x.ProductionStepLinkDataId).ToArray();
-            IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
-            if (lsProductionStepLinkDataId.Length > 0)
-            {
-                var sql = new StringBuilder(@$"
-                        SELECT * FROM dbo.ProductionStepLinkDataExtractInfo v 
-                        WHERE v.LinkDataObjectTypeId = {(int)EnumProductionStepLinkDataObjectType.Product} AND v.ProductionStepLinkDataId IN (SELECT [Value] FROM @ProductionStepLinkDataIds)
-                    ");
-                var parammeters = new List<SqlParameter>()
-                    {
-                        lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
-                    };
-
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
-            }
-
-            return stepLinkDatas.Select(x =>
-            {
-                var calc = data.FirstOrDefault(c => c.ProductionStepLinkDataId == x.ProductionStepLinkDataId);
-                if (calc != null)
-                    x.QuantityOrigin = calc.Quantity;
-                return x;
-            }).ToList();
         }
 
 
