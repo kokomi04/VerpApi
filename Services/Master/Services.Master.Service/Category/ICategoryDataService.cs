@@ -21,11 +21,11 @@ namespace VErp.Services.Master.Service.Category
 
         Task<NonCamelCaseDictionary> GetCategoryRow(string categoryCode, int fId);
 
-        Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data);
+        Task<int> AddCategoryRow(int categoryId, NonCamelCaseDictionary data);
 
-        Task<int> AddCategoryRowToDb(int categoryId, Dictionary<string, string> data);
+        Task<int> AddCategoryRowToDb(int categoryId, NonCamelCaseDictionary data);
 
-        Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data);
+        Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data);
 
         Task<int> DeleteCategoryRow(int categoryId, int fId);
 

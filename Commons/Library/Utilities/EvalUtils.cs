@@ -25,6 +25,85 @@ namespace VErp.Commons.Library
             }
         }
 
+        public static object EvalObject(string expression, NonCamelCaseDictionary parameters)
+        {
+            if (expression.IndexOf('"') >= 0) throw new BadRequestException("use single quote ' instead of double quote \" ");
+
+            var ex = new NCalc.Expression(expression, NCalc.EvaluateOptions.MatchStringsWithIgnoreCase);
+            ex.EvaluateFunction += Ex_EvaluateFunction;
+            if (parameters != null)
+            {
+                foreach (var (name, value) in parameters)
+                {
+                    ex.Parameters.Add(name, value); ;
+                }
+            }
+
+
+            void Ex_EvaluateFunction(string name, NCalc.FunctionArgs args)
+            {
+                if (name?.ToLower() == "substringlength")
+                {
+
+                    try
+                    {
+                        EvalSubStringLength(name, expression, args);
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new BadRequestException($"Error on eval {name} of {expression}. {ex.Message}");
+                    }
+
+
+                }
+            }
+
+            return ex.Evaluate();
+        }
+
+        private static void EvalSubStringLength(string name, string expression, NCalc.FunctionArgs args)
+        {
+            if (args.Parameters == null || args.Parameters.Length < 1)
+            {
+                throw new BadRequestException($"Error on eval {name} of {expression}, missing param 'from' ");
+            }
+            var str = args.Parameters[0].Evaluate()?.ToString();
+
+            if (args.Parameters.Length == 1 || string.IsNullOrWhiteSpace(str))
+            {
+                args.Result = str;
+                return;
+            }
+
+            var startIndex = (int)args.Parameters[1].Evaluate();
+            if (startIndex >= str.Length || startIndex < 0)
+            {
+                throw new BadRequestException($"Error on eval  {name}  of {expression}, param 'from' = {startIndex} is invalid ");
+
+            }
+            int? length = null;
+
+
+            if (args.Parameters.Length > 2)
+            {
+                length = (int)args.Parameters[2].Evaluate();
+            }
+            if (length <= 0)
+            {
+                throw new BadRequestException($"Error on eval  {name}  of {expression}, param 'length' = {length} is invalid ");
+
+            }
+
+            if (startIndex + length >= str.Length || !length.HasValue)
+            {
+                args.Result = str.Substring(startIndex);
+            }
+            else
+            {
+                args.Result = str.Substring(startIndex, length.Value);
+            }
+        }
+
         public static decimal EvalPrimaryQuantityFromProductUnitConversionQuantity(decimal productUnitConversionQuantity, string factorExpression)
         {
             var expression = $"({productUnitConversionQuantity})/({factorExpression})";

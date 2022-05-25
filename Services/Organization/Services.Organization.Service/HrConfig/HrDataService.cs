@@ -140,7 +140,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeId,
                                      a.IsMultiRow
                                  }).ToListAsync();
-                                 
+
             var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != (int)EnumFormType.MultiSelect).ToList();
 
             /* 
@@ -689,7 +689,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                             value = value.Trim();
 
                             if (value.StartsWith(PREFIX_ERROR_CELL))
-                            {                                
+                            {
                                 throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
                             }
 
@@ -759,8 +759,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                                     if (filterClause != null)
                                     {
                                         var whereCondition = new StringBuilder();
-                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
-                                        if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
+                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: mapRow);
+                                        if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                                     }
                                 }
 
@@ -1522,7 +1522,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
+                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: checkData.Data);
                 }
             }
 
@@ -1636,8 +1636,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     if (dataRef.Count > 0)
                     {
-                        var refFId = (int) dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
-                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long) refFId, false);
+                        var refFId = (int)dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
+                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
                     }
 
                 }

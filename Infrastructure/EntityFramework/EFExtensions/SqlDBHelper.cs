@@ -21,7 +21,7 @@ using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
-    
+
     public static class SqlDBHelper
     {
         private const string SubIdParam = "@SubId";
@@ -437,7 +437,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
+        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
         {
             if (clause != null)
             {
@@ -449,6 +449,25 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         singleClause.Value = value;
                     }
+
+                    if (singleClause.Value?.GetType() == typeof(string))
+                    {
+                        var v = singleClause.Value?.ToString();
+                        var pattern = "\\{(?<ex>.*)\\}";
+                        Regex rx = new Regex(pattern);
+                        MatchCollection match = rx.Matches(v);
+                        for (int i = 0; i < match.Count; i++)
+                        {
+                            var expression = match[i].Groups["ex"].Value;
+
+                            var expressionValue = EvalUtils.EvalObject(expression, refValues);
+
+                            v = v.Replace(match[i].Value, expressionValue?.ToString());
+                        }
+
+                        singleClause.Value = v;
+                    }
+
                     BuildExpression(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
                 }
                 else if (clause is ArrayClause)
@@ -466,7 +485,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value);
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value, refValues);
                     }
                 }
                 else
