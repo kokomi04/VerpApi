@@ -54,7 +54,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 
         Task<ProductionProcessOutsourceStep> GetProductionProcessOutsourceStep(EnumContainerType containerType, long containerId, long[] productionStepIds);
 
-        Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId);
+        Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId);
 
         Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId);
     }
