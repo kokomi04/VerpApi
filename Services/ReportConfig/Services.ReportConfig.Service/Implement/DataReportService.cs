@@ -510,7 +510,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo.BodySql.Contains("$ORDERBY"))
             {
-                sql = sql.Replace("$ORDERBY", string.IsNullOrWhiteSpace(orderBy) ? "" : " ORDER BY " + orderBy);
+                sql = sql.Replace("$ORDERBY", orderBy);
             }
             else if (!string.IsNullOrWhiteSpace(orderBy))
             {
