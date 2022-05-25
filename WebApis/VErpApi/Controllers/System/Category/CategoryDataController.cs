@@ -86,14 +86,14 @@ namespace VErpApi.Controllers.System.Category
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{categoryId}/categoryrows")]
-        public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromBody] Dictionary<string, string> data)
+        public async Task<int> AddCategoryRow([FromRoute] int categoryId, [FromBody] NonCamelCaseDictionary data)
         {
             return await _categoryDataService.AddCategoryRow(categoryId, data);
         }
 
         [HttpPut]
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
-        public async Task<int> GetCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] Dictionary<string, string> data)
+        public async Task<int> UpdateCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] NonCamelCaseDictionary data)
         {
             return await _categoryDataService.UpdateCategoryRow(categoryId, categoryRowId, data);
         }

@@ -973,7 +973,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
+                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: checkData.Data);
                 }
             }
 
@@ -2565,8 +2565,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (filterClause != null)
                             {
                                 var whereCondition = new StringBuilder();
-                                filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
-                                if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
+                                filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: mapRow);
+                                if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                             }
                         }
 
