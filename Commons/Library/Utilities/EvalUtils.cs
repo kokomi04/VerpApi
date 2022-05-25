@@ -27,6 +27,8 @@ namespace VErp.Commons.Library
 
         public static object EvalObject(string expression, NonCamelCaseDictionary parameters)
         {
+            if (expression.IndexOf('"') >= 0) throw new BadRequestException("use single quote ' instead of double quote \" ");
+
             var ex = new NCalc.Expression(expression, NCalc.EvaluateOptions.MatchStringsWithIgnoreCase);
             ex.EvaluateFunction += Ex_EvaluateFunction;
             if (parameters != null)
@@ -92,7 +94,7 @@ namespace VErp.Commons.Library
 
             }
 
-            if (startIndex + length >= str.Length)
+            if (startIndex + length >= str.Length || !length.HasValue)
             {
                 args.Result = str.Substring(startIndex);
             }
