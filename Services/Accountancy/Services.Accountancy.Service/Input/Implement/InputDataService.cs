@@ -37,6 +37,7 @@ using Verp.Resources.Accountancy.InputData;
 using static Verp.Resources.Accountancy.InputData.InputDataValidationMessage;
 using static VErp.Commons.Library.ExcelReader;
 using Verp.Resources.GlobalObject;
+using static VErp.Commons.Library.EvalUtils;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -973,7 +974,32 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: checkData.Data);
+                    try
+                    {
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+                    }
+                    catch (Exception ex)
+                    {
+                        ArgumentException agrEx = null;
+
+                        if (ex is ArgumentException except)
+                        {
+                            agrEx = except;
+                        }
+
+                        if (ex.InnerException is ArgumentException innerEx)
+                        {
+                            agrEx = innerEx;
+                        }
+
+                        if (agrEx != null)
+                        {
+                            var fieldBefore = (allFields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                            throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                        }
+                        throw;
+                    }
                 }
             }
 
@@ -2565,7 +2591,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             if (filterClause != null)
                             {
                                 var whereCondition = new StringBuilder();
-                                filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: mapRow);
+
+                                try
+                                {
+                                    var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+                                }
+                                catch (EvalObjectArgException agrEx)
+                                {
+                                    var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                                    throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                }
+                                catch (Exception)
+                                {
+                                    throw;
+                                }                              
+
                                 if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                             }
                         }

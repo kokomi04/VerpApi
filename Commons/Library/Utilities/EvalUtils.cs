@@ -27,39 +27,55 @@ namespace VErp.Commons.Library
 
         public static object EvalObject(string expression, NonCamelCaseDictionary parameters)
         {
-            if (expression.IndexOf('"') >= 0) throw new BadRequestException("use single quote ' instead of double quote \" ");
-
-            var ex = new NCalc.Expression(expression, NCalc.EvaluateOptions.MatchStringsWithIgnoreCase);
-            ex.EvaluateFunction += Ex_EvaluateFunction;
-            if (parameters != null)
+            try
             {
-                foreach (var (name, value) in parameters)
+
+
+                if (expression.IndexOf('"') >= 0) throw new BadRequestException("use single quote ' instead of double quote \" ");
+
+                var ex = new NCalc.Expression(expression, NCalc.EvaluateOptions.MatchStringsWithIgnoreCase);
+                ex.EvaluateFunction += Ex_EvaluateFunction;
+
+                if (parameters != null)
                 {
-                    ex.Parameters.Add(name, value); ;
+                    foreach (var (name, value) in parameters)
+                    {
+                        ex.Parameters.Add(name, value); ;
+                    }
                 }
-            }
 
 
-            void Ex_EvaluateFunction(string name, NCalc.FunctionArgs args)
-            {
-                if (name?.ToLower() == "substringlength")
+                void Ex_EvaluateFunction(string name, NCalc.FunctionArgs args)
                 {
-
-                    try
+                    if (name?.ToLower() == "substringlength")
                     {
                         EvalSubStringLength(name, expression, args);
                     }
-                    catch (Exception ex)
-                    {
-                        throw new BadRequestException($"Error on eval {name} of {expression}. {ex.Message}");
-                    }
-
-
                 }
-            }
 
-            return ex.Evaluate();
+
+                return ex.Evaluate();
+            }
+            catch (ArgumentException ex)
+            {
+                throw new EvalObjectArgException(ex.Message, ex.ParamName, ex);
+
+            }
+            catch (Exception)
+            {
+                throw;
+            }
         }
+
+        public class EvalObjectArgException : ArgumentException
+        {
+            public EvalObjectArgException(string message, string paramName, ArgumentException innerException) : base(message, paramName, innerException)
+            {
+
+            }
+        }
+
+
 
         private static void EvalSubStringLength(string name, string expression, NCalc.FunctionArgs args)
         {

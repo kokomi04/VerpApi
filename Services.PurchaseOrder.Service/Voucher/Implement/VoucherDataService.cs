@@ -36,6 +36,7 @@ using AutoMapper.QueryableExtensions;
 using static VErp.Commons.Library.ExcelReader;
 using Verp.Resources.GlobalObject;
 using VErp.Commons.Enums.AccountantEnum;
+using static VErp.Commons.Library.EvalUtils;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -936,7 +937,22 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: checkData.Data);
+
+                    try
+                    {
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+
+                    }
+                    catch (EvalObjectArgException agrEx)
+                    {
+                        var fieldBefore = (allFields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
                 }
             }
 
@@ -2138,7 +2154,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     {
                                         filterValue = filterValue.Substring(start, length);
                                     }
-                                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
+                                    if (string.IsNullOrEmpty(filterValue))
+                                    {
+                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
+                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                    }
                                     filters = filters.Replace(match[i].Value, filterValue);
                                 }
 
@@ -2146,7 +2166,24 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 if (filterClause != null)
                                 {
                                     var whereCondition = new StringBuilder();
-                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: mapRow);
+
+
+                                    try
+                                    {
+                                        var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+
+                                    }
+                                    catch (EvalObjectArgException agrEx)
+                                    {
+                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        throw;
+                                    }                                    
+
                                     if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                                 }
                             }
