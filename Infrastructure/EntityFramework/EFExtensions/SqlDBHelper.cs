@@ -452,7 +452,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                     if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullObject())
                     {
-                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>.*)\\}", delegate (Match match)
+                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
                         {
                             var expression = match.Groups["ex"].Value;
                             return EvalUtils.EvalObject(expression, refValues)?.ToString();
