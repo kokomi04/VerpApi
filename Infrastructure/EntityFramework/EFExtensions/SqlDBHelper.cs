@@ -450,22 +450,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         singleClause.Value = value;
                     }
 
-                    if (singleClause.Value?.GetType() == typeof(string))
+                    if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullObject())
                     {
-                        var v = singleClause.Value?.ToString();
-                        var pattern = "\\{(?<ex>.*)\\}";
-                        Regex rx = new Regex(pattern);
-                        MatchCollection match = rx.Matches(v);
-                        for (int i = 0; i < match.Count; i++)
+                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>.*)\\}", delegate (Match match)
                         {
-                            var expression = match[i].Groups["ex"].Value;
-
-                            var expressionValue = EvalUtils.EvalObject(expression, refValues);
-
-                            v = v.Replace(match[i].Value, expressionValue?.ToString());
-                        }
-
-                        singleClause.Value = v;
+                            var expression = match.Groups["ex"].Value;
+                            return EvalUtils.EvalObject(expression, refValues)?.ToString();
+                        });
                     }
 
                     BuildExpression(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
