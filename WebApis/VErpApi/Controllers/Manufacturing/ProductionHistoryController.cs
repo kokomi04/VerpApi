@@ -58,8 +58,15 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpGet]
         [Route("completionActualWorkload")]
         public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload([FromQuery] long startDate, [FromQuery] long endDate)
-        {
+        { 
             return await _productionHistoryService.GetCompletionActualWorkload(startDate, endDate);
+        }
+
+        [HttpDelete]
+        [Route("{productionHistoryId}")]
+        public async Task<bool> DeleteProductionHistory([FromRoute] long productionHistoryId)
+        {
+            return await _productionHistoryService.DeleteProductionHistory(productionHistoryId);
         }
     }
 }
