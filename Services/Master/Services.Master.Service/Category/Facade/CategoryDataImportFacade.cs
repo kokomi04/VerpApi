@@ -67,7 +67,7 @@ namespace VErp.Services.Master.Service.Category
             await RefCategoryForProperty(mapping);
             await MappingCategoryDate(mapping);
 
-            var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, 0, 0, "", true)).List;
+            var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, 0, 0, "", true)).List;
 
             var lsUpdateRow = new List<NonCamelCaseDictionary>();
             var lsAddRow = new List<NonCamelCaseDictionary>();

@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.System.Category
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+            return await _categoryDataService.GetCategoryRows(categoryId, request.Keyword, request.Filters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
 
@@ -62,7 +62,7 @@ namespace VErpApi.Controllers.System.Category
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+            return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
         [GlobalApi]
@@ -147,7 +147,7 @@ namespace VErpApi.Controllers.System.Category
                 Operator = EnumOperator.Equal,
                 Value = true
             };
-            var data = await _categoryDataService.GetCategoryRows(CurrencyCategoryCode, null, clause, null, null, 1, 1, null, true);
+            var data = await _categoryDataService.GetCategoryRows(CurrencyCategoryCode, null, clause, null, null, null, 1, 1, null, true);
             return data?.List?.FirstOrDefault();
         }
     }
