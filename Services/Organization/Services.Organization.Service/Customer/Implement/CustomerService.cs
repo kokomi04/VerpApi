@@ -496,7 +496,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             if (!igDeleteRef || data.CustomerCateId > 0)
                 customerInfo.CustomerCateId = data.CustomerCateId;
 
-            customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
+            if (data.CustomerTypeId.HasValue)
+                customerInfo.CustomerTypeId = (int)data.CustomerTypeId;
 
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Address))
                 customerInfo.Address = data.Address;
