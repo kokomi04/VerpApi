@@ -977,6 +977,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     try
                     {
                         var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+
+                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                        {
+                            parameters.Add(key, val);
+                        }
+
                         filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
                     }
                     catch (Exception ex)
@@ -2595,6 +2601,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 try
                                 {
                                     var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                    {
+                                        parameters.Add(key, val);
+                                    }
+
+
                                     filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
                                 }
                                 catch (EvalObjectArgException agrEx)
@@ -2605,7 +2617,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 catch (Exception)
                                 {
                                     throw;
-                                }                              
+                                }
 
                                 if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                             }

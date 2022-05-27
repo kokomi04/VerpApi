@@ -765,6 +765,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                                         try
                                         {
                                             var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                           
+
                                             filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
 
                                         }
