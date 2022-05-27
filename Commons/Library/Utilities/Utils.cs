@@ -44,7 +44,7 @@ namespace VErp.Commons.Library
             }
         }
 
-      
+
         public static Guid ToGuid(this string value)
         {
             MD5 md5Hasher = MD5.Create();
@@ -81,7 +81,7 @@ namespace VErp.Commons.Library
             return EnumActionType.View;
         }
 
-              
+
 
         public static string GetObjectKey(EnumObjectType objectTypeId, long objectId)
         {
@@ -117,7 +117,7 @@ namespace VErp.Commons.Library
         }
 
 
-      
+
         /*
 
         public static long ConvertValueToNumber(this string value, EnumDataType dataType)
@@ -172,8 +172,8 @@ namespace VErp.Commons.Library
             return (hashCode);
         }
 
-      
-      
+
+
 
 
         public static string GetPhysicalFilePath(this string filePath, AppSetting appSetting)
@@ -187,7 +187,7 @@ namespace VErp.Commons.Library
 
             return appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
-    
+
 
         public static void ValidateCodeSpecialCharactors(this string code, string desc = "")
         {
@@ -201,7 +201,7 @@ namespace VErp.Commons.Library
             }
         }
 
-     
+
         public static IEnumerable<string> GetRangeOfAllowValueForBoolean()
         {
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Concat(RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_FALSE);
@@ -228,6 +228,20 @@ namespace VErp.Commons.Library
             return RangeValueConstants.RANGE_OF_ALLOW_VALUE_FOR_BOOLEAN_TRUE.Select(x => x.NormalizeAsInternalName()).Contains(value.NormalizeAsInternalName());
         }
 
+        public static bool EqualityBetweenTwoNomCamelWithFields(this NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, string[] u)
+        {
+            for (int i = 0; i < u.Length; i++)
+            {
+                var key = u[i];
+
+                var f1Value = f1[key].ToString().ToLower();
+                var f2Value = f2[key].ToString().ToLower();
+
+                if (string.Compare(f1Value, f2Value, true) != 0) return false;
+            }
+
+            return true;
+        }
 
     }
 }

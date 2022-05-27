@@ -10,5 +10,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int ConfigId { get; set; }
         public string ConfigName { get; set; }
         public string Description { get; set; }
+        public string Value { get; set; }
     }
 }

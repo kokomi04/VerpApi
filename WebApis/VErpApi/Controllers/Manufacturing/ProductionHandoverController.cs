@@ -13,6 +13,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -44,10 +45,18 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPost]
-        [Route("DepartmentHandover/{departmentId}")]
-        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate)
+        [Route("GetDetailByArrayProductionOrder/department/{departmentId}")]
+        public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail([FromBody] IList<RequestObjectGetProductionOrderHandover> data, [FromRoute] int departmentId)
         {
-            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId);
+            var lstDetail = await _productionHandoverService.GetDepartmentHandoverDetailByArrayProductionOrderId(data, departmentId);
+            return lstDetail;
+        }
+
+        [HttpPost]
+        [Route("DepartmentHandover/{departmentId}")]
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish, [FromQuery] EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)
+        {
+            return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId, isInFinish, isOutFinish, productionStepLinkDataRoleTypeId);
         }
 
         [HttpGet]
@@ -86,6 +95,13 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpPut]
+        [Route("AcceptBatch")]
+        public async Task<bool> AcceptBatch([FromBody] IList<ProductionHandoverAcceptBatchInput> req)
+        {
+            return await _productionHandoverService.AcceptProductionHandoverBatch(req);
+        }
+
+        [HttpPut]
         [Route("{productionOrderId}/{productionHandoverId}/accept")]
         public async Task<ProductionHandoverModel> AcceptProductionHandover([FromRoute] long productionOrderId, [FromRoute] long productionHandoverId)
         {
@@ -97,6 +113,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<ProductionHandoverModel> RejectProductionHandover([FromRoute] long productionOrderId, [FromRoute] long productionHandoverId)
         {
             return await _productionHandoverService.ConfirmProductionHandover(productionOrderId, productionHandoverId, EnumHandoverStatus.Rejected);
+        }
+
+        [HttpPost]
+        [Route("patch")]
+        public async Task<bool> CreateProductionHandoverPatch([FromBody] IList<ProductionHandoverInputModel> data)
+        {
+            return await _productionHandoverService.CreateProductionHandoverPatch(data);
         }
     }
 }

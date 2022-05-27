@@ -48,7 +48,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeleteInputArea(int inputTypeId, int inputAreaId);
 
         // Field
-        Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size);
+        Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size, int? objectApprovalStepTypeId);
         Task<InputFieldInputModel> AddInputField(InputFieldInputModel data);
         Task<InputFieldInputModel> UpdateInputField(int inputFieldId, InputFieldInputModel data);
         Task<bool> DeleteInputField(int inputFieldId);

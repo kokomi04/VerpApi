@@ -541,6 +541,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.RefTableField = data.RefTableField;
             categoryField.RefTableTitle = data.RefTableTitle;
             categoryField.IsImage = data.IsImage;
+            categoryField.IsCalcSum = data.IsCalcSum;
         }
 
         private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
@@ -647,7 +648,7 @@ namespace VErp.Services.Master.Service.Category
             {
                 query = query.Skip((page - 1) * size).Take(size);
             }
-            List<CategoryFieldModel> lst = await query
+            var lst = await query
                 .OrderBy(f => f.SortOrder)
                 .ProjectTo<CategoryFieldModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();

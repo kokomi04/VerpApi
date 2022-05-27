@@ -11,7 +11,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         {
             ProductionAssignmentDetail = new HashSet<ProductionAssignmentDetail>();
             ProductionConsumMaterial = new HashSet<ProductionConsumMaterial>();
-            ProductionScheduleTurnShift = new HashSet<ProductionScheduleTurnShift>();
         }
 
         public long ProductionStepId { get; set; }
@@ -28,6 +27,5 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
-        public virtual ICollection<ProductionScheduleTurnShift> ProductionScheduleTurnShift { get; set; }
     }
 }

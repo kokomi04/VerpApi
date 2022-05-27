@@ -29,6 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumProductionStepLinkDataType ProductionStepLinkDataTypeId { get; set; }
         public EnumProductionStepLinkType ProductionStepLinkTypeId { get; set; }
         public long? ConverterId { get; set; }
+        public long? ProductionOutsourcePartMappingId { get; set; }
     }
 
     public class ProductionStepLinkDataInput : ProductionStepLinkDataModel
@@ -58,14 +59,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.QuantityOrigin, v => v.MapFrom(m => m.ProductionStepLinkData.QuantityOrigin))
                 .ForMember(m => m.WorkloadConvertRate, v => v.MapFrom(m => m.ProductionStepLinkData.WorkloadConvertRate))
                 .ForMember(m => m.SortOrder, v => v.MapFrom(m => m.ProductionStepLinkData.SortOrder))
-                .ForMember(m => m.LinkDataObjectTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.LinkDataObjectTypeId))
+                .ForMember(m => m.LinkDataObjectTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataObjectType) m.ProductionStepLinkData.LinkDataObjectTypeId))
                 .ForMember(m => m.OutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceQuantity))
                 .ForMember(m => m.ExportOutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.ExportOutsourceQuantity))
                 .ForMember(m => m.OutsourcePartQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourcePartQuantity))
                 .ForMember(m => m.ProductionStepLinkDataCode, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataCode))
                 .ForMember(m => m.OutsourceRequestDetailId, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceRequestDetailId))
-                .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
-                .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkTypeId))
+                .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataType) m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
+                .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => (EnumProductionStepLinkType) m.ProductionStepLinkData.ProductionStepLinkTypeId))
                 .ForMember(m => m.ConverterId, v => v.MapFrom(m => m.ProductionStepLinkData.ConverterId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup))

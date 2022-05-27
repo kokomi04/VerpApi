@@ -27,6 +27,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using Verp.Resources.Organization;
 using VErp.Commons.Library.Model;
 using System.IO;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -683,7 +685,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                             if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                             if (string.IsNullOrWhiteSpace(value)) continue;
+
                             value = value.Trim();
+
+                            if (value.StartsWith(PREFIX_ERROR_CELL))
+                            {                                
+                                throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
+                            }
+
                             if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                             {
                                 if (!DateTime.TryParse(value.ToString(), out DateTime date))

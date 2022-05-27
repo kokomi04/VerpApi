@@ -25,7 +25,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public ProductionConsumMaterialService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger<ProductionScheduleTurnShiftService> logger
+            , ILogger<ProductionConsumMaterialService> logger
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
@@ -195,11 +195,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 consumMaterial.IsDeleted = true;
 
-                var details = await _manufacturingDBContext.ProductionScheduleTurnShiftUser.Where(u => u.ProductionScheduleTurnShiftId == productionConsumMaterialId).ToListAsync();
-                foreach (var u in details)
-                {
-                    u.IsDeleted = true;
-                }
+                //var details = await _manufacturingDBContext.ProductionScheduleTurnShiftUser.Where(u => u.ProductionScheduleTurnShiftId == productionConsumMaterialId).ToListAsync();
+                //foreach (var u in details)
+                //{
+                //    u.IsDeleted = true;
+                //}
 
                 await _manufacturingDBContext.SaveChangesAsync();
 

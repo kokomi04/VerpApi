@@ -33,6 +33,9 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using Verp.Resources.PurchaseOrder.Voucher;
 using static Verp.Resources.PurchaseOrder.Voucher.VoucherDataValidationMessage;
 using AutoMapper.QueryableExtensions;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
+using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -744,7 +747,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     info.Data.TryGetValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
+                        throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
                     }
                 }
                 else // Validate rows
@@ -1904,7 +1907,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var result = new CategoryNameModel()
             {
-                //CategoryId = inputTypeInfo.InputTypeId,
+                //CategoryId = inputTypeInfo.VoucherTypeId,
                 CategoryCode = voucherTypeInfo.VoucherTypeCode,
                 CategoryTitle = voucherTypeInfo.Title,
                 IsTreeView = false,
@@ -1924,7 +1927,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 var fileData = new CategoryFieldNameModel()
                 {
-                    //CategoryFieldId = field.InputAreaFieldId,
+                    //CategoryFieldId = field.VoucherAreaFieldId,
                     FieldName = field.FieldName,
                     FieldTitle = GetTitleCategoryField(field),
                     RefCategory = null,
@@ -2074,6 +2077,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         if (string.IsNullOrWhiteSpace(value)) continue;
                         value = value.Trim();
+
+                        if (value.StartsWith(PREFIX_ERROR_CELL))
+                        {
+                            throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
+                        }
+
                         if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                         {
                             if (!DateTime.TryParse(value.ToString(), out DateTime date))
@@ -2565,6 +2574,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         public async Task<IList<VoucherOrderDetailSimpleModel>> OrderByCodes(IList<string> orderCodes)
         {
             // var total = new SqlParameter("@Total", SqlDbType.BigInt) { Direction = ParameterDirection.Output };
+            if (orderCodes == null || orderCodes.Count == 0) return new List<VoucherOrderDetailSimpleModel>();
             var data = await _purchaseOrderDBContext.ExecuteDataProcedure("asp_OrderGetByCodes",
                 new[]
                 {
@@ -2596,6 +2606,66 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 });
 
             return data.ConvertData();
+        }
+
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet(int inputTypeId)
+        {
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCensorStatus.Approved}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
+
+            return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
+                    .ConvertData<ObjectBillSimpleInfoModel>()
+                    .ToList();
+        }
+
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId)
+        {
+            var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCheckStatus.CheckedSuccess}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
+
+            return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", inputTypeId) }))
+                    .ConvertData<ObjectBillSimpleInfoModel>()
+                    .ToList();
+        }
+
+        public async Task<bool> CheckAllBillInList(IList<ObjectBillSimpleInfoModel> models)
+        {
+            if (models.Count > 0)
+            {
+                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CheckStatusId = {(int)EnumCheckStatus.CheckedSuccess} WHERE VoucherBill_F_Id IN (";
+                var sqlParams = new List<SqlParameter>();
+                var prefixColumn = "@VoucherBill_F_Id_";
+                foreach (var item in models.Select((item, index) => new { item, index }))
+                {
+                    if (item.index > 0)
+                        sql += ", ";
+                    sql += prefixColumn + $"{item.index}";
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.ObjectBill_F_Id));
+                }
+                sql += ")";
+
+                await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(sql, sqlParams);
+            }
+            return true;
+        }
+
+        public async Task<bool> ApproveAllBillInList(IList<ObjectBillSimpleInfoModel> models)
+        {
+            if (models.Count > 0)
+            {
+                var sql = $"UPDATE {VOUCHERVALUEROW_TABLE} SET CensorStatusId = {(int)EnumCensorStatus.Approved} WHERE VoucherBill_F_Id IN (";
+                var sqlParams = new List<SqlParameter>();
+                var prefixColumn = "@VoucherBill_F_Id_";
+                foreach (var item in models.Select((item, index) => new { item, index }))
+                {
+                    if (item.index > 0)
+                        sql += ", ";
+                    sql += prefixColumn + $"{item.index}";
+                    sqlParams.Add(new SqlParameter(prefixColumn + $"{item.index}", item.item.ObjectBill_F_Id));
+                }
+                sql += ")";
+
+                await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync(sql, sqlParams);
+            }
+            return true;
         }
 
 

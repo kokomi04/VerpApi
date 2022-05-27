@@ -36,6 +36,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public long? ProductionOrderId { get; set; }
         public long? MaterialCalcId { get; set; }
         public long? PropertyCalcId { get; set; }
+        public int? ProductMaterialsConsumptionGroupId { get; set; }
+        public DateTime? NeedDate { get; set; }
 
         public virtual MaterialCalc MaterialCalc { get; set; }
         public virtual PropertyCalc PropertyCalc { get; set; }

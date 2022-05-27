@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -20,6 +20,8 @@ using VErp.Services.Master.Model.Category;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 using Verp.Resources.Master.Category;
 using VErp.Infrastructure.ServiceCore.Facade;
+using static VErp.Commons.Library.ExcelReader;
+using Verp.Resources.GlobalObject;
 
 namespace VErp.Services.Master.Service.Category
 {
@@ -86,7 +88,7 @@ namespace VErp.Services.Master.Service.Category
                             throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
                         else
                             continue;
-                    
+
                     lsAddRow.Add(row);
                 }
                 else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
@@ -94,7 +96,7 @@ namespace VErp.Services.Master.Service.Category
                     if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                         continue;
 
-                    if (!row.ContainsKey(CategoryFieldConstants.ParentId))
+                    if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
                         row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
                     row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
@@ -170,7 +172,6 @@ namespace VErp.Services.Master.Service.Category
 
         private bool EqualityBetweenTwoCategory(Dictionary<string, string> f1, Dictionary<string, string> f2, CategoryField[] u)
         {
-            bool isEqual = false;
             for (int i = 0; i < u.Length; i++)
             {
                 var key = u[i].CategoryFieldName;
@@ -178,15 +179,15 @@ namespace VErp.Services.Master.Service.Category
                 var f1Value = f1[key].ToString().ToLower();
                 var f2Value = f2[key].ToString().ToLower();
 
-                isEqual = string.Compare(f1Value, f2Value, true) == 0;
+                if (string.Compare(f1Value, f2Value, true) != 0) return false;
             }
 
-            return isEqual;
+            return true;
         }
 
         private bool EqualityBetweenTwoCategory(NonCamelCaseDictionary f1, Dictionary<string, string> f2, CategoryField[] u)
         {
-            bool isEqual = false;
+
             for (int i = 0; i < u.Length; i++)
             {
                 var key = u[i].CategoryFieldName;
@@ -194,10 +195,10 @@ namespace VErp.Services.Master.Service.Category
                 var f1Value = f1[key].ToString().ToLower();
                 var f2Value = f2[key].ToString().ToLower();
 
-                isEqual = string.Compare(f1Value, f2Value, true) == 0;
+                if (string.Compare(f1Value, f2Value, true) != 0) return false;
             }
 
-            return isEqual;
+            return true;
         }
 
         private async Task MappingCategoryDate(ImportExcelMapping mapping)
@@ -236,6 +237,11 @@ namespace VErp.Services.Master.Service.Category
 
                     if (string.IsNullOrWhiteSpace(value) || mf.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty)
                         continue;
+
+                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    {
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(i + mapping.FromRow, mf.Column, $"\"{mf.Title}\" {value}");
+                    }
 
                     if (!string.IsNullOrWhiteSpace(mf.RefFieldName))
                     {
@@ -278,17 +284,17 @@ namespace VErp.Services.Master.Service.Category
 
                             _refCategoryDataForProperty.TryGetValue(mf.RefTableCode, out var _refTable);
 
-                            var refProperty = _refTable.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
+                            var refPropertyValues = _refTable.Where(x => x[mf.RefFieldName].ToString().ToLower() == value.ToLower());
 
-                            var hasGreaterThanProperty = refProperty.Count() > 1;
-                            if (hasGreaterThanProperty)
+                            var hasGreaterThanRefPropertyValue = refPropertyValues.Count() > 1;
+                            if (hasGreaterThanRefPropertyValue)
                                 throw ImportFoundMoreThanOneRef.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
-                            var notFoundProperty = _refCategoryDataForProperty.Count() == 0;
-                            if (notFoundProperty)
+                            var notFoundRefPropertyValue = refPropertyValues.Count() == 0;
+                            if (notFoundRefPropertyValue)
                                 throw ImportFoundNoRefValue.BadRequestFormat(refField.Title.ToLower(), $"{refField.Field.Title}: {value}", refField.Title);
 
-                            value = refProperty.FirstOrDefault()[CategoryFieldConstants.F_Id].ToString();
+                            value = refPropertyValues.First()[CategoryFieldConstants.F_Id].ToString();
                         }
                     }
                     else

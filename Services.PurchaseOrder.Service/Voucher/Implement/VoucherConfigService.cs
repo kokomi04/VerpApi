@@ -530,7 +530,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     RefTableTitle = f.RefTableTitle,
                     IsRequire = af.IsRequire,
                     decimalPlace = f.DecimalPlace,
-                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl,
+                    ObjectApprovalStepId = f.ObjectApprovalStepTypeId,
+                    VoucherFieldId = f.VoucherFieldId
 
                 }).ToListAsync();
 
@@ -922,7 +924,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<VoucherFieldOutputModel>> GetVoucherFields(string keyword, int page, int size)
+        public async Task<PageData<VoucherFieldOutputModel>> GetVoucherFields(string keyword, int page, int size, int? objectApprovalStepTypeId)
         {
             keyword = (keyword ?? "").Trim();
             var query = _purchaseOrderDBContext.VoucherField
@@ -931,6 +933,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
+
+            if(objectApprovalStepTypeId.HasValue)
+            {
+                query = query.Where(f => f.ObjectApprovalStepTypeId.HasValue && (f.ObjectApprovalStepTypeId & objectApprovalStepTypeId.Value) == objectApprovalStepTypeId.Value);
+            }
+
             var total = await query.CountAsync();
 
             if (size > 0)

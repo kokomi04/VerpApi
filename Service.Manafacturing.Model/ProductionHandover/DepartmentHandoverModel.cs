@@ -8,6 +8,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Commons.Library;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -23,16 +24,22 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int ObjectTypeId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
+        public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
         public string InOutType { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
         public EnumAssignedProgressStatus AssignedProgressStatus { get; set; }
+
+        public long ToProductionStepId { get; set; }
+        public long FromProductionStepId { get; set; }
+        
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()
                 .ForMember(m => m.StartDate, v => v.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
-                .ForMember(m => m.AssignedProgressStatus, v => v.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus));
+                .ForMember(m => m.AssignedProgressStatus, v => v.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))
+                .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId));
         }
     }
 
@@ -47,11 +54,15 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
         public string InOutType { get; set; }
+        public int ProductionStepLinkDataRoleTypeId { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public decimal HandoveredQuantity { get; set; }
         public int AssignedProgressStatus { get; set; }
+
+        public long ToProductionStepId { get; set; }
+        public long FromProductionStepId { get; set; }
     }
 
     public class DepartmentHandoverDetailModel

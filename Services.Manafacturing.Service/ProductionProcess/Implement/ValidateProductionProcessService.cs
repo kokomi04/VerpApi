@@ -189,41 +189,61 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var outsourceLinkData = productionProcess.ProductionStepLinkDatas
                                     .Where(x => x.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.StepLinkDataOutsourcePart).ToList();
 
-            var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.OutsourceRequestDetailId)
+            var sumQuantityUsage = outsourceLinkData.GroupBy(x => x.ProductionOutsourcePartMappingId)
                                     .Select(x => new
                                     {
-                                        OutsourcePartRequestDetailId = x.Key,
+                                        ProductionOutsourcePartMappingId = x.Key,
                                         QuantityUsage = x.Sum(x => x.Quantity)
                                     });
 
-            var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
+            var productionOutsourcePartMappings = await (from m in _manufacturingDBContext.ProductionOutsourcePartMapping
+                                                         join p in _manufacturingDBContext.RefProduct on m.ProductId equals p.ProductId into gp
+                                                         from p in gp.DefaultIfEmpty()
+                                                         join od in _manufacturingDBContext.OutsourcePartRequestDetail on m.OutsourcePartRequestDetailId equals od.OutsourcePartRequestDetailId
+                                                         join o in _manufacturingDBContext.OutsourcePartRequest on od.OutsourcePartRequestId equals o.OutsourcePartRequestId
+                                                         where m.ContainerId == productionProcess.ContainerId
+                                                         select new
+                                                         {
+                                                             m.ProductionOutsourcePartMappingId,
+                                                             m.ProductId,
+                                                             m.OutsourcePartRequestDetailId,
+                                                             m.Quantity,
+                                                             p.ProductCode,
+                                                             p.ProductName,
+                                                             o.OutsourcePartRequestCode,
+                                                             o.OutsourcePartRequestId
+                                                         }).ToListAsync();
+            
+            
 
-            if (outsourcePartRequestDetails.Count() > 0)
+            // var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
+
+            if (productionOutsourcePartMappings.Count() > 0)
             {
-                foreach (var outsourcePartRequestDetail in outsourcePartRequestDetails)
+                foreach (var outsource in productionOutsourcePartMappings)
                 {
 
-                    var usage = sumQuantityUsage.FirstOrDefault(x => x.OutsourcePartRequestDetailId == outsourcePartRequestDetail.OutsourcePartRequestDetailId);
+                    var usage = sumQuantityUsage.FirstOrDefault(x => x.ProductionOutsourcePartMappingId == outsource.ProductionOutsourcePartMappingId);
 
                     if (usage == null)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode} - Chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" chưa được thiết lập trong QTSX.",
-                            ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
-                            ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" chưa được thiết lập trong QTSX.",
+                            ObjectId = outsource.OutsourcePartRequestId,
+                            ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
                             WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
                         });
 
                     }
-                    else if (usage.QuantityUsage != outsourcePartRequestDetail.Quantity)
+                    else if (usage.QuantityUsage != outsource.Quantity)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsourcePartRequestDetail.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsourcePartRequestDetail.ProductPartTitle}\" của SP \"{outsourcePartRequestDetail.ProductTitle}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
-                            ObjectId = outsourcePartRequestDetail.OutsourcePartRequestId,
-                            ObjectCode = outsourcePartRequestDetail.OutsourcePartRequestCode,
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            ObjectId = outsource.OutsourcePartRequestId,
+                            ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
                             WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
                         });
@@ -231,10 +251,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
             }
 
-            var requestDetailIds = outsourcePartRequestDetails.Select(x => x.OutsourcePartRequestDetailId);
+            var requestDetailIds = productionOutsourcePartMappings.Select(x => x.ProductionOutsourcePartMappingId);
             foreach (var linkData in outsourceLinkData)
             {
-                if (!requestDetailIds.Contains(linkData.OutsourceRequestDetailId.GetValueOrDefault()))
+                if (!requestDetailIds.Contains(linkData.ProductionOutsourcePartMappingId.GetValueOrDefault()))
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {

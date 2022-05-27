@@ -10,13 +10,15 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionOrderDetail()
         {
             OutsourcePartRequest = new HashSet<OutsourcePartRequest>();
+            ProductionPlanExtraInfo = new HashSet<ProductionPlanExtraInfo>();
+            ProductionWeekPlan = new HashSet<ProductionWeekPlan>();
         }
 
         public long ProductionOrderDetailId { get; set; }
         public long ProductionOrderId { get; set; }
         public int ProductId { get; set; }
-        public decimal? Quantity { get; set; }
-        public decimal? ReserveQuantity { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal ReserveQuantity { get; set; }
         public string Note { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
@@ -32,5 +34,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public virtual ProductionOrder ProductionOrder { get; set; }
         public virtual ICollection<OutsourcePartRequest> OutsourcePartRequest { get; set; }
+        public virtual ICollection<ProductionPlanExtraInfo> ProductionPlanExtraInfo { get; set; }
+        public virtual ICollection<ProductionWeekPlan> ProductionWeekPlan { get; set; }
     }
 }

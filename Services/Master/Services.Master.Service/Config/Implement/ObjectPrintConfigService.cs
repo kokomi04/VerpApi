@@ -109,7 +109,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 .ToArray();
 
             var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigMapping
-                .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId && mapping.PrintConfigIds.Contains(x.PrintConfigCustomId))
+                .Where(x => x.ObjectTypeId == (int)mapping.ObjectTypeId && x.ObjectId == mapping.ObjectId)
                 .ToArrayAsync();
             _masterDbContext.ObjectPrintConfigMapping.RemoveRange(oldObjectPrintConfigs);
             await _masterDbContext.SaveChangesAsync();
@@ -221,6 +221,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 moduleTypeId: EnumModuleType.Manufacturing,
                 objectTypeId: EnumObjectType.ProductionOrder,
                 objectTitle: "Lệch sản xuất")
+            );
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Manufacturing,
+                objectTypeId: EnumObjectType.ProductionHandover,
+                objectTitle: "Bàn giao sản xuất")
             );
 
             return result;

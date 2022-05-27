@@ -537,6 +537,14 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
         public async Task<IList<ProcessingOrderListModel>> GetProcessingOrderList()
         {
+            var statusIds = new[]
+            {
+                EnumProductionStatus.ProcessingLessStarted,
+                EnumProductionStatus.ProcessingFullStarted,
+                EnumProductionStatus.OverDeadline
+            };
+            var strStatusId = string.Join(",", statusIds.Select(s => (int)s).ToArray());
+
             var sql = @$"SELECT 
                     v.ProductionOrderId,
                     v.ProductionOrderCode,
@@ -544,7 +552,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     v.StartDate,
                     v.EndDate  
                 FROM vProductionOrder v 
-                WHERE v.ProductionOrderStatus = {(int)EnumProductionStatus.Processing} OR v.ProductionOrderStatus = {(int)EnumProductionStatus.OverDeadline}";
+                WHERE v.ProductionOrderStatus IN ({strStatusId})";
 
             var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
             var lst = resultData
@@ -895,6 +903,80 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             return (lst, total);
         }
 
+
+        public async Task<IDictionary<long, DailyImportModel>> GetDailyImport(long monthPlanId, int stepId)
+        {
+            var monthPlan = _manufacturingDBContext.MonthPlan.FirstOrDefault(p => p.MonthPlanId == monthPlanId);
+            if (monthPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tháng");
+
+            var step = _manufacturingDBContext.Step.FirstOrDefault(s => s.StepId == stepId);
+            if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại công đoạn");
+
+            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= monthPlan.EndDate && po.PlanEndDate >= monthPlan.StartDate).ToList();
+            var productionOrderIds = productionOrders.Select(po => po.ProductionOrderId).ToList();
+
+            productionOrderIds = productionOrderIds.Distinct().ToList();
+
+            var productionHistories = (await (from ph in _manufacturingDBContext.ProductionHistory
+                                              join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
+                                              join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                              where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue && ps.StepId == stepId
+                                              select new
+                                              {
+                                                  ph.ObjectId,
+                                                  ph.ObjectTypeId,
+                                                  ph.ProductionQuantity,
+                                                  ph.OvertimeProductionQuantity,
+                                                  Date = ph.Date.Value
+                                              }).ToListAsync())
+                                             .GroupBy(ph => ph.Date)
+                                             .ToDictionary(g => g.Key.GetUnix(), g => g.Select(ph => new DailyProductionHistoryModel
+                                             {
+                                                 ObjectId = ph.ObjectId,
+                                                 ObjectTypeId = ph.ObjectTypeId,
+                                                 OfficeQuantity = ph.ProductionQuantity - ph.OvertimeProductionQuantity.GetValueOrDefault(),
+                                                 OvertimeQuantity = ph.OvertimeProductionQuantity.GetValueOrDefault()
+                                             }).ToList());
+
+            var resources = await (from hr in _manufacturingDBContext.ProductionHumanResource
+                                   join ps in _manufacturingDBContext.ProductionStep on hr.ProductionStepId equals ps.ProductionStepId
+                                   where productionOrderIds.Contains(hr.ProductionOrderId) && ps.StepId.HasValue && ps.StepId == stepId
+                                   select new
+                                   {
+                                       Date = hr.Date.Value,
+                                       hr.DepartmentId,
+                                       hr.OfficeWorkDay,
+                                       hr.OvertimeWorkDay
+                                   }).ToListAsync();
+
+            var productionHumanResources = resources
+                .GroupBy(ph => ph.Date)
+                .ToDictionary(g => g.Key.GetUnix(), g => new DailyHumanResourceModel
+                {
+                    OfficeWorkDay = g.Sum(hr => hr.OfficeWorkDay),
+                    OvertimeWorkDay = g.Sum(hr => hr.OvertimeWorkDay)
+                });
+
+            var workDepartments = resources
+                .GroupBy(ph => ph.Date)
+                .ToDictionary(g => g.Key.GetUnix(), g => g.Select(hr => hr.DepartmentId).Distinct().ToList());
+
+            var dates = new List<long>();
+            dates.AddRange(productionHistories.Keys);
+            dates.AddRange(productionHumanResources.Keys);
+            dates = dates.Distinct().ToList();
+            var result = new Dictionary<long, DailyImportModel>();
+            foreach (var date in dates)
+            {
+                var dailyImport = new DailyImportModel();
+                if (productionHistories.ContainsKey(date)) dailyImport.ProductionHistories = productionHistories[date];
+                if (productionHumanResources.ContainsKey(date)) dailyImport.HumanResources = productionHumanResources[date];
+                if (workDepartments.ContainsKey(date)) dailyImport.WorkDepartments = workDepartments[date];
+                result.Add(date, dailyImport);
+            }
+
+            return result;
+        }
 
     }
 }

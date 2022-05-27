@@ -154,7 +154,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var productIds = productInfos.Select(p => p.ProductId).ToList();
 
-            var packageCodes = rowDatas.SelectMany(r => new[] { r.ToPackgeInfo.PackageCode }).Distinct().ToList();
+            var packageCodes = rowDatas.SelectMany(r => new[] { r.ToPackgeInfo?.PackageCode }).Distinct().ToList();
 
             var productPackages = (await stockDbContext.Package.Where(p => p.StockId == stockId && (packageCodes.Contains(p.PackageCode) || p.PackageTypeId == (int)EnumPackageType.Default) && productIds.Contains(p.ProductId)).ToListAsync())
                 .GroupBy(p => p.ProductId)
@@ -164,7 +164,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             foreach (var item in rowDatas)
             {
-                if (item.PackageOptionId == EnumPackageOption.NoPackageManager && !string.IsNullOrWhiteSpace(item.ToPackgeInfo.PackageCode))
+                if (item.PackageOptionId == EnumPackageOption.NoPackageManager && !string.IsNullOrWhiteSpace(item.ToPackgeInfo?.PackageCode))
                 {
                     item.PackageOptionId = EnumPackageOption.Append;
                 }
@@ -251,9 +251,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 Package packageInfo = null;
 
-                if (!string.IsNullOrWhiteSpace(item.ToPackgeInfo.PackageCode) && item.PackageOptionId == EnumPackageOption.Append)
+                if (!string.IsNullOrWhiteSpace(item.ToPackgeInfo?.PackageCode) && item.PackageOptionId == EnumPackageOption.Append)
                 {
-                    var packageByCodes = packages?.Where(p => p.PackageCode.Equals(item.ToPackgeInfo.PackageCode, StringComparison.OrdinalIgnoreCase))?.ToList();
+                    var packageByCodes = packages?.Where(p => p.PackageCode.Equals(item.ToPackgeInfo?.PackageCode, StringComparison.OrdinalIgnoreCase))?.ToList();
 
                     if (packageByCodes?.Count == 1)
                     {
@@ -282,7 +282,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                     if (packageInfo == null && item.PackageOptionId == EnumPackageOption.Append)
                     {
-                        throw PackageCodeOfProductNotFound.BadRequestFormat(item.ToPackgeInfo.PackageCode, $"{item.ProductCode} {item.ProductName}");
+                        throw PackageCodeOfProductNotFound.BadRequestFormat(item.ToPackgeInfo?.PackageCode, $"{item.ProductCode} {item.ProductName}");
 
                     }
                 }

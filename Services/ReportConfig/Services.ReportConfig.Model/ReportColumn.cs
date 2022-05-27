@@ -46,4 +46,10 @@ namespace Verp.Services.ReportConfig.Model
         public string HeaderReportParams { get; set; }
 
     }
+
+    [Serializable]
+    public class ReportDisplayConfigModel
+    {
+        public bool IsVirtualScrolling { get; set; }
+    }
 }

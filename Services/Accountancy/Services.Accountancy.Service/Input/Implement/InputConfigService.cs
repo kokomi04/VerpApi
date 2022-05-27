@@ -529,7 +529,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     RefTableTitle = f.RefTableTitle,
                     IsRequire = af.IsRequire,
                     DecimalPlace = f.DecimalPlace,
-                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl
+                    ReferenceUrlExec = string.IsNullOrWhiteSpace(af.ReferenceUrl) ? f.ReferenceUrl : af.ReferenceUrl,
+                    InputFieldId = f.InputFieldId,
+                    ObjectApprovalStepId = f.ObjectApprovalStepTypeId
 
                 }).ToListAsync();
 
@@ -928,7 +930,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size)
+        public async Task<PageData<InputFieldOutputModel>> GetInputFields(string keyword, int page, int size, int? objectApprovalStepTypeId)
         {
             keyword = (keyword ?? "").Trim();
             var query = _accountancyDBContext.InputField
@@ -937,6 +939,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
+
+            if (objectApprovalStepTypeId.HasValue)
+            {
+                query = query.Where(f => f.ObjectApprovalStepTypeId.HasValue && (f.ObjectApprovalStepTypeId & objectApprovalStepTypeId.Value) == objectApprovalStepTypeId.Value);
+            }
+
             var total = await query.CountAsync();
 
             query = query.OrderBy(f => f.SortOrder);

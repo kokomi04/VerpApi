@@ -1,7 +1,14 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Services.Manafacturing.Model;
 using VErp.Services.Manafacturing.Service;
 
@@ -52,6 +59,26 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateTargetProductivity([FromRoute] int targetProductivityId, [FromBody] TargetProductivityModel model)
         {
             return await _targetProductivityService.UpdateTargetProductivity(targetProductivityId, model);
+        }
+
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public CategoryNameModel GetFieldDataForMapping()
+        {
+            return _targetProductivityService.GetFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("parseDetailsFromExcelMapping")]
+        [VErpAction(EnumActionType.View)]
+        public Task<IList<TargetProductivityDetailModel>> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null || mapping == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            mapping.FileName = file.FileName;
+            return _targetProductivityService.ParseDetails(mapping, file.OpenReadStream());
         }
     }
 }

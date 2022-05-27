@@ -26,5 +26,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? HandoverDatetime { get; set; }
         public long ProductionOrderId { get; set; }
         public string Note { get; set; }
+        public int? AcceptByUserId { get; set; }
+
+        public virtual ProductionStep FromProductionStep { get; set; }
+        public virtual ProductionOrder ProductionOrder { get; set; }
+        public virtual ProductionStep ToProductionStep { get; set; }
     }
 }

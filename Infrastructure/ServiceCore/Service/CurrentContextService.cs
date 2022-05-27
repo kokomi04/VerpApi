@@ -455,52 +455,5 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
     }
 
-    public class ScopeCurrentContextService : ICurrentContextService
-    {
-        public ScopeCurrentContextService(ICurrentContextService currentContextService)
-        : this(
-                currentContextService.UserId,
-                currentContextService.Action,
-                currentContextService.RoleInfo,
-                currentContextService.StockIds,
-                currentContextService.SubsidiaryId,
-                currentContextService.TimeZoneOffset,
-                currentContextService.Language,
-                currentContextService.IpAddress,
-                currentContextService.Domain
-        )
-        {
-
-        }
-
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress, string domain)
-        {
-            UserId = userId;
-            SubsidiaryId = subsidiaryId;
-            Action = action;
-            RoleInfo = roleInfo == null ? null : roleInfo.JsonSerialize().JsonDeserialize<RoleInfo>();
-            StockIds = stockIds == null ? null : stockIds.JsonSerialize().JsonDeserialize<List<int>>();
-            TimeZoneOffset = timeZoneOffset;
-            Language = language;
-            IpAddress = ipAddress;
-            Domain = domain;
-        }
-
-        public void SetSubsidiaryId(int subsidiaryId)
-        {
-            SubsidiaryId = subsidiaryId;
-        }
-
-        public int UserId { get; } = 0;
-        public int SubsidiaryId { get; private set; } = 0;
-        public EnumActionType Action { get; }
-        public IList<int> StockIds { get; }
-        public RoleInfo RoleInfo { get; }
-        public int? TimeZoneOffset { get; }
-        public bool IsDeveloper { get; } = false;
-        public string Language { get; }
-        public string IpAddress { get; }
-        public string Domain { get; }
-        public int ModuleId { get; }
-    }
+   
 }

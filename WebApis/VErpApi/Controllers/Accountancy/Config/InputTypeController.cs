@@ -75,9 +75,9 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("fields")]
-        public async Task<PageData<InputFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<InputFieldOutputModel>> GetAllFields([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] int? objectApprovalStepTypeId)
         {
-            return await _inputConfigService.GetInputFields(keyword, page, size).ConfigureAwait(true);
+            return await _inputConfigService.GetInputFields(keyword, page, size, objectApprovalStepTypeId).ConfigureAwait(true);
         }
 
 

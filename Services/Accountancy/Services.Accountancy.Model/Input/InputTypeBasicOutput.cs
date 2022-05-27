@@ -58,5 +58,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public int? DecimalPlace { get; set; }
 
         public string ReferenceUrlExec { get; set; }
+
+        public int InputFieldId { get; set; }
+        public int? ObjectApprovalStepId { get; set; }
     }
 }

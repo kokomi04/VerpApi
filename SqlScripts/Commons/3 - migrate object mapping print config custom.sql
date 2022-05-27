@@ -14,6 +14,7 @@ BEGIN TRY
       WHERE c.PrintConfigCustomId NOT IN (SELECT DISTINCT
         PrintConfigCustomId
       FROM MasterDB.dbo.ObjectPrintConfigMapping)
+	  AND c.IsDeleted = 0
 
   COMMIT TRAN -- Transaction Success!
 END TRY

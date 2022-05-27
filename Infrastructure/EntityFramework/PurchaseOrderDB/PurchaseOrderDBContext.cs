@@ -60,10 +60,10 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
         public virtual DbSet<RefCustomer> RefCustomer { get; set; }
         public virtual DbSet<RefEmployee> RefEmployee { get; set; }
+        public virtual DbSet<RefObjectApprovalStep> RefObjectApprovalStep { get; set; }
         public virtual DbSet<RefOutsourcePartRequest> RefOutsourcePartRequest { get; set; }
         public virtual DbSet<RefOutsourceStepRequest> RefOutsourceStepRequest { get; set; }
         public virtual DbSet<RefProduct> RefProduct { get; set; }
-        //public virtual DbSet<VoucherAction> VoucherAction { get; set; }
         public virtual DbSet<RefProductionOrder> RefProductionOrder { get; set; }
         public virtual DbSet<VoucherArea> VoucherArea { get; set; }
         public virtual DbSet<VoucherAreaField> VoucherAreaField { get; set; }
@@ -855,9 +855,20 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.FullName).HasMaxLength(128);
 
+                entity.Property(e => e.PartnerId).HasMaxLength(32);
+
                 entity.Property(e => e.Phone).HasMaxLength(64);
 
                 entity.Property(e => e.UserId).ValueGeneratedOnAdd();
+            });
+
+            modelBuilder.Entity<RefObjectApprovalStep>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefObjectApprovalStep");
+
+                entity.Property(e => e.ObjectApprovalStepId).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<RefOutsourcePartRequest>(entity =>
@@ -889,7 +900,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
             });
 
             modelBuilder.Entity<RefProduct>(entity =>
@@ -949,25 +960,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.ProductionOrderId).ValueGeneratedOnAdd();
             });
-
-            //modelBuilder.Entity<VoucherAction>(entity =>
-            //{
-            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
-
-            //    entity.Property(e => e.IconName).HasMaxLength(25);
-
-            //    entity.Property(e => e.Title).HasMaxLength(128);
-
-            //    entity.Property(e => e.VoucherActionCode)
-            //        .IsRequired()
-            //        .HasMaxLength(128);
-
-            //    entity.HasOne(d => d.VoucherType)
-            //        .WithMany(p => p.VoucherAction)
-            //        .HasForeignKey(d => d.VoucherTypeId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_Action_VoucherType");
-            //});
 
             modelBuilder.Entity<VoucherArea>(entity =>
             {

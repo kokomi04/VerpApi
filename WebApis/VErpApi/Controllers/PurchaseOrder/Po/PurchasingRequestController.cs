@@ -274,12 +274,13 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// Lấy thông tin phiếu yêu cầu vật tư theo LSX
         /// </summary>
         /// <param name="productionOrderId"></param>
+        /// <param name="productMaterialsConsumptionGroupId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId)
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId ,[FromQuery] int? productMaterialsConsumptionGroupId)
         {
-            return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId);
+            return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId, productMaterialsConsumptionGroupId);
         }
     }
 }

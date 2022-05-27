@@ -51,6 +51,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<LeaveConfigRole> LeaveConfigRole { get; set; }
         public virtual DbSet<LeaveConfigSeniority> LeaveConfigSeniority { get; set; }
         public virtual DbSet<LeaveConfigValidation> LeaveConfigValidation { get; set; }
+        public virtual DbSet<ObjectApprovalStep> ObjectApprovalStep { get; set; }
         public virtual DbSet<ObjectProcessObject> ObjectProcessObject { get; set; }
         public virtual DbSet<ObjectProcessStep> ObjectProcessStep { get; set; }
         public virtual DbSet<ObjectProcessStepDepend> ObjectProcessStepDepend { get; set; }
@@ -667,6 +668,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.LeaveConfigId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_LeaveConfigValidation_LeaveConfig");
+            });
+
+            modelBuilder.Entity<ObjectApprovalStep>(entity =>
+            {
+                entity.Property(e => e.ObjectFieldEnable).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<ObjectProcessObject>(entity =>

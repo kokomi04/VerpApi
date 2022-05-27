@@ -51,5 +51,12 @@ namespace VErpApi.Controllers.System.Internal
 
             return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
+
+        [HttpGet]
+        [Route("GetAllCategoryConfig")]
+        public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
+        {
+            return await _categoryConfigService.GetAllCategoryConfig();
+        }
     }
 }

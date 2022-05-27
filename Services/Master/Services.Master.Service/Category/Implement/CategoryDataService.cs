@@ -106,7 +106,7 @@ namespace VErp.Services.Accountancy.Service.Category
         }
 
         public async Task<int> AddCategoryRowToDb(int categoryId, Dictionary<string, string> data)
-        {           
+        {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
@@ -226,7 +226,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             await _customGenCodeHelperService.ConfirmCode(CustomGenCodeBaseValue);
 
-          
+
             foreach (var item in genCodeContexts)
             {
                 await item.ConfirmCode();
@@ -850,7 +850,16 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
             }
 
-            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total FROM {categoryView}");
+            var sumColumns = fields.Where(f => f.IsCalcSum).ToList();
+
+            var sumExpColumns = sumColumns.Select(f => $"SUM({f.CategoryFieldName}) AS {f.CategoryFieldName}").ToArray();
+
+            var totalSql = new StringBuilder($"SELECT COUNT(F_Id) as Total");
+            if (sumExpColumns.Length > 0)
+            {
+                totalSql.Append($", {string.Join(",", sumExpColumns)} ");
+            }
+            totalSql.Append($" FROM {categoryView} ");
 
             if (whereCondition.Length > 2)
             {
@@ -860,9 +869,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var countTable = await _masterContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var total = 0;
+            var additionResult = new NonCamelCaseDictionary();
             if (countTable != null && countTable.Rows.Count > 0)
             {
                 total = (countTable.Rows[0]["Total"] as int?).GetValueOrDefault();
+                foreach (var c in sumColumns)
+                {
+                    additionResult.Add(c.CategoryFieldName, countTable.Rows[0][c.CategoryFieldName]);
+                }
             }
 
             if (!category.IsTreeView)
@@ -890,7 +904,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
             }
 
-            return (lstData, total);
+            return (lstData, total, additionResult);
         }
 
         private void AddParents(ref List<NonCamelCaseDictionary> categoryRows, List<NonCamelCaseDictionary> lstAll)

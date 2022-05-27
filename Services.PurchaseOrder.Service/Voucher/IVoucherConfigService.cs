@@ -47,7 +47,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         Task<bool> DeleteVoucherArea(int voucherTypeId, int voucherAreaId);
 
         // Field
-        Task<PageData<VoucherFieldOutputModel>> GetVoucherFields(string keyword, int page, int size);
+        Task<PageData<VoucherFieldOutputModel>> GetVoucherFields(string keyword, int page, int size, int? ObjectApprovalStepTypeId);
         Task<VoucherFieldInputModel> AddVoucherField(VoucherFieldInputModel data);
         Task<VoucherFieldInputModel> UpdateVoucherField(int voucherFieldId, VoucherFieldInputModel data);
         Task<bool> DeleteVoucherField(int voucherFieldId);

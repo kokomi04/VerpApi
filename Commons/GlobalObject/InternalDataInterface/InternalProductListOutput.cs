@@ -65,6 +65,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public IList<InternalProductModelUnitConversion> ProductUnitConversions { get; set; }
         public string Description { get; set; }
         public string Color { get; set; }
+        public decimal? ProductPurity { get; set; }
     }
 
     public class InternalStockProductOutput

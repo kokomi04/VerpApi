@@ -1,11 +1,11 @@
 USE [msdb]
 GO
 
-/****** Object:  Job [Backup_Database_Diff]    Script Date: 12/15/2021 4:35:12 PM ******/
+/****** Object:  Job [Backup_Database_Diff]    Script Date: 4/23/2022 10:49:56 PM ******/
 BEGIN TRANSACTION
 DECLARE @ReturnCode INT
 SELECT @ReturnCode = 0
-/****** Object:  JobCategory [[Uncategorized (Local)]]    Script Date: 12/15/2021 4:35:12 PM ******/
+/****** Object:  JobCategory [[Uncategorized (Local)]]    Script Date: 4/23/2022 10:49:56 PM ******/
 IF NOT EXISTS (SELECT name FROM msdb.dbo.syscategories WHERE name=N'[Uncategorized (Local)]' AND category_class=1)
 BEGIN
 EXEC @ReturnCode = msdb.dbo.sp_add_category @class=N'JOB', @type=N'LOCAL', @name=N'[Uncategorized (Local)]'
@@ -23,10 +23,9 @@ EXEC @ReturnCode =  msdb.dbo.sp_add_job @job_name=N'Backup_Database_Diff',
 		@delete_level=0, 
 		@description=N'No description available.', 
 		@category_name=N'[Uncategorized (Local)]', 
-		--@owner_login_name=N'WIN-1IM5PTUG78E\Administrator', 
-		@job_id = @jobId OUTPUT
+		@owner_login_name=N'WIN-1IM5PTUG78E\Administrator', @job_id = @jobId OUTPUT
 IF (@@ERROR <> 0 OR @ReturnCode <> 0) GOTO QuitWithRollback
-/****** Object:  Step [execute_backup]    Script Date: 12/15/2021 4:35:12 PM ******/
+/****** Object:  Step [execute_backup]    Script Date: 4/23/2022 10:49:56 PM ******/
 EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'execute_backup', 
 		@step_id=1, 
 		@cmdexec_success_code=0, 
@@ -38,9 +37,9 @@ EXEC @ReturnCode = msdb.dbo.sp_add_jobstep @job_id=@jobId, @step_name=N'execute_
 		@retry_interval=0, 
 		@os_run_priority=0, @subsystem=N'TSQL', 
 		@command=N'DECLARE @DbName NVARCHAR(100) ,
-    @path NVARCHAR(100) = ''F:\backup\Verp\'';
+    @pathFull NVARCHAR(100) = ''F:\backup\Database\'' ;
 
-EXEC master.dbo.xp_create_subdir @path
+EXEC master.dbo.xp_create_subdir @pathFull
 DECLARE database_cursor CURSOR LOCAL
 FOR
     SELECT  name
@@ -52,23 +51,13 @@ OPEN database_cursor ;
 FETCH NEXT FROM database_cursor INTO @DbName ;
 WHILE @@FETCH_STATUS = 0 
 BEGIN
-			DECLARE @Sql NVARCHAR(200) = ''''
-		 DECLARE @result INT
-		 EXEC master.dbo.xp_fileexist @path, @result OUTPUT
-		 
-		 IF cast(@result as bit) = 1
-		 BEGIN
+		 DECLARE @Sql NVARCHAR(200) = ''''
+		
 
 		   SET @Sql = ''BACKUP DATABASE ['' + @DbName
-				+ ''] TO DISK = '''''' + @path + @DbName + ''.bak''
+				+ ''] TO DISK = '''''' + @pathFull + @DbName + ''.duoi_chong_ma_hoa''
 				+ '''''' WITH DIFFERENTIAL'' ;
-		 END
-		 ELSE
-		 BEGIN
-			  SET @Sql = ''BACKUP DATABASE ['' + @DbName
-				+ ''] TO DISK = '''''' + @path + @DbName + ''.bak''
-				+ '''''' WITH INIT'' ;
-		 END
+		
 
       
         EXEC(@Sql) ;
