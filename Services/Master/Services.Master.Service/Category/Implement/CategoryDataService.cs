@@ -749,28 +749,28 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -827,7 +827,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                 int suffix = 0;
-                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix);
+                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))
