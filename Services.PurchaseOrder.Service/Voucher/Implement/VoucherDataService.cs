@@ -2088,7 +2088,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         // Validate mapping required
                         if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
                         if (field == null) continue;
-                        if (!field.IsMultiRow && rowIndx > 0) continue;
+                        //if (!field.IsMultiRow && rowIndx > 0) continue;
 
                         string value = null;
                         if (row.Data.ContainsKey(mappingField.Column))
@@ -2217,8 +2217,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
                         if (!field.IsMultiRow)
-                        {
-                            info.Add(field.FieldName, value);
+                        {                        
+                            if (info.ContainsKey(field.FieldName))
+                            {
+                                if (info[field.FieldName]?.ToString() != value)
+                                {
+                                    throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                                }
+                            }
+                            else
+                            {
+                                info.Add(field.FieldName, value);
+                            }
                         }
                         else
                         {

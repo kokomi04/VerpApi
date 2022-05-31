@@ -19,7 +19,7 @@ namespace Verp.Resources.Accountancy.InputData {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class InputDataValidationMessage {
@@ -174,6 +174,15 @@ namespace Verp.Resources.Accountancy.InputData {
         public static string ListBillsToUpdateIsEmpty {
             get {
                 return ResourceManager.GetString("ListBillsToUpdateIsEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tồn tại nhiều hơn 1 giá trị ở trường thông tin chung {0}, dòng {1}, trường {2}, chứng từ {3}.
+        /// </summary>
+        public static string MultipleDiffValueAtInfoArea {
+            get {
+                return ResourceManager.GetString("MultipleDiffValueAtInfoArea", resourceCulture);
             }
         }
         
