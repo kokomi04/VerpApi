@@ -38,6 +38,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<CustomerBankAccount> _bankAccounts;
         private IList<CustomerContact> _customerContact;
 
+        private IList<CustomerNotifyParty> _notifyParties;
+
         public CusomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
             _customerService = customerService;
@@ -159,7 +161,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
             var customersCode = lstData.Select(x => x.CustomerCode);
             var customersName = lstData.Select(x => x.CustomerName);
-            var existsCumstomers = await _organizationContext.Customer.Where(x => customersCode.Contains(x.CustomerCode) || customersName.Contains(x.CustomerName))
+            var existsCustomers = await _organizationContext.Customer.Where(x => customersCode.Contains(x.CustomerCode) || customersName.Contains(x.CustomerName))
                 .AsNoTracking()
                 .Select(x => new { x.CustomerId, x.CustomerCode, x.CustomerName })
                 .ToListAsync();
@@ -200,9 +202,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             _bankAccounts = await _organizationContext.CustomerBankAccount.Where(x =>
                 backAccounts.Select(b => b.BankName).Contains(x.BankName) &&
                 backAccounts.Select(b => b.AccountName).Contains(x.AccountName)
-            ).AsNoTracking().ToListAsync();
+            ).AsNoTracking()
+            .ToListAsync();
 
             _customerContact = await _organizationContext.CustomerContact.Where(x => contactNames.Contains(x.FullName)).AsNoTracking().ToListAsync();
+
+            _notifyParties = await _organizationContext.CustomerNotifyParty.Where(x => existsCustomers.Select(c=>c.CustomerId).ToList().Contains(x.CustomerId)).AsNoTracking().ToListAsync();
 
             foreach (var customerModel in lstData)
             {
@@ -212,13 +217,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                 LoadContacts(customerInfo, customerModel, mapping);
                 LoadBankAccounts(customerInfo, customerModel, mapping);
+                LoadNotifyParties(customerInfo, customerModel, mapping);
 
                 if (customerInfo.CustomerTypeId == 0)
                 {
                     customerInfo.CustomerTypeId = customerInfo.Contacts?.Count > 0 ? EnumCustomerType.Organization : EnumCustomerType.Personal;
                 }
 
-                var existedCustomers = existsCumstomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
+                var existedCustomers = existsCustomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
 
                 if (existedCustomers != null && existedCustomers.Count() > 0 && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                 {
@@ -326,6 +332,30 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         AccountName = name ?? "",
                         CurrencyId = GetValueByFieldNumber<int>(obj, nameof(BaseCustomerImportModel.BankAccCurrency1), number),
                         Province = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.BankAccAddress1), number) ?? ""
+                    });
+                }
+            }
+
+        }
+
+        private void LoadNotifyParties(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
+        {
+            model.NotifyParties = new List<CustomerNotifyPartyModel>();
+            for (var number = 1; number <= 3; number++)
+            {
+                var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyName1), number);
+                var des = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyDescription1), number);
+                var content = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyContent1), number);
+
+                var existsEntity = _notifyParties.FirstOrDefault(x => model.CustomerId == x.CustomerId && x.Name?.NormalizeAsInternalName() == x.Name?.NormalizeAsInternalName());
+
+                if (!string.IsNullOrWhiteSpace(name))
+                {
+                    model.NotifyParties.Add(new CustomerNotifyPartyModel()
+                    {
+                        CustomerNotifyPartyId = existsEntity != null ? (long?)existsEntity.CustomerNotifyPartyId : null,
+                        Description = des,
+                        CustomerNotifyPartyStatusId = existsEntity != null ? (EnumCustomerNotifyPartyStatus)existsEntity.CustomerNotifyPartyStatusId : EnumCustomerNotifyPartyStatus.Actived
                     });
                 }
             }

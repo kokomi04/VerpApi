@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             CustomerAttachment = new HashSet<CustomerAttachment>();
             CustomerBankAccount = new HashSet<CustomerBankAccount>();
             CustomerContact = new HashSet<CustomerContact>();
+            CustomerNotifyParty = new HashSet<CustomerNotifyParty>();
         }
 
         public int CustomerId { get; set; }
@@ -47,5 +48,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual ICollection<CustomerAttachment> CustomerAttachment { get; set; }
         public virtual ICollection<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual ICollection<CustomerContact> CustomerContact { get; set; }
+        public virtual ICollection<CustomerNotifyParty> CustomerNotifyParty { get; set; }
     }
 }

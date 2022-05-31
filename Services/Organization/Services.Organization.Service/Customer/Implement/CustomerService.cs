@@ -175,13 +175,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             await ValidateCustomerModels(customers);
 
-            var (customerEntities, originData, contacts, bankAccounts, attachments) = ConvertToCustomerEntities(customers);
+            var (customerEntities, originData, contacts, bankAccounts, attachments, notifyParties) = ConvertToCustomerEntities(customers);
 
             await _organizationContext.InsertByBatch(customerEntities);
 
             var contactEntities = new List<CustomerContact>();
             var bankAccountEntities = new List<CustomerBankAccount>();
             var customerAttachments = new List<CustomerAttachment>();
+            var notifyPartiesEntities = new List<CustomerNotifyParty>();
 
             foreach (var entity in customerEntities)
             {
@@ -202,15 +203,22 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     attach.CustomerId = entity.CustomerId;
                 }
 
+                foreach (var notifyParty in notifyParties[entity])
+                {
+                    notifyParty.CustomerId = entity.CustomerId;
+                }
+
                 contactEntities.AddRange(contacts[entity]);
                 bankAccountEntities.AddRange(bankAccounts[entity]);
                 customerAttachments.AddRange(attachments[entity]);
+                notifyPartiesEntities.AddRange(notifyParties[entity]);
             }
 
             await _organizationContext.UpdateByBatch(customerEntities, false);
             await _organizationContext.InsertByBatch(contactEntities, false);
             await _organizationContext.InsertByBatch(bankAccountEntities, false);
             await _organizationContext.InsertByBatch(customerAttachments, false);
+            await _organizationContext.InsertByBatch(notifyPartiesEntities, false);
 
             _organizationContext.SaveChanges();
 
@@ -273,6 +281,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 c.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
 
+            var notifyPartyies = await _organizationContext.CustomerNotifyParty.Where(c => c.CustomerId == customerId).ToListAsync();
+            foreach (var c in notifyPartyies)
+            {
+                c.IsDeleted = true;
+                c.DeletedDatetimeUtc = DateTime.UtcNow;
+            }
+
+
             customerInfo.IsDeleted = true;
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
@@ -295,6 +311,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var bankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
             var customerAttachments = await _organizationContext.CustomerAttachment.Where(at => at.CustomerId == customerId).ProjectTo<CustomerAttachmentModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var notifyParties = await _organizationContext.CustomerNotifyParty.Where(at => at.CustomerId == customerId).ProjectTo<CustomerNotifyPartyModel>(_mapper.ConfigurationProvider).ToListAsync();
+
 
             return new CustomerModel()
             {
@@ -333,7 +351,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     Email = c.Email
                 }).ToList(),
                 BankAccounts = bankAccounts.Select(ba => TransformBankAccModel(ba)).ToList(),
-                CustomerAttachments = customerAttachments
+                CustomerAttachments = customerAttachments,
+                NotifyParties = notifyParties
             };
         }
 
@@ -482,7 +501,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
-            var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+            var dbCustomerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+            var dbNotifyParties = await _organizationContext.CustomerNotifyParty.Where(a => a.CustomerId == customerId).ToListAsync();
 
 
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.LegalRepresentative))
@@ -539,11 +559,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             {
                 data.Contacts = new List<CustomerContactModel>();
             }
-            if (data.Contacts == null)
+            if (data.BankAccounts == null)
             {
                 data.BankAccounts = new List<CustomerBankAccountModel>();
             }
 
+            if (data.CustomerAttachments == null)
+            {
+                data.CustomerAttachments = new List<CustomerAttachmentModel>();
+            }
+
+            //1. contacts
             if (!igDeleteRef)
             {
                 var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
@@ -582,6 +608,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
+            //2. banks
             if (!igDeleteRef)
             {
                 var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
@@ -616,19 +643,48 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
-            foreach (var attach in customerAttachments)
+            //3. Attachments
+            foreach (var attach in dbCustomerAttachments)
             {
                 var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
                 if (change != null)
                     _mapper.Map(change, attach);
                 else
-                    attach.IsDeleted = true;
+                {
+                    if (!igDeleteRef)
+                        attach.IsDeleted = true;
+                }
             }
             var newAttachment = data.CustomerAttachments.AsQueryable()
                 .Where(x => !(x.CustomerAttachmentId > 0))
                 .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
             newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
             await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
+
+
+            //4. Notify Parties
+
+            if (!igDeleteRef)
+            {
+                var deletedNofityParties = dbNotifyParties.Where(c => !data.NotifyParties.Any(s => s.CustomerNotifyPartyId == c.CustomerNotifyPartyId)).ToList();
+                foreach (var c in deletedNofityParties)
+                {
+                    c.IsDeleted = true;
+                }
+            }
+
+
+            var newNotifyParties = data.NotifyParties.Where(c => !(c.CustomerNotifyPartyId > 0)).Select(c => _mapper.Map<CustomerNotifyParty>(c));
+            await _organizationContext.CustomerNotifyParty.AddRangeAsync(newNotifyParties);
+
+            foreach (var c in dbNotifyParties)
+            {
+                var change = data.NotifyParties.FirstOrDefault(s => s.CustomerNotifyPartyId == c.CustomerNotifyPartyId);
+                if (change != null)
+                {
+                    _mapper.Map(change, c);
+                }
+            }
 
             await _organizationContext.SaveChangesAsync();
 
@@ -704,7 +760,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             Dictionary<CustomerEntity, CustomerModel> originData,
             Dictionary<CustomerEntity, List<CustomerContact>> contacts,
             Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts,
-            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments)
+            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments,
+            Dictionary<CustomerEntity, List<CustomerNotifyParty>> notifyParties)
             ConvertToCustomerEntities(IList<CustomerModel> customers)
         {
             var customerEntities = new List<CustomerEntity>();
@@ -712,6 +769,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
             var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
             var attachments = new Dictionary<CustomerEntity, List<CustomerAttachment>>();
+            var notifyParties = new Dictionary<CustomerEntity, List<CustomerNotifyParty>>();
 
             foreach (var data in customers)
             {
@@ -749,6 +807,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
                 attachments.Add(customer, new List<CustomerAttachment>());
+                notifyParties.Add(customer, new List<CustomerNotifyParty>());
 
                 if (data.Contacts != null && data.Contacts.Count > 0)
                 {
@@ -782,9 +841,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                     }));
                 }
+
+                if (data.NotifyParties != null && data.NotifyParties.Count > 0)
+                {
+                    notifyParties[customer].AddRange(_mapper.Map<List<CustomerNotifyParty>>(data.NotifyParties));
+                }
             }
 
-            return (customerEntities, originData, contacts, bankAccounts, attachments);
+            return (customerEntities, originData, contacts, bankAccounts, attachments, notifyParties);
         }
 
         private CustomerBankAccountModel TransformBankAccModel(CustomerBankAccount entity)
