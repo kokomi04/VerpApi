@@ -156,6 +156,9 @@
   <data name="ListBillsToUpdateIsEmpty" xml:space="preserve">
     <value>List bills to update are empty</value>
   </data>
+  <data name="MultipleDiffValueAtInfoArea" xml:space="preserve">
+    <value>Duplicate values at general info {0}, row {1}, field {2}, bill code {3}</value>
+  </data>
   <data name="NewValueIsInvalid" xml:space="preserve">
     <value>The new value is invalid</value>
   </data>

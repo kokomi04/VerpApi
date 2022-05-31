@@ -153,6 +153,9 @@
   <data name="ListBillsToUpdateIsEmpty" xml:space="preserve">
     <value>Không tồn tại chứng từ cần thay đổi</value>
   </data>
+  <data name="MultipleDiffValueAtInfoArea" xml:space="preserve">
+    <value>Tồn tại nhiều hơn 1 giá trị ở trường thông tin chung {0}, dòng {1}, trường {2}, chứng từ {3}</value>
+  </data>
   <data name="NewValueIsInvalid" xml:space="preserve">
     <value>Giá trị mới truyền vào không hợp lệ</value>
   </data>

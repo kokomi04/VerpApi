@@ -242,7 +242,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (size >= 0)
             {
                 dataSql += @$" OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT { size}
+                FETCH NEXT {size}
                 ROWS ONLY";
             }
 
@@ -301,7 +301,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -352,7 +352,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -2506,7 +2506,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
 
                     if (field == null) continue;
-                    if (!field.IsMultiRow && rowIndx > 0 && info.ContainsKey(field.FieldName)) continue;
+                    //if (!field.IsMultiRow && rowIndx > 0 && info.ContainsKey(field.FieldName)) continue;
 
                     string value = null;
                     if (row.Data.ContainsKey(mappingField.Column))
@@ -2643,7 +2643,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                     if (!field.IsMultiRow)
                     {
-                        info.Add(field.FieldName, value);
+                        if (info.ContainsKey(field.FieldName))
+                        {
+                            if (info[field.FieldName]?.ToString() != value)
+                            {
+                                throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                            }
+                        }
+                        else
+                        {
+                            info.Add(field.FieldName, value);
+                        }
+
                     }
                     else
                     {
@@ -2700,7 +2711,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
-            var billEntryInfoSql = $"SELECT r.* FROM { INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
@@ -2972,7 +2983,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private string GlobalFilter()
         {
-            return $"r.SubsidiaryId = { _currentContextService.SubsidiaryId}";
+            return $"r.SubsidiaryId = {_currentContextService.SubsidiaryId}";
         }
 
         private IList<ReferFieldModel> GetRefFields(IList<ReferFieldModel> fields)
