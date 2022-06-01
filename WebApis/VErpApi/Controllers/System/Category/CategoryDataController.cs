@@ -26,6 +26,7 @@ using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using static VErp.Commons.Constants.CurrencyCateConstants;
 using System.Linq;
+using Verp.Cache.Caching;
 
 namespace VErpApi.Controllers.System.Category
 {
@@ -36,11 +37,13 @@ namespace VErpApi.Controllers.System.Category
     {
         private readonly ICategoryDataService _categoryDataService;
         private readonly ICategoryConfigService _categoryConfigService;
+        private readonly ICachingService _cachingService;
 
-        public CategoryDataController(ICategoryDataService categoryDataService, ICategoryConfigService categoryConfigService)
+        public CategoryDataController(ICategoryDataService categoryDataService, ICategoryConfigService categoryConfigService, ICachingService cachingService)
         {
             _categoryDataService = categoryDataService;
             _categoryConfigService = categoryConfigService;
+            _cachingService = cachingService;
         }
 
         [HttpPost]

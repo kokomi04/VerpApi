@@ -120,6 +120,9 @@
   <data name="Create" xml:space="preserve">
     <value>Created bill {0}, Bill code {1}</value>
   </data>
+  <data name="CreateViaExcel" xml:space="preserve">
+    <value>Created bill {0}, Bill code {1} via excel</value>
+  </data>
   <data name="Delete" xml:space="preserve">
     <value>Deleted bill {0}, Bill code {1}</value>
   </data>
@@ -128,5 +131,8 @@
   </data>
   <data name="UpdateMulti" xml:space="preserve">
     <value>Update multiple bills {0}, by field {1}, Bill code {2}</value>
+  </data>
+  <data name="UpdateViaExcel" xml:space="preserve">
+    <value>Updated bill {0}, Bill code {1} via excel</value>
   </data>
 </root>
