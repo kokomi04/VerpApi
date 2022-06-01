@@ -1,11 +1,14 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -21,10 +24,12 @@ namespace VErpApi.Controllers.System.Internal
     {
         private readonly ICategoryConfigService _categoryConfigService;
         private readonly ICategoryDataService _categoryDataService;
-        public InternalCategoryController(ICategoryConfigService categoryConfigService, ICategoryDataService categoryDataService)
+        private readonly ICachingService _cachingService;
+        public InternalCategoryController(ICategoryConfigService categoryConfigService, ICategoryDataService categoryDataService, ICachingService cachingService)
         {
             _categoryConfigService = categoryConfigService;
             _categoryDataService = categoryDataService;
+            _cachingService = cachingService;
         }
 
         [HttpPost]
@@ -48,8 +53,12 @@ namespace VErpApi.Controllers.System.Internal
         public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows([FromRoute] string categoryCode, [FromBody] CategoryFilterModel request)
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            var key = categoryCode + "_" + JsonUtils.JsonSerialize(request).ToGuid();
+            return await _cachingService.TryGetSet("CATEGORY", key, TimeSpan.FromMinutes(3), async () =>
+             {
+                 return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+             }, TimeSpan.FromMinutes(1));
 
-            return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
         }
 
         [HttpGet]

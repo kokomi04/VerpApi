@@ -13,6 +13,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -121,11 +122,36 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return dataTable.ConvertData<T>();
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            if (cachingService != null)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine(rawSql);
+                if (parammeters != null)
+                {
+                    foreach (var p in parammeters)
+                    {
+                        builder.AppendLine(p.ParameterName);
+                        builder.AppendLine(JsonUtils.JsonSerialize(p.Value));
+                    }
+                }
+                builder.AppendLine(cmdType.ToString());
+                var key = "QueryDataTable_" + builder.ToString().ToGuid().ToString();
+                return await cachingService.TryGetSet("QueryDataTable", key, TimeSpan.FromMinutes(1), async () =>
+                {
+                    return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+                }, TimeSpan.FromMinutes(1));
+            }
+            return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+        }
+
+        private static async Task<DataTable> QueryDataTableDb(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
 
             try
             {
+
                 var st = new Stopwatch();
                 st.Start();
 
