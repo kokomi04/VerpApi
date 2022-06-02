@@ -192,6 +192,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (reportInfo.IsBsc)
             {
                 var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
+                bscConfig.Rows = bscConfig.Rows.OrderBy(r => r.SortOrder).ToList();
 
                 if (bscConfig != null)
                 {
@@ -234,6 +235,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
+
+            bscConfig.Rows = bscConfig.Rows.OrderBy(r => r.SortOrder).ToList();
 
             IList<NonCamelCaseDictionary> bscRows = new List<NonCamelCaseDictionary>();
 

@@ -39,7 +39,7 @@ namespace Verp.Services.ReportConfig.Model
         public string GroupColumns { get; set; }
         public string Sign { get; set; }
         public string HtmlTemplate { get; set; }
-       
+
         public EnumReportDetailOpenType? DetailOpenTypeId { get; set; }
         public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
@@ -65,12 +65,22 @@ namespace Verp.Services.ReportConfig.Model
         {
             return column.JsonDeserialize<List<ReportColumnModel>>()?.OrderBy(c => c.SortOrder)?.ToList();
         }
-      
+
+        public BscConfigModel ParseBscConfig(string bscConfigString)
+        {
+            var bsConfig = bscConfigString.JsonDeserialize<BscConfigModel>();
+            if (bsConfig != null)
+            {
+                bsConfig.Rows = bsConfig.Rows?.OrderBy(r => r.SortOrder)?.ToList();
+            }
+            return bsConfig;
+        }
+
         public int ReportModuleTypeId { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMap<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
-       .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonDeserialize<BscConfigModel>()))
+       .ForMember(m => m.BscConfig, m => m.MapFrom(v => ParseBscConfig(v.BscConfig)))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonDeserialize<ReportDisplayConfigModel>()))
        .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
        .ReverseMap()
