@@ -218,7 +218,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 dataSql = @$"
                  
-                    SELECT r.InputBill_F_Id, r.F_Id {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
+                    SELECT r.InputBill_F_Id, r.F_Id BillDetailId {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                     FROM {INPUTVALUEROW_VIEW} r
                     WHERE {whereCondition}
                
@@ -235,7 +235,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     GROUP BY r.InputBill_F_Id    
                 )
                 SELECT 
-                    t.InputBill_F_Id AS F_Id
+                    t.InputBill_F_Id AS F_Id,
+                    t.InputBill_F_Id,
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
@@ -1265,17 +1266,48 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds)
+        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
-            if (fIds.Length == 0) throw ListBillsToUpdateIsEmpty.BadRequest();
+            if (billIds.Length == 0) throw ListBillsToUpdateIsEmpty.BadRequest();
 
             // Get field
-            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).FirstOrDefault(f => f.InputField.FieldName == fieldName);
+            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).Include(f => f.InputArea).FirstOrDefault(f => f.InputField.FieldName == fieldName);
             if (field == null) throw FieldNotFound.BadRequest();
+
+            if (!field.InputArea.IsMultiRow && detailIds?.Length > 0)
+            {
+                var checkUpdateMultipleFielsSql = $@"
+                    ;WITH db AS(
+                        SELECT r.InputBill_F_Id, COUNT(0) TotalDetail 
+                            FROM {INPUTVALUEROW_TABLE} r 
+                            WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 
+                                AND r.InputBill_F_Id IN(SELECT [Value] FROM @BillIds) 
+                            GROUP BY r.InputBill_F_Id 
+                    ),req AS (
+                        SELECT r.InputBill_F_Id, COUNT(0) TotalDetail 
+                            FROM {INPUTVALUEROW_TABLE} r 
+                            WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 
+                                AND r.InputBill_F_Id IN (SELECT [Value] FROM @BillIds) 
+                                AND f.F_Id  IN (SELECT [Value] FROM @DetailIds) 
+                            GROUP BY r.InputBill_F_Id 
+                    )
+                    SELECT r.{AccountantConstants.BILL_CODE} 
+                        FROM db 
+                            LEFT JOIN req ON db.InputBill_F_Id = req.InputBill_F_Id
+                            LEFT JOIN {INPUTVALUEROW_TABLE} r ON db.InputBill_F_Id = r.InputBill_F_Id
+                    WHERE req.InputBill_F_Id IS NULL OR req.TotalDetail < db.TotalDetail
+                    ";
+                var invalids = await _accountancyDBContext.QueryDataTable(checkUpdateMultipleFielsSql, new[] { billIds.ToSqlParameter("@BillIds"), detailIds.ToSqlParameter("@DetailIds") });
+                if (invalids.Rows.Count > 0)
+                {
+                    var billCode = invalids.Rows[0][AccountantConstants.BILL_CODE];
+                    throw new BadRequestException($@"Trường dữ liệu ở vùng chung. Bạn cần lựa chọn tất cả các dòng chi tiết của chứng từ có mã {billCode}");
+                }
+            }
 
             object oldSqlValue;
             object newSqlValue;
@@ -1324,13 +1356,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 select f.FieldName).ToListAsync()).ToHashSet();
 
             // Get bills by old value
-            var sqlParams = new List<SqlParameter>();
+            var sqlParams = new List<SqlParameter>()
+            {
+                billIds.ToSqlParameter("@BillIds")
+            };
+
             var dataSql = new StringBuilder(@$"
 
                 SELECT     r.*
                 FROM {INPUTVALUEROW_TABLE} r 
 
-                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN ({string.Join(',', fIds)}) AND {GlobalFilter()}");
+                WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN (SELECT [Value] FROM @BillIds) AND {GlobalFilter()}");
 
 
             if (oldValue == null)
@@ -1398,7 +1434,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             break;
                     }
                 }
-                newRow[fieldName] = newSqlValue;
+
+                if (detailIds == null || detailIds.Length == 0 || detailIds.Contains((long)newRow["F_Id"]))
+                {
+                    newRow[fieldName] = newSqlValue;
+                }
+
                 dataTable.Rows.Add(newRow);
             }
 
@@ -1428,7 +1469,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             .MessageResourceFormatDatas(inputTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
                             .BillTypeId(inputTypeId)
                             .ObjectId(bill.FId)
-                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, fIds }.JsonSerialize().JsonSerialize())
+                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, billIds }.JsonSerialize().JsonSerialize())
                             .CreateLog();
 
                         // Update last bill version
