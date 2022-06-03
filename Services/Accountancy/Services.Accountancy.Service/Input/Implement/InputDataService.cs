@@ -1368,17 +1368,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 AND r.InputBill_F_Id IN (SELECT [Value] FROM @BillIds) AND {GlobalFilter()}");
 
+            /**
+             * NOTICE
+             * Not add old condition to filter params, because we need to select all details of bill, and create new version
+             * old data will be compare and replace at new version
+             */
 
-            if (oldValue == null)
-            {
-                dataSql.Append($" AND r.{fieldName} IS NULL");
-            }
-            else
-            {
-                var paramName = $"@{fieldName}";
-                dataSql.Append($" AND r.{fieldName} = {paramName}");
-                sqlParams.Add(new SqlParameter(paramName, oldSqlValue));
-            }
+
+            //if (oldValue == null)
+            //{
+            //    dataSql.Append($" AND r.{fieldName} IS NULL");
+            //}
+            //else
+            //{
+            //    var paramName = $"@{fieldName}";
+            //    dataSql.Append($" AND r.{fieldName} = {paramName}");
+            //    sqlParams.Add(new SqlParameter(paramName, oldSqlValue));//
+            //}
 
             var data = await _accountancyDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
             var updateBillIds = new HashSet<long>();
@@ -1437,7 +1443,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (detailIds == null || detailIds.Length == 0 || detailIds.Contains((long)newRow["F_Id"]))
                 {
-                    newRow[fieldName] = newSqlValue;
+                    var value = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(newRow[fieldName]);
+
+                    if (value.IsNullObject() && oldSqlValue.IsNullObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
+                    {
+                        newRow[fieldName] = newSqlValue;
+                    }
                 }
 
                 dataTable.Rows.Add(newRow);
