@@ -17,6 +17,7 @@ namespace VErp.Services.Organization.Model.Customer
     public class CustomerListOutput : CustomerListBasicOutput, IMapFrom<CustomerEntity>
     {
         public int? CustomerCateId { get; set; }
+        public long? LogoFileId { get; set; }
         public EnumCustomerType CustomerTypeId { get; set; }
         public string Address { get; set; }
         public string TaxIdNo { get; set; }
