@@ -557,6 +557,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             if (!igDeleteRef || data.CustomerStatusId.HasValue)
                 customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
 
+            if (!igDeleteRef || data.LogoFileId.HasValue)
+                customerInfo.LogoFileId = data.LogoFileId;
+
             if (data.Contacts == null)
             {
                 data.Contacts = new List<CustomerContactModel>();
