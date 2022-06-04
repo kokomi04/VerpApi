@@ -236,7 +236,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 )
                 SELECT 
                     t.InputBill_F_Id AS F_Id,
-                    t.InputBill_F_Id,
+                    t.InputBill_F_Id
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
                 FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
