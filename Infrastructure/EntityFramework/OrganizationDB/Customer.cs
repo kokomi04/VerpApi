@@ -43,6 +43,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int? LoanManagerUserId { get; set; }
         public string PartnerId { get; set; }
         public int? CustomerCateId { get; set; }
+        public long? LogoFileId { get; set; }
 
         public virtual CustomerCate CustomerCate { get; set; }
         public virtual ICollection<CustomerAttachment> CustomerAttachment { get; set; }
