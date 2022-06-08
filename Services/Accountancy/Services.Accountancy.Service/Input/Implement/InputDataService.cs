@@ -1292,7 +1292,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             FROM {INPUTVALUEROW_TABLE} r 
                             WHERE r.InputTypeId = {inputTypeId} AND r.IsDeleted = 0 
                                 AND r.InputBill_F_Id IN (SELECT [Value] FROM @BillIds) 
-                                AND f.F_Id  IN (SELECT [Value] FROM @DetailIds) 
+                                AND r.F_Id  IN (SELECT [Value] FROM @DetailIds) 
                             GROUP BY r.InputBill_F_Id 
                     )
                     SELECT r.{AccountantConstants.BILL_CODE} 
@@ -1441,7 +1441,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     }
                 }
 
-                if (detailIds == null || detailIds.Length == 0 || detailIds.Contains((long)newRow["F_Id"]))
+                if (detailIds == null || detailIds.Length == 0 || detailIds.Contains((long)row["F_Id"]))
                 {
                     var value = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(newRow[fieldName]);
 
