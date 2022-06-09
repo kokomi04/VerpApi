@@ -14,6 +14,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
     public interface IProductionHandoverService : IStatusProcessService
     {
         Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId);
+
+        Task<PageData<ProductionHandoverByDateModel>> GetDepartmentHandoversByDate(IList<long> fromDepartmentIds, IList<long> toDepartmentIds, IList<long> fromStepIds, IList<long> toStepIds, long? fromDate, long? toDate, bool? isInFinish, bool? isOutFinish, int page, int size);
+
         Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId);
         Task<ProductionHandoverModel> CreateProductionHandover(long productionOrderId, ProductionHandoverInputModel data);
         Task<ProductionHandoverModel> CreateStatictic(long productionOrderId, ProductionHandoverInputModel data);
