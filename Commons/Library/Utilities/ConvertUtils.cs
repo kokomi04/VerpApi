@@ -385,7 +385,7 @@ namespace VErp.Commons.Library
                 return Enum.ToObject(type, v);
             }
 
-            return v;
+            return Convert.ChangeType(v, type);
         }
         public static List<T> ConvertDataModel<T>(this DataTable data) where T : NonCamelCaseDictionary, new()
         {
