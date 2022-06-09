@@ -1358,7 +1358,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Get bills by old value
             var sqlParams = new List<SqlParameter>()
             {
-                billIds.ToSqlParameter("@BillIds")
+                billIds.ToSqlParameter("@BillIds")               
             };
 
             var dataSql = new StringBuilder(@$"
@@ -1443,7 +1443,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 if (detailIds == null || detailIds.Length == 0 || detailIds.Contains((long)row["F_Id"]))
                 {
-                    var value = ((EnumDataType)field.InputField.DataTypeId).GetSqlValue(newRow[fieldName]);
+                    var value = row[fieldName];
 
                     if (value.IsNullObject() && oldSqlValue.IsNullObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
                     {
