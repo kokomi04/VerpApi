@@ -565,15 +565,23 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} {ope} (");
                         int inSuffix = 0;
                         var paramNames = new StringBuilder();
-                        IList<string> values = new List<string>();
-                        if (clause.Value is IList<string> lst)
+                        IList<object> values = new List<object>();
+                        //if (clause.Value is IList<string> lst)
+                        //{
+                        //    values = lst;
+                        //}
+                        var type = clause.Value.GetType();
+                        if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
                         {
-                            values = lst;
+                            foreach (object v in (dynamic)clause.Value)
+                            {
+                                values.Add(v);
+                            }
                         }
 
                         if (clause.Value is string str)
                         {
-                            values = (str ?? "").Split(",").Select(v => v.Trim()).ToList();
+                            values = (str ?? "").Split(",").Select(v => (object)v.Trim()).ToList();
                         }
 
                         foreach (var value in values)
