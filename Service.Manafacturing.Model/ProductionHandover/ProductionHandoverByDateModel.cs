@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 		public long ToStepId { get; set; }
 		public decimal AssignmentQuantity { get; set; }
 		public decimal Quantity { get; set; }
-		public DateTime MinDate { get; set; }
-		public int TotalRecord { get; set; }
+		public long Date { get; set; }
+		public string Note { get; set; }
 	}
 }
