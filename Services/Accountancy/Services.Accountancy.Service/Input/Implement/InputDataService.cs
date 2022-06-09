@@ -1468,7 +1468,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Created bill version
                 await _accountancyDBContext.InsertDataTable(dataTable, true);
 
-                using (var batch = _inputDataActivityLog.BeginBatchLog())
+                using (var batchLog = _inputDataActivityLog.BeginBatchLog())
                 {
                     foreach (var bill in bills)
                     {
@@ -1490,6 +1490,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     await _accountancyDBContext.SaveChangesAsync();
                     trans.Commit();
 
+                    await batchLog.CommitAsync();
                 }
 
 
