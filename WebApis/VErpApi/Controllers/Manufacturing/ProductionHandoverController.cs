@@ -59,6 +59,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverService.GetDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId, isInFinish, isOutFinish, productionStepLinkDataRoleTypeId);
         }
 
+
+        [HttpGet]
+        [Route("DepartmentHandoverByDate")]
+        public async Task<PageData<ProductionHandoverByDateModel>> GetDepartmentHandovers([FromQuery] IList<long> fromDepartmentIds, [FromQuery] IList<long> toDepartmentIds, [FromQuery] IList<long> fromStepIds, [FromQuery] IList<long> toStepIds, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _productionHandoverService.GetDepartmentHandoversByDate(fromDepartmentIds,  toDepartmentIds, fromStepIds,  toStepIds, fromDate, toDate,  isInFinish, isOutFinish,  page,  size);
+        }
+
+
         [HttpGet]
         [Route("productionInventoryRequirement/{productionOrderId}")]
         public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements([FromRoute] long productionOrderId)
