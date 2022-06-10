@@ -1232,6 +1232,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
         }
 
+        public async Task UpdateProductionOrderProcessStatus(long productionOrderId)
+        {
+            var processModel = await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId);
+
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == productionOrderId);
+            if (productionOrder != null)
+            {
+                productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(EnumContainerType.ProductionOrder, productionOrderId, processModel)).Count() > 0;
+
+                await _manufacturingDBContext.SaveChangesAsync();
+            }
+        }
+
         public async Task<IList<ProductionStepLinkDataInput>> GetProductionStepLinkDataByListId(List<long> lsProductionStepLinkDataId)
         {
             IList<ProductionStepLinkDataInput> stepLinkDatas = new List<ProductionStepLinkDataInput>();
