@@ -23,6 +23,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
@@ -37,13 +38,16 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly IProductHelperService _productHelperService;
+        private readonly IProductionProcessService _productionProcessService;
+
         public OutsourceStepRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourceStepRequestService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-            , IProductHelperService productHelperService)
+            , IProductHelperService productHelperService
+            , IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -52,6 +56,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _productHelperService = productHelperService;
+            _productionProcessService = productionProcessService;
         }
 
         public async Task<PageData<OutsourceStepRequestSearch>> SearchOutsourceStepRequest(
@@ -325,6 +330,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
                     $"Cập nhật yêu cầu gia công công đoạn", requestModel.JsonSerialize());
 
+                await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
+
                 return true;
             }
             catch (Exception ex)
@@ -419,6 +426,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
                     $"Xóa yêu cầu gia công công đoạn", request.JsonSerialize());
+
+                await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
+
                 return true;
             }
             catch (Exception ex)
@@ -717,6 +727,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, entityRequest.OutsourceStepRequestId,
                     $"Thêm mới yêu cầu gia công công đoạn", requestModel.JsonSerialize());
+
+                await _productionProcessService.UpdateProductionOrderProcessStatus(entityRequest.ProductionOrderId);
 
                 return new OutsourceStepRequestPrivateKey
                 {
