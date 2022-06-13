@@ -159,7 +159,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             IList<CustomerCate> customerCates,
             IList<CustomerContact> customerContacts,
             IList<CustomerBankAccount> customerBanks,
-            IList<CustomerNotifyParty> notifyParties,
             string fieldName,
             out bool isFormula
             )
@@ -228,9 +227,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                 var bankAcc = GetBankAcc(ref isMatch, customer, customerBanks, fieldName);
                 if (isMatch) return bankAcc;
-
-                var notifyParty = GetNotifyParty(ref isMatch, customer, notifyParties, fieldName);
-                if (isMatch) return notifyParty;
 
             }
             catch (Exception)
@@ -329,35 +325,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
             return (EnumDataType.Text, null);
         }
-        private (EnumDataType type, object value) GetNotifyParty(ref bool isMatch, CustomerEntity customer, IList<CustomerNotifyParty> notifyParties, string fieldName)
-        {
-            var field = BankAccFieldPrefix.FirstOrDefault(f => fieldName.StartsWith(f));
-            if (field != null)
-            {
-                isMatch = true;
-                var suffix = int.Parse(fieldName.Substring(field.Length));
-                var index = suffix - 1;
-                if (notifyParties.Count > index)
-                {
-                    var notifyParty = notifyParties[index];
-
-                    if (field == NotifyPartyName)
-                    {
-                        return (EnumDataType.Text, notifyParty.Name);
-                    }
-                    if (field == NotifyPartyDescription)
-                    {
-                        return (EnumDataType.Text, notifyParty.Description);
-                    }
-                    if (field == NotifyPartyContent)
-                    {
-                        return (EnumDataType.Text, notifyParty.Content);
-                    }
-                }
-            }
-            return (EnumDataType.Text, null);
-        }
-
+      
         private async Task<string> WriteTableDetailData(IList<CustomerEntity> customers)
         {
             var stt = 1;
@@ -383,7 +351,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
             var contacts = new Dictionary<int, IList<CustomerContact>>();
             var bankAccs = new Dictionary<int, IList<CustomerBankAccount>>();
-            var notifyParties = new Dictionary<int, IList<CustomerNotifyParty>>();
             foreach (var customerIds in customerIdPages)
             {
                 var sValidations = (await _organizationContext.CustomerContact.Where(s => customerIds.Contains(s.CustomerId)).ToListAsync())
@@ -402,14 +369,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     bankAccs.Add(s.Key, s.Value);
                 }
 
-                var nParties = (await _organizationContext.CustomerNotifyParty.Where(s => customerIds.Contains(s.CustomerId)).ToListAsync())
-                    .GroupBy(s => s.CustomerId)
-                    .ToDictionary(s => s.Key, s => s.ToList());
-
-                foreach (var n in nParties)
-                {
-                    notifyParties.Add(n.Key, n.Value);
-                }
             }
 
             var customerCates = await _organizationContext.CustomerCate.ToListAsync();
@@ -436,10 +395,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         bankAccs.TryGetValue(p.CustomerId, out var customerBankAcc);
                         if (customerBankAcc == null) customerBankAcc = new List<CustomerBankAccount>();
 
-                        notifyParties.TryGetValue(p.CustomerId, out var customerNotifyParty);
-                        if (customerNotifyParty == null) customerNotifyParty = new List<CustomerNotifyParty>();
-
-                        var v = GetCustomerValue(p, customerCates, customerContacts, customerBankAcc, customerNotifyParty, f.FieldName, out var isFormula);
+                        var v = GetCustomerValue(p, customerCates, customerContacts, customerBankAcc, f.FieldName, out var isFormula);
                         switch (v.type)
                         {
                             case EnumDataType.BigInt:
