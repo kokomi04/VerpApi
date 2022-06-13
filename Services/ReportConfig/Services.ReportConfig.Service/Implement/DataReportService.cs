@@ -192,6 +192,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (reportInfo.IsBsc)
             {
                 var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
+                bscConfig.Rows = bscConfig.Rows.OrderBy(r => r.SortOrder).ToList();
 
                 if (bscConfig != null)
                 {
@@ -234,6 +235,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
             if (bscConfig == null) return (null, null);
+
+            bscConfig.Rows = bscConfig.Rows.OrderBy(r => r.SortOrder).ToList();
 
             IList<NonCamelCaseDictionary> bscRows = new List<NonCamelCaseDictionary>();
 
@@ -510,7 +513,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo.BodySql.Contains("$ORDERBY"))
             {
-                sql = sql.Replace("$ORDERBY", string.IsNullOrWhiteSpace(orderBy) ? "" : " ORDER BY " + orderBy);
+                sql = sql.Replace("$ORDERBY", string.IsNullOrWhiteSpace(orderBy) ? " 1 " : orderBy);
             }
             else if (!string.IsNullOrWhiteSpace(orderBy))
             {

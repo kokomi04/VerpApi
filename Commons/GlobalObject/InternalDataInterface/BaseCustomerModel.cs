@@ -202,6 +202,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             BankAccAddress,
             BankAccCurrency
         };
+
     }
 
     public class BaseCustomerModel : BaseCustomerImportModel

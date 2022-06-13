@@ -36,6 +36,7 @@ using AutoMapper.QueryableExtensions;
 using static VErp.Commons.Library.ExcelReader;
 using Verp.Resources.GlobalObject;
 using VErp.Commons.Enums.AccountantEnum;
+using static VErp.Commons.Library.EvalUtils;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -936,7 +937,27 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
+
+                    try
+                    {
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                        {
+                            parameters.Add(key, val);
+                        }
+
+                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+
+                    }
+                    catch (EvalObjectArgException agrEx)
+                    {
+                        var fieldBefore = (allFields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
                 }
             }
 
@@ -2067,7 +2088,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         // Validate mapping required
                         if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
                         if (field == null) continue;
-                        if (!field.IsMultiRow && rowIndx > 0) continue;
+                        //if (!field.IsMultiRow && rowIndx > 0) continue;
 
                         string value = null;
                         if (row.Data.ContainsKey(mappingField.Column))
@@ -2138,7 +2159,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     {
                                         filterValue = filterValue.Substring(start, length);
                                     }
-                                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
+                                    if (string.IsNullOrEmpty(filterValue))
+                                    {
+                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
+                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                    }
                                     filters = filters.Replace(match[i].Value, filterValue);
                                 }
 
@@ -2146,8 +2171,30 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 if (filterClause != null)
                                 {
                                     var whereCondition = new StringBuilder();
-                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
-                                    if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
+
+
+                                    try
+                                    {
+                                        var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                        foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                        {
+                                            parameters.Add(key, val);
+                                        }
+
+                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+
+                                    }
+                                    catch (EvalObjectArgException agrEx)
+                                    {
+                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                    }
+                                    catch (Exception)
+                                    {
+                                        throw;
+                                    }                                    
+
+                                    if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                                 }
                             }
 
@@ -2170,8 +2217,18 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
                         }
                         if (!field.IsMultiRow)
-                        {
-                            info.Add(field.FieldName, value);
+                        {                        
+                            if (info.ContainsKey(field.FieldName))
+                            {
+                                if (info[field.FieldName]?.ToString() != value)
+                                {
+                                    throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                                }
+                            }
+                            else
+                            {
+                                info.Add(field.FieldName, value);
+                            }
                         }
                         else
                         {

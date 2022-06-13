@@ -91,6 +91,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return result.List;
         }
 
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds(IList<long> productionOrderIds)
+        {
+            if (productionOrderIds.Count == 0) return Array.Empty<ProductionOrderListModel>();
+            var filter = new SingleClause()
+            {
+                DataType = EnumDataType.BigInt,
+                FieldName = nameof(ProductionOrderListModel.ProductionOrderId),
+                Operator = EnumOperator.InList,
+                Value = productionOrderIds
+            };
+
+            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            return result.List;
+        }
+
+
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
@@ -186,7 +202,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
-                            FETCH NEXT { size}
+                            FETCH NEXT {size}
                             ROWS ONLY");
             }
 

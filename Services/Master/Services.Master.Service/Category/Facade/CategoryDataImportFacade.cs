@@ -40,7 +40,7 @@ namespace VErp.Services.Master.Service.Category
         private Dictionary<string, List<NonCamelCaseDictionary>> _refCategoryDataForProperty;
         private Dictionary<string, IEnumerable<RefCategoryProperty>> _refCategoryFields;
         private CategoryField[] _uniqueFields;
-        private List<Dictionary<string, string>> _categoryDataRows;
+        private List<NonCamelCaseDictionary> _categoryDataRows;
 
         private readonly ObjectActivityLogFacade _categoryDataActivityLog;
 
@@ -67,10 +67,10 @@ namespace VErp.Services.Master.Service.Category
             await RefCategoryForProperty(mapping);
             await MappingCategoryDate(mapping);
 
-            var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, 0, 0, "", true)).List;
+            var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, 0, 0, "", true)).List;
 
-            var lsUpdateRow = new List<Dictionary<string, string>>();
-            var lsAddRow = new List<Dictionary<string, string>>();
+            var lsUpdateRow = new List<NonCamelCaseDictionary>();
+            var lsAddRow = new List<NonCamelCaseDictionary>();
             foreach (var row in _categoryDataRows)
             {
                 var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
@@ -110,9 +110,9 @@ namespace VErp.Services.Master.Service.Category
                 {
                     var parentField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == CategoryFieldConstants.ParentId);
 
-                    string GetParentId(Dictionary<string, string> row)
+                    string GetParentId(NonCamelCaseDictionary row)
                     {
-                        if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !string.IsNullOrWhiteSpace(row[CategoryFieldConstants.ParentId]))
+                        if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !row[CategoryFieldConstants.ParentId].IsNullObject())
                         {
                             var refValue = row[CategoryFieldConstants.ParentId].ToString();
 
@@ -121,9 +121,9 @@ namespace VErp.Services.Master.Service.Category
                         return "";
                     }
 
-                    IEnumerable<Dictionary<string, string>> GetElementByTreeView(IList<Dictionary<string, string>> data)
+                    IEnumerable<NonCamelCaseDictionary> GetElementByTreeView(IList<NonCamelCaseDictionary> data)
                     {
-                        var loopData = new List<Dictionary<string, string>>();
+                        var loopData = new List<NonCamelCaseDictionary>();
 
                         foreach (var row in data)
                         {
@@ -158,7 +158,7 @@ namespace VErp.Services.Master.Service.Category
                         if (!string.IsNullOrWhiteSpace(parentId))
                             uRow[CategoryFieldConstants.ParentId] = GetParentId(uRow);
 
-                        var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]);
+                        var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]?.ToString());
 
                         await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
                     }
@@ -170,7 +170,7 @@ namespace VErp.Services.Master.Service.Category
             return true;
         }
 
-        private bool EqualityBetweenTwoCategory(Dictionary<string, string> f1, Dictionary<string, string> f2, CategoryField[] u)
+        private bool EqualityBetweenTwoCategory(NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, CategoryField[] u)
         {
             for (int i = 0; i < u.Length; i++)
             {
@@ -184,26 +184,11 @@ namespace VErp.Services.Master.Service.Category
 
             return true;
         }
-
-        private bool EqualityBetweenTwoCategory(NonCamelCaseDictionary f1, Dictionary<string, string> f2, CategoryField[] u)
-        {
-
-            for (int i = 0; i < u.Length; i++)
-            {
-                var key = u[i].CategoryFieldName;
-
-                var f1Value = f1[key].ToString().ToLower();
-                var f2Value = f2[key].ToString().ToLower();
-
-                if (string.Compare(f1Value, f2Value, true) != 0) return false;
-            }
-
-            return true;
-        }
+       
 
         private async Task MappingCategoryDate(ImportExcelMapping mapping)
         {
-            _categoryDataRows = new List<Dictionary<string, string>>();
+            _categoryDataRows = new List<NonCamelCaseDictionary>();
 
             var mapField = (from mf in mapping.MappingFields
                             join cf in _categoryFields on mf.FieldName equals cf.CategoryFieldName into gcf
@@ -221,14 +206,14 @@ namespace VErp.Services.Master.Service.Category
 
             foreach (var (row, i) in _importData.Rows.Where(x => x.Values.Where(v => !string.IsNullOrWhiteSpace(v)).Count() > 0).Select((value, i) => (value, i)))
             {
-                var categoryDataRow = new Dictionary<string, string>();
+                var categoryDataRow = new NonCamelCaseDictionary();
                 foreach (var mf in mapField)
                 {
                     row.TryGetValue(mf.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value) && mf.IsIgnoredIfEmpty)
                     {
-                        categoryDataRow = new Dictionary<string, string>();
+                        categoryDataRow = new NonCamelCaseDictionary();
                         break;
                     }
 

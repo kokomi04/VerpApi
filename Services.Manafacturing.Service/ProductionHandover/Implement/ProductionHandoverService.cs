@@ -366,5 +366,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return (lst, total, additionResult);
         }
 
+        public async Task<PageData<ProductionHandoverByDateModel>> GetDepartmentHandoversByDate(IList<long> fromDepartmentIds, IList<long> toDepartmentIds, IList<long> fromStepIds, IList<long> toStepIds, long? fromDate, long? toDate, bool? isInFinish, bool? isOutFinish, int page, int size)
+        {
+            var parammeters = new List<SqlParameter>()
+            {
+                fromDepartmentIds.ToSqlParameter("@FromDepartmentIds"),
+                toDepartmentIds.ToSqlParameter("@ToDepartmentIds"),
+                fromStepIds.ToSqlParameter("@FromStepIds"),
+                toStepIds.ToSqlParameter("@ToStepIds"),
+
+                new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate)),
+                new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate)),
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish),
+                new SqlParameter("@Size", size),
+                new SqlParameter("@Page", page),
+            };
+
+            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDate", parammeters.ToArray());
+
+            var totalRecord = 0;
+            if (dataTable.Rows.Count > 0)
+            {
+                totalRecord = Convert.ToInt32(dataTable.Rows[0]["TotalRecord"]);
+            }
+            var lst = dataTable.ConvertData<ProductionHandoverByDateModel>();
+
+            return (lst, totalRecord);
+        }
+
     }
 }

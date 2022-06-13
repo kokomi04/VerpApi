@@ -77,13 +77,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished) return true;
             try
             {
-                var steps = await _manufacturingDBContext.ProductionStep.Where(s => s.ContainerId == productionOrder.ProductionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToListAsync();
+                var steps = await _manufacturingDBContext.ProductionStep.Where(s => !s.IsFinish && s.ContainerId == productionOrder.ProductionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToListAsync();
 
                 var inputs = await (from d in _manufacturingDBContext.ProductionStepLinkData
                                     join r in _manufacturingDBContext.ProductionStepLinkDataRole on d.ProductionStepLinkDataId equals r.ProductionStepLinkDataId
                                     join s in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals s.ProductionStepId
                                     where s.ContainerId == productionOrder.ProductionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                                     && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input
+                                    && !s.IsFinish
                                     select new
                                     {
                                         r.ProductionStepId,
@@ -95,6 +96,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                      join s in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals s.ProductionStepId
                                      where s.ContainerId == productionOrder.ProductionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder
                                      && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                                     && !s.IsFinish
                                      select new
                                      {
                                          r.ProductionStepId,
@@ -134,7 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
                 }
 
-                if (endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.All(a => a.ProductionStepId == s.StepId && (a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish))))
+                if (endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
                 {
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Completed;
                 }

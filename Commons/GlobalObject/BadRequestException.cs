@@ -26,6 +26,12 @@ namespace VErp.Commons.GlobalObject
             this.Code = GeneralCode.InvalidParams;
         }
 
+        public BadRequestException(Exception innerException, string message) : base(message, innerException)
+        {
+            this.Code = GeneralCode.InvalidParams;
+        }
+
+
         public BadRequestException(Enum errorCode, object[] param) : base(string.Format(EnumExtensions.GetEnumDescription(errorCode), param))
         {
             this.Code = errorCode;
@@ -72,7 +78,7 @@ namespace VErp.Commons.GlobalObject
         public static BadRequestException BadRequest(this (Enum code, string message) error)
         {
             return new BadRequestException(error.code, error.message);
-        }   
+        }
 
         public static BadRequestException BadRequestFormat(this string str, params object[] args)
         {

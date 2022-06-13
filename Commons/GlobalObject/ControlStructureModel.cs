@@ -46,6 +46,9 @@ namespace VErp.Commons.GlobalObject
         public string SortOrder { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public EnumDataType DataTypeId { get; set; }
+        public string RefTableCode { get; set; }
+        public string RefTableField { get; set; }
+        public string RefTableTitle { get; set; }
         public bool IsRequired { get; set; }
     }
 }
