@@ -168,40 +168,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "(3) Loại tiền", GroupName = "TT ngân hàng 3")]
         public int BankAccCurrency3 { get; set; }
 
-
-
-
-
-
-        [Display(Name = "(1) Tên", GroupName = "Notify party - Nhận thông báo hàng đến 1")]
-        public string NotifyPartyName1 { get; set; }
-
-        [Display(Name = "(1) Mô tả", GroupName = "Notify party - Nhận thông báo hàng đến 1")]
-        public string NotifyPartyDescription1 { get; set; }
-
-        [Display(Name = "(1) Nội dung", GroupName = "Notify party - Nhận thông báo hàng đến 1")]
-        public string NotifyPartyContent1 { get; set; }
-
-
-        [Display(Name = "(2) Tên", GroupName = "Notify party - Nhận thông báo hàng đến 2")]
-        public string NotifyPartyName2 { get; set; }
-
-        [Display(Name = "(2) Mô tả", GroupName = "Notify party - Nhận thông báo hàng đến 2")]
-        public string NotifyPartyDescription2 { get; set; }
-
-        [Display(Name = "(2) Nội dung", GroupName = "Notify party - Nhận thông báo hàng đến 2")]
-        public string NotifyPartyContent2 { get; set; }
-
-
-        [Display(Name = "(3) Tên", GroupName = "Notify party - Nhận thông báo hàng đến 3")]
-        public string NotifyPartyName3 { get; set; }
-
-        [Display(Name = "(3) Mô tả", GroupName = "Notify party - Nhận thông báo hàng đến 3")]
-        public string NotifyPartyDescription3 { get; set; }
-
-        [Display(Name = "(3) Nội dung", GroupName = "Notify party - Nhận thông báo hàng đến 3")]
-        public string NotifyPartyContent3 { get; set; }
-
     }
 
     public static class BaseCustomerImportModelExtensions
@@ -237,16 +203,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             BankAccCurrency
         };
 
-
-        public static string NotifyPartyName = nameof(BaseCustomerImportModel.NotifyPartyName1)[..^1];
-        public static string NotifyPartyDescription = nameof(BaseCustomerImportModel.NotifyPartyDescription1)[..^1];
-        public static string NotifyPartyContent = nameof(BaseCustomerImportModel.NotifyPartyContent1)[..^1];     
-
-        public static string[] NotifyPartyPrefix = new[] {
-            NotifyPartyName,
-            NotifyPartyDescription,
-            NotifyPartyContent
-        };
     }
 
     public class BaseCustomerModel : BaseCustomerImportModel
