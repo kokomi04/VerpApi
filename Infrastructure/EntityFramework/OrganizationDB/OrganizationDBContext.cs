@@ -28,7 +28,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<CustomerBankAccount> CustomerBankAccount { get; set; }
         public virtual DbSet<CustomerCate> CustomerCate { get; set; }
         public virtual DbSet<CustomerContact> CustomerContact { get; set; }
-        public virtual DbSet<CustomerNotifyParty> CustomerNotifyParty { get; set; }
         public virtual DbSet<DayOffCalendar> DayOffCalendar { get; set; }
         public virtual DbSet<Department> Department { get; set; }
         public virtual DbSet<DepartmentCalendar> DepartmentCalendar { get; set; }
@@ -300,19 +299,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasForeignKey(d => d.CustomerId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CustomerContact_Customer");
-            });
-
-            modelBuilder.Entity<CustomerNotifyParty>(entity =>
-            {
-                entity.Property(e => e.Description).HasMaxLength(512);
-
-                entity.Property(e => e.Name).HasMaxLength(128);
-
-                entity.HasOne(d => d.Customer)
-                    .WithMany(p => p.CustomerNotifyParty)
-                    .HasForeignKey(d => d.CustomerId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_CustomerNotifyParty_Customer");
             });
 
             modelBuilder.Entity<DayOffCalendar>(entity =>

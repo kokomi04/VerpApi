@@ -38,7 +38,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<CustomerBankAccount> _bankAccounts;
         private IList<CustomerContact> _customerContact;
 
-        private IList<CustomerNotifyParty> _notifyParties;
 
         public CusomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
@@ -207,8 +206,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
             _customerContact = await _organizationContext.CustomerContact.Where(x => contactNames.Contains(x.FullName)).AsNoTracking().ToListAsync();
 
-            _notifyParties = await _organizationContext.CustomerNotifyParty.Where(x => existsCustomers.Select(c=>c.CustomerId).ToList().Contains(x.CustomerId)).AsNoTracking().ToListAsync();
-
             foreach (var customerModel in lstData)
             {
 
@@ -217,7 +214,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                 LoadContacts(customerInfo, customerModel, mapping);
                 LoadBankAccounts(customerInfo, customerModel, mapping);
-                LoadNotifyParties(customerInfo, customerModel, mapping);
 
                 if (customerInfo.CustomerTypeId == 0)
                 {
@@ -338,30 +334,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-        private void LoadNotifyParties(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
-        {
-            model.NotifyParties = new List<CustomerNotifyPartyModel>();
-            for (var number = 1; number <= 3; number++)
-            {
-                var name = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyName1), number);
-                var des = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyDescription1), number);
-                var content = GetValueStringByFieldNumber(obj, nameof(BaseCustomerImportModel.NotifyPartyContent1), number);
-
-                var existsEntity = _notifyParties.FirstOrDefault(x => model.CustomerId == x.CustomerId && x.Name?.NormalizeAsInternalName() == x.Name?.NormalizeAsInternalName());
-
-                if (!string.IsNullOrWhiteSpace(name))
-                {
-                    model.NotifyParties.Add(new CustomerNotifyPartyModel()
-                    {
-                        CustomerNotifyPartyId = existsEntity != null ? (long?)existsEntity.CustomerNotifyPartyId : null,
-                        Description = des,
-                        CustomerNotifyPartyStatusId = existsEntity != null ? (EnumCustomerNotifyPartyStatus)existsEntity.CustomerNotifyPartyStatusId : EnumCustomerNotifyPartyStatus.Actived
-                    });
-                }
-            }
-
-        }
-
+    
         private T? GetValueByFieldNumber<T>(BaseCustomerImportModel obj, string propertyName, int number) where T : unmanaged
         {
             var fieldPrefix = GetFieldNameWithoutNumber(propertyName);
