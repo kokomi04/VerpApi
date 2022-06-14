@@ -13,6 +13,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public long FromDate { get; set; }
         public long ToDate { get; set; }
         public string Tk { get; set; }
+        public bool IsIgnoreZeroPrice { get; set; }
         public bool IsUpdate { get; set; }
     }
 

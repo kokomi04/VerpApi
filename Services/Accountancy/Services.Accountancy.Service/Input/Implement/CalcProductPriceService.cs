@@ -160,6 +160,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@ToDate", SqlDbType.DateTime2){ Value = tDate},
                     new SqlParameter("@ProductId", SqlDbType.Int){ Value = req.ProductId.HasValue?req.ProductId.Value: (object)DBNull.Value},
                     new SqlParameter("@Tk", SqlDbType.NVarChar){ Value = req.Tk},
+                    new SqlParameter("@IsIgnoreZeroPrice", SqlDbType.Bit){ Value = req.IsIgnoreZeroPrice},
                     new SqlParameter("@IsUpdate", SqlDbType.Bit){ Value = req.IsUpdate},
                     isInvalid
 
