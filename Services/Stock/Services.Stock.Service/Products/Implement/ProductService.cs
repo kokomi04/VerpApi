@@ -762,7 +762,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
-        public async Task<PageData<ProductListOutput>> GetList(ProductSearchRequestModel req)
+        public async Task<PageData<ProductListOutput>> GetList(ProductFilterRequestModel req, int page, int size)
         {
             var keyword = (req.Keyword ?? "").Trim();
             var productName = (req.ProductName ?? "").Trim();
@@ -899,7 +899,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             query = query.InternalFilter(req.Filters);
 
             var total = await query.CountAsync();
-            var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((req.Page - 1) * req.Size).Take(req.Size).ToListAsync();
+            var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
 
             var unitIds = lstData.Select(p => p.UnitId).ToList();
             var unitInfos = await _unitService.GetListByIds(unitIds);
@@ -984,8 +984,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(ProductExportRequestModel req)
         {
-            ProductSearchRequestModel searchReq = new ProductSearchRequestModel(req.Keyword, req.ProductIds, req.ProductName, req.ProductTypeIds, req.ProductCateIds, 1, int.MaxValue, req.IsProductSemi, req.IsProduct, req.IsMaterials, req.Filters, req.StockIds);
-            var lst = await GetList(searchReq);
+            var lst = await GetList(req, 1, int.MaxValue);
             var bomExport = new ProductExportFacade(_stockDbContext, req.FieldNames);
             return await bomExport.Export(lst.List);
         }
@@ -993,9 +992,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds)
         {
             if (productIds == null || productIds.Count == 0) return new List<ProductListOutput>();
-            ProductSearchRequestModel req = new ProductSearchRequestModel("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            var req = new ProductFilterRequestModel("", productIds, "", new int[0], new int[0], null, null, null, null);
             //var productList = await GetList("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
-            var productList = await GetList(req);
+            var productList = await GetList(req, 1, int.MaxValue);
 
             var pagedData = productList.List;
 

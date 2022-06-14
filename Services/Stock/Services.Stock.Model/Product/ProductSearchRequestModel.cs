@@ -17,14 +17,7 @@ namespace VErp.Services.Stock.Model.Product
         public bool? IsMaterials { get; set; }
         public Clause Filters { get; set; }
         public IList<int> StockIds { get; set; }
-    }
-
-    public class ProductSearchRequestModel : ProductFilterRequestModel
-    {
-        public int Page { get; set; }
-        public int Size { get; set; }
-
-        public ProductSearchRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public ProductFilterRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
             this.Keyword = keyword;
             this.ProductIds = productIds;
@@ -34,15 +27,28 @@ namespace VErp.Services.Stock.Model.Product
             this.IsProductSemi = isProductSemi;
             this.IsProduct = isProduct;
             this.IsMaterials = isMaterials;
-            this.Page = page;
-            this.Size = size;
             this.Filters = filters;
             this.StockIds = stockIds;
         }
     }
 
+    public class ProductSearchRequestModel : ProductFilterRequestModel
+    {
+        public ProductSearchRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null) : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, filters, stockIds)
+        {
+        }
+
+        public int Page { get; set; }
+        public int Size { get; set; }
+
+    }
+
     public class ProductExportRequestModel : ProductFilterRequestModel
     {
+        public ProductExportRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null) : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, filters, stockIds)
+        {
+        }
+
         public IList<string> FieldNames { get; set; }
     }
 }
