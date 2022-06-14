@@ -9,8 +9,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     public class BaseCustomerImportModel
     {
         [Display(Name = "Mã KH", GroupName = "TT chung")]
-        [Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
-        [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
+        //[Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
+        [MaxLength(128, ErrorMessage = "Mã đối tác quá dài")]
         public string CustomerCode { get; set; }
 
         [Display(Name = "Tên KH", GroupName = "TT chung")]
