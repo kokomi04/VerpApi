@@ -141,6 +141,9 @@
   <data name="CustomerCodeAlreadyExists" xml:space="preserve">
     <value>Mã đối tác "{0}" đã tồn tại</value>
   </data>
+  <data name="CustomerCodeIsRequired" xml:space="preserve">
+    <value>Vui lòng nhập mã đối tác</value>
+  </data>
   <data name="CustomerNameAlreadyExists" xml:space="preserve">
     <value>Tên đối tác "{0}" đã tồn tại</value>
   </data>
