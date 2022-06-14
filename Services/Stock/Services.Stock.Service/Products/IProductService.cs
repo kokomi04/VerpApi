@@ -15,7 +15,6 @@ namespace VErp.Services.Stock.Service.Products
     {
         //Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, IList<int> productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null);
         Task<PageData<ProductListOutput>> GetList(ProductSearchRequestModel req);
-        Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null);
         Task<(Stream stream, string fileName, string contentType)> ExportList(ProductExportRequestModel req);
 
         Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds);

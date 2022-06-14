@@ -981,14 +981,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return (pageData, total);
         }
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
-        {
-            ProductSearchRequestModel req = new ProductSearchRequestModel(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
-            //var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
-            var lst = await GetList(req);
-            var bomExport = new ProductExportFacade(_stockDbContext, fieldNames);
-            return await bomExport.Export(lst.List);
-        }
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(ProductExportRequestModel req)
         {
