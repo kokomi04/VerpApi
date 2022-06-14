@@ -325,8 +325,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
             return (EnumDataType.Text, null);
         }
-
-
+      
         private async Task<string> WriteTableDetailData(IList<CustomerEntity> customers)
         {
             var stt = 1;
@@ -369,6 +368,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 {
                     bankAccs.Add(s.Key, s.Value);
                 }
+
             }
 
             var customerCates = await _organizationContext.CustomerCate.ToListAsync();

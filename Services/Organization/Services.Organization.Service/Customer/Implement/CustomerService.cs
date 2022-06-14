@@ -202,6 +202,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     attach.CustomerId = entity.CustomerId;
                 }
 
+
                 contactEntities.AddRange(contacts[entity]);
                 bankAccountEntities.AddRange(bankAccounts[entity]);
                 customerAttachments.AddRange(attachments[entity]);
@@ -273,6 +274,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 c.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
 
+
             customerInfo.IsDeleted = true;
             customerInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
             await _organizationContext.SaveChangesAsync();
@@ -296,11 +298,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var bankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
             var customerAttachments = await _organizationContext.CustomerAttachment.Where(at => at.CustomerId == customerId).ProjectTo<CustomerAttachmentModel>(_mapper.ConfigurationProvider).ToListAsync();
 
+
             return new CustomerModel()
             {
                 CustomerName = customerInfo.CustomerName,
                 CustomerCode = customerInfo.CustomerCode,
                 CustomerCateId = customerInfo.CustomerCateId,
+                LogoFileId = customerInfo.LogoFileId,
                 CustomerTypeId = (EnumCustomerType)customerInfo.CustomerTypeId,
                 Address = customerInfo.Address,
                 TaxIdNo = customerInfo.TaxIdNo,
@@ -416,6 +420,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     CustomerCode = c.CustomerCode,
                     CustomerName = c.CustomerName,
                     CustomerCateId = c.CustomerCateId,
+                    LogoFileId = c.LogoFileId,
                     CustomerTypeId = (EnumCustomerType)c.CustomerTypeId,
                     Address = c.Address,
                     TaxIdNo = c.TaxIdNo,
@@ -482,7 +487,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
-            var customerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
+            var dbCustomerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
 
 
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.LegalRepresentative))
@@ -535,15 +540,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             if (!igDeleteRef || data.CustomerStatusId.HasValue)
                 customerInfo.CustomerStatusId = (int)data.CustomerStatusId;
 
+            if (!igDeleteRef || data.LogoFileId.HasValue)
+                customerInfo.LogoFileId = data.LogoFileId;
+
             if (data.Contacts == null)
             {
                 data.Contacts = new List<CustomerContactModel>();
             }
-            if (data.Contacts == null)
+            if (data.BankAccounts == null)
             {
                 data.BankAccounts = new List<CustomerBankAccountModel>();
             }
 
+            if (data.CustomerAttachments == null)
+            {
+                data.CustomerAttachments = new List<CustomerAttachmentModel>();
+            }
+
+            //1. contacts
             if (!igDeleteRef)
             {
                 var deletedContacts = dbContacts.Where(c => !data.Contacts.Any(s => s.CustomerContactId == c.CustomerContactId)).ToList();
@@ -582,6 +596,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
+            //2. banks
             if (!igDeleteRef)
             {
                 var deletedBankAccounts = dbBankAccounts.Where(ba => !data.BankAccounts.Any(s => s.BankAccountId == ba.CustomerBankAccountId)).ToList();
@@ -616,19 +631,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
-            foreach (var attach in customerAttachments)
+            //3. Attachments
+            foreach (var attach in dbCustomerAttachments)
             {
                 var change = data.CustomerAttachments.FirstOrDefault(x => x.CustomerAttachmentId == attach.CustomerAttachmentId);
                 if (change != null)
                     _mapper.Map(change, attach);
                 else
-                    attach.IsDeleted = true;
+                {
+                    if (!igDeleteRef)
+                        attach.IsDeleted = true;
+                }
             }
             var newAttachment = data.CustomerAttachments.AsQueryable()
                 .Where(x => !(x.CustomerAttachmentId > 0))
                 .ProjectTo<CustomerAttachment>(_mapper.ConfigurationProvider).ToList();
             newAttachment.ForEach(x => x.CustomerId = customerInfo.CustomerId);
             await _organizationContext.CustomerAttachment.AddRangeAsync(newAttachment);
+
 
             await _organizationContext.SaveChangesAsync();
 
@@ -704,7 +724,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             Dictionary<CustomerEntity, CustomerModel> originData,
             Dictionary<CustomerEntity, List<CustomerContact>> contacts,
             Dictionary<CustomerEntity, List<CustomerBankAccount>> bankAccounts,
-            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments)
+            Dictionary<CustomerEntity, List<CustomerAttachment>> attachments
+            )
             ConvertToCustomerEntities(IList<CustomerModel> customers)
         {
             var customerEntities = new List<CustomerEntity>();
@@ -712,6 +733,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
             var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
             var attachments = new Dictionary<CustomerEntity, List<CustomerAttachment>>();
+        
 
             foreach (var data in customers)
             {
@@ -720,6 +742,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     CustomerCode = data.CustomerCode,
                     CustomerName = data.CustomerName,
                     CustomerCateId = data.CustomerCateId,
+                    LogoFileId = data.LogoFileId,
                     CustomerTypeId = (int)(data.CustomerTypeId ?? EnumCustomerType.Organization),
                     Address = data.Address,
                     TaxIdNo = data.TaxIdNo,
@@ -749,6 +772,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
                 attachments.Add(customer, new List<CustomerAttachment>());
+           
 
                 if (data.Contacts != null && data.Contacts.Count > 0)
                 {
@@ -782,6 +806,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                     }));
                 }
+              
             }
 
             return (customerEntities, originData, contacts, bankAccounts, attachments);

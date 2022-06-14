@@ -120,6 +120,9 @@
   <data name="Create" xml:space="preserve">
     <value>Thêm chứng từ {0}, số {1}</value>
   </data>
+  <data name="CreateViaExcel" xml:space="preserve">
+    <value>Thêm chứng từ {0}, số {1} qua excel</value>
+  </data>
   <data name="Delete" xml:space="preserve">
     <value>Xóa chứng từ {0}, số {1}</value>
   </data>
@@ -128,5 +131,8 @@
   </data>
   <data name="UpdateMulti" xml:space="preserve">
     <value>Cập nhật nhiều dòng {0}, trường {1}, chứng từ {2}</value>
+  </data>
+  <data name="UpdateViaExcel" xml:space="preserve">
+    <value>Cập nhật chứng từ {0}, số {1} qua excel</value>
   </data>
 </root>

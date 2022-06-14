@@ -13,11 +13,11 @@ namespace VErp.Commons.GlobalObject
             var isSuccess = base.TryGetValue(key, out var objValue);
             value = objValue?.ToString()?.Trim();
             return isSuccess;
-        }      
+        }
     }
 
     public class CategoryDataRowModel : NonCamelCaseDictionary
-    {              
+    {
         public object F_Id
         {
             get
@@ -57,6 +57,16 @@ namespace VErp.Commons.GlobalObject
             {
                 var key = keySelector(item);
                 var value = elementSelector(item);
+                data.Add(key, value);
+            }
+            return data;
+        }
+
+        public static NonCamelCaseDictionary CloneNew(this NonCamelCaseDictionary source)
+        {
+            var data = new NonCamelCaseDictionary();
+            foreach (var (key, value) in source)
+            {
                 data.Add(key, value);
             }
             return data;

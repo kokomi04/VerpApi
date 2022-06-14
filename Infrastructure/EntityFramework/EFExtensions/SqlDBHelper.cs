@@ -13,6 +13,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -21,7 +22,7 @@ using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
-    
+
     public static class SqlDBHelper
     {
         private const string SubIdParam = "@SubId";
@@ -121,11 +122,36 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return dataTable.ConvertData<T>();
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            if (cachingService != null)
+            {
+                var builder = new StringBuilder();
+                builder.AppendLine(rawSql);
+                if (parammeters != null)
+                {
+                    foreach (var p in parammeters)
+                    {
+                        builder.AppendLine(p.ParameterName);
+                        builder.AppendLine(JsonUtils.JsonSerialize(p.Value));
+                    }
+                }
+                builder.AppendLine(cmdType.ToString());
+                var key = "QueryDataTable_" + builder.ToString().ToGuid().ToString();
+                return await cachingService.TryGetSet("QueryDataTable", key, TimeSpan.FromMinutes(1), async () =>
+                {
+                    return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+                }, TimeSpan.FromMinutes(1));
+            }
+            return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+        }
+
+        private static async Task<DataTable> QueryDataTableDb(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
 
             try
             {
+
                 var st = new Stopwatch();
                 st.Start();
 
@@ -437,7 +463,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null)
+        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
         {
             if (clause != null)
             {
@@ -449,6 +475,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         singleClause.Value = value;
                     }
+
+                    if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullObject())
+                    {
+                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
+                        {
+                            var expression = match.Groups["ex"].Value;
+                            return EvalUtils.EvalObject(expression, refValues)?.ToString();
+                        });
+                    }
+
                     BuildExpression(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
                 }
                 else if (clause is ArrayClause)
@@ -466,7 +502,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value);
+                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value, refValues);
                     }
                 }
                 else
@@ -529,15 +565,23 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} {ope} (");
                         int inSuffix = 0;
                         var paramNames = new StringBuilder();
-                        IList<string> values = new List<string>();
-                        if (clause.Value is IList<string> lst)
+                        IList<object> values = new List<object>();
+                        //if (clause.Value is IList<string> lst)
+                        //{
+                        //    values = lst;
+                        //}
+                        var type = clause.Value.GetType();
+                        if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
                         {
-                            values = lst;
+                            foreach (object v in (dynamic)clause.Value)
+                            {
+                                values.Add(v);
+                            }
                         }
 
                         if (clause.Value is string str)
                         {
-                            values = (str ?? "").Split(",").Select(v => v.Trim()).ToList();
+                            values = (str ?? "").Split(",").Select(v => (object)v.Trim()).ToList();
                         }
 
                         foreach (var value in values)

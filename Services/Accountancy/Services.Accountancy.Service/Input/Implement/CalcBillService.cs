@@ -18,10 +18,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
     public class CalcBillService : ICalcBillService
     {
         private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly ICurrentContextService _currentContextService;
 
-        public CalcBillService(AccountancyDBContext accountancyDBContext)
+        public CalcBillService(AccountancyDBContext accountancyDBContext, ICurrentContextService currentContextService)
         {
             _accountancyDBContext = accountancyDBContext;
+            _currentContextService = currentContextService;
         }
 
 
@@ -300,10 +302,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 new SqlParameter("@SoTK", accountNumber),
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcPrepaidExpense", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcPrepaidExpenseV2", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }

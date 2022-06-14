@@ -19,7 +19,7 @@ namespace Verp.Resources.Accountancy.InputData {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class AccountancyBillActivityLogMessage {
@@ -70,6 +70,15 @@ namespace Verp.Resources.Accountancy.InputData {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Thêm chứng từ {0}, số {1} qua excel.
+        /// </summary>
+        public static string CreateViaExcel {
+            get {
+                return ResourceManager.GetString("CreateViaExcel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xóa chứng từ {0}, số {1}.
         /// </summary>
         public static string Delete {
@@ -93,6 +102,15 @@ namespace Verp.Resources.Accountancy.InputData {
         public static string UpdateMulti {
             get {
                 return ResourceManager.GetString("UpdateMulti", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật chứng từ {0}, số {1} qua excel.
+        /// </summary>
+        public static string UpdateViaExcel {
+            get {
+                return ResourceManager.GetString("UpdateViaExcel", resourceCulture);
             }
         }
     }

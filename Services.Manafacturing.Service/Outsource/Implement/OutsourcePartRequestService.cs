@@ -24,6 +24,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 //using VErp.Services.Manafacturing.Model.Outsource.Order;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumOutsourceTrack;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
@@ -38,14 +39,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IProductBomHelperService _productBomHelperService;
         private readonly IPurchaseOrderHelperService _purchaseOrderHelperService;
-
+        private readonly IProductionProcessService _productionProcessService;
 
         public OutsourcePartRequestService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<OutsourcePartRequestService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductBomHelperService productBomHelperService, IPurchaseOrderHelperService purchaseOrderHelperService)
+            , IProductBomHelperService productBomHelperService, IPurchaseOrderHelperService purchaseOrderHelperService, IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -54,9 +55,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _productBomHelperService = productBomHelperService;
             _purchaseOrderHelperService = purchaseOrderHelperService;
+            _productionProcessService = productionProcessService;
         }
 
-        
+
 
         public async Task<long> CreateOutsourcePartRequest(OutsourcePartRequestModel model, bool isValidate = true)
         {
@@ -110,7 +112,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request.JsonSerialize());
 
-                
+                await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
+
                 return request.OutsourcePartRequestId;
             }
             catch (Exception ex)
@@ -218,6 +221,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, model.OutsourcePartRequestId, $"Cập nhật yêu cầu gia công chi tiết {model.OutsourcePartRequestId}", model.JsonSerialize());
+
+                await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
                 return true;
             }
             catch (Exception ex)
@@ -375,6 +380,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
 
                 await trans.CommitAsync();
+
+                await _productionProcessService.UpdateProductionOrderProcessStatus(order.ProductionOrderId.GetValueOrDefault());
+
                 return true;
             }
             catch (Exception ex)

@@ -47,7 +47,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.GetBills(inputTypeId, false, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _inputDataService.GetBills(inputTypeId, request.IsMultirow, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
         }
 
 
@@ -104,7 +104,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.FIds).ConfigureAwait(true);
+            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.BillIds, data.DetailIds).ConfigureAwait(true);
         }
 
         [HttpDelete]
@@ -273,7 +273,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/GetBillNotApprovedYet")]
-        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute]int inputTypeId)
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
         {
             return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
         }
@@ -282,7 +282,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [Route("{inputTypeId}/GetBillNotChekedYet")]
         public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
         {
-        return await _inputDataService.GetBillNotChekedYet(inputTypeId);
+            return await _inputDataService.GetBillNotChekedYet(inputTypeId);
         }
 
         [HttpPut]

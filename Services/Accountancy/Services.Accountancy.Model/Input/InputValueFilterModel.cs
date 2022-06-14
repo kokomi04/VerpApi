@@ -20,6 +20,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
     public class InputTypeBillsRequestModel: InputTypeBillsRequestFilterModel
     {
+        public bool IsMultirow { get; set; }
         public int Page { get; set; }
         public int Size { get; set; }
     }

@@ -8,5 +8,5 @@ namespace VErp.Commons.Enums.MasterEnum
     {
         NotActived = 0,
         Actived = 1
-    }
+    }  
 }

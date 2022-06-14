@@ -543,6 +543,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
         private async Task AddProduct(ImportInvInputModel info, IList<Product> products, HashSet<string> existedProductNormalizeCodes, HashSet<string> existedProductNormalizeNames)
         {
+            if (string.IsNullOrWhiteSpace(info.Unit1))
+            {
+                throw PuConversionDefaultError.BadRequestFormat(info.ProductCode);
+            }
+
             var p = CreateProductModel(info);
             _units.TryGetValue(info.Unit1.NormalizeAsInternalName(), out var unitInfo);
             p.UnitId = unitInfo.UnitId;
@@ -610,7 +615,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
             var existedUnitNames = units.Select(c => c.UnitName.NormalizeAsInternalName()).Distinct().ToHashSet();
 
-            var importUnits = _excelModel.SelectMany(p => new[] { p.Unit1, p.Unit2 }).Where(u => !string.IsNullOrWhiteSpace(u)).Distinct().ToList();
+            var importUnits = _excelModel.SelectMany(p => new[] { p.Unit1, p.Unit2 }).Where(u => !string.IsNullOrWhiteSpace(u))
+                .GroupBy(u=>u.NormalizeAsInternalName())
+                .Select(u=>u.First())
+                .Distinct()
+                .ToList();
 
             var newUnits = importUnits
                 .Where(c => !existedUnitNames.Contains(c.NormalizeAsInternalName()))

@@ -75,7 +75,7 @@ namespace VErp.Services.Accountancy.Service.Category
         }
 
 
-        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, Dictionary<string, string> data, Dictionary<string, EnumDataType> fields, EnumActionType action)
+        private async Task<(int Code, string Message, List<NonCamelCaseDictionary> ResultData)> ProcessActionAsync(string script, NonCamelCaseDictionary data, Dictionary<string, EnumDataType> fields, EnumActionType action)
         {
             List<NonCamelCaseDictionary> resultData = null;
             var resultParam = new SqlParameter("@ResStatus", 0) { DbType = DbType.Int32, Direction = ParameterDirection.Output };
@@ -96,7 +96,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
-        public async Task<int> AddCategoryRow(int categoryId, Dictionary<string, string> data)
+        public async Task<int> AddCategoryRow(int categoryId, NonCamelCaseDictionary data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
             using var trans = await _masterContext.Database.BeginTransactionAsync();
@@ -105,7 +105,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return r;
         }
 
-        public async Task<int> AddCategoryRowToDb(int categoryId, Dictionary<string, string> data)
+        public async Task<int> AddCategoryRowToDb(int categoryId, NonCamelCaseDictionary data)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -243,7 +243,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (int)id;
         }
 
-        public async Task<int> UpdateCategoryRow(int categoryId, int fId, Dictionary<string, string> data)
+        public async Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -391,12 +391,12 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, Dictionary<string, string> data)
+        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
         {
             var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
             long? ngayCtValue = null;
-            if (long.TryParse(ngayCt, out var v))
+            if (long.TryParse(ngayCt?.ToString(), out var v))
             {
                 ngayCtValue = v;
             }
@@ -533,29 +533,29 @@ namespace VErp.Services.Accountancy.Service.Category
             return numberChange;
         }
 
-        private void CheckRequired(Dictionary<string, string> data, IEnumerable<CategoryField> requiredFields)
+        private void CheckRequired(NonCamelCaseDictionary data, IEnumerable<CategoryField> requiredFields)
         {
             foreach (var field in requiredFields)
             {
                 // ignore auto generate field
                 //if (field.FormTypeId == (int)EnumFormType.Generate) continue;
 
-                if (!data.Any(v => v.Key == field.CategoryFieldName && !string.IsNullOrEmpty(v.Value)))
+                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullObject()))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
             }
         }
 
-        private async Task CheckRefer(Dictionary<string, string> data, IEnumerable<CategoryField> selectFields)
+        private async Task CheckRefer(NonCamelCaseDictionary data, IEnumerable<CategoryField> selectFields)
         {
             // Check refer
             foreach (var field in selectFields)
             {
                 string tableName = $"v{field.RefTableCode}";
-                data.TryGetValue(field.CategoryFieldName, out string valueItem);
+                data.TryGetValue(field.CategoryFieldName, out object valueItem);
 
-                if (!string.IsNullOrEmpty(valueItem))
+                if (!string.IsNullOrEmpty(valueItem?.ToString()))
                 {
                     var whereCondition = new StringBuilder();
                     var sqlParams = new List<SqlParameter>();
@@ -569,20 +569,20 @@ namespace VErp.Services.Accountancy.Service.Category
                         for (int i = 0; i < match.Count; i++)
                         {
                             var fieldName = match[i].Groups["word"].Value;
-                            filters = filters.Replace(match[i].Value, data[fieldName]);
+                            filters = filters.Replace(match[i].Value, data[fieldName]?.ToString());
                         }
 
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                         if (filterClause != null)
                         {
-                            filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
+                            filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: data);
                         }
                     }
                     var paramName = $"@{field.RefTableField}_{suffix}";
                     var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
                     if (whereCondition.Length > 0)
                     {
-                        existSql += $" AND {whereCondition.ToString()}";
+                        existSql += $" AND {whereCondition}";
                     }
                     sqlParams.Add(new SqlParameter(paramName, valueItem));
                     var result = await _masterContext.QueryDataTable(existSql, sqlParams.ToArray());
@@ -595,7 +595,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        private async Task CheckUnique(Dictionary<string, string> data, IEnumerable<CategoryField> uniqueFields, string categoryCode, int? fId = null)
+        private async Task CheckUnique(NonCamelCaseDictionary data, IEnumerable<CategoryField> uniqueFields, string categoryCode, int? fId = null)
         {
             foreach (var field in uniqueFields)
             {
@@ -620,7 +620,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        private void CheckValue(Dictionary<string, string> data, IEnumerable<CategoryField> categoryFields)
+        private void CheckValue(NonCamelCaseDictionary data, IEnumerable<CategoryField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
@@ -646,7 +646,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
         }
 
-        private async Task CheckParentRowAsync(Dictionary<string, string> data, CategoryEntity category, int? categoryRowId = null)
+        private async Task CheckParentRowAsync(NonCamelCaseDictionary data, CategoryEntity category, int? categoryRowId = null)
         {
             data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
             int parentId = 0;
@@ -749,28 +749,28 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -827,7 +827,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                 int suffix = 0;
-                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix);
+                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))

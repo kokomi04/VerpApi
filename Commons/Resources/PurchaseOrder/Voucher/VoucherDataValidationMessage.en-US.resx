@@ -180,4 +180,7 @@
   <data name="PairAccountError" xml:space="preserve">
     <value>Pair accounting account are required {0}</value>
   </data>
+  <data name="MultipleDiffValueAtInfoArea" xml:space="preserve">
+    <value>Duplicate values at general info {0}, row {1}, field {2}, bill code {3}</value>
+  </data>
 </root>

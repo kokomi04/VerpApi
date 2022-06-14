@@ -9,6 +9,14 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
+
+    public class ProductionStepLinkDataObjectModel
+    {
+        public long LinkDataObjectId { get; set; }
+        public EnumProductionStepLinkDataObjectType LinkDataObjectTypeId { get; set; }
+        public decimal Quantity { get; set; }
+    }
+
     public class ProductionStepLinkDataModel: IMapFrom<ProductionStepLinkData>
     {
         public long ProductionStepLinkDataId { get; set; }

@@ -99,6 +99,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrdersByCodes(productionOrderCodes);
         }
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByIds")]
+        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionOrderService.GetProductionOrdersByIds(productionOrderIds);
+        }
+
 
         [HttpGet]
         [Route("{productionOrderId}")]

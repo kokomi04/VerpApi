@@ -10,6 +10,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
     {
         public string Keyword { get; set; }
         public Clause Filters { get; set; }
+        public NonCamelCaseDictionary FilterData { get; set; }
         public string ExtraFilter { get; set; }
 
         public ExtraFilterParam[] ExtraFilterParams { get; set; }
@@ -21,7 +22,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
     }
 
     public class ExtraFilterParam
-    { 
+    {
         public string ParamName { get; set; }
         public EnumDataType DataType { get; set; }
         public object Value { get; set; }

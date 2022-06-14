@@ -29,6 +29,7 @@ using VErp.Commons.Library.Model;
 using System.IO;
 using static VErp.Commons.Library.ExcelReader;
 using Verp.Resources.GlobalObject;
+using static VErp.Commons.Library.EvalUtils;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -140,7 +141,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      t.HrTypeId,
                                      a.IsMultiRow
                                  }).ToListAsync();
-                                 
+
             var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != (int)EnumFormType.MultiSelect).ToList();
 
             /* 
@@ -689,7 +690,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                             value = value.Trim();
 
                             if (value.StartsWith(PREFIX_ERROR_CELL))
-                            {                                
+                            {
                                 throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
                             }
 
@@ -759,8 +760,29 @@ namespace VErp.Services.Organization.Service.HrConfig
                                     if (filterClause != null)
                                     {
                                         var whereCondition = new StringBuilder();
-                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix);
-                                        if (whereCondition.Length > 0) referSql += $" AND {whereCondition.ToString()}";
+
+
+                                        try
+                                        {
+                                            var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                           
+
+                                            filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+
+                                        }
+                                        catch (EvalObjectArgException agrEx)
+                                        {
+                                            var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                                            throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                        }
+                                        catch (Exception)
+                                        {
+                                            throw;
+                                        }
+
+
+                                       
+                                        if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                                     }
                                 }
 
@@ -981,7 +1003,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             // Check field required
             await CheckRequired(checkData, requiredFields, hrAreaFields);
             // Check refer
-            await CheckReferAsync(checkData, selectFields);
+            await CheckReferAsync(checkData, selectFields, hrAreaFields);
             // Check unique
             await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields);
             // Check value
@@ -1437,19 +1459,19 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private async Task CheckReferAsync(List<ValidateRowModel> rows, List<ValidateField> selectFields)
+        private async Task CheckReferAsync(List<ValidateRowModel> rows, List<ValidateField> selectFields, IEnumerable<ValidateField> hrAreaFields)
         {
             // Check refer
             foreach (var field in selectFields)
             {
                 for (int i = 0; i < rows.Count; i++)
                 {
-                    await ValidReferAsync(rows[i], field);
+                    await ValidReferAsync(rows[i], field, hrAreaFields);
                 }
             }
         }
 
-        private async Task ValidReferAsync(ValidateRowModel checkData, ValidateField field)
+        private async Task ValidReferAsync(ValidateRowModel checkData, ValidateField field, IEnumerable<ValidateField> hrAreaFields)
         {
             string tableName = $"v{field.RefTableCode}";
 
@@ -1514,7 +1536,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {
                         filterValue = filterValue.Substring(start, length);
                     }
-                    if (string.IsNullOrEmpty(filterValue)) throw new BadRequestException(GeneralCode.InvalidParams, $"Cần thông tin {fieldName} trước thông tin {field.FieldName}");
+                    if (string.IsNullOrEmpty(filterValue))
+                    {
+                        var fieldBefore = (hrAreaFields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
+                        throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                    }
 
                     filters = filters.Replace(match[i].Value, filterValue);
                 }
@@ -1522,7 +1548,24 @@ namespace VErp.Services.Organization.Service.HrConfig
                 Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                 if (filterClause != null)
                 {
-                    filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix);
+
+
+                    try
+                    {
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+
+                    }
+                    catch (EvalObjectArgException agrEx)
+                    {
+                        var fieldBefore = (hrAreaFields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                        throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                    
                 }
             }
 
@@ -1636,8 +1679,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     if (dataRef.Count > 0)
                     {
-                        var refFId = (int) dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
-                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long) refFId, false);
+                        var refFId = (int)dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
+                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
                     }
 
                 }
