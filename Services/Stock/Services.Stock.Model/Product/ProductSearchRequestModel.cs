@@ -23,9 +23,25 @@ namespace VErp.Services.Stock.Model.Product
     {
         public int Page { get; set; }
         public int Size { get; set; }
+
+        public ProductSearchRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        {
+            this.Keyword = keyword;
+            this.ProductIds = productIds;
+            this.ProductName = productName;
+            this.ProductTypeIds = productTypeIds;
+            this.ProductCateIds = productCateIds;
+            this.IsProductSemi = isProductSemi;
+            this.IsProduct = isProduct;
+            this.IsMaterials = isMaterials;
+            this.Page = page;
+            this.Size = size;
+            this.Filters = filters;
+            this.StockIds = stockIds;
+        }
     }
 
-    public class ProductExportRequestModel : ProductSearchRequestModel
+    public class ProductExportRequestModel : ProductFilterRequestModel
     {
         public IList<string> FieldNames { get; set; }
     }

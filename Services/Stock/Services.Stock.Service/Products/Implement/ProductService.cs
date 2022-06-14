@@ -762,228 +762,6 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
-
-
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, IList<int> productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
-        {
-            keyword = (keyword ?? "").Trim();
-            productName = (productName ?? "").Trim();
-
-            var productInternalName = productName.NormalizeAsInternalName();
-
-            var products = _stockDbContext.Product.AsQueryable();
-
-            if (productIds != null && productIds.Count > 0)
-            {
-                products = products.Where(x => productIds.Contains(x.ProductId));
-            }
-
-            if (isProductSemi == true)
-            {
-                products = products.Where(x => x.IsProductSemi == isProductSemi.Value);
-            }
-
-            if (isProduct == true)
-            {
-                products = products.Where(x => x.IsProduct == isProduct.Value);
-            }
-
-            if (isMaterials == true)
-            {
-                products = products.Where(x => x.IsMaterials == isMaterials.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(productName))
-            {
-                products = products.Where(p => p.ProductInternalName == productInternalName);
-            }
-
-            if (stockIds?.Count > 0)
-            {
-                var productIdsInStocks = _stockDbContext.StockProduct.Where(s => stockIds.Contains(s.StockId)).Select(s => s.ProductId);
-                products = products.Where(s => productIdsInStocks.Contains(s.ProductId));
-            }
-            var query = (
-              from p in products
-              join pe in _stockDbContext.ProductExtraInfo on p.ProductId equals pe.ProductId
-              join s in _stockDbContext.ProductStockInfo on p.ProductId equals s.ProductId
-              join pt in _stockDbContext.ProductType on p.ProductTypeId equals pt.ProductTypeId into pts
-              from pt in pts.DefaultIfEmpty()
-              join pc in _stockDbContext.ProductCate on p.ProductCateId equals pc.ProductCateId into pcs
-              from pc in pcs.DefaultIfEmpty()
-              select new
-              {
-                  p.ProductId,
-                  p.ProductCode,
-                  p.ProductName,
-                  p.ProductNameEng,
-                  p.MainImageFileId,
-                  p.ProductTypeId,
-                  ProductTypeCode = pt == null ? null : pt.IdentityCode,
-                  ProductTypeName = pt == null ? null : pt.ProductTypeName,
-                  p.ProductCateId,
-                  ProductCateName = pc == null ? null : pc.ProductCateName,
-                  p.BarcodeConfigId,
-                  p.Barcode,
-                  pe.Specification,
-                  pe.Description,
-                  p.UnitId,
-                  p.EstimatePrice,
-                  p.IsProductSemi,
-                  p.Coefficient,
-                  p.IsProduct,
-                  p.IsMaterials,
-                  p.Height,
-                  p.Long,
-                  p.Width,
-                  p.CreatedDatetimeUtc,
-                  //p.CustomerId,
-
-                  p.PackingMethod,
-                  p.Quantitative,
-                  p.QuantitativeUnitTypeId,
-
-                  p.ProductPurity,
-
-                  p.Measurement,
-                  p.NetWeight,
-                  p.GrossWeight,
-                  p.LoadAbility,
-
-                  p.PackingQuantitative,
-                  p.PackingWidth,
-                  p.PackingHeight,
-                  p.PackingLong,
-
-                  s.StockOutputRuleId,
-                  s.AmountWarningMin,
-                  s.AmountWarningMax,
-                  s.ExpireTimeAmount,
-                  s.ExpireTimeTypeId,
-
-                  s.DescriptionToStock,
-
-                  p.Color,
-                  p.TargetProductivityId
-              });
-
-
-            if (productTypeIds != null && productTypeIds.Length > 0)
-            {
-                var types = productTypeIds.Select(t => (int?)t);
-                query = from p in query
-                        where types.Contains(p.ProductTypeId)
-                        select p;
-            }
-
-            if (productCateIds != null && productCateIds.Count > 0)
-            {
-                query = from p in query
-                        where productCateIds.Contains(p.ProductCateId)
-                        select p;
-            }
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                query = from c in query
-                        where
-                        c.ProductCode.Contains(keyword)
-                        || c.Barcode.Contains(keyword)
-                        || c.ProductName.Contains(keyword)
-                        || c.ProductNameEng.Contains(keyword)
-                        || c.ProductTypeName.Contains(keyword)
-                        || c.ProductCateName.Contains(keyword)
-                        || c.Specification.Contains(keyword)
-                        || c.Description.Contains(keyword)
-                        || c.DescriptionToStock.Contains(keyword)
-                        select c;
-            }
-            query = query.InternalFilter(filters);
-
-            var total = await query.CountAsync();
-            var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
-
-            var unitIds = lstData.Select(p => p.UnitId).ToList();
-            var unitInfos = await _unitService.GetListByIds(unitIds);
-            var barCodeConfigs = (await _barcodeConfigHelperService.GetList("")).List.ToDictionary(b => b.BarcodeConfigId, b => b);
-
-            var dataProductIds = lstData.Select(p => p.ProductId).ToList();
-            var productUnitConverions = (await _stockDbContext.ProductUnitConversion.Where(p => dataProductIds.Contains(p.ProductId)).ToListAsync())
-                .GroupBy(p => p.ProductId)
-                .ToDictionary(p => p.Key, p => p.ToList()); ;
-
-            var pageData = new List<ProductListOutput>();
-            foreach (var item in lstData)
-            {
-                productUnitConverions.TryGetValue(item.ProductId, out var pus);
-                var puDefault = pus.FirstOrDefault(p => p.IsDefault);
-
-                var barcodeConfigId = item.BarcodeConfigId ?? 0;
-                barCodeConfigs.TryGetValue(barcodeConfigId, out var barcodeConfig);
-                var product = new ProductListOutput()
-                {
-                    ProductId = item.ProductId,
-                    ProductCode = item.ProductCode,
-                    ProductName = item.ProductName,
-                    ProductNameEng = item.ProductNameEng,
-                    BarcodeConfigName = barcodeConfig?.Name,
-                    Barcode = item.Barcode,
-                    MainImageFileId = item.MainImageFileId,
-                    ProductCateId = item.ProductCateId,
-                    ProductCateName = item.ProductCateName,
-                    ProductTypeId = item.ProductTypeId,
-                    ProductTypeCode = item.ProductTypeCode,
-                    ProductTypeName = item.ProductTypeName,
-                    Specification = item.Specification,
-                    UnitId = item.UnitId,
-                    EstimatePrice = item.EstimatePrice,
-                    IsProductSemi = item.IsProductSemi,
-                    Coefficient = item.Coefficient,
-                    IsProduct = item.IsProduct ?? false,
-                    IsMaterials = item.IsMaterials ?? false,
-                    Long = item.Long,
-                    Width = item.Width,
-                    Height = item.Height,
-                    //CustomerId = item.CustomerId,
-                    PackingMethod = item.PackingMethod,
-                    Quantitative = item.Quantitative,
-                    QuantitativeUnitTypeId = (EnumQuantitativeUnitType?)item.QuantitativeUnitTypeId,
-                    ProductPurity = item.ProductPurity,
-
-                    PackingQuantitative = item.PackingQuantitative,
-                    PackingHeight = item.PackingHeight,
-                    PackingLong = item.PackingLong,
-                    PackingWidth = item.PackingWidth,
-
-                    Measurement = item.Measurement,
-                    NetWeight = item.NetWeight,
-                    GrossWeight = item.GrossWeight,
-                    LoadAbility = item.LoadAbility,
-                    StockOutputRuleId = (EnumStockOutputRule?)item.StockOutputRuleId,
-                    AmountWarningMin = item.AmountWarningMin,
-                    AmountWarningMax = item.AmountWarningMax,
-                    ExpireTimeAmount = item.ExpireTimeAmount,
-                    ExpireTimeTypeId = (EnumTimeType?)item.ExpireTimeTypeId,
-                    DescriptionToStock = item.DescriptionToStock,
-                    DecimalPlace = puDefault?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT,
-                    UnitName = puDefault?.ProductUnitConversionName,
-                    ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
-                    Description = item.Description,
-                    Color = item.Color,
-                    TargetProductivityId = item.TargetProductivityId
-                };
-
-                var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
-
-                product.UnitName = unitInfo?.UnitName;
-
-                pageData.Add(product);
-            }
-
-
-            return (pageData, total);
-        }
-
         public async Task<PageData<ProductListOutput>> GetList(ProductSearchRequestModel req)
         {
             var keyword = (req.Keyword ?? "").Trim();
@@ -1205,16 +983,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
         {
-            var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
+            ProductSearchRequestModel req = new ProductSearchRequestModel(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
+            //var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
+            var lst = await GetList(req);
             var bomExport = new ProductExportFacade(_stockDbContext, fieldNames);
             return await bomExport.Export(lst.List);
         }
 
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(ProductExportRequestModel req)
         {
-            req.Page = 1;
-            req.Size = int.MaxValue;
-            var lst = await GetList(req);
+            ProductSearchRequestModel searchReq = new ProductSearchRequestModel(req.Keyword, req.ProductIds, req.ProductName, req.ProductTypeIds, req.ProductCateIds, 1, int.MaxValue, req.IsProductSemi, req.IsProduct, req.IsMaterials, req.Filters, req.StockIds);
+            var lst = await GetList(searchReq);
             var bomExport = new ProductExportFacade(_stockDbContext, req.FieldNames);
             return await bomExport.Export(lst.List);
         }
@@ -1222,8 +1001,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds)
         {
             if (productIds == null || productIds.Count == 0) return new List<ProductListOutput>();
-
-            var productList = await GetList("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            ProductSearchRequestModel req = new ProductSearchRequestModel("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            //var productList = await GetList("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            var productList = await GetList(req);
 
             var pagedData = productList.List;
 
