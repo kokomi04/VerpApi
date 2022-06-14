@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Model.Product
 {
@@ -22,5 +23,6 @@ namespace VErp.Services.Stock.Model.Product
     public class ProductExportRequestModel: ProductSearchRequestModel
     {
         public IList<string> FieldNames { get; set; }
+        public Clause Filters { get; set; }
     }
 }

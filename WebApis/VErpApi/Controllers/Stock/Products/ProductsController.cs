@@ -65,7 +65,7 @@ namespace VErpApi.Controllers.Stock.Products
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var (stream, fileName, contentType) = await _productService.ExportList(req.FieldNames, req.Keyword, req.ProductIds, req.ProductName, req.ProductTypeIds, req.ProductCateIds, req.Page, req.Size, isProductSemi: req.IsProductSemi, isProduct: req.IsProduct, isMaterials: req.IsMaterials);
+            var (stream, fileName, contentType) = await _productService.ExportList(req.FieldNames, req.Keyword, req.ProductIds, req.ProductName, req.ProductTypeIds, req.ProductCateIds, req.Page, req.Size, isProductSemi: req.IsProductSemi, isProduct: req.IsProduct, isMaterials: req.IsMaterials, req.Filters);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
