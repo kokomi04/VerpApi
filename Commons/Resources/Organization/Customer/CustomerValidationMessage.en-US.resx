@@ -141,6 +141,9 @@
   <data name="CustomerCodeAlreadyExists" xml:space="preserve">
     <value>Customer code "{0}" already existed</value>
   </data>
+  <data name="CustomerCodeIsRequired" xml:space="preserve">
+    <value>Customer code is required</value>
+  </data>
   <data name="CustomerNameAlreadyExists" xml:space="preserve">
     <value>Customer name "{0}" already existed</value>
   </data>

@@ -698,6 +698,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         private async Task ValidateCustomerModels(IList<CustomerModel> customers)
         {
+            foreach (var c in customers)
+            {
+                if (string.IsNullOrWhiteSpace(c.CustomerCode))
+                {
+                    throw CustomerCodeIsRequired.BadRequest();
+                }
+            }
             var customerCodes = customers.Select(c => c.CustomerCode).ToList();
 
             var customerNames = customers.Select(c => c.CustomerName).ToList();
@@ -733,7 +740,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var contacts = new Dictionary<CustomerEntity, List<CustomerContact>>();
             var bankAccounts = new Dictionary<CustomerEntity, List<CustomerBankAccount>>();
             var attachments = new Dictionary<CustomerEntity, List<CustomerAttachment>>();
-        
+
 
             foreach (var data in customers)
             {
@@ -772,7 +779,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 contacts.Add(customer, new List<CustomerContact>());
                 bankAccounts.Add(customer, new List<CustomerBankAccount>());
                 attachments.Add(customer, new List<CustomerAttachment>());
-           
+
 
                 if (data.Contacts != null && data.Contacts.Count > 0)
                 {
@@ -806,7 +813,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                         UpdatedDatetimeUtc = DateTime.UtcNow,
                     }));
                 }
-              
+
             }
 
             return (customerEntities, originData, contacts, bankAccounts, attachments);

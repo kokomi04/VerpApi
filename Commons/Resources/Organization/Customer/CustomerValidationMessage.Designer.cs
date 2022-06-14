@@ -133,6 +133,15 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Vui lòng nhập mã đối tác.
+        /// </summary>
+        public static string CustomerCodeIsRequired {
+            get {
+                return ResourceManager.GetString("CustomerCodeIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Tên đối tác &quot;{0}&quot; đã tồn tại.
         /// </summary>
         public static string CustomerNameAlreadyExists {
