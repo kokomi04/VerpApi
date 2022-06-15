@@ -151,6 +151,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
             var isInvalid = new SqlParameter("@IsInvalid", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var isError = new SqlParameter("@IsError", SqlDbType.Bit) { Direction = ParameterDirection.Output };
 
             var data = (await _accountancyDBContext.QueryDataTable(
                 "asp_CalcProduct_OutputPrice",
@@ -162,7 +163,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@Tk", SqlDbType.NVarChar){ Value = req.Tk},
                     new SqlParameter("@IsIgnoreZeroPrice", SqlDbType.Bit){ Value = req.IsIgnoreZeroPrice},
                     new SqlParameter("@IsUpdate", SqlDbType.Bit){ Value = req.IsUpdate},
-                    isInvalid
+                    isInvalid,
+                    isError
 
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
@@ -170,7 +172,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return new CalcProductOutputPriceModel
             {
                 Data = data,
-                IsInvalid = (isInvalid.Value as bool?).GetValueOrDefault()
+                IsInvalid = (isInvalid.Value as bool?).GetValueOrDefault(),
+                IsError = (isError.Value as bool?).GetValueOrDefault(),
             };
         }
 
