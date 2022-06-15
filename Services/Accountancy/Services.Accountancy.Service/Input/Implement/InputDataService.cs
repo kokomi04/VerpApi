@@ -2951,7 +2951,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 writer.WriteToSheet(table, "Data", out endRow, area.IsMultiRow, headerRgb, 0, endRow + 1);
             }
 
-            var fileName = $"{inputType.InputTypeCode}_{billCode}.xlsx";
+            //var fileName = $"{inputType.InputTypeCode}_{billCode}.xlsx";
+            var fileName = ($"{billCode}#{inputType.Title}.xlsx").Replace(" ", "#");
 
             MemoryStream stream = await writer.WriteToStream();
             return (stream, fileName);
