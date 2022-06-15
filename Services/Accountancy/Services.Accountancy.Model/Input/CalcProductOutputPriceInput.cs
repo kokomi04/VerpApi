@@ -22,5 +22,6 @@ namespace VErp.Services.Accountancy.Model.Input
     {
         public IList<NonCamelCaseDictionary> Data { get; set; }
         public bool IsInvalid { get; set; }
+        public bool IsError { get; set; }
     }
 }
