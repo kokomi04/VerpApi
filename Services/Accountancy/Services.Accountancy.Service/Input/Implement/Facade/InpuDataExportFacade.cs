@@ -106,7 +106,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"{typeInfo.Title.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            //var fileName = $"{typeInfo.Title.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = ($"{typeInfo.Title}#{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 
