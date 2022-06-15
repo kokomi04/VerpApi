@@ -2952,7 +2952,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
             //var fileName = $"{inputType.InputTypeCode}_{billCode}.xlsx";
-            var fileName = ($"{billCode}#{inputType.Title}.xlsx").Replace(" ", "#");
+            var fileName = StringUtils.RemoveDiacritics($"{billCode}#{inputType.Title}.xlsx").Replace(" ", "#");
 
             MemoryStream stream = await writer.WriteToStream();
             return (stream, fileName);
