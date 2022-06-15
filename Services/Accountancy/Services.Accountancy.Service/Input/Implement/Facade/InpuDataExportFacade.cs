@@ -107,7 +107,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             //var fileName = $"{typeInfo.Title.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
-            var fileName = ($"{typeInfo.Title}#{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
+            var fileName = StringUtils.RemoveDiacritics($"{typeInfo.Title}#{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 

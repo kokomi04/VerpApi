@@ -77,7 +77,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"product-bom-{firstProductCode.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = StringUtils.RemoveDiacritics($"{firstProductCode.NormalizeAsInternalName()} product bom.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 
