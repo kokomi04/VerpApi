@@ -48,7 +48,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public decimal? RequestProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionPrice { get; set; }
-
+        public decimal? Money { get; set; }
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }

@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
@@ -29,38 +30,180 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private Dictionary<string, Product> _productsByCode = null;
         private Dictionary<string, List<Product>> _productsByName = null;
 
-        private IList<ImportInvOutputModel> _excelModel = null;
-        private InventoryOutImportyExtraModel _model = null;
+        private IList<ImportInvOutputModel> _excelRows = null;
 
         private Dictionary<int, List<ProductUnitConversion>> _productUnitsByProduct = null;
 
         private StockDBContext _stockDbContext;
+        private IOrganizationHelperService _organizationHelperService;
+
 
         public InventoryOutImportFacade SetStockDBContext(StockDBContext stockDbContext)
         {
             _stockDbContext = stockDbContext;
             return this;
         }
-
-
-
-        public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model)
+        public InventoryOutImportFacade SetOrganizationHelper(IOrganizationHelperService organizationHelperService)
         {
-            _model = model;
+            _organizationHelperService = organizationHelperService;
+            return this;
+        }
 
-            var stockInfo = await _stockDbContext.Stock.FirstOrDefaultAsync(s => s.StockId == model.StockId);
-            if (stockInfo == null)
-            {
-                throw StockInfoNotFound.BadRequest(GeneralCode.ItemNotFound);
-            }
 
+
+
+        public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream)
+        {
             var reader = new ExcelReader(stream);
 
             var currentCateName = string.Empty;
             var currentCatePrefixCode = string.Empty;
 
-            _excelModel = reader.ReadSheetEntity<ImportInvOutputModel>(mapping, (entity, propertyName, value) =>
+            var stocks = await _stockDbContext.Stock.ToListAsync();
+
+            var stockByCodes = stocks
+               .GroupBy(l => l.StockCode?.NormalizeAsInternalName())
+               .ToDictionary(l => l.Key, l => l.ToList());
+
+            var stockByNames = stocks
+               .GroupBy(l => l.StockName?.NormalizeAsInternalName())
+               .ToDictionary(l => l.Key, l => l.ToList());
+
+            var customers = await _organizationHelperService.AllCustomers();
+
+            var customerByCodes = customers
+                .GroupBy(l => l.CustomerCode?.NormalizeAsInternalName())
+                .ToDictionary(l => l.Key, l => l.ToList());
+
+            var customerByNames = customers
+               .GroupBy(l => l.CustomerName?.NormalizeAsInternalName())
+               .ToDictionary(l => l.Key, l => l.ToList());
+
+            var departments = await _organizationHelperService.GetAllDepartmentSimples();
+
+            var departmentsByCodes = departments
+                 .GroupBy(l => l.DepartmentCode?.NormalizeAsInternalName())
+                .ToDictionary(l => l.Key, l => l.ToList());
+
+            var departmentByNames = departments
+                 .GroupBy(l => l.DepartmentName?.NormalizeAsInternalName())
+                .ToDictionary(l => l.Key, l => l.ToList());
+
+
+            _excelRows = reader.ReadSheetEntity<ImportInvOutputModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
             {
+                if (propertyName == nameof(ImportInvOutputModel.InventoryActionId))
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+
+                        if (!int.TryParse(value, out var action) || !ImportInvOutputModel.InventoryActionIds.Contains((EnumInventoryAction)action))
+                        {
+                            var actions = ImportInvOutputModel.InventoryActionIds;
+                            var des = $"Loại ({string.Join(",", actions.Select(a => $"{(int)a}: {a.GetEnumDescription()}"))})";
+
+                            throw GeneralCode.InvalidParams.BadRequest("Loại phiếu không hợp lệ " + value + ", chỉ chấp nhận " + des);
+                        }
+
+                        entity.InventoryActionId = (EnumInventoryAction)action;
+                    }
+
+                    return true;
+                }
+
+                if (propertyName == nameof(ImportInvOutputModel.StockId))
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        var stockNameNormalize = value?.NormalizeAsInternalName();
+                        if (!stockByNames.ContainsKey(stockNameNormalize))
+                        {
+                            throw GeneralCode.ItemNotFound.BadRequest("Không tìm thấy kho hoặc bạn không có quyền thực hiện trên kho " + value);
+                        }
+
+                        var stockInfo = stockByNames[stockNameNormalize].OrderByDescending(s => s.StockName == value).First();
+                        entity.StockId = stockInfo.StockId;
+                    }
+
+                    return true;
+                }
+
+                if (propertyName == nameof(ImportInvInputModel.Customer))
+                {
+                    var customerInfo = (InvCustomerInfo)refObj;
+
+                    if (refProperty == nameof(InvCustomerInfo.CustomerCode))
+                    {
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            var codeNormalize = value?.NormalizeAsInternalName();
+                            if (!customerByCodes.ContainsKey(codeNormalize))
+                            {
+                                throw GeneralCode.ItemNotFound.BadRequest("Không tìm thấy mã khách " + value);
+                            }
+
+                            var info = customerByCodes[codeNormalize].OrderByDescending(s => s.CustomerCode == value).First();
+                            customerInfo.CustomerId = info.CustomerId;
+                        }
+                    }
+
+                    if (refProperty == nameof(InvCustomerInfo.CustomerName))
+                    {
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            var nameNormalize = value?.NormalizeAsInternalName();
+                            if (!customerByNames.ContainsKey(nameNormalize))
+                            {
+                                throw GeneralCode.ItemNotFound.BadRequest("Không tìm thấy tên khách " + value);
+                            }
+
+                            var info = customerByNames[nameNormalize].OrderByDescending(s => s.CustomerName == value).First();
+                            customerInfo.CustomerId = info.CustomerId;
+                        }
+                    }
+
+                    return true;
+                }
+
+
+                if (propertyName == nameof(ImportInvInputModel.Department))
+                {
+                    var departmentInfo = (InvDepartmentInfo)refObj;
+
+                    if (refProperty == nameof(InvDepartmentInfo.DepartmentCode))
+                    {
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            var codeNormalize = value?.NormalizeAsInternalName();
+                            if (!departmentsByCodes.ContainsKey(codeNormalize))
+                            {
+                                throw GeneralCode.ItemNotFound.BadRequest("Không tìm thấy mã bộ phận " + value);
+                            }
+
+                            var info = departmentsByCodes[codeNormalize].OrderByDescending(s => s.DepartmentCode == value).First();
+                            departmentInfo.DepartmentId = info.DepartmentId;
+                        }
+                    }
+
+                    if (refProperty == nameof(InvDepartmentInfo.DepartmentName))
+                    {
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            var nameNormalize = value?.NormalizeAsInternalName();
+                            if (!departmentByNames.ContainsKey(nameNormalize))
+                            {
+                                throw GeneralCode.ItemNotFound.BadRequest("Không tìm thấy tên bộ phận " + value);
+                            }
+
+                            var info = departmentByNames[nameNormalize].OrderByDescending(s => s.DepartmentName == value).First();
+                            departmentInfo.DepartmentId = info.DepartmentId;
+                        }
+                    }
+
+                    return true;
+                }
+
+
                 if (propertyName == nameof(ImportInvOutputModel.CateName))
                 {
                     if (!string.IsNullOrWhiteSpace(value))
@@ -116,113 +259,124 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         }
 
 
-        public async Task<InventoryOutModel> GetOutputInventoryModel()
+        public async Task<IList<InventoryOutModel>> GetOutputInventoryModel()
         {
-            var inventoryOutList = new List<InventoryOutModel>();
 
-            var totalRowCount = _excelModel.Count;
+            var lst = new List<InventoryOutModel>();
 
-            var newInventoryOutProductModel = new List<InventoryOutProductModel>(totalRowCount);
-
-            var productUnitConversionIds = new List<int>();
-            var productIds = new List<int>();
-
-            var productInfoByIds = new Dictionary<int, Product>();
-
-            var sortOrder = 1;
-            foreach (var item in _excelModel)
+            var groups = _excelRows.GroupBy(r => r.InventoryCode);
+            foreach (var g in groups)
             {
-                if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
+                var totalRowCount = g.Count();
 
-                if (item.Qty1 <= 0)
-                    throw ProductQuantityInvalid.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
+                var newInventoryOutProductModel = new List<InventoryOutProductModel>(totalRowCount);
 
-                var productObj = GetProduct(item);
+                var productUnitConversionIds = new List<int>();
+                var productIds = new List<int>();
 
-                ProductUnitConversion productUnitConversionObj = null;
+                var productInfoByIds = new Dictionary<int, Product>();
 
-                if (!string.IsNullOrWhiteSpace(item.Unit2))
+                var sortOrder = 1;
+                foreach (var item in g)
                 {
-                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
-                    if (productUnitConversionObj == null)
+                    if (string.IsNullOrWhiteSpace(item.ProductCode)) continue;
+
+                    if (item.Qty1 <= 0)
+                        throw ProductQuantityInvalid.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
+
+                    var productObj = GetProduct(item);
+
+                    ProductUnitConversion productUnitConversionObj = null;
+
+                    if (!string.IsNullOrWhiteSpace(item.Unit2))
                     {
-                        throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
+                        productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.ProductUnitConversionName.NormalizeAsInternalName().Equals(item.Unit2.NormalizeAsInternalName()));
+                        if (productUnitConversionObj == null)
+                        {
+                            throw ProductUniConversionNameNotFound.BadRequestFormat(item.Unit2, item.ProductCode);
+                        }
                     }
-                }
-                else
-                {
-                    productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
-                    if (productUnitConversionObj == null)
+                    else
                     {
-                        throw PuConversionDefaultError.BadRequestFormat(item.ProductCode);
+                        productUnitConversionObj = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
+                        if (productUnitConversionObj == null)
+                        {
+                            throw PuConversionDefaultError.BadRequestFormat(item.ProductCode);
+                        }
                     }
+
+
+                    productUnitConversionIds.Add(productUnitConversionObj.ProductUnitConversionId);
+                    productIds.Add(productObj.ProductId);
+                    if (!productInfoByIds.ContainsKey(productObj.ProductId))
+                    {
+                        productInfoByIds.Add(productObj.ProductId, productObj);
+                    }
+
+                    long fromPackageId = 0;
+                    if (!string.IsNullOrWhiteSpace(item.FromPackageCode))
+                    {
+                        var packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
+
+                        if (packageInfo == null) throw ProductPackageWithCodeNotFound.BadRequestFormat(item.FromPackageCode, productObj.ProductCode);
+
+                        fromPackageId = packageInfo.PackageId;
+                    }
+                    else
+                    {
+                        var packageInfo = await _stockDbContext.Package.AsNoTracking()
+                           .Where(p => p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
+                           .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
+                           .FirstOrDefaultAsync();
+
+                        if (packageInfo == null) throw PuProductPackageNotFound.BadRequestFormat(productObj.ProductCode, productUnitConversionObj?.ProductUnitConversionName);
+
+                        fromPackageId = packageInfo.PackageId;
+                    }
+
+                    newInventoryOutProductModel.Add(new InventoryOutProductModel
+                    {
+                        SortOrder = sortOrder++,
+                        ProductId = productObj.ProductId,
+                        ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
+                        PrimaryQuantity = item.Qty1,
+                        ProductUnitConversionQuantity = item.Qty2,
+                        UnitPrice = item.UnitPrice,
+                        RefObjectTypeId = null,
+                        RefObjectId = null,
+                        RefObjectCode = item.CatePrefixCode,
+                        FromPackageId = fromPackageId
+                        //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
+                    });
                 }
 
-
-                productUnitConversionIds.Add(productUnitConversionObj.ProductUnitConversionId);
-                productIds.Add(productObj.ProductId);
-                if (!productInfoByIds.ContainsKey(productObj.ProductId))
+                var firstRow = g.First();
+                var newInventory = new InventoryOutModel
                 {
-                    productInfoByIds.Add(productObj.ProductId, productObj);
-                }
+                    StockId = firstRow.StockId,
+                    InventoryActionId = (EnumInventoryAction?)firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
+                    InventoryCode = g.Key,
+                    //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
+                    Date = firstRow.Date,
 
-                long fromPackageId = 0;
-                if (!string.IsNullOrWhiteSpace(item.FromPackageCode))
-                {
-                    var packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
+                    Shipper = firstRow.Shipper,
+                    Content = firstRow.Description,
+                    CustomerId = firstRow.Customer?.CustomerId,
+                    Department = string.Empty,
+                    DepartmentId = firstRow.Department?.DepartmentId,
+                    StockKeeperUserId = null,
+                    BillCode = firstRow.BillCode,
+                    BillSerial = firstRow.BillSerial,
+                    BillDate = firstRow.BillDate,
+                    FileIdList = null,
+                    OutProducts = newInventoryOutProductModel,
+                    // AccountancyAccountNumber = _model.AccountancyAccountNumber
+                };
 
-                    if (packageInfo == null) throw ProductPackageWithCodeNotFound.BadRequestFormat(item.FromPackageCode, productObj.ProductCode);
-
-                    fromPackageId = packageInfo.PackageId;
-                }
-                else
-                {
-                    var packageInfo = await _stockDbContext.Package.AsNoTracking()
-                       .Where(p => p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
-                       .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
-                       .FirstOrDefaultAsync();
-
-                    if (packageInfo == null) throw PuProductPackageNotFound.BadRequestFormat(productObj.ProductCode, productUnitConversionObj?.ProductUnitConversionName);
-
-                    fromPackageId = packageInfo.PackageId;
-                }
-
-                newInventoryOutProductModel.Add(new InventoryOutProductModel
-                {
-                    SortOrder = sortOrder++,
-                    ProductId = productObj.ProductId,
-                    ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
-                    PrimaryQuantity = item.Qty1,
-                    ProductUnitConversionQuantity = item.Qty2,
-                    UnitPrice = item.UnitPrice,
-                    RefObjectTypeId = null,
-                    RefObjectId = null,
-                    RefObjectCode = item.CatePrefixCode,
-                    FromPackageId = fromPackageId
-                    //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
-                });
+                lst.Add(newInventory);
             }
 
-
-            var newInventory = new InventoryOutModel
-            {
-                StockId = _model.StockId,
-                //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                Date = _model.IssuedDate,
-                Shipper = string.Empty,
-                Content = "Xuất kho từ excel",
-                CustomerId = null,
-                Department = string.Empty,
-                StockKeeperUserId = null,
-                BillCode = string.Empty,
-                BillSerial = string.Empty,
-                BillDate = _model.IssuedDate,
-                FileIdList = null,
-                OutProducts = newInventoryOutProductModel,
-                // AccountancyAccountNumber = _model.AccountancyAccountNumber
-            };
-
-            return newInventory;
+            return lst;
         }
 
         private Product GetProduct(OpeningBalanceModel item)

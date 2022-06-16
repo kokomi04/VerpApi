@@ -86,7 +86,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//req.StockId
             {
                 var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
 
@@ -239,7 +239,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//req.StockId
             {
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
@@ -448,7 +448,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -556,7 +556,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await ValidateInventoryConfig(inventoryObj.Date, inventoryObj.Date);
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
                 var baseValueChains = new Dictionary<string, int>();
 
@@ -996,6 +996,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
                     ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
                     ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
+                    Money = detail.Money,
                     RefObjectTypeId = detail.RefObjectTypeId,
                     RefObjectId = detail.RefObjectId,
                     RefObjectCode = detail.RefObjectCode,

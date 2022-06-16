@@ -82,8 +82,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
             long inventoryId;
 
-            using (var @lock1 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
-            using (var @lock2 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.ToStockId)))
+            using (var @lock1 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//req.StockId
+            //using (var @lock2 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.ToStockId)))
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
                 if (req?.OutProducts == null || req?.OutProducts?.Count == 0)
@@ -142,8 +142,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                                 .SetConfigData(0);
 
 
-            using (var @lock1 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId)))
-            using (var @lock2 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId)))
+            using (var @lock1 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//outputObj.StockId
+            //using (var @lock2 = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId)))
 
 
 
@@ -292,8 +292,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             }
 
 
-            using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId));
-            using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
+            using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey());//outputObj.StockId
+            //using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
 
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
@@ -341,8 +341,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
                                 .SetConfigData(0);
 
-            using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(outputObj.StockId));
-            using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
+            using var @lockOut = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey());//outputObj.StockId
+            //using var @lockIn = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inputObj.StockId));
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {

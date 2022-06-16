@@ -10,6 +10,45 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 {
     public class OpeningBalanceModel
     {
+        [Display(Name = "Loại", GroupName = "TT chung")]
+        public EnumInventoryAction? InventoryActionId { get; set; }
+
+        [Display(Name = "Mã phiếu", GroupName = "TT chung")]
+        public string InventoryCode { get; set; }
+
+        [Display(Name = "Tên kho", GroupName = "TT chung")]
+        public int StockId { get; set; }
+
+        [Display(Name = "Ngày", GroupName = "TT chung")]
+        public long Date { get; set; }
+        [Display(Name = "Mô tả", GroupName = "TT chung")]
+        public string Description { get; set; }
+
+        [Display(Name = "Người giao nhận", GroupName = "TT chung")]
+        public string Shipper { get; set; }
+
+        [Display(Name = "Khách hàng", GroupName = "TT chung")]
+        [FieldDataNestedObject]
+        public InvCustomerInfo Customer { get; set; }
+
+        [Display(Name = "Bộ phận", GroupName = "TT chung")]
+        [FieldDataNestedObject]
+        public InvDepartmentInfo Department { get; set; }
+
+
+        [Display(Name = "Mẫu hóa đơn", GroupName = "TT hóa đơn bổ sung")]
+        public string BillForm { get; set; }
+
+        [Display(Name = "Mã hóa đơn", GroupName = "TT hóa đơn bổ sung")]
+        public string BillCode { get; set; }
+
+        [Display(Name = "Serial hóa đơn", GroupName = "TT hóa đơn bổ sung")]
+        public string BillSerial { get; set; }
+        [Display(Name = "Ngày hóa đơn", GroupName = "TT hóa đơn bổ sung")]
+        public long BillDate { get; set; }
+
+
+
         [Display(Name = "Danh mục mặt hàng", GroupName = "Sản phẩm")]
         public string CateName { set; get; }
 
@@ -52,24 +91,20 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 
         [Display(Name = "Tỷ lệ Đơn vị chuyển đổi", GroupName = "Thẻ Kho")]
         public decimal Factor { set; get; }
-
-
-        //[Display(Name = "Tài khoản kế toán", GroupName = "Thẻ Kho")]
-        //public string AccountancyAccountNumber { set; get; }
-
-        //[Display(Name = "Tài khoản kế toán đối ứng", GroupName = "Thẻ Kho")]
-        //public string AccountancyAccountNumberDu { set; get; }
-
-        //[Display(Name = "Mã kiện (Bỏ chọn nếu là mặc định)", GroupName = "Thẻ Kho")]
-
-        //[FieldDataType((int)EnumInventoryType.Output)]
-        //public string PackageCode { set; get; }
-
     }
 
 
     public class ImportInvInputModel : OpeningBalanceModel
     {
+       
+
+        public static IList<EnumInventoryAction> InventoryActionIds = new[]
+             {
+                EnumInventoryAction.Normal,
+                EnumInventoryAction.InputOfProduct,
+                EnumInventoryAction.InputOfMaterial,
+            };
+
         [Display(Name = "Thông tin kiện", GroupName = "Thông tin kiện")]
         [FieldDataNestedObject]
         public PackageInputModel ToPackgeInfo { get; set; }
@@ -77,8 +112,31 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 
     public class ImportInvOutputModel : OpeningBalanceModel
     {
+        public static IList<EnumInventoryAction> InventoryActionIds = new[]
+          {
+                EnumInventoryAction.Normal,
+                EnumInventoryAction.OutputForSell,
+                EnumInventoryAction.OutputForManufacture,
+            };
+
         //[FieldDataType((int)EnumInventoryType.Output)]
         [Display(Name = "Kiện xuất", GroupName = "Thẻ Kho")]
         public string FromPackageCode { set; get; }
+    }
+
+    public class InvCustomerInfo
+    {
+        [FieldDataIgnore]
+        public int? CustomerId { get; set; }
+        public string CustomerCode { get; set; }
+        public string CustomerName { get; set; }
+    }
+
+    public class InvDepartmentInfo
+    {
+        [FieldDataIgnore]
+        public int? DepartmentId { get; set; }
+        public string DepartmentCode { get; set; }
+        public string DepartmentName { get; set; }
     }
 }

@@ -34,7 +34,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.Inventory.StockId));
+            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey());//req.Inventory.StockId
 
             var baseValueChains = new Dictionary<string, int>();
 
