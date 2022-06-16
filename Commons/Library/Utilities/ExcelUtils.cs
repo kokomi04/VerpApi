@@ -79,7 +79,7 @@ namespace VErp.Commons.Library
                     title = attrs.First().Name;
                     groupName = attrs.First().GroupName;
 
-                    if (attrs.First().Order > 0)
+                    if (attrs.First().GetOrder() > 0)
                         order = attrs.First().Order;
                 }
                 if (string.IsNullOrWhiteSpace(title))
