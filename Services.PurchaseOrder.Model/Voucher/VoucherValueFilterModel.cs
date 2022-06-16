@@ -19,6 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
     public class VoucherTypeBillsFilterPagingModel: VoucherTypeBillsFilterModel
     {
+        public bool IsMultirow { get; set; }
         public int Page { get; set; }
         public int Size { get; set; }
     }

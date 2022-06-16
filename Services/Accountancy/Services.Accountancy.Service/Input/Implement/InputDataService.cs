@@ -97,7 +97,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                 where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
-                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition }
+                select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
 
@@ -165,20 +165,27 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
+
+
+            var fieldToSelect = fields.Values.Where(f => f.IsMultiRow == isMultirow || isMultirow).ToList();
+
+            var sumCols = fieldToSelect.Where(c => c.IsCalcSum).ToList();
+
+            var sumSql = string.Join(", ", sumCols.Select(c => $"SUM(r.{c.FieldName}) AS {c.FieldName}").ToArray());
+            if (!string.IsNullOrWhiteSpace(sumSql))
+            {
+                sumSql = ", " + sumSql;
+            }
+
             string totalSql;
-
-            var fieldToSelect = fields.Values.ToList();
-
             if (isMultirow)
             {
-                totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
+                totalSql = @$"SELECT COUNT(0) as Total {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
             }
             else
             {
-                totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
-                fieldToSelect = fieldToSelect.Where(f => !f.IsMultiRow).ToList();
+                totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
             }
-
 
             var selectColumns = fieldToSelect.SelectMany(f =>
             {
@@ -206,9 +213,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var table = await _accountancyDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
 
             var total = 0;
+            var additionResults = new Dictionary<string, decimal>();
+
             if (table != null && table.Rows.Count > 0)
             {
                 total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+                foreach (var col in sumCols)
+                {
+                    var sum = (table.Rows[0][col.FieldName] as decimal?).GetValueOrDefault();
+                    additionResults.Add(col.FieldName, sum);
+                }
             }
 
             var selectColumn = string.Join(",", selectColumns.Select(c => $"r.[{c}]"));
@@ -252,7 +266,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var data = await _accountancyDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
-            return (data, total);
+            return (data, total, additionResults);
         }
 
         public async Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size)
@@ -1358,7 +1372,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // Get bills by old value
             var sqlParams = new List<SqlParameter>()
             {
-                billIds.ToSqlParameter("@BillIds")               
+                billIds.ToSqlParameter("@BillIds")
             };
 
             var dataSql = new StringBuilder(@$"
@@ -1499,7 +1513,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             catch (Exception ex)
             {
                 trans.TryRollbackTransaction();
-                _logger.LogError(ex, "UpdateBill");
+                _logger.LogError(ex, "UpdateMultipleBills");
                 throw;
             }
         }
