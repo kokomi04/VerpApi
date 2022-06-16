@@ -38,7 +38,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int inputTypeId, long fId);
 
-        Task<bool> UpdateMultipleVoucherBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] fIds);
+        Task<bool> UpdateMultipleVoucherBills(int voucherTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds);
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
 

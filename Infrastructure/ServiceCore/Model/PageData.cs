@@ -8,12 +8,12 @@ namespace VErp.Infrastructure.ServiceCore.Model
 {
     public class PageData<T>
     {
-        public int Total { get; set; }
+        public long Total { get; set; }
         public IList<T> List { get; set; }
 
         public object AdditionResult { get; set; }
 
-        public static implicit operator PageData<T>((IList<T> list, int total, object additionResult) result)
+        public static implicit operator PageData<T>((IList<T> list, long total, object additionResult) result)
         {
             return new PageData<T>()
             {
@@ -23,27 +23,20 @@ namespace VErp.Infrastructure.ServiceCore.Model
             };
         }
 
-        public static implicit operator PageData<T>((IList<T> list, int total) result)
+        public static implicit operator PageData<T>((IList<T> list, long total) result)
         {
-            return new PageData<T>()
-            {
-                Total = result.total,
-                List = result.list
-            };
+            return (result.list, result.total, null);
         }
     }
 
-    public class PageDataTable
+    public class PageDataTable : PageData<NonCamelCaseDictionary>
     {
-        public long Total { get; set; }
-        public IList<NonCamelCaseDictionary> List { get; set; }
 
         //public static implicit operator PageDataTable((DataTable list, int total) result)
         //{
         //    return (result.list, result.total);
         //}
-
-        public static implicit operator PageDataTable((DataTable list, long total) result)
+        public static implicit operator PageDataTable((DataTable list, long total, object additionResult) result)
         {
             var lst = new List<NonCamelCaseDictionary>();
 
@@ -69,8 +62,14 @@ namespace VErp.Infrastructure.ServiceCore.Model
             return new PageDataTable()
             {
                 Total = result.total,
-                List = lst
+                List = lst,
+                AdditionResult = result.additionResult
             };
+        }
+
+        public static implicit operator PageDataTable((DataTable list, long total) result)
+        {
+            return (result.list, result.total, null);
         }
     }
 }
