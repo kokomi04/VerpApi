@@ -63,18 +63,24 @@ namespace VErp.Commons.Library
                 });
             }
 
+            var sortOrder = 1;
             foreach (var prop in typeof(T).GetProperties())
             {
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
+
+                var order = sortOrder++;
                 int? type = null;
 
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
                     groupName = attrs.First().GroupName;
+
+                    if (attrs.First().Order > 0)
+                        order = attrs.First().Order;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
@@ -114,7 +120,8 @@ namespace VErp.Commons.Library
                             FieldTitle = f.FieldTitle,
                             IsRequired = f.IsRequired,
                             Type = f.Type,
-                            RefCategory = f.RefCategory
+                            RefCategory = f.RefCategory,
+                            SortOrder = f.SortOrder
                         });
                     }
                 }
@@ -129,7 +136,8 @@ namespace VErp.Commons.Library
                         FieldTitle = title,
                         IsRequired = isRequired != null,
                         Type = type,
-                        RefCategory = null
+                        RefCategory = null,
+                        SortOrder = order
                     };
 
 
@@ -156,7 +164,7 @@ namespace VErp.Commons.Library
             }
 
 
-            return fields;
+            return fields.OrderBy(f => f.SortOrder).ToList();
         }
     }
 }

@@ -707,7 +707,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FieldTitle = "(Kiện) - " + p.Title,
                     IsRequired = false,
                     Type = null,
-                    RefCategory = null
+                    RefCategory = null,
+                    SortOrder = packageField.SortOrder
                 };
 
                 fields.Add(f);
