@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
