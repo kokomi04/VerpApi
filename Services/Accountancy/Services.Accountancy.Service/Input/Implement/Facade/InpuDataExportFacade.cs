@@ -107,8 +107,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             //var fileName = $"{typeInfo.Title.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
-            var fromDate = Convert.ToInt64(req.FromDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
-            var toDate = Convert.ToInt64(req.ToDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+            var fromDate = req.FromDate.HasValue ? req.FromDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
+            var toDate = req.ToDate.HasValue ? req.ToDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
             var fileName = StringUtils.RemoveDiacritics($"{typeInfo.Title} {fromDate} {toDate}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }

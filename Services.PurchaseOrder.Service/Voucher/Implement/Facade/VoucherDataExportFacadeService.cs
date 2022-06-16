@@ -98,8 +98,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fromDate = Convert.ToInt64(req.FromDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
-            var toDate = Convert.ToInt64(req.ToDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+            var fromDate = req.FromDate.HasValue ? req.FromDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
+            var toDate = req.ToDate.HasValue ? req.ToDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
             var fileName = StringUtils.RemoveDiacritics($"{typeInfo.Title} {fromDate} {toDate}.xlsx").Replace(" ","#");
             return (stream, fileName, contentType);
         }

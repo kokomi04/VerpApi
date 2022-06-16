@@ -965,13 +965,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
             toDate = "";
             foreach (var key in filters.Filters.Keys)
             {
-                if (key.ToLower().Contains("fromdate"))
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
                 {
-                    if (!filters.Filters[key].IsNullObject()) fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                    fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
                 }
-                if (key.ToLower().Contains("todate"))
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
                 {
-                    if (!filters.Filters[key].IsNullObject()) toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                    toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
                 }
             }
         }
