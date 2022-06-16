@@ -1,14 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Services.Organization.Model.HrConfig;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
+using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -237,7 +237,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             hrArea.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrTypeId, $"Xóa vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự { hrTypeId}", hrArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrTypeId, $"Xóa vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", hrArea.JsonSerialize());
             return true;
         }
         #endregion
@@ -270,7 +270,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationDBContext.HrField
-                .Where(x=>x.HrAreaId == hrAreaId)
+                .Where(x => x.HrAreaId == hrAreaId)
                 .AsQueryable();
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -321,7 +321,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     throw new BadRequestException(HrErrorCode.HrFieldAlreadyExisted);
                 }
-                
+
                 if (!((EnumDataType)hrField.DataTypeId).Convertible((EnumDataType)data.DataTypeId))
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển đổi kiểu dữ liệu từ {((EnumDataType)hrField.DataTypeId).GetEnumDescription()} sang {((EnumDataType)data.DataTypeId).GetEnumDescription()}");
@@ -584,7 +584,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         public async Task<HrFieldInputModel> UpdateHrField(int hrAreaId, int hrFieldId, HrFieldInputModel data)
         {
             data.HrAreaId = hrAreaId;
-            
+
             var hrArea = await (from a in _organizationDBContext.HrArea
                                 join t in _organizationDBContext.HrType on a.HrTypeId equals t.HrTypeId
                                 where a.HrAreaId == hrAreaId && a.HrTypeReferenceId.HasValue == false
@@ -617,11 +617,12 @@ namespace VErp.Services.Organization.Service.HrConfig
                         await _organizationDBContext.RenameColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), inputField.FieldName, data.FieldName);
                     }
                     await _organizationDBContext.UpdateColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
-                }else if (data.FormTypeId != EnumFormType.ViewOnly)
+                }
+                else if (data.FormTypeId != EnumFormType.ViewOnly)
                 {
                     await _organizationDBContext.AddColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
-                
+
 
                 _mapper.Map(data, inputField);
 

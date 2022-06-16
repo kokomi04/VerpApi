@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.AccountantEnum;
 
 namespace VErp.Services.Master.Model.Config

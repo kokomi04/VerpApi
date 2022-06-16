@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {

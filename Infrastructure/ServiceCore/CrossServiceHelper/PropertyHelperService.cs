@@ -1,19 +1,15 @@
-﻿using Grpc.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
     public interface IPropertyHelperService
-    {       
+    {
         Task<PropertyInfoModel> GetInfo(int propertyId);
         Task<IList<PropertyInfoModel>> GetByIds(IList<int> propertyIds);
     }
@@ -33,7 +29,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _logger = logger;
             _productClient = productClient;
         }
-       
+
         public async Task<PropertyInfoModel> GetInfo(int propertyId)
         {
             return await _httpCrossService.Get<PropertyInfoModel>($"api/internal/InternalProperty/{propertyId}");

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
@@ -168,7 +166,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Danh sách kho chứa mặc định", GroupName = "TT lưu kho")]
         public ICollection<int> StockIds { get; set; }
-        
+
         [Display(Name = "Ghi chú lưu kho", GroupName = "TT lưu kho")]
         public string DescriptionToStock { get; set; }
         // UnitConversion       

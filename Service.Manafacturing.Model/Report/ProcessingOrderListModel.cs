@@ -1,13 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Enums.MasterEnum;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.Step;
-using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.Report
 {

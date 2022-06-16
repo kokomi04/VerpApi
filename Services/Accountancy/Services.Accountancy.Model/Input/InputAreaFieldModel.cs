@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
-using System;
+using Newtonsoft.Json;
 using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
-using Newtonsoft.Json;
-using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject.DynamicBill;
+using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -47,7 +44,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public ControlStructureModel Structure { get; set; }
 
         public int? ObjectApprovalStepTypeId { get; set; }
-        
+
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
             profile.CreateMap<InputField, T>()
@@ -151,7 +148,7 @@ namespace VErp.Services.Accountancy.Model.Input
                 CustomButtonOnClick == curField.CustomButtonOnClick &&
                 MouseEnter == curField.MouseEnter &&
                 MouseLeave == curField.MouseLeave;
-    }
+        }
     }
 
     public class InputAreaFieldOutputFullModel : InputAreaFieldInputModel, IFieldExecData

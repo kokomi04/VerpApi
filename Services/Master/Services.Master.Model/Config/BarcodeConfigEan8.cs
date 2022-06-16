@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Master.Model.Config
+﻿namespace VErp.Services.Master.Model.Config
 {
-    public class BarcodeConfigEan8: BarcodeConfigEan
+    public class BarcodeConfigEan8 : BarcodeConfigEan
     {
     }
 }

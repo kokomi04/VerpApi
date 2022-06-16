@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
-    public class ProductionOrderMaterialsCalc: ProductionOrderMaterialsCalcBase
+    public class ProductionOrderMaterialsCalc : ProductionOrderMaterialsCalcBase
     {
         public long? PrivateKeyTable { get; set; }
         public long ProductionStepId { get; set; }

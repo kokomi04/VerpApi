@@ -1,12 +1,8 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission;
 

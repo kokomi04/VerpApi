@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Services.Stock.Model.Inventory;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.Stock
 {
@@ -22,7 +19,7 @@ namespace VErp.Services.Stock.Model.Stock
 
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
-                
+
         public long CreatedDatetimeUtc { set; get; }
 
         public long UpdatedDatetimeUtc { set; get; }
@@ -37,7 +34,7 @@ namespace VErp.Services.Stock.Model.Stock
 
         public List<ReportForm04InventoryDetailsOutputModel> InventoryDetailsOutputModel { set; get; }
     }
-        
+
     public class ReportForm04InventoryDetailsOutputModel
     {
         public long InventoryDetailId { get; set; }

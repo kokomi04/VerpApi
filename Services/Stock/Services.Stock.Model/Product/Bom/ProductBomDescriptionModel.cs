@@ -11,7 +11,7 @@
 //    public class ProductBomDescriptionModel : ProductBomInfoPathBaseModel
 //    {
 //        public long ProductBomDescriptionId { get; set; }
-     
+
 //        [Required(ErrorMessage = "Chi tiết mô tả không hợp lệ")]
 //        public override int ProductId { get; set; }
 

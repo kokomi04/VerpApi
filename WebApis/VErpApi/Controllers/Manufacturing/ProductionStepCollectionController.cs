@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -12,7 +9,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/ProductionProcess/productionStepCollection")]
     [ApiController]
-    public class ProductionStepCollectionController: VErpBaseController
+    public class ProductionStepCollectionController : VErpBaseController
     {
         private readonly IProductionStepCollectionService _productionStepCollectionService;
 

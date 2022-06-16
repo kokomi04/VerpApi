@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
-using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
@@ -20,7 +16,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
-        
+
         Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments();
         Task<CapacityOutputModel> GetGeneralCapacityDepartments(long productionOrderId);
 

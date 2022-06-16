@@ -1,15 +1,13 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -26,9 +24,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _workScheduleActivityLog;
+        //private readonly ObjectActivityLogFacade _workScheduleActivityLog;
 
-        public WorkScheduleMarkService(OrganizationDBContext organizationDBContext, IMapper mapper, IActivityLogService activityLogService)
+        public WorkScheduleMarkService(OrganizationDBContext organizationDBContext, IMapper mapper)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
@@ -49,7 +47,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 await _organizationDBContext.WorkScheduleMark.AddAsync(entity);
 
-                if(lastMark != null)
+                if (lastMark != null)
                 {
                     lastMark.ExpiryDate = entity.BeginDate.AddDays(-1);
                 }

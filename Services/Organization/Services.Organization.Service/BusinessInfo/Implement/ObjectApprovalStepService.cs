@@ -1,22 +1,14 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Services.Organization.Model.BusinessInfo;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Verp.Resources.Organization.ObjectProcess;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.BusinessInfo;
 
 namespace Services.Organization.Service.BusinessInfo.Implement
@@ -31,16 +23,13 @@ namespace Services.Organization.Service.BusinessInfo.Implement
     public class ObjectApprovalStepService : IObjectApprovalStepService
     {
         private readonly OrganizationDBContext _organizationContext;
-        private readonly ObjectActivityLogFacade _objectProcessActivityLog;
         private readonly IMapper _mapper;
         private readonly IInputTypeHelperService _inputTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
 
         public ObjectApprovalStepService(OrganizationDBContext organizationContext
-            , ILogger<ObjectApprovalStepService> logger
             , IMapper mapper
-            , IActivityLogService activityLogService
             , IInputTypeHelperService inputTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService)
         {
@@ -62,7 +51,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
 
         public async Task<bool> UpdateObjectApprovalStep(ObjectApprovalStepModel model)
         {
-            if(!model.IsEnable)
+            if (!model.IsEnable)
                 await ValidateObjectApprovalStep(model);
 
             var entity = await _organizationContext.ObjectApprovalStep.FirstOrDefaultAsync(x => x.ObjectTypeId == model.ObjectTypeId && x.ObjectId == model.ObjectId && x.ObjectApprovalStepTypeId == (int)model.ObjectApprovalStepTypeId);
@@ -83,7 +72,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
 
         private async Task ValidateObjectApprovalStep(ObjectApprovalStepModel model)
         {
-            switch(model.ObjectTypeId)
+            switch (model.ObjectTypeId)
             {
                 case (int)EnumObjectType.InputType:
                     await ValidateAccountancyBill(model.ObjectId, model.ObjectApprovalStepTypeId);
@@ -99,7 +88,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             if (EnumObjectApprovalStepType.ApprovalStep == type)
             {
                 var data = await _inputTypeHelperService.GetBillNotApprovedYet(inputTypeId);
-                if(data.Count >0)
+                if (data.Count > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước duyệt chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được duyệt");
             }
             else

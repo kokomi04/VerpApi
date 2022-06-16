@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Commons.Enums.ErrorCodes;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
 
 namespace VErp.Services.PurchaseOrder.Service
@@ -40,7 +36,7 @@ namespace VErp.Services.PurchaseOrder.Service
         Task<PageData<PoAssignmentOutputListByProduct>> PoAssignmentListByProduct(string keyword, IList<int> productIds, EnumPoAssignmentStatus? poAssignmentStatusId, int? assigneeUserId, long? purchasingSuggestId, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
 
         Task<PoAssignmentOutput> PoAssignmentInfo(long poAssignmentId, int? assigneeUserId);
-       
+
         Task<IList<PoAssignmentOutput>> PoAssignmentListBySuggest(long purchasingSuggestId);
 
         Task<long> PoAssignmentCreate(long purchasingSuggestId, PoAssignmentInput model);

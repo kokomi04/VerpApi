@@ -1,17 +1,11 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHumanResourceModel : ProductionHumanResourceInputModel
     {
-        public int CreatedByUserId { get; set; }       
+        public int CreatedByUserId { get; set; }
     }
 
     public class ProductionHumanResourceInputModel : IMapFrom<ProductionHumanResource>
@@ -25,6 +19,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string ProductionStepTitle { get; set; }
         public string ProductionOrderCode { get; set; }
         public long? Date { get; set; }
-        public string Note { get; set; }       
+        public string Note { get; set; }
     }
 }

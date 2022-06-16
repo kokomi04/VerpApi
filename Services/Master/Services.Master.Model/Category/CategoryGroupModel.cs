@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.Category
 {
-  
+
     public class CategoryGroupModel : IMapFrom<CategoryGroup>
     {
         public int CategoryGroupId { get; set; }

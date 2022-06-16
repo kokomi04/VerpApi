@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -15,7 +13,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames = null, NonCamelCaseDictionary categoryRow = null);
         Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
         Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
-        
+
         Task<IList<CategoryListModel>> GetDynamicCates();
         Task<IList<CategoryFullSimpleModel>> GetAllCategoryConfig();
     }

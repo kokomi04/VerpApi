@@ -1,14 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.MasterEnum;
-using AutoMapper;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-
-namespace VErp.Services.Accountancy.Model.Input
+﻿namespace VErp.Services.Accountancy.Model.Input
 {
     //public class InputActionSimpleProjectMappingModel : InputActionSimpleModel, IMapFrom<InputAction>
     //{

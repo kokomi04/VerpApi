@@ -1,12 +1,12 @@
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -22,7 +22,6 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace Verp.Services.ReportConfig.Service.Implement

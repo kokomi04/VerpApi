@@ -15,7 +15,7 @@
 
 //namespace VErpApi.Controllers.Manufacturing.Outsource
 //{
-    
+
 //    [Route("api/manufacturing/outsourceStepOrder")]
 //    [ApiController]
 //    public class OutsourceStepOrderController : VErpBaseController
@@ -69,5 +69,5 @@
 //            return await _outsourceStepOrderService.DeleteOutsouceStepOrder(outsourceStepOrderId);
 //        }
 //    }
-    
+
 //}

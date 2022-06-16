@@ -1,17 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ApiCore.Middleware
 {

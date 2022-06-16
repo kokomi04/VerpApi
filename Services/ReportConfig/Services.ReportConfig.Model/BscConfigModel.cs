@@ -1,7 +1,4 @@
-﻿using NPOI.OpenXmlFormats.Spreadsheet;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 
@@ -26,7 +23,7 @@ namespace Verp.Services.ReportConfig.Model
         public NonCamelCaseDictionary<BscCellModel> RowData { get; set; }
 
         public NonCamelCaseDictionary<string> Value { get; set; }
-        
+
 
         public static bool IsSqlSelect(object valueConfig)
         {

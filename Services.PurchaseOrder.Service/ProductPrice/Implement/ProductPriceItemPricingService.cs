@@ -7,13 +7,14 @@ using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
-using VErp.Commons.Library;
 
-namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement {
+namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
+{
 
 
     public class ProductPriceItemPricingService : IProductPriceItemPricingService
@@ -44,7 +45,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement {
             }
 
             var lst = await _purchaseOrderDBContext.ProductPriceConfigItemPrice.Where(p => p.ProductPriceConfigId == productPriceConfigId).ToListAsync();
-             
+
             var items = _mapper.Map<List<ProductPriceConfigItemPriceModel>>(lst);
             return new ProductPriceConfigItemPricingUpdate()
             {

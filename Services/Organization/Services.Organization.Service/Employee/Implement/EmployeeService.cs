@@ -1,24 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Organization.Model.Department;
-using VErp.Services.Organization.Model.Employee;
-using EmployeeEntity = VErp.Infrastructure.EF.OrganizationDB.Employee;
-
-namespace VErp.Services.Organization.Service.Employee.Implement
+﻿namespace VErp.Services.Organization.Service.Employee.Implement
 {
     //public class EmployeeService : IEmployeeService
     //{

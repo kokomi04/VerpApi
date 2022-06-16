@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Package;
@@ -96,7 +94,7 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 
     public class ImportInvInputModel : OpeningBalanceModel
     {
-       
+
 
         public static IList<EnumInventoryAction> InventoryActionIds = new[]
              {

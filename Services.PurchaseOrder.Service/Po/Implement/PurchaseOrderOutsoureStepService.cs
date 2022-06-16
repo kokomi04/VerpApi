@@ -1,9 +1,7 @@
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using VErp.Commons.Library;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,12 +43,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<IList<RefOutsourceStepRequestModel>> GetOutsourceStepRequest(long[] arrOutsourceStepId)
         {
-            
+
             var queryRefOutsourceStep = _purchaseOrderDBContext.RefOutsourceStepRequest.AsQueryable();
 
             if (arrOutsourceStepId != null && arrOutsourceStepId.Length > 0)
                 queryRefOutsourceStep = queryRefOutsourceStep.Where(x => arrOutsourceStepId.Contains(x.OutsourceStepRequestId));
-            
+
             // var calculatorTotalQuantityByOutsourceStep = (from d in _purchaseOrderDBContext.PurchaseOrderDetail
             //                                               join po in _purchaseOrderDBContext.PurchaseOrder on new { d.PurchaseOrderId, PurchaseOrderType = (int)EnumPurchasingOrderType.OutsourceStep } equals new { po.PurchaseOrderId, po.PurchaseOrderType }
             //                                               group d by new { d.OutsourceRequestId, d.ProductionStepLinkDataId } into g

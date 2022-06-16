@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -21,7 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? PurchasingSuggestDetailId { get; set; }
         public int CustomerId { get; set; }
         public long? PurchasingRequestDetailId { get; set; }
-      
+
 
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
@@ -38,5 +36,5 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PoProviderPricingCode { get; set; }
     }
 
-   
+
 }

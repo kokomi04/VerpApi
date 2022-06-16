@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Commons.Enums.StandardEnum;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -48,7 +45,7 @@ namespace VErpApi.Controllers.Manufacturing
             var productionProcess = await _productionProcessService.GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, containerId);
             var lsWarningMessage = await _validateProductionProcessService.ValidateOutsourceStepRequest(productionProcess);
 
-            return !lsWarningMessage.Any(x=>x.ObjectId == outsourceStepRequestId);
+            return !lsWarningMessage.Any(x => x.ObjectId == outsourceStepRequestId);
         }
 
         [HttpGet]

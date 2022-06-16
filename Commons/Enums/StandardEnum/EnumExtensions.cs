@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using System.Net;
 using System.Reflection;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 using VErp.Commons.ObjectExtensions.Extensions;
@@ -68,10 +66,10 @@ namespace VErp.Commons.Enums.StandardEnum
             }
         }
 
-       
+
         public static string GetEnumDescription<T>(this int value) where T : Enum
         {
-         
+
             return ((Enum)Enum.ToObject(typeof(T), value)).GetEnumDescription();
         }
 

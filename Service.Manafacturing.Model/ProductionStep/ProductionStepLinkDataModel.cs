@@ -1,7 +1,4 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -17,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal Quantity { get; set; }
     }
 
-    public class ProductionStepLinkDataModel: IMapFrom<ProductionStepLinkData>
+    public class ProductionStepLinkDataModel : IMapFrom<ProductionStepLinkData>
     {
         public long ProductionStepLinkDataId { get; set; }
         public string ProductionStepLinkDataCode { get; set; }
@@ -46,8 +43,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public int UnitId { get; set; }
         public int ProductUnitConversion { get; set; }
         public int DecimalPlace { get; set; }
-        public string ProductCode {get;set;}
-        public string ProductName {get;set;}
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
     }
 
     public class ProductionStepLinkDataInfo : ProductionStepLinkDataModel, IMapFrom<ProductionStepLinkDataRole>
@@ -67,21 +64,21 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.QuantityOrigin, v => v.MapFrom(m => m.ProductionStepLinkData.QuantityOrigin))
                 .ForMember(m => m.WorkloadConvertRate, v => v.MapFrom(m => m.ProductionStepLinkData.WorkloadConvertRate))
                 .ForMember(m => m.SortOrder, v => v.MapFrom(m => m.ProductionStepLinkData.SortOrder))
-                .ForMember(m => m.LinkDataObjectTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataObjectType) m.ProductionStepLinkData.LinkDataObjectTypeId))
+                .ForMember(m => m.LinkDataObjectTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataObjectType)m.ProductionStepLinkData.LinkDataObjectTypeId))
                 .ForMember(m => m.OutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceQuantity))
                 .ForMember(m => m.ExportOutsourceQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.ExportOutsourceQuantity))
                 .ForMember(m => m.OutsourcePartQuantity, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourcePartQuantity))
                 .ForMember(m => m.ProductionStepLinkDataCode, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataCode))
                 .ForMember(m => m.OutsourceRequestDetailId, v => v.MapFrom(m => m.ProductionStepLinkData.OutsourceRequestDetailId))
-                .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataType) m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
-                .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => (EnumProductionStepLinkType) m.ProductionStepLinkData.ProductionStepLinkTypeId))
+                .ForMember(m => m.ProductionStepLinkDataTypeId, v => v.MapFrom(m => (EnumProductionStepLinkDataType)m.ProductionStepLinkData.ProductionStepLinkDataTypeId))
+                .ForMember(m => m.ProductionStepLinkTypeId, v => v.MapFrom(m => (EnumProductionStepLinkType)m.ProductionStepLinkData.ProductionStepLinkTypeId))
                 .ForMember(m => m.ConverterId, v => v.MapFrom(m => m.ProductionStepLinkData.ConverterId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup))
                 .ReverseMap()
                 .ForMember(m => m.ProductionStepLinkData, v => v.Ignore())
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (int)m.ProductionStepLinkDataRoleTypeId));
-                //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup));
+            //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup));
         }
     }
 

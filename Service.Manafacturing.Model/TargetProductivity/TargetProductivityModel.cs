@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using AutoMapper;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using AutoMapper;
-using DocumentFormat.OpenXml.Wordprocessing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -40,6 +39,6 @@ namespace VErp.Services.Manafacturing.Model
         [Display(Name = "Công đoạn")]
         public int ProductionStepId { get; set; }
         [Display(Name = "Năng suất mục tiêu")]
-        public decimal TargetProductivity { get; set; }        
+        public decimal TargetProductivity { get; set; }
     }
 }

@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Services.ReportConfig.Model;
@@ -20,7 +20,6 @@ using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using Microsoft.AspNetCore.DataProtection;
 
 namespace Verp.Services.ReportConfig.Service.Implement
 {
@@ -333,7 +332,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-              
+
 
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data.JsonSerialize());
 

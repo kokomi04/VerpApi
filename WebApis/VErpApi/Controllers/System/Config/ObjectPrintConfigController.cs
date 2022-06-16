@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
@@ -37,7 +34,7 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpGet]
         [Route("")]
-        public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping([FromQuery]EnumObjectType objectTypeId, [FromQuery] int objectId)
+        public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
             return await _objectPrintConfigService.GetObjectPrintConfigMapping(objectTypeId, objectId);
         }

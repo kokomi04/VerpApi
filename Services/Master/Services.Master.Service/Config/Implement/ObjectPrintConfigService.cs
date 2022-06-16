@@ -77,7 +77,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await trans.CommitAsync();
 
 
-                await _objectPrintConfigActivityLog.LogBuilder(() => ObjectPrintConfigActivityLogMessage.MapingObjectPrintConfigs)      
+                await _objectPrintConfigActivityLog.LogBuilder(() => ObjectPrintConfigActivityLogMessage.MapingObjectPrintConfigs)
                  .ObjectType(mapping.ObjectTypeId)
                  .ObjectId(mapping.ObjectId)
                  .JsonData(mapping.JsonSerialize())
@@ -91,7 +91,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 _logger.LogError(ex, "MapObjectPrintConfig");
                 throw;
             }
-            
+
 
         }
 
@@ -136,8 +136,8 @@ namespace VErp.Services.Master.Service.Config.Implement
                     ObjectTypeId = (int)mapping.ObjectTypeId,
                     PrintConfigStandardId = (int)printConfigStandardIdMap[printConfigId]
                 })
-                .GroupBy(x=>x.PrintConfigStandardId)
-                .Select(x=>x.FirstOrDefault())
+                .GroupBy(x => x.PrintConfigStandardId)
+                .Select(x => x.FirstOrDefault())
                 .ToArray();
 
                 var oldObjectPrintConfigs = await _masterDbContext.ObjectPrintConfigStandardMapping
@@ -155,7 +155,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private IList<PrintConfigCustom> _printConfigs;
         public async Task<PageData<ObjectPrintConfigSearch>> GetObjectPrintConfigSearch(string keyword, int page, int size)
         {
-            keyword = (keyword?? "").Trim().ToLower();
+            keyword = (keyword ?? "").Trim().ToLower();
 
             _objectPrintConfigMappings = await _masterDbContext.ObjectPrintConfigMapping.AsNoTracking().ToListAsync();
             _printConfigs = await _masterDbContext.PrintConfigCustom.AsNoTracking().ToListAsync();

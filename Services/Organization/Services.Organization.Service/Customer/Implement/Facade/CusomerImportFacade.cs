@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -12,14 +12,13 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Services.Organization.Model.Customer;
-using static VErp.Commons.Constants.CurrencyCateConstants;
-using static VErp.Commons.Constants.CategoryFieldConstants;
 using VErp.Infrastructure.EF.OrganizationDB;
-using Microsoft.EntityFrameworkCore;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Organization.Model.Customer;
 using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
+using static VErp.Commons.Constants.CategoryFieldConstants;
+using static VErp.Commons.Constants.CurrencyCateConstants;
 
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
@@ -334,7 +333,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-    
+
         private T? GetValueByFieldNumber<T>(BaseCustomerImportModel obj, string propertyName, int number) where T : unmanaged
         {
             var fieldPrefix = GetFieldNameWithoutNumber(propertyName);

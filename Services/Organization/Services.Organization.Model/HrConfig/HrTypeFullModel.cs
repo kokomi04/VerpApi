@@ -1,13 +1,12 @@
-using System.Collections.Generic;
 using AutoMapper;
-using VErp.Commons.GlobalObject;
+using System.Collections.Generic;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace Services.Organization.Model.HrConfig
 {
-    public class HrTypeFullModel: HrTypeExecData {
+    public class HrTypeFullModel : HrTypeExecData
+    {
         public HrTypeFullModel()
         {
             HrAreas = new List<HrAreaModel>();

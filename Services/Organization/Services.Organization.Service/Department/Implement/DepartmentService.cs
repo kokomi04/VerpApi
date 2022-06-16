@@ -1,25 +1,20 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Department;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Department;
-using VErp.Infrastructure.EF.EFExtensions;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Organization.Department;
 
 namespace VErp.Services.Organization.Service.Department.Implement
 {
@@ -112,7 +107,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             }
             department.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
-           
+
             if (department.ImageFileId.HasValue)
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(department.ImageFileId.Value));
@@ -150,7 +145,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction,  bool? isActived, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
@@ -281,7 +276,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.NumberOfPerson = data.NumberOfPerson;
 
             await _organizationContext.SaveChangesAsync();
-         
+
             if (deleteImageFileId.HasValue)
             {
                 _asyncRunnerService.RunAsync<IPhysicalFileService>(s => s.DeleteFile(deleteImageFileId.Value));

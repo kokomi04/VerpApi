@@ -1,12 +1,12 @@
-using System.Collections.Generic;
 using AutoMapper;
+using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 {
-    public class ElectronicInvoiceMappingModel: IMapFrom<ElectronicInvoiceMapping>
+    public class ElectronicInvoiceMappingModel : IMapFrom<ElectronicInvoiceMapping>
     {
         public int ElectronicInvoiceMappingId { get; set; }
         public int ElectronicInvoiceProviderId { get; set; }
@@ -32,7 +32,7 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 
     public class ElectronicInvoiceMappingFieldModel
     {
-        public string SourceField {get;set;}
-        public string DestinationField {get;set;}
+        public string SourceField { get; set; }
+        public string DestinationField { get; set; }
     }
 }

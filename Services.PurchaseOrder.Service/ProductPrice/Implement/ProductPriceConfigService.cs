@@ -6,19 +6,20 @@ using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
-using VErp.Commons.Library;
-using Verp.Resources.PurchaseOrder.ProductPriceConfig;
 
-namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement {
+namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
+{
     public class ProductPriceConfigService : IProductPriceConfigService
     {
 

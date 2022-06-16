@@ -1,15 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
-using Services.Organization.Model.SystemParameter;
 using Services.Organization.Model.TimeKeeping;
-using Services.Organization.Service.Parameter;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.System.Organization
@@ -24,38 +18,38 @@ namespace VErpApi.Controllers.System.Organization
             _countedSymbolService = countedSymbolService;
         }
 
-        
+
         [HttpPost]
         [Route("")]
-        public async Task<long> AddCountedSymbol([FromBody]CountedSymbolModel model)
+        public async Task<long> AddCountedSymbol([FromBody] CountedSymbolModel model)
         {
             return await _countedSymbolService.AddCountedSymbol(model);
         }
-        
+
         [HttpDelete]
         [Route("{countedSymbolId}")]
-        public async Task<bool> DeleteCountedSymbol([FromRoute]int countedSymbolId)
+        public async Task<bool> DeleteCountedSymbol([FromRoute] int countedSymbolId)
         {
             return await _countedSymbolService.DeleteCountedSymbol(countedSymbolId);
         }
-        
+
         [HttpGet]
         [Route("")]
         public async Task<IList<CountedSymbolModel>> GetListCountedSymbol()
         {
             return await _countedSymbolService.GetListCountedSymbol();
         }
-        
+
         [HttpGet]
         [Route("{countedSymbolId}")]
-        public async Task<CountedSymbolModel> GetCountedSymbol([FromRoute]int countedSymbolId)
+        public async Task<CountedSymbolModel> GetCountedSymbol([FromRoute] int countedSymbolId)
         {
             return await _countedSymbolService.GetCountedSymbol(countedSymbolId);
         }
-        
+
         [HttpPut]
         [Route("{countedSymbolId}")]
-        public async Task<bool> UpdateCountedSymbol([FromRoute] int countedSymbolId, [FromBody]CountedSymbolModel model)
+        public async Task<bool> UpdateCountedSymbol([FromRoute] int countedSymbolId, [FromBody] CountedSymbolModel model)
         {
             return await _countedSymbolService.UpdateCountedSymbol(countedSymbolId, model);
 

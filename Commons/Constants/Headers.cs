@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace VErp.Commons.Constants
+﻿namespace VErp.Commons.Constants
 {
     public static class Headers
     {

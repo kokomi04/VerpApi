@@ -1,11 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Manafacturing.Model.ProductionStep
 {
-    public class ProductionStepGroupModel: ProductionStepModel
+    public class ProductionStepGroupModel : ProductionStepModel
     {
-        public IList<long>  ListProductionStepId { get; set; }
+        public IList<long> ListProductionStepId { get; set; }
     }
 }

@@ -2,21 +2,17 @@
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
-using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 
@@ -42,7 +38,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         public async Task<Stream> GenerateWordAsPdfFromTemplate(SimpleFileInfo fileInfo, string data, DbContext dbContext)
         {
-            var fileDocPath =  await GenerateWordFromTemplate(fileInfo, data, dbContext);
+            var fileDocPath = await GenerateWordFromTemplate(fileInfo, data, dbContext);
             return await WordOpenXmlTools.ConvertToPdf(fileDocPath, _appSetting.PuppeteerPdf);
         }
 
@@ -62,7 +58,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 #region generate row data into table
                 var tRowDetects = body.Descendants<TableRow>()
                                             .Where(x => x.InnerText.StartsWith(RegexDocExpression.DetectMainTable));
-                foreach(var tRowDetect in tRowDetects)
+                foreach (var tRowDetect in tRowDetects)
                 {
                     var mainTable = (Table)(tRowDetect?.Parent);
 
@@ -114,7 +110,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         mainTable.AutoFitWindow();
                     }
                 }
-                
+
                 #endregion
 
                 #region find and replace string with regex
@@ -142,7 +138,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 }
                 #endregion
 
-                
+
                 document.SaveAs(fileName).Close();
                 document.Close();
             }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library.Model
@@ -58,7 +57,7 @@ namespace VErp.Commons.Library.Model
     /// </summary>
     public class FieldDataNestedObjectAttribute : Attribute
     {
-       
+
     }
 
     public abstract class MappingDataRowAbstract

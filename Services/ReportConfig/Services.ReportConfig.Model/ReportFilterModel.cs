@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Infrastructure.EF.EFExtensions;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 
 namespace Verp.Services.ReportConfig.Model

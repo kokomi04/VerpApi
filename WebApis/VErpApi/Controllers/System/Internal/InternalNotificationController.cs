@@ -1,5 +1,5 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Master.Model.Notification;
@@ -8,7 +8,7 @@ using VErp.Services.Master.Service.Notification;
 namespace VErpApi.Controllers.System.Internal
 {
     [Route("api/internal/[controller]")]
-    public class InternalNotificationController: CrossServiceBaseController
+    public class InternalNotificationController : CrossServiceBaseController
     {
         private readonly INotificationService _notificationService;
         private readonly ISubscriptionService _subscriptionService;
@@ -21,7 +21,7 @@ namespace VErpApi.Controllers.System.Internal
 
         [HttpPost]
         [Route("")]
-        public async Task<bool> AddNotification([FromBody]NotificationAdditionalModel model)
+        public async Task<bool> AddNotification([FromBody] NotificationAdditionalModel model)
         {
             return await _notificationService.AddNotification(model);
         }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Grpc
+﻿namespace VErp.Services.Grpc
 {
     public static class GrpcServiceAssembly
     {

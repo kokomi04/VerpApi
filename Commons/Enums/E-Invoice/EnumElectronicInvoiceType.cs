@@ -9,7 +9,7 @@ namespace VErp.Commons.Enums.E_Invoice
 
         [Description("Hóa đơn điều chỉnh")]
         ElectronicInvoiceModify = 2,
-        
+
         [Description("Hóa đơn thay thế")]
         ElectronicInvoiceReplace = 3,
     }

@@ -13,7 +13,6 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -22,9 +21,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
-using CalendarEntity = VErp.Infrastructure.EF.OrganizationDB.Calendar;
-using VErp.Commons.Library.Formaters;
 using static Verp.Resources.Organization.Calendar.CalendarValidationMessage;
+using CalendarEntity = VErp.Infrastructure.EF.OrganizationDB.Calendar;
 
 namespace VErp.Services.Organization.Service.Calendar.Implement
 {
@@ -686,7 +684,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
 
                 if (currentWorkingHourInfo == null || currentWorkingWeeks.Count == 0)
                 {
-                    throw CalendarStartDateInvalid. BadRequestFormat(oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
+                    throw CalendarStartDateInvalid.BadRequestFormat(oldTime.AddMinutes(-_currentContext.TimeZoneOffset.GetValueOrDefault()));
                 }
 
                 foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))

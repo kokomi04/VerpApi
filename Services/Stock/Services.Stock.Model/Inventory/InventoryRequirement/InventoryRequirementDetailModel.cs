@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 

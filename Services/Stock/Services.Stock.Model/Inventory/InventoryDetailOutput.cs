@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
@@ -66,7 +64,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public bool? IsSubCalculation { get; set; }
 
-        public IList<InventoryDetailSubCalculationModel> InventoryDetailSubCalculations { get; set; } = new List<InventoryDetailSubCalculationModel>(); 
+        public IList<InventoryDetailSubCalculationModel> InventoryDetailSubCalculations { get; set; } = new List<InventoryDetailSubCalculationModel>();
     }
 
     public class InventoryRequirementSimpleInfo

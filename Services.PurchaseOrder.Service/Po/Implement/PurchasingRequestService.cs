@@ -1,30 +1,30 @@
 ﻿
-using System;
-using System.Linq;
-using System.Collections.Generic;
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
 using Microsoft.Extensions.Options;
-using VErp.Commons.Enums.StandardEnum;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
+using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Services.PurchaseOrder.Model;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using AutoMapper;
-using System.IO;
-using VErp.Services.PurchaseOrder.Model.Request;
-using Verp.Cache.RedisCache;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.PurchaseOrder.PurchasingRequest;
+using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.PurchaseOrder.Model;
+using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
@@ -66,7 +66,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _purchasingRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingRequest);
-            _currentContextService= currentContextService;
+            _currentContextService = currentContextService;
         }
 
 
@@ -774,7 +774,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .AsNoTracking()
                 .Where(r => r.ProductionOrderId == productionOrderId);
 
-            if(productMaterialsConsumptionGroupId.HasValue)
+            if (productMaterialsConsumptionGroupId.HasValue)
                 query = query.Where(r => r.ProductMaterialsConsumptionGroupId == productMaterialsConsumptionGroupId);
 
             var info = await query

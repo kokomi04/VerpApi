@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.Enums.Report
+﻿namespace VErp.Commons.Enums.Report
 {
     public enum EnumReportDetailTarget
     {

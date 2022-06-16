@@ -1,9 +1,4 @@
-﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -12,13 +7,11 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 
 namespace VErp.Services.Master.Service.Category.Implement
 {

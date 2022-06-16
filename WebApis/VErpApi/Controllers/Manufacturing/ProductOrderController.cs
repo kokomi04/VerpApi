@@ -1,18 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
-using VErp.Services.Manafacturing.Service.ProductionOrder;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
-using VErp.Commons.GlobalObject;
+using VErp.Services.Manafacturing.Service.ProductionOrder;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -88,7 +84,7 @@ namespace VErpApi.Controllers.Manufacturing
             [FromQuery] bool? hasNewProductionProcessVersion,
             [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate,hasNewProductionProcessVersion, filters);
+            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, hasNewProductionProcessVersion, filters);
         }
 
         [HttpPost]
@@ -212,7 +208,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}/productionProcessVersion")]
-        public async Task<bool> UpdateProductionProcessVersion([FromRoute]long productionOrderId, [FromQuery] int productId)
+        public async Task<bool> UpdateProductionProcessVersion([FromRoute] long productionOrderId, [FromQuery] int productId)
         {
             return await _productionOrderService.UpdateProductionProcessVersion(productionOrderId, productId);
         }

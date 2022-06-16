@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Text;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Leave

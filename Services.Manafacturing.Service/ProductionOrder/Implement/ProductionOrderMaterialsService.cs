@@ -1,23 +1,20 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using AutoMapper.QueryableExtensions;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Enums.Manafacturing;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -63,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             materials.AddRange(materialsMain);
             materials.AddRange(materialsConsump);
 
-           
+
             return new ProductionOrderMaterialsModel
             {
                 IsReset = productionOrder.IsResetProductionProcess,
@@ -91,7 +88,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Where(x => x.IsGroup == true && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder && x.ContainerId == productionOrderId)
-                .Include(x=>x.Step)
+                .Include(x => x.Step)
                 .ToListAsync();
 
             var productionAssignments = _manufacturingDBContext.ProductionAssignment.AsNoTracking()
@@ -262,7 +259,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (productionOrder == null)
                     throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
-                await UpdateProductionOrderMaterialsMain(productionOrderId, materials.Where(x=>x.ProductMaterialsConsumptionGroupId == 0).ToList());
+                await UpdateProductionOrderMaterialsMain(productionOrderId, materials.Where(x => x.ProductMaterialsConsumptionGroupId == 0).ToList());
                 await UpdateProductionOrderMaterialsConsump(productionOrderId, materials.Where(x => x.ProductMaterialsConsumptionGroupId > 0).ToList());
 
                 productionOrder.IsResetProductionProcess = false;
@@ -288,7 +285,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 .ToListAsync();
 
             var newMaterials = materials.AsQueryable().Where(x => x.ProductionOrderMaterialsId == 0)
-            .Select(x=> new ProductionOrderMaterialsConsumption
+            .Select(x => new ProductionOrderMaterialsConsumption
             {
                 ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
                 Quantity = x.Quantity,
@@ -299,9 +296,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 ConversionRate = x.ConversionRate,
                 DepartmentId = x.DepartmentId,
                 IsReplacement = x.IsReplacement,
-                InventoryRequirementStatusId = (int) x.InventoryRequirementStatusId,
+                InventoryRequirementStatusId = (int)x.InventoryRequirementStatusId,
                 ProductionOrderMaterialsConsumptionId = x.ProductionOrderMaterialsId
-                
+
             })
             .ToArray();
 

@@ -1,12 +1,11 @@
-﻿using AutoMapper.QueryableExtensions;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
@@ -18,9 +17,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using Verp.Resources.Stock.Product;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {
@@ -782,10 +780,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             //     await _stockDbContext.SaveChangesAsync();
             // }
 
-                // foreach (var t in newGroups)
-                // {
-                //     _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
-                // }
+            // foreach (var t in newGroups)
+            // {
+            //     _groupConsumptions.Add(t.Title.NormalizeAsInternalName(), t);
+            // }
         }
 
         private StepSimpleInfo GetStep(string StepName)

@@ -1,8 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.MasterEnum;
-
-namespace VErp.Services.Organization.Model.BusinessInfo
+﻿namespace VErp.Services.Organization.Model.BusinessInfo
 
 {
     //public class BusinessInfoModel

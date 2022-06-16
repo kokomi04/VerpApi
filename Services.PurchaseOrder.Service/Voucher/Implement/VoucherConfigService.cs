@@ -8,24 +8,21 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.Voucher;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
@@ -261,7 +258,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             foreach (var item in voucherTypes)
             {
-               
+
                 if (typeFields.TryGetValue(item.VoucherTypeId, out var _fields))
                 {
                     item.AreaFields = _fields;
@@ -934,7 +931,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 query = query.Where(f => f.FieldName.Contains(keyword) || f.Title.Contains(keyword));
             }
 
-            if(objectApprovalStepTypeId.HasValue)
+            if (objectApprovalStepTypeId.HasValue)
             {
                 query = query.Where(f => f.ObjectApprovalStepTypeId.HasValue && (f.ObjectApprovalStepTypeId & objectApprovalStepTypeId.Value) == objectApprovalStepTypeId.Value);
             }

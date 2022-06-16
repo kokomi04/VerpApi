@@ -1,21 +1,18 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission;
 using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
-using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
 
 namespace VErpApi.Controllers.System
 {
@@ -169,7 +166,7 @@ namespace VErpApi.Controllers.System
         [AllowAnonymous]
         public bool AuthCacheRemove()
         {
-         //   if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
+            //   if (!_currentContextService.IsDeveloper) throw new BadRequestException("Clean auth caching require developer permission!");
             _roleService.RemoveAuthCache();
             return true;
         }
@@ -177,9 +174,9 @@ namespace VErpApi.Controllers.System
         [HttpGet]
         [Route("AuthCacheGetApis")]
         [GlobalApi]
-        public  HashSet<Guid> AuthCacheGetApis([FromQuery] int moduleId)
+        public HashSet<Guid> AuthCacheGetApis([FromQuery] int moduleId)
         {
-            return  _cachingService.TryGet<HashSet<Guid>>(ModuleApiEndpointMappingsCacheKey(moduleId));
+            return _cachingService.TryGet<HashSet<Guid>>(ModuleApiEndpointMappingsCacheKey(moduleId));
         }
 
         [HttpGet]

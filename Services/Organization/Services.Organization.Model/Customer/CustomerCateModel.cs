@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using Verp.Resources.Organization.Customer;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -11,7 +8,7 @@ namespace VErp.Services.Organization.Model.Customer
     public class CustomerCateModel : IMapFrom<CustomerCate>
     {
         public int? CustomerCateId { get; set; }
-        [Required(ErrorMessageResourceType =typeof(CustomerValidationMessage), ErrorMessageResourceName =nameof(CustomerValidationMessage.CustomerCateCodeTooShort))]
+        [Required(ErrorMessageResourceType = typeof(CustomerValidationMessage), ErrorMessageResourceName = nameof(CustomerValidationMessage.CustomerCateCodeTooShort))]
         [MinLength(1, ErrorMessageResourceType = typeof(CustomerValidationMessage), ErrorMessageResourceName = nameof(CustomerValidationMessage.CustomerCateCodeTooShort))]
         [MaxLength(128, ErrorMessageResourceType = typeof(CustomerValidationMessage), ErrorMessageResourceName = nameof(CustomerValidationMessage.CustomerCateCodeTooLong))]
         public string CustomerCateCode { get; set; }

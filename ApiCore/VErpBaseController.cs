@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.ApiCore
                 if (!_isFirstCall)
                     return _userId;
 
-                _isFirstCall = false;                               
+                _isFirstCall = false;
                 foreach (var claim in User.Claims)
                 {
                     if (claim.Type != "userId")

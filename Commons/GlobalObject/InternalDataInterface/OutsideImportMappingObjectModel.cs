@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
+﻿using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {

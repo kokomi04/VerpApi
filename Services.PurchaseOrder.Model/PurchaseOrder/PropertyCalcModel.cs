@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
@@ -79,7 +76,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     public class PropertyCalcProductOrderModel : IMapFrom<PropertyCalcProductOrder>
     {
         public string OrderCode { get; set; }
-        public decimal OrderProductQuantity { get; set; }     
+        public decimal OrderProductQuantity { get; set; }
     }
 
     public class PropertyCalcProductDetailModel : IMapFrom<PropertyCalcProductDetail>

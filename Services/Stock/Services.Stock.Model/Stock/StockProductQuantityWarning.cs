@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.StandardEnum;
-
-namespace VErp.Services.Stock.Model.Stock
+﻿namespace VErp.Services.Stock.Model.Stock
 {
     /// <summary>
     /// Cảnh báo số lượng tồn kho theo min max của sản phẩm
@@ -11,9 +6,9 @@ namespace VErp.Services.Stock.Model.Stock
     public class StockProductQuantityWarning
     {
         public int ProductId { get; set; }
-       
+
         public string ProductCode { get; set; }
-        
+
         public string ProductName { get; set; }
 
         public string Specification { set; get; }
@@ -48,5 +43,5 @@ namespace VErp.Services.Stock.Model.Stock
         //public decimal ProductUnitConversionRemaining { set; get; }
 
     }
-  
+
 }

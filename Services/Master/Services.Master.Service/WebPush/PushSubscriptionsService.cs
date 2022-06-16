@@ -1,14 +1,13 @@
+using ActivityLogDB;
+using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ActivityLogDB;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
-using Lib.Net.Http.WebPush;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings.Model;
@@ -26,7 +25,7 @@ namespace VErp.Services.Master.Service.Webpush
 
         Task<String> GetPublicKey();
     }
-    
+
 
     public class PushSubscriptionsService : IPushSubscriptionsService
     {
@@ -64,7 +63,7 @@ namespace VErp.Services.Master.Service.Webpush
 
         public async Task<string> GetPublicKey()
         {
-            if(string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey))
+            if (string.IsNullOrWhiteSpace(_appSetting.WebPush.PublicKey))
                 throw new BadRequestException(GeneralCode.InternalError, "Hệ thống gửi thông báo chưa sẵn sàng");
             return await Task.FromResult(_appSetting.WebPush.PublicKey);
         }

@@ -1,10 +1,5 @@
-﻿
-using AutoMapper;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Input

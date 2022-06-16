@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 
@@ -34,13 +33,13 @@ namespace VErp.Services.Stock.Model.Product
         public int? InputStepId { get; set; }
         public int? OutputStepId { get; set; }
         public Boolean? IsIgnoreStep { get; set; }
-     
+
     }
 
 
-    public class ProductBomPreviewOutput: ProductBomOutputBase
+    public class ProductBomPreviewOutput : ProductBomOutputBase
     {
-      
+
 
         public IList<int> PropertyIds { get; set; }
 

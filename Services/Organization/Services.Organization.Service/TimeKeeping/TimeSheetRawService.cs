@@ -1,18 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
-using VErp.Commons.Constants;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.Organization.TimeKeeping;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -30,7 +24,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<bool> UpdateTimeSheetRaw(long timeSheetRawId, TimeSheetRawModel model);
 
 
-        Task<CategoryNameModel> GetFieldDataForMapping();
+        CategoryNameModel GetFieldDataForMapping();
 
         Task<bool> ImportTimeSheetRawFromMapping(ImportExcelMapping mapping, Stream stream);
     }
@@ -105,7 +99,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -154,12 +148,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         var pattern = @"(?<hour>\d+):(?<min>\d+)";
                         Regex rx = new Regex(pattern);
                         MatchCollection match = rx.Matches(value);
-                        if(match.Count != 1) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
-                       
-                        if(!int.TryParse(match[0].Groups["hour"].Value, out int hour) || !int.TryParse(match[0].Groups["min"].Value, out int min))
+                        if (match.Count != 1) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+
+                        if (!int.TryParse(match[0].Groups["hour"].Value, out int hour) || !int.TryParse(match[0].Groups["min"].Value, out int min))
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
 
-                        if(hour >= 12 || hour < 0 || min >= 60 || min < 0) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+                        if (hour >= 12 || hour < 0 || min >= 60 || min < 0) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
 
                         TimeSpan time = TimeSpan.FromSeconds(hour * 60 * 60 + min * 60);
 

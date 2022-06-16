@@ -6,21 +6,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {
@@ -223,7 +216,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 case nameof(ProductImportModel.PackingWidth):
                     return (EnumDataType.Decimal, product.PackingWidth);
                 case nameof(ProductImportModel.PackingLong):
-                    return (EnumDataType.Decimal, product.PackingLong);              
+                    return (EnumDataType.Decimal, product.PackingLong);
 
                 case nameof(ProductImportModel.Long):
                     return (EnumDataType.Decimal, product.Long);

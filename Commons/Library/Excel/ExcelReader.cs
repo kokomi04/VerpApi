@@ -1,17 +1,13 @@
-﻿using System;
+﻿using NPOI.SS.UserModel;
+using NPOI.SS.Util;
+using NPOI.XSSF.UserModel;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using NPOI;
-using NPOI.HSSF.UserModel;
-using NPOI.SS.Formula;
-using NPOI.SS.UserModel;
-using NPOI.SS.Util;
-using NPOI.XSSF.UserModel;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -121,7 +117,7 @@ namespace VErp.Commons.Library
                 eval.IgnoreMissingWorkbooks = true;
                 eval.EvaluateAll();
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
             }
@@ -609,7 +605,7 @@ namespace VErp.Commons.Library
 
             var type = cell.CellType;
 
-            string formulaMessage = "";
+            // string formulaMessage = "";
             string cellFormular = "";
             if (cell.CellType == CellType.Formula)
             {
@@ -618,7 +614,7 @@ namespace VErp.Commons.Library
                     cellFormular = cell.CellFormula;
 
                 }
-                catch (Exception _)
+                catch (Exception)
                 {
 
                 }
@@ -628,7 +624,7 @@ namespace VErp.Commons.Library
                     //hssfwb.GetCreationHelper().CreateFormulaEvaluator().EvaluateFormulaCell(cell);
                     type = cell.CachedFormulaResultType;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //formulaMessage = cellFormular + " => " + ex.Message;
                 }

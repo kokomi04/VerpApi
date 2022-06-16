@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Commons.GlobalObject
 {
@@ -25,7 +23,8 @@ namespace VErp.Commons.GlobalObject
         public bool IsModulePermissionInherit { get; }
         public bool IsDataPermissionInheritOnStock { get; }
         public IList<int> ChildrenRoleIds { get; }
-        public IList<int> RoleIds {
+        public IList<int> RoleIds
+        {
             get
             {
                 var roleIds = new List<int>();

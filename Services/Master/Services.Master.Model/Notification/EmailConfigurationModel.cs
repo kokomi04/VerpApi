@@ -3,7 +3,7 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.Notification
 {
-    public class EmailConfigurationModel: IMapFrom<EmailConfiguration>
+    public class EmailConfigurationModel : IMapFrom<EmailConfiguration>
     {
         public string SmtpHost { get; set; }
         public int Port { get; set; }

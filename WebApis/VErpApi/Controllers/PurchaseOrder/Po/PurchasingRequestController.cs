@@ -1,20 +1,16 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service;
@@ -171,7 +167,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         {
             return await _purchasingRequestService.Delete(null, null, productionOrderId, purchasingRequestId).ConfigureAwait(true);
         }
-       
+
 
         [HttpGet]
         [Route("fieldDataForMapping")]
@@ -182,7 +178,7 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public  IAsyncEnumerable<PurchasingRequestInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
+        public IAsyncEnumerable<PurchasingRequestInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
             if (file == null || data == null)
             {
@@ -278,7 +274,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId ,[FromQuery] int? productMaterialsConsumptionGroupId)
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId)
         {
             return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId, productMaterialsConsumptionGroupId);
         }

@@ -4,11 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
@@ -19,7 +18,6 @@ using VErp.Services.Grpc;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
-using VErp.Commons.Library;
 
 namespace CreateNewVersionsOfBills
 {
@@ -37,9 +35,11 @@ namespace CreateNewVersionsOfBills
             ConfigReadWriteDBContext(services);
 
             services.AddCustomGrpcClient(GrpcServiceAssembly.Assembly,
-                configureClient => {
+                configureClient =>
+                {
                     configureClient.Address = new Uri(AppSetting.GrpcInternal?.Address?.TrimEnd('/') ?? "http://0.0.0.0:9999/");
-                }, configureOptions => {
+                }, configureOptions =>
+                {
                     configureOptions.SuppressContextNotFoundErrors = true;
                 });
 

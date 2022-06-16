@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Organization.Model.Customer
 {

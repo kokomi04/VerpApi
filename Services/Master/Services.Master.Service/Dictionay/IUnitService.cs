@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Service.Dictionay
 {

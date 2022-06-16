@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using GuideEnity = VErp.Infrastructure.EF.MasterDB.Guide;
 
 namespace VErp.Services.Master.Model.Guide
@@ -11,7 +8,7 @@ namespace VErp.Services.Master.Model.Guide
         public string Description { get; set; }
     }
 
-    public class GuideModelOutput: IMapFrom<GuideEnity>
+    public class GuideModelOutput : IMapFrom<GuideEnity>
     {
         public int GuideId { get; set; }
         public int? GuideCateId { get; set; }

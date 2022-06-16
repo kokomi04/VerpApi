@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
@@ -19,7 +17,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId);
         Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId);
     }
-    public class ManufacturingHelperService: IManufacturingHelperService
+    public class ManufacturingHelperService : IManufacturingHelperService
     {
         private readonly IHttpCrossService _httpCrossService;
         private readonly AppSetting _appSetting;
@@ -36,7 +34,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
-            return await _httpCrossService.Post<bool>($"api/internal/InternalManufacturing/productionProcess/copy?containerTypeId={containerTypeId}&fromContainerId={fromContainerId}&toContainerId={toContainerId}", new {});
+            return await _httpCrossService.Post<bool>($"api/internal/InternalManufacturing/productionProcess/copy?containerTypeId={containerTypeId}&fromContainerId={fromContainerId}&toContainerId={toContainerId}", new { });
         }
 
         public async Task<IList<StepSimpleInfo>> GetStepByArrayId(int[] arrayId)
@@ -53,7 +51,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         {
             return await _httpCrossService.Put<bool>($"api/internal/InternalManufacturing/outsourceRequest/Part/Status", outsourcePartRequestId);
         }
-      
+
         public async Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId)
         {
             return await _httpCrossService.Put<bool>($"api/internal/InternalManufacturing/outsourceRequest/Step/Status", outsourceStepRequestId);

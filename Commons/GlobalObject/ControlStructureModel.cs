@@ -15,7 +15,7 @@ namespace VErp.Commons.GlobalObject
         }
     }
 
-    public class ControlButtonModel 
+    public class ControlButtonModel
     {
         public string Title { get; set; }
         public string ButtonCode { get; set; }

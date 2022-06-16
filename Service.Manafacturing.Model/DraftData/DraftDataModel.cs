@@ -1,11 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Library;
+﻿using VErp.Commons.GlobalObject;
 using DraftDataEntity = VErp.Infrastructure.EF.ManufacturingDB.DraftData;
 namespace VErp.Services.Manafacturing.Model.DraftData
 {

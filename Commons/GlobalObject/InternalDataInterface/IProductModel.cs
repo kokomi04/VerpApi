@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
@@ -95,7 +93,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
             public bool IsFreeStyle { get; set; }
             public string FactorExpression { get; set; }
             public string ConversionDescription { get; set; }
-            public int DecimalPlace { get; set; }           
+            public int DecimalPlace { get; set; }
         }
 
         public class ProductModelCustomer

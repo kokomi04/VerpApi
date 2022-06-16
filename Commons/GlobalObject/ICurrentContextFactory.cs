@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.GlobalObject
+﻿namespace VErp.Commons.GlobalObject
 {
     public interface ICurrentContextFactory
     {

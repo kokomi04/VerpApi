@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
@@ -59,7 +57,7 @@ namespace VErp.Services.Organization.Model.Customer
     }
 
 
-    public class CustomerListExportModel: CustomerListFilterModel
+    public class CustomerListExportModel : CustomerListFilterModel
     {
         public IList<string> FieldNames { get; set; }
     }

@@ -107,7 +107,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-              
+
                 await trans.CommitAsync();
 
                 await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
@@ -178,7 +178,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-                
+
                 await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Update)
                 .MessageResourceFormatDatas(config.PrintConfigName)
                 .ObjectId(config.PrintConfigCustomId)
@@ -281,7 +281,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             }
 
             await _masterDBContext.SaveChangesAsync();
-     
+
             await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
             .MessageResourceFormatDatas(printConfig.PrintConfigName)
             .ObjectId(printConfig.PrintConfigCustomId)

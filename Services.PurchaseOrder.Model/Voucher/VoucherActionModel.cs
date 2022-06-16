@@ -1,18 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.MasterEnum;
-using AutoMapper;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-
-namespace VErp.Services.PurchaseOrder.Model.Voucher
+﻿namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
     //public class VoucherActionSimpleProjectMappingModel : VoucherActionSimpleModel, IMapFrom<VoucherAction>
     //{
-       
+
     //}
     //public class VoucherActionUseModel : VoucherActionSimpleProjectMappingModel
     //{

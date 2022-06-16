@@ -11,10 +11,8 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -168,17 +166,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             productionOrderIds = productionOrderIds.Distinct().ToList();
 
             var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
-                                       join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
-                                       join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
-                                       where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
-                                       select new
-                                       {
-                                           StepId = ps.StepId.Value,
-                                           ph.ObjectId,
-                                           ph.ObjectTypeId,
-                                           ph.ProductionQuantity,
-                                           Date = ph.Date.Value
-                                       }).ToListAsync();
+                                             join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
+                                             join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                             where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
+                                             select new
+                                             {
+                                                 StepId = ps.StepId.Value,
+                                                 ph.ObjectId,
+                                                 ph.ObjectTypeId,
+                                                 ph.ProductionQuantity,
+                                                 Date = ph.Date.Value
+                                             }).ToListAsync();
 
             var result = productionHistories
                 .GroupBy(ph => ph.Date.GetUnix())

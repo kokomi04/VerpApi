@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.Enums.ErrorCodes
+﻿namespace VErp.Commons.Enums.ErrorCodes
 {
     public enum BackupErrorCode
     {

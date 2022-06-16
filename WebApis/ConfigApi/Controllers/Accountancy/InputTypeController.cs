@@ -1,16 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Input;
-using VErp.Services.Accountancy.Service.Input;
-
-namespace ConfigApi.Controllers.Accountancy
+﻿namespace ConfigApi.Controllers.Accountancy
 {
     //[Route("api/accountancy/config/inputType")]
 

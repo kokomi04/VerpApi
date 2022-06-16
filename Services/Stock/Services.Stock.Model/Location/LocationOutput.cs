@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace VErp.Services.Stock.Model.Location
+﻿namespace VErp.Services.Stock.Model.Location
 {
     /// <summary>
     /// Vị trí trong kho

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+﻿using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Stock.Model.Stock
 {

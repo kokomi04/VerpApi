@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Math.EC.Rfc7748;
 using Services.Organization.Model.SystemParameter;
 using System;
 using System.Linq;
@@ -26,7 +25,7 @@ namespace Services.Organization.Service.Parameter.Implement
         private readonly ObjectActivityLogFacade _systemParameterActivityLog;
 
         public SystemParameterService(
-            OrganizationDBContext organizationDBContext, 
+            OrganizationDBContext organizationDBContext,
             ILogger<SystemParameterService> logger,
             ICurrentContextService currentContextService,
             IActivityLogService activityLogService)
@@ -64,7 +63,7 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _organizationDBContext.AddAsync(sParameterInfo);
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-                 
+
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Create)
                       .MessageResourceFormatDatas(spm.Name)
                       .ObjectId(sParameterInfo.SystemParameterId)
@@ -97,7 +96,7 @@ namespace Services.Organization.Service.Parameter.Implement
 
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-                    
+
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Delete)
                      .MessageResourceFormatDatas(sParameterInfo.Name)
                      .ObjectId(sParameterInfo.SystemParameterId)
@@ -117,7 +116,7 @@ namespace Services.Organization.Service.Parameter.Implement
         public async Task<PageData<SystemParameterModel>> GetList(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            IQueryable<SystemParameter> query = _organizationDBContext.SystemParameter.Where(x=> !x.IsDeleted);
+            IQueryable<SystemParameter> query = _organizationDBContext.SystemParameter.Where(x => !x.IsDeleted);
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -163,16 +162,16 @@ namespace Services.Organization.Service.Parameter.Implement
         public async Task<bool> UpdateSystemParameter(int keyId, SystemParameterModel spm)
         {
             var checkExistsFieldName = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).AnyAsync(x => x.FieldName.Equals(spm.Fieldname.Trim()));
-            if(checkExistsFieldName)
+            if (checkExistsFieldName)
             {
                 throw new BadRequestException(SystemParameterErrorCode.SystemParameterAlreadyExisted);
             }
-            using(var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
                 try
                 {
                     var sParameterInfo = await _organizationDBContext.SystemParameter.Where(q => !q.IsDeleted).FirstOrDefaultAsync(x => x.SystemParameterId.Equals(keyId));
-                    if(sParameterInfo == null)
+                    if (sParameterInfo == null)
                         throw new BadRequestException(SystemParameterErrorCode.SystemParameterNotFound);
                     sParameterInfo.FieldName = spm.Fieldname;
                     sParameterInfo.Name = spm.Name;
@@ -183,7 +182,7 @@ namespace Services.Organization.Service.Parameter.Implement
 
                     await _organizationDBContext.SaveChangesAsync();
                     trans.Commit();
-                 
+
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Update)
                        .MessageResourceFormatDatas(sParameterInfo.Name)
                        .ObjectId(sParameterInfo.SystemParameterId)
@@ -192,13 +191,13 @@ namespace Services.Organization.Service.Parameter.Implement
 
                     return true;
                 }
-                catch(Exception)
+                catch (Exception)
                 {
                     trans.TryRollbackTransaction();
                     throw;
                 }
             }
-            
+
         }
     }
 }

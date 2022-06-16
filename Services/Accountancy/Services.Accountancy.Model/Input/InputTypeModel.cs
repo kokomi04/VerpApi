@@ -1,8 +1,6 @@
 ﻿
 using AutoMapper;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Stock.Model.Stock
+﻿namespace VErp.Services.Stock.Model.Stock
 {
     public class StockSumaryReportOutput
     {
@@ -16,6 +12,6 @@ namespace VErp.Services.Stock.Model.Stock
         public decimal PrimaryQualtityBefore { get; set; }
         public decimal PrimaryQualtityInput { get; set; }
         public decimal PrimaryQualtityOutput { get; set; }
-        public decimal PrimaryQualtityAfter { get; set; }        
+        public decimal PrimaryQualtityAfter { get; set; }
     }
 }

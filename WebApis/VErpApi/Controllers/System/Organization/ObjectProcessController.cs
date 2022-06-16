@@ -1,19 +1,10 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StockEnum;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Service.Department;
-using VErp.Services.Organization.Model.Department;
-using Services.Organization.Service.Department;
-using Services.Organization.Model.Deparment;
-using Services.Organization.Service.BusinessInfo.Implement;
+﻿using Microsoft.AspNetCore.Mvc;
 using Services.Organization.Model.BusinessInfo;
-using System.Collections.Generic;
 using Services.Organization.Service.BusinessInfo;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Infrastructure.ApiCore;
 
 namespace VErpApi.Controllers.System
 {
@@ -34,7 +25,7 @@ namespace VErpApi.Controllers.System
             return _objectProcessService.ObjectProcessList();
         }
 
-       
+
         [HttpGet]
         [Route("{objectProcessTypeId}/Steps")]
         public async Task<IList<ObjectProcessInfoStepListModel>> ObjectProcessSteps([FromRoute] EnumObjectProcessType objectProcessTypeId)

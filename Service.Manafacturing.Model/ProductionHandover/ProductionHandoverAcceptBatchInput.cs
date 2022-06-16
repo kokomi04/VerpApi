@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Manafacturing.Model.ProductionHandover
+﻿namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHandoverAcceptBatchInput
     {

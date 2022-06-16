@@ -3,7 +3,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace Services.Organization.Model.TimeKeeping
 {
-    public class TimeSheetAggregateModel: IMapFrom<TimeSheetAggregate>
+    public class TimeSheetAggregateModel : IMapFrom<TimeSheetAggregate>
     {
         public long TimeSheetAggregateId { get; set; }
         public long TimeSheetId { get; set; }

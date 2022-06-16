@@ -14,7 +14,8 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement {
+namespace VErp.Services.PurchaseOrder.Service.Implement
+{
 
     public class PurchaseOrderOutsourcePropertyService : PurchaseOrderOutsourceAbstract, IPurchaseOrderOutsourcePropertyService
     {

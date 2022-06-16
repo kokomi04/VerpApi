@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Infrastructure.ServiceCore.Model
-{   
+﻿namespace VErp.Infrastructure.ServiceCore.Model
+{
     //public class CustomCodeModelOutput
     //{
     //    public string CustomCode { get; set; }

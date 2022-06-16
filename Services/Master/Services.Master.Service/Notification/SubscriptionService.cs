@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using ActivityLogDB;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -55,7 +55,7 @@ namespace VErp.Services.Master.Service.Notification
             var exists = await _activityLogContext.Subscription.FirstOrDefaultAsync(x => x.UserId == _currentContextService.UserId && x.BillTypeId == model.BillTypeId && x.ObjectTypeId == model.ObjectTypeId && x.ObjectId == model.ObjectId);
             if (exists == null)
             {
-                if(marker)
+                if (marker)
                 {
                     await AddSubscription(new SubscriptionModel
                     {
@@ -68,9 +68,9 @@ namespace VErp.Services.Master.Service.Notification
                 return true;
             }
 
-            if(!marker)
+            if (!marker)
                 exists.IsDeleted = true;
-                
+
             _activityLogContext.SaveChanges();
 
             return true;

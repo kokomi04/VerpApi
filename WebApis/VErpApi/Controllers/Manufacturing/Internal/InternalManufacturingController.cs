@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.Step;
@@ -14,12 +12,12 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]
-    public class InternalManufacturingController: CrossServiceBaseController
+    public class InternalManufacturingController : CrossServiceBaseController
     {
         private readonly IStepService _stepService;
         private readonly IProductionProcessService _productionProcessService;
-        private readonly IOutsourcePartRequestService  _outsourcePartRequestService;
-        private readonly IOutsourceStepRequestService  _outsourceStepRequestService;
+        private readonly IOutsourcePartRequestService _outsourcePartRequestService;
+        private readonly IOutsourceStepRequestService _outsourceStepRequestService;
 
         public InternalManufacturingController(
             IStepService stepService,

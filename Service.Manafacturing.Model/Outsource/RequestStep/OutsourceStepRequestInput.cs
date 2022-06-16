@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
@@ -23,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
     {
         public string Mode { get; set; }
         public ZoomSetting Zoom { get; set; }
-        public IList<NodeSetting> Nodes {get;set;}
+        public IList<NodeSetting> Nodes { get; set; }
     }
 
     public class ZoomSetting

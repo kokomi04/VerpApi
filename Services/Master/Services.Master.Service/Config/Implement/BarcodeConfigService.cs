@@ -3,22 +3,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.BarcodeConfig;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Config;
-using VErp.Services.Master.Service.Activity;
-using System.Linq;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Master.Config.BarcodeConfig;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Model.Config;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {
@@ -171,7 +169,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         public async Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = (from c in _masterContext.BarcodeConfig select c);
             if (!string.IsNullOrWhiteSpace(keyword))
             {

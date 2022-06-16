@@ -1,11 +1,11 @@
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -98,7 +98,7 @@ namespace VErp.Services.Manafacturing.Service
                     await RemoveDefaultTargetProductivity();
 
                 model.TargetProductivityId = targetProductivityId;
-                foreach(var d in model.TargetProductivityDetail)
+                foreach (var d in model.TargetProductivityDetail)
                 {
                     d.TargetProductivityId = targetProductivityId;
                 }
@@ -106,7 +106,7 @@ namespace VErp.Services.Manafacturing.Service
                 _mapper.Map(model, entity);
 
                 foreach (var detail in details)
-                {                    
+                {
                     var mDetail = model.TargetProductivityDetail.FirstOrDefault(x => x.TargetProductivityDetailId == detail.TargetProductivityDetailId);
                     if (mDetail != null)
                         _mapper.Map(mDetail, detail);

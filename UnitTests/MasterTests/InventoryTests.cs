@@ -5,21 +5,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 using VErp.Services.Stock.Service.Stock;
 using Xunit;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using VErp.Commons.GlobalObject;
 
 namespace MasterTests
 {
@@ -539,7 +536,7 @@ namespace MasterTests
                 stockInfo = await _stockDBContext.Stock.FirstOrDefaultAsync(p => p.StockName == stockName);
 
             }
-            
+
             return stockInfo;
 
         }

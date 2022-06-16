@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.StockDB;
-
-namespace VErp.Services.Stock.Model.Product
+﻿namespace VErp.Services.Stock.Model.Product
 {
     public class ProductElementModel
     {

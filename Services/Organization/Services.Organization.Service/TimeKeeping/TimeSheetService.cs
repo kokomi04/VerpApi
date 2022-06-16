@@ -1,14 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Verp.Resources.GlobalObject;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -259,7 +257,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _organizationDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                
+
                 return true;
 
             }
@@ -289,7 +287,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             result.TimeSheetOvertimes = timeSheetOvertimes;
             return result;
         }
-        
+
         public async Task<TimeSheetModel> GetTimeSheetByEmployee(int year, int month, int employeeId)
         {
             var timeSheet = await _organizationDBContext.TimeSheet
@@ -352,10 +350,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 GroupName = "Tăng ca(giờ)",
             });
 
-            for (long unixTime = beginDate; unixTime <= endDate; unixTime +=86400)
+            for (long unixTime = beginDate; unixTime <= endDate; unixTime += 86400)
             {
                 var date = unixTime.UnixToDateTime().Value;
-                fields.Add(new CategoryFieldNameModel{
+                fields.Add(new CategoryFieldNameModel
+                {
                     FieldName = $"TimeKeepingDay{unixTime}",
                     FieldTitle = $"Thời gian chấm công ngày {date.ToString("dd/MM/yyyy")} (hh:mm)",
                     GroupName = "TT chấm công",
@@ -401,7 +400,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     if (row.ContainsKey(fieldCheckImportEmpty.Column))
                         value = row[fieldCheckImportEmpty.Column]?.ToString();
 
-                    if(string.IsNullOrWhiteSpace(value)) continue;
+                    if (string.IsNullOrWhiteSpace(value)) continue;
                 }
 
                 var timeSheetImportModel = new TimeSheetImportFieldModel();
@@ -433,8 +432,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
 
-            
-            
+
+
             // var data = (reader.ReadSheetEntity<TimeSheetImportFieldModel>(mapping, (entity, propertyName, value) =>
             // {
             //     return false;
@@ -720,7 +719,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             .FirstOrDefaultAsync(x => x.Year == year && x.Month == month);
             if (timeSheet == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công tháng {month} năm {year}");
-            
+
             timeSheet.IsApprove = true;
             await _organizationDBContext.SaveChangesAsync();
             return true;

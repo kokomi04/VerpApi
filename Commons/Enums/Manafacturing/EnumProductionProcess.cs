@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
@@ -48,7 +45,7 @@ namespace VErp.Commons.Enums.Manafacturing
             Others = 99,
         }
 
-        public enum EnumOutsourceRequestStatusType: int
+        public enum EnumOutsourceRequestStatusType : int
         {
             [Description("Chưa xử lý")]
             Unprocessed = 1,

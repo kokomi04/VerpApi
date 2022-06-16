@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 
@@ -66,7 +63,7 @@ namespace VErp.Services.Master.Model.Category
                 RefTableField == curField.RefTableField &&
                 RefTableTitle == curField.RefTableTitle &&
                 DecimalPlace == curField.DecimalPlace &&
-                DefaultValue == curField.DefaultValue&&
+                DefaultValue == curField.DefaultValue &&
                 IsImage == curField.IsImage &&
                 IsCalcSum == curField.IsCalcSum;
 

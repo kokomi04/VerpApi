@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Stock.Model.FileResources
+﻿namespace VErp.Services.Stock.Model.FileResources
 {
     public class VisualFile
     {

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
@@ -135,7 +134,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                     SortOrder = item.SortOrder,
 
-                    
+
                     //TaxInMoney = item.TaxInMoney
                 };
 

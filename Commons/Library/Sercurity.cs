@@ -1,7 +1,5 @@
 ﻿using Sodium;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace VErp.Commons.Library
 {
@@ -18,6 +16,6 @@ namespace VErp.Commons.Library
         {
             return PasswordHash.ScryptHashStringVerify(passwordHash, pepper + salt + password);
         }
-       
+
     }
 }

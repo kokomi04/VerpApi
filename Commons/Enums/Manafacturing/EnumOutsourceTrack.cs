@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
     public static class EnumOutsourceTrack
     {
-        public enum EnumOutsourceTrackType: int
+        public enum EnumOutsourceTrackType : int
         {
             [Description("Cập nhật toàn bộ chi tiết")]
             All = 1,

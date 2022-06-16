@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
+﻿using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Master.Model.Data
 {
@@ -15,6 +12,6 @@ namespace VErp.Services.Master.Model.Data
         public long? ObjectDate { get; set; }
         public EnumObjectType? Parent_ObjectTypeId { get; set; }
         public string Parent_ObjectCode { get; set; }
-        
+
     }
 }

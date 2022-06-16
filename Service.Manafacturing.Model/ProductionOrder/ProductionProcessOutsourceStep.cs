@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Services.Manafacturing.Model.ProductionStep;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
@@ -20,13 +16,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public IList<GroupProductionStepToOutsource> groupProductionStepToOutsources { get; set; }
     }
 
-    public class ProductionStepLinkDataOutsourceStep: ProductionStepLinkDataInput
+    public class ProductionStepLinkDataOutsourceStep : ProductionStepLinkDataInput
     {
         public string ProductionStepReceiveTitle { get; set; }
         public long ProductionStepReceiveId { get; set; }
         public string ProductionStepSourceTitle { get; set; }
         public long ProductionStepSourceId { get; set; }
         public bool IsImportant { get; set; }
-        
+
     }
 }

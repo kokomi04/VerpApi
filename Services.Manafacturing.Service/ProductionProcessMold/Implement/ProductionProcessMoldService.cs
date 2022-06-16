@@ -5,18 +5,15 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionProcessMold;
-using VErp.Services.Manafacturing.Service.ProductionProcess;
 using ProductionProcessMoldEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionProcessMold;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
@@ -42,7 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
         public async Task<PageData<ProductionProcessMoldOutput>> Search(string keyword, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = _manufacturingDBContext.ProductionProcessMold.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -133,9 +130,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 ValidProductionProcessMold(model);
 
-                 var productionSteps = await _manufacturingDBContext.ProductionStepMold
-                    .Where(x => x.ProductionProcessMoldId == productionProcessMoldId)
-                    .ToListAsync();
+                var productionSteps = await _manufacturingDBContext.ProductionStepMold
+                   .Where(x => x.ProductionProcessMoldId == productionProcessMoldId)
+                   .ToListAsync();
 
                 var linkOlds = await _manufacturingDBContext.ProductionStepMoldLink
                     .Where(l => productionSteps.Select(x => x.ProductionStepMoldId).Contains(l.FromProductionStepMoldId))

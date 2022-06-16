@@ -1,10 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Services.Organization.Model.BusinessInfo;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.ObjectProcess;
 using VErp.Commons.Enums.MasterEnum;

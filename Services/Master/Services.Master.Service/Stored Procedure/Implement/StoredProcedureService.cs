@@ -1,12 +1,9 @@
-﻿using Elasticsearch.Net;
-using Microsoft.Data.SqlClient;
-using Microsoft.Diagnostics.Tracing.Parsers.ApplicationServer;
+﻿using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.ErrorCodes;
@@ -75,9 +72,9 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                         var index = definition.IndexOf(target, StringComparison.CurrentCultureIgnoreCase);
                         if (index > 0)
                         {
-                            while (!definition.Substring(index-2, 2).Contains("\n"))
+                            while (!definition.Substring(index - 2, 2).Contains("\n"))
                             {
-                                if ((index + target.Length) > definition.Length) 
+                                if ((index + target.Length) > definition.Length)
                                     throw new BadRequestException(StoredProcedureErrorCode.InvalidTSQl);
 
                                 index = definition.IndexOf(target, index + target.Length, StringComparison.CurrentCultureIgnoreCase);
@@ -87,7 +84,8 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                             var b = definition.Substring(index + target.Length);
 
                             x["definition"] = a + "ALTER " + b.TrimStart();
-                        }else
+                        }
+                        else
                             x["definition"] = "ALTER " + definition.Substring(target.Length).TrimStart();
                     });
 
@@ -118,7 +116,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                 if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
                 {
                     throw StoredProcedureErrorCode.InvalidExists.BadRequestFormat(ObjectAlreadyExisted, storedProcedureModel.Name);
-                    
+
                 }
 
                 await _masterDBContext.Database.ExecuteSqlRawAsync(storedProcedureModel.Definition);

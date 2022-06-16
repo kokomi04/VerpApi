@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErpApi.Controllers.Report
 {

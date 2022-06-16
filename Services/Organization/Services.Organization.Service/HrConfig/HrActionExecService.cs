@@ -1,12 +1,10 @@
-﻿using System;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -27,24 +25,16 @@ namespace VErp.Services.Organization.Service.HrConfig
 
     public class HrActionExecService : ActionButtonExecHelperServiceAbstract, IHrActionExecService
     {
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
 
-        private readonly IActionButtonExecHelperService _actionButtonExecHelperService;
         private readonly ObjectActivityLogFacade _hrDataActivityLog;
         public HrActionExecService(
             ILogger<HrActionExecService> logger,
             IActivityLogService activityLogService,
-            IMapper mapper,
             IActionButtonExecHelperService actionButtonExecHelperService,
             OrganizationDBContext organizationDBContext)
             : base(actionButtonExecHelperService, EnumObjectType.HrType)
         {
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
             _organizationDBContext = organizationDBContext;
             _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
         }

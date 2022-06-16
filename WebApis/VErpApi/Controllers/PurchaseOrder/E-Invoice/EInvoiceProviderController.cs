@@ -1,9 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Services.PurchaseOrder.Model.E_Invoice;
 using VErp.Services.PurchaseOrder.Service.E_Invoice.Implement;
 
 namespace VErpApi.Controllers.PurchaseOrder.EInvoice

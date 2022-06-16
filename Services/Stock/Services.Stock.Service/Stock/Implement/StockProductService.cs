@@ -1,33 +1,21 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
+using VErp.Commons.Library.Excel;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Stock;
-using VErp.Infrastructure.EF.EFExtensions;
-using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Constants;
-using Microsoft.Data.SqlClient;
-using VErp.Commons.Library.Excel;
-using System.IO;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Service.Products;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
@@ -1338,7 +1326,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return resultData;
         }
 
-        
+
 
         /// <summary>
         /// Báo cáo tổng hợp NXT 2 DVT 2 DVT (SỐ LƯỢNG) - Mẫu báo cáo kho 03

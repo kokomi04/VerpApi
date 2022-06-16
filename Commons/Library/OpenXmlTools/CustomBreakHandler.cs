@@ -1,13 +1,11 @@
 ﻿using OpenXmlPowerTools;
 using OpenXmlPowerTools.OpenXMLWordprocessingMLToHtmlConverter;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Xml.Linq;
 
 namespace VErp.Commons.Library.OpenXmlTools
 {
-    public class CustomBreakHandler: IBreakHandler
+    public class CustomBreakHandler : IBreakHandler
     {
         BreakHandler defaultHandle = new BreakHandler();
         public IEnumerable<XNode> TransformBreak(XElement element)

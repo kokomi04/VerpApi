@@ -20,35 +20,35 @@ namespace VErpApi.Controllers.System.Organization
 
         [HttpPost]
         [Route("")]
-        public async Task<long> AddWorkScheduleMark([FromBody]WorkScheduleMarkModel model)
+        public async Task<long> AddWorkScheduleMark([FromBody] WorkScheduleMarkModel model)
         {
             return await _workScheduleMarkService.AddWorkScheduleMark(model);
         }
-        
+
         [HttpDelete]
         [Route("{workScheduleMarkId}")]
-        public async Task<bool> DeleteWorkScheduleMark([FromRoute]int workScheduleMarkId)
+        public async Task<bool> DeleteWorkScheduleMark([FromRoute] int workScheduleMarkId)
         {
             return await _workScheduleMarkService.DeleteWorkScheduleMark(workScheduleMarkId);
         }
-        
+
         [HttpGet]
         [Route("")]
-        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark([FromQuery]int? employeeId)
+        public async Task<IList<WorkScheduleMarkModel>> GetListWorkScheduleMark([FromQuery] int? employeeId)
         {
             return await _workScheduleMarkService.GetListWorkScheduleMark(employeeId);
         }
-        
+
         [HttpGet]
         [Route("{workScheduleMarkId}")]
-        public async Task<WorkScheduleMarkModel> GetWorkScheduleMark([FromRoute]int workScheduleMarkId)
+        public async Task<WorkScheduleMarkModel> GetWorkScheduleMark([FromRoute] int workScheduleMarkId)
         {
             return await _workScheduleMarkService.GetWorkScheduleMark(workScheduleMarkId);
         }
-        
+
         [HttpPut]
         [Route("{workScheduleMarkId}")]
-        public async Task<bool> UpdateWorkScheduleMark([FromRoute] int workScheduleMarkId, [FromBody]WorkScheduleMarkModel model)
+        public async Task<bool> UpdateWorkScheduleMark([FromRoute] int workScheduleMarkId, [FromBody] WorkScheduleMarkModel model)
         {
             return await _workScheduleMarkService.UpdateWorkScheduleMark(workScheduleMarkId, model);
 

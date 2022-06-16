@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using System;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Calendar

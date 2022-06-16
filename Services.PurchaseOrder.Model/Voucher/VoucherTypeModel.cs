@@ -1,7 +1,6 @@
 ﻿
 using AutoMapper;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -11,15 +10,15 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
     public class VoucherTypeSimpleProjectMappingModel : VoucherTypeSimpleModel, IMapFrom<VoucherType>
     {
-       
+
     }
 
-    public class VoucherTypeModel: VoucherTypeSimpleProjectMappingModel, ITypeData
+    public class VoucherTypeModel : VoucherTypeSimpleProjectMappingModel, ITypeData
     {
         public VoucherTypeModel()
         {
         }
-   
+
         public string PreLoadAction { get; set; }
         public string PostLoadAction { get; set; }
         public string AfterLoadAction { get; set; }

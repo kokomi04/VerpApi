@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.InventoryProcess;
@@ -18,13 +18,10 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using VErp.Services.Stock.Service.Stock;
 using VErp.Services.Stock.Service.Stock.Implement;
-using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillOutputMessage;
-using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
-using System.Linq.Expressions;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 {
@@ -45,7 +42,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             ICurrentContextService currentContextService,
             IInventoryBillInputService inventoryBillInputService,
             IInventoryBillOutputService inventoryBillOutputService,
-            IActivityLogService activityLogService, 
+            IActivityLogService activityLogService,
             ICurrentContextService contextService,
             IQueueProcessHelperService queueProcessHelperService
             )
@@ -171,14 +168,14 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                     await UpdateProductionOrderStatus(outDetails, EnumProductionStatus.ProcessingLessStarted, outputObj.InventoryCode);
 
-                   // await UpdateIgnoreAllocation(outDetails);
+                    // await UpdateIgnoreAllocation(outDetails);
 
 
                     var intDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inputObj.InventoryId).ToListAsync();
 
                     await UpdateProductionOrderStatus(intDetails, EnumProductionStatus.ProcessingLessStarted, inputObj.InventoryCode);
 
-                   // await UpdateIgnoreAllocation(intDetails);
+                    // await UpdateIgnoreAllocation(intDetails);
 
                     await ctx.ConfirmCode();
 

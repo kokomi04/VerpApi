@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Models
 {

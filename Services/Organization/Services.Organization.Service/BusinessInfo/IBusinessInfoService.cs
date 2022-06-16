@@ -1,7 +1,5 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Services.Organization.Service.BusinessInfo
 {

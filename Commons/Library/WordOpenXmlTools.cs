@@ -7,7 +7,6 @@ using PuppeteerSharp;
 using PuppeteerSharp.Media;
 using System;
 using System.Collections.Generic;
-using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -23,7 +22,7 @@ namespace VErp.Commons.Library
     {
         public static async Task<Stream> ConvertToPdf(string fileDocPath, PuppeteerPdfSetting puppeteerPdfSetting)
         {
-           return await ConvertHtmlToPdf(ConvertToHtml(fileDocPath), puppeteerPdfSetting) ;
+            return await ConvertHtmlToPdf(ConvertToHtml(fileDocPath), puppeteerPdfSetting);
         }
 
         public static string ConvertToHtml(string fileDocPath)
@@ -105,7 +104,7 @@ namespace VErp.Commons.Library
 
             if (string.IsNullOrWhiteSpace(executablePath))
             {
-                string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome? "chrome" : "firefox");
+                string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome ? "chrome" : "firefox");
 #pragma warning disable CS0618 // Type or member is obsolete
                 int version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? int.Parse(puppeteerSetting?.Version, CultureInfo.CurrentCulture.NumberFormat) : BrowserFetcher.DefaultRevision;
 #pragma warning restore CS0618 // Type or member is obsolete

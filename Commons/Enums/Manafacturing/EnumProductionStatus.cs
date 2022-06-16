@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
@@ -41,7 +38,7 @@ namespace VErp.Commons.Enums.Manafacturing
         ///  Đã có phát sinh số liệu thống kê SX hoặc bàn giao ở 1 hoặc 1 số công đoạn - Chưa nhận đủ vật tư đầu vào (cái này nhằm phân biệt các lệnh đang có vật tư chưa phân bổ)
         /// </summary>
         [Description("Đang sản xuất thiếu vật tư")]
-        ProcessingLessStarted = 210,      
+        ProcessingLessStarted = 210,
 
         /// <summary>
         /// Những lệnh đã quá ngày hoàn thành nhưng chưa có số liệu thống kê ở khâu cuối ra thành phẩm hoặc chưa có phiếu nhập kho thành phẩm

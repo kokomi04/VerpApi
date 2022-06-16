@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Services.Manafacturing.Model.ProductionProcess;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Commons.GlobalObject;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Model.ProductionProcess;
+using VErp.Services.Manafacturing.Model.ProductionStep;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess
 {
@@ -35,7 +31,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> UpdateProductionStepSortOrder(IList<ProductionStepSortOrderModel> req);
 
         //ProductionStepRoleClient
-        Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel  model);
+        Task<bool> InsertAndUpdatePorductionStepRoleClient(ProductionStepRoleClientModel model);
         Task<string> GetPorductionStepRoleClient(int containerTypeId, long containerId);
         // StepGroup
         Task<long> CreateProductionStepGroup(ProductionStepGroupModel req);

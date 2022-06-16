@@ -1,10 +1,4 @@
-﻿using AutoMapper;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.OrganizationDB;
+﻿using System.Collections.Generic;
 using VErp.Services.Organization.Model.Calendar;
 
 namespace VErp.Services.Organization.Model.DepartmentCalendar

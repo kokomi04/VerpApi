@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -136,7 +136,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("outsourcePart/request")]
-        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest([FromQuery]string productionOrderCode,[FromQuery] int? productId, [FromQuery] bool ignoreOutsourceAllocateCompeleted = false)
+        public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest([FromQuery] string productionOrderCode, [FromQuery] int? productId, [FromQuery] bool ignoreOutsourceAllocateCompeleted = false)
         {
             return await _purchaseOrderOutsourcePartService.GetOutsourcePartRequest(null, productionOrderCode, productId, ignoreOutsourceAllocateCompeleted);
         }

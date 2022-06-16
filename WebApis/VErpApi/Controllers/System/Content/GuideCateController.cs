@@ -1,12 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Guide;
 using VErp.Services.Master.Service.Guide;
 

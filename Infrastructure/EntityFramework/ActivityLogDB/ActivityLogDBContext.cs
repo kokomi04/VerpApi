@@ -1,6 +1,4 @@
-using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -24,7 +22,8 @@ namespace ActivityLogDB
         public virtual DbSet<UserActivityLogChange> UserActivityLogChange { get; set; }
         public virtual DbSet<UserLoginLog> UserLoginLog { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

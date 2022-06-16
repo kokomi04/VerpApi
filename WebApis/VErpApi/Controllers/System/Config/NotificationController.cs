@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -10,7 +10,7 @@ using VErp.Services.Master.Service.Notification;
 namespace VErpApi.Controllers.System
 {
     [Route("api/notification")]
-    public class NotificationController: VErpBaseController
+    public class NotificationController : VErpBaseController
     {
         private readonly INotificationService _notificationService;
         private readonly ISubscriptionService _subscriptionService;
@@ -28,7 +28,7 @@ namespace VErpApi.Controllers.System
         {
             return await _notificationService.GetListByUserId();
         }
-        
+
         [HttpGet]
         [Route("numberOfUnRead")]
         [GlobalApi]
@@ -58,7 +58,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public async Task<bool> CheckSubscriptionByUserId([FromQuery] int objectTypeId, [FromQuery] int objectId, [FromQuery] int? billTypeId)
         {
-            return await _subscriptionService.CheckSubscription(new CheckSubscriptionSimpleModel 
+            return await _subscriptionService.CheckSubscription(new CheckSubscriptionSimpleModel
             {
                 BillTypeId = billTypeId,
                 ObjectId = objectId,

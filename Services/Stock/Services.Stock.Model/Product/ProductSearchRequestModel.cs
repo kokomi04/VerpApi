@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.Product
 {
     public class ProductSearchRequestModel
     {
-     
+
         public string Keyword { get; set; }
         public IList<int> ProductIds { get; set; }
         public string ProductName { get; set; }
@@ -19,7 +17,7 @@ namespace VErp.Services.Stock.Model.Product
         public bool? IsMaterials { get; set; }
     }
 
-    public class ProductExportRequestModel: ProductSearchRequestModel
+    public class ProductExportRequestModel : ProductSearchRequestModel
     {
         public IList<string> FieldNames { get; set; }
     }

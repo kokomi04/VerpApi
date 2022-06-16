@@ -1,15 +1,11 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace VErp.Commons.Library
 {
     public static class ConfigurationExtensions
-    {        
+    {
         public static IServiceCollection AddScopedServices(this IServiceCollection services, Assembly assembly)
         {
             return services
@@ -32,6 +28,6 @@ namespace VErp.Commons.Library
             }
 
             return services;
-        }       
+        }
     }
 }

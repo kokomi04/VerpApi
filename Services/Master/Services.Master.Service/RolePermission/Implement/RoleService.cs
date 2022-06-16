@@ -4,9 +4,9 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Cache.Caching;
+using Verp.Resources.Master.Role;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -14,14 +14,12 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
-using VErp.Services.Master.Service.Activity;
-using RolePermissionEntity = VErp.Infrastructure.EF.MasterDB.RolePermission;
 using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Master.Role;
+using RolePermissionEntity = VErp.Infrastructure.EF.MasterDB.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {

@@ -1,18 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi;
-using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
-using Microsoft.OpenApi.Writers;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Infrastructure.ApiCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {

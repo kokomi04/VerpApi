@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Stock.InventoryProcess;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -12,11 +13,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory;
-using Verp.Resources.Stock.InventoryProcess;
-using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Stock.Model.Inventory;
+using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -205,7 +204,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             }
 
-            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x=>x.Detail).ToList() };
+            return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x => x.Detail).ToList() };
         }
 
         private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)

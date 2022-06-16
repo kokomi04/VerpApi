@@ -1,28 +1,23 @@
 ﻿using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
+using System.Security.Claims;
+using System.Security.Principal;
+using Verp.Cache.Caching;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
-using Microsoft.Extensions.Primitives;
-using VErp.Commons.Constants;
-using System.Security.Claims;
-using System.Security.Principal;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.EF.OrganizationDB;
-using Microsoft.Extensions.DependencyInjection;
 using static VErp.Commons.Constants.Caching.AuthorizeCacheKeys;
 using static VErp.Commons.Constants.Caching.AuthorizeCachingTtlConstants;
-using Verp.Cache.Caching;
-using System.Threading.Tasks;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -455,5 +450,5 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
     }
 
-   
+
 }

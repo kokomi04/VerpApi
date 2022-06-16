@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
+﻿using System.Collections.Generic;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;

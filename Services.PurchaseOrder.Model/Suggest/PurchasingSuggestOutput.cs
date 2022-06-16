@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
@@ -12,9 +9,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PurchasingSuggestCode { get; set; }
     }
 
-    public class PurchasingSuggestOutputList: PurchasingSuggestBasic
+    public class PurchasingSuggestOutputList : PurchasingSuggestBasic
     {
-        public long Date { get; set; }      
+        public long Date { get; set; }
         public EnumPurchasingSuggestStatus PurchasingSuggestStatusId { get; set; }
         public bool? IsApproved { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
@@ -40,7 +37,7 @@ namespace VErp.Services.PurchaseOrder.Model
     }
 
     public class PurchasingSuggestDetailOutputModel : PurchasingSuggestDetailInputModel
-    {     
+    {
         public PurchasingRequestDetailInfo RequestDetail { get; set; }
     }
 

@@ -4,7 +4,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.BusinessInfo
 {
-    public class ObjectApprovalStepModel: IMapFrom<ObjectApprovalStep>
+    public class ObjectApprovalStepModel : IMapFrom<ObjectApprovalStep>
     {
         public int ObjectApprovalStepId { get; set; }
         public int ObjectTypeId { get; set; }

@@ -1,15 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 
@@ -32,7 +28,7 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<IList<FileThumbnailInfo>> GetThumbnails(IList<long> fileIds, EnumThumbnailSize? thumb);
 
         Task<bool> GenerateThumbnail(long fileId);
-        
+
 
         Task<IList<FileToDownloadInfo>> GetListFileUrl(IList<long> fileIds, EnumThumbnailSize? thumb);
 

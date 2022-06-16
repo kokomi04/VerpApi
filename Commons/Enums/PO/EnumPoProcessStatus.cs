@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Verp.Resources.Enums.PO;
+﻿using Verp.Resources.Enums.PO;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.MasterEnum.PO

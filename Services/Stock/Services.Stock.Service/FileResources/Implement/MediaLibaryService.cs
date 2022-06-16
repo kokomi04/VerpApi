@@ -16,7 +16,6 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
-using VErp.Services.Stock.Service.FileResources;
 
 namespace VErp.Services.Stock.Service.FileResources.Implement
 {
@@ -326,7 +325,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             pathSource = GetPhysicalFilePath(GenerateMediaFilePath(pathSource));
 
             DirectoryInfo source = new DirectoryInfo(pathSource);
-            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName,RemoveDotsInRelativePath(newNameFolder)));
+            DirectoryInfo dest = new DirectoryInfo(Path.Combine(source.Parent.FullName, RemoveDotsInRelativePath(newNameFolder)));
 
             if (!source.Exists) throw new BadRequestException(MediaLibraryErrorCode.NotFoundDirectory);
             if (dest.Exists) throw new BadRequestException(MediaLibraryErrorCode.SubdirectoryExists);

@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using Verp.Resources.Enums.Stock;
+﻿using Verp.Resources.Enums.Stock;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum

@@ -1,18 +1,15 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -103,7 +100,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         {
                             var code = value.NormalizeAsInternalName();
 
-                            if (!targetProductivities.Any(x=>x.TargetProductivityCode == value))
+                            if (!targetProductivities.Any(x => x.TargetProductivityCode == value))
                             {
                                 throw TargetProductivityWithCodeNotFound.BadRequestFormat(value);
                             }
@@ -509,7 +506,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
             product.UpdateIfAvaiable(p => p.Color, row.Color);
-          
+
             //product.IsCanBuy = row.IsCanBuy ?? true;
             //product.IsCanSell = row.IsCanSell ?? true;
             //product.MainImageFileId = null;

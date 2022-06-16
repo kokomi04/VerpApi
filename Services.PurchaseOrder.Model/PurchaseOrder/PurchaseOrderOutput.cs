@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
@@ -11,7 +9,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PurchaseOrderCode { get; set; }
     }
 
-    public class PurchaseOrderOutputList: PurchaseOrderOutputBasic
+    public class PurchaseOrderOutputList : PurchaseOrderOutputBasic
     {
         public long? Date { get; set; }
         public int CustomerId { get; set; }
@@ -33,7 +31,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public int UpdatedByUserId { get; set; }
         public int? CheckedByUserId { get; set; }
         public int? CensorByUserId { get; set; }
-        
+
         public long CreatedDatetimeUtc { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
@@ -59,8 +57,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public IList<long> FileIds { get; set; }
         public IList<PurchaseOrderOutputDetail> Details { get; set; }
 
-        public IList<PurchaseOrderExcessModel> Excess {get;set;}
-        public IList<PurchaseOrderMaterialsModel> Materials {get;set;}
+        public IList<PurchaseOrderExcessModel> Excess { get; set; }
+        public IList<PurchaseOrderMaterialsModel> Materials { get; set; }
     }
 
     public class PurchaseOrderOutputDetail : PurchaseOrderInputDetail
@@ -87,7 +85,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
 
         // public decimal? TaxInMoney { get; set; }
-        public string PoProviderPricingCode { get; set; } 
+        public string PoProviderPricingCode { get; set; }
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public string Description { get; set; }

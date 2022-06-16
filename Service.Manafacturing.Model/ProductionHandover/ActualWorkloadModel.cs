@@ -1,9 +1,7 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
-   
+
     public class ActualWorkloadModel
     {
         public IDictionary<int, List<ActualWorkloadOutputModel>> ActualWorkloadOutput { get; set; }

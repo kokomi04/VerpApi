@@ -1,16 +1,8 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Service.Config;
 

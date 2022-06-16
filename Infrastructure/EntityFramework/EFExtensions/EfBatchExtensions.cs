@@ -4,11 +4,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {

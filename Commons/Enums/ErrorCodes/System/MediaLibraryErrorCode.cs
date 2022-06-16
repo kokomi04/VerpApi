@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using Verp.Resources.Enums.System;
 using VErp.Commons.Enums.StandardEnum;
-using Verp.Resources.Enums.System;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.ErrorCodes

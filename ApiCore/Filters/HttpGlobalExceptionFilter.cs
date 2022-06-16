@@ -1,15 +1,12 @@
 ﻿using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Text;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;

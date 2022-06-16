@@ -1,12 +1,14 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -15,13 +17,10 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
-using VErp.Commons.Enums.Manafacturing;
-using Microsoft.Data.SqlClient;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
-using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
-using Newtonsoft.Json;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 
 namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 {
@@ -128,7 +127,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 .ToListAsync();
 
             var stepRoles = _manufacturingDBContext.ProductionStepLinkDataRole.AsQueryable().Where(r => !finishSteps.Contains(r.ProductionStepId));
-        
+
             // Lấy thông tin đầu vào/ra tất cả phân công công đoạn trong lệnh
             var allProductionAssignments = (
                 from a in _manufacturingDBContext.ProductionAssignment

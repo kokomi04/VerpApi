@@ -1,26 +1,20 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
-using Services.Organization.Model.SystemParameter;
 using Services.Organization.Model.TimeKeeping;
-using Services.Organization.Service.Parameter;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.ModelBinders;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.System.Organization
 {
     [Route("api/organization/timekeeping/timesheetraw")]
-    public class TimeSheetRawController: VErpBaseController
+    public class TimeSheetRawController : VErpBaseController
     {
         private readonly ITimeSheetRawService _timeSheetRawService;
 
@@ -29,10 +23,10 @@ namespace VErpApi.Controllers.System.Organization
             _timeSheetRawService = timeSheetRawService;
         }
 
-        
+
         [HttpPost]
         [Route("")]
-        public async Task<long> AddTimeSheetRaw([FromBody]TimeSheetRawModel model)
+        public async Task<long> AddTimeSheetRaw([FromBody] TimeSheetRawModel model)
         {
             return await _timeSheetRawService.AddTimeSheetRaw(model);
         }
@@ -68,9 +62,9 @@ namespace VErpApi.Controllers.System.Organization
 
         [HttpGet]
         [Route("fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForMapping()
         {
-            return await _timeSheetRawService.GetFieldDataForMapping();
+            return _timeSheetRawService.GetFieldDataForMapping();
         }
 
         [HttpPost]

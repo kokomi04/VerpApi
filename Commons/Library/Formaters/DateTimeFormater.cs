@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Verp.Resources.Library.Formaters;
 
 namespace VErp.Commons.Library.Formaters

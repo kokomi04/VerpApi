@@ -1,34 +1,21 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Activity;
-using VErp.Services.Stock.Model.Product;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Commons.GlobalObject;
-using Microsoft.Data.SqlClient;
-using VErp.Infrastructure.EF.EFExtensions;
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using System.Data;
-using System.IO;
-using VErp.Commons.Library.Model;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Service.Products.Implement.ProductBomFacade;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Facade;
-using static Verp.Resources.Stock.Product.PropertyValidationMessage;
+using System.Linq;
+using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Stock.Model.Product;
+using static Verp.Resources.Stock.Product.PropertyValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -132,8 +119,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             if (propertyIds == null || propertyIds.Count == 0)
                 return new List<PropertyModel>();
-            var properties = await _stockDbContext.Property.Where(p => propertyIds.Contains( p.PropertyId)).ToListAsync();
-            
+            var properties = await _stockDbContext.Property.Where(p => propertyIds.Contains(p.PropertyId)).ToListAsync();
+
             return _mapper.Map<List<PropertyModel>>(properties);
         }
 

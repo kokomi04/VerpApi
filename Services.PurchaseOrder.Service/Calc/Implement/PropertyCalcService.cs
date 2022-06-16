@@ -1,28 +1,20 @@
 ﻿using AutoMapper;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.Calc.PropertyCalc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.AppSettings.Model;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Commons.Library;
-using VErp.Commons.Enums.StandardEnum;
-using Microsoft.EntityFrameworkCore;
-using VErp.Infrastructure.EF.EFExtensions;
-using System.Linq;
-using VErp.Infrastructure.ServiceCore.Model;
-using AutoMapper.QueryableExtensions;
-using Verp.Cache.RedisCache;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
-using Verp.Resources.PurchaseOrder.Calc.PropertyCalc;
 using static Verp.Resources.PurchaseOrder.Calc.PropertyCalc.PropertyCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
@@ -86,7 +78,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 );
 
             query = query.InternalFilter(filter);
-            if(!string.IsNullOrEmpty(sortBy))
+            if (!string.IsNullOrEmpty(sortBy))
             {
                 query = query.InternalOrderBy(sortBy, asc.HasValue ? asc.Value : true);
             }

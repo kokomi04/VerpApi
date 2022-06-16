@@ -1,15 +1,4 @@
-﻿using Microsoft.Data.SqlClient;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.EF.StockDB;
-using System.Collections.Generic;
-using VErp.Commons.Library;
-
-namespace VErp.Services.Stock.Service.Stock.Implement
+﻿namespace VErp.Services.Stock.Service.Stock.Implement
 {
     /*
     public interface IInventoryTrackingFacade

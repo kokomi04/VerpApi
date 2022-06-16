@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
@@ -190,7 +188,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (requirement.CensorStatus == (int)EnumInventoryRequirementStatus.Rejected)
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu vật tư thêm đã bị từ chối");
 
-            if(requirement.ProductionMaterialsRequirementDetail.Any(x=>x.Quantity == 0))
+            if (requirement.ProductionMaterialsRequirementDetail.Any(x => x.Quantity == 0))
                 throw new BadRequestException(GeneralCode.InvalidParams, $"Chi tiết yêu cầu thêm phải có lượng lớn hơn  0");
         }
 
@@ -208,7 +206,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         public async Task<PageData<ProductionMaterialsRequirementDetailSearch>> SearchProductionMaterialsRequirement(long productionOrderId, string keyword, int page, int size, Clause filters)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var requirements = (await _manufacturingDBContext.ProductionMaterialsRequirement.AsNoTracking()
                .Where(x => x.ProductionOrderId == productionOrderId)
                .ProjectTo<ProductionMaterialsRequirementModel>(_mapper.ConfigurationProvider)
@@ -352,7 +350,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 long inventoryRequirmentId = 0;
-                if(status == EnumProductionMaterialsRequirementStatus.Accepted)
+                if (status == EnumProductionMaterialsRequirementStatus.Accepted)
                     inventoryRequirmentId = await AddInventoryRequirement(_mapper.Map<ProductionMaterialsRequirementModel>(requirement));
 
                 await trans.CommitAsync();

@@ -7,12 +7,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Calendar;
 using Verp.Resources.Organization.Department;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -22,9 +22,8 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Calendar;
 using VErp.Services.Organization.Model.DepartmentCalendar;
-using DepartmentCalendarEntity = VErp.Infrastructure.EF.OrganizationDB.DepartmentCalendar;
 using static Verp.Resources.Organization.Department.DepartmentCalendarValidationMessage;
-using Verp.Resources.Organization.Calendar;
+using DepartmentCalendarEntity = VErp.Infrastructure.EF.OrganizationDB.DepartmentCalendar;
 
 namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 {

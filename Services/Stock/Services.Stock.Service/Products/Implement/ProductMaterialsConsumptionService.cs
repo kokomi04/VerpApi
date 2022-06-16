@@ -7,8 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -22,7 +22,6 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade;
-using Verp.Resources.Stock.Product;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement
@@ -282,9 +281,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var otherMaterials = model.Where(x => x.ProductId != productId);
 
-                foreach (var other in otherMaterials) 
+                foreach (var other in otherMaterials)
                 {
-                    if(other.ProductMaterialsConsumptionId > 0)
+                    if (other.ProductMaterialsConsumptionId > 0)
                         await UpdateProductMaterialsConsumption(other.ProductId, other.ProductMaterialsConsumptionId, other);
                     else
                         _stockDbContext.ProductMaterialsConsumption.Add(_mapper.Map<ProductMaterialsConsumption>(other));
@@ -321,7 +320,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw;
             }
 
-            
+
         }
 
         public async Task<bool> UpdateProductMaterialsConsumption(int productId, long productMaterialsConsumptionId, ProductMaterialsConsumptionInput model)
@@ -342,7 +341,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             model.ProductId = productId;
-            if(model.Quantity <= 0)
+            if (model.Quantity <= 0)
                 material.IsDeleted = true;
             else
                 _mapper.Map(model, material);

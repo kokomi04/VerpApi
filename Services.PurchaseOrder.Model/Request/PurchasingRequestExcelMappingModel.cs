@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
 
 namespace VErp.Services.PurchaseOrder.Model.Request
@@ -16,7 +13,7 @@ namespace VErp.Services.PurchaseOrder.Model.Request
 
     //    public PurchasingRequestDetailMappingColumn ColumnMapping{ get; set; }
 
-     
+
 
     //    public class PurchasingRequestDetailMappingColumn
     //    {
@@ -40,7 +37,7 @@ namespace VErp.Services.PurchaseOrder.Model.Request
     }
 
     [Display(Name = "Chi tiết Yêu cầu vật tư")]
-    public class PurchasingRequestDetailRowValue: MappingDataRowAbstract
+    public class PurchasingRequestDetailRowValue : MappingDataRowAbstract
     {
         [Display(Name = "Mã mặt hàng", GroupName = "Mặt hàng")]
         public string ProductCode { get; set; }
@@ -61,7 +58,7 @@ namespace VErp.Services.PurchaseOrder.Model.Request
         [Display(Name = "Mã LSX", GroupName = "Bổ sung")]
         public string ProductionOrderCode { get; set; }
         [Display(Name = "Mô tả", GroupName = "Bổ sung")]
-        public string Description { get; set; }     
+        public string Description { get; set; }
 
         [Display(Name = "Thứ tự sắp xếp", GroupName = "Bổ sung")]
         public int? SortOrder { get; set; }

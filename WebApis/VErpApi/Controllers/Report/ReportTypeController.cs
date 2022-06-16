@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.Enums.MasterEnum;
@@ -18,7 +16,7 @@ namespace VErpApi.Controllers.Report
     public class ReportTypeController : VErpBaseController
     {
         private readonly IReportConfigService _reportConfigService;
-        private readonly IFileService _fileService; 
+        private readonly IFileService _fileService;
         public ReportTypeController(IReportConfigService reportConfigService, IFileService fileService)
         {
             _reportConfigService = reportConfigService;
@@ -41,7 +39,7 @@ namespace VErpApi.Controllers.Report
             return await _reportConfigService
                 .ReportTypeGroupCreate(model)
                 .ConfigureAwait(true);
-        }     
+        }
 
         [HttpPut]
         [Route("Groups/{reportTypeGroupId}")]

@@ -1,10 +1,7 @@
 ﻿using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Constants;
 
 namespace VErp.Infrastructure.ApiCore.Filters
@@ -30,7 +27,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             {
                 Name = Headers.Language,
                 In = ParameterLocation.Header,
-                Required = false,                
+                Required = false,
                 Schema = new OpenApiSchema()
                 {
                     Type = "string",

@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -136,10 +135,10 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
         public async Task<IList<StepModel>> GetStepByArrayId(int[] arrayId)
         {
-           return await _manufacturingDBContext.Step.AsNoTracking()
-                .Where(x=> arrayId.Contains(x.StepId))
-                .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            return await _manufacturingDBContext.Step.AsNoTracking()
+                 .Where(x => arrayId.Contains(x.StepId))
+                 .ProjectTo<StepModel>(_mapper.ConfigurationProvider)
+                 .ToListAsync();
         }
 
         public async Task<bool> UpdateStep(int stepId, StepModel req)

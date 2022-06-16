@@ -158,10 +158,10 @@ namespace ObjectDefineAlter
                     foreach (SqlParameter sqlParameter in sqlCommand.Parameters)
                     {
                         if (sqlParameter.SqlDbType == SqlDbType.NVarChar)
-                            sqlParameter.Value = (sqlParameter.Value ?? "").ToString().Trim();                      
+                            sqlParameter.Value = (sqlParameter.Value ?? "").ToString().Trim();
                     }
                 }
-               
+
                 sqlCommand.Connection = sqlConnection;
                 return sqlCommand.ExecuteNonQuery();
             }

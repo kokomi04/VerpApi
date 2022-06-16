@@ -1,11 +1,10 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
 using VErp.Services.Master.Model.FileConfig;
 
 namespace VErp.Services.Master.Service.Notification

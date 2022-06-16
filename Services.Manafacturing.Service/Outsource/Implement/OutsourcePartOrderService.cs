@@ -474,7 +474,7 @@
 //                    foreach (var ld in map)
 //                    {
 //                        var productionStepId = role.FirstOrDefault(x => x.ProductionStepLinkDataId == ld.ProductionStepLinkDataId)?.ProductionStepId;
-                        
+
 //                        var linkDataOrigin = role.Where(x => x.ProductionStepId == productionStepId 
 //                                                            && x.ProductionStepLinkData.ObjectId == ld.ObjectId 
 //                                                            && x.ProductionStepLinkData.ProductionStepLinkDataId != ld.ProductionStepLinkDataId)
@@ -561,11 +561,11 @@
 //                                }
 //                            }
 //                        }
-                            
+
 //                    }
-                    
+
 //                }
-                
+
 
 //            }
 
@@ -675,6 +675,6 @@
 //           return await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(stepIds);
 //        }
 //        #endregion
-       
+
 //    }
 //}

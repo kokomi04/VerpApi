@@ -1,18 +1,10 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StockEnum;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Service.Department;
-using VErp.Services.Organization.Model.Department;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using VErp.Services.Stock.Service.FileResources;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Services.Organization.Service.DepartmentCalendar;
+using System.Threading.Tasks;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.DepartmentCalendar;
+using VErp.Services.Organization.Service.DepartmentCalendar;
 
 namespace VErpApi.Controllers.System
 {

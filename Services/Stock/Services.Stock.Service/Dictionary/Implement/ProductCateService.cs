@@ -1,22 +1,19 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Dictionary;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Dictionary;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Stock.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary.Implement
 {
@@ -31,7 +28,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             )
         {
             _stockContext = stockContext;
-           
+
             _productCateActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductCate);
         }
 
@@ -78,7 +75,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
 
             await UpdateSortOrder(productCate);
 
-            
+
 
             await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Create)
               .MessageResourceFormatDatas(productCate.ProductCateName)
@@ -118,7 +115,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             await _stockContext.SaveChangesAsync();
 
             await UpdateSortOrder(productCate);
-           
+
             await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Delete)
              .MessageResourceFormatDatas(productCate.ProductCateName)
              .ObjectId(productCate.ProductCateId)

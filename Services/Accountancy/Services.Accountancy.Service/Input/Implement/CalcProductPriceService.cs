@@ -5,20 +5,15 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
@@ -203,7 +198,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
-       }
+        }
 
 
         public async Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req)

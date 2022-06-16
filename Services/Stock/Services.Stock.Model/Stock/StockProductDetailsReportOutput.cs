@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Stock

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
+﻿namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 {
     public class ProductionStepInOutsourceStepRequest
     {

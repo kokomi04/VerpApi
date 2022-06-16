@@ -1,25 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Threading.Tasks;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Location;
+using System;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Services.Master.Service.Activity;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Facade;
+using System.Threading.Tasks;
 using Verp.Resources.Stock.Location;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
+using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Service.Dictionay;
+using VErp.Services.Stock.Model.Location;
 
 namespace VErp.Services.Stock.Service.Location.Implement
 {
@@ -48,7 +46,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
 
             var checkExisted = _stockDbContext.Location.Any(q =>
                 q.StockId == req.StockId && q.Name == req.Name);
-            
+
 
             if (checkExisted)
                 throw new BadRequestException(LocationErrorCode.LocationAlreadyExisted);

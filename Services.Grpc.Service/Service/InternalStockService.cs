@@ -1,10 +1,7 @@
 ﻿using Grpc.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -13,7 +10,7 @@ using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Grpc.Service
 {
-    public class InternalStockService: VErp.Grpc.Protos.Stock.StockBase
+    public class InternalStockService : VErp.Grpc.Protos.Stock.StockBase
     {
         private readonly StockDBContext _stockContext;
         private readonly ILogger<InternalStockService> _logger;
@@ -31,9 +28,10 @@ namespace VErp.Services.Grpc.Service
             {
                 throw new BadRequestException(StockErrorCode.StockNotFound);
             }
-            return await Task.FromResult( new StockInfoResponses
+            return await Task.FromResult(new StockInfoResponses
             {
-                StockOutPut = new StockOutput{
+                StockOutPut = new StockOutput
+                {
                     StockId = stockInfo.StockId,
                     StockName = stockInfo.StockName,
                     Description = stockInfo.Description,

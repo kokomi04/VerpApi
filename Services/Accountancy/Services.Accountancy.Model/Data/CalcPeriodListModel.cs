@@ -1,11 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.AccountancyDB;
-
-namespace VErp.Services.Accountancy.Model.Data
+﻿namespace VErp.Services.Accountancy.Model.Data
 {
     public class CalcPeriodListModel
     {

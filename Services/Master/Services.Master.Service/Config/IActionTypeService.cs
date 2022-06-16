@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Infrastructure.EF.MasterDB;
 
@@ -8,7 +6,7 @@ namespace VErp.Services.Master.Service.Config
 {
     public interface IActionTypeService
     {
-        Task<IList<ActionType>> GetList();      
+        Task<IList<ActionType>> GetList();
 
         Task<bool> Update(int actionTypeId, ActionType model);
 

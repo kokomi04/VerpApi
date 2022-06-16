@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Report;
 
 namespace Verp.Services.ReportConfig.Model

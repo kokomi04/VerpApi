@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using System.Collections.Generic;
 
 namespace Verp.Services.ReportConfig.Model
 {
@@ -10,11 +7,11 @@ namespace Verp.Services.ReportConfig.Model
         public RHeader Header { get; set; }
         public RBody Body { get; set; }
         public RFooter Footer { get; set; }
-        
+
         public class RFooter
         {
             public string RDateText { get; set; }
-            public string SignText { get; set; } 
+            public string SignText { get; set; }
         }
 
         public class RHeader

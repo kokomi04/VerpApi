@@ -1,12 +1,10 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Services.Stock.Service.FileResources;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Service.BusinessInfo;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Services.Organization.Service.BusinessInfo;
+using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.System
 {

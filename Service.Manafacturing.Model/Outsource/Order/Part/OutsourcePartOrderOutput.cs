@@ -10,7 +10,7 @@
 //{
 //    public class OutsourcePartOrderOutput : OutsourceOrderModel, IMapFrom<OutsourceOrder>
 //    {
-        
+
 //        public IList<OutsourcePartOrderDetailOutput> OutsourceOrderDetails { get; set; }
 //        public IList<OutsourceOrderMaterialsOutput> OutsourceOrderMaterials { get; set; }
 //        public IList<OutsourceOrderExcessOutput> OutsourceOrderExcesses { get; set; }
@@ -33,5 +33,5 @@
 //                .ForMember(m => m.AttachmentFileId, v => v.MapFrom(m => m.AttachmentFileId));
 //        }
 //    }
-    
+
 //}

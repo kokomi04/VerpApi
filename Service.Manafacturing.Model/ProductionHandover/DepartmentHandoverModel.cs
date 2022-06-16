@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Library;
-using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
@@ -32,7 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public long ToProductionStepId { get; set; }
         public long FromProductionStepId { get; set; }
-        
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()

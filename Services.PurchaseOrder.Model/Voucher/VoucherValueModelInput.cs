@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.PurchaseOrder.Model.Voucher
 {
@@ -22,7 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
     }
 
 
-    public class VoucherValueModel 
+    public class VoucherValueModel
     {
         public int VoucherAreaFieldId { get; set; }
         public string Value { get; set; }

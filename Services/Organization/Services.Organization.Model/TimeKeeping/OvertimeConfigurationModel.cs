@@ -1,7 +1,4 @@
-using System;
-using AutoMapper;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace Services.Organization.Model.TimeKeeping

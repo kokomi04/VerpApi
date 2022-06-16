@@ -1,15 +1,12 @@
 ﻿using ActivityLogDB;
 using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.ServiceCore.Model
 {
-    public class UserLoginLogModel: IMapFrom<UserLoginLog>
+    public class UserLoginLogModel : IMapFrom<UserLoginLog>
     {
         public long UserLoginLogId { get; set; }
         public int? UserId { get; set; }

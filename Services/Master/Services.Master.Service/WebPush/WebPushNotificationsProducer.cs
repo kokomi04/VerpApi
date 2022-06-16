@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using ActivityLogDB;
 using Lib.Net.Http.WebPush;
 using Lib.Net.Http.WebPush.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.SignalR;
 using VErp.Services.Master.Model.WebPush;
@@ -58,7 +58,7 @@ namespace VErp.Services.Master.Service.Webpush
 
             foreach (var subscription in subs)
             {
-                if(!_principalBroadcaster.IsUserConnected(subscription.UserId.ToString()))
+                if (!_principalBroadcaster.IsUserConnected(subscription.UserId.ToString()))
                 {
                     var keys = new Dictionary<string, string>();
                     keys.Add("auth", subscription.Auth);
@@ -71,7 +71,7 @@ namespace VErp.Services.Master.Service.Webpush
                         Keys = keys,
                     }, notification);
                 }
-                
+
             }
         }
 

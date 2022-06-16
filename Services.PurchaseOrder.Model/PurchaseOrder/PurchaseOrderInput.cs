@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum.PO;
 
 namespace VErp.Services.PurchaseOrder.Model
@@ -45,7 +43,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? CurrencyId { get; set; }
         public decimal? ExchangeRate { get; set; }
 
-        public EnumPurchasingOrderType PurchaseOrderType {get;set;}
+        public EnumPurchasingOrderType PurchaseOrderType { get; set; }
     }
 
     public interface IPurchaseOrderInputDetail

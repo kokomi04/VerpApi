@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Services.Organization.Model.Employee
+﻿namespace Services.Organization.Model.Employee
 {
     public class UserDataModel
     {

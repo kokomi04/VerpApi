@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.Enums.StockEnum
+﻿namespace VErp.Commons.Enums.StockEnum
 {
     public enum EnumFileType
     {

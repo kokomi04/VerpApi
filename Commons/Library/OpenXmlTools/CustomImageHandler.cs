@@ -1,10 +1,7 @@
 ﻿using OpenXmlPowerTools;
 using OpenXmlPowerTools.OpenXMLWordprocessingMLToHtmlConverter;
-using System;
-using System.Collections.Generic;
 using System.Drawing.Imaging;
 using System.IO;
-using System.Text;
 using System.Xml.Linq;
 
 namespace VErp.Commons.Library.OpenXmlTools

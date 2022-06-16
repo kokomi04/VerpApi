@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -30,7 +27,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
             return await _httpCrossService.Post<bool>($"api/internal/InternalVoucher/CheckReferFromCategory", req);
         }
-       
+
         public async Task<IList<VoucherTypeSimpleModel>> GetVoucherTypeSimpleList()
         {
             return await _httpCrossService.Get<List<VoucherTypeSimpleModel>>($"api/internal/InternalVoucher/simpleList");

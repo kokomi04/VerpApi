@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
+﻿using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
@@ -15,5 +12,5 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long EndDate { get; set; }
         public decimal ProductQuantity { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
-    }    
+    }
 }

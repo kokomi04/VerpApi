@@ -1,18 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.SqlServer.Management.SqlParser.Metadata;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
-using VErp.Services.Manafacturing.Service.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Service.ProductionHandover;
 
 namespace VErpApi.Controllers.Manufacturing
 {

@@ -1,35 +1,35 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.StockDB;
+using VErp.Commons.Library.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using System.IO;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using Microsoft.Data.SqlClient;
-using System.Data;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using AutoMapper;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
-using VErp.Infrastructure.ServiceCore.Facade;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using Verp.Resources.Stock.Product;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -379,7 +379,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         throw new BadRequestException(ProductErrorCode.ProductNotFound);
                     }
 
-                    
+
                     /*
                     if (productInfo.UnitId != req.UnitId)
                     {

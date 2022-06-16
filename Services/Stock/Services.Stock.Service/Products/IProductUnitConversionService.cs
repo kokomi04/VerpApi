@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Products

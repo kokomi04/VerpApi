@@ -1,13 +1,11 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductMaterialsConsumptionOutput: ProductMaterialsConsumptionBaseModel
+    public class ProductMaterialsConsumptionOutput : ProductMaterialsConsumptionBaseModel
     {
         public decimal TotalQuantityInheritance { get; set; }
         public decimal BomQuantity { get; set; }

@@ -1,8 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using Verp.Cache.Caching;
 using Verp.Cache.MemCache;
 using VErp.Commons.GlobalObject;
@@ -24,7 +21,7 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddScoped<IActivityLogService, ActivityLogService>();
             services.AddScoped<IPhysicalFileService, PhysicalFileService>();
-            
+
 
 
             services.AddScoped<IStockHelperService, StockHelperService>();
@@ -35,7 +32,7 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<IRoleHelperService, RoleHelperService>();
             services.AddScoped<IOutsideMappingHelperService, OutsideMappingHelperService>();
             services.AddScoped<IBarcodeConfigHelperService, BarcodeConfigHelperService>();
-            
+
 
             services.AddScoped<ICategoryHelperService, CategoryHelperService>();
             services.AddScoped<IMenuHelperService, MenuHelperService>();

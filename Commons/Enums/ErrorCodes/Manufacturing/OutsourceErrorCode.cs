@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
-using Verp.Resources.Enums.ErrorCodes.Manufacturing;
+﻿using Verp.Resources.Enums.ErrorCodes.Manufacturing;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 

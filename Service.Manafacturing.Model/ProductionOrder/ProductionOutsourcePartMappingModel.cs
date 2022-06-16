@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -21,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public ProductionOutsourcePartMappingInput()
         {
-            ProductionStepLinkDataCodes = new List<string> ();
+            ProductionStepLinkDataCodes = new List<string>();
         }
     }
 }

@@ -1,11 +1,10 @@
 using AutoMapper;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Model.Notification
 {
-    public class NotificationModel: IMapFrom<NotificationEntity>
+    public class NotificationModel : IMapFrom<NotificationEntity>
     {
         public long NotificationId { get; set; }
         public int UserId { get; set; }
@@ -13,7 +12,7 @@ namespace VErp.Services.Master.Model.Notification
         public long CreatedDatetimeUtc { get; set; }
         public long? ReadDateTimeUtc { get; set; }
         public bool IsRead { get; set; }
-        public long SubscriptionId {get;set;}
+        public long SubscriptionId { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -26,5 +25,5 @@ namespace VErp.Services.Master.Model.Notification
         }
     }
 
-    
+
 }

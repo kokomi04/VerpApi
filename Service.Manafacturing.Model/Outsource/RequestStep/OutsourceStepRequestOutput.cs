@@ -1,16 +1,8 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 {
-    public class OutsourceStepRequestOutput: OutsourceStepRequestPrivateKey
+    public class OutsourceStepRequestOutput : OutsourceStepRequestPrivateKey
     {
         public long ProductionOrderId { get; set; }
         public long OutsourceStepRequestFinishDate { get; set; }
@@ -36,11 +28,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         public string PurchaseOrderId { get; set; }
     }
 
-    public class OutsourceStepRequestMaterialsConsumption {
-        public long OutsourceStepRequestId {get;set;}
-        public long ProductId {get;set;}
-        public decimal Quantity {get;set;}
+    public class OutsourceStepRequestMaterialsConsumption
+    {
+        public long OutsourceStepRequestId { get; set; }
+        public long ProductId { get; set; }
+        public decimal Quantity { get; set; }
     }
 
-   
+
 }

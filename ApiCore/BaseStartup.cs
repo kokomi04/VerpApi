@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,23 +19,14 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Primitives;
-using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using Swashbuckle.AspNetCore.Swagger;
 using System;
-using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
-using System.Text.Json;
-using System.Threading.Tasks;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -45,7 +35,6 @@ using VErp.Infrastructure.ApiCore.Middleware;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
-using static IdentityModel.OidcConstants;
 
 namespace VErp.Infrastructure.ApiCore
 {

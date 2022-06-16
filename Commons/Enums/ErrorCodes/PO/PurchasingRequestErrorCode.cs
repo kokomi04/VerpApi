@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
-using VErp.Commons.Enums.StandardEnum;
+﻿using Verp.Resources.Enums.ErrorCodes.PO;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
-using Verp.Resources.Enums.ErrorCodes.PO;
 
 namespace VErp.Commons.Enums.ErrorCodes
 {
@@ -14,7 +9,7 @@ namespace VErp.Commons.Enums.ErrorCodes
         RequestNotFound = 1,
         RequestCodeEmpty = 2,
         RequestCodeAlreadyExisted = 3,
-      
+
         //RequestAlreadyApproved = 4,
     }
 }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Manafacturing.Model.ProductionAssignment
+﻿namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
     public class CapacityDepartmentChartsModel
     {

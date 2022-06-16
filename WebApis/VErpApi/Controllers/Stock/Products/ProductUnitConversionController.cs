@@ -1,20 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Dictionary;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.Dictionary;
-using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
 
 namespace VErpApi.Controllers.Stock.Products

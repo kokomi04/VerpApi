@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using System.Collections;
 using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using ProductionProcessMoldEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionProcessMold;

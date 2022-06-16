@@ -1,9 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
@@ -18,7 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal WorkloadConvertRate { get; set; }
     }
 
-    public class ProductionStepLinkDataRoleInput: ProductionStepLinkDataRoleModel
+    public class ProductionStepLinkDataRoleInput : ProductionStepLinkDataRoleModel
     {
         public string ProductionStepCode { get; set; }
         public string ProductionStepLinkDataCode { get; set; }

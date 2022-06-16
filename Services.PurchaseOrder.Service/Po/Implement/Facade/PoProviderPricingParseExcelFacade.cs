@@ -2,16 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
-using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Services.PurchaseOrder.Model.Request;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderParseExcelValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
@@ -25,9 +21,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
         }
 
-        public async IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping,Stream stream)
+        public async IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, Stream stream)
         {
-            var rowDatas = SingleInvoiceParseExcel(mapping,  stream).ToList();
+            var rowDatas = SingleInvoiceParseExcel(mapping, stream).ToList();
 
             var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
             var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
@@ -150,7 +146,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 return false;
             });
             foreach (var item in data)
-            {                              
+            {
                 item.ProductInternalName = item.ProductName?.NormalizeAsInternalName();
             }
             return data.OrderBy(d => d.SortOrder).ToList();

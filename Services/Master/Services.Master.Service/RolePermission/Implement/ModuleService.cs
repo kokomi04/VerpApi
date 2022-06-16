@@ -1,16 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.RolePermission;
-using VErp.Services.Master.Service.RolePermission;
 
 namespace VErp.Services.Master.Service.RolePermission.Implement
 {
