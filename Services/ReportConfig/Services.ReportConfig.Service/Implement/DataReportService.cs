@@ -940,7 +940,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.pdf").Replace(" ", "#"));
+                var fromDate = Convert.ToInt64(reportDataModel.Head["tu_ngay"]).UnixToDateTime().Value;
+                var toDate = Convert.ToInt64(reportDataModel.Head["den_ngay"]).UnixToDateTime().Value;
+                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate.ToString("ddMMyyyy")} {toDate.ToString("ddMMyyyy")}.pdf").Replace(" ", "#"));
             }
             catch (Exception ex)
             {

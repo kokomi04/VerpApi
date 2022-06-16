@@ -134,9 +134,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var stream = await xssfwb.WriteToStream();
             stream.Seek(0, SeekOrigin.Begin);
-
+            var fromDate = Convert.ToInt64(model.Body.FilterData.Filters["FromDate"]).UnixToDateTime().Value;
+            var toDate = Convert.ToInt64(model.Body.FilterData.Filters["ToDate"]).UnixToDateTime().Value;
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "#");
+            var fileName = StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate.ToString("ddMMyyyy")} {toDate.ToString("ddMMyyyy")}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 
