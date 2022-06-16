@@ -26,9 +26,9 @@ namespace VErp.Services.Stock.Service.Stock
 
         CategoryNameModel OutputFieldsForMapping();
 
-        Task<long> InventoryInputImport(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model);
+        Task<bool> InventoryInputImport(ImportExcelMapping mapping, Stream stream);
 
-        Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model);
+        Task<bool> InventoryOutImport(ImportExcelMapping mapping, Stream stream);
 
         CategoryNameModel OutFieldsForParse();
 

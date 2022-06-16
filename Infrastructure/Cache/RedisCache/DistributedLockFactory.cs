@@ -121,9 +121,9 @@ namespace Verp.Cache.RedisCache
             return $"HRTYPE_LOCK_{hrTypeId}";
         }
 
-        public static string GetLockStockResourceKey(int stockId)
+        public static string GetLockStockResourceKey()
         {
-            return $"STOCK_LOCK_{stockId}";
+            return $"STOCK_LOCK";
         }
 
         public static string GetLockGenerateCodeKey(int customGenCodeId)

@@ -72,7 +72,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var totalMoney = (decimal)0;
             foreach (var item in data)
             {
-                totalMoney += (item.UnitPrice * item.PrimaryQuantity);
+                totalMoney += item.Money ?? 0;// (item.UnitPrice * item.PrimaryQuantity);
             }
             return totalMoney;
         }

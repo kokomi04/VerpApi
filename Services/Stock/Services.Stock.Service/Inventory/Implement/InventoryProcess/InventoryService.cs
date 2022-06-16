@@ -464,6 +464,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
                         ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
                         ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
+                        Money = detail.Money,
                         FromPackageId = detail.FromPackageId,
                         ToPackageId = detail.ToPackageId,
                         ToPackageCode = packageInfo?.PackageCode,
@@ -712,6 +713,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 fields.Add(f);
             }
 
+            var actionField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvInputModel.InventoryActionId)));
+
+            var actions = ImportInvInputModel.InventoryActionIds;
+
+            actionField.FieldTitle = $"Loại ({string.Join(",", actions.Select(a => $"{(int)a}: {a.GetEnumDescription()}"))})";
+
             result.Fields = fields;
             return result;
         }
@@ -730,100 +737,123 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             };
             var fields = ExcelUtils.GetFieldNameModels<ImportInvOutputModel>();
 
+            var actionField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvOutputModel.InventoryActionId)));
+
+            var actions = ImportInvOutputModel.InventoryActionIds;
+
+            actionField.FieldTitle = $"Loại ({string.Join(",", actions.Select(a => $"{(int)a}: {a.GetEnumDescription()}"))})";
+
             result.Fields = fields;
             return result;
         }
 
-        public async Task<long> InventoryInputImport(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model)
+        public async Task<bool> InventoryInputImport(ImportExcelMapping mapping, Stream stream)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))
             {
                 var baseValueChains = new Dictionary<string, int>();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryExport = new InventoryInputImportFacade();
-                    inventoryExport.SetProductService(_productService);
-                    inventoryExport.SetMasterDBContext(_masterDBContext);
-                    inventoryExport.SetStockDBContext(_stockDbContext);
-                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
-
-                    var inventoryData = await inventoryExport.GetInputInventoryModel();
-                    if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+                    using (var batchLog = _activityLogService.BeginBatchLog())
                     {
-                        throw new BadRequestException("No products found!");
+
+                        var inventoryExport = new InventoryInputImportFacade();
+                        inventoryExport.SetProductService(_productService);
+                        inventoryExport.SetMasterDBContext(_masterDBContext);
+                        inventoryExport.SetStockDBContext(_stockDbContext);
+                        inventoryExport.SetOrganizationHelper(_organizationHelperService);
+                        await inventoryExport.ProcessExcelFile(mapping, stream);
+
+                        var inventoryDatas = await inventoryExport.GetInputInventoryModel();
+
+                        foreach (var inventoryData in inventoryDatas)
+                        {
+                            if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+                            {
+                                throw new BadRequestException("No products found!");
+                            }
+
+                            if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                            }
+
+                            var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
+
+                            var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
+
+
+                            await ctx.ConfirmCode();
+
+                            await _inventoryBillInputService.ImportedLogBuilder()
+                               .MessageResourceFormatDatas(entity.InventoryCode)
+                               .ObjectId(entity.InventoryId)
+                               .JsonData(inventoryData.JsonSerialize())
+                               .CreateLog();
+                        }
+
+                        await trans.CommitAsync();
+
+                        await batchLog.CommitAsync();
                     }
-
-                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                    {
-                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
-                    }
-
-                    inventoryData.InventoryCode = model.InventoryCode;
-
-                    var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
-
-                    var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
-
-                    await trans.CommitAsync();
-
-                    await ctx.ConfirmCode();
-
-                    await _inventoryBillInputService.ImportedLogBuilder()
-                       .MessageResourceFormatDatas(entity.InventoryCode)
-                       .ObjectId(entity.InventoryId)
-                       .JsonData(inventoryData.JsonSerialize())
-                       .CreateLog();
-
-                    return entity.InventoryId;
+                    return true;
                 }
             }
         }
 
 
-        public async Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model)
+        public async Task<bool> InventoryOutImport(ImportExcelMapping mapping, Stream stream)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))
             {
 
                 var baseValueChains = new Dictionary<string, int>();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryExport = new InventoryOutImportFacade();
-                    inventoryExport.SetStockDBContext(_stockDbContext);
-                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
-
-
-                    var inventoryData = await inventoryExport.GetOutputInventoryModel();
-                    if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
+                    using (var batchLog = _activityLogService.BeginBatchLog())
                     {
-                        throw new BadRequestException("No products found!");
+                        var inventoryExport = new InventoryOutImportFacade();
+                        inventoryExport.SetStockDBContext(_stockDbContext);
+                        inventoryExport.SetOrganizationHelper(_organizationHelperService);
+                        await inventoryExport.ProcessExcelFile(mapping, stream);
+
+
+                        var inventoryDatas = await inventoryExport.GetOutputInventoryModel();
+                        foreach (var inventoryData in inventoryDatas)
+                        {
+                            if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
+                            {
+                                throw new BadRequestException("No products found!");
+                            }
+
+                            if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
+                            }
+
+                            var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
+
+                            var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
+
+                            await trans.CommitAsync();
+
+                            await ctx.ConfirmCode();
+
+                            await _inventoryBillOutputService.ImportedLogBuilder()
+                                .MessageResourceFormatDatas(inventoryData.InventoryCode)
+                                .ObjectId(entity.InventoryId)
+                                .JsonData(inventoryData.JsonSerialize())
+                                .CreateLog();
+
+                        }
+
+                        await trans.CommitAsync();
+
+                        await batchLog.CommitAsync();
+                        return true;
                     }
-
-                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                    {
-                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
-                    }
-
-
-                    inventoryData.InventoryCode = model.InventoryCode;
-
-                    var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
-
-                    var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
-
-                    await trans.CommitAsync();
-
-                    await ctx.ConfirmCode();
-
-                    await _inventoryBillOutputService.ImportedLogBuilder()
-                        .MessageResourceFormatDatas(inventoryData.InventoryCode)
-                        .ObjectId(entity.InventoryId)
-                        .JsonData(inventoryData.JsonSerialize())
-                        .CreateLog();
-
-                    return entity.InventoryId;
                 }
             }
         }
