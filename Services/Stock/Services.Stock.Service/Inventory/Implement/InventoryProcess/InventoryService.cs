@@ -684,6 +684,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
 
+            var sortOrder = fields.Max(f => f.SortOrder);
             foreach (var p in customProps)
             {
                 var f = new CategoryFieldNameModel()
@@ -695,7 +696,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsRequired = false,
                     Type = null,
                     RefCategory = null,
-                    SortOrder = packageField.SortOrder
+                    SortOrder = sortOrder++
                 };
 
                 fields.Add(f);

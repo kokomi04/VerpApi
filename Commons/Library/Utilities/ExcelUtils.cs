@@ -30,7 +30,7 @@ namespace VErp.Commons.Library
 
 
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "")
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "", int parentOrder = 0)
         {
             var fields = new List<CategoryFieldNameModel>();
 
@@ -44,7 +44,7 @@ namespace VErp.Commons.Library
                 });
             }
 
-            var sortOrder = 1;
+            var sortOrder = parentOrder;
             foreach (var prop in typeof(T).GetProperties())
             {
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
@@ -90,7 +90,7 @@ namespace VErp.Commons.Library
                 {
                     MethodInfo method = typeof(ExcelUtils).GetMethod(nameof(ExcelUtils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name });
+                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name, order });
                     foreach (var f in nestedFields)
                     {
                         fields.Add(new CategoryFieldNameModel()
