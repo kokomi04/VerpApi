@@ -30,6 +30,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
     {
         private PurchaseOrderDBContext purchaseOrderDBContext;
         private readonly IVoucherDataService voucherDataService;
+        private readonly ICurrentContextService currentContextService;
         private ISheet sheet = null;
         private int currentRow = 0;
         //private int maxColumnIndex = 10;
@@ -39,10 +40,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
         private VoucherType typeInfo;
         private bool isMultirow;
 
-        public VoucherDataExportFacadeService(PurchaseOrderDBContext accountancyDBContext, IVoucherDataService inputDataService)
+        public VoucherDataExportFacadeService(PurchaseOrderDBContext accountancyDBContext, IVoucherDataService inputDataService, ICurrentContextService currentContextService)
         {
             this.purchaseOrderDBContext = accountancyDBContext;
             this.voucherDataService = inputDataService;
+            this.currentContextService = currentContextService;
         }
 
         private async Task LoadFields(int voucherTypeId, VoucherTypeBillsExportModel req)
@@ -96,7 +98,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"{typeInfo.Title.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fromDate = Convert.ToInt64(req.FromDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+            var toDate = Convert.ToInt64(req.ToDate).UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+            var fileName = StringUtils.RemoveDiacritics($"{typeInfo.Title} {fromDate} {toDate}.xlsx").Replace(" ","#");
             return (stream, fileName, contentType);
         }
 

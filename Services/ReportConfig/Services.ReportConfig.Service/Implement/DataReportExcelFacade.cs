@@ -135,7 +135,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var stream = await xssfwb.WriteToStream();
             stream.Seek(0, SeekOrigin.Begin);
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            GetFromDateToDate(model.Body.FilterData.Filters, out var fromDate, out var toDate);
+            GetFromDateToDate(model.Body.FilterData, out var fromDate, out var toDate);
             var fileName = StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate} {toDate}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }

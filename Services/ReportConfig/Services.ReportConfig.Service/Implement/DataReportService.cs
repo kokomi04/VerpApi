@@ -940,7 +940,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                GetFromDateToDate(reportDataModel.Body.FilterData.Filters, out var fromDate, out var toDate);
+                GetFromDateToDate(reportDataModel.FilterData, out var fromDate, out var toDate);
                 return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate} {toDate}.pdf").Replace(" ", "#"));
             }
             catch (Exception ex)
