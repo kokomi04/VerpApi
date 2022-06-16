@@ -27,6 +27,8 @@ namespace VErp.Commons.Library.Model
 
         public EnumDataType? DataTypeId { get; set; }
         public CategoryNameModel RefCategory { get; set; }
+
+        public int? SortOrder { get; set; }
     }
 
     //public class FieldDataTypeAttribute : Attribute
