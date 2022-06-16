@@ -940,9 +940,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                var fromDate = Convert.ToInt64(reportDataModel.Head["tu_ngay"]).UnixToDateTime().Value;
-                var toDate = Convert.ToInt64(reportDataModel.Head["den_ngay"]).UnixToDateTime().Value;
-                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate.ToString("ddMMyyyy")} {toDate.ToString("ddMMyyyy")}.pdf").Replace(" ", "#"));
+                GetFromDateToDate(reportDataModel.Body.FilterData.Filters, out var fromDate, out var toDate);
+                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate} {toDate}.pdf").Replace(" ", "#"));
             }
             catch (Exception ex)
             {
@@ -967,6 +966,23 @@ namespace Verp.Services.ReportConfig.Service.Implement
             public int SortOrder { get; set; }
 
             public string KeyValue { get; set; }
+        }
+
+        private void GetFromDateToDate(ReportFilterDataModel filters, out string fromDate, out string toDate)
+        {
+            fromDate = "";
+            toDate = "";
+            foreach(var key in filters.Filters.Keys)
+            {
+                if (key.ToLower().Contains("fromdate"))
+                {
+                    if (!filters.Filters[key].IsNullObject()) fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+                if (key.ToLower().Contains("todate"))
+                {
+                    if (!filters.Filters[key].IsNullObject()) toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+            }
         }
     }
 
