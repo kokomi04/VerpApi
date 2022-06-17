@@ -59,6 +59,15 @@ namespace VErpApi.Controllers.Stock.Products
         }
 
         [HttpPost]
+        [Route("SearchV2")]
+        [GlobalApi]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<ProductListOutput>> Search([FromBody] ProductSearchRequestModel req)
+        {
+            return await _productService.GetList(req, req.Page, req.Size);
+        }
+
+        [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("ExportList")]
         public async Task<IActionResult> ExportList([FromBody] ProductExportRequestModel req)
