@@ -41,7 +41,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var rawString = fileKey.DecryptFileKey(_dataProtectionProvider, _appSetting);
             var data = rawString.Split('|');
 
-            var fileId = data[0];
+            // var fileId = data[0];
             var relativeFilePath = data[1];
             var contentType = data[2];
             var timeUnix = data[3];

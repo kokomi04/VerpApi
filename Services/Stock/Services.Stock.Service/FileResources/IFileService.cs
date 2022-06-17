@@ -20,6 +20,7 @@ namespace VErp.Services.Stock.Service.FileResources
         Task<bool> FileAssignToObject(EnumObjectType objectTypeId, long objectId, long fileId);
 
         Task<FileToDownloadInfo> GetFileUrl(long fileId, EnumThumbnailSize? thumb);
+        Task<bool> UpdateViewInfo(long fileId, decimal? rotate);
 
         Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb);
 

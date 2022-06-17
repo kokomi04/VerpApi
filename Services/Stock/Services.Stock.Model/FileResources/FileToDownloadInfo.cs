@@ -4,6 +4,7 @@
     {
         public string ThumbnailUrl { get; set; }
         public string FileName { get; set; }
+        public decimal? Rotate { get; set; }
     }
     public class FileToDownloadInfo : FileThumbnailInfo
     {
@@ -11,5 +12,10 @@
         public long FileLength { get; set; }
 
         public long? FileId { set; get; }
+    }
+
+    public class FileViewModel
+    {
+        public decimal? Rotate { get; set; }
     }
 }
