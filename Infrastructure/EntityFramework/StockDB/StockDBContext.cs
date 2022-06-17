@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -59,8 +61,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public virtual DbSet<StockTakePeriod> StockTakePeriod { get; set; }
         public virtual DbSet<StockTakeRepresentative> StockTakeRepresentative { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -81,6 +82,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(1024);
 
                 entity.Property(e => e.LargeThumb).HasMaxLength(1024);
+
+                entity.Property(e => e.Rotate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.SmallThumb).HasMaxLength(1024);
             });

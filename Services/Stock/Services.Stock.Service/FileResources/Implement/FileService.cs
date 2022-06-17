@@ -122,6 +122,18 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             return GenerateFileDownloadInfo(fileInfo, thumb, true);
         }
 
+        public async Task<bool> UpdateViewInfo(long fileId, decimal? rotate)
+        {
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+            fileInfo.Rotate = rotate;
+            await _stockContext.SaveChangesAsync();
+            return true;
+        }
+
         public async Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb)
         {
             if (fileIds == null || fileIds.Count == 0)
@@ -511,7 +523,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 FileName = fileInfo.FileName,
                 FileUrl = fileUrl,
                 ThumbnailUrl = thumbUrl,
-                FileLength = fileInfo.FileLength ?? 0
+                FileLength = fileInfo.FileLength ?? 0,
+                Rotate = fileInfo.Rotate
             };
         }
 

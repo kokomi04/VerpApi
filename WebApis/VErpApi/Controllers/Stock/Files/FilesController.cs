@@ -38,6 +38,14 @@ namespace VErpApi.Controllers.Stock.Files
         }
 
         [GlobalApi]
+        [HttpPut]
+        [Route("{fileId}/UpdateViewInfo")]
+        public async Task<bool> UpdateViewInfo([FromRoute] long fileId, [FromBody] FileViewModel req)
+        {
+            return await _fileService.UpdateViewInfo(fileId, req?.Rotate).ConfigureAwait(true);
+        }
+
+        [GlobalApi]
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetFilesUrls")]
