@@ -762,35 +762,33 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return true;
         }
 
-
-
-        public async Task<PageData<ProductListOutput>> GetList(string keyword, IList<int> productIds, string productName, int[] productTypeIds, IList<int> productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<PageData<ProductListOutput>> GetList(ProductFilterRequestModel req, int page, int size)
         {
-            keyword = (keyword ?? "").Trim();
-            productName = (productName ?? "").Trim();
+            var keyword = (req.Keyword ?? "").Trim();
+            var productName = (req.ProductName ?? "").Trim();
 
             var productInternalName = productName.NormalizeAsInternalName();
 
             var products = _stockDbContext.Product.AsQueryable();
 
-            if (productIds != null && productIds.Count > 0)
+            if (req.ProductIds != null && req.ProductIds.Count > 0)
             {
-                products = products.Where(x => productIds.Contains(x.ProductId));
+                products = products.Where(x => req.ProductIds.Contains(x.ProductId));
             }
 
-            if (isProductSemi == true)
+            if (req.IsProductSemi == true)
             {
-                products = products.Where(x => x.IsProductSemi == isProductSemi.Value);
+                products = products.Where(x => x.IsProductSemi == req.IsProductSemi.Value);
             }
 
-            if (isProduct == true)
+            if (req.IsProduct == true)
             {
-                products = products.Where(x => x.IsProduct == isProduct.Value);
+                products = products.Where(x => x.IsProduct == req.IsProduct.Value);
             }
 
-            if (isMaterials == true)
+            if (req.IsMaterials == true)
             {
-                products = products.Where(x => x.IsMaterials == isMaterials.Value);
+                products = products.Where(x => x.IsMaterials == req.IsMaterials.Value);
             }
 
             if (!string.IsNullOrWhiteSpace(productName))
@@ -798,9 +796,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(p => p.ProductInternalName == productInternalName);
             }
 
-            if (stockIds?.Count > 0)
+            if (req.StockIds?.Count > 0)
             {
-                var productIdsInStocks = _stockDbContext.StockProduct.Where(s => stockIds.Contains(s.StockId)).Select(s => s.ProductId);
+                var productIdsInStocks = _stockDbContext.StockProduct.Where(s => req.StockIds.Contains(s.StockId)).Select(s => s.ProductId);
                 products = products.Where(s => productIdsInStocks.Contains(s.ProductId));
             }
             var query = (
@@ -868,18 +866,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
               });
 
 
-            if (productTypeIds != null && productTypeIds.Length > 0)
+            if (req.ProductTypeIds != null && req.ProductTypeIds.Length > 0)
             {
-                var types = productTypeIds.Select(t => (int?)t);
+                var types = req.ProductTypeIds.Select(t => (int?)t);
                 query = from p in query
                         where types.Contains(p.ProductTypeId)
                         select p;
             }
 
-            if (productCateIds != null && productCateIds.Count > 0)
+            if (req.ProductCateIds != null && req.ProductCateIds.Count() > 0)
             {
                 query = from p in query
-                        where productCateIds.Contains(p.ProductCateId)
+                        where req.ProductCateIds.Contains(p.ProductCateId)
                         select p;
             }
 
@@ -898,7 +896,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         || c.DescriptionToStock.Contains(keyword)
                         select c;
             }
-            query = query.InternalFilter(filters);
+            query = query.InternalFilter(req.Filters);
 
             var total = await query.CountAsync();
             var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
@@ -984,19 +982,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return (pageData, total);
         }
 
-
-        public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, int page, int size, bool? isProductSemi, bool? isProduct, bool? isMaterials, Clause filters = null, IList<int> stockIds = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportList(ProductExportRequestModel req)
         {
-            var lst = await GetList(keyword, productIds, productName, productTypeIds, productCateIds, 1, int.MaxValue, isProductSemi, isProduct, isMaterials, filters, stockIds);
-            var bomExport = new ProductExportFacade(_stockDbContext, fieldNames);
+            var lst = await GetList(req, 1, int.MaxValue);
+            var bomExport = new ProductExportFacade(_stockDbContext, req.FieldNames);
             return await bomExport.Export(lst.List);
         }
 
         public async Task<IList<ProductListOutput>> GetListByIds(IList<int> productIds)
         {
             if (productIds == null || productIds.Count == 0) return new List<ProductListOutput>();
-
-            var productList = await GetList("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            var req = new ProductFilterRequestModel("", productIds, "", new int[0], new int[0], null, null, null, null);
+            //var productList = await GetList("", productIds, "", new int[0], new int[0], 1, int.MaxValue, null, null, null, null);
+            var productList = await GetList(req, 1, int.MaxValue);
 
             var pagedData = productList.List;
 
