@@ -100,7 +100,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             var fromDate = req.FromDate.HasValue ? req.FromDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
             var toDate = req.ToDate.HasValue ? req.ToDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
-            var fileName = StringUtils.RemoveDiacritics($"{typeInfo.Title} {fromDate} {toDate}.xlsx").Replace(" ","#");
+            var fileName = typeInfo.Title.ToString();
+            if (!"".Equals(fromDate)) fileName += $" {fromDate}";
+            if (!"".Equals(toDate)) fileName += $" {toDate}";
+            fileName = StringUtils.RemoveDiacritics($"{fileName}.xlsx").Replace(" ","#");
             return (stream, fileName, contentType);
         }
 

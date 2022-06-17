@@ -940,8 +940,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                GetFromDateToDate(reportDataModel.FilterData, out var fromDate, out var toDate);
-                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {fromDate} {toDate}.pdf").Replace(" ", "#"));
+                var fileName = GetFileName(reportDataModel.FilterData, reportInfo.ReportTypeName);
+                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{fileName}.pdf").Replace(" ", "#"));
             }
             catch (Exception ex)
             {
@@ -968,10 +968,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
             public string KeyValue { get; set; }
         }
 
-        private void GetFromDateToDate(ReportFilterDataModel filters, out string fromDate, out string toDate)
+        private string GetFileName(ReportFilterDataModel filters, string fileName)
         {
-            fromDate = "";
-            toDate = "";
+            var fromDate = "";
+            var toDate = "";
             foreach(var key in filters.Filters.Keys)
             {
                 if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
@@ -983,6 +983,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
                 }
             }
+            if (!"".Equals(fromDate)) fileName = $"{fileName} {fromDate}";
+            if (!"".Equals(toDate)) fileName = $"{fileName} {toDate}";
+            return fileName;
         }
     }
 
