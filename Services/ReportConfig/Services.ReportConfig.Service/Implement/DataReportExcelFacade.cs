@@ -130,9 +130,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var stream = await xssfwb.WriteToStream();
             stream.Seek(0, SeekOrigin.Begin);
-
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = StringUtils.RemoveDiacritics($"{reportInfo.ReportTypeName} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
+            var fileName = GetFileName(model.Body.FilterData, reportInfo.ReportTypeName);
+            fileName = StringUtils.RemoveDiacritics($"{fileName}.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 
@@ -955,5 +955,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
         internal void SetContextData(ReportConfigDBContext reportConfigDB) => _contextData = reportConfigDB;
         internal void SetCurrentContextService(ICurrentContextService currentContextService) => _currentContextService = currentContextService;
         internal void SetDataReportService(IDataReportService dataReportService) => _dataReportService = dataReportService;
+        private string GetFileName(ReportFilterDataModel filters, string fileName)
+        {
+            var fromDate = "";
+            var toDate = "";
+            foreach (var key in filters.Filters.Keys)
+            {
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                {
+                    fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                {
+                    toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+            }
+            if (!"".Equals(fromDate)) fileName = $"{fileName} {fromDate}";
+            if (!"".Equals(toDate)) fileName = $"{fileName} {toDate}";
+            return fileName;
+        }
     }
 }

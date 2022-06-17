@@ -65,7 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"product-materials-consumption-{productCode.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = StringUtils.RemoveDiacritics($"{productCode.NormalizeAsInternalName()} product materials consumption.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 

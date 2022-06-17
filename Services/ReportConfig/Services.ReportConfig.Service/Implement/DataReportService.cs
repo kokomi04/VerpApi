@@ -937,7 +937,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 var newFile = await _docOpenXmlService.GenerateWordAsPdfFromTemplate(fileInfo, reportDataModel.JsonSerialize(), _dbContext);
-                return (newFile, "application/pdf", Path.GetFileNameWithoutExtension(fileInfo.FileName) + ".pdf");
+                var fileName = GetFileName(reportDataModel.FilterData, reportInfo.ReportTypeName);
+                return (newFile, "application/pdf", StringUtils.RemoveDiacritics($"{fileName}.pdf").Replace(" ", "#"));
             }
             catch (Exception ex)
             {
@@ -962,6 +963,26 @@ namespace Verp.Services.ReportConfig.Service.Implement
             public int SortOrder { get; set; }
 
             public string KeyValue { get; set; }
+        }
+
+        private string GetFileName(ReportFilterDataModel filters, string fileName)
+        {
+            var fromDate = "";
+            var toDate = "";
+            foreach(var key in filters.Filters.Keys)
+            {
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                {
+                    fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                {
+                    toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                }
+            }
+            if (!"".Equals(fromDate)) fileName = $"{fileName} {fromDate}";
+            if (!"".Equals(toDate)) fileName = $"{fileName} {toDate}";
+            return fileName;
         }
     }
 

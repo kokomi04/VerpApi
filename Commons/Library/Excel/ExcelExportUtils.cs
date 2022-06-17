@@ -95,7 +95,7 @@ namespace VErp.Commons.Library.Excel
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fName = StringUtils.RemoveDiacritics($"{title} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
+            var fName = StringUtils.RemoveDiacritics($"{title}.xlsx").Replace(" ", "#");
             return (stream, fName, contentType);
 
         }
