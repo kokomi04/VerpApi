@@ -48,5 +48,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
         public int? TargetProductivityId { get; set; }
+        public bool? ConfirmFlag { get; set; }
     }
 }

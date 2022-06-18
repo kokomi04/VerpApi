@@ -119,6 +119,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw UnitOfProductNotFound.BadRequestFormat(model.ProductCode);
             }
 
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                new SqlParameter("@ProductId",productId),
+                isInUsed
+            };
+            await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true && model.ConfirmFlag != true)
+            {
+                throw new BadRequestException(ProductErrorCode.ProductInUsed);
+            }
+
             using (var trans = await _stockContext.Database.BeginTransactionAsync())
             {
                 var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
