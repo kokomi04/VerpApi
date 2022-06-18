@@ -670,16 +670,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var checkParams = new[]
-            {
-                new SqlParameter("@ProductId",productId),
-                isInUsed
-            };
+            //var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            //var checkParams = new[]
+            //{
+            //    new SqlParameter("@ProductId",productId),
+            //    isInUsed
+            //};
 
-            await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+            //await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
-            if (isInUsed.Value as bool? == true)
+            var isInUsed = await CheckProductionIsUsed(productId);
+            //if (isInUsed.Value as bool? == true)
+            if (isInUsed.Value == true)
             {
                 throw CanNotDeleteProductWhichInUsed.BadRequest(ProductErrorCode.ProductInUsed);
             }
@@ -1306,6 +1308,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
 
             }
+        }
+
+        public async Task<bool?> CheckProductionIsUsed(int productId)
+        {
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                new SqlParameter("@ProductId",productId),
+                isInUsed
+            };
+            await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+            return isInUsed.Value as bool?;
         }
     }
 }

@@ -41,6 +41,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<bool> UpdateProductionProcessVersion(int productId);
         Task<long> GetProductionProcessVersion(int productId);
+        Task<bool?> CheckProductionIsUsed(int productId);
 
     }
 }
