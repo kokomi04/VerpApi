@@ -30,13 +30,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
+        private readonly IProductService _productService;
 
-        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService, ObjectActivityLogFacade productActivityLog)
+        public ProductImportFacade(
+            StockDBContext stockContext
+            , MasterDBContext masterDBContext
+            , IOrganizationHelperService organizationHelperService
+            , ObjectActivityLogFacade productActivityLog
+            , IProductService productService
+        )
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
             _productActivityLog = productActivityLog;
+            _productService = productService;
         }
 
 
@@ -59,7 +67,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         IList<RefTargetProductivity> targetProductivities = null;
 
-        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream, bool? confirmFlag)
         {
             var reader = new ExcelReader(stream);
 
@@ -374,6 +382,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .Select(y => y.ToList().MergeData())
                 .ToList();
 
+            //check if data in used
+            if (confirmFlag != true)
+            {
+                foreach (var _product in updateProducts)
+                {
+                    var oldProduct = _stockContext.Product.Where(x => x.ProductCode == _product.ProductCode).FirstOrDefault();
+                    if (units[_product.Unit.NormalizeAsInternalName()] != oldProduct.UnitId)
+                    {
+                        var isInUsed = await _productService.CheckProductionIsUsed(oldProduct.ProductId);
+                        if (isInUsed.Value == true)
+                        {
+                            throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                        }
+                    }
+                }
+            }
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
