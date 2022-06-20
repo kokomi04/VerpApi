@@ -84,14 +84,14 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPost]
         [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file, [FromBody] bool? confirmFlag)
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             mapping.FileName = file.FileName;
-            return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream(), confirmFlag).ConfigureAwait(true);
+            return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream(), mapping.confirmFlag).ConfigureAwait(true);
         }
 
         /// <summary>
