@@ -12,7 +12,7 @@ namespace VErp.Commons.Library.Model
         public int? ToRow { get; set; }
         public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
-        public bool? confirmFlag { get; set; }
+        public bool? ConfirmFlag { get; set; }
     }
 
     public class ImportExcelMappingExtra<T>
