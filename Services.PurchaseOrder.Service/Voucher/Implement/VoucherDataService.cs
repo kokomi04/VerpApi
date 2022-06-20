@@ -1194,7 +1194,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (billIds.Length == 0) throw ListBillsToUpdateIsEmpty.BadRequest();
 
             // Get field
-            var field = _purchaseOrderDBContext.VoucherAreaField.Include(f => f.VoucherField).Include(f => f.VoucherArea).FirstOrDefault(f => f.VoucherField.FieldName == fieldName);
+            var field = _purchaseOrderDBContext.VoucherAreaField.Include(f => f.VoucherField).Include(f => f.VoucherArea).FirstOrDefault(f => f.VoucherArea.VoucherTypeId == voucherTypeId && f.VoucherField.FieldName == fieldName);
             if (field == null) throw FieldNotFound.BadRequest();
 
             if (!field.VoucherArea.IsMultiRow && detailIds?.Length > 0)
