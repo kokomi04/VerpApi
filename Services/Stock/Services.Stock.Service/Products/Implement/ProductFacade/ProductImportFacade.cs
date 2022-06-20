@@ -382,22 +382,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .Select(y => y.ToList().MergeData())
                 .ToList();
 
-            //check if data in used
-            if (mapping.ConfirmFlag != true)
-            {
-                foreach (var _product in updateProducts)
-                {
-                    var oldProduct = _stockContext.Product.Where(x => x.ProductCode == _product.ProductCode).FirstOrDefault();
-                    if (units[_product.Unit.NormalizeAsInternalName()] != oldProduct.UnitId)
-                    {
-                        var isInUsed = await _productService.CheckProductionIsUsed(oldProduct.ProductId);
-                        if (isInUsed.Value == true)
-                        {
-                            throw new BadRequestException(ProductErrorCode.ProductInUsed);
-                        }
-                    }
-                }
-            }
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
@@ -407,7 +391,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     foreach (var row in newProducts)
                     {
                         var newProduct = new Product();
-                        await ParseProductInfoEntity(newProduct, row);
+                        await ParseProductInfoEntity(newProduct, row, true);
 
                         _stockContext.Product.Add(newProduct);
                         productsMap.Add(row, newProduct);
@@ -417,7 +401,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         if (updateProducts.Count > 0)
                         {
-                            await UpdateProduct(productsMap, updateProducts, existsProduct);
+                            await UpdateProduct(productsMap, updateProducts, existsProduct, mapping.ConfirmFlag);
                         }
                     }
 
@@ -461,7 +445,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct, bool? confirmFlag)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -480,7 +464,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
-                await ParseProductInfoEntity(existedProduct, row);
+                await ParseProductInfoEntity(existedProduct, row, confirmFlag);
 
                 productsMap.Add(row, existedProduct);
 
@@ -488,7 +472,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private async Task ParseProductInfoEntity(Product product, ProductImportModel row)
+        private async Task ParseProductInfoEntity(Product product, ProductImportModel row, bool? confirmFlag)
         {
 
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
@@ -501,6 +485,17 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
             await Task.CompletedTask;
+            if (confirmFlag.Value != true)
+            {
+                if (product.ProductId > 0 && product.UnitId != oldUnitId)
+                {
+                    var isInUsed = await _productService.CheckProductionIsUsed(product.ProductId);
+                    if (isInUsed.Value == true)
+                    {
+                        throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                    }
+                }
+            }
             /*
             if (product.ProductId > 0 && product.UnitId != oldUnitId)
             {
