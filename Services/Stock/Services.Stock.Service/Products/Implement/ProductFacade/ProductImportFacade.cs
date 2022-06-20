@@ -67,7 +67,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         IList<RefTargetProductivity> targetProductivities = null;
 
-        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream, bool? confirmFlag)
+        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
@@ -383,7 +383,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .ToList();
 
             //check if data in used
-            if (confirmFlag != true)
+            if (mapping.ConfirmFlag != true)
             {
                 foreach (var _product in updateProducts)
                 {

@@ -91,7 +91,7 @@ namespace VErpApi.Controllers.Stock.Products
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             mapping.FileName = file.FileName;
-            return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream(), mapping.confirmFlag).ConfigureAwait(true);
+            return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         /// <summary>

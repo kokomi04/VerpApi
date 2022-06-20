@@ -31,7 +31,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
         CategoryNameModel GetFieldMappings();
-        Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream, bool? confirmFlag);
+        Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
 
         Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient);
 
