@@ -1289,7 +1289,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (billIds.Length == 0) throw ListBillsToUpdateIsEmpty.BadRequest();
 
             // Get field
-            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).Include(f => f.InputArea).FirstOrDefault(f => f.InputField.FieldName == fieldName);
+            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).Include(f => f.InputArea).FirstOrDefault(f => f.InputArea.InputTypeId == inputTypeId && f.InputField.FieldName == fieldName);
             if (field == null) throw FieldNotFound.BadRequest();
 
             if (!field.InputArea.IsMultiRow && detailIds?.Length > 0)
