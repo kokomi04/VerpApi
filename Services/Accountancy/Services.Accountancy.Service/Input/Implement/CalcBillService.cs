@@ -257,10 +257,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 new SqlParameter("@SoTK", accountNumber),
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcDepreciation", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcDepreciationV2", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }
