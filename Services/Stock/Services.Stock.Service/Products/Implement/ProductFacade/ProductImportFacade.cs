@@ -31,6 +31,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
+        private readonly IProductService _productService;
 
         public ProductImportFacade(
             StockDBContext stockContext
@@ -333,11 +334,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //check product is in used
             if (mapping.ConfirmFlag != true)
             {
-                var listProductId = existsProduct.Select(p => p.ProductId).AsEnumerable();
-                var isInUsed = await CheckListProductionIsUsed(listProductId);
-                if (isInUsed.Value == true)
+                var listProductIds = existsProduct.Select(p => p.ProductId).AsEnumerable().ToList();
+                var usedProductId = await _productService.CheckListProductionIsUsed(listProductIds);
+                if (usedProductId.HasValue)
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                    var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
+                    throw new BadRequestException(ProductErrorCode.ProductInUsed, usedProductCode);
                 }
             }
 
@@ -771,28 +773,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             }
             return lstUnitConverions;
 
-        }
-
-        public async Task<bool?> CheckListProductionIsUsed(IEnumerable<int> listProduct)
-        {
-            var tableID = new DataTable();
-            tableID.Columns.Add("Item");
-            foreach (var _proId in listProduct)
-            {
-                tableID.Rows.Add(_proId);
-            }
-
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var pList = new SqlParameter("@ProductId", SqlDbType.Structured);
-            pList.TypeName = "dbo.ListId";
-            pList.Value = tableID;
-            var checkParams = new[]
-            {
-                pList,
-                isInUsed
-            };
-            await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed_ByList", checkParams);
-            return isInUsed.Value as bool?;
         }
     }
     public class ProductUnitConversionUpdate : ProductUnitConversion
