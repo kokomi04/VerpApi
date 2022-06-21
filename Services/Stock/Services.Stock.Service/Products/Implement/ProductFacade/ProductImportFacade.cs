@@ -792,7 +792,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 var oldUnitId = existedProduct.UnitId;
                 existedProduct.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
                 await Task.CompletedTask;
-                if (existedProduct.ProductId > 0 && existedProduct.UnitId != oldUnitId)
+                if (!existedProduct.UnitId.IsNullObject() && existedProduct.UnitId != oldUnitId)
                 {
                     listProductIds.Add(existedProduct.ProductId);
                 }
