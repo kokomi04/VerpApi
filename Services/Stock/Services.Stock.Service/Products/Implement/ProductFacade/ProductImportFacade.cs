@@ -336,8 +336,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //check product is in used
             if (mapping.ConfirmFlag != true)
             {
-                var listProductIds = existsProduct.Select(p => p.ProductId).AsEnumerable().ToList();
-                var usedProductId = await _productService.CheckListProductionIsUsed(listProductIds);
+                var listProductIds = existsProduct.Select(p => p.ProductId).ToList();
+                var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
                 if (usedProductId.HasValue)
                 {
                     var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
