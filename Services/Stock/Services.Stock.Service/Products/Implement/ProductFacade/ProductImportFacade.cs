@@ -304,9 +304,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
             }
 
-
-
-
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
 
@@ -332,18 +329,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //{
             //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             //}
-
-            //check product is in used
-            if (mapping.ConfirmFlag != true)
-            {
-                var listProductIds = existsProduct.Select(p => p.ProductId).ToList();
-                var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
-                if (usedProductId.HasValue)
-                {
-                    var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                    throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
-                }
-            }
 
             existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
 
@@ -391,6 +376,30 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .GroupBy(x => x.ProductCode)
                 .Select(y => y.ToList().MergeData())
                 .ToList();
+
+            //check product is in used
+            if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
+            {
+                var listProductIds = new List<int>();
+                foreach (var _product in updateProducts)
+                {
+                    var _existsProduct = existsProduct.Where(x => x.ProductCode == _product.ProductCode).FirstOrDefault();
+                    var _existsUnit = units.Where(x => x.Value == _existsProduct.UnitId).Select(y => y.Key).FirstOrDefault();
+                    if (_existsUnit.NormalizeAsInternalName() != _product.Unit.NormalizeAsInternalName())
+                    {
+                        listProductIds.Add(_existsProduct.ProductId);
+                    }
+                }
+                if (listProductIds.Count() > 0)
+                {
+                    var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
+                    if (usedProductId.HasValue)
+                    {
+                        var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
+                        throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
+                    }
+                }
+            }
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
