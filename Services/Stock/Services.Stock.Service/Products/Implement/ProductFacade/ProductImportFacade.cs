@@ -31,21 +31,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
-        private readonly IProductService _productService;
 
         public ProductImportFacade(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
             , IOrganizationHelperService organizationHelperService
             , ObjectActivityLogFacade productActivityLog
-            , IProductService productService
         )
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
             _productActivityLog = productActivityLog;
-            _productService = productService;
         }
 
 
