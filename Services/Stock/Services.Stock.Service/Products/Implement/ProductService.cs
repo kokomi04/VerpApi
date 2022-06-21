@@ -679,7 +679,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             //await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
-            var usedProductId = await CheckListProductionIsUsed(new List<int>(productId));
+            var usedProductId = await CheckListProductionIsUsed(new List<int>() { productId });
             //if (isInUsed.Value as bool? == true)
             if (usedProductId.HasValue)
             {
@@ -1098,7 +1098,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog)
+            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog, this)
                    .ImportProductFromMapping(mapping, stream);
 
         }
@@ -1319,7 +1319,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 tableID.Rows.Add(_proId);
             }
 
-            var outProductId = new SqlParameter("@OutProductId", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var outProductId = new SqlParameter("@OutProductId", SqlDbType.Int) { Direction = ParameterDirection.Output };
             var pList = new SqlParameter("@ProductIds", SqlDbType.Structured);
             pList.TypeName = "dbo._INTVALUES";
             pList.Value = tableID;

@@ -31,19 +31,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
-        private readonly IProductService _productService;
+        private IProductService _productService;
 
         public ProductImportFacade(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
             , IOrganizationHelperService organizationHelperService
             , ObjectActivityLogFacade productActivityLog
+            , IProductService productService
         )
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
             _productActivityLog = productActivityLog;
+            _productService = productService;
         }
 
 
@@ -339,7 +341,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 if (usedProductId.HasValue)
                 {
                     var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                    throw new BadRequestException(ProductErrorCode.ProductInUsed, usedProductCode);
+                    throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
                 }
             }
 

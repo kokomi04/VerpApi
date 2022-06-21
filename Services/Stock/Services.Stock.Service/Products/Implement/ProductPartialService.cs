@@ -132,7 +132,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
                 {
-                    var usedProductId = await _productService.CheckListProductionIsUsed(new List<int>(productId));
+                    var usedProductId = await _productService.CheckListProductionIsUsed(new List<int>() { productId });
                     if (usedProductId.HasValue)
                     {
                         throw new BadRequestException(ProductErrorCode.ProductInUsed);
