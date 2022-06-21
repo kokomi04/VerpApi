@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -332,8 +333,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             //}
 
-
-
+            //check product is in used
+            if (mapping.ConfirmFlag != true)
+            {
+                var listProductId = existsProduct.Select(p => p.ProductId).AsEnumerable();
+                var isInUsed = await CheckListProductionIsUsed(listProductId);
+                if (isInUsed.Value == true)
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                }
+            }
 
             existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
 
@@ -391,7 +400,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     foreach (var row in newProducts)
                     {
                         var newProduct = new Product();
-                        await ParseProductInfoEntity(newProduct, row, true);
+                        await ParseProductInfoEntity(newProduct, row);
 
                         _stockContext.Product.Add(newProduct);
                         productsMap.Add(row, newProduct);
@@ -464,7 +473,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
-                await ParseProductInfoEntity(existedProduct, row, confirmFlag);
+                await ParseProductInfoEntity(existedProduct, row);
 
                 productsMap.Add(row, existedProduct);
 
@@ -472,7 +481,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private async Task ParseProductInfoEntity(Product product, ProductImportModel row, bool? confirmFlag)
+        private async Task ParseProductInfoEntity(Product product, ProductImportModel row)
         {
 
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
@@ -485,17 +494,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
             await Task.CompletedTask;
-            if (confirmFlag.Value != true)
-            {
-                if (product.ProductId > 0 && product.UnitId != oldUnitId)
-                {
-                    var isInUsed = await _productService.CheckProductionIsUsed(product.ProductId);
-                    if (isInUsed.Value == true)
-                    {
-                        throw new BadRequestException(ProductErrorCode.ProductInUsed);
-                    }
-                }
-            }
             /*
             if (product.ProductId > 0 && product.UnitId != oldUnitId)
             {
@@ -778,6 +776,27 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
+        public async Task<bool?> CheckListProductionIsUsed(IEnumerable<int> listProduct)
+        {
+            var tableID = new DataTable();
+            tableID.Columns.Add("Item");
+            foreach (var _proId in listProduct)
+            {
+                tableID.Rows.Add(_proId);
+            }
+
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var pList = new SqlParameter("@ProductId", SqlDbType.Structured);
+            pList.TypeName = "dbo.ListId";
+            pList.Value = tableID;
+            var checkParams = new[]
+            {
+                pList,
+                isInUsed
+            };
+            await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed_ByList", checkParams);
+            return isInUsed.Value as bool?;
+        }
     }
     public class ProductUnitConversionUpdate : ProductUnitConversion
     {
