@@ -380,16 +380,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //check product is in used
             if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
             {
-                var listProductIds = new List<int>();
-                foreach (var _product in updateProducts)
-                {
-                    var _existsProduct = existsProduct.Where(x => x.ProductCode == _product.ProductCode).FirstOrDefault();
-                    var _existsUnit = units.Where(x => x.Value == _existsProduct.UnitId).Select(y => y.Key).FirstOrDefault();
-                    if (_existsUnit.NormalizeAsInternalName() != _product.Unit.NormalizeAsInternalName())
-                    {
-                        listProductIds.Add(_existsProduct.ProductId);
-                    }
-                }
+                var listProductIds = await GetProductIdsHasUnitChange(updateProducts, existsProduct);
                 if (listProductIds.Count() > 0)
                 {
                     var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
@@ -784,6 +775,29 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             }
             return lstUnitConverions;
 
+        }
+        private async Task<List<int>> GetProductIdsHasUnitChange(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        {
+            var listProductIds = new List<int>();
+            var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
+                                            .ToDictionary(g => g.Key, g => g.ToList());
+            foreach (var row in updateProducts)
+            {
+                var productCodeKey = row.ProductCode.ToLower();
+                if (!existsProductInLowerCase.ContainsKey(productCodeKey))
+                {
+                    throw new BadRequestException(GeneralCode.InternalError, "Existed product not found!");
+                }
+                var existedProduct = existsProductInLowerCase[productCodeKey].First();
+                var oldUnitId = existedProduct.UnitId;
+                existedProduct.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
+                await Task.CompletedTask;
+                if (existedProduct.ProductId > 0 && existedProduct.UnitId != oldUnitId)
+                {
+                    listProductIds.Add(existedProduct.ProductId);
+                }
+            }
+            return listProductIds;
         }
     }
     public class ProductUnitConversionUpdate : ProductUnitConversion
