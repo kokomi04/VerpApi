@@ -407,7 +407,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         if (updateProducts.Count > 0)
                         {
-                            await UpdateProduct(productsMap, updateProducts, existsProduct, mapping.ConfirmFlag);
+                            await UpdateProduct(productsMap, updateProducts, existsProduct);
                         }
                     }
 
@@ -451,7 +451,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct, bool? confirmFlag)
+        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
