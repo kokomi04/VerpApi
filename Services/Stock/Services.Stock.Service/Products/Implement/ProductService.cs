@@ -670,16 +670,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var checkParams = new[]
-            {
-                new SqlParameter("@ProductId",productId),
-                isInUsed
-            };
+            //var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            //var checkParams = new[]
+            //{
+            //    new SqlParameter("@ProductId",productId),
+            //    isInUsed
+            //};
 
-            await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+            //await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
-            if (isInUsed.Value as bool? == true)
+            var usedProductId = await CheckProductIdsIsUsed(new List<int>() { productId });
+            //if (isInUsed.Value as bool? == true)
+            if (usedProductId.HasValue)
             {
                 throw CanNotDeleteProductWhichInUsed.BadRequest(ProductErrorCode.ProductInUsed);
             }
@@ -1096,7 +1098,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog)
+            return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog, this)
                    .ImportProductFromMapping(mapping, stream);
 
         }
@@ -1306,6 +1308,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
 
             }
+        }
+
+        public async Task<int?> CheckProductIdsIsUsed(List<int> listProduct)
+        {
+            var outProductId = new SqlParameter("@OutProductId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                listProduct.ToSqlParameter("@ProductIds"),
+                outProductId
+            };
+            await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed_ByList", checkParams);
+            return outProductId.Value as int?;
         }
     }
 }

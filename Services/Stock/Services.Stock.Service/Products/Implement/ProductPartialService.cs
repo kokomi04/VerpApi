@@ -28,18 +28,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly StockDBContext _stockContext;
         private readonly IUnitService _unitService;
+        private readonly IProductService _productService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductPartialService(
             StockDBContext stockContext
             , IUnitService unitService
+            , IProductService productService
             , IActivityLogService activityLogService
             , IMapper mapper
             )
         {
             _stockContext = stockContext;
             _unitService = unitService;
+            _productService = productService;
             _mapper = mapper;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
@@ -125,6 +128,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
+                {
+                    var usedProductId = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
+                    if (usedProductId.HasValue)
+                    {
+                        throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                    }
                 }
 
                 /*
