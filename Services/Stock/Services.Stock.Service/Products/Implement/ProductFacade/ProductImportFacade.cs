@@ -789,10 +789,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     throw new BadRequestException(GeneralCode.InternalError, "Existed product not found!");
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
-                var oldUnit = units.Where(x => x.Value == existedProduct.UnitId).Select(y => y.Key).FirstOrDefault();
-                if (!string.IsNullOrEmpty(row.Unit) && !row.Unit.NormalizeAsInternalName().Equals(oldUnit.NormalizeAsInternalName()))
+                if (!string.IsNullOrEmpty(row.Unit))
                 {
-                    listProductIds.Add(existedProduct.ProductId);
+                    var unitId = units[row.Unit.NormalizeAsInternalName()];
+                    if (!unitId.IsNullObject() && unitId != existedProduct.UnitId)
+                    {
+                        listProductIds.Add(existedProduct.ProductId);
+                    }
                 }
             }
             return listProductIds;
