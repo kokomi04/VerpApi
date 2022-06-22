@@ -380,7 +380,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //check product is in used
             if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
             {
-                var listProductIds = await GetProductIdsHasUnitChange(updateProducts, existsProduct);
+                var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
                 if (listProductIds.Count() > 0)
                 {
                     var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
@@ -776,7 +776,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             return lstUnitConverions;
 
         }
-        private async Task<List<int>> GetProductIdsHasUnitChange(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private List<int> GetProductIdsHasUnitChange(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
             var listProductIds = new List<int>();
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -789,10 +789,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     throw new BadRequestException(GeneralCode.InternalError, "Existed product not found!");
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
-                var oldUnitId = existedProduct.UnitId;
-                existedProduct.UpdateIfAvaiable(p => p.UnitId, units, row.Unit.NormalizeAsInternalName());
-                await Task.CompletedTask;
-                if (!existedProduct.UnitId.IsNullObject() && existedProduct.UnitId != oldUnitId)
+                var oldUnit = units.Where(x => x.Value == existedProduct.UnitId).Select(y => y.Key).FirstOrDefault();
+                if (!string.IsNullOrEmpty(row.Unit) && !row.Unit.NormalizeAsInternalName().Equals(oldUnit.NormalizeAsInternalName()))
                 {
                     listProductIds.Add(existedProduct.ProductId);
                 }
