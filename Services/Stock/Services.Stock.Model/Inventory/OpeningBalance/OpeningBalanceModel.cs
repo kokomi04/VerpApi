@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library.Model;
 using VErp.Services.Stock.Model.Package;
+using System;
 
 namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 {
