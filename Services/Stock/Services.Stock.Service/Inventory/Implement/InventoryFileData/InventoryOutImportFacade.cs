@@ -348,7 +348,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     InventoryActionId = (EnumInventoryAction?)firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                    Date = firstRow.Date,
+                    Date = firstRow.Date.GetUnix(),
 
                     Shipper = firstRow.Shipper,
                     Content = firstRow.Description,
@@ -358,7 +358,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     StockKeeperUserId = null,
                     BillCode = firstRow.BillCode,
                     BillSerial = firstRow.BillSerial,
-                    BillDate = firstRow.BillDate,
+                    BillDate = firstRow.BillDate?.GetUnix(),
                     FileIdList = null,
                     OutProducts = newInventoryOutProductModel,
                     // AccountancyAccountNumber = _model.AccountancyAccountNumber

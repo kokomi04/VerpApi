@@ -18,7 +18,7 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public int StockId { get; set; }
 
         [Display(Name = "Ngày", GroupName = "TT chung", Order = 4)]
-        public long Date { get; set; }
+        public DateTime Date { get; set; }
         [Display(Name = "Mô tả", GroupName = "TT chung", Order = 5)]
         public string Description { get; set; }
 
@@ -43,7 +43,7 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         [Display(Name = "Serial hóa đơn", GroupName = "TT hóa đơn bổ sung", Order = 11)]
         public string BillSerial { get; set; }
         [Display(Name = "Ngày hóa đơn", GroupName = "TT hóa đơn bổ sung", Order = 12)]
-        public long BillDate { get; set; }
+        public DateTime? BillDate { get; set; }
 
 
 
