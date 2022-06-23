@@ -207,8 +207,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                                              m.ProductId,
                                                              m.OutsourcePartRequestDetailId,
                                                              m.Quantity,
-                                                             p.ProductCode,
-                                                             p.ProductName,
+                                                             ProductPartCode = p.ProductCode,
+                                                             ProductPartName = p.ProductName,
                                                              o.OutsourcePartRequestCode,
                                                              o.OutsourcePartRequestId
                                                          }).ToListAsync();
@@ -228,7 +228,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" chưa được thiết lập trong QTSX.",
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" chưa được thiết lập trong QTSX.",
                             ObjectId = outsource.OutsourcePartRequestId,
                             ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
@@ -240,13 +240,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
                             ObjectId = outsource.OutsourcePartRequestId,
                             ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
                             WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
                         });
                     }
+                }
+            }
+
+
+            var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
+            var checkDetails = productionOutsourcePartMappings.Select(o => o.OutsourcePartRequestDetailId).ToList();
+            outsourcePartRequestDetails = outsourcePartRequestDetails.Where(o => !checkDetails.Contains(o.OutsourcePartRequestDetailId)).ToList();
+            if (outsourcePartRequestDetails.Count() > 0)
+            {
+                foreach (var outsource in outsourcePartRequestDetails)
+                {
+
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" chưa được thiết lập trong QTSX.",
+                        ObjectId = outsource.OutsourcePartRequestId,
+                        ObjectCode = outsource.OutsourcePartRequestCode,
+                        GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
+                    });
                 }
             }
 
