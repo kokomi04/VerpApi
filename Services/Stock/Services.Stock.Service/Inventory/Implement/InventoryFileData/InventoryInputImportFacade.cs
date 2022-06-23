@@ -450,10 +450,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 var newInventory = new InventoryInModel
                 {
                     StockId = firstRow.StockId,
-                    InventoryActionId = (EnumInventoryAction?)firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
+                    InventoryActionId = firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                    Date = firstRow.Date,
+                    Date = firstRow.Date.GetUnix(),
 
                     Shipper = firstRow.Shipper,
                     Content = firstRow.Description,
@@ -463,7 +463,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     StockKeeperUserId = null,
                     BillCode = firstRow.BillCode,
                     BillSerial = firstRow.BillSerial,
-                    BillDate = firstRow.BillDate,
+                    BillDate = firstRow.BillDate?.GetUnix(),
                     FileIdList = null,
                     InProducts = newInventoryInputModel,
                     //AccountancyAccountNumber = _model.AccountancyAccountNumber
