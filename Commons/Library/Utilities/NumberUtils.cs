@@ -13,6 +13,7 @@ namespace VErp.Commons.Library
             if (decimalPlace == null) decimalPlace = 11;
             return Math.Round(value, decimalPlace.Value, MidpointRounding.AwayFromZero);
         }
+       
 
         public static decimal AddDecimal(this decimal a, decimal b)
         {

@@ -311,7 +311,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             d.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
 
-                        foreach(var s in inventoryDetailSubCalculations)
+                        foreach (var s in inventoryDetailSubCalculations)
                         {
                             s.IsDeleted = true;
                             s.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -320,9 +320,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var item in validate.Data)
                         {
                             var eDetail = item.Detail;
-                            
+
                             eDetail.InventoryId = inventoryObj.InventoryId;
-                            
+
                             await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
                             await _stockDbContext.SaveChangesAsync();
 
@@ -512,7 +512,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 s.IsDeleted = true;
                 s.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
-            
+
             foreach (var item in inventoryDetails)
             {
                 item.IsDeleted = true;
@@ -991,11 +991,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsDeleted = false,
                     RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
                     PrimaryQuantity = detail.PrimaryQuantity.RoundBy(puDefault.DecimalPlace),
-                    UnitPrice = detail.UnitPrice.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = detail.UnitPrice?.RoundBy(puDefault.DecimalPlace) ?? 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
                     RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
                     ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice?.RoundBy(puInfo.DecimalPlace),
                     Money = detail.Money,
                     RefObjectTypeId = detail.RefObjectTypeId,
                     RefObjectId = detail.RefObjectId,
@@ -1023,7 +1023,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UnitConversionId = x.UnitConversionId
                 }).ToList();
 
-                inventoryDetailList.Add(new CoupleDataInventoryDetail{
+                inventoryDetailList.Add(new CoupleDataInventoryDetail
+                {
                     Detail = eDetail,
                     Subs = eSubs
                 });

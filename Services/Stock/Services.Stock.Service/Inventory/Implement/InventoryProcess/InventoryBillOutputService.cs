@@ -74,7 +74,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             return _invOutputActivityLog.LogBuilder(() => InventoryBillOutputActivityMessage.Import);
         }
-     
+
 
         /// <summary>
         /// Thêm mới phiếu xuất kho
@@ -287,7 +287,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var item in data)
                         {
                             var eDetail = item.Detail;
-                            
+
                             eDetail.InventoryId = inventoryObj.InventoryId;
                             await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
                             await _stockDbContext.SaveChangesAsync();
@@ -420,7 +420,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                  
+
                     try
                     {
                         inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
@@ -456,7 +456,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
         public async Task ApproveInventoryOutputDb(InventoryEntity inventoryObj)
-        {           
+        {
 
             if (inventoryObj.InventoryTypeId != (int)EnumInventoryType.Output)
             {
@@ -600,8 +600,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await ReCalculateRemainingAfterUpdate(inventoryObj.InventoryId);
 
-         
-                
+
+
 
         }
 
@@ -991,7 +991,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 }
 
-               
+
 
                 packageRemainingPrimary[fromPackageInfo.PackageId] = packageRemainingPrimary[fromPackageInfo.PackageId].SubDecimal(primaryQualtity);
                 packageRemainingPu[fromPackageInfo.PackageId] = packageRemainingPu[fromPackageInfo.PackageId].SubDecimal(detail.ProductUnitConversionQuantity);
@@ -1039,11 +1039,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     ProductId = detail.ProductId,
                     RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
                     PrimaryQuantity = primaryQualtity.RoundBy(puDefault.DecimalPlace),
-                    UnitPrice = detail.UnitPrice.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = detail.UnitPrice?.RoundBy(puDefault.DecimalPlace) ?? 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
                     RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
                     ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice?.RoundBy(puInfo.DecimalPlace),
                     Money = detail.Money,
                     RefObjectTypeId = detail.RefObjectTypeId,
                     RefObjectId = detail.RefObjectId,
