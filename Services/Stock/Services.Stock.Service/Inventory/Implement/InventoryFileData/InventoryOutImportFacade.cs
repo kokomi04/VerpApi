@@ -7,6 +7,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Formaters;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -305,9 +306,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     }
 
                     long fromPackageId = 0;
+                    Package packageInfo;
                     if (!string.IsNullOrWhiteSpace(item.FromPackageCode))
                     {
-                        var packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
+                        packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
 
                         if (packageInfo == null) throw ProductPackageWithCodeNotFound.BadRequestFormat(item.FromPackageCode, productObj.ProductCode);
 
@@ -315,24 +317,61 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     }
                     else
                     {
-                        var packageInfo = await _stockDbContext.Package.AsNoTracking()
-                           .Where(p => p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
-                           .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
-                           .FirstOrDefaultAsync();
+                        packageInfo = await _stockDbContext.Package.AsNoTracking()
+                          .Where(p => p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
+                          .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
+                          .FirstOrDefaultAsync();
 
                         if (packageInfo == null) throw PuProductPackageNotFound.BadRequestFormat(productObj.ProductCode, productUnitConversionObj?.ProductUnitConversionName);
 
                         fromPackageId = packageInfo.PackageId;
                     }
 
+
+                    var puDefault = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
+
+                    var calcModel = new QuantityPairInputModel()
+                    {
+                        PrimaryQuantity = item.Qty1 ?? 0,
+                        PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                        PuQuantity = item.Qty2 ?? 0,
+                        PuDecimalPlace = productUnitConversionObj.DecimalPlace,
+
+                        FactorExpression = productUnitConversionObj.FactorExpression,
+
+                        FactorExpressionRate = packageInfo.ProductUnitConversionRemaining / packageInfo.PrimaryQuantityRemaining
+                    };
+
+
+                    var (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+
+                    if (isSuccess)
+                    {
+                        item.Qty1 = primaryQuantity;
+                        item.Qty2 = pucQuantity;
+                    }
+                    else
+                    {
+                        throw new BadRequestException(ProductUnitConversionErrorCode.SecondaryUnitConversionError, $"{item.ProductCode} không thể tính giá trị ĐVCĐ, tính theo tỷ lệ: {pucQuantity.Format()}, nhập vào {item.Qty2?.Format()}, kiểm tra lại độ sai số đơn vị");
+                    }
+
+                    CalcMoney(item);
+
+                    CalcPrice(item);
+
+                    CalcMoney(item);
+
                     newInventoryOutProductModel.Add(new InventoryOutProductModel
                     {
                         SortOrder = sortOrder++,
                         ProductId = productObj.ProductId,
                         ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
-                        PrimaryQuantity = item.Qty1,
-                        ProductUnitConversionQuantity = item.Qty2,
+                        PrimaryQuantity = item.Qty1 ?? 0,
+                        ProductUnitConversionQuantity = item.Qty2 ?? 0,
                         UnitPrice = item.UnitPrice,
+                        ProductUnitConversionPrice = item.Unit2Price,
+                        Money = item.Money,
                         RefObjectTypeId = null,
                         RefObjectId = null,
                         RefObjectCode = item.CatePrefixCode,
@@ -345,7 +384,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 var newInventory = new InventoryOutModel
                 {
                     StockId = firstRow.StockId,
-                    InventoryActionId = (EnumInventoryAction?)firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
+                    InventoryActionId = firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
                     Date = firstRow.Date.GetUnix(),
@@ -368,6 +407,35 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             }
 
             return lst;
+        }
+
+        private void CalcPrice(ImportInvOutputModel item)
+        {
+            if (!item.UnitPrice.HasValue && item.Qty1 > 0)
+            {
+                item.UnitPrice = item.Money / item.Qty1;
+            }
+
+            if (!item.Unit2Price.HasValue && item.Qty2 > 0)
+            {
+                item.Unit2Price = item.Money / item.Qty2;
+            }
+
+        }
+
+        private void CalcMoney(ImportInvOutputModel item)
+        {
+
+            if (!item.Money.HasValue)
+            {
+                item.Money = item.Qty1 * item.UnitPrice;
+            }
+
+            if (!item.Money.HasValue)
+            {
+                item.Money = item.Qty2 * item.Unit2Price;
+            }
+
         }
 
         private Product GetProduct(OpeningBalanceModel item)

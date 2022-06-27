@@ -76,20 +76,26 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public string Unit1 { set; get; }
 
         [Display(Name = "Số lượng (Đơn vị chính)", GroupName = "Thẻ Kho", Order = 22)]
-        public decimal Qty1 { set; get; }
+        public decimal? Qty1 { set; get; }
 
         [Display(Name = "Giá (Đơn vị chính)", GroupName = "Thẻ Kho", Order = 23)]
-        public decimal UnitPrice { set; get; }
+        public decimal? UnitPrice { set; get; }
+
+        [Display(Name = "Thành tiền", GroupName = "Thẻ Kho", Order = 23)]
+        public decimal? Money { set; get; }
 
 
         [Display(Name = "Đơn vị chuyển đổi", GroupName = "Thẻ Kho", Order = 24)]
         public string Unit2 { set; get; }
 
         [Display(Name = "Số lượng (Đơn vị chuyển đổi)", GroupName = "Thẻ Kho", Order = 25)]
-        public decimal Qty2 { set; get; }
+        public decimal? Qty2 { set; get; }
 
         [Display(Name = "Tỷ lệ Đơn vị chuyển đổi", GroupName = "Thẻ Kho", Order = 26)]
-        public decimal Factor { set; get; }
+        public decimal? Factor { set; get; }
+
+        [Display(Name = "Giá Đơn vị chuyển đổi", GroupName = "Thẻ Kho", Order = 27)]
+        public decimal? Unit2Price { set; get; }
     }
 
 
@@ -127,7 +133,9 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
     {
         [FieldDataIgnore]
         public int? CustomerId { get; set; }
+        [Display(Name = "Mã khách", GroupName = "TT chung", Order = 1)]
         public string CustomerCode { get; set; }
+        [Display(Name = "Tên khách", GroupName = "TT chung", Order = 2)]
         public string CustomerName { get; set; }
     }
 
@@ -135,7 +143,9 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
     {
         [FieldDataIgnore]
         public int? DepartmentId { get; set; }
+        [Display(Name = "Mã bộ phận", GroupName = "TT chung", Order = 1)]
         public string DepartmentCode { get; set; }
+        [Display(Name = "Tên bộ phận", GroupName = "TT chung", Order = 2)]
         public string DepartmentName { get; set; }
     }
 }

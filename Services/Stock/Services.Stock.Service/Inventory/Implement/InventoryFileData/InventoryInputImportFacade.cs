@@ -19,6 +19,7 @@ using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Service.Products;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
+using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -410,6 +411,42 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         }
                     }
 
+                    var puDefault = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
+
+                    var calcModel = new QuantityPairInputModel()
+                    {
+                        PrimaryQuantity = item.Qty1 ?? 0,
+                        PrimaryDecimalPlace = puDefault?.DecimalPlace ?? 12,
+
+                        PuQuantity = item.Qty2 ?? 0,
+                        PuDecimalPlace = productUnitConversionObj.DecimalPlace,
+
+                        FactorExpression = productUnitConversionObj.FactorExpression,
+
+                        FactorExpressionRate = null
+                    };
+
+
+                    var (isSuccess, primaryQuantity, pucQuantity) = EvalUtils.GetProductUnitConversionQuantityFromPrimaryQuantity(calcModel);
+
+                    if (isSuccess)
+                    {
+                        item.Qty1 = primaryQuantity;
+                        item.Qty2 = pucQuantity;
+                    }
+                    else
+                    {
+                        //_logger.LogWarning($"Wrong pucQuantity input data: PrimaryQuantity={detail.PrimaryQuantity}, FactorExpression={puInfo.FactorExpression}, ProductUnitConversionQuantity={detail.ProductUnitConversionQuantity}, evalData={pucQuantity}");
+                        //return ProductUnitConversionErrorCode.SecondaryUnitConversionError;
+                        throw PuConversionError.BadRequestFormat(productUnitConversionObj.ProductUnitConversionName, item.ProductCode);
+                    }
+
+
+                    CalcMoney(item);
+
+                    CalcPrice(item);
+
+                    CalcMoney(item);
 
 
                     newInventoryInputModel.Add(new InventoryInProductModel
@@ -417,9 +454,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         SortOrder = sortOrder++,
                         ProductId = productObj != null ? productObj.ProductId : 0,
                         ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
-                        PrimaryQuantity = item.Qty1,
-                        ProductUnitConversionQuantity = item.Qty2,
+                        PrimaryQuantity = item.Qty1 ?? 0,
+                        ProductUnitConversionQuantity = item.Qty2 ?? 0,
                         UnitPrice = item.UnitPrice,
+                        ProductUnitConversionPrice = item.Unit2Price,
+                        Money = item.Money,
                         RefObjectTypeId = null,
                         RefObjectId = null,
                         RefObjectCode = item.CatePrefixCode,
@@ -489,6 +528,35 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             return puInfo;
         }
         */
+
+        private void CalcPrice(ImportInvInputModel item)
+        {
+            if (!item.UnitPrice.HasValue && item.Qty1 > 0)
+            {
+                item.UnitPrice = item.Money / item.Qty1;
+            }
+
+            if (!item.Unit2Price.HasValue && item.Qty2 > 0)
+            {
+                item.Unit2Price = item.Money / item.Qty2;
+            }
+
+        }
+
+        private void CalcMoney(ImportInvInputModel item)
+        {
+
+            if (!item.Money.HasValue)
+            {
+                item.Money = item.Qty1 * item.UnitPrice;
+            }
+
+            if (!item.Money.HasValue)
+            {
+                item.Money = item.Qty2 * item.Unit2Price;
+            }
+
+        }
         private Product GetProduct(ImportInvInputModel item)
         {
             var pCodeKey = item.ProductCode.NormalizeAsInternalName();
