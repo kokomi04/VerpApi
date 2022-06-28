@@ -93,8 +93,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fromDate = req.FromDate.HasValue ? req.FromDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
-            var toDate = req.ToDate.HasValue ? req.ToDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("ddMMyyyy") : "";
+            var fromDate = req.FromDate.HasValue ? req.FromDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy") : "";
+            var toDate = req.ToDate.HasValue ? req.ToDate.Value.UnixToDateTime(currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy") : "";
             var fileName = typeInfo.Title.ToString();
             if (!"".Equals(fromDate)) fileName += $" {fromDate}";
             if (!"".Equals(toDate)) fileName += $" {toDate}";
