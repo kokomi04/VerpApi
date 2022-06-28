@@ -976,11 +976,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
                 {
-                    fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                    fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
                 if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
                 {
-                    toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("ddMMyyyy");
+                    toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
             }
             if (!"".Equals(fromDate)) fileName = $"{fileName} {fromDate}";
