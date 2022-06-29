@@ -72,5 +72,6 @@ namespace VErp.Commons.Enums.StandardEnum
         InvalidSubsidiary = 46,
 
         CatRelationshipAlreadyExisted = 47,
+        DataSizeInValid = 48,
     }
 }
