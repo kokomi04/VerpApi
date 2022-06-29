@@ -187,9 +187,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 {
                     decimal totalAssignmentQuantity = 0;
 
-                    if (outSource != null && (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault()) > 0)
+                    if (outSource != null && outSource.ProductionStepLinkData.Quantity > 0)
                     {
-                        totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() / (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault());
+                        totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() / outSource.ProductionStepLinkData.Quantity;
                     }
 
                     foreach (var assignment in productionStepAssignments.ProductionAssignments)
@@ -439,7 +439,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(r => r.ProductionStepLinkDataId,
                 r =>
                 {
-                    return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
+                    return Math.Round(r.ProductionStepLinkData.Quantity, 8);
                 });
 
             if (data.Any(d => d.AssignmentQuantity <= 0))
@@ -457,7 +457,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 if (outSource != null)
                 {
                     totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()
-                        / (outSource.ProductionStepLinkData.QuantityOrigin - outSource.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault());
+                        / outSource.ProductionStepLinkData.Quantity;
                 }
 
                 foreach (var assignment in data)
@@ -783,15 +783,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     a.StartDate,
                     a.EndDate,
                     a.CreatedDatetimeUtc,
-                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault(),
+                 
                     d.LinkDataObjectId,
                     d.LinkDataObjectTypeId,
                     s.StepName,
                     ProductivityPerPerson = s.Productivity,
                     po.ProductionOrderCode,
                     po.ProductionOrderId,
-                    Workload = (ld.Quantity - ld.OutsourcePartQuantity.GetValueOrDefault()) * ld.WorkloadConvertRate,
-                    OutputQuantity = ld.Quantity - ld.OutsourcePartQuantity.GetValueOrDefault(),
+                    Workload = ld.Quantity * ld.WorkloadConvertRate,
+                    OutputQuantity = ld.Quantity,
                     IsImport = ildr == null,
                     psw.MinHour,
                     psw.MaxHour,
@@ -808,8 +808,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     AssignmentQuantity = g.Max(a => a.AssignmentQuantity),
                     StartDate = g.Max(a => a.StartDate),
                     EndDate = g.Max(a => a.EndDate),
-                    CreatedDatetimeUtc = g.Max(a => a.CreatedDatetimeUtc),
-                    TotalQuantity = g.Max(a => a.TotalQuantity),
+                    CreatedDatetimeUtc = g.Max(a => a.CreatedDatetimeUtc),                  
                     Workload = g.Sum(a => a.Workload),
                     ObjectId = g.Max(a => a.LinkDataObjectId),
                     ObjectTypeId = g.Max(a => a.LinkDataObjectTypeId),
@@ -933,7 +932,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         StepName = productionStepName,
                         Workload = otherAssignment.Workload,
                         AssingmentQuantity = otherAssignment.AssignmentQuantity,
-                        LinkDataQuantity = otherAssignment.TotalQuantity,
+                        //LinkDataQuantity = otherAssignment.OutputQuantity,
                         OutputQuantity = otherAssignment.OutputQuantity,
                         StartDate = otherAssignment.StartDate.GetUnix(),
                         EndDate = otherAssignment.EndDate.GetUnix(),
@@ -948,9 +947,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     {
                         foreach (var productionAssignmentDetail in otherAssignment.ProductionAssignmentDetail)
                         {
-                            var capacityPerDay = otherAssignment.TotalQuantity > 0 ? (otherAssignment.Workload
+                            var capacityPerDay = otherAssignment.OutputQuantity > 0 ? (otherAssignment.Workload
                                 * productionAssignmentDetail.QuantityPerDay.Value)
-                                / (otherAssignment.TotalQuantity
+                                / (otherAssignment.OutputQuantity
                                 * otherAssignment.ProductivityPerPerson) : 0;
                             capacityDepartment.CapacityDetail.Add(new CapacityDetailModel
                             {
@@ -1080,8 +1079,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             public int DepartmentId { get; set; }
             public long ProductionStepId { get; set; }
-            public decimal AssignmentQuantity { get; set; }
-            public decimal TotalQuantity { get; set; }
+            public decimal AssignmentQuantity { get; set; }           
             public decimal Workload { get; set; }
             public int ObjectTypeId { get; set; }
             public long ObjectId { get; set; }
