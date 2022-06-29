@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 
 namespace VErp.Services.Manafacturing.Model.Report
 {
-    public class OutsourcePartRequestReportModel: IMapFrom<OutsourcePartRequestDetailExtractInfo>
+    public class OutsourcePartRequestReportModel : IMapFrom<OutsourcePartRequestDetailExtractInfo>
     {
         public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }

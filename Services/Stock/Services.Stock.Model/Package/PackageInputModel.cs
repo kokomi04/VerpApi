@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Package
 {
-   
+
 
     public class PackageInputModel
     {

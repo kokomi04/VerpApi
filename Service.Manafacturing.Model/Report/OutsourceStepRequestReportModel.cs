@@ -1,14 +1,6 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
-
-namespace VErp.Services.Manafacturing.Model.Report
+﻿namespace VErp.Services.Manafacturing.Model.Report
 {
-    public class OutsourceStepRequestReportModel 
+    public class OutsourceStepRequestReportModel
     {
         public long OutsourceStepRequestId { get; set; }
         public string OutsourceStepRequestCode { get; set; }

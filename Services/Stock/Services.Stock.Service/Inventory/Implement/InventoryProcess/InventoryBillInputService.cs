@@ -2,35 +2,33 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Stock.InventoryProcess;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
-using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Service.Products;
-using VErp.Commons.Library.Model;
-using System.Data;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.ServiceCore.Facade;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
-using Verp.Resources.Stock.InventoryProcess;
 using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using Microsoft.AspNetCore.SignalR;
-using VErp.Infrastructure.ServiceCore.SignalR;
-using VErp.Services.Stock.Model.Package;
+using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -86,7 +84,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//req.StockId
             {
                 var ctx = await GenerateInventoryCode(EnumInventoryType.Input, req);
 
@@ -239,7 +237,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(req.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//req.StockId
             {
 
                 var issuedDate = req.Date.UnixToDateTime().Value;
@@ -311,7 +309,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             d.UpdatedDatetimeUtc = DateTime.UtcNow;
                         }
 
-                        foreach(var s in inventoryDetailSubCalculations)
+                        foreach (var s in inventoryDetailSubCalculations)
                         {
                             s.IsDeleted = true;
                             s.UpdatedDatetimeUtc = DateTime.UtcNow;
@@ -320,9 +318,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         foreach (var item in validate.Data)
                         {
                             var eDetail = item.Detail;
-                            
+
                             eDetail.InventoryId = inventoryObj.InventoryId;
-                            
+
                             await _stockDbContext.InventoryDetail.AddRangeAsync(eDetail);
                             await _stockDbContext.SaveChangesAsync();
 
@@ -448,7 +446,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
@@ -512,7 +510,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 s.IsDeleted = true;
                 s.UpdatedDatetimeUtc = DateTime.UtcNow;
             }
-            
+
             foreach (var item in inventoryDetails)
             {
                 item.IsDeleted = true;
@@ -556,7 +554,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await ValidateInventoryConfig(inventoryObj.Date, inventoryObj.Date);
 
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(inventoryObj.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
                 var baseValueChains = new Dictionary<string, int>();
 
@@ -993,11 +991,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsDeleted = false,
                     RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(puDefault.DecimalPlace),
                     PrimaryQuantity = detail.PrimaryQuantity.RoundBy(puDefault.DecimalPlace),
-                    UnitPrice = detail.UnitPrice.RoundBy(puDefault.DecimalPlace),
+                    UnitPrice = detail.UnitPrice?.RoundBy(puDefault.DecimalPlace) ?? 0,
                     ProductUnitConversionId = detail.ProductUnitConversionId,
                     RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(puInfo.DecimalPlace),
                     ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(puInfo.DecimalPlace),
-                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice.RoundBy(puInfo.DecimalPlace),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice?.RoundBy(puInfo.DecimalPlace),
+                    Money = detail.Money,
                     RefObjectTypeId = detail.RefObjectTypeId,
                     RefObjectId = detail.RefObjectId,
                     RefObjectCode = detail.RefObjectCode,
@@ -1024,7 +1023,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     UnitConversionId = x.UnitConversionId
                 }).ToList();
 
-                inventoryDetailList.Add(new CoupleDataInventoryDetail{
+                inventoryDetailList.Add(new CoupleDataInventoryDetail
+                {
                     Detail = eDetail,
                     Subs = eSubs
                 });

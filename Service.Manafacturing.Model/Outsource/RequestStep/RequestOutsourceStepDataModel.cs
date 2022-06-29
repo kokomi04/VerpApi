@@ -1,8 +1,5 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -30,7 +27,7 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
         }
     }
 
-    public class OutsourceStepRequestDataExtraInfo: OutsourceStepRequestDataModel
+    public class OutsourceStepRequestDataExtraInfo : OutsourceStepRequestDataModel
     {
         public string OutsourceStepRequestCode { get; set; }
         public string ProductionStepTitle { get; set; }

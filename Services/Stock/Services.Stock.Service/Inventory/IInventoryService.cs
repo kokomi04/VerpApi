@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
@@ -8,9 +7,6 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Inventory.OpeningBalance;
-using VErp.Services.Stock.Model.Package;
-using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Stock
 {
@@ -26,9 +22,9 @@ namespace VErp.Services.Stock.Service.Stock
 
         CategoryNameModel OutputFieldsForMapping();
 
-        Task<long> InventoryInputImport(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model);
+        Task<bool> InventoryInputImport(ImportExcelMapping mapping, Stream stream);
 
-        Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model);
+        Task<bool> InventoryOutImport(ImportExcelMapping mapping, Stream stream);
 
         CategoryNameModel OutFieldsForParse();
 

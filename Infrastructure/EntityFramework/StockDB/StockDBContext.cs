@@ -83,6 +83,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.LargeThumb).HasMaxLength(1024);
 
+                entity.Property(e => e.Rotate).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.SmallThumb).HasMaxLength(1024);
             });
 
@@ -99,8 +101,6 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasFilter("([IsDeleted]=(0))");
 
                 entity.HasIndex(e => new { e.SubsidiaryId, e.IsDeleted, e.IsApproved }, "IX_Inventory_IsApproved");
-
-                //entity.Property(e => e.AccountancyAccountNumber).HasMaxLength(128);
 
                 entity.Property(e => e.BillCode)
                     .HasMaxLength(64)
@@ -160,9 +160,13 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.HasIndex(e => e.ProductId, "IDX_InventoryDetail_Product");
 
+                entity.HasIndex(e => e.ProductionOrderCode, "IDX_InventoryDetail_ProductionOrderCode");
+
                 entity.HasIndex(e => new { e.IsDeleted, e.InventoryId, e.SubsidiaryId }, "IDX_InventoryDetail_Search");
 
                 entity.HasIndex(e => new { e.IsDeleted, e.SubsidiaryId, e.InventoryRequirementDetailId }, "IX_InventoryDetail_InventoryRequirementDetailId");
+
+                entity.HasIndex(e => new { e.InventoryId, e.SubsidiaryId, e.IsDeleted }, "Idx_InventoryDetail_InventoryId");
 
                 entity.Property(e => e.CreatedByUserId).HasDefaultValueSql("((2))");
 
@@ -170,7 +174,9 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.FromPackageId).HasComment("Xuất kho vào kiện nào");
 
-                //entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
+                entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
+
+                entity.Property(e => e.Money).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
@@ -336,6 +342,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
             modelBuilder.Entity<InventoryRequirementDetail>(entity =>
             {
+                entity.HasIndex(e => e.ProductionOrderCode, "IDX_InventoryRequirementDetail_ProductionOrderCode");
+
                 entity.Property(e => e.OrderCode)
                     .HasMaxLength(64)
                     .IsUnicode(false);

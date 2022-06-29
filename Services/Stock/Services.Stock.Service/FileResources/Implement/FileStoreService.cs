@@ -1,27 +1,18 @@
 ﻿using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Stock.Model.FileResources;
-using FileEnity = VErp.Infrastructure.EF.StockDB.File;
 
 namespace VErp.Services.Stock.Service.FileResources.Implement
 {
-    public class FileStoreService: IFileStoreService
+    public class FileStoreService : IFileStoreService
     {
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
@@ -29,7 +20,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly string _rootFolder = "";
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
-        
+
         public FileStoreService(
             IOptions<AppSetting> appSetting
             , ILogger<FileService> logger
@@ -50,7 +41,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             var rawString = fileKey.DecryptFileKey(_dataProtectionProvider, _appSetting);
             var data = rawString.Split('|');
 
-            var fileId = data[0];
+            // var fileId = data[0];
             var relativeFilePath = data[1];
             var contentType = data[2];
             var timeUnix = data[3];

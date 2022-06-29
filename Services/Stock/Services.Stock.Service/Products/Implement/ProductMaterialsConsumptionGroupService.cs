@@ -1,27 +1,17 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Commons.Library.Model;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
-using Verp.Resources.Stock.Product;
 using static Verp.Resources.Stock.Product.ConsumptionGroupValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement

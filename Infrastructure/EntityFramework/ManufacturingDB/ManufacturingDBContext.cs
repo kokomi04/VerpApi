@@ -1,6 +1,4 @@
-using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -70,7 +68,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<TargetProductivityDetail> TargetProductivityDetail { get; set; }
         public virtual DbSet<WeekPlan> WeekPlan { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

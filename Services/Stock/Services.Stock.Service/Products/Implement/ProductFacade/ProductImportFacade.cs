@@ -6,13 +6,11 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -33,13 +31,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
+        private IProductService _productService;
 
-        public ProductImportFacade(StockDBContext stockContext, MasterDBContext masterDBContext, IOrganizationHelperService organizationHelperService, ObjectActivityLogFacade productActivityLog)
+        public ProductImportFacade(
+            StockDBContext stockContext
+            , MasterDBContext masterDBContext
+            , IOrganizationHelperService organizationHelperService
+            , ObjectActivityLogFacade productActivityLog
+            , IProductService productService
+        )
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
             _productActivityLog = productActivityLog;
+            _productService = productService;
         }
 
 
@@ -103,7 +109,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         {
                             var code = value.NormalizeAsInternalName();
 
-                            if (!targetProductivities.Any(x=>x.TargetProductivityCode == value))
+                            if (!targetProductivities.Any(x => x.TargetProductivityCode == value))
                             {
                                 throw TargetProductivityWithCodeNotFound.BadRequestFormat(value);
                             }
@@ -298,9 +304,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
             }
 
-
-
-
             // Validate unique product code
             var productCodes = data.Select(p => p.ProductCode).ToList();
 
@@ -326,9 +329,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             //{
             //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
             //}
-
-
-
 
             existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
 
@@ -376,6 +376,21 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 .GroupBy(x => x.ProductCode)
                 .Select(y => y.ToList().MergeData())
                 .ToList();
+
+            //check product is in used
+            if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
+            {
+                var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
+                if (listProductIds.Count() > 0)
+                {
+                    var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
+                    if (usedProductId.HasValue)
+                    {
+                        var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
+                        throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
+                    }
+                }
+            }
 
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
@@ -509,7 +524,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
             product.UpdateIfAvaiable(p => p.Color, row.Color);
-          
+
             //product.IsCanBuy = row.IsCanBuy ?? true;
             //product.IsCanSell = row.IsCanSell ?? true;
             //product.MainImageFileId = null;
@@ -761,7 +776,27 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             return lstUnitConverions;
 
         }
-
+        private List<int> GetProductIdsHasUnitChange(IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        {
+            var listProductIds = new List<int>();
+            var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
+                                            .ToDictionary(g => g.Key, g => g.ToList());
+            foreach (var row in updateProducts)
+            {
+                var productCodeKey = row.ProductCode.ToLower();
+                if (!existsProductInLowerCase.ContainsKey(productCodeKey))
+                {
+                    throw new BadRequestException(GeneralCode.InternalError, "Existed product not found!");
+                }
+                var existedProduct = existsProductInLowerCase[productCodeKey].First();
+                var unitIdKey = row.Unit.NormalizeAsInternalName();
+                if (!string.IsNullOrEmpty(row.Unit) && units.ContainsKey(unitIdKey) && units[unitIdKey] != existedProduct.UnitId)
+                {
+                    listProductIds.Add(existedProduct.ProductId);
+                }
+            }
+            return listProductIds;
+        }
     }
     public class ProductUnitConversionUpdate : ProductUnitConversion
     {

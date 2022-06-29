@@ -1,10 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
 

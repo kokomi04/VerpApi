@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.GlobalObject;
@@ -210,7 +209,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             var trans = await _manuDBContext.Database.BeginTransactionAsync();
             try
             {
-                foreach(var model in models)
+                foreach (var model in models)
                 {
                     var productSemiEntity = await _manuDBContext.ProductSemi.FirstOrDefaultAsync(p => p.ProductSemiId == model.ProductSemiId);
                     if (productSemiEntity == null)
@@ -236,7 +235,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Cập nhật bán thành phẩm {models.Select(x=>x.ProductSemiId).JsonSerialize()}", models.Select(x => x.ProductSemiId).JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Cập nhật bán thành phẩm {models.Select(x => x.ProductSemiId).JsonSerialize()}", models.Select(x => x.ProductSemiId).JsonSerialize());
                 return true;
             }
             catch (Exception ex)

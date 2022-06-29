@@ -1,9 +1,6 @@
-﻿using Grpc.Core;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
@@ -172,7 +169,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             //                    UnitId = current.UnitId
             //                });
             //            }
-                        
+
             //        }
             //        return productModels;
             //    }
@@ -208,7 +205,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> UpdateProductionProcessVersion(long productId)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProduct/{productId}/productionProcessVersion", new {});
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProduct/{productId}/productionProcessVersion", new { });
         }
 
         public async Task<long> GetProductionProcessVersion(long productId)

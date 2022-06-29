@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ReportConfigDB;
 
 namespace Verp.Services.ReportConfig.Model

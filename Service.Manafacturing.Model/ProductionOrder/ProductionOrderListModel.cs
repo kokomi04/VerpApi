@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using AutoMapper;
+using System;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using AutoMapper;
-using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {

@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input
@@ -17,6 +12,6 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceInput req);
         Task<IList<NonCamelCaseDictionary>> GetProductPriceBuyLastest(CalcProductPriceInput req);
         Task<CalcProfitAndLossTableOutput> CalcProfitAndLoss(CalcProfitAndLossInput req);
-       
+
     }
 }

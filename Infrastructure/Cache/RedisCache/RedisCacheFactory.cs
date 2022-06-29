@@ -1,13 +1,4 @@
-﻿using RedLockNet;
-using RedLockNet.SERedis;
-using RedLockNet.SERedis.Configuration;
-using StackExchange.Redis;
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using StackExchange.Redis;
 using VErp.Infrastructure.AppSettings;
 
 namespace Verp.Cache.RedisCache
@@ -18,7 +9,7 @@ namespace Verp.Cache.RedisCache
         static ConnectionMultiplexer _connection = null;
         static ConfigurationOptions _configOptions = null;
 
-      
+
         public static ConfigurationOptions GetConfigurationOptions()
         {
             lock (_objLock)
@@ -51,7 +42,7 @@ namespace Verp.Cache.RedisCache
             }
         }
 
-      
+
 
         public static void InitRedisCacheFactory()
         {
@@ -84,12 +75,12 @@ namespace Verp.Cache.RedisCache
 
         public static IDatabase GetDataBase(int db)
         {
-            var _connection =  GetConnectionMultiplexer();
+            var _connection = GetConnectionMultiplexer();
             if (_connection == null) return null;
             return _connection.GetDatabase(db);
         }
 
     }
 
-  
+
 }

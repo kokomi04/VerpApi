@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Service.Dictionary;
@@ -55,12 +54,12 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productCateService.GetInfoProductCate(productCateId).ConfigureAwait(true);
         }
 
-       /// <summary>
-       /// Cập nhật thông tin danh mục sản phẩm
-       /// </summary>
-       /// <param name="productCateId"></param>
-       /// <param name="productCate"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Cập nhật thông tin danh mục sản phẩm
+        /// </summary>
+        /// <param name="productCateId"></param>
+        /// <param name="productCate"></param>
+        /// <returns></returns>
         [HttpPut]
         [Route("{productCateId}")]
         public async Task<bool> UpdateProductCate([FromRoute] int productCateId, [FromBody] ProductCateInput productCate)

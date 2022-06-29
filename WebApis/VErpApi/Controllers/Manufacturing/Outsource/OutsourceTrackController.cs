@@ -14,7 +14,7 @@
 
 //namespace VErpApi.Controllers.Manufacturing.Outsource
 //{
-    
+
 //    [Route("api/manufacturing/outsourceOrders")]
 //    [ApiController]
 //    public class OutsourceTrackController : VErpBaseController
@@ -61,5 +61,5 @@
 //            return await _outsourceTrackService.DeleteOutsourceTrack(outsourceOrderId, outsourceTrackId);
 //        }
 //    }
-    
+
 //}

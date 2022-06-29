@@ -1,9 +1,9 @@
 ﻿using AutoMapper;
 using IdentityServer4.EntityFramework.Stores;
+using Lib.Net.Http.WebPush;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
@@ -18,36 +18,30 @@ using System.Security.Cryptography.X509Certificates;
 using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
+using VErp.Commons.Library.Queue;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
 using VErp.Services.Grpc;
 using VErp.Services.Manafacturing.Model;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Services.Master.Model;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Model;
 using VErp.Services.Stock.Service;
-using VErp.WebApis.VErpApi.Validator;
-using VErp.Commons.Library;
-using VErp.Services.Master.Service.Webpush;
-using Lib.Net.Http.WebPush;
-using VErp.Commons.Library.Queue;
-using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
-using System.Threading.Tasks;
-using System.Threading;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
-using VErp.Services.Manafacturing.Service.ProductionOrder;
-using VErp.Services.Manafacturing.Service.ProductionProcess;
 using VErp.Services.Stock.Service.Stock;
-using VErp.Commons.Enums.Manafacturing;
+using VErp.WebApis.VErpApi.Validator;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -184,19 +178,19 @@ namespace VErp.WebApis.VErpApi
             app.UseSwagger()
               .UseSwaggerUI(c =>
               {
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/system/swagger.json", "SYSTEM.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/system/swagger.json", "SYSTEM.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/stock/swagger.json", "STOCK.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/stock/swagger.json", "STOCK.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/accountant/swagger.json", "ACCOUNTANT.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/report/swagger.json", "REPORT.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/report/swagger.json", "REPORT.API V1");
 
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
 
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");

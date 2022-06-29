@@ -1,13 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Query.SqlExpressions;
 using Microsoft.Extensions.Logging;
-using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
-using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 
@@ -20,7 +16,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual IQueryable<MaterialCalcProductOrderGroup> MaterialCalcProductOrderGroup
         {
             get
-            {               
+            {
                 var sql = $"SELECT MaterialCalcProductId, STRING_AGG(OrderCode,',') OrderCodes, SUM(OrderProductQuantity) TotalOrderProductQuantity FROM dbo.MaterialCalcProductOrder GROUP BY MaterialCalcProductId";
 
                 return _materialCalcProductOrderGroup.FromSqlRaw(sql);

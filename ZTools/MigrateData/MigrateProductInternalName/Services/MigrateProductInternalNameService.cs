@@ -1,13 +1,7 @@
-﻿using EFCore.BulkExtensions;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using VErp.Infrastructure.EF.StockDB;
-using Z.BulkOperations;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.StockDB;
 
 namespace MigrateProductInternalName.Services
 {
@@ -31,7 +25,7 @@ namespace MigrateProductInternalName.Services
                 .IgnoreQueryFilters()
                 .ToListAsync();
 
-            foreach(var p in products)
+            foreach (var p in products)
             {
                 p.ProductInternalName = p.ProductName.NormalizeAsInternalName();
             }

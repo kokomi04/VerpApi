@@ -5,7 +5,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
 {
-    public class ProductionStepMoldModel: IMapFrom<ProductionStepMold>
+    public class ProductionStepMoldModel : IMapFrom<ProductionStepMold>
     {
         public long ProductionStepMoldId { get; set; }
         public long ProductionProcessMoldId { get; set; }
@@ -26,9 +26,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
                 .ForMember(x => x.ProductionProcessMoldId, v => v.MapFrom(m => m.ProductionProcessMoldId))
                 .ForMember(x => x.ProductionStepMoldLinkFromProductionStepMold, v => v.Ignore())
                 .ForMember(x => x.Step, v => v.Ignore())
-                .ForMember(x => x.CoordinateY, v => v.MapFrom(x=>x.CoordinateY))
-                .ForMember(x => x.CoordinateX, v => v.MapFrom(x=>x.CoordinateX))
-                .ForMember(x => x.IsFinish, v => v.MapFrom(x=>x.IsFinish))
+                .ForMember(x => x.CoordinateY, v => v.MapFrom(x => x.CoordinateY))
+                .ForMember(x => x.CoordinateX, v => v.MapFrom(x => x.CoordinateX))
+                .ForMember(x => x.IsFinish, v => v.MapFrom(x => x.IsFinish))
                 .ReverseMap()
                 .ForMember(x => x.ProductionStepMoldId, v => v.MapFrom(m => m.ProductionStepMoldId))
                 .ForMember(x => x.StepId, v => v.MapFrom(m => m.StepId))

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Data;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
-    public class CalcProductPriceGetTableInput: IFilterHashData
+    public class CalcProductPriceGetTableInput : IFilterHashData
     {
         public int? ProductId { get; set; }
         public string OrderCode { get; set; }

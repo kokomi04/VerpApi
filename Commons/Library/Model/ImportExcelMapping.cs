@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library.Model
@@ -14,6 +12,7 @@ namespace VErp.Commons.Library.Model
         public int? ToRow { get; set; }
         public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
+        public bool? ConfirmFlag { get; set; }
     }
 
     public class ImportExcelMappingExtra<T>

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
-
-namespace VErp.Commons.GlobalObject.InternalDataInterface
+﻿namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class InternalProductCateOutput
     {

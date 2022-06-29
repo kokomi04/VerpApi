@@ -6,24 +6,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Services.Organization.Model.Customer;
-using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
-using CustomerCate = VErp.Infrastructure.EF.OrganizationDB.CustomerCate;
-using static VErp.Commons.GlobalObject.InternalDataInterface.BaseCustomerImportModelExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Commons.GlobalObject.InternalDataInterface.Category;
-using static VErp.Commons.Constants.CurrencyCateConstants;
 using static VErp.Commons.Constants.CategoryFieldConstants;
+using static VErp.Commons.Constants.CurrencyCateConstants;
+using static VErp.Commons.GlobalObject.InternalDataInterface.BaseCustomerImportModelExtensions;
+using CustomerCate = VErp.Infrastructure.EF.OrganizationDB.CustomerCate;
+using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
@@ -325,7 +321,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
             return (EnumDataType.Text, null);
         }
-      
+
         private async Task<string> WriteTableDetailData(IList<CustomerEntity> customers)
         {
             var stt = 1;

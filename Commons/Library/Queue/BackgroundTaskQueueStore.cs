@@ -1,13 +1,9 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using VErp.Commons.Library.Queue.Interfaces;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Queue.Interfaces;
 
 namespace VErp.Commons.Library.Queue
 {

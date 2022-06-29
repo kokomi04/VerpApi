@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Model;
+﻿using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 
 namespace VErp.Services.Stock.Service.Dictionary

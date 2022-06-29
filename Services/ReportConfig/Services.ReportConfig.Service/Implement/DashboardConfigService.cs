@@ -1,13 +1,13 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
@@ -63,6 +63,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _mapper = mapper;
             _logger = logger;
             _roleHelperService = roleHelperService;
+            _protectionProvider = protectionProvider;
+            _appSetting = appSetting.Value;
         }
 
         #region DashboardTypeView

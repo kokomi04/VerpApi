@@ -1,18 +1,11 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StockEnum;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Service.Department;
-using VErp.Services.Organization.Model.Department;
-using Services.Organization.Service.Department;
 using Services.Organization.Model.Deparment;
-using Microsoft.AspNetCore.Authorization;
-using System.Collections;
+using Services.Organization.Service.Department;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErpApi.Controllers.System
 {

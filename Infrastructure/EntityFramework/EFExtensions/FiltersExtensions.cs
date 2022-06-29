@@ -1,9 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace VErp.Infrastructure.EF.EFExtensions
 {
@@ -24,9 +21,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             var prop = Expression.Property(_tableParam, field);
             try
-            {               
+            {
                 //var propertyType = ((PropertyInfo)prop.Member).PropertyType;
-            
+
                 //var valueExpression = Expression.Convert(value, propertyType);
 
                 _expressions.Add(Expression.Equal(prop, value));

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
@@ -18,7 +16,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string VoucherTypeCode { get; set; }
 
         public int SortOrder { get; set; }
-        public int? VoucherTypeGroupId { get; set; }     
+        public int? VoucherTypeGroupId { get; set; }
 
         public IList<VoucherAreaFieldSimpleModel> AreaFields { get; set; }
     }
@@ -28,7 +26,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int VoucherAreaId { get; set; }
         public string VoucherAreaTitle { get; set; }
         public int VoucherAreaFieldId { get; set; }
-        public string VoucherAreaFieldTitle { get; set; }        
+        public string VoucherAreaFieldTitle { get; set; }
         public int VoucherFieldId { get; set; }
         public EnumFormType FormTypeId { get; set; }
     }

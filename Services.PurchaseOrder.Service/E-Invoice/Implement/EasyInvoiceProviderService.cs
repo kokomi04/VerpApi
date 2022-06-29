@@ -1,29 +1,29 @@
+using AutoMapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml;
-using AutoMapper;
-using Microsoft.EntityFrameworkCore;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.E_Invoice;
 using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.E_Invoice;
-using System.Linq;
-using VErp.Commons.Constants;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Library;
-using System.Net.Http;
-using System.IO;
-using Microsoft.Data.SqlClient;
-using System.Globalization;
 using VErp.Services.PurchaseOrder.Model.E_Invoice.EasyInvoice;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Service.Voucher;
 
 namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
@@ -69,7 +69,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
                 if (firstRow.ContainsKey(VoucherConstants.VOUCHER_BILL_CODE))
                 {
                     var vEinvoiceType = firstRow[VoucherConstants.VOUCHER_E_INVOICE_TYPE];
-                    if(!Enum.IsDefined(typeof(EnumElectronicInvoiceType), vEinvoiceType))
+                    if (!Enum.IsDefined(typeof(EnumElectronicInvoiceType), vEinvoiceType))
                         throw ElectronicInvoiceProviderErrorCode.NotFoundEInvoiceType.BadRequest();
                     einvoiceType = (EnumElectronicInvoiceType)(firstRow[VoucherConstants.VOUCHER_E_INVOICE_TYPE]);
                 }

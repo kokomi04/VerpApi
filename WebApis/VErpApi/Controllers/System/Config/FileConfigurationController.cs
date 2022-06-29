@@ -1,9 +1,8 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.FileConfig;
-using VErp.Services.Master.Model.Notification;
 using VErp.Services.Master.Service.Notification;
 
 namespace VErpApi.Controllers.System

@@ -1,15 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
-using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Service.Outsource;
-using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
@@ -62,14 +58,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPut]
         [Route("{outsourceStepRequestId}")]
-        public async Task<bool> UpdateRequestOutsourceStep([FromRoute]long outsourceStepRequestId, OutsourceStepRequestInput req)
+        public async Task<bool> UpdateRequestOutsourceStep([FromRoute] long outsourceStepRequestId, OutsourceStepRequestInput req)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequest(outsourceStepRequestId, req);
         }
 
         [HttpGet]
         [Route("{outsourceStepRequestId}/outsourceStepRequestData")]
-        public async Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData([FromRoute]long outsourceStepRequestId)
+        public async Task<IList<OutsourceStepRequestDataExtraInfo>> GetOutsourceStepRequestData([FromRoute] long outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.GetOutsourceStepRequestData(outsourceStepRequestId);
         }
@@ -83,7 +79,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPut]
         [Route("status")]
-        public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody]long[] outsourceStepRequestId)
+        public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody] long[] outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(outsourceStepRequestId);
         }

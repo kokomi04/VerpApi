@@ -3,30 +3,29 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.InventoryProcess;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.Stock;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
-using Microsoft.Data.SqlClient;
-using VErp.Services.Stock.Service.Stock;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Inventory.InventoryRequirement;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequirement;
-using VErp.Services.Stock.Service.FileResources;
-using VErp.Services.Stock.Model.FileResources;
-using VErp.Commons.Enums.Stock;
-using System.Data;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Stock.InventoryProcess;
-using static Verp.Resources.Stock.InventoryProcess.InventoryRequirementMessage;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Stock.Model.FileResources;
+using VErp.Services.Stock.Model.Inventory.InventoryRequirement;
+using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
+using VErp.Services.Stock.Service.Stock;
+using static Verp.Resources.Stock.InventoryProcess.InventoryRequirementMessage;
+using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequirement;
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
@@ -234,7 +233,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     ProductId = x.ProductId,
                     InventoryRequirementDetailId = x.InventoryRequirementDetailId,
                     InventoryInfo = new List<InventorySimpleInfo>(),
-                    PrimaryQuantityRemaining = x.PrimaryQuantityRemaining??0,
+                    PrimaryQuantityRemaining = x.PrimaryQuantityRemaining ?? 0,
                     InventoryQuantity = x.InventoryQuantity,
                     PrimaryQuantity = x.PrimaryQuantity,
                     ProductUnitConversionId = x.ProductUnitConversionId,

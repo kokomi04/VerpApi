@@ -8,13 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -202,7 +198,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             foreach (var item in inputTypes)
             {
-               
+
 
                 if (typeFields.TryGetValue(item.InputTypeId, out var _fields))
                 {

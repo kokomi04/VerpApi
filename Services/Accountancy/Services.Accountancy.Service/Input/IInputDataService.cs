@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Data;
-using VErp.Services.Accountancy.Model.Input;
 using static VErp.Services.Accountancy.Service.Input.Implement.InputDataService;
 
 namespace VErp.Services.Accountancy.Service.Input

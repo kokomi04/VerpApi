@@ -1,8 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -10,7 +7,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.ManufacturingDB
 {
-    public partial class ManufacturingDBRestrictionContext: ManufacturingDBContext, ISubsidiayRequestDbContext
+    public partial class ManufacturingDBRestrictionContext : ManufacturingDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }

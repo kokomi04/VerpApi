@@ -1,22 +1,16 @@
-using AutoMapper;
-using AutoMapper.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Services.PurchaseOrder.Service;
 using System;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Services.Master.Service;
 using VErp.Services.Stock.Service;
-using VErp.Commons.Library;
 
 namespace MigrateAndMappingApi
 {

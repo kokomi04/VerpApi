@@ -1,33 +1,32 @@
 ﻿using AutoMapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Commons.Library;
-using VErp.Commons.Enums.StandardEnum;
-using Microsoft.EntityFrameworkCore;
-using VErp.Infrastructure.EF.EFExtensions;
-using System.Linq;
-using VErp.Infrastructure.ServiceCore.Model;
-using Microsoft.Data.SqlClient;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
 using static Verp.Resources.PurchaseOrder.Calc.MaterialCalc.MaterialCalcValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
     public class MaterialCalcService : IMaterialCalcService
     {
-        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;        
+        private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IMapper _mapper;
 
@@ -123,7 +122,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 ";
             var paged = await _purchaseOrderDBContext.QueryList<MaterialCalcListModel>(listSql, sqlParams.CloneSqlParams());
 
-            return (paged.OrderBy(d=>d.RowNumber).ToList(), total);
+            return (paged.OrderBy(d => d.RowNumber).ToList(), total);
         }
 
         public async IAsyncEnumerable<MaterialOrderProductHistory> GetHistoryProductOrderList(IList<int> productIds, IList<string> orderCodes)
@@ -220,7 +219,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             _mapper.Map(req, entity);
 
-            await _purchaseOrderDBContext.SaveChangesAsync();           
+            await _purchaseOrderDBContext.SaveChangesAsync();
 
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Update)
                 .MessageResourceFormatDatas(entity.MaterialCalcCode)
@@ -239,7 +238,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             entity.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-         
+
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Delete)
                .MessageResourceFormatDatas(entity.MaterialCalcCode)
                .ObjectId(entity.MaterialCalcId)

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Stock.Model.Product.Bom
+﻿namespace VErp.Services.Stock.Model.Product.Bom
 {
     public class ProductBomUpdateInfoModel
     {

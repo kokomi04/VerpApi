@@ -1,11 +1,7 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model
@@ -39,7 +35,7 @@ namespace VErp.Services.PurchaseOrder.Model
           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
           .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.GetUnix()))
           .ForMember(m => m.PurchasingRequestStatusId, m => m.MapFrom(v => (EnumPurchasingRequestStatus)v.PurchasingRequestStatusId))
-          .ForMember(m => m.PoProcessStatusId, m =>          
+          .ForMember(m => m.PoProcessStatusId, m =>
               m.MapFrom(v => v.PoProcessStatusId.HasValue ? (EnumPoProcessStatus?)v.PoProcessStatusId : null)
           )
           .ForMember(m => m.CreatedDatetimeUtc, m => m.MapFrom(v => v.CreatedDatetimeUtc.GetUnix()))
@@ -69,6 +65,6 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PurchasingRequestOutputDetail : PurchasingRequestInputDetail
     {
         public long PurchasingRequestDetailId { get; set; }
-        public new void Mapping(Profile profile) => MappingBase<PurchasingRequestOutputDetail>(profile);        
+        public new void Mapping(Profile profile) => MappingBase<PurchasingRequestOutputDetail>(profile);
     }
 }

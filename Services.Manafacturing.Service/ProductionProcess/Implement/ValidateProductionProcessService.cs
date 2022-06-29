@@ -19,7 +19,6 @@ using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Services.Manafacturing.Service.Outsource;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
@@ -97,10 +96,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                join ld in productionProcess.ProductionStepLinkDatas on role.ProductionStepLinkDataCode equals ld.ProductionStepLinkDataCode
                                where role.ProductionStepCode == stepFinal.ProductionStepCode && role.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input
                                select ld;
-                foreach(var ld in linkData)
+                foreach (var ld in linkData)
                 {
                     var p = productionOrderDetail.FirstOrDefault(x => x.ProductId == ld.LinkDataObjectId);
-                    if(p == null)
+                    if (p == null)
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
@@ -112,7 +111,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         });
                     }
                 }
-                
+
 
             }
 
@@ -131,7 +130,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var dicOutsourceStep = new Dictionary<long, IList<string>>();
             foreach (var stepRequest in outsourceStepRequest)
-                dicOutsourceStep.Add(stepRequest.Key, productionProcess.ProductionSteps.Where(x=>x.OutsourceStepRequestId == stepRequest.Key).Select(x=>x.ProductionStepCode).ToList());
+                dicOutsourceStep.Add(stepRequest.Key, productionProcess.ProductionSteps.Where(x => x.OutsourceStepRequestId == stepRequest.Key).Select(x => x.ProductionStepCode).ToList());
 
             var productionStepIds = dicOutsourceStep.SelectMany(x => x.Value);
             var productionStepLinkDataIds = productionProcess.ProductionStepLinkDataRoles
@@ -176,7 +175,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         });
                     }
                 }
-                
+
             }
 
             return lsWarning;
@@ -208,13 +207,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                                              m.ProductId,
                                                              m.OutsourcePartRequestDetailId,
                                                              m.Quantity,
-                                                             p.ProductCode,
-                                                             p.ProductName,
+                                                             ProductPartCode = p.ProductCode,
+                                                             ProductPartName = p.ProductName,
                                                              o.OutsourcePartRequestCode,
                                                              o.OutsourcePartRequestId
                                                          }).ToListAsync();
-            
-            
+
+
 
             // var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
 
@@ -229,7 +228,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" chưa được thiết lập trong QTSX.",
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" chưa được thiết lập trong QTSX.",
                             ObjectId = outsource.OutsourcePartRequestId,
                             ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
@@ -241,13 +240,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         lsWarning.Add(new ProductionProcessWarningMessage
                         {
-                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsource.ProductCode}/{outsource.ProductName}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
+                            Message = $"YCGC {outsource.OutsourcePartRequestCode} - Số lượng của chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" thiết lập chưa chính xác(thừa/thiếu) trong QTSX.",
                             ObjectId = outsource.OutsourcePartRequestId,
                             ObjectCode = outsource.OutsourcePartRequestCode,
                             GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
                             WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
                         });
                     }
+                }
+            }
+
+
+            var outsourcePartRequestDetails = await GetOutsourcePartRequestDetailInfo(productionProcess.ContainerId);
+            var checkDetails = productionOutsourcePartMappings.Select(o => o.OutsourcePartRequestDetailId).ToList();
+            outsourcePartRequestDetails = outsourcePartRequestDetails.Where(o => !checkDetails.Contains(o.OutsourcePartRequestDetailId)).ToList();
+            if (outsourcePartRequestDetails.Count() > 0)
+            {
+                foreach (var outsource in outsourcePartRequestDetails)
+                {
+
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"YCGC {outsource.OutsourcePartRequestCode} - Chi tiết \"{outsource.ProductPartCode}/{outsource.ProductPartName}\" chưa được thiết lập trong QTSX.",
+                        ObjectId = outsource.OutsourcePartRequestId,
+                        ObjectCode = outsource.OutsourcePartRequestCode,
+                        GroupName = EnumProductionProcessWarningCode.WarningOutsourcePartRequest.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningOutsourcePartRequest,
+                    });
                 }
             }
 
@@ -288,12 +307,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 });
             }
 
-            productionSteps.Where(x => x.StepId.HasValue).Join(productionStepInOuts, x => x.ProductionStepId, y => y.ParentId, (x, y) => new {
+            productionSteps.Where(x => x.StepId.HasValue).Join(productionStepInOuts, x => x.ProductionStepId, y => y.ParentId, (x, y) => new
+            {
                 ProductionStep = x,
                 ProductionStepInOutId = y?.ProductionStepId
-            }).ToList().ForEach(x => {
-                if (!x.ProductionStepInOutId.HasValue) {
-                    lsWarning.Add(new ProductionProcessWarningMessage {
+            }).ToList().ForEach(x =>
+            {
+                if (!x.ProductionStepInOutId.HasValue)
+                {
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
                         Message = $"Công đoạn {x.ProductionStep.Title} chưa thiết lập nhóm (đầu ra đầu vào)",
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
                         WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
@@ -304,15 +327,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var groupRole = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
 
-            var productionStepInOutNoRoles =  productionStepInOuts.Where(x => !groupRole.Any(g => g.Key.Equals(x.ProductionStepCode))).ToList();
+            var productionStepInOutNoRoles = productionStepInOuts.Where(x => !groupRole.Any(g => g.Key.Equals(x.ProductionStepCode))).ToList();
 
-            foreach(var p in productionStepInOutNoRoles) {
+            foreach (var p in productionStepInOutNoRoles)
+            {
                 var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == p.ParentId);
-                if (step == null || step.IsFinish) {
+                if (step == null || step.IsFinish)
+                {
                     continue;
                 }
 
-                lsWarning.Add(new ProductionProcessWarningMessage {
+                lsWarning.Add(new ProductionProcessWarningMessage
+                {
                     Message = $"Công đoạn {step.Title} có nhóm (đầu ra đầu vào) không có đầu ra đầu vào",
                     GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
                     WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
@@ -322,7 +348,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             foreach (var group in groupRole)
             {
                 var inOutOfStep = productionStepInOuts.FirstOrDefault(x => x.ProductionStepCode == group.Key);
-                if (inOutOfStep == null) {
+                if (inOutOfStep == null)
+                {
                     continue;
                 }
 
@@ -467,7 +494,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
             var productIds = _manufacturingDBContext.ProductionOrderDetail.AsNoTracking()
                 .Where(x => x.ProductionOrderId == productionProcess.ContainerId)
-                .Select(x=> (long)x.ProductId);
+                .Select(x => (long)x.ProductId);
             foreach (var l in ldFinishInvalid)
             {
                 var ld = productionProcess.ProductionStepLinkDatas.FirstOrDefault(x => x.ProductionStepLinkDataCode == l.ProductionStepLinkDataCode);
@@ -532,8 +559,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     var temp = groupbyLinkDataRole.Where(x => x.Key != role.Key && x.Where(y => y.ProductionStepCode == linkData.ProductionStepCode).Count() > 0).ToList();
                     TraceProductionStepRelationship(temp, groupbyLinkDataRoleScanned, groupbyLinkDataRole, lsProductionStepIdInGroup);
                 }
-                
-                
+
+
                 // var productionStepLinkData = from l in productionProcess.ProductionStepLinkDatas
                 //                              join r in productionProcess.ProductionStepLinkDataRoles
                 //                                 on l.ProductionStepLinkDataCode equals r.ProductionStepLinkDataCode

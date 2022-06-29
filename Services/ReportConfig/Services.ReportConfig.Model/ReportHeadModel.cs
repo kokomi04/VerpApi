@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
-
-namespace Verp.Services.ReportConfig.Model
+﻿namespace Verp.Services.ReportConfig.Model
 {
     public class ReportHeadModel
     {

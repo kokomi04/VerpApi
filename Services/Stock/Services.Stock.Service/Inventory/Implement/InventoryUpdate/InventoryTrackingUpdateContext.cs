@@ -1,12 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.EF.StockDB;
-
-namespace VErp.Services.Stock.Service.Stock.Implement
+﻿namespace VErp.Services.Stock.Service.Stock.Implement
 {
     /*
     public class InventoryTrackingUpdateContext

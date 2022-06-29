@@ -1,6 +1,6 @@
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
-    public class SubscriptionSimpleModel: CheckSubscriptionSimpleModel
+    public class SubscriptionSimpleModel : CheckSubscriptionSimpleModel
     {
         public int UserId { get; set; }
     }
@@ -12,7 +12,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public long ObjectId { get; set; }
     }
 
-    public class  SubscriptionToThePermissionPersonSimpleModel
+    public class SubscriptionToThePermissionPersonSimpleModel
     {
         public int ObjectTypeId { get; set; }
         public int? BillTypeId { get; set; }

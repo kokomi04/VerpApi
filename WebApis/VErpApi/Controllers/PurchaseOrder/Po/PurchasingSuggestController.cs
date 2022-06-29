@@ -1,17 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Activity;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Service;
 
@@ -43,7 +39,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetList")]
-        public async Task<PageData<PurchasingSuggestOutputList>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchasingSuggestOutputList>> GetList([FromQuery] string keyword, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService.GetList(keyword, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
@@ -65,7 +61,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("GetListByProduct")]
-        public async Task<PageData<PurchasingSuggestOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery]string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<PurchasingSuggestOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchasingSuggestStatus? purchasingSuggestStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService.GetListByProduct(keyword, productIds, purchasingSuggestStatusId, poProcessStatusId, isApproved, fromDate, toDate, sortBy, asc, page, size).ConfigureAwait(true);
         }
@@ -90,7 +86,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         /// <response code="200">Danh sách suggest của các request: { purcharsingRequestId1: [{purcharsingSuggestId: 1, purcharsingSuggestCode: "SC1"}, {purcharsingSuggestId: 2, purcharsingSuggestCode: "SC2"}, ...], ...] }</response>
         [HttpGet]
-        [Route("GetSuggestByRequest")]        
+        [Route("GetSuggestByRequest")]
         public async Task<IDictionary<long, IList<PurchasingSuggestBasic>>> GetSuggestByRequest([FromQuery] IList<long> purchasingRequestIds)
         {
             return await _purchasingSuggestService.GetSuggestByRequest(purchasingRequestIds).ConfigureAwait(true);
@@ -202,7 +198,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("AllUsers/Assignments")]
-        public async Task<PageData<PoAssignmentOutputList>> AllUsersAssignments([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        public async Task<PageData<PoAssignmentOutputList>> AllUsersAssignments([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery] long? purchasingSuggestId, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByUser(keyword, poAssignmentStatusId, assigneeUserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
@@ -226,7 +222,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("AllUsers/AssignmentsByProduct")]
-        public async Task<PageData<PoAssignmentOutputListByProduct>> AllUsersAssignmentsByProduct([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        public async Task<PageData<PoAssignmentOutputListByProduct>> AllUsersAssignmentsByProduct([FromQuery] string keyword, [FromQuery] int? assigneeUserId, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery] long? purchasingSuggestId, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByProduct(keyword, productIds, poAssignmentStatusId, assigneeUserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
@@ -263,7 +259,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("CurrentUser/Assignments")]
-        public async Task<PageData<PoAssignmentOutputList>> AssignmentsByCurrentUser([FromQuery] string keyword, [FromQuery]  EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        public async Task<PageData<PoAssignmentOutputList>> AssignmentsByCurrentUser([FromQuery] string keyword, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery] long? purchasingSuggestId, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByUser(keyword, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)
@@ -286,7 +282,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("CurrentUser/AssignmentsByProduct")]
-        public async Task<PageData<PoAssignmentOutputListByProduct>> AssignmentsByCurrentUserByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery]  long? purchasingSuggestId, [FromQuery]  long? fromDate, [FromQuery]  long? toDate, [FromQuery]  string sortBy, [FromQuery]  bool asc, [FromQuery]  int page, [FromQuery]  int size)
+        public async Task<PageData<PoAssignmentOutputListByProduct>> AssignmentsByCurrentUserByProduct([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] EnumPoAssignmentStatus? poAssignmentStatusId, [FromQuery] long? purchasingSuggestId, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
             return await _purchasingSuggestService
                 .PoAssignmentListByProduct(keyword, productIds, poAssignmentStatusId, UserId, purchasingSuggestId, fromDate, toDate, sortBy, asc, page, size)

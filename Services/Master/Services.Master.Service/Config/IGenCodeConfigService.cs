@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
+﻿using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 
@@ -30,6 +25,6 @@ namespace VErp.Services.Master.Service.Config
         Task<CustomCodeGeneratedModel> GenerateCode(int customGenCodeId, int lastValue, long? fId, string code, long? date);
 
         Task<bool> ConfirmCode(int customGenCodeId, string baseValue);
-        
+
     }
 }

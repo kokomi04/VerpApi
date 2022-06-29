@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.AccountantEnum;
-using VErp.Infrastructure.EF.EFExtensions;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Model.Input
@@ -18,14 +14,14 @@ namespace VErp.Services.Accountancy.Model.Input
         public Clause ColumnsFilters { get; set; }
     }
 
-    public class InputTypeBillsRequestModel: InputTypeBillsRequestFilterModel
+    public class InputTypeBillsRequestModel : InputTypeBillsRequestFilterModel
     {
         public bool IsMultirow { get; set; }
         public int Page { get; set; }
         public int Size { get; set; }
     }
 
-    public class InputTypeBillsExporttFilterModel: InputTypeBillsRequestFilterModel
+    public class InputTypeBillsExporttFilterModel : InputTypeBillsRequestFilterModel
     {
         public IList<string> FieldNames { get; set; }
     }

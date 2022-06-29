@@ -2,24 +2,21 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Services.Organization.Model.Deparment;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Subsidiary;
 using VErp.Commons.Enums.ErrorCodes.Organization;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Organization.Subsidiary;
 
 namespace Services.Organization.Service.Department.Implement
 {
@@ -167,7 +164,7 @@ namespace Services.Organization.Service.Department.Implement
 
             await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
-            
+
             await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Update)
               .MessageResourceFormatDatas(info.SubsidiaryCode)
               .ObjectId(info.SubsidiaryId)
@@ -210,7 +207,7 @@ namespace Services.Organization.Service.Department.Implement
 
             await _unAuthorizeOrganizationContext.SaveChangesAsync();
 
-            
+
             await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Delete)
               .MessageResourceFormatDatas(info.SubsidiaryCode)
               .ObjectId(info.SubsidiaryId)

@@ -1,13 +1,8 @@
-﻿using VErp.Commons.GlobalObject;
-using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Verp.Services.ReportConfig.Model;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Report;
 using VErp.Services.Manafacturing.Model.Step;

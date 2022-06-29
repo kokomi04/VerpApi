@@ -1,27 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
+using System;
+using System.Collections.Generic;
+using System.IO;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Accountancy.Service;
-using VErp.Commons.Library;
 
 namespace ConfigApi
 {
@@ -77,12 +71,13 @@ namespace ConfigApi
             //profile.ApplyMappingsFromAssembly(ReportConfigModelAssembly.Assembly);
             //profile.ApplyMappingsFromAssembly(PurchaseOrderModelAssembly.Assembly);
 
-            services.AddAutoMapper(cfg => {
-                
+            services.AddAutoMapper(cfg =>
+            {
+
                 cfg.AddProfile(profile);
 
 
-             
+
 
 
             }, this.GetType().Assembly);
@@ -102,7 +97,7 @@ namespace ConfigApi
             app.UseSwagger()
               .UseSwaggerUI(c =>
               {
-                  c.SwaggerEndpoint($"{ (!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty) }/swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}/swagger/accountancy/swagger.json", "ACCOUNTANTCY.API V1");
 
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");
@@ -132,7 +127,7 @@ namespace ConfigApi
                     Title = "VERP Accountancy HTTP API",
                     Version = "v1",
                     Description = "The Accountancy Service HTTP API"
-                });             
+                });
 
                 options.AddSecurityDefinition("OAuth2", new OpenApiSecurityScheme
                 {

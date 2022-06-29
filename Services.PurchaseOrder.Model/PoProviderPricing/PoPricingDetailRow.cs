@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Model;
 
 namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
-{    
+{
     [Display(Name = "Chi tiết báo giá nhà cung cấp")]
     public class PoPricingDetailRow
     {
@@ -28,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
 
         [Display(Name = "Tên Đơn vị chuyển đổi", GroupName = "TT về lượng")]
         public string ProductUnitConversionName { get; set; }
-        
+
         [Display(Name = "Số lượng Đơn vị chuyển đổi", GroupName = "TT về lượng")]
         public decimal? ProductUnitConversionQuantity { get; set; }
 

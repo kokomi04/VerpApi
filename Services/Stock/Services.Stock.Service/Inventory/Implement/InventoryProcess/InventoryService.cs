@@ -3,51 +3,38 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
-using System.Threading;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
-using VErp.Commons.Constants;
+using Verp.Resources.Stock.Inventory.Abstract;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Model.Inventory;
+using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
-using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
-using VErp.Commons.GlobalObject;
-using Microsoft.Data.SqlClient;
-using NPOI.SS.UserModel;
-using System.IO;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using NPOI.SS.Util;
-using NPOI.XSSF.UserModel;
-using NPOI.HSSF.UserModel;
-using VErp.Services.Stock.Service.Stock.Implement.InventoryFileData;
 using VErp.Services.Stock.Service.Products;
-using VErp.Commons.Library.Model;
-using VErp.Services.Stock.Model.Inventory.OpeningBalance;
-using System.Data;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Stock.Inventory.Abstract;
+using VErp.Services.Stock.Service.Stock.Implement.InventoryFileData;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillOutputMessage;
-using InventoryEntity = VErp.Infrastructure.EF.StockDB.Inventory;
+using PackageEntity = VErp.Infrastructure.EF.StockDB.Package;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -464,6 +451,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
                         ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
                         ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
+                        Money = detail.Money,
                         FromPackageId = detail.FromPackageId,
                         ToPackageId = detail.ToPackageId,
                         ToPackageCode = packageInfo?.PackageCode,
@@ -696,6 +684,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var customProps = await _stockDbContext.PackageCustomProperty.ToListAsync();
 
+            var sortOrder = fields.Max(f => f.SortOrder);
             foreach (var p in customProps)
             {
                 var f = new CategoryFieldNameModel()
@@ -706,11 +695,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FieldTitle = "(Kiện) - " + p.Title,
                     IsRequired = false,
                     Type = null,
-                    RefCategory = null
+                    RefCategory = null,
+                    SortOrder = sortOrder++
                 };
 
                 fields.Add(f);
             }
+
+            var actionField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvInputModel.InventoryActionId)));
+
+            var actions = ImportInvInputModel.InventoryActionIds;
+
+            actionField.FieldTitle = $"Loại ({string.Join(",", actions.Select(a => $"{(int)a}: {a.GetEnumDescription()}"))})";
 
             result.Fields = fields;
             return result;
@@ -730,100 +726,122 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             };
             var fields = ExcelUtils.GetFieldNameModels<ImportInvOutputModel>();
 
+            var actionField = fields.First(f => f.FieldName.StartsWith(nameof(ImportInvOutputModel.InventoryActionId)));
+
+            var actions = ImportInvOutputModel.InventoryActionIds;
+
+            actionField.FieldTitle = $"Loại ({string.Join(",", actions.Select(a => $"{(int)a}: {a.GetEnumDescription()}"))})";
+
             result.Fields = fields;
             return result;
         }
 
-        public async Task<long> InventoryInputImport(ImportExcelMapping mapping, Stream stream, InventoryInputImportExtraModel model)
+        public async Task<bool> InventoryInputImport(ImportExcelMapping mapping, Stream stream)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))
             {
                 var baseValueChains = new Dictionary<string, int>();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryExport = new InventoryInputImportFacade();
-                    inventoryExport.SetProductService(_productService);
-                    inventoryExport.SetMasterDBContext(_masterDBContext);
-                    inventoryExport.SetStockDBContext(_stockDbContext);
-                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
-
-                    var inventoryData = await inventoryExport.GetInputInventoryModel();
-                    if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+                    using (var batchLog = _activityLogService.BeginBatchLog())
                     {
-                        throw new BadRequestException("No products found!");
+
+                        var inventoryExport = new InventoryInputImportFacade();
+                        inventoryExport.SetProductService(_productService);
+                        inventoryExport.SetMasterDBContext(_masterDBContext);
+                        inventoryExport.SetStockDBContext(_stockDbContext);
+                        inventoryExport.SetOrganizationHelper(_organizationHelperService);
+                        await inventoryExport.ProcessExcelFile(mapping, stream);
+
+                        var inventoryDatas = await inventoryExport.GetInputInventoryModel();
+
+                        foreach (var inventoryData in inventoryDatas)
+                        {
+                            if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+                            {
+                                throw new BadRequestException("No products found!");
+                            }
+
+                            if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                            }
+
+                            var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
+
+                            var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
+
+
+                            await ctx.ConfirmCode();
+
+                            await _inventoryBillInputService.ImportedLogBuilder()
+                               .MessageResourceFormatDatas(entity.InventoryCode)
+                               .ObjectId(entity.InventoryId)
+                               .JsonData(inventoryData.JsonSerialize())
+                               .CreateLog();
+                        }
+
+                        await trans.CommitAsync();
+
+                        await batchLog.CommitAsync();
                     }
-
-                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                    {
-                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
-                    }
-
-                    inventoryData.InventoryCode = model.InventoryCode;
-
-                    var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
-
-                    var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
-
-                    await trans.CommitAsync();
-
-                    await ctx.ConfirmCode();
-
-                    await _inventoryBillInputService.ImportedLogBuilder()
-                       .MessageResourceFormatDatas(entity.InventoryCode)
-                       .ObjectId(entity.InventoryId)
-                       .JsonData(inventoryData.JsonSerialize())
-                       .CreateLog();
-
-                    return entity.InventoryId;
+                    return true;
                 }
             }
         }
 
 
-        public async Task<long> InventoryOutImport(ImportExcelMapping mapping, Stream stream, InventoryOutImportyExtraModel model)
+        public async Task<bool> InventoryOutImport(ImportExcelMapping mapping, Stream stream)
         {
-            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey(model.StockId)))
+            using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))
             {
 
                 var baseValueChains = new Dictionary<string, int>();
 
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    var inventoryExport = new InventoryOutImportFacade();
-                    inventoryExport.SetStockDBContext(_stockDbContext);
-                    await inventoryExport.ProcessExcelFile(mapping, stream, model);
-
-
-                    var inventoryData = await inventoryExport.GetOutputInventoryModel();
-                    if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
+                    using (var batchLog = _activityLogService.BeginBatchLog())
                     {
-                        throw new BadRequestException("No products found!");
+                        var inventoryExport = new InventoryOutImportFacade();
+                        inventoryExport.SetStockDBContext(_stockDbContext);
+                        inventoryExport.SetOrganizationHelper(_organizationHelperService);
+                        await inventoryExport.ProcessExcelFile(mapping, stream);
+
+
+                        var inventoryDatas = await inventoryExport.GetOutputInventoryModel();
+                        foreach (var inventoryData in inventoryDatas)
+                        {
+                            if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
+                            {
+                                throw new BadRequestException("No products found!");
+                            }
+
+                            if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
+                            }
+
+                            var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
+
+                            var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
+                            
+
+                            await ctx.ConfirmCode();
+
+                            await _inventoryBillOutputService.ImportedLogBuilder()
+                                .MessageResourceFormatDatas(inventoryData.InventoryCode)
+                                .ObjectId(entity.InventoryId)
+                                .JsonData(inventoryData.JsonSerialize())
+                                .CreateLog();
+
+                        }
+
+                        await trans.CommitAsync();
+
+                        await batchLog.CommitAsync();
+                        return true;
                     }
-
-                    if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                    {
-                        throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
-                    }
-
-
-                    inventoryData.InventoryCode = model.InventoryCode;
-
-                    var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
-
-                    var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
-
-                    await trans.CommitAsync();
-
-                    await ctx.ConfirmCode();
-
-                    await _inventoryBillOutputService.ImportedLogBuilder()
-                        .MessageResourceFormatDatas(inventoryData.InventoryCode)
-                        .ObjectId(entity.InventoryId)
-                        .JsonData(inventoryData.JsonSerialize())
-                        .CreateLog();
-
-                    return entity.InventoryId;
                 }
             }
         }

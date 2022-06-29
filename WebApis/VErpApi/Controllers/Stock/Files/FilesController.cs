@@ -1,16 +1,12 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Service.FileResources;
 
@@ -39,6 +35,14 @@ namespace VErpApi.Controllers.Stock.Files
         public async Task<FileToDownloadInfo> GetFileUrl([FromRoute] long fileId, [FromQuery] EnumThumbnailSize? thumb)
         {
             return await _fileService.GetFileUrl(fileId, thumb).ConfigureAwait(true);
+        }
+
+        [GlobalApi]
+        [HttpPut]
+        [Route("{fileId}/UpdateViewInfo")]
+        public async Task<bool> UpdateViewInfo([FromRoute] long fileId, [FromBody] FileViewModel req)
+        {
+            return await _fileService.UpdateViewInfo(fileId, req?.Rotate).ConfigureAwait(true);
         }
 
         [GlobalApi]

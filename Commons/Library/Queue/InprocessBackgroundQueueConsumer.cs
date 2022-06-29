@@ -2,8 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -24,14 +22,14 @@ namespace VErp.Commons.Library.Queue
             ILoggerFactory loggerFactory,
             IBackgroundTaskQueueStore store,
             string queueName,
-            Func<IService, ProcessQueueMessage<T>, CancellationToken, Task> func            
+            Func<IService, ProcessQueueMessage<T>, CancellationToken, Task> func
             )
         {
             _serviceScopeFactory = serviceScopeFactory;
             _logger = loggerFactory.CreateLogger<InprocessBackgroundQueueConsumer<IService, T>>();
             _queueName = queueName;
             _store = store;
-            _func = func;            
+            _func = func;
         }
 
         protected async override Task ExecuteAsync(CancellationToken cancellationToken)

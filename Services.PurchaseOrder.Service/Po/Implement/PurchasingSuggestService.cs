@@ -1,24 +1,24 @@
 ﻿
-using System;
-using System.Linq;
-using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Commons.Enums.StandardEnum;
+using Verp.Cache.RedisCache;
+using Verp.Resources.PurchaseOrder.Assignment;
+using Verp.Resources.PurchaseOrder.Suggest;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Services.PurchaseOrder.Model;
-using Verp.Cache.RedisCache;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.PurchaseOrder.Suggest;
-using Verp.Resources.PurchaseOrder.Assignment;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.PurchaseOrder.Model;
 using static Verp.Resources.PurchaseOrder.Suggest.PurchasingSuggestValidationMessage;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
@@ -402,7 +402,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                  
+
                     await ctx.ConfirmCode();// ConfirmPurchasingSuggestCode(customGenCodeId);
 
                     await _purchasingSuggestActivityLog
@@ -479,7 +479,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.SortOrder = item.SortOrder;
 
-                                
+
                                 break;
                             }
                         }
@@ -549,12 +549,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                  
+
                     await ctx.ConfirmCode();// ConfirmPurchasingSuggestCode(customGenCodeId);
 
                     await _purchasingSuggestActivityLog
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Update)
-                     .MessageResourceFormatDatas(info.PurchasingSuggestCode )
+                     .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
                      .JsonData(model.JsonSerialize())
                      .CreateLog();
@@ -645,7 +645,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                 
+
                     await _purchasingSuggestActivityLog
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Delete)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
@@ -678,7 +678,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-               
+
                 await _purchasingSuggestActivityLog
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.SentToCensor)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
@@ -780,7 +780,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                
+
                 await _purchasingSuggestActivityLog
                   .LogBuilder(() => PurchasingSuggestActivityLogMessage.UpdateProgress)
                   .MessageResourceFormatDatas(info.PurchasingSuggestCode, poProcessStatusId.GetEnumDescription())
@@ -1304,7 +1304,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                  
+
                     await _assignmentActivityLog
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Create)
                     .MessageResourceFormatDatas(poAssignment.PoAssignmentCode)
@@ -1401,7 +1401,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     trans.Commit();
 
-                  
+
                     await _assignmentActivityLog
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Update)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
@@ -1446,7 +1446,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-             
+
                 await ctx.ConfirmCode();// ConfirmPoAssignmentCode(customGenCodeId);
 
 
@@ -1543,7 +1543,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 trans.Commit();
 
-               
+
                 await _assignmentActivityLog
                   .LogBuilder(() => PoAssignmentActivityLogMessage.UserConfirm)
                   .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
@@ -1597,7 +1597,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
-                    
+
                     await _assignmentActivityLog
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
@@ -1701,7 +1701,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 Description = d.Description,
                 IntoMoney = d.IntoMoney,
-                SortOrder = d.SortOrder                
+                SortOrder = d.SortOrder
             };
         }
 

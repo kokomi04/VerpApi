@@ -4,7 +4,8 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Services.PurchaseOrder.Model.ProductPrice;
 using VErp.Services.PurchaseOrder.Service.ProductPrice;
 
-namespace VErpApi.Controllers.PurchaseOrder.ProductPrice {
+namespace VErpApi.Controllers.PurchaseOrder.ProductPrice
+{
     [Route("api/ProductPrice/ItemPricing")]
     public class ProductPriceConfigItemPricingController : VErpBaseController
     {

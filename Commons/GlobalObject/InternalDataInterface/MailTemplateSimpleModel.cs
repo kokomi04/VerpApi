@@ -1,5 +1,3 @@
-using VErp.Commons.GlobalObject;
-
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class MailTemplateSimpleModel

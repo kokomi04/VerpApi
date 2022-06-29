@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using NPOI.XSSF.UserModel;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -11,12 +9,9 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Inventory.OpeningBalance;
-using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Stock;
@@ -317,15 +312,15 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("inputImportFromMapping")]
-        public async Task<long> InputImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryInputImportExtraModel> data, IFormFile file)
+        public async Task<bool> InputImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (data == null) throw GeneralCode.InvalidParams.BadRequest();
+            if (mapping == null) throw GeneralCode.InvalidParams.BadRequest();
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            data.Mapping.FileName = file.FileName;
-            return await _inventoryService.InventoryInputImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
+            mapping.FileName = file.FileName;
+            return await _inventoryService.InventoryInputImport(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -338,15 +333,15 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("outImportFromMapping")]
-        public async Task<long> OutImportFromMapping([FromFormString] ImportExcelMappingExtra<InventoryOutImportyExtraModel> data, IFormFile file)
+        public async Task<bool> OutImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (data == null) throw GeneralCode.InvalidParams.BadRequest();
+            if (mapping == null) throw GeneralCode.InvalidParams.BadRequest();
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            data.Mapping.FileName = file.FileName;
-            return await _inventoryService.InventoryOutImport(data.Mapping, file.OpenReadStream(), data.Extra).ConfigureAwait(true);
+            mapping.FileName = file.FileName;
+            return await _inventoryService.InventoryOutImport(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
 

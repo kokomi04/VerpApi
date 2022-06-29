@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Grpc.Protos;
+﻿using VErp.Grpc.Protos;
 
 namespace VErp.Services.Grpc.Client
 {
-    public class InternalProductCateClient: ProductCate.ProductCateClient
+    public class InternalProductCateClient : ProductCate.ProductCateClient
     {
     }
 }

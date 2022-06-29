@@ -1,14 +1,13 @@
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Notification;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Services.Master.Service.Notification
 {

@@ -1,6 +1,4 @@
-using System;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -30,7 +28,8 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

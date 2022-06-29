@@ -17,8 +17,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Leave;
-using LeaveLetter = VErp.Infrastructure.EF.OrganizationDB.Leave;
 using static Verp.Resources.Organization.Leave.LeaveLetterValidationMessage;
+using LeaveLetter = VErp.Infrastructure.EF.OrganizationDB.Leave;
 
 namespace VErp.Services.Organization.Service.Leave
 {
@@ -121,7 +121,7 @@ namespace VErp.Services.Organization.Service.Leave
 
         }
 
-       
+
         public async Task<long> Create(LeaveModel model)
         {
 

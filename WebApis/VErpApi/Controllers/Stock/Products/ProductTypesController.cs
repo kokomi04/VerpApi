@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Service.Dictionary;
@@ -53,12 +52,12 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productTypeService.GetInfoProductType(productTypeId).ConfigureAwait(true);
         }
 
-       /// <summary>
-       /// Cập nhật thông tin loại sản phẩm
-       /// </summary>
-       /// <param name="productTypeId"></param>
-       /// <param name="type"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Cập nhật thông tin loại sản phẩm
+        /// </summary>
+        /// <param name="productTypeId"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
         [HttpPut]
         [Route("{productTypeId}")]
         public async Task<bool> UpdateProductType([FromRoute] int productTypeId, [FromBody] ProductTypeInput type)
@@ -76,6 +75,6 @@ namespace VErpApi.Controllers.Stock.Products
         public async Task<bool> DeleteProductType([FromRoute] int productTypeId)
         {
             return await _productTypeService.DeleteProductType(productTypeId).ConfigureAwait(true);
-        }       
+        }
     }
 }

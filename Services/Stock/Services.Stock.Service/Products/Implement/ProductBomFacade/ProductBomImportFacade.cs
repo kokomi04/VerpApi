@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
 using Verp.Resources.Stock.Product.ProductImport;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
@@ -14,13 +13,12 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Bom;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 {
@@ -300,8 +298,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportBom)
                         .MessageResourceFormatDatas(rootProductInfo.ProductCode)
                         .ObjectId(rootProductInfo.ProductId)
-                        .JsonData(new{ _mapping, productBoms, productMaterials }.JsonSerialize())
-                        .CreateLog();                    
+                        .JsonData(new { _mapping, productBoms, productMaterials }.JsonSerialize())
+                        .CreateLog();
                 }
                 else
                 {
@@ -559,7 +557,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     {
                         cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
                         if (cate == null)
-                        {                            
+                        {
                             throw ImportProductCateDefaultOfProductNotFound.BadRequestFormat(productTitle);
 
                         }
@@ -570,7 +568,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                         if (cate == null)
                         {
-                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);                           
+                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);
                         }
                     }
 
@@ -578,7 +576,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
                     if (unit == null || unit.Length <= 0)
                     {
-                        throw UnitOfProductNotFound.BadRequestFormat(productTitle);                        
+                        throw UnitOfProductNotFound.BadRequestFormat(productTitle);
                     }
 
                     return new ProductModel

@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.ErrorCodes;
-using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -194,7 +193,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             return (lst, total);
         }
-  
+
         public async Task<OutsourceStepRequestOutput> GetOutsourceStepRequestOutput(long outsourceStepRequestId)
         {
             var request = await _manufacturingDBContext.OutsourceStepRequest.AsNoTracking()
@@ -231,7 +230,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     {
                         ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                         Quantity = x.Quantity,
-                        TotalOutsourceOrderQuantity = purchaseOrderDetail.Sum(x => x.PrimaryQuantity)??0,
+                        TotalOutsourceOrderQuantity = purchaseOrderDetail.Sum(x => x.PrimaryQuantity) ?? 0,
                         RoleType = (int)EnumProductionStepLinkDataRoleType.Output,
                         ProductionStepTitle = productionStepParentInfo.Step?.StepName,
                         PurchaseOrderCode = string.Join(", ", purchaseOrderDetail.Select(x => x.PurchaseOrderCode)),
@@ -790,7 +789,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
             return results;
         }
-    
+
     }
 
 }

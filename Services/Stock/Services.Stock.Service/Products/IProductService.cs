@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;
-using System.IO;
-using VErp.Commons.Library.Model;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Stock.Service.Products
 {
@@ -43,6 +41,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<bool> UpdateProductionProcessVersion(int productId);
         Task<long> GetProductionProcessVersion(int productId);
+        Task<int?> CheckProductIdsIsUsed(List<int> listProduct);
 
     }
 }

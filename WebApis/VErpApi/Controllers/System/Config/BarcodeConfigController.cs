@@ -1,19 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
-using VErp.Services.Master.Model.Users;
 using VErp.Services.Master.Service.Config;
-using VErp.Services.Master.Service.Users;
 
 namespace VErpApi.Controllers.System
 {
@@ -41,7 +32,7 @@ namespace VErpApi.Controllers.System
         {
             return await _barcodeConfigService.GetList(keyword, page, size);
         }
-       
+
 
         /// <summary>
         /// Thêm mới cấu hình barcode

@@ -1,13 +1,12 @@
 using AutoMapper;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
     public class RefOutsourcePartRequestModel : IMapFrom<RefOutsourcePartRequest>
     {
-       public long OutsourcePartRequestId { get; set; }
+        public long OutsourcePartRequestId { get; set; }
         public string OutsourcePartRequestCode { get; set; }
         public long? ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }

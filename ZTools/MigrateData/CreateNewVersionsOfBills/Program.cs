@@ -6,7 +6,6 @@ using System.Linq;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.ServiceCore.Service;
 
 namespace CreateNewVersionsOfBills
 {

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -7,25 +8,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Manafacturing.Model.Step;
-using Microsoft.Data.SqlClient;
-using StepEnity = VErp.Infrastructure.EF.ManufacturingDB.Step;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.ProductionHandover;
-using VErp.Services.Manafacturing.Model.Report;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
-using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Services.Manafacturing.Model.Report;
+using VErp.Services.Manafacturing.Model.Step;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 
 namespace VErp.Services.Manafacturing.Service.Report.Implement

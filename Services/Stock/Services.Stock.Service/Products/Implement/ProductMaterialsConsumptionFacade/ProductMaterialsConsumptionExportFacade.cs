@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
@@ -66,7 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"product-materials-consumption-{productCode.NormalizeAsInternalName()}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = StringUtils.RemoveDiacritics($"{productCode.NormalizeAsInternalName()} product materials consumption.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
         }
 
@@ -137,14 +136,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         {
             var groupsConsump = (await _stockDbContext.ProductMaterialsConsumptionGroup
                 .AsNoTracking()
-                .Where(m => materialsConsumps.Select(x=>x.ProductMaterialsConsumptionGroupId).Contains(m.ProductMaterialsConsumptionGroupId))
+                .Where(m => materialsConsumps.Select(x => x.ProductMaterialsConsumptionGroupId).Contains(m.ProductMaterialsConsumptionGroupId))
                 .ToListAsync())
-                .ToDictionary( k=> k.ProductMaterialsConsumptionGroupId, v=>v.Title);
+                .ToDictionary(k => k.ProductMaterialsConsumptionGroupId, v => v.Title);
 
             var stepInfos = (await _manufacturingHelperService.GetStepByArrayId(materialsConsumps.Select(x => x.StepId.GetValueOrDefault()).ToArray()))
                 .ToDictionary(k => k.StepId, v => v.StepName);
             var departmentInfos = (await _organizationHelperService.GetDepartmentSimples(materialsConsumps.Select(x => x.DepartmentId.GetValueOrDefault()).ToArray()))
-                .ToDictionary(k => k.DepartmentId, v => new { v.DepartmentCode , v.DepartmentName}); ;
+                .ToDictionary(k => k.DepartmentId, v => new { v.DepartmentCode, v.DepartmentName }); ;
 
             var productInfos = (await (
                 from p in _stockDbContext.Product

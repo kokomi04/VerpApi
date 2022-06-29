@@ -9,6 +9,6 @@ namespace VErp.Infrastructure.ApiCore
     [TypeFilter(typeof(InternalCrossAuthorizeAttribute))]
     public class CrossServiceBaseController : ControllerBase
     {
-       
+
     }
 }

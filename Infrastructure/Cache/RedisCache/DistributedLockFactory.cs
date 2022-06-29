@@ -4,9 +4,7 @@ using RedLockNet.SERedis.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.AppSettings;
 
 namespace Verp.Cache.RedisCache
@@ -121,9 +119,9 @@ namespace Verp.Cache.RedisCache
             return $"HRTYPE_LOCK_{hrTypeId}";
         }
 
-        public static string GetLockStockResourceKey(int stockId)
+        public static string GetLockStockResourceKey()
         {
-            return $"STOCK_LOCK_{stockId}";
+            return $"STOCK_LOCK";
         }
 
         public static string GetLockGenerateCodeKey(int customGenCodeId)

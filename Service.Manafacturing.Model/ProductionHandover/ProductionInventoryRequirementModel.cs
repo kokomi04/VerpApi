@@ -1,11 +1,8 @@
 ﻿using AutoMapper;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -43,7 +40,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }
     }
- 
+
     public class ProductionInventoryRequirementEntity : ProductionInventoryRequirementBaseModel
     {
         public int Status { get; set; }

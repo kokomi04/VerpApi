@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.Manafacturing
 {
-    public enum EnumProductionMaterialsRequirementStatus: int
+    public enum EnumProductionMaterialsRequirementStatus : int
     {
         [Description("Đang chờ duyệt")]
         Waiting = 1,

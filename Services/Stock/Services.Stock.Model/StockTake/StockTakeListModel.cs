@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using StockTakeEntity = VErp.Infrastructure.EF.StockDB.StockTake;
 
 namespace VErp.Services.Stock.Model.StockTake

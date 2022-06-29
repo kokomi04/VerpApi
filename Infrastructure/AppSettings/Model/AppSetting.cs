@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Infrastructure.AppSettings.Model
+﻿namespace VErp.Infrastructure.AppSettings.Model
 {
     public class AppSetting
     {
@@ -30,6 +26,6 @@ namespace VErp.Infrastructure.AppSettings.Model
 
         public PuppeteerPdfSetting PuppeteerPdf { get; set; }
 
-        public WebPushSetting WebPush{ get; set; }
+        public WebPushSetting WebPush { get; set; }
     }
 }

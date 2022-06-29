@@ -1,31 +1,22 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Stock;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Stock;
-using VErp.Infrastructure.EF.EFExtensions;
-using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Stock.Stock;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Stock.Model.Stock;
+using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -166,7 +157,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    
+
                     await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Update)
                       .MessageResourceFormatDatas(req.StockCode)
                       .ObjectId(stockInfo.StockId)
@@ -203,7 +194,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
-                    
+
 
                     await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(stockInfo.StockCode)

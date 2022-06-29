@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductIgnoreStepModel: ProductBomInfoPathBaseModel
+    public class ProductIgnoreStepModel : ProductBomInfoPathBaseModel
     {
         public long ProductIgnoreStepId { get; set; }
 

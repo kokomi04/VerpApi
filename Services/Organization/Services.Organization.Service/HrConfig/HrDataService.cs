@@ -1,35 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Services.Organization.Model.HrConfig;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.GlobalObject;
+using Verp.Resources.Organization;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using Verp.Resources.Organization;
-using VErp.Commons.Library.Model;
-using System.IO;
-using static VErp.Commons.Library.ExcelReader;
-using Verp.Resources.GlobalObject;
 using static VErp.Commons.Library.EvalUtils;
+using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -279,7 +279,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (size >= 0)
             {
                 dataSql += @$" OFFSET {(page - 1) * size} ROWS
-                FETCH NEXT { size}
+                FETCH NEXT {size}
                 ROWS ONLY";
             }
 
@@ -765,7 +765,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                         try
                                         {
                                             var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                                           
+
 
                                             filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
 
@@ -781,7 +781,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                         }
 
 
-                                       
+
                                         if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
                                     }
                                 }
@@ -982,7 +982,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = { _currentContextService.SubsidiaryId}", @columns);
+            return ($"SELECT {(isMultiRow ? "" : "TOP 1")} {@selectColumn} {@join} WHERE [row].IsDeleted = 0 AND [row].SubsidiaryId = {_currentContextService.SubsidiaryId}", @columns);
         }
 
         private void ValidateExistenceHrBill(long hrBill_F_Id)
@@ -1565,7 +1565,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {
                         throw;
                     }
-                    
+
                 }
             }
 
@@ -1619,7 +1619,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         private string GlobalFilter()
         {
-            return $"bill.SubsidiaryId = { _currentContextService.SubsidiaryId} AND bill.IsDeleted = 0";
+            return $"bill.SubsidiaryId = {_currentContextService.SubsidiaryId} AND bill.IsDeleted = 0";
         }
 
         private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)

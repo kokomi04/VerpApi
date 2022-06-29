@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -8,7 +6,7 @@ using VErp.Commons.GlobalObject.Org;
 
 namespace VErp.Services.Master.Model.Users
 {
-   
+
     public class UserInfoInput : EmployeeBase, IMapFrom<UserImportModel>
     {
         public string UserName { get; set; }

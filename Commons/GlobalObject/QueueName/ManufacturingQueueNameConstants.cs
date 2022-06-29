@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.GlobalObject.QueueName
+﻿namespace VErp.Commons.GlobalObject.QueueName
 {
     public static class ManufacturingQueueNameConstants
     {

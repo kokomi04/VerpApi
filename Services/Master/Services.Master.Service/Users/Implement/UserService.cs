@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Verp.Resources.Master.User;
 using VErp.Commons.Enums.MasterEnum;
@@ -26,9 +25,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
-using VErp.Services.Master.Service.Activity;
 using VErp.Services.Master.Service.RolePermission;
-using VErp.Services.Organization.Model.Department;
 using static Verp.Resources.Master.User.UserValidationMessage;
 
 namespace VErp.Services.Master.Service.Users.Implement

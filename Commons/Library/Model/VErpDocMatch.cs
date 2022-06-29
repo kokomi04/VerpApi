@@ -1,7 +1,4 @@
 ﻿using DocumentFormat.OpenXml.Wordprocessing;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Text.RegularExpressions;
 using VErp.Commons.GlobalObject;
 

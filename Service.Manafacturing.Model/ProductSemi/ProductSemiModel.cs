@@ -6,7 +6,7 @@ using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
 namespace VErp.Services.Manafacturing.Model.ProductSemi
 {
-    public class ProductSemiModel: IMapFrom<ProductSemiEntity>
+    public class ProductSemiModel : IMapFrom<ProductSemiEntity>
     {
         public long ProductSemiId { get; set; }
         public long ContainerId { get; set; }

@@ -1,9 +1,9 @@
 
-using System.Collections.Generic;
 using AutoMapper;
+using System.Collections.Generic;
+using VErp.Commons.Enums.Organization.TimeKeeping;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Commons.Enums.Organization.TimeKeeping;
 
 namespace Services.Organization.Model.TimeKeeping
 {
@@ -43,8 +43,8 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void SetRefForeginKey(int[] refForeginKey)
         {
-            ArrangeShiftId = 0 ;
-            if(refForeginKey.Length > 0)
+            ArrangeShiftId = 0;
+            if (refForeginKey.Length > 0)
             {
                 this.WorkScheduleId = refForeginKey[0];
             }
@@ -96,7 +96,7 @@ namespace Services.Organization.Model.TimeKeeping
             {
                 this.ArrangeShiftId = refForeginKey[0];
             }
-            
+
             if (refForeginKey.Length > 1)
             {
                 this.ParentArrangeShiftItemId = refForeginKey[1];

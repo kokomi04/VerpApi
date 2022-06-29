@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using Verp.Resources.Enums.ErrorCodes.Product;
+﻿using Verp.Resources.Enums.ErrorCodes.Product;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum

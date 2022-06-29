@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Model.Product;

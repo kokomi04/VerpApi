@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.DepartmentCalendar;
 

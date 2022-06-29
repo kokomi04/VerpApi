@@ -1,15 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.Outsource.RequestPart;
 using VErp.Services.Manafacturing.Service.Outsource;
-using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Manufacturing.Outsource
 {
@@ -35,7 +31,7 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
             [FromQuery] long? productionOrderId,
             [FromBody] Clause filters = null)
         {
-            return await _outsourcePartRequestService.Search(keyword, page, size,fromDate, toDate, productionOrderId, filters);
+            return await _outsourcePartRequestService.Search(keyword, page, size, fromDate, toDate, productionOrderId, filters);
         }
 
         [HttpGet]
@@ -68,7 +64,8 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpDelete]
         [Route("{outsourcePartRequestId}")]
-        public async Task<bool> DeletedRequestOutsourcePart([FromRoute] long outsourcePartRequestId) {
+        public async Task<bool> DeletedRequestOutsourcePart([FromRoute] long outsourcePartRequestId)
+        {
             return await _outsourcePartRequestService.DeletedOutsourcePartRequest(outsourcePartRequestId);
         }
 

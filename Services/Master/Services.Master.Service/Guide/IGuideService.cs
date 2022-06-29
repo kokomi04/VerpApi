@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Guide;

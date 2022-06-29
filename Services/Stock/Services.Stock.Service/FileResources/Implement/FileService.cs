@@ -1,10 +1,6 @@
-﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
-using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
-using ImageMagick;
+﻿using ImageMagick;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -13,7 +9,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -25,7 +20,6 @@ using VErp.Commons.Library.Model;
 using VErp.Commons.ObjectExtensions.Extensions;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
@@ -126,6 +120,18 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 throw new BadRequestException(FileErrorCode.FileNotFound);
             }
             return GenerateFileDownloadInfo(fileInfo, thumb, true);
+        }
+
+        public async Task<bool> UpdateViewInfo(long fileId, decimal? rotate)
+        {
+            var fileInfo = await _stockContext.File.FirstOrDefaultAsync(f => f.FileId == fileId);
+            if (fileInfo == null)
+            {
+                throw new BadRequestException(FileErrorCode.FileNotFound);
+            }
+            fileInfo.Rotate = rotate;
+            await _stockContext.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IList<FileToDownloadInfo>> GetFilesUrls(IList<long> fileIds, EnumThumbnailSize? thumb)
@@ -517,7 +523,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 FileName = fileInfo.FileName,
                 FileUrl = fileUrl,
                 ThumbnailUrl = thumbUrl,
-                FileLength = fileInfo.FileLength ?? 0
+                FileLength = fileInfo.FileLength ?? 0,
+                Rotate = fileInfo.Rotate
             };
         }
 

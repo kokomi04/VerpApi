@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -117,7 +116,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         private string GenerateTempFilePath(string uploadFileName)
         {
-            var relativeFolder = $"/{FOLDER_DOCUMENT }/{Guid.NewGuid().ToString()}";
+            var relativeFolder = $"/{FOLDER_DOCUMENT}/{Guid.NewGuid().ToString()}";
             var relativeFilePath = relativeFolder + "/" + uploadFileName;
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);

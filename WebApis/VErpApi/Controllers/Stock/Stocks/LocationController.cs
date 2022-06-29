@@ -1,14 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Location;
 using VErp.Services.Stock.Service.Location;
-
-using VErp.Services.Stock.Model.Inventory;
 
 namespace VErpApi.Controllers.Stock.Stocks
 {
@@ -17,12 +12,12 @@ namespace VErpApi.Controllers.Stock.Stocks
     public class LocationController : VErpBaseController
     {
         private readonly ILocationService _locationService;
-        
+
         public LocationController(ILocationService locationService
             )
         {
             _locationService = locationService;
-        
+
         }
 
         /// <summary>
@@ -35,9 +30,9 @@ namespace VErpApi.Controllers.Stock.Stocks
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PageData<LocationOutput>> Get([FromQuery] int stockId,[FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<LocationOutput>> Get([FromQuery] int stockId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _locationService.GetList(stockId,keyword, page, size);
+            return await _locationService.GetList(stockId, keyword, page, size);
         }
 
 

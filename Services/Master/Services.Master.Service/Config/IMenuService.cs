@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 
 namespace VErp.Services.Master.Service.Config
@@ -17,9 +12,9 @@ namespace VErp.Services.Master.Service.Config
         Task<MenuOutputModel> Get(int menuId);
 
         Task<bool> Update(int menuId, MenuInputModel model);
-        
+
         Task<bool> Delete(int menuId);
-        
+
         Task<int> Create(MenuInputModel model);
     }
 }

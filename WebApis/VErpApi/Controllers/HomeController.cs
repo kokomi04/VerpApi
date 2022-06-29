@@ -18,7 +18,7 @@ namespace VErpApi.Controllers
         {
             _interaction = interaction;
             _settings = settings;
-            
+
         }
         //[Route("")]
         [HttpGet]
@@ -34,6 +34,6 @@ namespace VErpApi.Controllers
         {
             var message = await _interaction.GetErrorContextAsync(errorId);
             return Json(message);
-        }     
+        }
     }
 }

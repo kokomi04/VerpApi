@@ -1,14 +1,8 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Enums.MasterEnum;
+﻿using System.Collections.Generic;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 namespace VErp.Services.Manafacturing.Model.Report
 {
-    public class StepProgressModel 
+    public class StepProgressModel
     {
         public int StepId { get; set; }
 

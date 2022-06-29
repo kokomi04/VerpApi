@@ -1,9 +1,5 @@
-﻿
-using AutoMapper;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
@@ -12,7 +8,7 @@ namespace VErp.Services.Master.Model.Category
 {
 
     public class CategoryModel : CategoryListModel, IMapFrom<CategoryEntity>
-    {       
+    {
         public bool IsModule { get; set; }
         public bool IsReadonly { get; set; }
         public bool IsOutSideData { get; set; }
@@ -34,11 +30,11 @@ namespace VErp.Services.Master.Model.Category
     public class CategoryFullModel : CategoryModel
     {
         public ICollection<CategoryFieldModel> CategoryField { get; set; }
-     
+
         public CategoryFullModel()
         {
             CategoryField = new List<CategoryFieldModel>();
         }
-     
+
     }
 }

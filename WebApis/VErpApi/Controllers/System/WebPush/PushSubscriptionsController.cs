@@ -1,5 +1,5 @@
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Master.Model.WebPush;
@@ -20,7 +20,7 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("")]
         [GlobalApi]
-        public async Task<bool> Subscribe([FromBody]PushSubscriptionRequest subscription)
+        public async Task<bool> Subscribe([FromBody] PushSubscriptionRequest subscription)
         {
             return await _pushSubscriptionService.Subscribe(subscription);
         }
@@ -28,9 +28,9 @@ namespace VErpApi.Controllers.System
         [HttpDelete]
         [Route("")]
         [GlobalApi]
-        public async Task<bool> UnSubscribe([FromQuery]string endpoint)
+        public async Task<bool> UnSubscribe([FromQuery] string endpoint)
         {
-            return  await _pushSubscriptionService.UnSubscribe(endpoint);
+            return await _pushSubscriptionService.UnSubscribe(endpoint);
         }
 
         [HttpGet]

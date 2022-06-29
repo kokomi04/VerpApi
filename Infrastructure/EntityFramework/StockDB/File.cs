@@ -21,5 +21,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public long? FileLength { get; set; }
         public string SmallThumb { get; set; }
         public string LargeThumb { get; set; }
+        public decimal? Rotate { get; set; }
     }
 }

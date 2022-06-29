@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Verp.Resources.Organization.TimeKeeping;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -93,7 +93,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
         }
 
-        private async Task AddEntityWithInner<T, E>(DbSet<E> dataSet,IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
+        private async Task AddEntityWithInner<T, E>(DbSet<E> dataSet, IList<T> items, int[] refForeginKeyId, bool ignoreInner = false) where E : class where T : class, IRefForeginKey, IInnerBySelf<T>
         {
             foreach (var item in items)
             {
@@ -102,8 +102,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var eItem = _mapper.Map<E>(item);
 
                 await dataSet.AddAsync(eItem);
-                
-                if(item.HasInner())
+
+                if (item.HasInner())
                     await _organizationDBContext.SaveChangesAsync();
 
                 if (!ignoreInner && item.HasInner())
@@ -207,9 +207,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (workSchedule == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            var arrangeShifts = await _organizationDBContext.ArrangeShift.Where(x=>x.WorkScheduleId == workScheduleId).ProjectTo<ArrangeShiftModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var arrangeShifts = await _organizationDBContext.ArrangeShift.Where(x => x.WorkScheduleId == workScheduleId).ProjectTo<ArrangeShiftModel>(_mapper.ConfigurationProvider).ToListAsync();
             var arrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(x => arrangeShifts.Select(x => x.ArrangeShiftId).Contains(x.ArrangeShiftId)).ToListAsync();
-            
+
             foreach (var shift in arrangeShifts)
             {
                 var items = arrangeShiftItems.Where(x => x.ArrangeShiftId == shift.ArrangeShiftId && x.ParentArrangeShiftItemId.HasValue == false)

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
+﻿using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Master.Model.Config
 {
@@ -27,7 +24,7 @@ namespace VErp.Services.Master.Model.Config
 
         public EnumObjectType ObjectTypeId { get; set; }
         public string ObjectTypeName { get; set; }
-     
+
         public EnumObjectType ConfigObjectTypeId { get; set; }
         public long ConfigObjectId { get; set; }
         public string TargetObjectName { get; set; }

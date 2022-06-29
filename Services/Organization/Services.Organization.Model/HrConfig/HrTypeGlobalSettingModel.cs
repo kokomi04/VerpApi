@@ -4,7 +4,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace Services.Organization.Model.HrConfig
 {
-    public class HrTypeGlobalSettingModel: ITypeData, IMapFrom<HrTypeGlobalSetting>
+    public class HrTypeGlobalSettingModel : ITypeData, IMapFrom<HrTypeGlobalSetting>
     {
         public HrTypeGlobalSettingModel()
         {

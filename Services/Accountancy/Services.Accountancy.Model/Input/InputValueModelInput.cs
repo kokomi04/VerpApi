@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -22,7 +19,7 @@ namespace VErp.Services.Accountancy.Model.Input
     }
 
 
-    public class InputValueModel 
+    public class InputValueModel
     {
         public int InputAreaFieldId { get; set; }
         public string Value { get; set; }

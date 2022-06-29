@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Model.Users;
@@ -44,7 +39,7 @@ namespace VErp.Services.Master.Service.Users
         Task<IList<UserInfoOutput>> GetListByRoleIds(IList<int> roles);
         CategoryNameModel GetFieldDataForMapping();
         Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream);
-      
+
 
     }
 }

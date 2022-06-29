@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Routing;
 using Services.Organization.Model.SystemParameter;
 using Services.Organization.Service.Parameter;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -13,7 +9,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 namespace VErpApi.Controllers.System.Organization
 {
     [Route("api/organization/systemParameter")]
-    public class SystemParameterController: VErpBaseController
+    public class SystemParameterController : VErpBaseController
     {
         private readonly ISystemParameterService _systemParameterService;
 

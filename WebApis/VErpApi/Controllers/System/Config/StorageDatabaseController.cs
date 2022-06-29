@@ -1,11 +1,6 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.GlobalObject;
 using VErp.Services.Master.Model.StorageDatabase;
 using VErp.Services.Master.Service.StorageDatabase;
 
@@ -24,7 +19,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("backupPoints/{moduleTypeId}")]
-        public async Task<IList<BackupStorageOutput>> GetBackupStorages([FromRoute]int moduleTypeId)
+        public async Task<IList<BackupStorageOutput>> GetBackupStorages([FromRoute] int moduleTypeId)
         {
             return await _storageDbService.GetBackupStorages(moduleTypeId);
         }
@@ -38,7 +33,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("backup")]
-        public async Task<bool> BackupDatabase([FromBody]BackupStorageInput  storageModel)
+        public async Task<bool> BackupDatabase([FromBody] BackupStorageInput storageModel)
         {
             return await _storageDbService.BackupStorage(storageModel);
         }

@@ -15,7 +15,7 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
 
         [Description("Kí hiệu tăng ca")]
         OvertimeSymbol = 4,
-        
+
         [Description("Kí hiệu thiếu giờ ra")]
         ShortTimeoutSymbol = 5,
 
@@ -26,7 +26,7 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
         AbsentSymbol = 7,
 
         [Description("Kí hiệu đúng giờ ca có qua đêm")]
-        
+
         ShiftNightSymbol = 8,
 
         [Description("Kí hiệu ngày không xếp ca")]

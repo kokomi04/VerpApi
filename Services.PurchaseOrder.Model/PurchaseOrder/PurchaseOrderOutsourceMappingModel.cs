@@ -3,7 +3,7 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
-    public class PurchaseOrderOutsourceMappingModel: IMapFrom<PurchaseOrderOutsourceMapping>
+    public class PurchaseOrderOutsourceMappingModel : IMapFrom<PurchaseOrderOutsourceMapping>
     {
         public long PurchaseOrderOutsourceMappingId { get; set; }
         public long PurchaseOrderDetailId { get; set; }

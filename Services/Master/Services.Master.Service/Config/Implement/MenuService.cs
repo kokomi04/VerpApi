@@ -1,24 +1,19 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Verp.Resources.Master.Config.Menu;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Config;
-using VErp.Services.Master.Service.Activity;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using VErp.Commons.Library;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Commons.GlobalObject;
-using VErp.Services.Master.Service.RolePermission;
-using VErp.Services.Master.Service.Users;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Master.Config.Menu;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Model.Config;
+using VErp.Services.Master.Service.Users;
 
 namespace VErp.Services.Master.Service.Config.Implement
 {

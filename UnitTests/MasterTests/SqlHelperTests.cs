@@ -1,28 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Model.Stock;
-using VErp.Services.Stock.Service.Dictionary;
-using VErp.Services.Stock.Service.Products;
-using VErp.Services.Stock.Service.Stock;
-using Xunit;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using VErp.Infrastructure.EF.EFExtensions;
-using Microsoft.Data.SqlClient;
-using Microsoft.SqlServer.Management.SqlParser.Parser;
 using System.Text;
+using System.Threading.Tasks;
+using VErp.Infrastructure.EF.EFExtensions;
+using Xunit;
 
 namespace MasterTests
 {
@@ -150,7 +135,7 @@ sdd WHERE
         private static int GetSqlKeyWordIndex(string sql, string keyword)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var index = sql.LastIndexOf(keyword, StringComparison.OrdinalIgnoreCase);
 
             while (index >= 0

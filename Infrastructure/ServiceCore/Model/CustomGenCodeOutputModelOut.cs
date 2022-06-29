@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Infrastructure.ServiceCore.Model
+﻿namespace VErp.Infrastructure.ServiceCore.Model
 {
-   
+
     //public class CustomGenCodeOutputModelOut
     //{
     //    public int CustomGenCodeId { get; set; }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Grpc.Protos.ValueTypes
+﻿namespace VErp.Grpc.Protos.ValueTypes
 {
     //public partial class DecimalValue
     //{
@@ -35,7 +31,7 @@ namespace VErp.Grpc.Protos.ValueTypes
     public static class DecimalValueExtensions
     {
         private const decimal NanoFactor = 1_000_000_000;
-        
+
         public static DecimalValue ToDecimalValue(this decimal value)
         {
             var units = decimal.ToInt64(value);

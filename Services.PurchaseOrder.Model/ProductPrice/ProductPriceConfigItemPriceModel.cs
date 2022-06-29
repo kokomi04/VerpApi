@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
@@ -14,7 +12,7 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
 
     public class ProductPriceConfigItemPriceModel : IMapFrom<ProductPriceConfigItemPrice>
     {
-        public long ProductPriceConfigItemPriceId { get; set; }                
+        public long ProductPriceConfigItemPriceId { get; set; }
         public bool? IsForeignPrice { get; set; }
         public bool? IsEditable { get; set; }
         public string ItemKey { get; set; }

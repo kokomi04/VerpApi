@@ -1,16 +1,14 @@
 ﻿using AutoMapper;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Data;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.Data;
-using VErp.Infrastructure.EF.EFExtensions;
-using Microsoft.Data.SqlClient;
-using System.Data;
 
 namespace VErp.Services.Master.Service.Data.Implement
 {

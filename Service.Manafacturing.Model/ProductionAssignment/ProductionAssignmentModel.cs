@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Commons.Library;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
-using System.Linq;
 
 namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {

@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -15,10 +14,8 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionAssignment;
-using VErp.Services.Manafacturing.Service.ProductionAssignment.Implement;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
-using VErp.Services.Manafacturing.Service.StatusProcess;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 

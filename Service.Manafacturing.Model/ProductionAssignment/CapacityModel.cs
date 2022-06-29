@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
@@ -19,7 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal Workload { get; set; }
         public decimal OutputQuantity { get; set; }
         public decimal AssingmentQuantity { get; set; }
-        public decimal LinkDataQuantity { get; set; }
+        //public decimal LinkDataQuantity { get; set; }
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         //public decimal CompletedQuantity { get; set; }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
-using Verp.Resources.Enums.ErrorCodes.Organization;
+﻿using Verp.Resources.Enums.ErrorCodes.Organization;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 
 namespace VErp.Commons.Enums.StandardEnum
@@ -10,7 +6,7 @@ namespace VErp.Commons.Enums.StandardEnum
     [ErrorCodePrefix("CUS")]
     [LocalizedDescription(ResourceType = typeof(CustomerErrorCodeDescription))]
     public enum CustomerErrorCode
-    {      
+    {
         CustomerNotFound = 1,
         CustomerCodeAlreadyExisted = 2,
         CustomerNameAlreadyExisted = 3,

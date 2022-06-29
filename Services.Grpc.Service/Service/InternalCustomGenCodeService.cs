@@ -1,21 +1,4 @@
-﻿using Grpc.Core;
-using GrpcProto.Protos;
-using GrpcProto.Protos.Message;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Service;
-
-namespace VErp.Services.Grpc.Service
+﻿namespace VErp.Services.Grpc.Service
 {
     //public class InternalCustomGenCodeService: CustomGenCodeProvider.CustomGenCodeProviderBase
     //{

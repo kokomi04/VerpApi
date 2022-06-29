@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.PurchaseOrder.Model
+﻿namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingSuggestBasicInfo
     {
@@ -11,8 +7,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
     }
 
-    public class PurchasingSuggestDetailInfo: PurchasingSuggestBasicInfo
-    {     
+    public class PurchasingSuggestDetailInfo : PurchasingSuggestBasicInfo
+    {
         public long PurchasingSuggestDetailId { get; set; }
         public int ProductId { get; set; }
         public decimal PrimaryQuantity { get; set; }
@@ -23,7 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string OrderCode { get; set; }
         public string ProductionOrderCode { get; set; }
         public int? SortOrder { get; set; }
-        
+
     }
 
     public class PoAssignmentBasicInfo
@@ -32,7 +28,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PoAssignmentCode { get; set; }
     }
 
-    public class PoAssignmentDetailInfo: PoAssignmentBasicInfo
+    public class PoAssignmentDetailInfo : PoAssignmentBasicInfo
     {
         public long PoAssignmentDetailId { get; set; }
         public int ProductId { get; set; }

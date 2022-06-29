@@ -6,20 +6,18 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
-using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
-    public class ValidateProductionOrderService: IValidateProductionOrderService
+    public class ValidateProductionOrderService : IValidateProductionOrderService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -46,12 +44,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             };
             var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
 
-            var productionOrderDetail =  resultData.ConvertData<ProductionOrderDetailOutputModel>();
+            var productionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
             return await GetWarningProductionOrder(productionOrderId, productionOrderDetail);
         }
 
-        public  async Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IEnumerable<ProductionOrderDetailOutputModel> productionOrderDetail)
+        public async Task<IList<string>> GetWarningProductionOrder(long productionOrderId, IEnumerable<ProductionOrderDetailOutputModel> productionOrderDetail)
         {
             var lsWarning = new List<string>();
 

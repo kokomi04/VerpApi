@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,30 +9,27 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Master.Category;
 using VErp.Commons.Constants;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Category;
 using VErp.Services.Master.Model.CategoryConfig;
-using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using Microsoft.AspNetCore.DataProtection;
 using static Verp.Resources.Master.Category.CategoryConfigValidationMessage;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Master.Category;
+using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 
 namespace VErp.Services.Master.Service.Category
 {

@@ -1,19 +1,14 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MigrateProductInternalName.Services;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.ServiceCore;
 using VErp.Services.Accountancy.Model;
@@ -21,7 +16,6 @@ using VErp.Services.Accountancy.Service;
 using VErp.Services.Master.Service;
 using VErp.Services.Organization.Service;
 using VErp.Services.Stock.Service;
-using VErp.Commons.Library;
 
 namespace MigrateProductInternalName
 {
@@ -38,7 +32,7 @@ namespace MigrateProductInternalName
 
             ConfigReadWriteDBContext(services);
 
-          
+
             ConfigureBussinessService(services);
 
             ConfigureAutoMaper(services);
@@ -73,7 +67,7 @@ namespace MigrateProductInternalName
 
 
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
-        }       
+        }
 
         private static void ResolveCustomService(IServiceCollection services)
         {

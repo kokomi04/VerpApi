@@ -1,10 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -81,7 +77,7 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("{productId}/materialsConsumption/importFromMapping")]
         public async Task<bool> ImportMaterialsConsumptionFromMapping([FromRoute] int productId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            if (file == null || mapping==null)
+            if (file == null || mapping == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
@@ -169,7 +165,7 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpDelete]
         [Route("materialsConsumptionGroups/{groupId}")]
-        public async Task<bool> UpdateProductMaterialsConsumptionGroup([FromRoute]  int groupId)
+        public async Task<bool> UpdateProductMaterialsConsumptionGroup([FromRoute] int groupId)
         {
             return await _productMaterialsConsumptionGroupService.DeleteProductMaterialsConsumptionGroup(groupId);
         }

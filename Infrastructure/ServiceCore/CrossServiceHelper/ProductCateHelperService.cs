@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.ServiceCore.Service;
+﻿using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Enums.Manafacturing;
-using System.Data;
-using VErp.Commons.Library;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {

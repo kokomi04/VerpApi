@@ -1,24 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
-using VErp.Infrastructure.EF.EFExtensions;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
-using VErp.Commons.GlobalObject;
-using Microsoft.Data.SqlClient;
-using System.Data;
-using AutoMapper;
 using VErp.Services.Stock.Model.Product.Partial;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using VErp.Infrastructure.ServiceCore.Facade;
-using Verp.Resources.Stock.Product;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -28,18 +28,21 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         private readonly StockDBContext _stockContext;
         private readonly IUnitService _unitService;
+        private readonly IProductService _productService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductPartialService(
             StockDBContext stockContext
             , IUnitService unitService
+            , IProductService productService
             , IActivityLogService activityLogService
             , IMapper mapper
             )
         {
             _stockContext = stockContext;
             _unitService = unitService;
+            _productService = productService;
             _mapper = mapper;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
@@ -125,6 +128,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
+                {
+                    var usedProductId = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
+                    if (usedProductId.HasValue)
+                    {
+                        throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                    }
                 }
 
                 /*
@@ -506,7 +518,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return new ProductProcessModel()
             {
-              Coefficient = productInfo.Coefficient
+                Coefficient = productInfo.Coefficient
             };
         }
 

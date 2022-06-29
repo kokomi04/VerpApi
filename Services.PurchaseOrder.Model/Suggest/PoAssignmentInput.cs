@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -31,10 +29,10 @@ namespace VErp.Services.PurchaseOrder.Model
         int? CustomerId { get; set; }
     }
 
-    public class PoAssimentDetailModel: IPoAssimentDetailModel
+    public class PoAssimentDetailModel : IPoAssimentDetailModel
     {
         public long? PoAssignmentDetailId { get; set; }
-        public long PurchasingSuggestDetailId { get; set; }               
+        public long PurchasingSuggestDetailId { get; set; }
         public decimal PrimaryQuantity { get; set; }
         public decimal PrimaryUnitPrice { get; set; }
 

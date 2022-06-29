@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Stock.Service.Products;
@@ -18,7 +18,7 @@ namespace VErpApi.Controllers.Stock.Internal
             _propertyService = propertyService;
         }
 
-     
+
 
         [HttpGet]
         [Route("{propertyId}")]
@@ -31,8 +31,8 @@ namespace VErpApi.Controllers.Stock.Internal
         [Route("GetByIds")]
         public async Task<IList<PropertyInfoModel>> GetByIds([FromBody] IList<int> propertyIds)
         {
-            return (await _propertyService.GetByIds(propertyIds))?.Select(s=>(PropertyInfoModel)s)?.ToList();
+            return (await _propertyService.GetByIds(propertyIds))?.Select(s => (PropertyInfoModel)s)?.ToList();
         }
-        
+
     }
 }

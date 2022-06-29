@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using VErp.Services.Stock.Model.Inventory;
 
 namespace VErp.Services.Stock.Service.Inventory
@@ -20,6 +17,6 @@ namespace VErp.Services.Stock.Service.Inventory
 
         Task<bool> ApprovedDelete(long outInvId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
 
-        
+
     }
 }

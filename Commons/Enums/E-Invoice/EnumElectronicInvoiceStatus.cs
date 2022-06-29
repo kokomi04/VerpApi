@@ -2,7 +2,7 @@ using System.ComponentModel;
 
 namespace VErp.Commons.Enums.E_Invoice
 {
-    public enum EnumElectronicInvoiceStatus: int
+    public enum EnumElectronicInvoiceStatus : int
     {
         [Description("Hóa đơn không tồn tại")]
         EInvoiceNotExists = 0,
@@ -15,7 +15,7 @@ namespace VErp.Commons.Enums.E_Invoice
 
         [Description("Hóa đơn đã khai báo thuế")]
         EInvoiceDeclaredTax = 3,
-        
+
         [Description("Hóa đơn bị thay thế")]
         EInvoiceReplaced = 4,
 

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Organization.Model.Employee;
-
-namespace VErp.Services.Organization.Service.Employee
+﻿namespace VErp.Services.Organization.Service.Employee
 {
     //public interface IEmployeeService
     //{

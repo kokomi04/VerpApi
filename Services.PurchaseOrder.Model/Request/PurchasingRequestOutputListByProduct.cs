@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.PurchaseOrder.Model
+﻿namespace VErp.Services.PurchaseOrder.Model
 {
-    public class PurchasingRequestOutputListByProduct: PurchasingRequestOutputList
+    public class PurchasingRequestOutputListByProduct : PurchasingRequestOutputList
     {
         public long PurchasingRequestDetailId { get; set; }
         public int ProductId { get; set; }

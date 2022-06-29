@@ -20,8 +20,8 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
-using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
+using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -144,9 +144,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(entityDetail);
                         await _purchaseOrderDBContext.SaveChangesAsync();
 
-                        if(detail.OutsourceMappings.Count > 0)
+                        if (detail.OutsourceMappings.Count > 0)
                         {
-                            var eOutsourceMappings = detail.OutsourceMappings.Select(x=> new PurchaseOrderOutsourceMapping
+                            var eOutsourceMappings = detail.OutsourceMappings.Select(x => new PurchaseOrderOutsourceMapping
                             {
                                 OrderCode = x.OrderCode,
                                 OutsourcePartRequestId = x.OutsourcePartRequestId,
@@ -200,7 +200,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         }
                         await _purchaseOrderDBContext.PurchaseOrderMaterials.AddRangeAsync(lst);
                     }
-                    
+
 
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
@@ -211,7 +211,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await UpdateStatusForOutsourceRequestInPurcharOrder(po.PurchaseOrderId, purchaseOrderType);
 
-                   
+
                     await ctx.ConfirmCode();
 
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
@@ -277,7 +277,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (info.DeliveryDestination?.Length > 1024)
                     {
-                        throw DeleveryDestinationTooLong.BadRequest();                        
+                        throw DeleveryDestinationTooLong.BadRequest();
                     }
 
 
@@ -341,7 +341,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 break;
                             }
-                            
+
                         }
 
                         if (!found)
@@ -350,7 +350,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             if (item.PrimaryQuantity < allocateQuantity)
                                 throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
-                                
+
                             var eDetail = new PurchaseOrderDetail()
                             {
                                 PurchaseOrderId = info.PurchaseOrderId,
@@ -363,7 +363,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
                                 ProductUnitConversionPrice = item.ProductUnitConversionPrice,
 
-                                PoProviderPricingCode=item.PoProviderPricingCode,
+                                PoProviderPricingCode = item.PoProviderPricingCode,
                                 OrderCode = item.OrderCode,
                                 ProductionOrderCode = item.ProductionOrderCode,
                                 Description = item.Description,
@@ -499,7 +499,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await UpdateStatusForOutsourceRequestInPurcharOrder(purchaseOrderId, (EnumPurchasingOrderType)info.PurchaseOrderType);
 
-                   
+
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                       .MessageResourceFormatDatas(info.PurchaseOrderCode)
                       .ObjectId(info.PurchaseOrderId)
@@ -563,11 +563,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (outsourceRequestId.Length > 0 && info.PurchaseOrderType == (int)EnumPurchasingOrderType.OutsourceStep)
                         return await _manufacturingHelperService.UpdateOutsourceStepRequestStatus(outsourceRequestId);
 
-                  
+
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
                         .MessageResourceFormatDatas(info.PurchaseOrderCode)
                         .ObjectId(info.PurchaseOrderId)
-                        .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model= info }).JsonSerialize())
+                        .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model = info }).JsonSerialize())
                         .CreateLog();
 
                     return true;

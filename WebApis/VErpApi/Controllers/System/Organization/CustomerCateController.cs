@@ -1,24 +1,9 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.Enums.StockEnum;
-using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Service.Config;
-using VErp.Services.Stock.Service.FileResources;
-using VErp.Services.Organization.Service.Customer;
-using VErp.Services.Organization.Model.Customer;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using VErp.Infrastructure.ApiCore.Attributes;
-using System.Linq;
-using VErp.Commons.GlobalObject;
-using Newtonsoft.Json;
-using VErp.Commons.Library.Model;
-using VErp.Services.Master.Model.Config;
-using VErp.Infrastructure.ApiCore.ModelBinders;
+using System.Threading.Tasks;
+using VErp.Infrastructure.ApiCore;
+using VErp.Services.Organization.Model.Customer;
+using VErp.Services.Organization.Service.Customer;
 
 namespace VErpApi.Controllers.System
 {

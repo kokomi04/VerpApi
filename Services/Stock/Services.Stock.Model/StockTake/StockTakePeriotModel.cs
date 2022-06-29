@@ -1,10 +1,7 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.StockTake

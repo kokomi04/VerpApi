@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Product
 {
-    public class ProductMaterialsConsumptionGroupModel: IMapFrom<ProductMaterialsConsumptionGroup>
+    public class ProductMaterialsConsumptionGroupModel : IMapFrom<ProductMaterialsConsumptionGroup>
     {
         public int ProductMaterialsConsumptionGroupId { get; set; }
 

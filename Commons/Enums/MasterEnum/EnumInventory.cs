@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Text;
+﻿using System.ComponentModel;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
@@ -21,7 +18,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Output = 2
     }
 
-    public enum EnumInventoryAction 
+    public enum EnumInventoryAction
     {
         [Description("Bình thường")]
         Normal = 1,
@@ -38,7 +35,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Rotation = 6
     }
 
-    public enum EnumInventoryStatus 
+    public enum EnumInventoryStatus
     {
 
         Draff = 1,

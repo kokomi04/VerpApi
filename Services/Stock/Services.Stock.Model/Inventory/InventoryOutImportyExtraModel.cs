@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Library.Model;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryInputImportExtraModel
+    public class InventoryInputImportExtraModel_Bak
     {
         public string InventoryCode { get; set; }
         public int StockId { get; set; }
@@ -26,7 +22,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
     }
 
-    public class InventoryOutImportyExtraModel
+    public class InventoryOutImportyExtraModel_Bak
     {
         public string InventoryCode { get; set; }
         public int StockId { get; set; }

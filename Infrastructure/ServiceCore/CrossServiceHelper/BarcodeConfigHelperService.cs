@@ -1,9 +1,5 @@
-﻿using GrpcProto.Protos;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.AppSettings.Model;
@@ -32,11 +28,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             _appSetting = appSetting.Value;
             _logger = logger;
         }
-       
+
         public async Task<PageData<BarcodeConfigListOutput>> GetList(string keyword, int page = 1, int size = 0)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var queries = new
             {
                 keyword,

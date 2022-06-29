@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.Enums.MasterEnum.Accountant
+﻿namespace VErp.Commons.Enums.MasterEnum.Accountant
 {
     public enum EnumProgramingLang
     {

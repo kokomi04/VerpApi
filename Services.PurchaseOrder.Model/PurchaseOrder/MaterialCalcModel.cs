@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
@@ -27,7 +24,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
 
-        public bool IsPurchasingRequestCreated { get { return PurchasingRequestId > 0;  } }
+        public bool IsPurchasingRequestCreated { get { return PurchasingRequestId > 0; } }
         public long? PurchasingRequestId { get; set; }
         public string PurchasingRequestCode { get; set; }
     }
@@ -54,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         }
     }
 
-    public class MaterialCalcConsumptionGroupModel: IMapFrom<MaterialCalcConsumptionGroup>
+    public class MaterialCalcConsumptionGroupModel : IMapFrom<MaterialCalcConsumptionGroup>
     {
         public int ProductMaterialsConsumptionGroupId { get; set; }
     }
@@ -80,7 +77,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     public class MaterialCalcProductOrderModel : IMapFrom<MaterialCalcProductOrder>
     {
         public string OrderCode { get; set; }
-        public decimal OrderProductQuantity { get; set; }     
+        public decimal OrderProductQuantity { get; set; }
     }
 
     public class MaterialCalcProductDetailModel : IMapFrom<MaterialCalcProductDetail>

@@ -1,21 +1,15 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.SqlServer.Management.SqlParser.Metadata;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using VErp.Services.Manafacturing.Service.ProductionProcess;
-using VErp.Commons.Enums.Manafacturing;
-using VErp.Infrastructure.ApiCore;
-using VErp.Services.Manafacturing.Model.ProductionProcess;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Commons.GlobalObject;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
-using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Model.ProductionProcess;
+using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -238,7 +232,8 @@ namespace VErpApi.Controllers.Manufacturing
         /// <returns></returns>
         [HttpGet]
         [Route("{containerTypeId}/{containerId}/getAllProductInProductionProcess")]
-        public async Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcess([FromRoute] EnumContainerType containerTypeId,[FromRoute] long containerId){
+        public async Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcess([FromRoute] EnumContainerType containerTypeId, [FromRoute] long containerId)
+        {
             return await _productionProcessService.GetAllProductInProductionProcessV2(containerTypeId, containerId);
         }
     }

@@ -1,8 +1,6 @@
 ﻿using ActivityLogDB;
 using Elasticsearch.Net;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -12,7 +10,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Master.StorageDatabase;
-using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -219,7 +216,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 string filePath = GetPhysicalFilePath($"{outDirectory}/{db}.bak");
 
                 await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreStarted)
-                    .MessageResourceFormatDatas(db,(EnumModuleType) backup.ModuleTypeId, backup.Title)
+                    .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
                     .ObjectId(backup.BackupPoint)
                     .JsonData(backup.JsonSerialize())
                     .CreateLog();

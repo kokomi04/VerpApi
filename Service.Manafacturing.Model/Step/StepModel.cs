@@ -6,7 +6,7 @@ using StepEntity = VErp.Infrastructure.EF.ManufacturingDB.Step;
 
 namespace VErp.Services.Manafacturing.Model.Step
 {
-    public class StepModel: IMapFrom<StepEntity>
+    public class StepModel : IMapFrom<StepEntity>
     {
         public int StepId { get; set; }
         public string StepName { get; set; }

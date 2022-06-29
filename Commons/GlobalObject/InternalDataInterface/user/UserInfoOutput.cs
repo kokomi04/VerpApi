@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.Org;
 
@@ -26,7 +24,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     //}
 
     public class UserDepartmentInfoModel : UserDepartmentMappingModel
-    {      
+    {
         public string DepartmentCode { get; set; }
         public string DepartmentName { get; set; }
     }

@@ -1,10 +1,10 @@
 
-using VErp.Commons.GlobalObject;
 using ActivityLogDB;
+using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Master.Model.WebPush
 {
-    public class PushSubscriptionModel: IMapFrom<PushSubscription>
+    public class PushSubscriptionModel : IMapFrom<PushSubscription>
     {
         public long PushSubscriptionId { get; set; }
         public int UserId { get; set; }

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Infrastructure.ApiCore.Model
+﻿namespace VErp.Infrastructure.ApiCore.Model
 {
     public static class VerpHeaders
     {

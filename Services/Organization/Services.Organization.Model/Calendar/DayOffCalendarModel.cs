@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
-using System;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Calendar
@@ -15,7 +13,7 @@ namespace VErp.Services.Organization.Model.Calendar
         public void Mapping(Profile profile)
         {
             profile.CreateMap<DayOffCalendar, DayOffCalendarModel>()
-                .ForMember(dest => dest.Day, opt => opt.MapFrom(x =>x.Day.GetUnix()))
+                .ForMember(dest => dest.Day, opt => opt.MapFrom(x => x.Day.GetUnix()))
                 .ReverseMap()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(x => x.Day.UnixToDateTime()));
         }

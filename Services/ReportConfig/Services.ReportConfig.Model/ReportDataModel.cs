@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 
@@ -17,5 +15,6 @@ namespace Verp.Services.ReportConfig.Model
         public NonCamelCaseDictionary Head { get; set; }
         public IList<NonCamelCaseDictionary> HeadTable { get; set; }
         public NonCamelCaseDictionary Foot { get; set; }
+        public ReportFilterDataModel FilterData { get; set; }
     }
 }

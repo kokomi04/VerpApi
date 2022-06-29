@@ -202,7 +202,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<IList<ActionButtonBillTypeMapping>> GetActionButtonBillType(EnumObjectType billTypeObjectTypeId, int? billTypeObjectId)
         {
-            var queries = new 
+            var queries = new
             {
                 //ActionButtonId = actionButtonId,
                 BillTypeObjectTypeId = billTypeObjectTypeId,

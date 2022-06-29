@@ -1,18 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
+using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
-using VErp.Services.Master.Service.Config;
 using VErp.Services.Master.Service.Config.Implement;
 
 namespace VErpApi.Controllers.System
@@ -41,7 +33,7 @@ namespace VErpApi.Controllers.System
         {
             return await _i18NLanguageService.DeleteI18n(i18nLanguageId);
         }
-        
+
         [HttpGet, Route("")]
         // [AllowAnonymous]
         [GlobalApi]
@@ -51,7 +43,7 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost, Route("search")]
-        public async Task<PageData<I18nLanguageModel>> SearchI18n([FromQuery]string keyword, [FromQuery]int size, [FromQuery]int page)
+        public async Task<PageData<I18nLanguageModel>> SearchI18n([FromQuery] string keyword, [FromQuery] int size, [FromQuery] int page)
         {
             return await _i18NLanguageService.SearchI18n(keyword, size, page);
         }

@@ -3,7 +3,7 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.Notification
 {
-    public class MailTemplateModel: IMapFrom<MailTemplate>
+    public class MailTemplateModel : IMapFrom<MailTemplate>
     {
         public int MailTemplateId { get; set; }
         public string TemplateCode { get; set; }

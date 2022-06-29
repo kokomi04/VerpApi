@@ -1,23 +1,20 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
-using System.Linq;
-using Microsoft.EntityFrameworkCore;
-using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using VErp.Services.Manafacturing.Model.ProductionStep;
-using AutoMapper.QueryableExtensions;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Enums.Manafacturing;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 {
@@ -63,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             materials.AddRange(materialsMain);
             materials.AddRange(materialsConsump);
 
-           
+
             return new ProductionOrderMaterialsModel
             {
                 IsReset = productionOrder.IsResetProductionProcess,
@@ -91,18 +88,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Where(x => x.IsGroup == true && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder && x.ContainerId == productionOrderId)
-                .Include(x=>x.Step)
+                .Include(x => x.Step)
                 .ToListAsync();
 
-            var productionAssignments = _manufacturingDBContext.ProductionAssignment.AsNoTracking()
+            var productionAssignments = (await _manufacturingDBContext.ProductionAssignment.AsNoTracking()
                                             .Where(x => roleInputData.Select(x => x.ProductionStepId).Contains(x.ProductionStepId))
                                             .Include(x => x.ProductionStepLinkData)
                                             .Select(x => new
                                             {
                                                 x.ProductionStepId,
                                                 x.DepartmentId,
-                                                RateQuantity = Math.Round(x.AssignmentQuantity / (x.ProductionStepLinkData.Quantity - x.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()), 5)
-                                            }).ToArray();
+                                                x.AssignmentQuantity,
+                                                x.ProductionStepLinkData.Quantity
+                                            }).
+                                            ToListAsync())
+                                            .Select(x => new
+                                            {
+                                                x.ProductionStepId,
+                                                x.DepartmentId,
+                                                RateQuantity = x.Quantity > 0 ? Math.Round(x.AssignmentQuantity / x.Quantity, 5) : 0
+                                            })
+                                            .ToArray();
 
             var materialsAssigned = (from r in roleInputData
                                      join a in productionAssignments
@@ -112,13 +118,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                      where r.ProductionStepLinkData.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                                      select new ProductionOrderMaterialsCalc
                                      {
-                                         AssignmentQuantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
+                                         AssignmentQuantity = a.RateQuantity * r.ProductionStepLinkData.Quantity,
                                          DepartmentId = a.DepartmentId,
                                          ProductId = r.ProductionStepLinkData.LinkDataObjectId,
                                          ProductionStepId = r.ProductionStepId,
                                          ProductionStepTitle = string.Concat(s.Step?.StepName, $@" ({r.ProductionStep.Title})"),
                                          ProductionStepLinkDataId = r.ProductionStepLinkDataId,
-                                         Quantity = a.RateQuantity * (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
+                                         Quantity = a.RateQuantity * r.ProductionStepLinkData.Quantity,
                                          RateQuantity = a.RateQuantity,
                                          InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
                                          ConversionRate = 1,
@@ -141,17 +147,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                       join a in calcuTotalAssignmentQuantity
                                            on r.ProductionStepLinkDataId equals a.ProductionStepLinkDataId into assignMap
                                       from m in assignMap.DefaultIfEmpty()
-                                      let AssignmentQuantity = (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()) - m?.TotalAssignmentQuantity
+                                      let AssignmentQuantity = r.ProductionStepLinkData.Quantity - m?.TotalAssignmentQuantity
                                       where AssignmentQuantity is null || AssignmentQuantity > 0 && r.ProductionStepLinkData.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                                       select new ProductionOrderMaterialsCalc
                                       {
-                                          AssignmentQuantity = !AssignmentQuantity.HasValue ? r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() : AssignmentQuantity,
+                                          AssignmentQuantity = !AssignmentQuantity.HasValue ? r.ProductionStepLinkData.Quantity : AssignmentQuantity,
                                           ProductId = r.ProductionStepLinkData.LinkDataObjectId,
                                           ProductionStepId = r.ProductionStepId,
                                           ProductionStepTitle = string.Concat(s.Step?.StepName, $@" ({r.ProductionStep.Title})"),
                                           ProductionStepLinkDataId = r.ProductionStepLinkDataId,
-                                          Quantity = AssignmentQuantity.HasValue ? AssignmentQuantity.GetValueOrDefault() : (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault()),
-                                          RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / (r.ProductionStepLinkData.Quantity - r.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault())),
+                                          Quantity = AssignmentQuantity.HasValue ? AssignmentQuantity.GetValueOrDefault() : r.ProductionStepLinkData.Quantity,
+                                          RateQuantity = !AssignmentQuantity.HasValue ? 1 : (AssignmentQuantity.GetValueOrDefault() / r.ProductionStepLinkData.Quantity),
                                           InventoryRequirementStatusId = EnumProductionOrderMaterials.EnumInventoryRequirementStatus.NotCreateYet,
                                           ConversionRate = 1,
                                       };
@@ -262,7 +268,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (productionOrder == null)
                     throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
-                await UpdateProductionOrderMaterialsMain(productionOrderId, materials.Where(x=>x.ProductMaterialsConsumptionGroupId == 0).ToList());
+                await UpdateProductionOrderMaterialsMain(productionOrderId, materials.Where(x => x.ProductMaterialsConsumptionGroupId == 0).ToList());
                 await UpdateProductionOrderMaterialsConsump(productionOrderId, materials.Where(x => x.ProductMaterialsConsumptionGroupId > 0).ToList());
 
                 productionOrder.IsResetProductionProcess = false;
@@ -288,7 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 .ToListAsync();
 
             var newMaterials = materials.AsQueryable().Where(x => x.ProductionOrderMaterialsId == 0)
-            .Select(x=> new ProductionOrderMaterialsConsumption
+            .Select(x => new ProductionOrderMaterialsConsumption
             {
                 ProductMaterialsConsumptionGroupId = x.ProductMaterialsConsumptionGroupId,
                 Quantity = x.Quantity,
@@ -299,9 +305,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 ConversionRate = x.ConversionRate,
                 DepartmentId = x.DepartmentId,
                 IsReplacement = x.IsReplacement,
-                InventoryRequirementStatusId = (int) x.InventoryRequirementStatusId,
+                InventoryRequirementStatusId = (int)x.InventoryRequirementStatusId,
                 ProductionOrderMaterialsConsumptionId = x.ProductionOrderMaterialsId
-                
+
             })
             .ToArray();
 

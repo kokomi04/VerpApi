@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Calc;
 
 namespace VErp.Services.Stock.Service.Products

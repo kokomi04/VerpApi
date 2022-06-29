@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.Master.Model.Activity
+﻿namespace VErp.Services.Master.Model.Activity
 {
     public class UserActivityLogInputModel
     {

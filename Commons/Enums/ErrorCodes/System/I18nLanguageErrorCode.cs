@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using Verp.Resources.Enums.System;
 using VErp.Commons.ObjectExtensions.CustomAttributes;
 

@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 namespace VErp.Services.Manafacturing.Model.Report
 {
     public class DailyImportModel

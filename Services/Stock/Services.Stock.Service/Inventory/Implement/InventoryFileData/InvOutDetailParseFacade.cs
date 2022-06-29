@@ -12,8 +12,8 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Products;
-using static VErp.Services.Stock.Model.Inventory.InvOutDetailRowValue;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
+using static VErp.Services.Stock.Model.Inventory.InvOutDetailRowValue;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {

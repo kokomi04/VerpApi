@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -13,7 +12,7 @@ namespace VErpApi.Controllers.Manufacturing
 {
     [Route("api/ProductSemi")]
     [ApiController]
-    public class ProductSemiController: VErpBaseController
+    public class ProductSemiController : VErpBaseController
     {
         private readonly IProductSemiService _productSemiService;
         private readonly IProductSemiConversionService _productSemiConversionService;
@@ -26,7 +25,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("")]
-        public async Task<IList<ProductSemiModel>> GetListProductSemi([FromQuery]long containerId, [FromQuery] int containerTypeId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemi([FromQuery] long containerId, [FromQuery] int containerTypeId)
         {
             return await _productSemiService.GetListProductSemi(containerId, containerTypeId);
         }
@@ -75,7 +74,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("{productSemiId}/conversions")]
-        public async Task<long> AddProductSemiConversion([FromRoute] long productSemiId, [FromBody]ProductSemiConversionModel model)
+        public async Task<long> AddProductSemiConversion([FromRoute] long productSemiId, [FromBody] ProductSemiConversionModel model)
         {
             if (model == null) throw GeneralCode.InvalidParams.BadRequest();
 
@@ -97,7 +96,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productSemiId}/conversions/{conversionId}")]
         public async Task<bool> DeleteProductSemiConversion([FromRoute] long productSemiId, [FromRoute] long conversionId)
         {
-            return await _productSemiConversionService.DeleteProductSemiConversion(productSemiId,conversionId);
+            return await _productSemiConversionService.DeleteProductSemiConversion(productSemiId, conversionId);
         }
 
         [HttpGet]
@@ -111,7 +110,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("more")]
         public async Task<long[]> CreateListProductSemi([FromBody] IList<ProductSemiModel> models)
         {
-            if(models?.Count > 0)
+            if (models?.Count > 0)
                 return await _productSemiService.CreateListProductSemi(models);
             return Array.Empty<long>();
         }

@@ -1,9 +1,8 @@
-﻿using System.ComponentModel.DataAnnotations;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+﻿using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Organization.Model.Department
 {
-    public class DepartmentModel: DepartmentSimpleModel
+    public class DepartmentModel : DepartmentSimpleModel
     {
         public string Description { get; set; }
         public int? ParentId { get; set; }

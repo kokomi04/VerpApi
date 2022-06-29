@@ -1,9 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Infrastructure.AppSettings

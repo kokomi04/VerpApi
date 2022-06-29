@@ -5,7 +5,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -16,7 +15,7 @@ using VErp.Services.Manafacturing.Model.ProductionStep;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
-    public class ProductionStepCollectionService: IProductionStepCollectionService
+    public class ProductionStepCollectionService : IProductionStepCollectionService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly IActivityLogService _activityLogService;
@@ -59,7 +58,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 entity.Frequence = 1;
                 _manufacturingDBContext.ProductionStepCollection.Add(entity);
             }
-            
+
             await _manufacturingDBContext.SaveChangesAsync();
 
             return entity.ProductionStepCollectionId;
@@ -89,7 +88,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<PageData<ProductionStepCollectionSearch>> SearchProductionStepCollection(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var collections = await _manufacturingDBContext.ProductionStepCollection.AsNoTracking()
                 .OrderByDescending(x => x.Frequence).ThenBy(x => x.ProductionStepCollectionId)
                 .ProjectTo<ProductionStepCollectionSearch>(_mapper.ConfigurationProvider)

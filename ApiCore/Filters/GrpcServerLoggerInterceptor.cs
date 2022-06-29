@@ -1,15 +1,12 @@
-﻿using Dia2Lib;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace VErp.Infrastructure.ApiCore.Filters
 {
-    public class GrpcServerLoggerInterceptor: Interceptor
+    public class GrpcServerLoggerInterceptor : Interceptor
     {
         private readonly ILogger<GrpcServerLoggerInterceptor> _logger;
 

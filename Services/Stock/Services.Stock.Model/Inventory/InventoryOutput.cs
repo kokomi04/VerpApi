@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.FileResources;
-using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -57,14 +54,14 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public IList<MappingInputBillModel> InputBills { get; set; }
         public int? CensorByUserId { get; set; }
-        public EnumInventoryAction InventoryActionId {get;set;}
+        public EnumInventoryAction InventoryActionId { get; set; }
         public int InventoryStatusId { get; set; }
 
         public long? RefInventoryId { get; set; }
         public string RefInventoryCode { get; set; }
         public int? RefStockId { get; set; }
 
-       
+
     }
 
     public class MappingInputBillModel

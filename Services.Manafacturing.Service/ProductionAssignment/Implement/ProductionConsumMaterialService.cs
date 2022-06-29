@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -98,18 +97,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .GroupBy(c => c.ProductionStepId)
                 .ToDictionary(g => g.Key, g => g.Select(c =>
                     {
-                         var consumMaterial = _mapper.Map<ProductionConsumMaterialModel>(c);
-                         var details = new Dictionary<int, Dictionary<long, ProductionConsumMaterialDetailModel>>();
-                         foreach (var detail in c.ProductionConsumMaterialDetail)
-                         {
-                             if (!details.ContainsKey(detail.ObjectTypeId))
-                             {
-                                 details.Add(detail.ObjectTypeId, new Dictionary<long, ProductionConsumMaterialDetailModel>());
-                             }
-                             details[detail.ObjectTypeId].Add(detail.ObjectId, _mapper.Map<ProductionConsumMaterialDetailModel>(detail));
-                         }
-                         consumMaterial.Details = details;
-                         return consumMaterial;
+                        var consumMaterial = _mapper.Map<ProductionConsumMaterialModel>(c);
+                        var details = new Dictionary<int, Dictionary<long, ProductionConsumMaterialDetailModel>>();
+                        foreach (var detail in c.ProductionConsumMaterialDetail)
+                        {
+                            if (!details.ContainsKey(detail.ObjectTypeId))
+                            {
+                                details.Add(detail.ObjectTypeId, new Dictionary<long, ProductionConsumMaterialDetailModel>());
+                            }
+                            details[detail.ObjectTypeId].Add(detail.ObjectId, _mapper.Map<ProductionConsumMaterialDetailModel>(detail));
+                        }
+                        consumMaterial.Details = details;
+                        return consumMaterial;
                     }).ToList()
                 );
         }

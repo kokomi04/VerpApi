@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace VErp.Services.Master.Model.Config
 {
@@ -11,7 +8,7 @@ namespace VErp.Services.Master.Model.Config
         //public int ObjectTypeId { get; set; }
         //public string ObjectName { get; set; }
         public int CodeLength { get; set; }
-        
+
         [StringLength(32)]
         public string Prefix { get; set; }
 

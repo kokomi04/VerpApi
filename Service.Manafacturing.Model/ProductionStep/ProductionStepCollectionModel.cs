@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -15,7 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionStepCollection, ProductionStepCollectionModel>()
-                .ForMember(m=>m.Collections, v=>v.MapFrom(x=>x.Collections.JsonDeserialize<IList<StepCollection>>()))
+                .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonDeserialize<IList<StepCollection>>()))
                 .ReverseMap()
                 .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonSerialize()));
         }
@@ -41,7 +39,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public long ProductionStepCollectionId { get; set; }
         public string Title { get; set; }
     }
-    public class StepCollectionSearch: StepCollection
+    public class StepCollectionSearch : StepCollection
     {
         public string StepName { get; set; }
     }

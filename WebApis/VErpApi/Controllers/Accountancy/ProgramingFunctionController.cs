@@ -1,16 +1,13 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum.Accountant;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Programing;
 using VErp.Services.Accountancy.Service.Programing;
-using VErp.Commons.GlobalObject;
 
 namespace VErpApi.Controllers.Accountancy
 {
@@ -57,7 +54,7 @@ namespace VErpApi.Controllers.Accountancy
         }
 
         [HttpPost("ExecFunction/{programingFunctionName}")]
-        public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody]  NonCamelCaseDictionary<FuncParameter> inputData)
+        public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody] NonCamelCaseDictionary<FuncParameter> inputData)
         {
             return _programingFunctionService.ExecSQLFunction(programingFunctionName, inputData);
         }

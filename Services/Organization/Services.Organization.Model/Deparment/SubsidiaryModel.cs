@@ -1,9 +1,4 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.Org;
 using VErp.Infrastructure.EF.OrganizationDB;
 using EmployeeEntity = VErp.Infrastructure.EF.OrganizationDB.Employee;

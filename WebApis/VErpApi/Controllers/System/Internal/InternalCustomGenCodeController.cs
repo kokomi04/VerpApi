@@ -1,14 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Config;
 using VErp.Services.Master.Service.Config;
 
 namespace VErpApi.Controllers.System.Internal

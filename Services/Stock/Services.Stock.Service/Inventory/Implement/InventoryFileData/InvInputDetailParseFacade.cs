@@ -11,10 +11,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Inventory;
-using VErp.Services.Stock.Service.Products;
-using static VErp.Services.Stock.Model.Inventory.InvOutDetailRowValue;
-using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 using VErp.Services.Stock.Model.Package;
+using VErp.Services.Stock.Service.Products;
+using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryDetailParseFacadeMessage;
 using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 
 
@@ -68,7 +67,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                         if (refProperty?.StartsWith(nameof(PackageInputModel.CustomPropertyValue)) == true)
                         {
-                            
+
                             var customPropertyId = Convert.ToInt32(refProperty.Substring(nameof(PackageInputModel.CustomPropertyValue).Length));
 
                             var propertyInfo = customProps.FirstOrDefault(p => p.PackageCustomPropertyId == customPropertyId);
@@ -114,7 +113,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                                 {
                                     locationInfo = new LocationEntity()
                                     {
-                                        StockId =stockId,
+                                        StockId = stockId,
                                         Name = value,
                                         Description = "",
                                         Status = 1
@@ -134,7 +133,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         break;
                 }
 
-               
+
 
                 return false;
             });

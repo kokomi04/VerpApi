@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -28,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public void Mapping(Profile profile) => profile.CreateMap<PurchasingRequest, PurchasingRequestInput>()
            .ForMember(m => m.Details, m => m.Ignore())
-           .ForMember(m => m.Date, m => m.MapFrom(v=>v.Date.GetUnix()))
+           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
            .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.GetUnix()))
            .ReverseMap()
            .ForMember(m => m.PurchasingRequestDetail, m => m.Ignore())
@@ -56,7 +53,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public int OriginalProductId { get; set; }
 
-        public int? SortOrder { get; set; }        
+        public int? SortOrder { get; set; }
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
             => profile.CreateMap<PurchasingRequestDetail, T>()

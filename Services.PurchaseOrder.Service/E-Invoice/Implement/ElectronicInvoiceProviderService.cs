@@ -1,26 +1,21 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.EInvoice;
 using VErp.Commons.Enums.E_Invoice;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model.E_Invoice;
-using VErp.Commons.Library;
-using Verp.Resources.PurchaseOrder.EInvoice;
 
 namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
 {
-   
+
 
     public class ElectronicInvoiceProviderService : IElectronicInvoiceProviderService
     {
@@ -42,7 +37,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
         public async Task<IList<ElectronicInvoiceProviderModel>> GetList()
         {
             var lst = await _purchaseOrderDBContext.ElectronicInvoiceProvider.ToListAsync();
-            
+
             return _mapper.Map<List<ElectronicInvoiceProviderModel>>(lst);
         }
 

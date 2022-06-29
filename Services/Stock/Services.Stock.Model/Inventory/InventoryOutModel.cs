@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
@@ -42,13 +40,13 @@ namespace VErp.Services.Stock.Model.Inventory
         //public bool? IsFreeStyle { set; get; }
         public decimal? RequestPrimaryQuantity { get; set; }
         public decimal PrimaryQuantity { get; set; }
-        public decimal UnitPrice { get; set; }
+        public decimal? UnitPrice { get; set; }
 
         public int ProductUnitConversionId { set; get; }
         public decimal? RequestProductUnitConversionQuantity { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
-        public decimal ProductUnitConversionPrice { get; set; }
-
+        public decimal? ProductUnitConversionPrice { get; set; }
+        public decimal? Money { get; set; }
 
         public int? RefObjectTypeId { get; set; }
         public long? RefObjectId { get; set; }

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.Package
 {
@@ -9,7 +7,7 @@ namespace VErp.Services.Stock.Model.Package
         public IList<PackageSplitDetailModel> ToPackages { get; set; }
     }
 
-    public class PackageSplitDetailModel: INewPackageBase
+    public class PackageSplitDetailModel : INewPackageBase
     {
         public string PackageCode { get; set; }
         public int? LocationId { get; set; }

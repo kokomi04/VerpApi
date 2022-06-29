@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model;
-using VErp.Services.Master.Model.Category;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.Library.Model;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.Library.Model;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Master.Model.Category;
 
 namespace VErp.Services.Master.Service.Category
 {

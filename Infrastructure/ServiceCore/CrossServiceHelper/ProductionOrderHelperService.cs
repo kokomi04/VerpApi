@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Data;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
-using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Commons.GlobalObject;
 using VErp.Commons.Enums.Manafacturing;
-using System.Data;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -26,7 +22,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public async Task<bool> UpdateProductionOrderStatus(string productionOrderCode, DataTable inventories, EnumProductionStatus status)
         {
-            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/status", new 
+            return await _httpCrossService.Put<bool>($"api/internal/InternalProductionOrder/status", new
             {
                 ProductionOrderCode = productionOrderCode,
                 ProductionOrderStatus = status,

@@ -1,29 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
-using System.Collections;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Data;
-using System.Globalization;
-using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
 using VErp.Commons.Constants;
-using VErp.Commons.Enums.AccountantEnum;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
-using VErp.Commons.ObjectExtensions.Extensions;
-using VErp.Infrastructure.AppSettings.Model;
 
 
 namespace VErp.Commons.Library
@@ -49,7 +30,7 @@ namespace VErp.Commons.Library
 
 
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "")
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "", int parentOrder = 0)
         {
             var fields = new List<CategoryFieldNameModel>();
 
@@ -63,18 +44,24 @@ namespace VErp.Commons.Library
                 });
             }
 
+            var sortOrder = parentOrder;
             foreach (var prop in typeof(T).GetProperties())
             {
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
                 var groupName = "Trường dữ liệu";
+
+                var order = sortOrder++;
                 int? type = null;
 
                 if (attrs != null && attrs.Count() > 0)
                 {
                     title = attrs.First().Name;
                     groupName = attrs.First().GroupName;
+
+                    if (attrs.First().GetOrder() > 0)
+                        order = attrs.First().Order;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
@@ -103,7 +90,7 @@ namespace VErp.Commons.Library
                 {
                     MethodInfo method = typeof(ExcelUtils).GetMethod(nameof(ExcelUtils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name });
+                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name, order });
                     foreach (var f in nestedFields)
                     {
                         fields.Add(new CategoryFieldNameModel()
@@ -114,7 +101,8 @@ namespace VErp.Commons.Library
                             FieldTitle = f.FieldTitle,
                             IsRequired = f.IsRequired,
                             Type = f.Type,
-                            RefCategory = f.RefCategory
+                            RefCategory = f.RefCategory,
+                            SortOrder = f.SortOrder
                         });
                     }
                 }
@@ -129,7 +117,8 @@ namespace VErp.Commons.Library
                         FieldTitle = title,
                         IsRequired = isRequired != null,
                         Type = type,
-                        RefCategory = null
+                        RefCategory = null,
+                        SortOrder = order
                     };
 
 
@@ -156,7 +145,7 @@ namespace VErp.Commons.Library
             }
 
 
-            return fields;
+            return fields.OrderBy(f => f.SortOrder).ToList();
         }
     }
 }

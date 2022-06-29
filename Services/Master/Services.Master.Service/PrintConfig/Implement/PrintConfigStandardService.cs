@@ -107,7 +107,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 config.IsDeleted = true;
 
                 await _masterDBContext.SaveChangesAsync();
-             
+
                 await trans.CommitAsync();
 
                 await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Delete)
@@ -140,13 +140,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         public async Task<PageData<PrintConfigStandardModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
         {
             keyword = (keyword ?? "").Trim();
-            
+
             var query = _masterDBContext.PrintConfigStandard.AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(x => x.PrintConfigName.Contains(keyword));
 
-            if(moduleTypeId > 0)
+            if (moduleTypeId > 0)
                 query = query.Where(x => x.ModuleTypeId.Equals(moduleTypeId));
 
             var total = await query.CountAsync();
@@ -179,7 +179,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await _masterDBContext.SaveChangesAsync();
 
-              
+
                 await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Update)
                    .MessageResourceFormatDatas(config.PrintConfigName)
                    .ObjectId(config.PrintConfigStandardId)

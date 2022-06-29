@@ -1,10 +1,5 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Manafacturing;
+﻿using System;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {

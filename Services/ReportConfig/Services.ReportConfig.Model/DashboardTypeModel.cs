@@ -12,7 +12,7 @@ namespace Verp.Services.ReportConfig.Model
         public int SortOrder { get; set; }
     }
 
-    public class DashboardTypeModel: DashboardTypeListModel
+    public class DashboardTypeModel : DashboardTypeListModel
     {
         public string BodySql { get; set; }
         public string Columns { get; set; }

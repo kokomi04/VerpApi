@@ -1,10 +1,5 @@
-﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.Organization;
+﻿using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using LeaveBill = VErp.Infrastructure.EF.OrganizationDB.Leave;
 
 namespace VErp.Services.Organization.Model.Leave

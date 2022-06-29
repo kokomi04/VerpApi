@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
-using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.PurchaseOrder.Service
 {

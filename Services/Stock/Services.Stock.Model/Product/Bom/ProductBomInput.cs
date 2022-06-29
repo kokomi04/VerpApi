@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 
@@ -32,5 +30,5 @@ namespace VErp.Services.Stock.Model.Product
 
         public IList<ProductBomInput> Bom { get; set; }
     }
-    
+
 }

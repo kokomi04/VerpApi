@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.Constants
+﻿namespace VErp.Commons.Constants
 {
     public static class CategoryFieldConstants
     {
@@ -11,7 +7,7 @@ namespace VErp.Commons.Constants
         public const string ParentId_Title = "Đối tượng cha";
 
         public static string F_Id = "F_Id";
-        
+
     }
 
     public static class CurrencyCateConstants

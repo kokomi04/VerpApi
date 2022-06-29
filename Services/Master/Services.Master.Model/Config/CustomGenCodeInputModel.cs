@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Master.Model.Config
@@ -24,11 +22,11 @@ namespace VErp.Services.Master.Model.Config
         public string Prefix { get; set; }
 
         [StringLength(32)]
-        public string Suffix { get; set; }     
+        public string Suffix { get; set; }
 
         [StringLength(128)]
         public string Description { get; set; }
-        
+
         public int SortOrder { get; set; }
 
         public bool IsDefault { get; set; }

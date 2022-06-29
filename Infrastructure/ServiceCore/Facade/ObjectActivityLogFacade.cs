@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Service;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 
@@ -30,7 +26,7 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
         }
 
-        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null,int? billTypeId=null)
+        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
@@ -20,7 +17,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public int SortOrder { get; set; }
         public int? HrTypeGroupId { get; set; }
-        
+
         public IList<HrAreaFieldSimpleModel> AreaFields { get; set; }
     }
 

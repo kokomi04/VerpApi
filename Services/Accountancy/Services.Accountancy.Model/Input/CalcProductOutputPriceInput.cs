@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.AccountantEnum;
+﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Accountancy.Model.Input
@@ -13,6 +10,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public long FromDate { get; set; }
         public long ToDate { get; set; }
         public string Tk { get; set; }
+        public bool IsIgnoreZeroPrice { get; set; }
         public bool IsUpdate { get; set; }
     }
 
@@ -21,5 +19,6 @@ namespace VErp.Services.Accountancy.Model.Input
     {
         public IList<NonCamelCaseDictionary> Data { get; set; }
         public bool IsInvalid { get; set; }
+        public bool IsError { get; set; }
     }
 }

@@ -1,13 +1,9 @@
 ﻿using AutoMapper;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.EF.ManufacturingDB;
-using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
-using VErp.Commons.Library;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
@@ -22,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         {
             profile.CreateMap<ProductionOrderEntity, ProductionOrderOutputModel>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
-                .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.MapFrom(x=>x.ProductionOrderAttachment))
+                .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.MapFrom(x => x.ProductionOrderAttachment))
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
@@ -34,7 +30,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderInputModel : ProductOrderModel, IMapFrom<ProductionOrderEntity>
     {
-        public ProductionOrderInputModel() {
+        public ProductionOrderInputModel()
+        {
             ProductionOrderDetail = new HashSet<ProductionOrderDetailInputModel>();
             ProductionOrderAttachment = new HashSet<ProductionOrderAttachmentModel>();
         }
@@ -85,7 +82,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
             Inventories = new List<ProductionInventoryRequirementEntity>();
         }
     }
-  
+
 
     public class OrderProductInfo
     {

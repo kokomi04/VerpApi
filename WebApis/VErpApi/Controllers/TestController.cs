@@ -1,22 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using System;
+using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Services.Master.Model.Dictionary;
-using VErp.Services.Master.Service.Activity.Implement;
-using VErpApi.Controllers;
-using VErp.Services.Master.Service.Activity;
-using Microsoft.EntityFrameworkCore;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Master.Model.Dictionary;
+using VErp.Services.Master.Service.Activity;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 
 namespace VErpApi.Controllers.System

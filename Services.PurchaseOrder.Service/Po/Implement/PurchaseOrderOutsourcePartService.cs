@@ -1,5 +1,4 @@
 using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -16,11 +15,11 @@ using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
-using VErp.Commons.Library;
 
-namespace VErp.Services.PurchaseOrder.Service.Implement {
+namespace VErp.Services.PurchaseOrder.Service.Implement
+{
 
-    public class PurchaseOrderOutsourcePartService: PurchaseOrderOutsourceAbstract, IPurchaseOrderOutsourcePartService
+    public class PurchaseOrderOutsourcePartService : PurchaseOrderOutsourceAbstract, IPurchaseOrderOutsourcePartService
     {
         public PurchaseOrderOutsourcePartService(
             PurchaseOrderDBContext purchaseOrderDBContext,
@@ -30,7 +29,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             ICurrentContextService currentContext,
             ICustomGenCodeHelperService customGenCodeHelperService,
             IManufacturingHelperService manufacturingHelperService,
-            IMapper mapper): base(
+            IMapper mapper) : base(
                 purchaseOrderDBContext,
                 appSetting,
                 logger,
@@ -51,10 +50,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
         public async Task<IList<RefOutsourcePartRequestModel>> GetOutsourcePartRequest(long[] outsourcePartRequestId, string productionOrderCode, int? productId, bool ignoreOutsourceAllocateCompeleted = false)
         {
-            
+
             var queryRefOutsourcePart = _purchaseOrderDBContext.RefOutsourcePartRequest.AsQueryable();
 
-            if(outsourcePartRequestId != null && outsourcePartRequestId.Length > 0 )
+            if (outsourcePartRequestId != null && outsourcePartRequestId.Length > 0)
                 queryRefOutsourcePart = queryRefOutsourcePart.Where(x => outsourcePartRequestId.Contains(x.OutsourcePartRequestId));
 
 
@@ -73,24 +72,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
 
             var query = (from o in queryRefOutsourcePart
-                                 join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId, ProductId = (int) c.ProductId } into gc
-                                 from c in gc.DefaultIfEmpty()
-                                 where ignoreOutsourceAllocateCompeleted == false ? true :  c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
-                                 select new RefOutsourcePartRequestModel
-                                 {
-                                     ProductId = o.ProductId,
-                                     ProductionOrderCode = o.ProductionOrderCode,
-                                     ProductionOrderId = o.ProductionOrderId,
-                                     Quantity = o.Quantity,
-                                     QuantityProcessed = c.TotalQuantity.GetValueOrDefault(),
-                                     OutsourcePartRequestCode = o.OutsourcePartRequestCode,
-                                     OutsourcePartRequestDetailFinishDate = o.OutsourcePartRequestDetailFinishDate.GetUnix(),
-                                     OutsourcePartRequestId = o.OutsourcePartRequestId,
-                                     ProductionOrderDetailId = o.ProductionOrderDetailId,
-                                     RootProductId = o.RootProductId
-                                 });
+                         join c in calculatorTotalQuantityByOutsourcePart on new { o.OutsourcePartRequestId, o.ProductId } equals new { OutsourcePartRequestId = c.OutsourceRequestId, ProductId = (int)c.ProductId } into gc
+                         from c in gc.DefaultIfEmpty()
+                         where ignoreOutsourceAllocateCompeleted == false ? true : c.TotalQuantity.HasValue == false && (o.Quantity - c.TotalQuantity.GetValueOrDefault()) > 0
+                         select new RefOutsourcePartRequestModel
+                         {
+                             ProductId = o.ProductId,
+                             ProductionOrderCode = o.ProductionOrderCode,
+                             ProductionOrderId = o.ProductionOrderId,
+                             Quantity = o.Quantity,
+                             QuantityProcessed = c.TotalQuantity.GetValueOrDefault(),
+                             OutsourcePartRequestCode = o.OutsourcePartRequestCode,
+                             OutsourcePartRequestDetailFinishDate = o.OutsourcePartRequestDetailFinishDate.GetUnix(),
+                             OutsourcePartRequestId = o.OutsourcePartRequestId,
+                             ProductionOrderDetailId = o.ProductionOrderDetailId,
+                             RootProductId = o.RootProductId
+                         });
 
-            
+
 
             if (!string.IsNullOrWhiteSpace(productionOrderCode))
                 query = query.Where(x => x.ProductionOrderCode == productionOrderCode);
@@ -100,7 +99,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             var results = await query.ToListAsync();
             return results.OrderByDescending(x => x.OutsourcePartRequestId).ToList();
         }
-        
+
         public async Task<long> CreatePurchaseOrderOutsourcePart(PurchaseOrderInput model)
         {
             return await CreatePurchaseOrderOutsource(model, EnumPurchasingOrderType.OutsourcePart);
@@ -116,7 +115,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
             return await DeletePurchaseOrderOutsource(purchaseOrderId);
         }
 
-        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePart(long purchaseOrderId){
+        public async Task<PurchaseOrderOutput> GetPurchaseOrderOutsourcePart(long purchaseOrderId)
+        {
             return await GetPurchaseOrderOutsource(purchaseOrderId);
         }
 
@@ -126,10 +126,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement {
 
             return await _manufacturingHelperService.UpdateOutsourcePartRequestStatus(outsourceRequestId);
         }
-        
+
         private async Task<RefOutsourcePartRequestModel> GetOutsourcePartRequest(long outsourcePartId)
         {
-            return (await GetOutsourcePartRequest(new [] { outsourcePartId }, "", null)).FirstOrDefault();
+            return (await GetOutsourcePartRequest(new[] { outsourcePartId }, "", null)).FirstOrDefault();
         }
 
         protected override async Task<Enum> ValidateModelInput(long? poId, PurchaseOrderInput model)

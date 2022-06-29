@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.PrintConfig
@@ -28,7 +25,7 @@ namespace VErp.Services.Master.Model.PrintConfig
         public int ModuleTypeId { get; set; }
     }
 
-    public class PrintConfigRollbackModel: PrintConfigBaseModel, IMapFrom<PrintConfigStandard>
+    public class PrintConfigRollbackModel : PrintConfigBaseModel, IMapFrom<PrintConfigStandard>
     {
 
     }

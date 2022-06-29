@@ -1,17 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service;
-using VErp.Services.PurchaseOrder.Service.Voucher;
 
 namespace VErpApi.Controllers.PurchaseOrder.Internal
 {

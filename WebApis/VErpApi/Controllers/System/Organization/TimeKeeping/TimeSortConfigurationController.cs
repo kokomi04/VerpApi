@@ -20,35 +20,35 @@ namespace VErpApi.Controllers.System.Organization
 
         [HttpPost]
         [Route("")]
-        public async Task<long> AddTimeSortConfiguration([FromBody]TimeSortConfigurationModel model)
+        public async Task<long> AddTimeSortConfiguration([FromBody] TimeSortConfigurationModel model)
         {
             return await _timeSortConfigurationService.AddTimeSortConfiguration(model);
         }
-        
+
         [HttpDelete]
         [Route("{timeSortConfigurationId}")]
-        public async Task<bool> DeleteTimeSortConfiguration([FromRoute]int timeSortConfigurationId)
+        public async Task<bool> DeleteTimeSortConfiguration([FromRoute] int timeSortConfigurationId)
         {
             return await _timeSortConfigurationService.DeleteTimeSortConfiguration(timeSortConfigurationId);
         }
-        
+
         [HttpGet]
         [Route("")]
         public async Task<IList<TimeSortConfigurationModel>> GetListTimeSortConfiguration()
         {
             return await _timeSortConfigurationService.GetListTimeSortConfiguration();
         }
-        
+
         [HttpGet]
         [Route("{timeSortConfigurationId}")]
-        public async Task<TimeSortConfigurationModel> GetTimeSortConfiguration([FromRoute]int timeSortConfigurationId)
+        public async Task<TimeSortConfigurationModel> GetTimeSortConfiguration([FromRoute] int timeSortConfigurationId)
         {
             return await _timeSortConfigurationService.GetTimeSortConfiguration(timeSortConfigurationId);
         }
-        
+
         [HttpPut]
         [Route("{timeSortConfigurationId}")]
-        public async Task<bool> UpdateTimeSortConfiguration([FromRoute] int timeSortConfigurationId, [FromBody]TimeSortConfigurationModel model)
+        public async Task<bool> UpdateTimeSortConfiguration([FromRoute] int timeSortConfigurationId, [FromBody] TimeSortConfigurationModel model)
         {
             return await _timeSortConfigurationService.UpdateTimeSortConfiguration(timeSortConfigurationId, model);
 

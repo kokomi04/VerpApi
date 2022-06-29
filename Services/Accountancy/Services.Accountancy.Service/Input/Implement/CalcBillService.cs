@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
@@ -11,7 +12,6 @@ using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
-using System;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -257,10 +257,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 new SqlParameter("@SoTK", accountNumber),
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime())
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcDepreciation", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcDepreciationV2", sqlParams);
             var rows = data.ConvertData();
             return rows;
         }

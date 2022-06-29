@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Infrastructure.ServiceCore.Model

@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,7 +6,7 @@ namespace VErp.Commons.ObjectExtensions.Extensions
 {
     public static class StringExtensions
     {
-        public static string Format(this string str,params object[] args)
+        public static string Format(this string str, params object[] args)
         {
             return string.Format(str, args);
         }

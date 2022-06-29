@@ -1,30 +1,22 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Model;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Master.Model.Dictionary;
-using VErp.Services.Master.Service.Config;
-using VErp.Services.Master.Service.Dictionay;
-using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.Dictionary;
+using VErp.Services.Stock.Model.Product.Partial;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Products;
-using VErp.Commons.GlobalObject;
-using Newtonsoft.Json;
-using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ApiCore.ModelBinders;
-using VErp.Services.Stock.Model.Product.Partial;
 
 namespace VErpApi.Controllers.Stock.Products
 {
@@ -56,6 +48,16 @@ namespace VErpApi.Controllers.Stock.Products
             var req = new ProductFilterRequestModel(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials, filters);
             //return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials, filters);
             return await _productService.GetList(req, page, size);
+        }
+
+
+        [HttpPost]
+        [Route("SearchV2")]
+        [GlobalApi]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<ProductListOutput>> Search([FromBody] ProductSearchRequestModel req)
+        {
+            return await _productService.GetList(req, req.Page, req.Size);
         }
 
         [HttpPost]

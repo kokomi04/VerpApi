@@ -1,26 +1,15 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
-using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
@@ -52,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     .Where(d => d.MonthPlanId == monthPlanId).ToListAsync();
                 _manufacturingDBContext.ProductionPlanExtraInfo.RemoveRange(currentData);
 
-                foreach(var item in data)
+                foreach (var item in data)
                 {
                     var entity = _mapper.Map<ProductionPlanExtraInfo>(item);
                     entity.MonthPlanId = monthPlanId;
@@ -79,7 +68,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 .Where(d => d.MonthPlanId == monthPlanId)
                 .ProjectTo<ProductionPlanExtraInfoModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
-           
+
             return result;
         }
 

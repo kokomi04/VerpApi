@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace VErp.Services.Stock.Model.FileResources
 {
@@ -15,6 +13,6 @@ namespace VErp.Services.Stock.Model.FileResources
         public string path { get; set; }
         public string name { get; set; }
         public int file { get; set; }
-        public List<DirectoryStructure> subdirectories {get;set;}
+        public List<DirectoryStructure> subdirectories { get; set; }
     }
 }

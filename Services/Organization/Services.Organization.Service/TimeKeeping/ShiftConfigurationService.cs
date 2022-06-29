@@ -1,10 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Verp.Resources.Organization.TimeKeeping;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -100,10 +99,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
             var overtimeConfiguration = await _organizationDBContext.OvertimeConfiguration.FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);
-            
+
             shiftConfiguration.IsDeleted = true;
 
-            if(overtimeConfiguration != null) overtimeConfiguration.IsDeleted = true;
+            if (overtimeConfiguration != null) overtimeConfiguration.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
 

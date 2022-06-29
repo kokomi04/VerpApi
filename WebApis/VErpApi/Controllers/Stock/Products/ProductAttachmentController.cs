@@ -1,14 +1,8 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Model;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Dictionary;
 using VErp.Services.Stock.Model.Product;
-using VErp.Services.Stock.Service.Dictionary;
 using VErp.Services.Stock.Service.Products;
 
 namespace VErpApi.Controllers.Stock.Products

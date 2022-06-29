@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.Enums.AccountantEnum;
-using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Constants
 {
     public static class PurchaseOrderConstants
-    {        
+    {
         public const int INPUT_TYPE_FIELD_NUMBER = 101;
         public const int CONVERT_VALUE_TO_NUMBER_FACTOR = 100000;
         public const string INPUT_TYPE_FIELDNAME_FORMAT = "Field{0}";

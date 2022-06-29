@@ -1,7 +1,4 @@
-﻿
-using AutoMapper;
-using System.Collections.Generic;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;

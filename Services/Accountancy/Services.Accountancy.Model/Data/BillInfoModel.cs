@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VErp.Commons.GlobalObject;
-
-namespace VErp.Services.Accountancy.Model.Data
+﻿namespace VErp.Services.Accountancy.Model.Data
 {
 
 

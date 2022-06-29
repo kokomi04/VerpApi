@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 
@@ -49,7 +48,7 @@ namespace VErp.Services.Stock.Model.Inventory
             }
             set
             {
-                _OldPrimaryQuantity = value.RelativeTo(NewPrimaryQuantity);               
+                _OldPrimaryQuantity = value.RelativeTo(NewPrimaryQuantity);
             }
         }
 
@@ -62,7 +61,7 @@ namespace VErp.Services.Stock.Model.Inventory
             }
             set
             {
-                _NewPrimaryQuantity = value.RelativeTo(OldPrimaryQuantity);               
+                _NewPrimaryQuantity = value.RelativeTo(OldPrimaryQuantity);
             }
         }
 
@@ -78,7 +77,7 @@ namespace VErp.Services.Stock.Model.Inventory
             set
             {
                 _OldProductUnitConversionQuantity = value.RelativeTo(NewProductUnitConversionQuantity);
-              
+
             }
         }
 
@@ -92,7 +91,7 @@ namespace VErp.Services.Stock.Model.Inventory
             set
             {
                 _NewProductUnitConversionQuantity = value.RelativeTo(OldProductUnitConversionQuantity);
-              
+
             }
         }
 
@@ -113,7 +112,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public long ObjectId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public EnumPackageOperationType PackageOperationTypeId { get; set; }
-                     
+
 
         private decimal _OldTransferPrimaryQuantity;
         public decimal OldTransferPrimaryQuantity
@@ -124,7 +123,7 @@ namespace VErp.Services.Stock.Model.Inventory
             }
             set
             {
-                _OldTransferPrimaryQuantity = value.RelativeTo(NewTransferPrimaryQuantity);                
+                _OldTransferPrimaryQuantity = value.RelativeTo(NewTransferPrimaryQuantity);
             }
         }
 
@@ -137,7 +136,7 @@ namespace VErp.Services.Stock.Model.Inventory
             }
             set
             {
-                _NewTransferPrimaryQuantity = value.RelativeTo(OldTransferPrimaryQuantity);                
+                _NewTransferPrimaryQuantity = value.RelativeTo(OldTransferPrimaryQuantity);
             }
         }
 
@@ -153,7 +152,7 @@ namespace VErp.Services.Stock.Model.Inventory
             set
             {
                 _OldTransferProductUnitConversionQuantity = value.RelativeTo(NewTransferProductUnitConversionQuantity);
-               
+
             }
         }
 

@@ -1,9 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace VErp.Infrastructure.ApiCore.ModelBinders
 {
@@ -25,7 +21,7 @@ namespace VErp.Infrastructure.ApiCore.ModelBinders
             //{
             //    var a = 1;
             //}
-            
+
             if (context.Metadata?.BindingSource?.GetType() == typeof(FormStringBindingSource))
             {
                 return new FormStringModelBinder(context.Metadata.ModelType, context.Metadata.Name);

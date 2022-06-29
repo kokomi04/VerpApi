@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Product.Partial
@@ -10,7 +7,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
     {
         public int? ProductTypeId { get; set; }
 
-        [Required(ErrorMessage ="Vui lòng nhập mã mặt hàng")]
+        [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng")]
         public string ProductCode { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập tên mặt hàng")]
@@ -50,6 +47,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
-        public int? TargetProductivityId {get;set;}
+        public int? TargetProductivityId { get; set; }
+        public bool? ConfirmFlag { get; set; }
     }
 }

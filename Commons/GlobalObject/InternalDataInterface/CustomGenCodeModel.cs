@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Commons.GlobalObject.InternalDataInterface
+﻿namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
     public class CustomGenCodeOutputModel
     {
@@ -35,11 +31,11 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string BaseValue { get; set; }
         public int LastValue { get; set; }
         public string LastCode { get; set; }
-        public string Example { get; set; }        
-       
+        public string Example { get; set; }
+
     }
 
-    public class GenerateCodeResult: CustomGenCodeBaseValueModel
+    public class GenerateCodeResult : CustomGenCodeBaseValueModel
     {
         public string GeneratedCode { get; set; }
     }

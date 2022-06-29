@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.AppSettings.Model;
 
 namespace VErp.Commons.Library.Excel
 {
@@ -96,7 +95,7 @@ namespace VErp.Commons.Library.Excel
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fName = StringUtils.RemoveDiacritics($"{title} {DateTime.UtcNow.ToString("dd_MM_yyyy")}.xlsx").Replace(" ", "_");
+            var fName = StringUtils.RemoveDiacritics($"{title}.xlsx").Replace(" ", "#");
             return (stream, fName, contentType);
 
         }
@@ -314,7 +313,7 @@ namespace VErp.Commons.Library.Excel
 
                     //ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
 
-                   // ICellStyle cellStyle = numerst
+                    // ICellStyle cellStyle = numerst
                     if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
                     {
                         sumCalc.Add(columnIndx, field);

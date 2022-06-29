@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Location;
 
-namespace VErp.Services.Stock.Service.Location    
+namespace VErp.Services.Stock.Service.Location
 {
     /// <summary>
     /// I - Vi trí trong kho hàng
@@ -19,7 +17,7 @@ namespace VErp.Services.Stock.Service.Location
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        Task<PageData<LocationOutput>> GetList(int stockId,string keyword, int page, int size);
+        Task<PageData<LocationOutput>> GetList(int stockId, string keyword, int page, int size);
 
         /// <summary>
         /// Thêm mới thông tin vị trí

@@ -1,6 +1,6 @@
+using AutoMapper;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using AutoMapper;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
 
@@ -24,7 +24,7 @@ namespace Services.Organization.Model.HrConfig
 
         public bool IsMultiRow { get; set; }
         public bool IsAddition { get; set; }
-        
+
         [Required(ErrorMessage = "Vui lòng nhập số lượng cột hiển thị")]
         public int Columns { get; set; }
 

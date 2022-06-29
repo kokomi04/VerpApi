@@ -10,8 +10,6 @@ using System;
 using System.Linq;
 using System.Reflection;
 using VErp.Commons.GlobalObject.Attributes;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.Filters;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -157,7 +155,8 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             app.UseEndpoints(opt =>
             {
-                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>{
+                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>
+                {
                 });
             });
 
@@ -176,7 +175,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
                 var pattern = "/signalr/hubs/" + (attributes.Length > 0 ? attributes[0].Pattern.ToLower() : type.Name.Replace(surfix, "").ToLower());
 
-                var method = typeof(HubEndpointRouteBuilderExtensions).GetMethod("MapHub", new Type[] {typeof(IEndpointRouteBuilder), typeof(string), typeof (Action<HttpConnectionDispatcherOptions>)})
+                var method = typeof(HubEndpointRouteBuilderExtensions).GetMethod("MapHub", new Type[] { typeof(IEndpointRouteBuilder), typeof(string), typeof(Action<HttpConnectionDispatcherOptions>) })
                     .MakeGenericMethod(type);
                 method?.Invoke(null, new object[] { builder, pattern, configureOptions });
             }

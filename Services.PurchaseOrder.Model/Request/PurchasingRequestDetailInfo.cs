@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace VErp.Services.PurchaseOrder.Model
+﻿namespace VErp.Services.PurchaseOrder.Model
 {
     public class PurchasingRequestDetailInfo
     {
@@ -15,6 +11,6 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal PrimaryQuantity { get; set; }
         public int ProductUnitConversionId { get; set; }
         public decimal ProductUnitConversionQuantity { get; set; }
-        
+
     }
 }

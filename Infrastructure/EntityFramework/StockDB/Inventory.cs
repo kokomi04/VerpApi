@@ -38,7 +38,6 @@ namespace VErp.Infrastructure.EF.StockDB
         public bool IsDeleted { get; set; }
         public bool IsApproved { get; set; }
         public bool IsOpening { get; set; }
-        //public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
         public int InventoryActionId { get; set; }
         public int InventoryStatusId { get; set; }

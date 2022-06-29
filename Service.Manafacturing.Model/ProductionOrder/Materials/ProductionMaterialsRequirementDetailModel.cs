@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
-    public class ProductionMaterialsRequirementDetailModel: IMapFrom<ProductionMaterialsRequirementDetail>
+    public class ProductionMaterialsRequirementDetailModel : IMapFrom<ProductionMaterialsRequirementDetail>
     {
         public long ProductionMaterialsRequirementDetailId { get; set; }
         public long ProductionMaterialsRequirementId { get; set; }
@@ -35,7 +31,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     }
 
 
-    public class ProductionMaterialsRequirementDetailExtrackBase: ProductionMaterialsRequirementDetailModel
+    public class ProductionMaterialsRequirementDetailExtrackBase : ProductionMaterialsRequirementDetailModel
     {
         public string RequirementCode { get; set; }
         public string RequirementContent { get; set; }
