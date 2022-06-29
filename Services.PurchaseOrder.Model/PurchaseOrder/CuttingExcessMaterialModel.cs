@@ -12,5 +12,6 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string Note { get; set; }
         public string Specification { get; set; }
         public int? UnitId { get; set; }
+        public long CuttingExcessMaterialId { get; set; }
     }
 }
