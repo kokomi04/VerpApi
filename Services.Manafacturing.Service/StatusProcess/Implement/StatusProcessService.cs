@@ -157,9 +157,9 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     a.ProductionStepId,
                     a.AssignmentQuantity,
                     role.ProductionStepLinkDataRoleTypeId,
-                    TotalQuantity = d.QuantityOrigin - d.OutsourcePartQuantity.GetValueOrDefault(),
+                    TotalQuantity = ld.Quantity,
                     ld.LinkDataObjectId,
-                    OutputQuantity = ld.Quantity - d.OutsourcePartQuantity.GetValueOrDefault(),
+                    OutputQuantity = ld.Quantity,
                     IsHandover = otherRole == null
                 })
                 .GroupBy(a => new
@@ -175,8 +175,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     g.Key.ProductionStepId,
                     g.Key.LinkDataObjectId,
                     g.Key.ProductionStepLinkDataRoleTypeId,
-                    AssignmentQuantity = g.Max(a => a.AssignmentQuantity),
-                    TotalQuantity = g.Max(a => a.TotalQuantity),
+                    AssignmentQuantity = g.Max(a => a.AssignmentQuantity),                
                     OutputQuantity = g.Sum(a => a.OutputQuantity),
                     HandoverStockQuantity = g.Sum(a => a.IsHandover ? a.OutputQuantity : 0)
                 })
@@ -187,7 +186,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     ProductionStepId = a.ProductionStepId,
                     ObjectId = a.LinkDataObjectId,
                     ProductionStepLinkDataRoleTypeId = a.ProductionStepLinkDataRoleTypeId,
-                    HandoverStockQuantity = a.HandoverStockQuantity * a.AssignmentQuantity / a.TotalQuantity
+                    HandoverStockQuantity = a.HandoverStockQuantity * a.AssignmentQuantity / a.OutputQuantity
                 })
                 .ToList();
 
