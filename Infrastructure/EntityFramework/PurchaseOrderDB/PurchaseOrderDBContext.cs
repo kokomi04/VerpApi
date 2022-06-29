@@ -83,7 +83,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<CuttingExcessMaterial>(entity =>
             {
-                entity.HasKey(e => new { e.CuttingWorkSheetId, e.ExcessMaterial });
+                entity.HasKey(e => new { e.CuttingExcessMaterialId });
+
+                entity.Property(e => e.CuttingWorkSheetId).HasColumnType("bigint");
 
                 entity.Property(e => e.ExcessMaterial).HasMaxLength(255);
 
