@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 {
@@ -19,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal AssingmentQuantity { get; set; }
         //public decimal LinkDataQuantity { get; set; }
         public long ObjectId { get; set; }
-        public int ObjectTypeId { get; set; }
+        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         //public decimal CompletedQuantity { get; set; }
 
         public virtual ICollection<CapacityDetailModel> CapacityDetail { get; set; }

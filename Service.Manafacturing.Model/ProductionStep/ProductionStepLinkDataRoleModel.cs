@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public long ProductionStepLinkDataId { get; set; }
         public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
         //public string ProductionStepLinkDataGroup { get; set; }
-        public decimal WorkloadConvertRate { get; set; }
+        public decimal? WorkloadConvertRate { get; set; }
     }
 
     public class ProductionStepLinkDataRoleInput : ProductionStepLinkDataRoleModel
