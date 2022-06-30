@@ -1080,7 +1080,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             public int DepartmentId { get; set; }
             public long ProductionStepId { get; set; }
             public decimal AssignmentQuantity { get; set; }           
-            public decimal Workload { get; set; }
+            public decimal? Workload { get; set; }
             public int ObjectTypeId { get; set; }
             public long ObjectId { get; set; }
             public string StepName { get; set; }

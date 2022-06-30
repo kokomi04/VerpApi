@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
@@ -18,11 +19,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class StepInfo
     {
         public int StepId { get; set; }
-        public string StepName { get; set; }
-        public decimal Productivity { get; set; }
+        public string StepName { get; set; }        
     }
 
-    public class ProductionOrderDetailCapacityModel
+    public class ProductionOrderDetailQuantityModel
     {
 
         public long ProductionOrderDetailId { get; set; }
@@ -36,19 +36,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
-        public IList<ProductionOrderDetailCapacityModel> ProductionOrderDetail { get; set; }
-        public IDictionary<int, List<ProductionCapacityDetailModel>> ProductionCapacityDetail { get; set; }
+        public IList<ProductionOrderDetailQuantityModel> ProductionOrderDetail { get; set; }
+        public IDictionary<int, IList<ProductionCapacityDetailModel>> ProductionCapacityDetail { get; set; }
         public ProductionOrderCapacityModel()
         {
-            ProductionOrderDetail = new List<ProductionOrderDetailCapacityModel>();
-            ProductionCapacityDetail = new Dictionary<int, List<ProductionCapacityDetailModel>>();
+            ProductionOrderDetail = new List<ProductionOrderDetailQuantityModel>();
+            ProductionCapacityDetail = new Dictionary<int, IList<ProductionCapacityDetailModel>>();
         }
     }
 
     public class ProductionCapacityDetailModel
     {
         public long ObjectId { get; set; }
-        public int ObjectTypeId { get; set; }
+        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
 
         public decimal WorkloadQuantity { get; set; }
