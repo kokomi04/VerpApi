@@ -190,6 +190,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.PurchasingRequestId,
                             r.PurchasingRequestStatusId,
                             r.PurchasingRequestTypeId,
+                            r.ProductionOrderId,
+                            r.ProductMaterialsConsumptionGroupId,
+                            r.MaterialCalcId,
+                            r.PropertyCalcId,
                             r.Date,
                             r.NeedDate,
                             d.OrderCode,
@@ -290,6 +294,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     Description = info.Description,
                     PurchasingRequestTypeId = (EnumPurchasingRequestType)info.PurchasingRequestTypeId,
+                    ProductionOrderId = info.ProductionOrderId,
+                    ProductMaterialsConsumptionGroupId = info.ProductMaterialsConsumptionGroupId,
+                    MaterialCalcId = info.MaterialCalcId,
+                    PropertyCalcId = info.PropertyCalcId,
                     SortOrder = info.SortOrder
 
                 });

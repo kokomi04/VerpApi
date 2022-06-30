@@ -24,10 +24,14 @@ namespace VErp.Services.PurchaseOrder.Model
         public long UpdatedDatetimeUtc { get; set; }
         public long? CensorDatetimeUtc { get; set; }
 
+        public EnumPurchasingRequestType PurchasingRequestTypeId { get; set; }
+
+        public long? MaterialCalcId { get; set; }
+        public long? PropertyCalcId { get; set; }
+
         public long? ProductionOrderId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
-
-        public EnumPurchasingRequestType PurchasingRequestTypeId { get; set; }
+      
 
         public long? NeedDate { get; set; }
 
