@@ -21,7 +21,9 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Service.Facade;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFacade;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
@@ -269,80 +271,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Select(w => w.ObjectId)
                 .ToList();
 
-            var semis = await _manufacturingDBContext.ProductSemi.AsNoTracking()
-                .Where(s => semiIds.Contains(s.ProductSemiId))
-                .ToListAsync();
+            var workloadFacade = new ProductivityWorkloadFacade(_manufacturingDBContext, _productHelperService);
+            var (productTargets, semiTargets) = await workloadFacade.GetProductivities(productIds, semiIds);
 
-            var semiToProduct = semis.ToDictionary(s => s.ProductSemiId, s => s.RefProductId);
-
-            productIds.AddRange(semis.Where(s => s.RefProductId.HasValue).Select(s => (int)s.RefProductId.Value));
-
-            var productInfos = await _productHelperService.GetListProducts(productIds);
-
-            var targetProductivityIds = productInfos.Where(p => p.TargetProductivity.HasValue).Select(p => p.TargetProductivity.Value).ToList();
-
-            var targetProductivityInfos = (await _manufacturingDBContext.TargetProductivity.Include(t => t.TargetProductivityDetail)
-                .Where(t => targetProductivityIds.Contains(t.TargetProductivityId) || t.IsDefault)
-                .ToListAsync()
-                ).ToDictionary(t => t.TargetProductivityId,
-                    t => new TargetModel
-                    {
-                        Info = t,
-                        BySteps = t.TargetProductivityDetail.GroupBy(d => d.ProductionStepId)
-                                           .ToDictionary(d => d.Key, d => d.First())
-                    });
-
-            var productByIds = productInfos.ToDictionary(p => p.ProductId, p => p);
-
-
-            var semiTarget = new Dictionary<long, TargetModel>();
-            var productTarget = new Dictionary<long, TargetModel>();
-
-            var defaultProductivity = targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Value;
 
             foreach (var workload in workloadInfos)
             {
 
 
-                decimal? rate = null;
-                int? productId = null;
+                LinkDataObjectTargetProductivity target = null;
                 if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
-                    productId = (int?)semiToProduct[workload.ObjectId];
+                    semiTargets.TryGetValue(workload.ObjectId, out target);
                 }
                 else
                 {
-                    productId = (int?)workload.ObjectId;
+                    productTargets.TryGetValue((int)workload.ObjectId, out target);
                 }
 
-                TargetModel targetProductivityInfo = null;
-
-                if (productId.HasValue
-                    && productByIds.TryGetValue(productId.Value, out var productInfo)
-                    && targetProductivityInfos.TryGetValue(productInfo.TargetProductivity ?? targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Key, out targetProductivityInfo))
-                {
-                    if (targetProductivityInfo.Info.WorkLoadTypeId == (int)EnumWorkloadType.Purity)
-                    {
-                        rate = productInfo.ProductPurity;
-                    }
-
-                }
-
-                if (targetProductivityInfo == null)
-                {
-                    targetProductivityInfo = defaultProductivity;
-                }
-
-
-                if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
-                {
-                    semiTarget.TryAdd(workload.ObjectId, targetProductivityInfo);
-                }
-                else
-                {
-                    productTarget.TryAdd(workload.ObjectId, targetProductivityInfo);
-                }
-
+                var rate = target?.Rate;
 
                 if (!workload.WorkloadConvertRate.HasValue || workload.WorkloadConvertRate <= 0)
                 {
@@ -388,15 +335,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         decimal? productivityByStep = null;
 
-                        TargetModel targetProductivityInfo = null;
+                        LinkDataObjectTargetProductivity target = null;
                         if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                         {
-                            semiTarget.TryGetValue(workload.ObjectId, out targetProductivityInfo);
+                            semiTargets.TryGetValue(workload.ObjectId, out target);
                         }
                         else
                         {
-                            productTarget.TryGetValue(workload.ObjectId, out targetProductivityInfo);
+                            productTargets.TryGetValue((int)workload.ObjectId, out target);
                         }
+
+                        TargetModel targetProductivityInfo = target?.Target;
+                        
                         if (targetProductivityInfo != null)
                         {
                             if (targetProductivityInfo.BySteps.TryGetValue(workload.StepId, out var detailInfo))
@@ -1283,12 +1233,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
     {
 
     }
-
-
-    class TargetModel
-    {
-        public TargetProductivity Info { get; set; }
-        public Dictionary<int, TargetProductivityDetail> BySteps { get; set; }
-    }
+   
 
 }
