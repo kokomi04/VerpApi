@@ -14,7 +14,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long CreatedDatetimeUtc { get; set; }
         public string StepName { get; set; }
         public string ProductionOrderCode { get; set; }
-        public decimal Workload { get; set; }
+        public decimal? Workload { get; set; }
         public decimal OutputQuantity { get; set; }
         public decimal AssingmentQuantity { get; set; }
         //public decimal LinkDataQuantity { get; set; }

@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -68,8 +70,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<TargetProductivityDetail> TargetProductivityDetail { get; set; }
         public virtual DbSet<WeekPlan> WeekPlan { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -316,6 +317,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionHandover>(entity =>
             {
+                entity.HasIndex(e => new { e.ProductionOrderId, e.FromDepartmentId, e.ObjectId, e.ObjectTypeId, e.Status, e.FromProductionStepId, e.ToDepartmentId, e.ToProductionStepId, e.HandoverDatetime }, "IDX_ProductionHandover_Search");
+
                 entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.FromProductionStep)
@@ -981,6 +984,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             {
                 entity.Property(e => e.Description).HasMaxLength(512);
 
+                entity.Property(e => e.EstimateProductionDays).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.EstimateProductionQuantity).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.Note).HasMaxLength(1024);
 
                 entity.Property(e => e.TargetProductivityCode)
@@ -988,10 +995,18 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.WorkLoadTypeId)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("Option tính KLCV tính năng suất theo KL Tinh hay theo số lượng");
             });
 
             modelBuilder.Entity<TargetProductivityDetail>(entity =>
             {
+                entity.Property(e => e.ProductivityResourceTypeId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ProductivityTimeTypeId).HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.TargetProductivityNavigation)

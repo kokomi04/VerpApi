@@ -25,6 +25,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
+        public int WorkLoadTypeId { get; set; }
+        public decimal? EstimateProductionDays { get; set; }
+        public decimal? EstimateProductionQuantity { get; set; }
 
         public virtual ICollection<TargetProductivityDetail> TargetProductivityDetail { get; set; }
     }
