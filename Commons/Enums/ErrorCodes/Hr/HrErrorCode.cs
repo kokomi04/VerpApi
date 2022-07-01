@@ -65,5 +65,6 @@ namespace VErp.Commons.Enums.StandardEnum
 
 
         ReferValueNotValidFilter = 42,
+        HrFieldDataSizeInValid = 48,
     }
 }
