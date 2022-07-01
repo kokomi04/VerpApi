@@ -60,6 +60,6 @@ namespace VErp.Commons.Enums.StandardEnum
 
 
         VoucherActionNotFound = 39,
-
+        VoucherFieldDataSizeInValid = 48,
     }
 }
