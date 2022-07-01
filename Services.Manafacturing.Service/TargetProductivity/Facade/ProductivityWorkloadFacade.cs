@@ -64,7 +64,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
             }));
             objects.AddRange(semiIds.Select(p => new LinkDataObjectModel
             {
-                ObjectTypeId = EnumProductionStepLinkDataObjectType.Product,
+                ObjectTypeId = EnumProductionStepLinkDataObjectType.ProductSemi,
                 ObjectId = p
             }));
 
