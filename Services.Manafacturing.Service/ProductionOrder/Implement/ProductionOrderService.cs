@@ -326,7 +326,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var capacityByStep = new CapacityByStep();
                 productionCapacityDetail.Add(productionOrderId, capacityByStep);
-                
+
                 foreach (var (stepId, stepWorkloads) in productionWorkloads.GroupBy(w => w.StepId).Select(w => (w.Key, w.ToList())))
                 {
                     var capacities = new List<ProductionCapacityDetailModel>();
@@ -346,7 +346,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         }
 
                         TargetModel targetProductivityInfo = target?.Target;
-                        
+
                         if (targetProductivityInfo != null)
                         {
                             if (targetProductivityInfo.BySteps.TryGetValue(workload.StepId, out var detailInfo))
@@ -448,7 +448,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
                     var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
                     var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= workDateUnix && i.EndDate >= workDateUnix);
-                    totalHour += (decimal)((workingHourInfo?.WorkingHourPerDay ?? 0 * (department?.NumberOfPerson ?? 0 + increase?.NumberOfPerson ?? 0)) + (overHour?.OverHour ?? 0 * overHour?.NumberOfPerson ?? 0));
+
+                    var workingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? 0;
+                    var numberOfPerson = department?.NumberOfPerson ?? 0;
+                    var increasePerson = increase?.NumberOfPerson ?? 0;
+
+                    var overHourPerday = overHour?.OverHour ?? 0;
+                    var overPerson = overHour?.NumberOfPerson ?? 0;
+
+                    var totalWorkingHour = workingHourPerDay * (numberOfPerson + increasePerson);
+
+                    var totalOverHour = overHourPerday * overPerson;
+
+                    totalHour += (decimal)(totalWorkingHour + totalOverHour);
                 }
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
@@ -1233,6 +1245,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
     {
 
     }
-   
+
 
 }
