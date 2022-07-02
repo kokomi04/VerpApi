@@ -665,6 +665,12 @@ namespace VErp.Services.Master.Service.Category
                     throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
                 }
 
+                // Validate text size
+                if (fields.Select(f => f.DataTypeId == (int)EnumDataType.Text && f.DataSize <= 0).Count() > 0)
+                {
+                    throw new BadRequestException(CategoryErrorCode.DataSizeInValid);
+                }    
+
                 var category = _masterContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
 
                 for (int indx = 0; indx < fields.Count; indx++)

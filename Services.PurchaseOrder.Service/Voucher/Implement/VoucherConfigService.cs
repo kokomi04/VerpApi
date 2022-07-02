@@ -994,6 +994,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     throw new BadRequestException(VoucherErrorCode.SourceCategoryFieldNotFound);
                 }
             }
+            if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
+            {
+                throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid);
+            }
         }
 
         private void FieldDataProcess(ref VoucherFieldInputModel data)

@@ -180,4 +180,7 @@
   <data name="UniqueValueAlreadyExisted" xml:space="preserve">
     <value>The field {0} has value already exist</value>
   </data>
+  <data name="DataSizeInValid" xml:space="preserve">
+    <value>The DataSize of Text field cannot less or equal than 0</value>
+  </data>
 </root>

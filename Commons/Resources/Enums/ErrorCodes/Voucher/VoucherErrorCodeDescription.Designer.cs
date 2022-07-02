@@ -383,5 +383,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
                 return ResourceManager.GetString("VoucherValueNotFound", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0.
+        /// </summary>
+        public static string VoucherFieldDataSizeInValid {
+            get
+            {
+                return ResourceManager.GetString("VoucherFieldDataSizeInValid", resourceCulture);
+            }
+        }
     }
 }

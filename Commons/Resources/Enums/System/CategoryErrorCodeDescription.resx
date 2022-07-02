@@ -180,4 +180,7 @@
   <data name="UniqueValueAlreadyExisted" xml:space="preserve">
     <value>Trường thông tin {0} có giá trị đã tồn tại</value>
   </data>
+  <data name="DataSizeInValid" xml:space="preserve">
+    <value>DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0</value>
+  </data>
 </root>

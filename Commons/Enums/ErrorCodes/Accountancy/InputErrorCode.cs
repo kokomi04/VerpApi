@@ -67,5 +67,6 @@ namespace VErp.Commons.Enums.StandardEnum
         InputActionNotFound = 39,
 
         InputActionCodeAlreadyExisted = 40,
+        InputFieldDataSizeInValid = 48,
     }
 }
