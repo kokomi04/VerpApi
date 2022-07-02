@@ -71,5 +71,10 @@ namespace VErp.Commons.Library
             return NumericTypes.Contains(objectType);
         }
 
+        public static bool InRange(this long dateTime, long from, long to)
+        {
+            return dateTime >= from && dateTime <= to;
+        }
+
     }
 }

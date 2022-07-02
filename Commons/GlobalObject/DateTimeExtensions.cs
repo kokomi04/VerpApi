@@ -48,5 +48,10 @@ namespace VErp.Commons.GlobalObject
             return datetime.AddMinutes(-timezoneOffset ?? 0);
         }
 
+        public static bool InRange(this DateTime dateTime, DateTime from, DateTime to)
+        {
+            return dateTime >= from && dateTime <= to;
+        }
+
     }
 }
