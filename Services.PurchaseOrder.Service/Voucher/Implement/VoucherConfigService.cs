@@ -996,7 +996,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
             if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
             {
-                throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid);
+                throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid, "Dữ liệu kiểu Text không thể có DataSize <= 0");
             }
         }
 

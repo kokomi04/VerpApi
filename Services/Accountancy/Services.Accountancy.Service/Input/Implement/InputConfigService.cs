@@ -999,7 +999,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
             {
-                throw new BadRequestException(InputErrorCode.InputFieldDataSizeInValid);
+                throw new BadRequestException(InputErrorCode.InputFieldDataSizeInValid, "Dữ liệu kiểu Text không thể có DataSize <= 0");
             }
         }
 
