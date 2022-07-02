@@ -61,42 +61,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Kiểu dữ liệu không tồn tại.
-        /// </summary>
-        public static string DataTypeNotFound {
-            get {
-                return ResourceManager.GetString("DataTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to File không hợp lệ.
-        /// </summary>
-        public static string FormatFileInvalid {
-            get {
-                return ResourceManager.GetString("FormatFileInvalid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Kiểu nhập liệu không tồn tại.
-        /// </summary>
-        public static string FormTypeNotFound {
-            get {
-                return ResourceManager.GetString("FormTypeNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Vùng dữ liệu đang trực thuộc chứng từ.
-        /// </summary>
-        public static string IsVoucherArea {
-            get {
-                return ResourceManager.GetString("IsVoucherArea", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Cấu hình mã tự sinh thất bại.
         /// </summary>
         public static string MapGenCodeConfigFail {
@@ -111,33 +75,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         public static string MultiRowAreaAlreadyExisted {
             get {
                 return ResourceManager.GetString("MultiRowAreaAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Thông tin dữ liệu dạng bảng không được để trống.
-        /// </summary>
-        public static string MultiRowAreaEmpty {
-            get {
-                return ResourceManager.GetString("MultiRowAreaEmpty", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Tên cấu hình phiếu in đã tồn tại.
-        /// </summary>
-        public static string PrintConfigNameAlreadyExisted {
-            get {
-                return ResourceManager.GetString("PrintConfigNameAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy cấu hình phiếu in.
-        /// </summary>
-        public static string PrintConfigNotFound {
-            get {
-                return ResourceManager.GetString("PrintConfigNotFound", resourceCulture);
             }
         }
         
@@ -196,15 +133,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Mã chức năng đã tồn tại.
-        /// </summary>
-        public static string VoucherActionCodeAlreadyExisted {
-            get {
-                return ResourceManager.GetString("VoucherActionCodeAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy chức năng.
         /// </summary>
         public static string VoucherActionNotFound {
@@ -237,15 +165,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         public static string VoucherAreaFieldNotFound {
             get {
                 return ResourceManager.GetString("VoucherAreaFieldNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không còn trường dữ liệu trống.
-        /// </summary>
-        public static string VoucherAreaFieldOverLoad {
-            get {
-                return ResourceManager.GetString("VoucherAreaFieldOverLoad", resourceCulture);
             }
         }
         
@@ -286,6 +205,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0.
+        /// </summary>
+        public static string VoucherFieldDataSizeInValid {
+            get {
+                return ResourceManager.GetString("VoucherFieldDataSizeInValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Trường dữ liệu dùng chung đang được sử dụng.
         /// </summary>
         public static string VoucherFieldIsUsed {
@@ -300,42 +228,6 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         public static string VoucherFieldNotFound {
             get {
                 return ResourceManager.GetString("VoucherFieldNotFound", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Không phải là chứng từ.
-        /// </summary>
-        public static string VoucherIsNotModule {
-            get {
-                return ResourceManager.GetString("VoucherIsNotModule", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Chứng từ không được phép thay đổi.
-        /// </summary>
-        public static string VoucherReadOnly {
-            get {
-                return ResourceManager.GetString("VoucherReadOnly", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Đang có dòng dữ liệu sử dụng giá trị này.
-        /// </summary>
-        public static string VoucherRowAlreadyExisted {
-            get {
-                return ResourceManager.GetString("VoucherRowAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Dòng thông tin không tồn tại.
-        /// </summary>
-        public static string VoucherRowNotFound {
-            get {
-                return ResourceManager.GetString("VoucherRowNotFound", resourceCulture);
             }
         }
         
@@ -367,20 +259,11 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Giá trị dòng {0} trường dữ liệu {1} không hợp lệ.
+        ///   Looks up a localized string similar to Giá trị {0} dòng {1} trường dữ liệu {2} không hợp lệ.
         /// </summary>
         public static string VoucherValueInValid {
             get {
                 return ResourceManager.GetString("VoucherValueInValid", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Giá trị không tồn tại.
-        /// </summary>
-        public static string VoucherValueNotFound {
-            get {
-                return ResourceManager.GetString("VoucherValueNotFound", resourceCulture);
             }
         }
     }

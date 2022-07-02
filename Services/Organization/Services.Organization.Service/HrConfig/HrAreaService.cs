@@ -349,7 +349,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
             {
-                throw new BadRequestException(HrErrorCode.HrFieldDataSizeInValid, "Dữ liệu kiểu Text không thể có DataSize <= 0");
+                throw new BadRequestException(HrErrorCode.HrFieldDataSizeInValid);
             }
 
             await Task.CompletedTask;
