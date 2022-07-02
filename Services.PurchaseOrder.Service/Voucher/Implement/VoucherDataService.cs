@@ -2611,13 +2611,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return $"r.SubsidiaryId = {_currentContextService.SubsidiaryId}";
         }
 
-        public async Task<BillInfoModel> GetPackingListInfo(long fId, int voucherBill_BHXKId)
+        public async Task<BillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
         {
             var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == voucherBill_BHXKId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f
             ).ToListAsync()
             )
@@ -2634,11 +2634,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 SELECT     r.*
                 FROM {VOUCHERVALUEROW_VIEW} r 
 
-                WHERE r.so_bh_xk = {fId} AND r.VoucherTypeId = {voucherBill_BHXKId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+                WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
             var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherBill_BHXKId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
