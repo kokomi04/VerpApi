@@ -747,14 +747,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     using (var batchLog = _activityLogService.BeginBatchLog())
                     {
 
-                        var inventoryExport = new InventoryInputImportFacade();
-                        inventoryExport.SetProductService(_productService);
-                        inventoryExport.SetMasterDBContext(_masterDBContext);
-                        inventoryExport.SetStockDBContext(_stockDbContext);
-                        inventoryExport.SetOrganizationHelper(_organizationHelperService);
-                        await inventoryExport.ProcessExcelFile(mapping, stream);
+                        var inventoryInImport = new InventoryInputImportFacade();
+                        inventoryInImport.SetProductService(_productService);
+                        inventoryInImport.SetMasterDBContext(_masterDBContext);
+                        inventoryInImport.SetStockDBContext(_stockDbContext);
+                        inventoryInImport.SetOrganizationHelper(_organizationHelperService);
+                        await inventoryInImport.ProcessExcelFile(mapping, stream);
 
-                        var inventoryDatas = await inventoryExport.GetInputInventoryModel();
+                        var inventoryDatas = await inventoryInImport.GetInputInventoryModel();
 
                         foreach (var inventoryData in inventoryDatas)
                         {
