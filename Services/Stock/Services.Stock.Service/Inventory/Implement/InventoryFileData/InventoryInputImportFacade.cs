@@ -20,6 +20,7 @@ using VErp.Services.Stock.Service.Products;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;
 using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
+using Verp.Resources.Stock.Inventory.InventoryFileData;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -300,7 +301,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                             {
                                 locationInfo = new LocationEntity()
                                 {
-                                    StockId = entity.StockId,
+                                    StockId = entity.StockId.Value,
                                     Name = value,
                                     Description = "",
                                     Status = 1
@@ -452,7 +453,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     newInventoryInputModel.Add(new InventoryInProductModel
                     {
                         SortOrder = sortOrder++,
-                        ProductId = productObj != null ? productObj.ProductId : 0,
+                        ProductId = productObj.ProductId,
                         ProductUnitConversionId = productUnitConversionObj.ProductUnitConversionId,
                         PrimaryQuantity = item.Qty1 ?? 0,
                         ProductUnitConversionQuantity = item.Qty2 ?? 0,
@@ -481,9 +482,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 //}
 
                 var firstRow = g.First();
+                if (!firstRow.StockId.HasValue)
+                {
+                    throw InventoryImportFacadeMessage.StockInfoNotFound.BadRequest();
+                }
+
                 var newInventory = new InventoryInModel
                 {
-                    StockId = firstRow.StockId,
+                    StockId = firstRow.StockId.Value,
                     InventoryActionId = firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),

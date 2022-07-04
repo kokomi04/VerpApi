@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Stock.Inventory.InventoryFileData;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -381,9 +382,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 }
 
                 var firstRow = g.First();
+
+                if (!firstRow.StockId.HasValue)
+                {
+                    throw InventoryImportFacadeMessage.StockInfoNotFound.BadRequest();
+                }
+
                 var newInventory = new InventoryOutModel
                 {
-                    StockId = firstRow.StockId,
+                    StockId = firstRow.StockId.Value,
                     InventoryActionId = firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PX_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
