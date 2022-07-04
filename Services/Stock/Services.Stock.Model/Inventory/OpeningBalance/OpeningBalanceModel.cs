@@ -12,13 +12,15 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         [Display(Name = "Loại", GroupName = "TT chung", Order = 1)]
         public EnumInventoryAction? InventoryActionId { get; set; }
 
-        [Display(Name = "Mã phiếu", GroupName = "TT chung", Order = 2)]
+        [Display(Name = "Mã phiếu", GroupName = "TT chung", Order = 2)]        
         public string InventoryCode { get; set; }
 
         [Display(Name = "Tên kho", GroupName = "TT chung", Order = 3)]
-        public int StockId { get; set; }
+        [Required]
+        public int? StockId { get; set; }
 
         [Display(Name = "Ngày", GroupName = "TT chung", Order = 4)]
+        [Required]
         public DateTime Date { get; set; }
         [Display(Name = "Mô tả", GroupName = "TT chung", Order = 5)]
         public string Description { get; set; }

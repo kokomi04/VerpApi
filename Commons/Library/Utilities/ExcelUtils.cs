@@ -61,7 +61,7 @@ namespace VErp.Commons.Library
                     groupName = attrs.First().GroupName;
 
                     if (attrs.First().GetOrder() > 0)
-                        order = attrs.First().Order;
+                        order = parentOrder + attrs.First().Order;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
