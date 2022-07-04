@@ -19,7 +19,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class StepInfo
     {
         public int StepId { get; set; }
-        public string StepName { get; set; }        
+        public string StepName { get; set; }
     }
 
     public class ProductionOrderDetailQuantityModel
@@ -50,10 +50,36 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long ObjectId { get; set; }
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal TargetProductivity { get; set; }
 
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
+        public IList<CapacityStepDetailModel> Details { get; set; }
 
     }
+
+    public class CapacityStepDetailModel
+    {
+        public long ProductionStepId { get; set; }
+        public long ProductionStepLinkDataId { get; set; }        
+        public decimal Quantity { get; set; }
+        public decimal WorkloadQuantity { get; set; }
+        public decimal WorkHour { get; set; }
+        public decimal? AssignQuantity { get; set; }
+    }
+
+    public class ProductionWorkloadInfo
+    {
+        public long ProductionStepId { get; set; }
+        public long ProductionOrderId { get; set; }
+        public int StepId { get; set; }
+
+        public long ProductionStepLinkDataId { get; set; }
+        public decimal Quantity { get; set; }
+        public long ObjectId { get; set; }
+
+        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
+        public decimal? WorkloadConvertRate { get; set; }
+    }    
 
 }

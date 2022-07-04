@@ -30,7 +30,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<bool> EditNote(long productionOrderDetailId, string note);
         Task<bool> EditDate(long[] productionOrderDetailId, long startDate, long planEndDate, long endDate);
 
-        Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate);
+        Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate, int? assignDepartmentId);
 
         Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
         Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);
