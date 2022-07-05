@@ -149,5 +149,14 @@ namespace Verp.Resources.Enums.System {
                 return ResourceManager.GetString("X_ModuleMissing", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Tồn tại Công đoạn trùng nhau trong Năng suất mục tiêu.
+        /// </summary>
+        public static string DuplicateProductionStep {
+            get {
+                return ResourceManager.GetString("DuplicateProductionStep", resourceCulture);
+            }
+        }
     }
 }
