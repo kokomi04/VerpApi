@@ -147,4 +147,7 @@
   <data name="X_ModuleMissing" xml:space="preserve">
     <value>X-Module header was not found</value>
   </data>
+  <data name="DuplicateProductionStep" xml:space="preserve">
+    <value>Tồn tại Công đoạn trùng nhau trong Năng suất mục tiêu</value>
+  </data>
 </root>

@@ -54,6 +54,11 @@ namespace VErp.Services.Manafacturing.Service
             if (_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityCode == model.TargetProductivityCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Đã tồn tại mã năng suất mục tiêu trong hệ thống");
 
+            if (model.TargetProductivityDetail.GroupBy(d => d.ProductionStepId).Any(g => g.Count() > 1))
+            {
+                throw new BadRequestException(GeneralCode.DuplicateProductionStep);
+            }
+
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -93,6 +98,11 @@ namespace VErp.Services.Manafacturing.Service
 
                 if (entity.TargetProductivityCode != model.TargetProductivityCode && _manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityCode == model.TargetProductivityCode))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Đã tồn tại mã năng suất mục tiêu trong hệ thống");
+
+                if (model.TargetProductivityDetail.GroupBy(d => d.ProductionStepId).Any(g => g.Count() > 1))
+                {
+                    throw new BadRequestException(GeneralCode.DuplicateProductionStep);
+                }
 
                 if (model.IsDefault)
                     await RemoveDefaultTargetProductivity();
