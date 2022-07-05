@@ -44,9 +44,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
 
 
-
+        private ImportExcelMapping _mapping;
         public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream)
         {
+            _mapping = mapping;
+
             var reader = new ExcelReader(stream);
 
             var currentCateName = string.Empty;
@@ -258,8 +260,33 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
             var lst = new List<InventoryOutModel>();
 
             var groups = _excelRows.GroupBy(r => r.InventoryCode);
+
+            var codes = groups.Select(g => g.Key).ToList();
+
+            var existedInventoryByCodes = (await _stockDbContext.Inventory
+                .Where(iv => iv.InventoryTypeId == (int)EnumInventoryType.Output && codes.Contains(iv.InventoryCode))
+                .Select(iv => iv.InventoryCode)
+                .ToListAsync())
+                .Select(code => code.ToLower());
+
             foreach (var g in groups)
             {
+                if (existedInventoryByCodes.Contains(g.Key?.ToLower()))
+                {
+
+                    switch (_mapping.ImportDuplicateOptionId)
+                    {
+                        case EnumImportDuplicateOption.Ignore:
+                            continue;
+
+                        case EnumImportDuplicateOption.Denied:
+                            throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequestFormat(g.Key);
+
+                        default:
+                            throw GeneralCode.NotYetSupported.BadRequest("Update option is not support yet!");
+                    }
+                }
+
                 var totalRowCount = g.Count();
 
                 var newInventoryOutProductModel = new List<InventoryOutProductModel>(totalRowCount);
