@@ -995,19 +995,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Title).HasMaxLength(128);
-
-                entity.Property(e => e.WorkLoadTypeId)
-                    .HasDefaultValueSql("((1))")
-                    .HasComment("Option tính KLCV tính năng suất theo KL Tinh hay theo số lượng");
             });
 
             modelBuilder.Entity<TargetProductivityDetail>(entity =>
             {
                 entity.Property(e => e.ProductivityResourceTypeId).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.ProductivityTimeTypeId).HasDefaultValueSql("((1))");
+                entity.Property(e => e.ProductivityTimeTypeId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.WorkLoadTypeId)
+                    .HasDefaultValueSql("((1))")
+                    .HasComment("Option tính KLCV tính năng suất theo KL Tinh hay theo số lượng");
 
                 entity.HasOne(d => d.TargetProductivityNavigation)
                     .WithMany(p => p.TargetProductivityDetail)

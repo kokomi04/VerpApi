@@ -17,6 +17,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int ProductivityTimeTypeId { get; set; }
         public int ProductivityResourceTypeId { get; set; }
+        public string Note { get; set; }
+        public int WorkLoadTypeId { get; set; }
 
         public virtual TargetProductivity TargetProductivityNavigation { get; set; }
     }
