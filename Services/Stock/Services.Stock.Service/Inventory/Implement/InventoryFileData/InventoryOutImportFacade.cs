@@ -279,7 +279,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                             continue;
 
                         case EnumImportDuplicateOption.Denied:
-                            throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequestFormat(g.Key);
+                            throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequestDescriptionFormat(g.Key);
 
                         default:
                             throw GeneralCode.NotYetSupported.BadRequest("Update option is not support yet!");

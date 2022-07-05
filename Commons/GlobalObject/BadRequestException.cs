@@ -63,6 +63,11 @@ namespace VErp.Commons.GlobalObject
             return new BadRequestException(code, messageFormat.Format(args));
         }
 
+        public static BadRequestException BadRequestDescriptionFormat(this Enum code, params object[] args)
+        {
+            return new BadRequestException(code, args);
+        }
+
         public static BadRequestException BadRequest(this string message)
         {
             return new BadRequestException(message);
