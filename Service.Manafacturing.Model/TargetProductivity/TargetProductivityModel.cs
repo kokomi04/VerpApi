@@ -54,7 +54,10 @@ namespace VErp.Services.Manafacturing.Model
             .ForMember(m => m.ProductivityTimeTypeId, v => v.MapFrom(m => (EnumProductivityTimeType)m.ProductivityTimeTypeId))
             .ForMember(m => m.ProductivityResourceTypeId, v => v.MapFrom(m => (EnumProductivityResourceType)m.ProductivityResourceTypeId))
             .ForMember(m => m.WorkLoadTypeId, v => v.MapFrom(m => (EnumWorkloadType)m.WorkLoadTypeId))
-            .ReverseMap();
+            .ReverseMap()
+            .ForMember(m => m.ProductivityTimeTypeId, v => v.MapFrom(m => (int)m.ProductivityTimeTypeId))
+            .ForMember(m => m.ProductivityResourceTypeId, v => v.MapFrom(m => (int)m.ProductivityResourceTypeId))
+            .ForMember(m => m.WorkLoadTypeId, v => v.MapFrom(m => (int)m.WorkLoadTypeId));
         }
     }
 }
