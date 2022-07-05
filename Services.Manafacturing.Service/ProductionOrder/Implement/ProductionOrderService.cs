@@ -253,6 +253,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                        select new ProductionWorkloadInfo
                                        {
                                            ProductionStepId = s.ProductionStepId,
+                                           ProductionStepTitle = s.Title,
                                            ProductionOrderId = s.ContainerId,
                                            StepId = p.StepId.Value,
                                            ProductionStepLinkDataId = ld.ProductionStepLinkDataId,
@@ -278,7 +279,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             foreach (var workload in workloadInfos)
             {
-
 
                 ProductTargetProductivityByStep target = null;
                 if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
@@ -342,6 +342,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         return new
                         {
                             d.ProductionStepId,
+                            d.ProductionStepTitle,
                             d.ProductionStepLinkDataId,
                             d.Quantity,
                             WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
@@ -400,6 +401,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             Details = workload.DetailSteps.Select(d => new CapacityStepDetailModel
                             {
                                 ProductionStepId = d.ProductionStepId,
+                                ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
 
                                 Quantity = d.Quantity,
