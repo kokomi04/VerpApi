@@ -307,7 +307,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var productionAssignments = _manufacturingDBContext.ProductionAssignment
                 .Include(pa => pa.ProductionAssignmentDetail)
                 .Where(pa => productionStepIds.Contains(pa.ProductionStepId) && pa.DepartmentId == assignDepartmentId)
-                .ToList();          
+                .ToList();
 
 
             // Lấy thông tin đầu ra và số giờ công cần
@@ -329,7 +329,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     g.Key.ObjectTypeId,
                     Quantity = g.Sum(w => w.Quantity),
                     WorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value),
-                    DetailSteps = g.Select(d => {
+                    DetailSteps = g.Select(d =>
+                    {
                         var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
 
                         decimal? assignQuantity = null;
@@ -343,8 +344,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             d.ProductionStepId,
                             d.ProductionStepLinkDataId,
                             d.Quantity,
+                            WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
                             AssignQuantity = assignQuantity,
-                            WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value
+                            AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value
                         };
                     })
                 })
@@ -399,10 +401,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             {
                                 ProductionStepId = d.ProductionStepId,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
+
                                 Quantity = d.Quantity,
                                 WorkloadQuantity = d.WorkloadQuantity,
+                                WorkHour = productivityByStep > 0 ? d.WorkloadQuantity / productivityByStep.Value : 0,
+
                                 AssignQuantity = d.AssignQuantity,
-                                WorkHour = productivityByStep > 0 ? d.WorkloadQuantity / productivityByStep.Value : 0
+                                AssignWorkloadQuantity = d.AssignWorkloadQuantity,
+                                AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0
+
                             }).ToList()
                         };
                         capacities.Add(capacity);
@@ -411,7 +418,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
 
-           
+
 
 
             // Lấy thông tin phân công
