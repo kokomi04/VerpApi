@@ -65,7 +65,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal Quantity { get; set; }
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
+
         public decimal? AssignQuantity { get; set; }
+        public decimal? AssignWorkloadQuantity { get; set; }
+
+        public decimal? AssignWorkHour { get; set; }
     }
 
     public class ProductionWorkloadInfo
