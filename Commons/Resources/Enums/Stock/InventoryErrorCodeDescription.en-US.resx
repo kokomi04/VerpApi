@@ -136,7 +136,7 @@
     <value>The inventory bill already existed</value>
   </data>
   <data name="InventoryCodeAlreadyExisted" xml:space="preserve">
-    <value>The inventory code already existed</value>
+    <value>The inventory code "{0}" already existed</value>
   </data>
   <data name="InventoryCodeEmpty" xml:space="preserve">
     <value>The inventory code is empty</value>
