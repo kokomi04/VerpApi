@@ -61,6 +61,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class CapacityStepDetailModel
     {
         public long ProductionStepId { get; set; }
+        public string ProductionStepTitle { get; set; }
         public long ProductionStepLinkDataId { get; set; }        
         public decimal Quantity { get; set; }
         public decimal WorkloadQuantity { get; set; }
@@ -75,6 +76,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionWorkloadInfo
     {
         public long ProductionStepId { get; set; }
+        public string ProductionStepTitle { get; set; }
         public long ProductionOrderId { get; set; }
         public int StepId { get; set; }
 
