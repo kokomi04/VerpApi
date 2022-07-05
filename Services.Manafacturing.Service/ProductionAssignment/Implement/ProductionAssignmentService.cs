@@ -825,7 +825,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 decimal? productivityByStep = null;
 
-                LinkDataObjectTargetProductivity target = null;
+                ProductTargetProductivityByStep target = null;
                 if (a.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
                     semiTargets.TryGetValue(a.LinkDataObjectId, out target);
@@ -835,21 +835,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     productTargets.TryGetValue((int)a.LinkDataObjectId, out target);
                 }
 
-                TargetModel targetProductivityInfo = target?.Target;
+                ProductStepTargetProductivityDetail targetByStep = null;
+                target?.TryGetValue(a.StepId, out targetByStep);
 
-                if (targetProductivityInfo != null)
+                if (targetByStep != null)
                 {
-                    if (targetProductivityInfo.BySteps.TryGetValue(a.StepId, out var detailInfo))
+                    productivityByStep = targetByStep.TargetProductivity;
+                    if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
                     {
-                        productivityByStep = detailInfo.TargetProductivity;
-                        if (detailInfo.ProductivityTimeTypeId == (int)EnumProductivityTimeType.Day)
-                        {
-                            productivityByStep /= 24;
-                        }
+                        productivityByStep /= 24;
                     }
                 }
 
-                var rate = a.WorkloadConvertRate ?? target.Rate ?? 1;
+                var rate = a.WorkloadConvertRate ?? (targetByStep.Rate ?? 1);
                 return new
                 {
                     a.DepartmentId,

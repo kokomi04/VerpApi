@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
             _productHelperService = productHelperService;
         }
 
-        public async Task<(Dictionary<int, LinkDataObjectTargetProductivity> productTargets, Dictionary<long, LinkDataObjectTargetProductivity> semiTargets)> GetProductivities(List<int> productIds, List<long> semiIds)
+        public async Task<(Dictionary<int, ProductTargetProductivityByStep> productTargets, Dictionary<long, ProductTargetProductivityByStep> semiTargets)> GetProductivities(List<int> productIds, List<long> semiIds)
         {
             var semis = await _manufacturingDBContext.ProductSemi.AsNoTracking()
                 .Where(s => semiIds.Contains(s.ProductSemiId))
@@ -50,8 +50,8 @@ namespace VErp.Services.Manafacturing.Service.Facade
             var productByIds = productInfos.ToDictionary(p => p.ProductId, p => p);
 
 
-            var semiTarget = new Dictionary<long, LinkDataObjectTargetProductivity>();
-            var productTarget = new Dictionary<int, LinkDataObjectTargetProductivity>();
+            var semiTarget = new Dictionary<long, ProductTargetProductivityByStep>();
+            var productTarget = new Dictionary<int, ProductTargetProductivityByStep>();
 
             var defaultProductivity = targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Value;
 
@@ -71,8 +71,6 @@ namespace VErp.Services.Manafacturing.Service.Facade
             foreach (var obj in objects)
             {
 
-
-                decimal? rate = null;
                 int? productId = null;
                 if (obj.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
@@ -85,15 +83,12 @@ namespace VErp.Services.Manafacturing.Service.Facade
 
                 TargetModel targetProductivityInfo = null;
 
+                decimal? productPurity = null;
                 if (productId.HasValue
-                    && productByIds.TryGetValue(productId.Value, out var productInfo)
-                    && targetProductivityInfos.TryGetValue(productInfo.TargetProductivity ?? targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Key, out targetProductivityInfo))
+                    && productByIds.TryGetValue(productId.Value, out var productInfo))
                 {
-                    if (targetProductivityInfo.Info.WorkLoadTypeId == (int)EnumWorkloadType.Purity)
-                    {
-                        rate = productInfo.ProductPurity;
-                    }
-
+                    productPurity = productInfo.ProductPurity;
+                    targetProductivityInfos.TryGetValue(productInfo.TargetProductivity ?? targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Key, out targetProductivityInfo);
                 }
 
                 if (targetProductivityInfo == null)
@@ -101,25 +96,52 @@ namespace VErp.Services.Manafacturing.Service.Facade
                     targetProductivityInfo = defaultProductivity;
                 }
 
+                var target = new ProductTargetProductivityByStep();
+                if (targetProductivityInfo != null)
+                {
+                    foreach (var (step, detail) in targetProductivityInfo.BySteps)
+                    {
+                        decimal? rate = null;
+
+                        var workloadType = (EnumWorkloadType)detail.WorkLoadTypeId;
+                        switch (workloadType)
+                        {
+                            case EnumWorkloadType.Quantity:
+                                rate = 1;
+                                break;
+                            case EnumWorkloadType.Purity:
+                                rate = productPurity ?? 1;
+                                break;
+                        }
+
+                        target.Add(step, new ProductStepTargetProductivityDetail()
+                        {
+                            TargetProductivityId = targetProductivityInfo.Info.TargetProductivityId,
+
+                            EstimateProductionDays = targetProductivityInfo.Info.EstimateProductionDays,
+                            EstimateProductionQuantity = targetProductivityInfo.Info.EstimateProductionQuantity,
+
+                            TargetProductivity = detail.TargetProductivity,
+                            ProductionStepId = detail.ProductionStepId,
+                            ProductivityTimeTypeId = (EnumProductivityTimeType)detail.ProductivityTimeTypeId,
+                            ProductivityResourceTypeId = (EnumProductivityResourceType)detail.ProductivityResourceTypeId,
+
+                            WorkLoadTypeId = workloadType,
+
+                            Rate = rate ?? 1
+                        });
+                    }
+
+                }
 
                 if (obj.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
 
-                    semiTarget.TryAdd(obj.ObjectId, new LinkDataObjectTargetProductivity()
-                    {
-                        Id = obj.ObjectId,
-                        Rate = rate,
-                        Target = targetProductivityInfo
-                    });
+                    semiTarget.TryAdd(obj.ObjectId, target);
                 }
                 else
                 {
-                    productTarget.TryAdd((int)obj.ObjectId, new LinkDataObjectTargetProductivity()
-                    {
-                        Id = obj.ObjectId,
-                        Rate = rate,
-                        Target = targetProductivityInfo
-                    });
+                    productTarget.TryAdd((int)obj.ObjectId, target);
                 }
 
             }
@@ -133,17 +155,32 @@ namespace VErp.Services.Manafacturing.Service.Facade
             public long ObjectId { get; set; }
         }
 
-        public class TargetModel
+        private class TargetModel
         {
             public TargetProductivityEntity Info { get; set; }
             public Dictionary<int, TargetProductivityDetail> BySteps { get; set; }
         }
 
-        public class LinkDataObjectTargetProductivity
+        public class ProductTargetProductivityByStep : Dictionary<int, ProductStepTargetProductivityDetail>
         {
-            public long Id { get; set; }
+
+        }
+
+        public class ProductStepTargetProductivityDetail
+        {
+            public int TargetProductivityId { get; set; }
+
+            public decimal? EstimateProductionDays { get; set; }
+            public decimal? EstimateProductionQuantity { get; set; }
+
+            public decimal TargetProductivity { get; set; }
+            public int ProductionStepId { get; set; }
+            public EnumProductivityTimeType ProductivityTimeTypeId { get; set; }
+            public EnumProductivityResourceType ProductivityResourceTypeId { get; set; }
+
+            public EnumWorkloadType WorkLoadTypeId { get; set; }
+
             public decimal? Rate { get; set; }
-            public TargetModel Target { get; set; }
         }
     }
 }

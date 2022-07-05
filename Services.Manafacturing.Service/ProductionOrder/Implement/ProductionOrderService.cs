@@ -279,7 +279,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
 
 
-                LinkDataObjectTargetProductivity target = null;
+                ProductTargetProductivityByStep target = null;
                 if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
                     semiTargets.TryGetValue(workload.ObjectId, out target);
@@ -289,11 +289,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     productTargets.TryGetValue((int)workload.ObjectId, out target);
                 }
 
-                var rate = target?.Rate;
+                ProductStepTargetProductivityDetail targetByStep = null;
+                target?.TryGetValue(workload.StepId, out targetByStep);
 
                 if (!workload.WorkloadConvertRate.HasValue || workload.WorkloadConvertRate <= 0)
                 {
-                    workload.WorkloadConvertRate = rate ?? 1;
+                    workload.WorkloadConvertRate = targetByStep?.Rate ?? 1;
                 }
 
             }
@@ -335,7 +336,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         decimal? productivityByStep = null;
 
-                        LinkDataObjectTargetProductivity target = null;
+                        ProductTargetProductivityByStep target = null;
                         if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                         {
                             semiTargets.TryGetValue(workload.ObjectId, out target);
@@ -345,18 +346,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             productTargets.TryGetValue((int)workload.ObjectId, out target);
                         }
 
-                        TargetModel targetProductivityInfo = target?.Target;
+                        ProductStepTargetProductivityDetail targetByStep = null;
+                        target?.TryGetValue(workload.StepId, out targetByStep);
 
-                        if (targetProductivityInfo != null)
+                        if (targetByStep != null)
                         {
-                            if (targetProductivityInfo.BySteps.TryGetValue(workload.StepId, out var detailInfo))
+
+                            productivityByStep = targetByStep.TargetProductivity;
+                            if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
                             {
-                                productivityByStep = detailInfo.TargetProductivity;
-                                if (detailInfo.ProductivityTimeTypeId == (int)EnumProductivityTimeType.Day)
-                                {
-                                    productivityByStep /= 24;
-                                }
+                                productivityByStep /= 24;
                             }
+
                         }
                         var capacity = new ProductionCapacityDetailModel
                         {
