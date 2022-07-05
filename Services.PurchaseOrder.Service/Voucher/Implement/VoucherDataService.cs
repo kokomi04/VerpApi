@@ -2611,13 +2611,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return $"r.SubsidiaryId = {_currentContextService.SubsidiaryId}";
         }
 
-        public async Task<BillInfoModel> GetPackingListInfo(int voucherTypeId, long voucherBill_BHXKId)
+        public async Task<BillInfoModel> GetPackingListInfo(int packingListVoucherTypeId, long voucherBill_BHXKId)
         {
             var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == packingListVoucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f
             ).ToListAsync()
             )
@@ -2634,34 +2634,29 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 SELECT     r.*
                 FROM {VOUCHERVALUEROW_VIEW} r 
 
-                WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+                WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {packingListVoucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
             var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
-
-            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {voucherBill_BHXKId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            result.Info = null;
+            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {packingListVoucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
-
-            result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
-
-            if (billEntryInfo.Rows.Count > 0)
+            var billEntryInfos = billEntryInfo.ConvertData();
+            for (var i = 0; i < data.Rows.Count; i++)
             {
-                for (var i = 0; i < data.Rows.Count; i++)
+                var row = data.Rows[i];
+                var _billEntryInfo = billEntryInfos.Where(d => (long)d["VoucherBill_F_Id"] == (long)row["VoucherBill_F_Id"]).FirstOrDefault();
+                if (_billEntryInfo != null && billEntryInfos.Count > 0)
                 {
-                    var row = data.Rows[i];
                     for (var j = 0; j < data.Columns.Count; j++)
                     {
                         var column = data.Columns[j];
                         if (singleFields.Contains(column.ColumnName))
                         {
-                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
+                            row[column] = _billEntryInfo[column.ColumnName];
                         }
                     }
                 }
-            }
-            else
-            {
-                result.Info = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
             result.Rows = data.ConvertData();
