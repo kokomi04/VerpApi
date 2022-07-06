@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int NumberOfPerson { get; set; }
         public int? WorkingHoursPerDay { get; set; }
+        public int NumberOfMachine { get; set; }
 
         public virtual Department Parent { get; set; }
         public virtual ICollection<DepartmentCapacityBalance> DepartmentCapacityBalance { get; set; }
