@@ -10,6 +10,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
     {
         Task<bool> DismissUpdateWarning(long productionOrderId);
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
+        Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds);
+
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
 
         Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info);

@@ -75,9 +75,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId)
         {
+            return await GetByProductionOrders(new[] { productionOrderId });
+        }
+
+        public async Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds)
+        {
             return await _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => a.ProductionOrderId == productionOrderId)
+                .Where(a => productionOrderIds.Contains(a.ProductionOrderId))
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }

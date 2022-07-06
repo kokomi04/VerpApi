@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Services.Manafacturing.Service.ProductionAssignment;
@@ -27,6 +29,14 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments([FromRoute] long productionOrderId)
         {
             return await _productionAssignmentService.GetProductionAssignments(productionOrderId);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByProductionOrders")]
+        public async Task<IList<ProductionAssignmentModel>> GetByProductionOrders([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionAssignmentService.GetByProductionOrders(productionOrderIds);
         }
 
         [HttpGet]

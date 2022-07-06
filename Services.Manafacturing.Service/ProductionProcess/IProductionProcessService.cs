@@ -17,6 +17,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
 
         Task<ProductionProcessInfo> GetProductionProcessByProductionOrder(long productionOrderId);
         Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);
+
+        Task<IList<ProductionProcessModel>> GetProductionProcessByContainerIds(EnumContainerType containerTypeId, IList<long> containerIds);
+
         Task<ProductionStepInfo> GetProductionStepById(long productionStepId);
         Task<bool> UpdateProductionStepById(long productionStepId, ProductionStepInfo req);
         Task<long> CreateProductionStep(ProductionStepInfo req);
