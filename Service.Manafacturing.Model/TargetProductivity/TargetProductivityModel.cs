@@ -44,9 +44,12 @@ namespace VErp.Services.Manafacturing.Model
         public int ProductionStepId { get; set; }
         [Display(Name = "Năng suất mục tiêu")]
         public decimal TargetProductivity { get; set; }
+        [Display(Name = "Đơn vị thời gian")]
         public EnumProductivityTimeType ProductivityTimeTypeId { get; set; }
+        [Display(Name = "Đối tượng tính năng suất")]
         public EnumProductivityResourceType ProductivityResourceTypeId { get; set; }
         public string Note { get; set; }
+        [Display(Name = "Cách tính KLCV")]
         public EnumWorkloadType WorkLoadTypeId { get; set; }
         public void Mapping(Profile profile)
         {
