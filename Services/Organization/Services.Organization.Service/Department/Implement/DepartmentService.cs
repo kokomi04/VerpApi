@@ -69,7 +69,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = data.IsProduction,
                 ImageFileId = data.ImageFileId,
                 IsDeleted = false,
-                NumberOfPerson = data.NumberOfPerson
+                NumberOfPerson = data.NumberOfPerson,
+                NumberOfMachine = data.NumberOfMachine
             };
 
             await _organizationContext.Department.AddAsync(department);
@@ -141,7 +142,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsActived = department.IsActived,
                 IsProduction = department.IsProduction,
                 ImageFileId = department.ImageFileId,
-                NumberOfPerson = department.NumberOfPerson
+                NumberOfPerson = department.NumberOfPerson,
+                NumberOfMachine = department.NumberOfMachine
             };
         }
 
@@ -178,7 +180,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
-                NumberOfPerson = d.NumberOfPerson
+                NumberOfPerson = d.NumberOfPerson,
+                NumberOfMachine = d.NumberOfMachine
             }).ToListAsync();
 
             var total = await query.CountAsync();
@@ -206,7 +209,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ParentName = d.Parent == null ? null : d.Parent.DepartmentName,
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
-                NumberOfPerson = d.NumberOfPerson
+                NumberOfPerson = d.NumberOfPerson,
+                NumberOfMachine = d.NumberOfMachine
             }).ToListAsync();
 
             return lst;
@@ -274,6 +278,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.IsProduction = data.IsProduction;
             department.ImageFileId = data.ImageFileId;
             department.NumberOfPerson = data.NumberOfPerson;
+            department.NumberOfMachine = data.NumberOfMachine;
 
             await _organizationContext.SaveChangesAsync();
 
