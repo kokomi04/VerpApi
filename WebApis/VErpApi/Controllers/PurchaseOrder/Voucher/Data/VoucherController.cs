@@ -131,7 +131,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpGet]
-        [Route("{voucherTypeId}/{fId}/info/pkl/{voucherTypeBKLId}")]
+        [Route("{voucherTypeId}/{voucherBill_BHXKId}/info/pkl/{packingListVoucherTypeId}")]
         public async Task<BillInfoModel> GetPackingListInfo([FromRoute] int voucherTypeId, [FromRoute] long voucherBill_BHXKId, [FromRoute] int packingListVoucherTypeId)
         {
             if (voucherTypeId == 0) throw new BadRequestException(GeneralCode.InvalidParams);
