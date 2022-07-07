@@ -228,12 +228,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                                 where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                                 select new
                                                 {
-                                                    ProductionOrderId = po.ProductionOrderId,
-                                                    ProductionOrderCode = po.ProductionOrderCode,
-                                                    ProductionOrderDetailId = pod.ProductionOrderDetailId,
-                                                    ProductId = pod.ProductId,
-                                                    Quantity = pod.Quantity,
-                                                    ReserveQuantity = pod.ReserveQuantity,
+                                                    po.ProductionOrderId,
+                                                    po.ProductionOrderCode,
+                                                    pod.ProductionOrderDetailId,
+                                                    pod.OrderCode,
+                                                    pod.ProductId,
+                                                    pod.Quantity,
+                                                    pod.ReserveQuantity,
                                                     StartDate = po.StartDate.GetUnix(),
                                                     EndDate = po.EndDate.GetUnix()
                                                 })
@@ -267,6 +268,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .Where(w => w.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                 .Select(w => (int)w.ObjectId)
                 .ToList();
+
+            productIds.AddRange(productionOrderDetails.Select(d => d.ProductId));
 
             var semiIds = workloadInfos
                 .Where(w => w.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
@@ -529,11 +532,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             };
 
 
-            foreach (var productionCapacity in productionOrderDetails.GroupBy(pc => new { pc.ProductionOrderId, pc.ProductionOrderCode }))
+            foreach (var productionCapacity in productionOrderDetails.GroupBy(pc => new { pc.ProductionOrderId, pc.ProductionOrderCode, pc.StartDate, pc.EndDate }))
             {
                 var productionOrderDetail = productionCapacity
                     .Select(pc => new ProductionOrderDetailQuantityModel
                     {
+                        OrderCode = pc.OrderCode,
                         ProductId = pc.ProductId,
                         ProductionOrderDetailId = pc.ProductionOrderDetailId,
                         Quantity = pc.Quantity,
@@ -551,6 +555,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     ProductionOrderId = productionCapacity.Key.ProductionOrderId,
                     ProductionOrderCode = productionCapacity.Key.ProductionOrderCode,
+                    StartDate = productionCapacity.Key.StartDate,
+                    EndDate = productionCapacity.Key.EndDate,
                     ProductionCapacityDetail = prodCap,
                     ProductionOrderDetail = productionOrderDetail
                 });
