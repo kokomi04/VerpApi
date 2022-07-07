@@ -431,6 +431,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
+            inputAreaFields = inputAreaFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             ValidateRowModel checkInfo = new ValidateRowModel(data.Info, null, null);
 
             List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
@@ -1161,6 +1162,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Lấy thông tin field
             var inputAreaFields = await GetInputFields(inputTypeId);
+            inputAreaFields = inputAreaFields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
 
             // Get changed info
             var infoSQL = new StringBuilder("SELECT TOP 1 ");
@@ -2047,7 +2049,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return await (from af in _accountancyDBContext.InputAreaField
                           join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
                           join a in area on af.InputAreaId equals a.InputAreaId
-                          where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
+                          //where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
+                          where af.InputTypeId == inputTypeId
                           orderby a.SortOrder, af.SortOrder
                           select new ValidateField
                           {
@@ -2165,7 +2168,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             // Lấy thông tin field
             var fields = await GetInputFields(inputTypeId);
-
+            fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly).ToList();
             // var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
             // if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
