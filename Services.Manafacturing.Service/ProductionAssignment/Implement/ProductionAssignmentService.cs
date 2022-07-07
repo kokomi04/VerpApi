@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -11,6 +12,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -636,6 +638,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
+        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId)
+        {
+
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@DepartmentId", departmentId)
+            };
+            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters);
+            return resultData.FirstOrDefault();
+        }
 
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
@@ -963,8 +975,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 var minDate = otherAssignments.Min(a => a.StartDate).GetUnix();
                 var maxDate = otherAssignments.Max(a => a.EndDate).GetUnix();
-                startDateUnix = startDateUnix < minDate ? startDateUnix : minDate;
-                endDateUnix = endDateUnix > maxDate ? endDateUnix : maxDate;
+                startDateUnix = startDateUnix < minDate ? startDateUnix : (minDate ?? startDateUnix);
+                endDateUnix = endDateUnix > maxDate ? endDateUnix : (maxDate ?? endDateUnix);
             }
 
             // Lấy thông tin phong ban
@@ -1173,8 +1185,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             public decimal? MinHour { get; set; }
             public decimal? MaxHour { get; set; }
 
-            public DateTime StartDate { get; set; }
-            public DateTime EndDate { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
             public DateTime CreatedDatetimeUtc { get; set; }
 
             public List<AssignmentCapacityDetail> ProductionAssignmentDetail { get; set; }

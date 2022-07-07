@@ -17,8 +17,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public long ProductionOrderId { get; set; }
         public int AssignedProgressStatus { get; set; }

@@ -10,8 +10,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
     public class CapacityModel
     {
-        public long StartDate { get; set; }
-        public long EndDate { get; set; }
+        public long? StartDate { get; set; }
+        public long? EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public string StepName { get; set; }
         public string ProductionOrderCode { get; set; }
@@ -44,5 +44,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     {
         public decimal ProductivityPerPerson { get; set; }
         public int UnitId { get; set; }
+    }
+
+    public class DepartmentAssignFreeDate
+    {
+        public long FreeDate { get; set; }
     }
 }

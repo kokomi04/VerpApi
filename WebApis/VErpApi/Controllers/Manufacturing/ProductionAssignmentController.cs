@@ -90,6 +90,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, keyword, productionOrderId, page, size, orderByFieldName, asc, fromDate, toDate);
         }
 
+        [HttpGet]
+        [Route("departments/{departmentId}/FreeDate")]
+        public async Task<DepartmentAssignFreeDate> DepartmentProductionAssignment([FromRoute] int departmentId)
+        {
+            return await _productionAssignmentService.DepartmentFreeDate(departmentId);
+        }
+
+
         //[HttpGet]
         //[Route("productivity/productionStep/{productionStepId}")]
         //public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
