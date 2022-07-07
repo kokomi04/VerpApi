@@ -74,7 +74,9 @@ namespace VErp.Services.Manafacturing.Service.Facade
                 int? productId = null;
                 if (obj.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                 {
-                    productId = (int?)semiToProduct[obj.ObjectId];
+                    semiToProduct.TryGetValue(obj.ObjectId, out var pId);
+                    if (pId > 0)
+                        productId = (int?)pId;
                 }
                 else
                 {

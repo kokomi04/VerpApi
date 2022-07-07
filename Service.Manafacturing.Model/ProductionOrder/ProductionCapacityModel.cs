@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionOrderDetailQuantityModel
     {
-
+        public string OrderCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public int? ProductId { get; set; }
         public decimal? Quantity { get; set; }
@@ -36,6 +36,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+
         public IList<ProductionOrderDetailQuantityModel> ProductionOrderDetail { get; set; }
         public IDictionary<int, IList<ProductionCapacityDetailModel>> ProductionCapacityDetail { get; set; }
         public ProductionOrderCapacityModel()
