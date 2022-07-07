@@ -959,6 +959,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.EstimateHandoverTime).HasColumnType("decimal(18, 5)");
+
                 entity.Property(e => e.QuantityBak)
                     .HasColumnType("decimal(18, 5)")
                     .HasColumnName("Quantity_bak")
