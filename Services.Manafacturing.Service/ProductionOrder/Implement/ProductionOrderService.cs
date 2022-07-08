@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -389,7 +390,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             productivityByStep = targetByStep.TargetProductivity;
                             if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
                             {
-                                productivityByStep /= 24;
+                                productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
                             }
 
                         }
