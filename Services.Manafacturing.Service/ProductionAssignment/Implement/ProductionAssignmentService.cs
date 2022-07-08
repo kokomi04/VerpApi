@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
@@ -645,7 +646,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 new SqlParameter("@DepartmentId", departmentId)
             };
-            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters);
+            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters, CommandType.StoredProcedure);
             return resultData.FirstOrDefault();
         }
 
