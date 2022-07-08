@@ -92,7 +92,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("departments/{departmentId}/FreeDate")]
-        public async Task<DepartmentAssignFreeDate> DepartmentProductionAssignment([FromRoute] int departmentId)
+        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate([FromRoute] int departmentId)
         {
             return await _productionAssignmentService.DepartmentFreeDate(departmentId);
         }

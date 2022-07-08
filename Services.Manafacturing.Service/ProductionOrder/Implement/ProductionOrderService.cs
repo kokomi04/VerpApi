@@ -493,7 +493,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var calendar = departmentCalendar.FirstOrDefault(c => c.DepartmentId == departmentId);
                 var department = departments.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
-                for (var workDateUnix = fromDate; workDateUnix < toDate; workDateUnix += 24 * 60 * 60)
+                for (var workDateUnix = fromDate; workDateUnix <= toDate; workDateUnix += 24 * 60 * 60)
                 {
                     // Tính số giờ làm việc theo ngày của tổ
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
