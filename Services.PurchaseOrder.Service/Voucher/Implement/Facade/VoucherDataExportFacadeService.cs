@@ -45,7 +45,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
         private async Task LoadFields(int voucherTypeId, VoucherTypeBillsExportModel req)
         {
 
-            fields = (await voucherDataService.GetVoucherFields(voucherTypeId))
+            fields = (await voucherDataService.GetVoucherFields(voucherTypeId, null, (int)EnumFormType.ViewOnly))
                 .Where(f => ((req.FieldNames?.Count ?? 0) == 0 || req.FieldNames.Contains(f.FieldName))
                 ).ToList();
 

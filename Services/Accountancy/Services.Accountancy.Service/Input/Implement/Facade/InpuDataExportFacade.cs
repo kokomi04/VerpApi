@@ -50,7 +50,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             //    && ((fieldNames?.Count ?? 0) == 0 || fieldNames.Contains(f.FieldName))
             //    )
             //    .ToList();
-            fields = (await inputDataService.GetInputFields(inputTypeId))
+            fields = (await inputDataService.GetInputFields(inputTypeId, null, (int)EnumFormType.ViewOnly))
                 .Where(f => ((req.FieldNames?.Count ?? 0) == 0 || req.FieldNames.Contains(f.FieldName))
                 ).ToList();
 
