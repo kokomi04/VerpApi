@@ -96,4 +96,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public GeneralProductionStepAssignmentModel[] ProductionStepAssignment { get; set; }
         //public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
     }
+
+    public class DepartmentAssignUpdateDateModel
+    {
+        public long ProductionStepId { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+        public IList<ProductionAssignmentDetailModel> Details { get; set; }
+    }
 }

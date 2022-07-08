@@ -650,6 +650,48 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             return resultData.FirstOrDefault();
         }
 
+
+        public async Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data)
+        {
+            using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
+            {
+                var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
+                var assignsByDepartment = await _manufacturingDBContext.ProductionAssignment
+                     .Include(a => a.ProductionAssignmentDetail)
+                     .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId))
+                     .ToListAsync();
+
+                var removingDetails = new List<ProductionAssignmentDetail>();
+
+                var addingDetails = new List<ProductionAssignmentDetail>();
+
+                foreach (var assign in assignsByDepartment)
+                {
+                    var updateInfo = data.FirstOrDefault(d => d.ProductionStepId == assign.ProductionStepId);
+                    if (updateInfo != null)
+                    {
+                        assign.StartDate = updateInfo.StartDate.UnixToDateTime();
+                        assign.EndDate = updateInfo.EndDate.UnixToDateTime();
+                        removingDetails.AddRange(assign.ProductionAssignmentDetail);
+                        var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
+                        foreach (var d in details)
+                        {
+                            d.ProductionOrderId = assign.ProductionOrderId;
+                            d.ProductionStepId = assign.ProductionStepId;
+                            d.DepartmentId = assign.DepartmentId;
+                        }
+                        addingDetails.AddRange(details);
+                    }
+                }
+                _manufacturingDBContext.ProductionAssignmentDetail.RemoveRange(removingDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+                await _manufacturingDBContext.ProductionAssignmentDetail.AddRangeAsync(addingDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+                return true;
+            }
+        }
+
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
             var fDate = fromDate.UnixToDateTime();

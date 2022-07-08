@@ -98,6 +98,14 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
 
+        [HttpPut]
+        [Route("departments/{departmentId}/AssignDate")]
+        public async Task<bool> UpdateDepartmentAssignmentDate([FromRoute] int departmentId, IList<DepartmentAssignUpdateDateModel> data)
+        {
+            return await _productionAssignmentService.UpdateDepartmentAssignmentDate(departmentId, data);
+        }
+
+        //Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data)
         //[HttpGet]
         //[Route("productivity/productionStep/{productionStepId}")]
         //public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)
