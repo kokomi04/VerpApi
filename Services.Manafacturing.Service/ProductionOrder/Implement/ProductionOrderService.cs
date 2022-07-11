@@ -336,6 +336,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     DetailSteps = g.Select(d =>
                     {
                         decimal? assignQuantity = null;
+                        bool isSelectionAssign = false;
                         //var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
                         //if (assign != null)
                         //{
@@ -350,6 +351,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             {
                                 assignQuantity = assignStep.AssignmentQuantity * d.Quantity / workInfo.Quantity;
                             }
+
+                            isSelectionAssign = d.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId;
                         }
 
 
@@ -359,6 +362,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             d.ProductionStepTitle,
                             d.ProductionStepLinkDataId,
                             d.Quantity,
+                            IsSelectionAssign = isSelectionAssign,
                             WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
                             AssignQuantity = assignQuantity,
                             AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value
@@ -422,6 +426,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 WorkloadQuantity = d.WorkloadQuantity,
                                 WorkHour = productivityByStep > 0 ? d.WorkloadQuantity / productivityByStep.Value : 0,
 
+                                IsSelectionAssign = d.IsSelectionAssign,
                                 AssignQuantity = d.AssignQuantity,
                                 AssignWorkloadQuantity = d.AssignWorkloadQuantity,
                                 AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0
