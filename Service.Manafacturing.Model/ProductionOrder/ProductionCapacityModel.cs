@@ -70,6 +70,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
 
+        public bool IsSelectionAssign { get; set; }
         public decimal? AssignQuantity { get; set; }
         public decimal? AssignWorkloadQuantity { get; set; }
 
