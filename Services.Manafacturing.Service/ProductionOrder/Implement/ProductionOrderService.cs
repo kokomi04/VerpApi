@@ -335,13 +335,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     WorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value),
                     DetailSteps = g.Select(d =>
                     {
-                        var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-
                         decimal? assignQuantity = null;
-                        if (assign != null)
+                        //var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                        //if (assign != null)
+                        //{
+                        //    assignQuantity = assign.AssignmentQuantity;
+                        //}
+
+                        var assignStep = productionAssignments.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId);
+                        if (assignStep != null)
                         {
-                            assignQuantity = assign.AssignmentQuantity;
+                            var workInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                            if (workInfo != null)
+                            {
+                                assignQuantity = assignStep.AssignmentQuantity * d.Quantity / workInfo.Quantity;
+                            }
                         }
+
 
                         return new
                         {
