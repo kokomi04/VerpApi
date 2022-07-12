@@ -280,7 +280,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     sheet.EnsureCell(currentRow, 5).SetCellValue(voucherOrder.PartnerCode);
                     sheet.EnsureCell(currentRow, 6).SetCellValue(voucherOrder.PartnerName != null ? voucherOrder.PartnerName : "N/A");
                     sheet.EnsureCell(currentRow, 10).SetCellValue((double)voucherOrder.Quantity);
-                    sheet.EnsureCell(currentRow, 22).SetCellValue(voucherOrder.DeliveryDate > 0 ? voucherOrder.DeliveryDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd/MM/yyyy") : "");
+                    if (voucherOrder.DeliveryDate > 0)
+                    {
+                        sheet.EnsureCell(currentRow, 22).SetCellValue(voucherOrder.DeliveryDate.UnixToDateTime(_currentContext.TimeZoneOffset));
+                    }    
                 }
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.ProductCode);
                 sheet.EnsureCell(currentRow, 8).SetCellValue(item.ProductName);
