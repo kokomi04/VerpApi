@@ -103,6 +103,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public bool IsManualSetDate { get; set; }
+        public decimal RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> Details { get; set; }
     }
 }
