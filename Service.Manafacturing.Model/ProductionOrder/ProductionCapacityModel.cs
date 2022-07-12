@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
@@ -81,7 +82,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long? EndDate { get; set; }
         public bool IsManualSetDate { get; set; }
         public decimal RateInPercent { get; set; }
+
+        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
+
     }
+
 
     public class ProductionWorkloadInfo
     {
