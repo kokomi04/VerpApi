@@ -77,8 +77,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public decimal? AssignWorkHour { get; set; }
 
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public long? StartDate { get; set; }
+        public long? EndDate { get; set; }
         public bool IsManualSetDate { get; set; }
         public decimal RateInPercent { get; set; }
     }

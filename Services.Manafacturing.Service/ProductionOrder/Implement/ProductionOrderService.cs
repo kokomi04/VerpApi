@@ -439,8 +439,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 AssignWorkloadQuantity = d.AssignWorkloadQuantity,
                                 AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0,
 
-                                StartDate = d.StartDate,
-                                EndDate = d.EndDate,
+                                StartDate = d.StartDate.GetUnix(),
+                                EndDate = d.EndDate.GetUnix(),
                                 IsManualSetDate = d.IsManualSetDate ?? false,
                                 RateInPercent = d.RateInPercent ?? 100
 
