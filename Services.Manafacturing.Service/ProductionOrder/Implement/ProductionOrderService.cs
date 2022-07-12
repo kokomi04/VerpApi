@@ -520,11 +520,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 for (var workDateUnix = fromDate; workDateUnix <= toDate; workDateUnix += 24 * 60 * 60)
                 {
                     var date = workDateUnix.UnixToDateTime(_currentContextService.TimeZoneOffset).Date;
-                    if (offDays.Contains(date))
-                    {
-                        continue;
-                    }
-                  
+
+
                     var dayOfWeek = date.DayOfWeek;
                     // Tính số giờ làm việc theo ngày của tổ
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
@@ -539,6 +536,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var overPerson = overHour?.NumberOfPerson ?? 0;
 
                     var totalWorkingHour = workingHourPerDay * (numberOfPerson + increasePerson);
+
+                    if (offDays.Contains(date))
+                    {
+                        totalWorkingHour = 0;
+                    }
 
                     var totalOverHour = overHourPerday * overPerson;
 
