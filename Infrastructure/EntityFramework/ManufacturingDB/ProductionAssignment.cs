@@ -23,6 +23,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionOrderId { get; set; }
         public int AssignedProgressStatus { get; set; }
         public bool IsManualFinish { get; set; }
+        public bool IsManualSetDate { get; set; }
 
         public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }

@@ -369,7 +369,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             IsSelectionAssign = isSelectionAssign,
                             WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
                             AssignQuantity = assignQuantity,
-                            AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value
+                            AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value,
+                            assignStep.StartDate,
+                            assignStep.EndDate,
+                            assignStep.IsManualSetDate
                         };
                     })
                 })
@@ -433,7 +436,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 IsSelectionAssign = d.IsSelectionAssign,
                                 AssignQuantity = d.AssignQuantity,
                                 AssignWorkloadQuantity = d.AssignWorkloadQuantity,
-                                AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0
+                                AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0,
+
+                                StartDate = d.StartDate,
+                                EndDate = d.EndDate,
+                                IsManualSetDate = d.IsManualSetDate
 
                             }).ToList()
                         };

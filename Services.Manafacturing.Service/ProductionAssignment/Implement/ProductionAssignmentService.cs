@@ -672,6 +672,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     {
                         assign.StartDate = updateInfo.StartDate.UnixToDateTime();
                         assign.EndDate = updateInfo.EndDate.UnixToDateTime();
+                        assign.IsManualSetDate = updateInfo.IsManualSetDate;
                         removingDetails.AddRange(assign.ProductionAssignmentDetail);
                         var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
                         foreach (var d in details)
