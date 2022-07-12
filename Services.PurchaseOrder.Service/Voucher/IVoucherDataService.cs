@@ -27,7 +27,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null);
 
-        Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, int? viewOnly = null);
+        Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool? viewOnly = null);
 
         Task<bool> ImportVoucherBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
