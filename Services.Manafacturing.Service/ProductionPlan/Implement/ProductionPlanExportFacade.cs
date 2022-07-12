@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
@@ -87,7 +88,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             ProductionPlanExportModel data,
             IList<string> mappingFunctionKeys = null)
         {
-            maxColumnIndex = 11 + data.ProductCateIds.Length;
+            maxColumnIndex = 23 + data.ProductCateIds.Length;
             productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
 
@@ -139,12 +140,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
             var currentRowTmp = currentRow;
 
-            for (var i = 1; i <= maxColumnIndex; i++)
+            for (var i = 0; i <= maxColumnIndex; i++)
             {
                 sheet.AutoSizeColumn(i);
             }
 
-            for (var i = 1; i <= maxColumnIndex; i++)
+            for (var i = 0; i <= maxColumnIndex; i++)
             {
                 var c = sheet.GetColumnWidth(i);
                 if (c < 2000)
@@ -163,7 +164,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"KHSX_{startDate}_{endDate}.xlsx";
+            var fileName = $"KHSX#{startDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}#{endDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}.xlsx";
             return (stream, fileName, contentType);
         }
 
@@ -183,19 +184,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
             var fRow = currentRow;
 
-            sheet.EnsureCell(fRow, 0).SetCellValue($"Khách hàng");
-            sheet.EnsureCell(fRow, 1).SetCellValue($"Đơn hàng");
-            sheet.EnsureCell(fRow, 2).SetCellValue($"PO của khách");
-            sheet.EnsureCell(fRow, 3).SetCellValue($"Mã hàng");
-            sheet.EnsureCell(fRow, 4).SetCellValue($"Tên hàng");
-            sheet.EnsureCell(fRow, 5).SetCellValue($"S.lg Cont.");
-            sheet.EnsureCell(fRow, 6).SetCellValue($"Số lượng");
-            sheet.EnsureCell(fRow, 7).SetCellValue($"Đơn vị");
-            sheet.EnsureCell(fRow, 8).SetCellValue($"Ngày bắt đầu");
-            sheet.EnsureCell(fRow, 9).SetCellValue($"Hoàn thành hàng trắng");
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Ngày hoàn thành");
-            sheet.EnsureCell(fRow, 11).SetCellValue($"Ghi chú");
-            int colIndx = 12;
+            sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
+            sheet.EnsureCell(fRow, 1).SetCellValue($"Lệnh SX");
+            sheet.EnsureCell(fRow, 2).SetCellValue($"Mã Đơn Hàng");
+            sheet.EnsureCell(fRow, 3).SetCellValue($"S.lg Cont.");
+            sheet.EnsureCell(fRow, 4).SetCellValue($"Số PO đối tác");
+            sheet.EnsureCell(fRow, 5).SetCellValue($"Mã KH");
+            sheet.EnsureCell(fRow, 6).SetCellValue($"Tên KH");
+            sheet.EnsureCell(fRow, 7).SetCellValue($"Mã SP");
+            sheet.EnsureCell(fRow, 8).SetCellValue($"Tên SP");
+            sheet.EnsureCell(fRow, 9).SetCellValue($"ĐVT");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"S.lg đ.hàng");
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Vào lệnh");
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Bù hao");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Tổng s.lg");
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Tổng KL tinh");
+            sheet.EnsureCell(fRow, 15).SetCellValue($"Đơn giá");
+            sheet.EnsureCell(fRow, 16).SetCellValue($"T.tiền n.tệ");
+            sheet.EnsureCell(fRow, 17).SetCellValue($"T.tiền VNĐ");
+            sheet.EnsureCell(fRow, 18).SetCellValue($"Ngày chứng từ");
+            sheet.EnsureCell(fRow, 19).SetCellValue($"Bắt đầu");
+            sheet.EnsureCell(fRow, 20).SetCellValue($"K.thúc h.trắng");
+            sheet.EnsureCell(fRow, 21).SetCellValue($"K.thúc");
+            sheet.EnsureCell(fRow, 22).SetCellValue($"Ngày giao");
+            sheet.EnsureCell(fRow, 23).SetCellValue($"Ghi chú");
+            int colIndx = 24;
             foreach (var productCate in productCates)
             {
                 sheet.EnsureCell(fRow, colIndx).SetCellValue($"{productCate.ProductCateName}");
@@ -220,47 +233,76 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
 
             // var centerCell = sheet.GetCellStyle(hAlign: HorizontalAlignment.Center, isBorder: true);
-
+            var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
+            var products = _productHelperService.GetByIds(productIds).Result;
             var normalCell = sheet.GetCellStyle(isBorder: true);
-
             var numberCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0");
             var dateCell = sheet.GetCellStyle(isBorder: true, dataFormat: "dd/MM/yyyy");
-
+            var stt = 1;
             foreach (var item in productionPlanInfo)
             {
+                var productPurityCell = new StringBuilder("#,##0");
+                var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                if (product != null && product.DecimalPlace > 0)
+                {
+                    productPurityCell.Append(".0");
+                    for (int i = 1; i < product.DecimalPlace; i++)
+                    {
+                        productPurityCell.Append("#");
+                    }
+                }    
                 for (var i = 0; i <= maxColumnIndex; i++)
                 {
                     var style = normalCell;
-                    if (i == 6)
+                    if (i == 14)
+                    {
+                        style = sheet.GetCellStyle(isBorder: true, dataFormat: productPurityCell.ToString());
+                    }    
+                    else if (i == 3 || (i >= 10 && i <= 17 ))
                     {
                         style = numberCell;
                     }
-                    else if (i == 8 || i == 9 || i == 10)
+                    else if (i >= 18 && i <= 22)
                     {
                         style = dateCell;
                     }
                     sheet.EnsureCell(currentRow, i).CellStyle = style;
                 }
 
-                var voucherOrder = mapVoucherOrder.FirstOrDefault(x => x.OrderCode == item.OrderCode);
+                sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
+                sheet.EnsureCell(currentRow, 1).SetCellValue(item.ProductionOrderCode);
+                sheet.EnsureCell(currentRow, 2).SetCellValue(item.OrderCode);
+                var voucherOrder = mapVoucherOrder.FirstOrDefault(x => x.OrderCode == item.OrderCode && x.ProductId == item.ProductId);
                 if (voucherOrder != null)
                 {
-                    sheet.EnsureCell(currentRow, 0).SetCellValue(voucherOrder != null ? string.IsNullOrEmpty(voucherOrder?.PartnerName) ? voucherOrder?.PartnerCode : $"{voucherOrder?.PartnerCode} ({voucherOrder?.PartnerName})" : "N/A");
-                    sheet.EnsureCell(currentRow, 2).SetCellValue(voucherOrder.CustomerPO);
-                    sheet.EnsureCell(currentRow, 5).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    sheet.EnsureCell(currentRow, 3).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    sheet.EnsureCell(currentRow, 4).SetCellValue(voucherOrder.CustomerPO);
+                    sheet.EnsureCell(currentRow, 5).SetCellValue(voucherOrder.PartnerCode);
+                    sheet.EnsureCell(currentRow, 6).SetCellValue(voucherOrder.PartnerName != null ? voucherOrder.PartnerName : "N/A");
+                    sheet.EnsureCell(currentRow, 10).SetCellValue((double)voucherOrder.Quantity);
+                    sheet.EnsureCell(currentRow, 22).SetCellValue(voucherOrder.DeliveryDate > 0 ? voucherOrder.DeliveryDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd/MM/yyyy") : "");
                 }
-                sheet.EnsureCell(currentRow, 1).SetCellValue(item.OrderCode);
-                sheet.EnsureCell(currentRow, 3).SetCellValue(item.ProductCode);
-                sheet.EnsureCell(currentRow, 4).SetCellValue(item.ProductName);
+                sheet.EnsureCell(currentRow, 7).SetCellValue(item.ProductCode);
+                sheet.EnsureCell(currentRow, 8).SetCellValue(item.ProductName);
+                sheet.EnsureCell(currentRow, 9).SetCellValue(item.UnitName);
+                sheet.EnsureCell(currentRow, 11).SetCellValue((double)item.Quantity.GetValueOrDefault());
+                sheet.EnsureCell(currentRow, 12).SetCellValue((double)item.ReserveQuantity.GetValueOrDefault());
+                var totalQuantity = item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault();
+                sheet.EnsureCell(currentRow, 13).SetCellValue((double)totalQuantity);
+                if (product != null && product.ProductPurity.HasValue)
+                {
+                    sheet.EnsureCell(currentRow, 14).SetCellValue((double)(product.ProductPurity.Value * totalQuantity)); 
+                }
+                sheet.EnsureCell(currentRow, 15).SetCellValue((double)item.UnitPrice);
+                sheet.EnsureCell(currentRow, 16).SetCellValue((double)(item.UnitPrice * totalQuantity));
+                sheet.EnsureCell(currentRow, 17).SetCellValue((double)(item.UnitPrice * totalQuantity * (item.CurrencyRate.HasValue ? item.CurrencyRate : 1)));
+                sheet.EnsureCell(currentRow, 18).SetCellValue(item.Date.UnixToDateTime(_currentContext.TimeZoneOffset));
+                sheet.EnsureCell(currentRow, 19).SetCellValue(item.StartDate.UnixToDateTime(_currentContext.TimeZoneOffset));
+                sheet.EnsureCell(currentRow, 20).SetCellValue(item.PlanEndDate.UnixToDateTime(_currentContext.TimeZoneOffset));
+                sheet.EnsureCell(currentRow, 21).SetCellValue(item.EndDate.UnixToDateTime(_currentContext.TimeZoneOffset));
+                sheet.EnsureCell(currentRow, 23).SetCellValue(item.Note);
 
-                sheet.EnsureCell(currentRow, 6).SetCellValue((double)(item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()));
-                sheet.EnsureCell(currentRow, 7).SetCellValue(item.UnitName);
-                sheet.EnsureCell(currentRow, 8).SetCellValue((item.StartDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 9).SetCellValue((item.PlanEndDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 10).SetCellValue((item.EndDate + _currentContext.TimeZoneOffset.GetValueOrDefault()).UnixToDateTime().Value);
-                sheet.EnsureCell(currentRow, 11).SetCellValue(item.Note);
-
-                int colIndx = 12;
+                int colIndx = 24;
                 foreach (var productCate in productCates)
                 {
                     sheet.EnsureCell(currentRow, colIndx).SetCellValue((double)((item.Quantity.GetValueOrDefault() + item.ReserveQuantity.GetValueOrDefault()) * productCateQuantity[item.ProductId.Value][productCate.ProductCateId]));
@@ -268,6 +310,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 }
 
                 currentRow++;
+                stt++;
             }
         }
 
