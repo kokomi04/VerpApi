@@ -80,6 +80,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsManualSetDate { get; set; }
+        public decimal RateInPercent { get; set; }
     }
 
     public class ProductionWorkloadInfo

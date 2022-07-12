@@ -260,6 +260,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(32, 12)");
 
+                entity.Property(e => e.RateInPercent)
+                    .HasColumnType("decimal(18, 5)")
+                    .HasDefaultValueSql("((100))");
+
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionAssignment)
                     .HasForeignKey(d => d.ProductionStepLinkDataId)

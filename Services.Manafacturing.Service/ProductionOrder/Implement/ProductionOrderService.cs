@@ -370,9 +370,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
                             AssignQuantity = assignQuantity,
                             AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value,
-                            StartDate = assignStep?.StartDate,
-                            EndDate = assignStep?.EndDate,
-                            IsManualSetDate = assignStep?.IsManualSetDate
+                            assignStep?.StartDate,
+                            assignStep?.EndDate,
+                            assignStep?.IsManualSetDate,
+                            assignStep?.RateInPercent
                         };
                     })
                 })
@@ -440,7 +441,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 StartDate = d.StartDate,
                                 EndDate = d.EndDate,
-                                IsManualSetDate = d.IsManualSetDate ?? false
+                                IsManualSetDate = d.IsManualSetDate ?? false,
+                                RateInPercent = d.RateInPercent ?? 100
 
                             }).ToList()
                         };
