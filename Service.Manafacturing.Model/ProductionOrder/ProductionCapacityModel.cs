@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
@@ -75,6 +76,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal? AssignWorkloadQuantity { get; set; }
 
         public decimal? AssignWorkHour { get; set; }
+
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsManualSetDate { get; set; }
     }
 
     public class ProductionWorkloadInfo
