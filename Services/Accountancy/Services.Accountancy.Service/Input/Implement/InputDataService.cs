@@ -2036,7 +2036,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool? isViewOnly = null)
+        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false)
         {
             var area = _accountancyDBContext.InputArea.AsQueryable();
             if (areaId > 0)

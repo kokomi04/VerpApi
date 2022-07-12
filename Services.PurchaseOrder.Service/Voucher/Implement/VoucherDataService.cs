@@ -1943,7 +1943,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }, true);
         }
 
-        public async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool? isViewOnly = null)
+        public async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool isViewOnly = false)
         {
             var area = _purchaseOrderDBContext.VoucherArea.AsQueryable();
             if (areaId > 0)
