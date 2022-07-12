@@ -238,25 +238,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var normalCell = sheet.GetCellStyle(isBorder: true);
             var numberCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0");
             var dateCell = sheet.GetCellStyle(isBorder: true, dataFormat: "dd/MM/yyyy");
+            var productPurityCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0.00###");
             var stt = 1;
             foreach (var item in productionPlanInfo)
             {
-                var productPurityCell = new StringBuilder("#,##0");
                 var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
-                if (product != null && product.DecimalPlace > 0)
-                {
-                    productPurityCell.Append(".0");
-                    for (int i = 1; i < product.DecimalPlace; i++)
-                    {
-                        productPurityCell.Append("#");
-                    }
-                }    
                 for (var i = 0; i <= maxColumnIndex; i++)
                 {
                     var style = normalCell;
                     if (i == 14)
                     {
-                        style = sheet.GetCellStyle(isBorder: true, dataFormat: productPurityCell.ToString());
+                        style = productPurityCell;
                     }    
                     else if (i == 3 || (i >= 10 && i <= 17 ))
                     {
