@@ -2036,7 +2036,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null)
+        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false)
         {
             var area = _accountancyDBContext.InputArea.AsQueryable();
             if (areaId > 0)
@@ -2044,32 +2044,37 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 area = area.Where(a => a.InputAreaId == areaId);
             }
 
-            return await (from af in _accountancyDBContext.InputAreaField
-                          join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                          join a in area on af.InputAreaId equals a.InputAreaId
-                          where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly //&& f.FieldName != AccountantConstants.F_IDENTITY
-                          orderby a.SortOrder, af.SortOrder
-                          select new ValidateField
-                          {
-                              InputAreaFieldId = af.InputAreaFieldId,
-                              Title = af.Title,
-                              IsAutoIncrement = af.IsAutoIncrement,
-                              IsHidden = af.IsHidden,
-                              IsReadOnly = f.IsReadOnly,
-                              IsRequire = af.IsRequire,
-                              IsUnique = af.IsUnique,
-                              Filters = af.Filters,
-                              FieldName = f.FieldName,
-                              DataTypeId = f.DataTypeId,
-                              FormTypeId = f.FormTypeId,
-                              RefTableCode = f.RefTableCode,
-                              RefTableField = f.RefTableField,
-                              RefTableTitle = f.RefTableTitle,
-                              RegularExpression = af.RegularExpression,
-                              IsMultiRow = a.IsMultiRow,
-                              RequireFilters = af.RequireFilters,
-                              AreaTitle = a.Title,
-                          }).ToListAsync();
+            var _ret = from af in _accountancyDBContext.InputAreaField
+                       join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                       join a in area on af.InputAreaId equals a.InputAreaId
+                       where af.InputTypeId == inputTypeId
+                       orderby a.SortOrder, af.SortOrder
+                       select new ValidateField
+                       {
+                           InputAreaFieldId = af.InputAreaFieldId,
+                           Title = af.Title,
+                           IsAutoIncrement = af.IsAutoIncrement,
+                           IsHidden = af.IsHidden,
+                           IsReadOnly = f.IsReadOnly,
+                           IsRequire = af.IsRequire,
+                           IsUnique = af.IsUnique,
+                           Filters = af.Filters,
+                           FieldName = f.FieldName,
+                           DataTypeId = f.DataTypeId,
+                           FormTypeId = f.FormTypeId,
+                           RefTableCode = f.RefTableCode,
+                           RefTableField = f.RefTableField,
+                           RefTableTitle = f.RefTableTitle,
+                           RegularExpression = af.RegularExpression,
+                           IsMultiRow = a.IsMultiRow,
+                           RequireFilters = af.RequireFilters,
+                           AreaTitle = a.Title,
+                       };
+            if (isViewOnly != true)
+            {
+                _ret = _ret.Where(f => f.FormTypeId == (int)EnumFormType.ViewOnly);
+            }
+            return await _ret.ToListAsync();
         }
 
 
@@ -2079,7 +2084,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             // Lấy thông tin field
-            var fields = await GetInputFields(inputTypeId, areaId);
+            var fields = await GetInputFields(inputTypeId, areaId, true);
 
             var result = new CategoryNameModel()
             {
