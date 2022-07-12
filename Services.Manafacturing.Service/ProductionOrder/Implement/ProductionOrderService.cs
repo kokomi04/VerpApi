@@ -39,6 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IDraftDataHelperService _draftDataHelperService;
+        private readonly ICurrentContextService _currentContextService;
 
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -47,7 +48,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductHelperService productHelperService
             , IOrganizationHelperService organizationHelperService
-            , IDraftDataHelperService draftDataHelperService)
+            , IDraftDataHelperService draftDataHelperService
+            , ICurrentContextService currentContextService
+            )
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -57,6 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _productHelperService = productHelperService;
             _organizationHelperService = organizationHelperService;
             _draftDataHelperService = draftDataHelperService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<bool> UpdateProductionProcessVersion(long productionOrderId, int productId)
@@ -498,6 +502,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
             var departmentHour = new Dictionary<int, decimal>();
 
+
             foreach (var departmentId in departmentIds)
             {
                 // Danh sách công đoạn tổ đảm nhiệm
@@ -509,8 +514,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var calendar = departmentCalendar.FirstOrDefault(c => c.DepartmentId == departmentId);
                 var department = departments.FirstOrDefault(d => d.DepartmentId == departmentId);
                 decimal totalHour = 0;
+
+                var offDays = calendar.DepartmentDayOffCalendar.Select(o => o.Day.UnixToDateTime(_currentContextService.TimeZoneOffset).Date).ToList();
+
                 for (var workDateUnix = fromDate; workDateUnix <= toDate; workDateUnix += 24 * 60 * 60)
                 {
+                    var date = workDateUnix.UnixToDateTime(_currentContextService.TimeZoneOffset).Date;
+                    if (offDays.Contains(date))
+                    {
+                        continue;
+                    }
+                  
+                    var dayOfWeek = date.DayOfWeek;
                     // Tính số giờ làm việc theo ngày của tổ
                     var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
                     var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
