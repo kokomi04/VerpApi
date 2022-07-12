@@ -21,6 +21,7 @@ using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.Facade;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -348,15 +349,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         //}
 
                         var assignStep = productionAssignments.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId);
+
+                        var byDates = new List<ProductionAssignmentDetailModel>();
+
                         if (assignStep != null)
                         {
                             var workInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                            var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
                             if (workInfo != null)
                             {
-                                assignQuantity = assignStep.AssignmentQuantity * d.Quantity / workInfo.Quantity;
+                                var rateQuantiy = assignStep.AssignmentQuantity / workInfo.Quantity;
+
+                                assignQuantity = d.Quantity * rateQuantiy;
+
+                                byDates = byDateAssign.Select(a => new ProductionAssignmentDetailModel()
+                                {
+                                    WorkDate = a.WorkDate,
+                                    QuantityPerDay = a.QuantityPerDay * rateQuantiy
+                                }).ToList();
                             }
 
                             isSelectionAssign = d.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId;
+
                         }
 
 
@@ -373,7 +387,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             assignStep?.StartDate,
                             assignStep?.EndDate,
                             assignStep?.IsManualSetDate,
-                            assignStep?.RateInPercent
+                            assignStep?.RateInPercent,
+                            ByDates = byDates
                         };
                     })
                 })
@@ -442,7 +457,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 StartDate = d.StartDate.GetUnix(),
                                 EndDate = d.EndDate.GetUnix(),
                                 IsManualSetDate = d.IsManualSetDate ?? false,
-                                RateInPercent = d.RateInPercent ?? 100
+                                RateInPercent = d.RateInPercent ?? 100,
+                                ByDates = d.ByDates
 
                             }).ToList()
                         };
