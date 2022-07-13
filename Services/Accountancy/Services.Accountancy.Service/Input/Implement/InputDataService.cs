@@ -2044,37 +2044,38 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 area = area.Where(a => a.InputAreaId == areaId);
             }
 
-            var _ret = from af in _accountancyDBContext.InputAreaField
-                       join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                       join a in area on af.InputAreaId equals a.InputAreaId
-                       where af.InputTypeId == inputTypeId
-                       orderby a.SortOrder, af.SortOrder
-                       select new ValidateField
-                       {
-                           InputAreaFieldId = af.InputAreaFieldId,
-                           Title = af.Title,
-                           IsAutoIncrement = af.IsAutoIncrement,
-                           IsHidden = af.IsHidden,
-                           IsReadOnly = f.IsReadOnly,
-                           IsRequire = af.IsRequire,
-                           IsUnique = af.IsUnique,
-                           Filters = af.Filters,
-                           FieldName = f.FieldName,
-                           DataTypeId = f.DataTypeId,
-                           FormTypeId = f.FormTypeId,
-                           RefTableCode = f.RefTableCode,
-                           RefTableField = f.RefTableField,
-                           RefTableTitle = f.RefTableTitle,
-                           RegularExpression = af.RegularExpression,
-                           IsMultiRow = a.IsMultiRow,
-                           RequireFilters = af.RequireFilters,
-                           AreaTitle = a.Title,
-                       };
+            var field = _accountancyDBContext.InputField.AsQueryable();
             if (isViewOnly != true)
             {
-                _ret = _ret.Where(f => f.FormTypeId == (int)EnumFormType.ViewOnly);
+                field = field.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly);
             }
-            return await _ret.ToListAsync();
+
+            return await (from af in _accountancyDBContext.InputAreaField
+                          join f in field on af.InputFieldId equals f.InputFieldId
+                          join a in area on af.InputAreaId equals a.InputAreaId
+                          where af.InputTypeId == inputTypeId
+                          orderby a.SortOrder, af.SortOrder
+                          select new ValidateField
+                          {
+                              InputAreaFieldId = af.InputAreaFieldId,
+                              Title = af.Title,
+                              IsAutoIncrement = af.IsAutoIncrement,
+                              IsHidden = af.IsHidden,
+                              IsReadOnly = f.IsReadOnly,
+                              IsRequire = af.IsRequire,
+                              IsUnique = af.IsUnique,
+                              Filters = af.Filters,
+                              FieldName = f.FieldName,
+                              DataTypeId = f.DataTypeId,
+                              FormTypeId = f.FormTypeId,
+                              RefTableCode = f.RefTableCode,
+                              RefTableField = f.RefTableField,
+                              RefTableTitle = f.RefTableTitle,
+                              RegularExpression = af.RegularExpression,
+                              IsMultiRow = a.IsMultiRow,
+                              RequireFilters = af.RequireFilters,
+                              AreaTitle = a.Title,
+                          }).ToListAsync();
         }
 
 
