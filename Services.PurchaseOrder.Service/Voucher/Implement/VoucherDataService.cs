@@ -1951,37 +1951,39 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 area = area.Where(a => a.VoucherAreaId == areaId);
 
             }
-            var _ret = from af in _purchaseOrderDBContext.VoucherAreaField
-                       join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-                       join a in area on af.VoucherAreaId equals a.VoucherAreaId
-                       where af.VoucherTypeId == voucherTypeId
-                       orderby a.SortOrder, af.SortOrder
-                       select new ValidateVoucherField
-                       {
-                           VoucherAreaFieldId = af.VoucherAreaFieldId,
-                           Title = af.Title,
-                           IsAutoIncrement = af.IsAutoIncrement,
-                           IsRequire = af.IsRequire,
-                           IsUnique = af.IsUnique,
-                           Filters = af.Filters,
-                           FieldName = f.FieldName,
-                           DataTypeId = f.DataTypeId,
-                           FormTypeId = f.FormTypeId,
-                           RefTableCode = f.RefTableCode,
-                           RefTableField = f.RefTableField,
-                           RefTableTitle = f.RefTableTitle,
-                           RegularExpression = af.RegularExpression,
-                           IsMultiRow = a.IsMultiRow,
-                           RequireFilters = af.RequireFilters,
-                           IsReadOnly = f.IsReadOnly,
-                           IsHidden = af.IsHidden,
-                           AreaTitle = a.Title
-                       };
+
+            var field = _purchaseOrderDBContext.VoucherField.AsQueryable();
             if (isViewOnly != true)
             {
-                _ret = _ret.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly);
+                field = field.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly);
             }
-            return await _ret.ToListAsync();
+
+            return await (from af in _purchaseOrderDBContext.VoucherAreaField
+                          join f in field on af.VoucherFieldId equals f.VoucherFieldId
+                          join a in area on af.VoucherAreaId equals a.VoucherAreaId
+                          where af.VoucherTypeId == voucherTypeId
+                          orderby a.SortOrder, af.SortOrder
+                          select new ValidateVoucherField
+                          {
+                              VoucherAreaFieldId = af.VoucherAreaFieldId,
+                              Title = af.Title,
+                              IsAutoIncrement = af.IsAutoIncrement,
+                              IsRequire = af.IsRequire,
+                              IsUnique = af.IsUnique,
+                              Filters = af.Filters,
+                              FieldName = f.FieldName,
+                              DataTypeId = f.DataTypeId,
+                              FormTypeId = f.FormTypeId,
+                              RefTableCode = f.RefTableCode,
+                              RefTableField = f.RefTableField,
+                              RefTableTitle = f.RefTableTitle,
+                              RegularExpression = af.RegularExpression,
+                              IsMultiRow = a.IsMultiRow,
+                              RequireFilters = af.RequireFilters,
+                              IsReadOnly = f.IsReadOnly,
+                              IsHidden = af.IsHidden,
+                              AreaTitle = a.Title
+                          }).ToListAsync();
         }
 
 
