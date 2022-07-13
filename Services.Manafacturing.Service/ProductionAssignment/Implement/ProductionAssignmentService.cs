@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -86,6 +87,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             return await _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
                 .Where(a => productionOrderIds.Contains(a.ProductionOrderId))
+                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+
+        public async Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate)
+        {
+            return await _manufacturingDBContext.ProductionAssignment
+                .Include(a => a.ProductionAssignmentDetail)
+                .Where(a => a.StartDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime())
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
@@ -905,7 +916,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     productivityByStep = targetByStep.TargetProductivity;
                     if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
                     {
-                        productivityByStep /= 24;
+                        productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
                     }
                 }
 
