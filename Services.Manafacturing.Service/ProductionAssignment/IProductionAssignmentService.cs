@@ -11,6 +11,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<bool> DismissUpdateWarning(long productionOrderId);
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
         Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds);
+        Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate);
 
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
 

@@ -39,6 +39,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetByProductionOrders(productionOrderIds);
         }
 
+
+        [HttpGet]
+        [Route("GetByDateRange")]
+        public async Task<IList<ProductionAssignmentModel>> GetByDateRange([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _productionAssignmentService.GetByDateRange(fromDate, toDate);
+        }
+
+
         [HttpGet]
         [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
         public async Task<ProductionAssignmentModel> GetProductionAssignment([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId)

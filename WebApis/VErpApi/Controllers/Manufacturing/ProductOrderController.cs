@@ -193,6 +193,14 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
+        [Route("Workloads")]
+        public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId)
+        {
+            return await _productionOrderService.ListWorkLoads(productionOrderId);
+        }
+
+
+        [HttpGet]
         [Route("configuration")]
         public async Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration()
         {

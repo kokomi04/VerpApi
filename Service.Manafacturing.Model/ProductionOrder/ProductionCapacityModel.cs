@@ -59,19 +59,25 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
-        public IList<CapacityStepDetailModel> Details { get; set; }
+        public IList<ProductionStepWorkloadAssignModel> Details { get; set; }
 
     }
 
-    public class CapacityStepDetailModel
+    public class ProductionStepWorkloadModel
     {
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
-        public long ProductionStepLinkDataId { get; set; }        
+        public long ProductionStepLinkDataId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal WorkloadConvertRate { get; set; }
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
+        public decimal? Productivity { get; set; }
+    }
 
+
+    public class ProductionStepWorkloadAssignModel: ProductionStepWorkloadModel
+    {
         public bool IsSelectionAssign { get; set; }
         public decimal? AssignQuantity { get; set; }
         public decimal? AssignWorkloadQuantity { get; set; }
