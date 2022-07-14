@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -307,7 +308,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
             };
 
-            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcPrepaidExpenseV2", sqlParams);
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcPrepaidExpenseV2", sqlParams, AccountantConstants.REPORT_QUERY_TIMEOUT);
             var rows = data.ConvertData();
             return rows;
         }

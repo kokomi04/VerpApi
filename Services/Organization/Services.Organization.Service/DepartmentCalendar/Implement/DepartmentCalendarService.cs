@@ -608,7 +608,10 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
                 if (departmentIds.Count != departments.Count) throw DepartmentNotFound.BadRequest();
 
-                if (data.Any(oh => data.Any(ooh => ooh != oh && oh.StartDate <= oh.EndDate && oh.EndDate >= oh.StartDate && ooh.DepartmentId == oh.DepartmentId)))
+                if (data.Any(d => d.StartDate > d.EndDate))
+                    throw GeneralCode.InvalidParams.BadRequest();
+
+                if (data.Any(d => data.Any(c => c != d && c.DepartmentId == d.DepartmentId && d.StartDate.InRange(c.StartDate, c.EndDate))))
                     throw DuplicateDateRange.BadRequest();
 
                 var currentOverHours = _organizationContext.DepartmentOverHourInfo.Where(oh => departmentIds.Contains(oh.DepartmentId)).ToList();
@@ -663,6 +666,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             }
         }
 
+      
         public async Task<bool> DeleteDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId)
         {
             try

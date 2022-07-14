@@ -142,6 +142,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0.
+        /// </summary>
+        public static string InputFieldDataSizeInValid {
+            get {
+                return ResourceManager.GetString("InputFieldDataSizeInValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Trường dữ liệu dùng chung đang được sử dụng.
         /// </summary>
         public static string InputFieldIsUse {

@@ -10,10 +10,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
     {
         Task<bool> DismissUpdateWarning(long productionOrderId);
         Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId);
+        Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds);
+        Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate);
+
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
 
         Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info);
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
+
+        Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data);
+
+        Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId);
+
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
 

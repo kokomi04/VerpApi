@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder
 {
@@ -19,12 +22,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public int StepId { get; set; }
         public string StepName { get; set; }
-        public decimal Productivity { get; set; }
     }
 
-    public class ProductionOrderDetailCapacityModel
+    public class ProductionOrderDetailQuantityModel
     {
-
+        public string OrderCode { get; set; }
         public long ProductionOrderDetailId { get; set; }
         public int? ProductId { get; set; }
         public decimal? Quantity { get; set; }
@@ -36,24 +38,75 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
-        public IList<ProductionOrderDetailCapacityModel> ProductionOrderDetail { get; set; }
-        public IDictionary<int, List<ProductionCapacityDetailModel>> ProductionCapacityDetail { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+
+        public IList<ProductionOrderDetailQuantityModel> ProductionOrderDetail { get; set; }
+        public IDictionary<int, IList<ProductionCapacityDetailModel>> ProductionCapacityDetail { get; set; }
         public ProductionOrderCapacityModel()
         {
-            ProductionOrderDetail = new List<ProductionOrderDetailCapacityModel>();
-            ProductionCapacityDetail = new Dictionary<int, List<ProductionCapacityDetailModel>>();
+            ProductionOrderDetail = new List<ProductionOrderDetailQuantityModel>();
+            ProductionCapacityDetail = new Dictionary<int, IList<ProductionCapacityDetailModel>>();
         }
     }
 
     public class ProductionCapacityDetailModel
     {
         public long ObjectId { get; set; }
-        public int ObjectTypeId { get; set; }
+        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal TargetProductivity { get; set; }
 
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
+        public IList<ProductionStepWorkloadAssignModel> Details { get; set; }
 
     }
+
+    public class ProductionStepWorkloadModel
+    {
+        public long ProductionStepId { get; set; }
+        public string ProductionStepTitle { get; set; }
+        public long ProductionStepLinkDataId { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal WorkloadConvertRate { get; set; }
+        public decimal WorkloadQuantity { get; set; }
+        public decimal WorkHour { get; set; }
+        public decimal? Productivity { get; set; }
+    }
+
+
+    public class ProductionStepWorkloadAssignModel: ProductionStepWorkloadModel
+    {
+        public bool IsSelectionAssign { get; set; }
+        public decimal? AssignQuantity { get; set; }
+        public decimal? AssignWorkloadQuantity { get; set; }
+
+        public decimal? AssignWorkHour { get; set; }
+
+        public long? StartDate { get; set; }
+        public long? EndDate { get; set; }
+        public bool IsManualSetDate { get; set; }
+        public decimal RateInPercent { get; set; }
+
+        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
+
+    }
+
+
+    public class ProductionWorkloadInfo
+    {
+        public long ProductionStepId { get; set; }
+        public string ProductionStepTitle { get; set; }
+        public long ProductionOrderId { get; set; }
+        public int StepId { get; set; }
+
+        public long ProductionStepLinkDataId { get; set; }
+        public decimal Quantity { get; set; }
+        public long ObjectId { get; set; }
+
+        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
+        public decimal? WorkloadConvertRate { get; set; }
+    }    
 
 }

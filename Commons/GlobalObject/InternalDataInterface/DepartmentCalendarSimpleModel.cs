@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using VErp.Commons.Enums.Organization;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
@@ -8,6 +9,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int DepartmentId { get; set; }
         public ICollection<DepartmentWorkingHourSimpleInfoModel> DepartmentWorkingHourInfo { get; set; }
         public ICollection<DepartmentOverHourSimpleInfoModel> DepartmentOverHourInfo { get; set; }
+        public ICollection<DayOffCalendarSimpleInfoModel> DepartmentDayOffCalendar { get; set; }
         public ICollection<DepartmentIncreaseSimpleInfoModel> DepartmentIncreaseInfo { get; set; }
         public DepartmentCalendarSimpleModel()
         {
@@ -42,5 +44,12 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public long EndDate { get; set; }
         public int NumberOfPerson { get; set; }
         public string Content { get; set; }
+    }
+
+    public class DayOffCalendarSimpleInfoModel 
+    {
+        public long Day { get; set; }
+        public string Content { get; set; }
+        public EnumDayOffType? DayOffType { get; set; }
     }
 }

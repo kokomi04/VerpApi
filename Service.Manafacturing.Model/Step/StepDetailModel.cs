@@ -11,5 +11,6 @@ namespace VErp.Services.Manafacturing.Model.Step
         public decimal Quantity { get; set; }
         public decimal WorkingHours { get; set; }
         public int NumberOfPerson { get; set; }
+        public int EstimateHandoverTime { get; set; }
     }
 }

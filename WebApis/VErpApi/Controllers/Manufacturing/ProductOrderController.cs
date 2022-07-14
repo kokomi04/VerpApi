@@ -187,10 +187,18 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("capacity")]
-        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? assignDepartmentId)
         {
-            return await _productionOrderService.GetProductionCapacity(startDate, endDate);
+            return await _productionOrderService.GetProductionCapacity(startDate, endDate, assignDepartmentId);
         }
+
+        [HttpGet]
+        [Route("Workloads")]
+        public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId)
+        {
+            return await _productionOrderService.ListWorkLoads(productionOrderId);
+        }
+
 
         [HttpGet]
         [Route("configuration")]

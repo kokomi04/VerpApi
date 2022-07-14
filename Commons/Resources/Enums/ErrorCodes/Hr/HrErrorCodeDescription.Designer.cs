@@ -133,6 +133,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0.
+        /// </summary>
+        public static string HrFieldDataSizeInValid {
+            get {
+                return ResourceManager.GetString("HrFieldDataSizeInValid", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Trường dữ liệu đang được sử dụng.
         /// </summary>
         public static string HrFieldIsUsed {

@@ -1,24 +1,30 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using VErp.Services.Manafacturing.Service.Facade;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFacade;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
@@ -32,13 +38,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
-
+        private readonly IProductHelperService _productHelperService;
         public ProductionAssignmentService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService, IProductHelperService productHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -47,6 +53,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
             _organizationHelperService = organizationHelperService;
             _queueProcessHelperService = queueProcessHelperService;
+            _productHelperService = productHelperService;
         }
 
         public async Task<bool> DismissUpdateWarning(long productionOrderId)
@@ -72,9 +79,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IList<ProductionAssignmentModel>> GetProductionAssignments(long productionOrderId)
         {
+            return await GetByProductionOrders(new[] { productionOrderId });
+        }
+
+        public async Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds)
+        {
             return await _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => a.ProductionOrderId == productionOrderId)
+                .Where(a => productionOrderIds.Contains(a.ProductionOrderId))
+                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
+
+
+        public async Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate)
+        {
+            return await _manufacturingDBContext.ProductionAssignment
+                .Include(a => a.ProductionAssignmentDetail)
+                .Where(a => a.StartDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime())
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
         }
@@ -628,6 +650,60 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
+        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId)
+        {
+
+            var parammeters = new SqlParameter[]
+            {
+                new SqlParameter("@DepartmentId", departmentId)
+            };
+            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters, CommandType.StoredProcedure);
+            return resultData.FirstOrDefault();
+        }
+
+
+        public async Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data)
+        {
+            using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
+            {
+                var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
+                var assignsByDepartment = await _manufacturingDBContext.ProductionAssignment
+                     .Include(a => a.ProductionAssignmentDetail)
+                     .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId))
+                     .ToListAsync();
+
+                var removingDetails = new List<ProductionAssignmentDetail>();
+
+                var addingDetails = new List<ProductionAssignmentDetail>();
+
+                foreach (var assign in assignsByDepartment)
+                {
+                    var updateInfo = data.FirstOrDefault(d => d.ProductionStepId == assign.ProductionStepId);
+                    if (updateInfo != null)
+                    {
+                        assign.StartDate = updateInfo.StartDate.UnixToDateTime();
+                        assign.EndDate = updateInfo.EndDate.UnixToDateTime();
+                        assign.IsManualSetDate = updateInfo.IsManualSetDate;
+                        assign.RateInPercent = updateInfo.RateInPercent;
+                        removingDetails.AddRange(assign.ProductionAssignmentDetail);
+                        var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
+                        foreach (var d in details)
+                        {
+                            d.ProductionOrderId = assign.ProductionOrderId;
+                            d.ProductionStepId = assign.ProductionStepId;
+                            d.DepartmentId = assign.DepartmentId;
+                        }
+                        addingDetails.AddRange(details);
+                    }
+                }
+                _manufacturingDBContext.ProductionAssignmentDetail.RemoveRange(removingDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+                await _manufacturingDBContext.ProductionAssignmentDetail.AddRangeAsync(addingDetails);
+                await _manufacturingDBContext.SaveChangesAsync();
+                await trans.CommitAsync();
+                return true;
+            }
+        }
 
         public async Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate)
         {
@@ -739,14 +815,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var capacityDepartments = departmentIds.Distinct().ToDictionary(d => d, d => new List<CapacityModel>());
 
-            var otherAssignments = (
+            var assignOthers = (
                 from a in _manufacturingDBContext.ProductionAssignment
                 where departmentIds.Contains(a.DepartmentId)
                     && a.ProductionOrderId != productionOrderId
                     && a.StartDate <= productionTime.EndDate
                     && a.EndDate >= productionTime.StartDate
                 join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
-                join s in _manufacturingDBContext.Step on ps.StepId equals s.StepId
+                join p in _manufacturingDBContext.ProductionStep on ps.ParentId equals p.ProductionStepId
+                join s in _manufacturingDBContext.Step on p.StepId equals s.StepId
                 join sd in _manufacturingDBContext.StepDetail on new { s.StepId, a.DepartmentId } equals new { sd.StepId, sd.DepartmentId }
                 join po in _manufacturingDBContext.ProductionOrder on ps.ContainerId equals po.ProductionOrderId
                 join d in _manufacturingDBContext.ProductionStepLinkData on a.ProductionStepLinkDataId equals d.ProductionStepLinkDataId
@@ -783,24 +860,96 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     a.StartDate,
                     a.EndDate,
                     a.CreatedDatetimeUtc,
-                 
+
                     d.LinkDataObjectId,
-                    d.LinkDataObjectTypeId,
+                    LinkDataObjectTypeId = (EnumProductionStepLinkDataObjectType)d.LinkDataObjectTypeId,
+                    s.StepId,
                     s.StepName,
-                    ProductivityPerPerson = s.Productivity,
+
                     po.ProductionOrderCode,
                     po.ProductionOrderId,
-                    Workload = ld.Quantity * ld.WorkloadConvertRate,
+                    ld.WorkloadConvertRate,
                     OutputQuantity = ld.Quantity,
                     IsImport = ildr == null,
                     psw.MinHour,
-                    psw.MaxHour,
+                    psw.MaxHour
                 })
-                .GroupBy(a => new
+               .ToList();
+
+
+            var productIds = assignOthers
+               .Where(w => w.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
+               .Select(w => (int)w.LinkDataObjectId)
+               .Distinct()
+               .ToList();
+
+            var semiIds = assignOthers
+                .Where(w => w.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                .Select(w => w.LinkDataObjectId)
+                .Distinct()
+                .ToList();
+
+            var workloadFacade = new ProductivityWorkloadFacade(_manufacturingDBContext, _productHelperService);
+            var (productTargets, semiTargets) = await workloadFacade.GetProductivities(productIds, semiIds);
+
+
+            var otherAssignments = assignOthers.Select(a =>
+            {
+
+                decimal? productivityByStep = null;
+
+                ProductTargetProductivityByStep target = null;
+                if (a.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                {
+                    semiTargets.TryGetValue(a.LinkDataObjectId, out target);
+                }
+                else
+                {
+                    productTargets.TryGetValue((int)a.LinkDataObjectId, out target);
+                }
+
+                ProductStepTargetProductivityDetail targetByStep = null;
+                target?.TryGetValue(a.StepId, out targetByStep);
+
+                if (targetByStep != null)
+                {
+                    productivityByStep = targetByStep.TargetProductivity;
+                    if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
+                    {
+                        productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
+                    }
+                }
+
+                var rate = a.WorkloadConvertRate ?? (targetByStep.Rate ?? 1);
+                return new
                 {
                     a.DepartmentId,
-                    a.ProductionStepId
-                })
+                    a.ProductionStepId,
+                    a.AssignmentQuantity,
+                    a.StartDate,
+                    a.EndDate,
+                    a.CreatedDatetimeUtc,
+
+                    a.LinkDataObjectId,
+                    a.LinkDataObjectTypeId,
+                    a.StepName,
+                    ProductivityPerPerson = productivityByStep,
+                    a.ProductionOrderCode,
+                    a.ProductionOrderId,
+
+                    WorkloadConvertRate = rate,
+                    Workload = a.OutputQuantity * rate,
+
+                    a.OutputQuantity,
+                    a.IsImport,
+                    a.MinHour,
+                    a.MaxHour
+                };
+            }).GroupBy(a => new
+            {
+                a.DepartmentId,
+                a.ProductionStepId
+            })
                 .Select(g => new AssignmentCapacityInfo
                 {
                     DepartmentId = g.Key.DepartmentId,
@@ -808,7 +957,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     AssignmentQuantity = g.Max(a => a.AssignmentQuantity),
                     StartDate = g.Max(a => a.StartDate),
                     EndDate = g.Max(a => a.EndDate),
-                    CreatedDatetimeUtc = g.Max(a => a.CreatedDatetimeUtc),                  
+                    CreatedDatetimeUtc = g.Max(a => a.CreatedDatetimeUtc),
                     Workload = g.Sum(a => a.Workload),
                     ObjectId = g.Max(a => a.LinkDataObjectId),
                     ObjectTypeId = g.Max(a => a.LinkDataObjectTypeId),
@@ -882,8 +1031,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             {
                 var minDate = otherAssignments.Min(a => a.StartDate).GetUnix();
                 var maxDate = otherAssignments.Max(a => a.EndDate).GetUnix();
-                startDateUnix = startDateUnix < minDate ? startDateUnix : minDate;
-                endDateUnix = endDateUnix > maxDate ? endDateUnix : maxDate;
+                startDateUnix = startDateUnix < minDate ? startDateUnix : (minDate ?? startDateUnix);
+                endDateUnix = endDateUnix > maxDate ? endDateUnix : (maxDate ?? endDateUnix);
             }
 
             // Lấy thông tin phong ban
@@ -1079,9 +1228,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             public int DepartmentId { get; set; }
             public long ProductionStepId { get; set; }
-            public decimal AssignmentQuantity { get; set; }           
-            public decimal Workload { get; set; }
-            public int ObjectTypeId { get; set; }
+            public decimal AssignmentQuantity { get; set; }
+            public decimal? Workload { get; set; }
+            public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
             public long ObjectId { get; set; }
             public string StepName { get; set; }
             public decimal ProductivityPerPerson { get; set; }
@@ -1092,11 +1241,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             public decimal? MinHour { get; set; }
             public decimal? MaxHour { get; set; }
 
-            public DateTime StartDate { get; set; }
-            public DateTime EndDate { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
             public DateTime CreatedDatetimeUtc { get; set; }
 
             public List<AssignmentCapacityDetail> ProductionAssignmentDetail { get; set; }
         }
+
     }
 }

@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Services.Manafacturing.Service.ProductionAssignment;
@@ -28,6 +30,23 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionAssignmentService.GetProductionAssignments(productionOrderId);
         }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByProductionOrders")]
+        public async Task<IList<ProductionAssignmentModel>> GetByProductionOrders([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionAssignmentService.GetByProductionOrders(productionOrderIds);
+        }
+
+
+        [HttpGet]
+        [Route("GetByDateRange")]
+        public async Task<IList<ProductionAssignmentModel>> GetByDateRange([FromQuery] long fromDate, [FromQuery] long toDate)
+        {
+            return await _productionAssignmentService.GetByDateRange(fromDate, toDate);
+        }
+
 
         [HttpGet]
         [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}")]
@@ -80,6 +99,22 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.DepartmentProductionAssignment(departmentId, keyword, productionOrderId, page, size, orderByFieldName, asc, fromDate, toDate);
         }
 
+        [HttpGet]
+        [Route("departments/{departmentId}/FreeDate")]
+        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate([FromRoute] int departmentId)
+        {
+            return await _productionAssignmentService.DepartmentFreeDate(departmentId);
+        }
+
+
+        [HttpPut]
+        [Route("departments/{departmentId}/AssignDate")]
+        public async Task<bool> UpdateDepartmentAssignmentDate([FromRoute] int departmentId, IList<DepartmentAssignUpdateDateModel> data)
+        {
+            return await _productionAssignmentService.UpdateDepartmentAssignmentDate(departmentId, data);
+        }
+
+        //Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data)
         //[HttpGet]
         //[Route("productivity/productionStep/{productionStepId}")]
         //public async Task<IDictionary<int, ProductivityModel>> GetProductivityDepartments([FromRoute] long productionStepId)

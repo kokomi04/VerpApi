@@ -36,7 +36,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long? OutsourceRequestDetailId { get; set; }
         public int ProductionStepLinkTypeId { get; set; }
         public long? ConverterId { get; set; }
-        public decimal WorkloadConvertRate { get; set; }
+        public decimal? WorkloadConvertRate { get; set; }
         public long LinkDataObjectId { get; set; }
         public int LinkDataObjectTypeId { get; set; }
         public long? ProductionOutsourcePartMappingId { get; set; }

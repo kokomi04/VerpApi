@@ -144,6 +144,9 @@
   <data name="InputFieldAlreadyExisted" xml:space="preserve">
     <value>The bill field already exists</value>
   </data>
+  <data name="InputFieldDataSizeInValid" xml:space="preserve">
+    <value>The DataSize of Text field cannot less or equal than 0</value>
+  </data>
   <data name="InputFieldIsUse" xml:space="preserve">
     <value>The fields are in use</value>
   </data>

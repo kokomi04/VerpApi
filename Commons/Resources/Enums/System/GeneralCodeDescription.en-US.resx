@@ -120,6 +120,9 @@
   <data name="DistributedLockExeption" xml:space="preserve">
     <value>There is resource disputes by another process, try again later</value>
   </data>
+  <data name="DuplicateProductionStep" xml:space="preserve">
+    <value>Duplicate Production Step are found</value>
+  </data>
   <data name="Forbidden" xml:space="preserve">
     <value>You don't have permission to access this function</value>
   </data>

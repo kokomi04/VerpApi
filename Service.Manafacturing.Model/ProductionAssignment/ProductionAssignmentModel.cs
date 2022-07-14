@@ -21,6 +21,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public bool IsManualFinish { get; set; }
+        public bool IsManualSetDate { get; set; }
+        public decimal? RateInPercent { get; set; }
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
@@ -95,5 +97,15 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     {
         public GeneralProductionStepAssignmentModel[] ProductionStepAssignment { get; set; }
         //public DepartmentTimeTableModel[] DepartmentTimeTable { get; set; }
+    }
+
+    public class DepartmentAssignUpdateDateModel
+    {
+        public long ProductionStepId { get; set; }
+        public long StartDate { get; set; }
+        public long EndDate { get; set; }
+        public bool IsManualSetDate { get; set; }
+        public decimal RateInPercent { get; set; }
+        public IList<ProductionAssignmentDetailModel> Details { get; set; }
     }
 }

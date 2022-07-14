@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 #nullable disable
 
@@ -17,6 +18,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
+        public int EstimateHandoverTime { get; set; }
 
         public virtual Step Step { get; set; }
     }

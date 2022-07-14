@@ -997,6 +997,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     throw new BadRequestException(InputErrorCode.SourceCategoryFieldNotFound);
                 }
             }
+            if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
+            {
+                throw new BadRequestException(InputErrorCode.InputFieldDataSizeInValid);
+            }
         }
 
         private void FieldDataProcess(ref InputFieldInputModel data)

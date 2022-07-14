@@ -144,6 +144,9 @@
   <data name="InputFieldAlreadyExisted" xml:space="preserve">
     <value>Trường dữ liệu dùng chung đã tồn tại</value>
   </data>
+  <data name="InputFieldDataSizeInValid" xml:space="preserve">
+    <value>DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0</value>
+  </data>
   <data name="InputFieldIsUse" xml:space="preserve">
     <value>Trường dữ liệu dùng chung đang được sử dụng</value>
   </data>

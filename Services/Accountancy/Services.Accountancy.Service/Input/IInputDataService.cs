@@ -23,7 +23,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
-        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null);
+        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false);
 
         Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId);
 
