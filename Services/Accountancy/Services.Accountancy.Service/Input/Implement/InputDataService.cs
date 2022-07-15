@@ -1920,7 +1920,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             //Create addition reciprocal accounting
-            if (data.Info.Any(k => k.Key.IsVndColumn() && decimal.TryParse(k.Value?.ToString(), out var value) && value != 0))
+            if (data.Info.Any(k => k.Key.IsVndColumn() && !k.Value.IsNullObject()))// decimal.TryParse(k.Value?.ToString(), out var value) && value != 0
             {
                 var dataRow = NewBillVersionRow(dataTable, inputTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
