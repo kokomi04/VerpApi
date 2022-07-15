@@ -48,6 +48,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
     public class DepartmentAssignFreeDate
     {
+        public int DepartmentId { get; set; }
         public long FreeDate { get; set; }
     }
 }

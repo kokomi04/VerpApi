@@ -22,6 +22,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId);
 
+        Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(IList<int> departmentIds);
+
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 
 
