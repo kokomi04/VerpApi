@@ -107,6 +107,14 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("departments/FreeDates")]
+        public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates([FromBody] IList<int> departmentIds)
+        {
+            return await _productionAssignmentService.DepartmentsFreeDates(departmentIds);
+        }
+
         [HttpPut]
         [Route("departments/{departmentId}/AssignDate")]
         public async Task<bool> UpdateDepartmentAssignmentDate([FromRoute] int departmentId, IList<DepartmentAssignUpdateDateModel> data)
