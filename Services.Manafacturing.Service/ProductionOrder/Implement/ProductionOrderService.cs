@@ -252,7 +252,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var toDateTime = toDate.UnixToDateTime();
 
             var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
-                  .ToListAsync();
+                    .Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime)
+                    .ToListAsync();
 
 
             // Lấy thông tin đầu ra và số giờ công cần

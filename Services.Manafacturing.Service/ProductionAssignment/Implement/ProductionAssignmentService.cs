@@ -126,7 +126,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToListAsync();
 
             var poIds = assignments.Select(a => a.ProductionOrderId).Distinct().ToList();
-            var productionOrders = await _manufacturingDBContext.ProductionOrder.Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
+            var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po=>po.ProductionOrderDetail).Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
             var workLoads = await _productionOrderService.GetProductionWorkLoads(productionOrders, null);
 
             var workloadInfos = workLoads.SelectMany(production =>
