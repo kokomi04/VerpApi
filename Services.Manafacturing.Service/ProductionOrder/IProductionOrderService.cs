@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
+using VErp.Services.Manafacturing.Service.ProductionOrder.Implement;
+using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {
@@ -33,6 +35,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate, int? assignDepartmentId);
 
         Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId);
+
+        Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId);
 
         Task<ProductionOrderConfigurationModel> GetProductionOrderConfiguration();
         Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model);

@@ -107,6 +107,17 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal? WorkloadConvertRate { get; set; }
-    }    
+    }
+
+
+    public class CapacityByStep : Dictionary<int, IList<ProductionCapacityDetailModel>>
+    {
+
+    }
+
+    public class CapacityStepByProduction : Dictionary<long, CapacityByStep>
+    {
+
+    }
 
 }
