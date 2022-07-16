@@ -23,6 +23,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsManualFinish { get; set; }
         public bool IsManualSetDate { get; set; }
         public decimal? RateInPercent { get; set; }
+
+
+     
+
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
@@ -62,19 +66,50 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
             return isChange;
         }
 
+        private decimal? _assignmentWorkload;
+        private decimal? _assignmentWorkHour;
+
+        public decimal? AssignmentWorkload { get { return _assignmentWorkload; } }
+        public decimal? AssignmentWorkHour { get { return _assignmentWorkHour; } }
+
+        public void SetAssignmentWorkload(decimal? assignmentWorkload)
+        {
+            _assignmentWorkload = assignmentWorkload;
+        }
+
+        public void SetAssignmentWorkHour(decimal? assignmentWorkHour)
+        {
+            _assignmentWorkHour = assignmentWorkHour;
+        }
     }
 
     public class ProductionAssignmentDetailModel : IMapFrom<ProductionAssignmentDetail>
     {
         public long WorkDate { get; set; }
         public decimal? QuantityPerDay { get; set; }
-
+      
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
                 .ReverseMap()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
+        }
+
+        private decimal? _workloadPerDay;
+        private decimal? _workHourPerDay;
+
+        public decimal? WorkloadPerDay { get { return _workloadPerDay; } }
+        public decimal? WorkHourPerDay { get { return _workHourPerDay; } }
+
+        public void SetWorkloadPerDay(decimal? workloadPerDay)
+        {
+            _workloadPerDay = workloadPerDay;
+        }
+
+        public void SetWorkHourPerDay(decimal? workHourPerDay)
+        {
+            _workHourPerDay = workHourPerDay;
         }
     }
 

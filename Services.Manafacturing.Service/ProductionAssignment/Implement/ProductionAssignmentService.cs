@@ -20,7 +20,9 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.Facade;
+using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
@@ -39,12 +41,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
         private readonly IProductHelperService _productHelperService;
+        private readonly IProductionOrderService _productionOrderService;
+
+
         public ProductionAssignmentService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService, IProductHelperService productHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService, IProductHelperService productHelperService, IProductionOrderService productionOrderService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -54,6 +59,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             _organizationHelperService = organizationHelperService;
             _queueProcessHelperService = queueProcessHelperService;
             _productHelperService = productHelperService;
+            _productionOrderService = productionOrderService;
         }
 
         public async Task<bool> DismissUpdateWarning(long productionOrderId)
@@ -84,32 +90,77 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<IList<ProductionAssignmentModel>> GetByProductionOrders(IList<long> productionOrderIds)
         {
-            return await _manufacturingDBContext.ProductionAssignment
-                .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => productionOrderIds.Contains(a.ProductionOrderId))
-                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+
+            var assignmentQuery = _manufacturingDBContext.ProductionAssignment
+              .Where(a => productionOrderIds.Contains(a.ProductionOrderId));
+
+            return await GetProductionAssignment(assignmentQuery);
         }
 
 
         public async Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate)
         {
-            return await _manufacturingDBContext.ProductionAssignment
-                .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => a.StartDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime())
-                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var assignmentQuery = _manufacturingDBContext.ProductionAssignment
+              .Where(a => a.StartDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime());
+
+            return await GetProductionAssignment(assignmentQuery);
         }
 
         public async Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId)
         {
-            var assignment = await _manufacturingDBContext.ProductionAssignment
+
+            var assignmentQuery = _manufacturingDBContext.ProductionAssignment
+               .Where(a => a.ProductionOrderId == productionOrderId
+               && a.ProductionStepId == productionStepId
+               && a.DepartmentId == departmentId);
+
+            return (await GetProductionAssignment(assignmentQuery)).FirstOrDefault();
+        }
+
+
+        private async Task<IList<ProductionAssignmentModel>> GetProductionAssignment(IQueryable<ProductionAssignmentEntity> productionAssignments)
+        {
+            var assignments = await productionAssignments
                 .Include(a => a.ProductionAssignmentDetail)
-                .Where(a => a.ProductionOrderId == productionOrderId
-                && a.ProductionStepId == productionStepId
-                && a.DepartmentId == departmentId)
-                .FirstOrDefaultAsync();
-            return _mapper.Map<ProductionAssignmentModel>(assignment);
+                .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var poIds = assignments.Select(a => a.ProductionOrderId).Distinct().ToList();
+            var productionOrders = await _manufacturingDBContext.ProductionOrder.Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
+            var workLoads = await _productionOrderService.GetProductionWorkLoads(productionOrders, null);
+
+            var workloadInfos = workLoads.SelectMany(production =>
+                                        production.Value.SelectMany(step =>
+                                                                        step.Value.SelectMany(group =>
+                                                                                                    group.Details.Select(v => (ProductionStepWorkloadModel)v)
+                                                                                              )
+                                                                    )
+                                    )
+                .ToList();
+
+            foreach (var a in assignments)
+            {
+                var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
+                if (workloadInfo != null)
+                {
+                    var workload = a.AssignmentQuantity * workloadInfo.WorkloadConvertRate;
+                    a.SetAssignmentWorkload(workload);
+                    a.SetAssignmentWorkHour(workload / workloadInfo.Productivity);
+                }
+
+                foreach (var d in a.ProductionAssignmentDetail)
+                {
+                   
+                    if (workloadInfo != null)
+                    {
+                        var workload = d.QuantityPerDay * workloadInfo.WorkloadConvertRate;
+                        d.SetWorkloadPerDay(workload);
+                        d.SetWorkHourPerDay(workload / workloadInfo.Productivity);
+                    }
+                }
+            }
+
+            return assignments;
         }
 
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data)

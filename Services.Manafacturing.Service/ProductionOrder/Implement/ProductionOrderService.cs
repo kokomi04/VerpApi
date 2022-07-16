@@ -232,7 +232,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var workLoads = await GetProductionWorkLoads(new[] { productionOrderInfo }, null);
 
-            var result = new List<ProductionStepWorkloadModel>();
+            //var result = new List<ProductionStepWorkloadModel>();
 
             return workLoads.SelectMany(production =>
                                         production.Value.SelectMany(step =>
@@ -411,7 +411,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return result;
         }
 
-        private async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId)
+        public async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId)
         {
 
             var productionOrderIds = productionOrders.Select(p => p.ProductionOrderId).Distinct().ToList();
@@ -1357,17 +1357,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         #endregion
     }
 
-
-
-    class CapacityByStep : Dictionary<int, IList<ProductionCapacityDetailModel>>
-    {
-
-    }
-
-    class CapacityStepByProduction : Dictionary<long, CapacityByStep>
-    {
-
-    }
 
 
 }
