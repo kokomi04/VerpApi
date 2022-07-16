@@ -264,7 +264,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
 
             // Lấy thông tin giờ làm việc / ngày thay đổi trong khoảng thời gian
             var departmentChangeWorkingHours = await _organizationContext.WorkingHourInfo
-                .Where(wh => wh.StartDate > start && wh.StartDate <= end && calendarIds.Contains(wh.CalendarId))
+                .Where(wh => wh.StartDate <= end && calendarIds.Contains(wh.CalendarId))// wh.StartDate > start &&
                 .OrderBy(wh => wh.StartDate)
                 .ToListAsync();
 
@@ -392,9 +392,24 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                     var prevTimePoint = start;
                     foreach (var changeDepartmentCalendar in changeDepartmentCalendars)
                     {
+                        //Ngày áp dụng lịch
+
+                        workingHourInfos.Add(new WorkingHourInfoModel()
+                        {
+                            StartDate = changeDepartmentCalendar.StartDate.GetUnix(),
+                            WorkingHourPerDay = departmentChangeWorkingHours
+                            .Where(wh => wh.CalendarId == changeDepartmentCalendar.CalendarId
+                            && wh.StartDate <= changeDepartmentCalendar.StartDate)
+                            .OrderByDescending(wh => wh.StartDate)
+                            .FirstOrDefault()
+                            ?.WorkingHourPerDay ?? OrganizationConstants.WORKING_HOUR_PER_DAY
+                        });
+
+
                         if (prevCalendar != null)
                         {
                             // Thêm thông tin giờ làm / ngày
+
                             workingHourInfos.AddRange(departmentChangeWorkingHours
                                 .Where(wh => wh.CalendarId == prevCalendar.CalendarId
                                 && wh.StartDate > prevTimePoint
@@ -404,6 +419,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                     StartDate = wh.StartDate.GetUnix(),
                                     WorkingHourPerDay = wh.WorkingHourPerDay
                                 }));
+
 
                             // Thêm thông tin ngày nghỉ
                             for (var day = prevTimePoint; day < changeDepartmentCalendar.StartDate; day = day.AddDays(1))
@@ -666,7 +682,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
             }
         }
 
-      
+
         public async Task<bool> DeleteDepartmentOverHourInfo(int departmentId, long departmentOverHourInfoId)
         {
             try
