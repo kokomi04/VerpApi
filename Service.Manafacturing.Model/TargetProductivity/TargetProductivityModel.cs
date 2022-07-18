@@ -48,6 +48,7 @@ namespace VErp.Services.Manafacturing.Model
         public EnumProductivityTimeType ProductivityTimeTypeId { get; set; }
         [Display(Name = "Đối tượng tính năng suất")]
         public EnumProductivityResourceType ProductivityResourceTypeId { get; set; }
+        [Display(Name = "Ghi chú")]
         public string Note { get; set; }
         [Display(Name = "Cách tính KLCV")]
         public EnumWorkloadType WorkLoadTypeId { get; set; }
