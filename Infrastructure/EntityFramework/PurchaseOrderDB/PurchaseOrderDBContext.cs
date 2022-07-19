@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -51,6 +53,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchaseOrderMaterials> PurchaseOrderMaterials { get; set; }
         public virtual DbSet<PurchaseOrderOutsourceMapping> PurchaseOrderOutsourceMapping { get; set; }
         public virtual DbSet<PurchaseOrderTracked> PurchaseOrderTracked { get; set; }
+        public virtual DbSet<PurchaseOrderType> PurchaseOrderType { get; set; }
         public virtual DbSet<PurchasingRequest> PurchasingRequest { get; set; }
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
@@ -73,8 +76,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<VoucherTypeView> VoucherTypeView { get; set; }
         public virtual DbSet<VoucherTypeViewField> VoucherTypeViewField { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -83,11 +85,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
             modelBuilder.Entity<CuttingExcessMaterial>(entity =>
             {
-                entity.HasKey(e => new { e.CuttingExcessMaterialId });
+                entity.HasKey(e => e.CuttingExcessMaterialId)
+                    .IsClustered(false);
 
-                entity.Property(e => e.CuttingWorkSheetId).HasColumnType("bigint");
-
-                entity.Property(e => e.ExcessMaterial).HasMaxLength(255);
+                entity.Property(e => e.ExcessMaterial)
+                    .IsRequired()
+                    .HasMaxLength(255);
 
                 entity.Property(e => e.ProductQuantity).HasColumnType("decimal(32, 12)");
 
@@ -525,17 +528,23 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.AdditionNote).HasMaxLength(512);
 
+                entity.Property(e => e.AttachmentBill).HasMaxLength(512);
+
                 entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
 
                 entity.Property(e => e.DeliveryFee).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.DeliveryMethod).HasMaxLength(512);
+
                 entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PaymentInfo).HasMaxLength(512);
+
+                entity.Property(e => e.PaymentMethod).HasMaxLength(512);
 
                 entity.Property(e => e.PoDescription).HasMaxLength(1024);
 
@@ -671,6 +680,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchaseOrderId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchaseOrderTracked_PurchaseOrder");
+            });
+
+            modelBuilder.Entity<PurchaseOrderType>(entity =>
+            {
+                entity.Property(e => e.PurchaseOrderTypeId).ValueGeneratedNever();
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.PurchaseOrderTypeName).HasMaxLength(128);
             });
 
             modelBuilder.Entity<PurchasingRequest>(entity =>
@@ -870,6 +888,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.ToView("RefObjectApprovalStep");
 
                 entity.Property(e => e.ObjectApprovalStepId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.ObjectFieldEnable).HasMaxLength(1024);
             });
 
             modelBuilder.Entity<RefOutsourcePartRequest>(entity =>

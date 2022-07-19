@@ -52,6 +52,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? ExchangeRate { get; set; }
         public long? CurrencyId { get; set; }
         public decimal? TaxInMoney { get; set; }
+        public string DeliveryMethod { get; set; }
+        public string PaymentMethod { get; set; }
+        public string AttachmentBill { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
         public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }
