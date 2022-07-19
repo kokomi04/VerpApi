@@ -105,9 +105,9 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpGet]
         [Route("{voucherTypeId}/fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId, [FromQuery] int? areaId = null)
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int voucherTypeId, [FromQuery] int? areaId = null, [FromQuery] bool? isExport=null)
         {
-            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId, areaId);
+            return await _voucherDataService.GetFieldDataForMapping(voucherTypeId, areaId, isExport);
         }
 
 

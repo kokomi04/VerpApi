@@ -2036,7 +2036,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }, true);
         }
 
-        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false)
+        public async Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isExport = false)
         {
             var area = _accountancyDBContext.InputArea.AsQueryable();
             if (areaId > 0)
@@ -2044,48 +2044,61 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 area = area.Where(a => a.InputAreaId == areaId);
             }
 
-            var field = _accountancyDBContext.InputField.AsQueryable();
-            if (isViewOnly != true)
+
+            var fields = await (from af in _accountancyDBContext.InputAreaField
+                                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                                join a in area on af.InputAreaId equals a.InputAreaId
+                                where af.InputTypeId == inputTypeId
+                                orderby a.SortOrder, af.SortOrder
+                                select new ValidateField
+                                {
+                                    InputAreaFieldId = af.InputAreaFieldId,
+                                    Title = af.Title,
+                                    IsAutoIncrement = af.IsAutoIncrement,
+                                    IsHidden = af.IsHidden,
+                                    IsReadOnly = f.IsReadOnly,
+                                    IsRequire = af.IsRequire,
+                                    IsUnique = af.IsUnique,
+                                    Filters = af.Filters,
+                                    FieldName = f.FieldName,
+                                    DataTypeId = f.DataTypeId,
+                                    FormTypeId = f.FormTypeId,
+                                    RefTableCode = f.RefTableCode,
+                                    RefTableField = f.RefTableField,
+                                    RefTableTitle = f.RefTableTitle,
+                                    RegularExpression = af.RegularExpression,
+                                    IsMultiRow = a.IsMultiRow,
+                                    RequireFilters = af.RequireFilters,
+                                    AreaTitle = a.Title,
+                                }).ToListAsync();
+
+            if (isExport)
             {
-                field = field.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly);
+                var refFieldNames = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
+                     .SelectMany(f => f.RefTableTitle.Split(',').Select(r => $"{f.FieldName}_{r.Trim()}"));
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly || refFieldNames.Contains(f.FieldName))
+                    .ToList();
+            }
+            else
+            {
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                    .ToList();
+
             }
 
-            return await (from af in _accountancyDBContext.InputAreaField
-                          join f in field on af.InputFieldId equals f.InputFieldId
-                          join a in area on af.InputAreaId equals a.InputAreaId
-                          where af.InputTypeId == inputTypeId
-                          orderby a.SortOrder, af.SortOrder
-                          select new ValidateField
-                          {
-                              InputAreaFieldId = af.InputAreaFieldId,
-                              Title = af.Title,
-                              IsAutoIncrement = af.IsAutoIncrement,
-                              IsHidden = af.IsHidden,
-                              IsReadOnly = f.IsReadOnly,
-                              IsRequire = af.IsRequire,
-                              IsUnique = af.IsUnique,
-                              Filters = af.Filters,
-                              FieldName = f.FieldName,
-                              DataTypeId = f.DataTypeId,
-                              FormTypeId = f.FormTypeId,
-                              RefTableCode = f.RefTableCode,
-                              RefTableField = f.RefTableField,
-                              RefTableTitle = f.RefTableTitle,
-                              RegularExpression = af.RegularExpression,
-                              IsMultiRow = a.IsMultiRow,
-                              RequireFilters = af.RequireFilters,
-                              AreaTitle = a.Title,
-                          }).ToListAsync();
+
+            return fields;
+
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId, bool? isExport)
         {
             var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
 
 
             // Lấy thông tin field
-            var fields = await GetInputFields(inputTypeId, areaId, true);
+            var fields = await GetInputFields(inputTypeId, areaId, isExport == true);
 
             var result = new CategoryNameModel()
             {
