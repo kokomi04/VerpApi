@@ -14,8 +14,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? Date { get; set; }
         public int CustomerId { get; set; }
         public DeliveryDestinationModel DeliveryDestination { get; set; }
-        public string Content { get; set; }
-        public string AdditionNote { get; set; }
+        public string Requirement { get; set; }
+        public string DeliveryPolicy { get; set; }
         public decimal DeliveryFee { get; set; }
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
@@ -44,11 +44,15 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? CurrencyId { get; set; }
         public decimal? ExchangeRate { get; set; }
+
+        public string DeliveryMethod { get; set; }
+        public string PaymentMethod { get; set; }
+        public string AttachmentBill { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList
     {
-        public string PaymentInfo { get; set; }
+        public string OtherPolicy { get; set; }
 
         //public long? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
