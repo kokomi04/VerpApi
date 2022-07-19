@@ -126,8 +126,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.Date,
                             po.CustomerId,
                             po.DeliveryDestination,
-                            po.Content,
-                            po.AdditionNote,
+                            po.Requirement,
+                            po.DeliveryPolicy,
                             po.DeliveryFee,
                             po.OtherFee,
                             po.TotalMoney,
@@ -158,14 +158,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             CheckerFullName = checker.FullName,
                             CensorFullName = censor.FullName,
                             po.PurchaseOrderType,
+
+                            po.DeliveryMethod,
+                            po.PaymentMethod,
+                            po.AttachmentBill,
+
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
             {
 
                 query = query
                    .Where(q => q.PurchaseOrderCode.Contains(keyword)
-                    || q.Content.Contains(keyword)
-                    || q.AdditionNote.Contains(keyword)
+                    || q.Requirement.Contains(keyword)
+                    || q.DeliveryPolicy.Contains(keyword)
+                    || q.DeliveryMethod.Contains(keyword)
+                    || q.PaymentMethod.Contains(keyword)
+                    || q.AttachmentBill.Contains(keyword)
                     || q.CustomerCode.Contains(keyword)
                     || q.CustomerName.Contains(keyword)
                     || q.ProductCode.Contains(keyword)
@@ -242,8 +250,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     Date = info.Date.GetUnix(),
                     CustomerId = info.CustomerId,
                     DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
-                    Content = info.Content,
-                    AdditionNote = info.AdditionNote,
+                    Requirement = info.Requirement,
+                    DeliveryPolicy = info.DeliveryPolicy,
                     DeliveryFee = info.DeliveryFee,
                     OtherFee = info.OtherFee,
                     TotalMoney = info.TotalMoney,
@@ -264,7 +272,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CheckedDatetimeUtc = info.CheckedDatetimeUtc.GetUnix(),
                     CensorDatetimeUtc = info.CensorDatetimeUtc.GetUnix(),
                     DeliveryDate = info.DeliveryDate.GetUnix(),
-                    PurchaseOrderType = info.PurchaseOrderType
+                    PurchaseOrderType = info.PurchaseOrderType,
+
+                    DeliveryMethod = info.DeliveryMethod,
+                    PaymentMethod = info.DeliveryMethod,
+                    AttachmentBill = info.AttachmentBill,
                 });
             }
 
@@ -308,8 +320,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.Date,
                             po.CustomerId,
                             po.DeliveryDestination,
-                            po.Content,
-                            po.AdditionNote,
+                            po.Requirement,
+                            po.DeliveryPolicy,
                             po.DeliveryFee,
                             po.OtherFee,
                             po.TotalMoney,
@@ -376,15 +388,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                             po.CurrencyId,
                             pod.ExchangedMoney,
-                            po.ExchangeRate
+                            po.ExchangeRate,
+
+                            po.DeliveryMethod,
+                            po.PaymentMethod,
+                            po.AttachmentBill,
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query
                     .Where(q => q.PurchaseOrderCode.Contains(keyword)
-                    || q.Content.Contains(keyword)
-                    || q.AdditionNote.Contains(keyword)
+                    || q.Requirement.Contains(keyword)
+                    || q.DeliveryPolicy.Contains(keyword)
+                    || q.DeliveryMethod.Contains(keyword)
+                    || q.PaymentMethod.Contains(keyword)
+                    || q.AttachmentBill.Contains(keyword)
                     || q.CustomerCode.Contains(keyword)
                     || q.CustomerName.Contains(keyword)
                     || q.ProductCode.Contains(keyword)
@@ -488,8 +507,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     Date = item.Date.GetUnix(),
                     CustomerId = item.CustomerId,
                     DeliveryDestination = item.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
-                    Content = item.Content,
-                    AdditionNote = item.AdditionNote,
+                    Requirement = item.Requirement,
+                    DeliveryPolicy = item.DeliveryPolicy,
+
                     DeliveryFee = item.DeliveryFee,
                     OtherFee = item.OtherFee,
                     TotalMoney = item.TotalMoney,
@@ -542,7 +562,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     CurrencyId = item.CurrencyId,
                     ExchangedMoney = item.ExchangedMoney,
                     ExchangeRate = item.ExchangeRate,
-                    SortOrder = item.SortOrder
+                    SortOrder = item.SortOrder,
+
+                    DeliveryMethod = item.DeliveryMethod,
+                    PaymentMethod = item.DeliveryMethod,
+                    AttachmentBill = item.AttachmentBill,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
@@ -583,15 +607,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchaseOrderCode = info.PurchaseOrderCode,
                 Date = info.Date.GetUnix(),
                 CustomerId = info.CustomerId,
-                PaymentInfo = info.PaymentInfo,
+                OtherPolicy = info.OtherPolicy,
 
                 DeliveryDate = info.DeliveryDate?.GetUnix(),
                 DeliveryUserId = info.DeliveryUserId,
                 DeliveryCustomerId = info.DeliveryCustomerId,
 
                 DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
-                Content = info.Content,
-                AdditionNote = info.AdditionNote,
+                Requirement = info.Requirement,
+                DeliveryPolicy = info.DeliveryPolicy,
                 DeliveryFee = info.DeliveryFee,
                 OtherFee = info.OtherFee,
                 TotalMoney = info.TotalMoney,
@@ -616,6 +640,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 TaxInMoney = info.TaxInMoney,
                 CurrencyId = info.CurrencyId,
                 ExchangeRate = info.ExchangeRate,
+
+                DeliveryMethod = info.DeliveryMethod,
+                PaymentMethod = info.DeliveryMethod,
+                AttachmentBill = info.AttachmentBill,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder)
@@ -701,13 +729,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PurchaseOrderCode = model.PurchaseOrderCode,
                     CustomerId = model.CustomerId,
                     Date = model.Date.UnixToDateTime(),
-                    PaymentInfo = model.PaymentInfo,
+                    OtherPolicy = model.OtherPolicy,
                     DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
                     DeliveryUserId = model.DeliveryUserId,
                     DeliveryCustomerId = model.DeliveryCustomerId,
                     DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
-                    Content = model.Content,
-                    AdditionNote = model.AdditionNote,
+                    Requirement = model.Requirement,
+                    DeliveryPolicy = model.DeliveryPolicy,
                     PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
                     PoDescription = model.PoDescription,
                     IsApproved = null,
@@ -729,7 +757,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     TaxInMoney = model.TaxInMoney,
 
                     CurrencyId = model.CurrencyId,
-                    ExchangeRate = model.ExchangeRate
+                    ExchangeRate = model.ExchangeRate,
+
+                    DeliveryMethod = model.DeliveryMethod,
+                    PaymentMethod = model.DeliveryMethod,
+                    AttachmentBill = model.AttachmentBill,
                 };
 
                 if (po.DeliveryDestination?.Length > 1024)
@@ -884,14 +916,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.CustomerId = model.CustomerId;
                 info.Date = model.Date.UnixToDateTime();
-                info.PaymentInfo = model.PaymentInfo;
+                info.OtherPolicy = model.OtherPolicy;
                 info.DeliveryDate = model.DeliveryDate?.UnixToDateTime();
                 info.DeliveryUserId = model.DeliveryUserId;
                 info.DeliveryCustomerId = model.DeliveryCustomerId;
 
                 info.DeliveryDestination = model.DeliveryDestination.JsonSerialize();
-                info.Content = model.Content;
-                info.AdditionNote = model.AdditionNote;
+                info.Requirement = model.Requirement;
+                info.DeliveryPolicy = model.DeliveryPolicy;
                 info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff;
                 info.IsChecked = null;
                 info.IsApproved = null;
@@ -912,6 +944,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 info.CurrencyId = model.CurrencyId;
                 info.ExchangeRate = model.ExchangeRate;
+
+                info.DeliveryMethod = model.DeliveryMethod;
+                info.PaymentMethod = model.DeliveryMethod;
+                info.AttachmentBill = model.AttachmentBill;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
