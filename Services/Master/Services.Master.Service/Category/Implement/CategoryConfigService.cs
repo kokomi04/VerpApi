@@ -666,7 +666,7 @@ namespace VErp.Services.Master.Service.Category
                 }
 
                 // Validate text size
-                if (fields.Select(f => f.DataTypeId == (int)EnumDataType.Text && f.DataSize <= 0).Count() > 0)
+                if (fields.Any(f => f.DataTypeId == (int)EnumDataType.Text && f.DataSize <= 0))
                 {
                     throw new BadRequestException(CategoryErrorCode.DataSizeInValid);
                 }    
