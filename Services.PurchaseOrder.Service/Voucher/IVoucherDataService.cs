@@ -25,7 +25,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
 
         Task<bool> DeleteVoucherBill(int inputTypeId, long inputValueBillId);
 
-        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null);
+        Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId = null, bool? isExport = null);
 
         Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool isViewOnly = false);
 

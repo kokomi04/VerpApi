@@ -23,9 +23,9 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
-        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false);
+        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isExport = false);
 
-        Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId);
+        Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId, bool? isExport);
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
