@@ -760,7 +760,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ExchangeRate = model.ExchangeRate,
 
                     DeliveryMethod = model.DeliveryMethod,
-                    PaymentMethod = model.DeliveryMethod,
+                    PaymentMethod = model.PaymentMethod,
                     AttachmentBill = model.AttachmentBill,
                 };
 
@@ -946,7 +946,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.ExchangeRate = model.ExchangeRate;
 
                 info.DeliveryMethod = model.DeliveryMethod;
-                info.PaymentMethod = model.DeliveryMethod;
+                info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
 
                 if (info.DeliveryDestination?.Length > 1024)
