@@ -126,7 +126,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToListAsync();
 
             var poIds = assignments.Select(a => a.ProductionOrderId).Distinct().ToList();
-            var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po=>po.ProductionOrderDetail).Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
+            var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail).Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
             var workLoads = await _productionOrderService.GetProductionWorkLoads(productionOrders, null);
 
             var workloadInfos = workLoads.SelectMany(production =>
@@ -140,22 +140,48 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var a in assignments)
             {
-                var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
+                var workloads = workloadInfos.Where(s => s.ProductionStepId == a.ProductionStepId);
+                var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
+
+
                 if (workloadInfo != null)
                 {
-                    var workload = a.AssignmentQuantity * workloadInfo.WorkloadConvertRate;
-                    a.SetAssignmentWorkload(workload);
-                    a.SetAssignmentWorkHour(workload / workloadInfo.Productivity);
+
+                    decimal totalWorkload = 0;
+                    decimal? totalHours = 0;
+                    foreach (var w in workloads)
+                    {
+                        var assignQuantity = a.AssignmentQuantity * w.Quantity / workloadInfo.Quantity;
+                        var workload = assignQuantity * w.WorkloadConvertRate;
+                        var hour = workload / w.Productivity;
+                        totalWorkload += workload;
+                        totalHours += hour;
+                    }
+
+
+                    a.SetAssignmentWorkload(totalWorkload);
+                    a.SetAssignmentWorkHour(totalHours);
                 }
 
                 foreach (var d in a.ProductionAssignmentDetail)
                 {
-                   
+
                     if (workloadInfo != null)
                     {
-                        var workload = d.QuantityPerDay * workloadInfo.WorkloadConvertRate;
-                        d.SetWorkloadPerDay(workload);
-                        d.SetWorkHourPerDay(workload / workloadInfo.Productivity);
+                        decimal? totalWorkload = 0;
+                        decimal? totalHours = 0;
+                        foreach (var w in workloads)
+                        {
+                            var assignQuantity = d.QuantityPerDay * w.Quantity / workloadInfo.Quantity;
+                            var workload = assignQuantity * w.WorkloadConvertRate;
+                            var hour = workload / w.Productivity;
+                            totalWorkload += workload;
+                            totalHours += hour;
+                        }
+
+                        d.SetWorkloadPerDay(totalWorkload);
+                        d.SetWorkHourPerDay(totalHours);
+
                     }
                 }
             }
