@@ -140,7 +140,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             foreach (var a in assignments)
             {
-                var workloads = workloadInfos.Where(s => s.ProductionStepId == a.ProductionStepId);
+                var workloads = workloadInfos.Where(s => s.ProductionStepId == a.ProductionStepId).ToList();
                 var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
 
 
@@ -151,11 +151,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     decimal? totalHours = 0;
                     foreach (var w in workloads)
                     {
-                        var assignQuantity = a.AssignmentQuantity * w.Quantity / workloadInfo.Quantity;
+
+                        var assignQuantity = workloadInfo.Quantity > 0 ? a.AssignmentQuantity * w.Quantity / workloadInfo.Quantity : 0;
                         var workload = assignQuantity * w.WorkloadConvertRate;
-                        var hour = workload / w.Productivity;
+                        var hour = w.Productivity > 0 ? workload / w.Productivity : 0;
                         totalWorkload += workload;
                         totalHours += hour;
+
+
+
                     }
 
 
@@ -172,11 +176,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         decimal? totalHours = 0;
                         foreach (var w in workloads)
                         {
-                            var assignQuantity = d.QuantityPerDay * w.Quantity / workloadInfo.Quantity;
+
+                            var assignQuantity = workloadInfo.Quantity > 0 ? d.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
                             var workload = assignQuantity * w.WorkloadConvertRate;
-                            var hour = workload / w.Productivity;
+                            var hour = w.Productivity > 0 ? workload / w.Productivity : 0;
                             totalWorkload += workload;
                             totalHours += hour;
+
                         }
 
                         d.SetWorkloadPerDay(totalWorkload);
