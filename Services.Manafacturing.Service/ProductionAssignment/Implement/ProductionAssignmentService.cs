@@ -920,7 +920,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }
                 }
 
-                var rate = a.WorkloadConvertRate ?? (targetByStep.Rate ?? 1);
+                var rate = a.WorkloadConvertRate ?? (targetByStep?.Rate ?? 1);
                 return new
                 {
                     a.DepartmentId,
