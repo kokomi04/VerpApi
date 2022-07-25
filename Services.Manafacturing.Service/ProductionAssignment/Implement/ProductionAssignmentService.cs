@@ -733,19 +733,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId)
-        {
-            var resultData = await DepartmentsFreeDates(new[] { departmentId });
-
-            return resultData.FirstOrDefault();
-        }
-
-        public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(IList<int> departmentIds)
+     
+        public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(DepartmentAssignFreeDateInput req)
         {
 
             var parammeters = new SqlParameter[]
             {
-                departmentIds.ToSqlParameter("@DepartmentIds")
+                req.DepartmentIds.ToSqlParameter("@DepartmentIds"),
+                req.ExeptProductionOrderIds.ToSqlParameter("@ExeptProductionOrderIds"),
             };
             var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters, CommandType.StoredProcedure);
             return resultData;
