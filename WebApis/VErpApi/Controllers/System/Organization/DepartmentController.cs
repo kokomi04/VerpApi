@@ -42,6 +42,15 @@ namespace VErpApi.Controllers.System
         }
 
         [HttpPost]
+        [Route("GetInfosByIds")]
+        [GlobalApi]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<DepartmentModel>> GetInfosByIds([FromBody] IList<int> departmentIds)
+        {
+            return await _departmentService.GetListByIds(departmentIds);
+        }
+
+        [HttpPost]
         [Route("")]
         public async Task<int> AddDepartment([FromBody] DepartmentModel department)
         {

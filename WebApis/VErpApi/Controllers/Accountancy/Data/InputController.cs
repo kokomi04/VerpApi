@@ -112,9 +112,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId, [FromQuery] bool? isExport)
         {
-            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId);
+            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId, isExport);
         }
 
         [HttpPost]

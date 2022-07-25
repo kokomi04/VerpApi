@@ -1943,7 +1943,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }, true);
         }
 
-        public async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool isViewOnly = false)
+        public async Task<List<ValidateVoucherField>> GetVoucherFields(int voucherTypeId, int? areaId = null, bool isExport = false)
         {
             var area = _purchaseOrderDBContext.VoucherArea.AsQueryable();
             if (areaId > 0)
@@ -1952,48 +1952,59 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             }
 
-            var field = _purchaseOrderDBContext.VoucherField.AsQueryable();
-            if (isViewOnly != true)
+
+            var fields = await (from af in _purchaseOrderDBContext.VoucherAreaField
+                                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
+                                join a in area on af.VoucherAreaId equals a.VoucherAreaId
+                                where af.VoucherTypeId == voucherTypeId
+                                orderby a.SortOrder, af.SortOrder
+                                select new ValidateVoucherField
+                                {
+                                    VoucherAreaFieldId = af.VoucherAreaFieldId,
+                                    Title = af.Title,
+                                    IsAutoIncrement = af.IsAutoIncrement,
+                                    IsRequire = af.IsRequire,
+                                    IsUnique = af.IsUnique,
+                                    Filters = af.Filters,
+                                    FieldName = f.FieldName,
+                                    DataTypeId = f.DataTypeId,
+                                    FormTypeId = f.FormTypeId,
+                                    RefTableCode = f.RefTableCode,
+                                    RefTableField = f.RefTableField,
+                                    RefTableTitle = f.RefTableTitle,
+                                    RegularExpression = af.RegularExpression,
+                                    IsMultiRow = a.IsMultiRow,
+                                    RequireFilters = af.RequireFilters,
+                                    IsReadOnly = f.IsReadOnly,
+                                    IsHidden = af.IsHidden,
+                                    AreaTitle = a.Title
+                                }).ToListAsync();
+
+            if (isExport)
             {
-                field = field.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly);
+                var refFieldNames = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
+                     .SelectMany(f => f.RefTableTitle.Split(',').Select(r => $"{f.FieldName}_{r.Trim()}"));
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly || refFieldNames.Contains(f.FieldName))
+                    .ToList();
+            }
+            else
+            {
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                    .ToList();
+
             }
 
-            return await (from af in _purchaseOrderDBContext.VoucherAreaField
-                          join f in field on af.VoucherFieldId equals f.VoucherFieldId
-                          join a in area on af.VoucherAreaId equals a.VoucherAreaId
-                          where af.VoucherTypeId == voucherTypeId
-                          orderby a.SortOrder, af.SortOrder
-                          select new ValidateVoucherField
-                          {
-                              VoucherAreaFieldId = af.VoucherAreaFieldId,
-                              Title = af.Title,
-                              IsAutoIncrement = af.IsAutoIncrement,
-                              IsRequire = af.IsRequire,
-                              IsUnique = af.IsUnique,
-                              Filters = af.Filters,
-                              FieldName = f.FieldName,
-                              DataTypeId = f.DataTypeId,
-                              FormTypeId = f.FormTypeId,
-                              RefTableCode = f.RefTableCode,
-                              RefTableField = f.RefTableField,
-                              RefTableTitle = f.RefTableTitle,
-                              RegularExpression = af.RegularExpression,
-                              IsMultiRow = a.IsMultiRow,
-                              RequireFilters = af.RequireFilters,
-                              IsReadOnly = f.IsReadOnly,
-                              IsHidden = af.IsHidden,
-                              AreaTitle = a.Title
-                          }).ToListAsync();
+            return fields;
         }
 
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int voucherTypeId, int? areaId, bool? isExport = null)
         {
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.AsNoTracking().FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
 
 
             // Lấy thông tin field
-            var fields = await GetVoucherFields(voucherTypeId, areaId, true);
+            var fields = await GetVoucherFields(voucherTypeId, areaId, isExport == true);
 
             var result = new CategoryNameModel()
             {

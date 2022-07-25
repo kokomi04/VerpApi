@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -217,6 +218,29 @@ namespace VErp.Services.Manafacturing.Service
                 Fields = new List<CategoryFieldNameModel>()
             };
             var fields = ExcelUtils.GetFieldNameModels<TargetProductivityDetailModel>();
+
+            var productivityTimeTypeField = fields.First(f => f.FieldName.Equals(nameof(TargetProductivityDetailModel.ProductivityTimeTypeId)));
+
+            var productivityTimeTypes = EnumExtensions.GetEnumMembers<EnumProductivityTimeType>();
+
+            productivityTimeTypeField.FieldTitle += $" ({string.Join(", ", productivityTimeTypes.Select(t => $"{(int)t.Enum}: {t.Description}"))})";
+
+
+
+            var productivityResourceTypeField = fields.First(f => f.FieldName.Equals(nameof(TargetProductivityDetailModel.ProductivityResourceTypeId)));
+
+            var productivityResourceTypes = EnumExtensions.GetEnumMembers<EnumProductivityResourceType>();
+
+            productivityResourceTypeField.FieldTitle += $" ({string.Join(", ", productivityResourceTypes.Select(t => $"{(int)t.Enum}: {t.Description}"))})";
+
+
+            var workLoadTypeIdField = fields.First(f => f.FieldName.Equals(nameof(TargetProductivityDetailModel.WorkLoadTypeId)));
+
+            var workLoadTypes = EnumExtensions.GetEnumMembers<EnumWorkloadType>();
+
+            workLoadTypeIdField.FieldTitle += $" ({string.Join(", ", workLoadTypes.Select(t => $"{(int)t.Enum}: {t.Description}"))})";
+
+
             result.Fields = fields;
             return result;
         }

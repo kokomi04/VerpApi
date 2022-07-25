@@ -77,13 +77,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         PurchaseOrderCode = model.PurchaseOrderCode,
                         CustomerId = model.CustomerId,
                         Date = model.Date.UnixToDateTime(),
-                        PaymentInfo = model.PaymentInfo,
+                        OtherPolicy = model.OtherPolicy,
                         DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
                         DeliveryUserId = model.DeliveryUserId,
                         DeliveryCustomerId = model.DeliveryCustomerId,
                         DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
-                        Content = model.Content,
-                        AdditionNote = model.AdditionNote,
+                        Requirement = model.Requirement,
+                        DeliveryPolicy = model.DeliveryPolicy,
                         PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
                         IsApproved = null,
                         IsChecked = null,
@@ -251,14 +251,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     info.CustomerId = model.CustomerId;
                     info.Date = model.Date.UnixToDateTime();
-                    info.PaymentInfo = model.PaymentInfo;
+                    info.OtherPolicy = model.OtherPolicy;
                     info.DeliveryDate = model.DeliveryDate?.UnixToDateTime();
                     info.DeliveryUserId = model.DeliveryUserId;
                     info.DeliveryCustomerId = model.DeliveryCustomerId;
 
                     info.DeliveryDestination = model.DeliveryDestination.JsonSerialize();
-                    info.Content = model.Content;
-                    info.AdditionNote = model.AdditionNote;
+                    info.Requirement = model.Requirement;
+                    info.DeliveryPolicy = model.DeliveryPolicy;
                     info.PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff;
                     info.IsChecked = null;
                     info.IsApproved = null;
@@ -598,15 +598,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PurchaseOrderCode = info.PurchaseOrderCode,
                 Date = info.Date.GetUnix(),
                 CustomerId = info.CustomerId,
-                PaymentInfo = info.PaymentInfo,
+                OtherPolicy = info.OtherPolicy,
 
                 DeliveryDate = info.DeliveryDate?.GetUnix(),
                 DeliveryUserId = info.DeliveryUserId,
                 DeliveryCustomerId = info.DeliveryCustomerId,
 
                 DeliveryDestination = info.DeliveryDestination?.JsonDeserialize<DeliveryDestinationModel>(),
-                Content = info.Content,
-                AdditionNote = info.AdditionNote,
+                Requirement = info.Requirement,
+                DeliveryPolicy = info.DeliveryPolicy,
                 DeliveryFee = info.DeliveryFee,
                 OtherFee = info.OtherFee,
                 TotalMoney = info.TotalMoney,
