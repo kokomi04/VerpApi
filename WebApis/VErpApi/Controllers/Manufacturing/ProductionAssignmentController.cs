@@ -103,17 +103,10 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("DepartmentsFreeDates")]
-        public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates([FromBody] IList<int> departmentIds)
+        public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates([FromBody] DepartmentAssignFreeDateInput req)
         {
-            return await _productionAssignmentService.DepartmentsFreeDates(departmentIds);
-        }
-
-        [HttpGet]
-        [Route("departments/{departmentId}/FreeDate")]
-        public async Task<DepartmentAssignFreeDate> DepartmentFreeDate([FromRoute] int departmentId)
-        {
-            return await _productionAssignmentService.DepartmentFreeDate(departmentId);
-        }
+            return await _productionAssignmentService.DepartmentsFreeDates(req);
+        }      
 
 
         [HttpPut]

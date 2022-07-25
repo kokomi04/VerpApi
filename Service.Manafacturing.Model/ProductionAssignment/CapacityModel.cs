@@ -51,4 +51,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public int DepartmentId { get; set; }
         public long FreeDate { get; set; }
     }
+
+    public class DepartmentAssignFreeDateInput
+    {
+        public IList<int> DepartmentIds { get; set; }
+        public IList<long> ExeptProductionOrderIds { get; set; }
+    }
+
 }
