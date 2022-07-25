@@ -17,8 +17,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public int CompletedQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         //public decimal Productivity { get; set; }
-        public long StartDate { get; set; }
-        public long EndDate { get; set; }
+        public long? StartDate { get; set; }
+        public long? EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public bool IsManualFinish { get; set; }
         public bool IsManualSetDate { get; set; }
