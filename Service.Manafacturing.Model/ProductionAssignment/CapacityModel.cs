@@ -55,7 +55,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     public class DepartmentAssignFreeDateInput
     {
         public IList<int> DepartmentIds { get; set; }
-        public IList<long> ExeptProductionOrderIds { get; set; }
+        public IList<long> ExceptProductionOrderIds { get; set; }
     }
 
 }
