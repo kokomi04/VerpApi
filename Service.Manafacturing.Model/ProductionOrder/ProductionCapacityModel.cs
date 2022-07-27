@@ -10,11 +10,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public IList<StepInfo> StepInfo { get; set; }
         public IList<ProductionOrderCapacityModel> ProductionOrder { get; set; }
         public IDictionary<int, decimal> DepartmentHour { get; set; }
+        public IDictionary<int, decimal> AssignedStepHours { get; set; }
+
         public ProductionCapacityModel()
         {
             StepInfo = new List<StepInfo>();
             ProductionOrder = new List<ProductionOrderCapacityModel>();
             DepartmentHour = new Dictionary<int, decimal>();
+            AssignedStepHours = new Dictionary<int, decimal>();
         }
     }
 
@@ -52,6 +55,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionCapacityDetailModel
     {
+        public long ProductionOrderId { get; set; }
+        public int StepId { get; set; }
         public long ObjectId { get; set; }
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
@@ -76,7 +81,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     }
 
 
-    public class ProductionStepWorkloadAssignModel: ProductionStepWorkloadModel
+    public class ProductionStepWorkloadAssignModel : ProductionStepWorkloadModel
     {
         public bool IsSelectionAssign { get; set; }
         public decimal? AssignQuantity { get; set; }
@@ -90,6 +95,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal RateInPercent { get; set; }
 
         public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
+
+        public IList<CapacityAssignInfo> AssignInfos { get; set; }
 
     }
 

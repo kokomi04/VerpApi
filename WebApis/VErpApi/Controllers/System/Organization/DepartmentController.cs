@@ -33,10 +33,10 @@ namespace VErpApi.Controllers.System
             return await _departmentService.GetList(keyword, departmentIds, isProduction, isActived, page, size);
         }
 
-        [HttpGet]
-        [Route("GetByIds")]
+        [HttpPost]
+        [Route("GetInfosByIds")]
         [GlobalApi]
-        public async Task<IList<DepartmentModel>> GetByIds([FromQuery] IList<int> departmentIds)
+        public async Task<IList<DepartmentModel>> GetByIds([FromBody] IList<int> departmentIds)
         {
             return await _departmentService.GetListByIds(departmentIds);
         }

@@ -491,6 +491,22 @@ namespace VErp.Commons.Library
             return result;
         }
 
+        public static T ToCustomDictionary<T, TSource, TKey, TElement>(this IEnumerable<TSource> source, T initData, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector) where T : Dictionary<TKey, TElement>, new()
+        {
+            //var result = new T();// Activator.CreateInstance<T>(source.Count());
+            foreach (var item in source)
+            {
+                initData.Add(keySelector.Invoke(item), elementSelector.Invoke(item));
+            }
+
+            return initData;
+
+        }
+
+        public static IList<TSource> ToIList<TSource>(this IEnumerable<TSource> source)
+        {
+            return new List<TSource>(source);
+        }
 
     }
 }
