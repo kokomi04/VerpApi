@@ -489,6 +489,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin đầu ra và số giờ công cần
             var productionCapacityDetail = new CapacityStepByProduction();
 
+
             var workloadInfosGroups = workloadInfos
                 .GroupBy(w => new
                 {
@@ -507,6 +508,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     WorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value),
                     DetailSteps = g.Select(d =>
                     {
+                        
+
                         decimal? assignQuantity = null;
                         bool isSelectionAssign = false;
                         //var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
@@ -529,10 +532,63 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 assignQuantity = d.Quantity * rateQuantiy;
 
-                                byDates = byDateAssign.Select(a => new ProductionAssignmentDetailModel()
+                                byDates = byDateAssign.Select(a =>
                                 {
-                                    WorkDate = a.WorkDate,
-                                    QuantityPerDay = a.QuantityPerDay * rateQuantiy
+                                    var byDate = new ProductionAssignmentDetailModel()
+                                    {
+                                        WorkDate = a.WorkDate,
+                                        QuantityPerDay = a.QuantityPerDay * rateQuantiy
+                                    };
+
+                                    var workloads = workloadInfos.Where(s => s.ProductionStepId == d.ProductionStepId).ToList();
+                                    var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+
+
+                                    decimal? totalWorkload = 0;
+                                    decimal? totalHours = 0;
+                                    foreach (var w in workloads)
+                                    {
+                                        decimal? productivityByStep = null;
+
+                                        ProductTargetProductivityByStep target = null;
+                                        if (w.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                                        {
+                                            semiTargets.TryGetValue(w.ObjectId, out target);
+                                        }
+                                        else
+                                        {
+                                            productTargets.TryGetValue((int)w.ObjectId, out target);
+                                        }
+
+                                        ProductStepTargetProductivityDetail targetByStep = null;
+                                        target?.TryGetValue(w.StepId, out targetByStep);
+
+                                        if (targetByStep != null)
+                                        {
+
+                                            productivityByStep = targetByStep.TargetProductivity;
+                                            if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
+                                            {
+                                                productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
+                                            }
+
+                                        }
+
+
+                                        var assignQuantity = workloadInfo.Quantity > 0 ? a.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
+                                        var workload = assignQuantity * w.WorkloadConvertRate;
+                                        var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
+                                        totalWorkload += workload;
+                                        totalHours += hour;
+
+                                    }
+
+                                    byDate.SetWorkHourPerDay(totalHours);
+                                    byDate.SetWorkloadPerDay(totalWorkload);
+
+                                    return byDate;
+
+
                                 }).ToList();
                             }
 
