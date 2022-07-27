@@ -584,7 +584,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
                                 if (workInfo != null)
                                 {
-                                    var rateQuantiy = assignStep.AssignmentQuantity / workInfo.Quantity;
+                                    var rateQuantiy = workInfo.Quantity > 0 ? assignStep.AssignmentQuantity / workInfo.Quantity : 0;
 
                                     assignQuantity = d.Quantity * rateQuantiy;
 
