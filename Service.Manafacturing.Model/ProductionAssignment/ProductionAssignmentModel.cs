@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
@@ -25,7 +26,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal? RateInPercent { get; set; }
 
 
-     
+
 
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
@@ -87,7 +88,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     {
         public long WorkDate { get; set; }
         public decimal? QuantityPerDay { get; set; }
-      
+
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
@@ -142,5 +143,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsManualSetDate { get; set; }
         public decimal RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> Details { get; set; }
+    }
+
+    public class CapacityAssignInfo
+    {
+        public int DepartmentId { get; set; }
+        public decimal AssignQuantity { get; set; }
+        public decimal AssignWorkloadQuantity { get; set; }
+        public decimal AssignWorkHour { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsSelectionAssign { get; set; }
+        public bool IsManualSetDate { get; set; }
+        public decimal? RateInPercent { get; set; }
+        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
     }
 }

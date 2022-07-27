@@ -308,6 +308,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
             var departmentHour = new Dictionary<int, decimal>();
 
+            var assignedHours = new Dictionary<int, decimal>();
+            foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
+            {
+                foreach (var (stepId, capacities) in stepCapacity)
+                {
+                    if (!assignedHours.ContainsKey(stepId))
+                    {
+                        assignedHours.Add(stepId, 0);
+                    }
+
+                    assignedHours[stepId] += capacities.Sum(s => s.Details.Sum(d => d.AssignInfos.Sum(a => a.AssignWorkHour)));
+                }
+            }
 
             foreach (var departmentId in departmentIds)
             {
@@ -375,7 +388,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var result = new ProductionCapacityModel
             {
                 StepInfo = stepInfo,
-                DepartmentHour = departmentHour
+                DepartmentHour = departmentHour,
+                AssignedStepHours = assignedHours
             };
 
             foreach (var productionOrder in productionOrders)
@@ -480,17 +494,47 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var productionStepIds = workloadInfos.Select(w => w.ProductionStepId).Distinct().ToList();
 
             // Lấy thông tin phân công
-            var productionAssignments = _manufacturingDBContext.ProductionAssignment
+            var productionAssignments1 = _manufacturingDBContext.ProductionAssignment
                 .Include(pa => pa.ProductionAssignmentDetail)
-                .Where(pa => productionStepIds.Contains(pa.ProductionStepId) && pa.DepartmentId == assignDepartmentId)
+                .Where(pa => productionStepIds.Contains(pa.ProductionStepId))
                 .ToList();
 
 
             // Lấy thông tin đầu ra và số giờ công cần
-            var productionCapacityDetail = new CapacityStepByProduction();
+            // var productionCapacityDetail = new CapacityStepByProduction();
 
+            Func<EnumProductionStepLinkDataObjectType, long, int, decimal?> getProductivity = (EnumProductionStepLinkDataObjectType objectTypeId, long objectId, int stepId) =>
+            {
+                decimal? productivityByStep = null;
 
-            var workloadInfosGroups = workloadInfos
+                ProductTargetProductivityByStep target = null;
+                if (objectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                {
+                    semiTargets.TryGetValue(objectId, out target);
+                }
+                else
+                {
+                    productTargets.TryGetValue((int)objectId, out target);
+                }
+
+                ProductStepTargetProductivityDetail targetByStep = null;
+                target?.TryGetValue(stepId, out targetByStep);
+
+                if (targetByStep != null)
+                {
+
+                    productivityByStep = targetByStep.TargetProductivity;
+                    if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
+                    {
+                        productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
+                    }
+
+                }
+
+                return productivityByStep;
+            };
+
+            return workloadInfos
                 .GroupBy(w => new
                 {
                     w.ProductionOrderId,
@@ -498,204 +542,137 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     w.ObjectId,
                     w.ObjectTypeId
                 })
-                .Select(g => new
+                .Select(g =>
                 {
-                    g.Key.ProductionOrderId,
-                    g.Key.StepId,
-                    g.Key.ObjectId,
-                    g.Key.ObjectTypeId,
-                    Quantity = g.Sum(w => w.Quantity),
-                    WorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value),
-                    DetailSteps = g.Select(d =>
+
+                    decimal? productivityByStep = getProductivity(g.Key.ObjectTypeId, g.Key.ObjectId, g.Key.StepId);
+
+                    var totalWorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value);
+                    return new ProductionCapacityDetailModel
                     {
-                        
-
-                        decimal? assignQuantity = null;
-                        bool isSelectionAssign = false;
-                        //var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-                        //if (assign != null)
-                        //{
-                        //    assignQuantity = assign.AssignmentQuantity;
-                        //}
-
-                        var assignStep = productionAssignments.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId);
-
-                        var byDates = new List<ProductionAssignmentDetailModel>();
-
-                        if (assignStep != null)
+                        ProductionOrderId = g.Key.ProductionOrderId,
+                        StepId = g.Key.StepId,
+                        ObjectId = g.Key.ObjectId,
+                        ObjectTypeId = g.Key.ObjectTypeId,
+                        Quantity = g.Sum(w => w.Quantity),
+                        WorkloadQuantity = totalWorkloadQuantity,
+                        TargetProductivity = productivityByStep ?? 0,
+                        WorkHour = productivityByStep > 0 ? totalWorkloadQuantity / productivityByStep.Value : 0,
+                        Details = g.Select(d =>
                         {
-                            var workInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
-                            var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
-                            if (workInfo != null)
+
+                            //var assign = productionAssignments.FirstOrDefault(a => a.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                            //if (assign != null)
+                            //{
+                            //    assignQuantity = assign.AssignmentQuantity;
+                            //}
+
+                            var departmentIds = productionAssignments1.Where(a => a.ProductionStepId == d.ProductionStepId).Select(a => a.DepartmentId).ToList();
+
+
+                            var assignInfos = new List<CapacityAssignInfo>();
+                            foreach (var depId in departmentIds)
                             {
-                                var rateQuantiy = assignStep.AssignmentQuantity / workInfo.Quantity;
+                                decimal assignQuantity = 0;
+                                bool isSelectionAssign = false;
 
-                                assignQuantity = d.Quantity * rateQuantiy;
+                                var assignStep = productionAssignments1.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId && w.DepartmentId == depId);
 
-                                byDates = byDateAssign.Select(a =>
+                                var byDates = new List<ProductionAssignmentDetailModel>();
+
+                                var workInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
+                                if (workInfo != null)
                                 {
-                                    var byDate = new ProductionAssignmentDetailModel()
+                                    var rateQuantiy = assignStep.AssignmentQuantity / workInfo.Quantity;
+
+                                    assignQuantity = d.Quantity * rateQuantiy;
+
+                                    byDates = byDateAssign.Select(a =>
                                     {
-                                        WorkDate = a.WorkDate,
-                                        QuantityPerDay = a.QuantityPerDay * rateQuantiy
-                                    };
-
-                                    var workloads = workloadInfos.Where(s => s.ProductionStepId == d.ProductionStepId).ToList();
-                                    var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-
-
-                                    decimal? totalWorkload = 0;
-                                    decimal? totalHours = 0;
-                                    foreach (var w in workloads)
-                                    {
-                                        decimal? productivityByStep = null;
-
-                                        ProductTargetProductivityByStep target = null;
-                                        if (w.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
+                                        var byDate = new ProductionAssignmentDetailModel()
                                         {
-                                            semiTargets.TryGetValue(w.ObjectId, out target);
-                                        }
-                                        else
+                                            WorkDate = a.WorkDate,
+                                            QuantityPerDay = a.QuantityPerDay * rateQuantiy
+                                        };
+
+                                        var workloads = workloadInfos.Where(s => s.ProductionStepId == d.ProductionStepId).ToList();
+                                        var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+
+
+                                        decimal? totalWorkload = 0;
+                                        decimal? totalHours = 0;
+                                        foreach (var w in workloads)
                                         {
-                                            productTargets.TryGetValue((int)w.ObjectId, out target);
-                                        }
-
-                                        ProductStepTargetProductivityDetail targetByStep = null;
-                                        target?.TryGetValue(w.StepId, out targetByStep);
-
-                                        if (targetByStep != null)
-                                        {
-
-                                            productivityByStep = targetByStep.TargetProductivity;
-                                            if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
-                                            {
-                                                productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
-                                            }
+                                            var assignQuantity = workloadInfo.Quantity > 0 ? a.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
+                                            var workload = assignQuantity * w.WorkloadConvertRate;
+                                            var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
+                                            totalWorkload += workload;
+                                            totalHours += hour;
 
                                         }
 
+                                        byDate.SetWorkHourPerDay(totalHours);
+                                        byDate.SetWorkloadPerDay(totalWorkload);
 
-                                        var assignQuantity = workloadInfo.Quantity > 0 ? a.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
-                                        var workload = assignQuantity * w.WorkloadConvertRate;
-                                        var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
-                                        totalWorkload += workload;
-                                        totalHours += hour;
-
-                                    }
-
-                                    byDate.SetWorkHourPerDay(totalHours);
-                                    byDate.SetWorkloadPerDay(totalWorkload);
-
-                                    return byDate;
+                                        return byDate;
 
 
-                                }).ToList();
+                                    }).ToList();
+                                }
+
+                                isSelectionAssign = d.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId;
+
+                                var wokloadQuantiy = assignQuantity * d.WorkloadConvertRate.Value;
+                                assignInfos.Add(new CapacityAssignInfo()
+                                {
+                                    DepartmentId = depId,
+                                    AssignQuantity = assignQuantity,
+                                    AssignWorkloadQuantity = wokloadQuantiy,
+                                    AssignWorkHour = productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
+                                    StartDate = assignStep?.StartDate,
+                                    EndDate = assignStep?.EndDate,
+                                    IsManualSetDate = assignStep.IsManualSetDate,
+                                    RateInPercent = assignStep.RateInPercent,
+                                    IsSelectionAssign = isSelectionAssign,
+                                    ByDates = byDates
+                                });
                             }
 
-                            isSelectionAssign = d.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId;
 
-                        }
+                            var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
 
-
-                        return new
-                        {
-                            d.ProductionStepId,
-                            d.ProductionStepTitle,
-                            d.ProductionStepLinkDataId,
-                            d.Quantity,
-                            IsSelectionAssign = isSelectionAssign,
-                            WorkloadConvertRate = d.WorkloadConvertRate.Value,
-                            WorkloadQuantity = d.Quantity * d.WorkloadConvertRate.Value,
-                            AssignQuantity = assignQuantity,
-                            AssignWorkloadQuantity = assignQuantity * d.WorkloadConvertRate.Value,
-                            assignStep?.StartDate,
-                            assignStep?.EndDate,
-                            assignStep?.IsManualSetDate,
-                            assignStep?.RateInPercent,
-                            ByDates = byDates
-                        };
-                    })
-                })
-                .GroupBy(w => w.ProductionOrderId)
-                .Select(w => (w.Key, w.ToList()));
-
-            foreach (var (prodId, productionWorkloads) in workloadInfosGroups)
-            {
-                var capacityByStep = new CapacityByStep();
-                productionCapacityDetail.Add(prodId, capacityByStep);
-
-                foreach (var (stepId, stepWorkloads) in productionWorkloads.GroupBy(w => w.StepId).Select(w => (w.Key, w.ToList())))
-                {
-                    var capacities = new List<ProductionCapacityDetailModel>();
-                    capacityByStep.Add(stepId, capacities);
-                    foreach (var workload in stepWorkloads)
-                    {
-                        decimal? productivityByStep = null;
-
-                        ProductTargetProductivityByStep target = null;
-                        if (workload.ObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
-                        {
-                            semiTargets.TryGetValue(workload.ObjectId, out target);
-                        }
-                        else
-                        {
-                            productTargets.TryGetValue((int)workload.ObjectId, out target);
-                        }
-
-                        ProductStepTargetProductivityDetail targetByStep = null;
-                        target?.TryGetValue(workload.StepId, out targetByStep);
-
-                        if (targetByStep != null)
-                        {
-
-                            productivityByStep = targetByStep.TargetProductivity;
-                            if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
-                            {
-                                productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
-                            }
-
-                        }
-                        var capacity = new ProductionCapacityDetailModel
-                        {
-                            ObjectId = workload.ObjectId,
-                            ObjectTypeId = workload.ObjectTypeId,
-                            Quantity = workload.Quantity,
-                            TargetProductivity = productivityByStep ?? 0,
-                            WorkloadQuantity = workload.WorkloadQuantity,
-                            WorkHour = productivityByStep > 0 ? workload.WorkloadQuantity / productivityByStep.Value : 0,
-                            Details = workload.DetailSteps.Select(d => new ProductionStepWorkloadAssignModel
+                            var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
+                            return new ProductionStepWorkloadAssignModel
                             {
                                 ProductionStepId = d.ProductionStepId,
                                 ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
-
                                 Quantity = d.Quantity,
-                                WorkloadConvertRate = d.WorkloadConvertRate,
-                                WorkloadQuantity = d.WorkloadQuantity,
+                                IsSelectionAssign = currentDepartmentAssign?.IsSelectionAssign ?? false,
+                                WorkloadConvertRate = d.WorkloadConvertRate.Value,
+                                WorkloadQuantity = workloadQuantity,
 
-                                Productivity = productivityByStep,
+                                Productivity = productivityByStep ?? 0,
 
-                                WorkHour = productivityByStep > 0 ? d.WorkloadQuantity / productivityByStep.Value : 0,
+                                WorkHour = productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
 
-                                IsSelectionAssign = d.IsSelectionAssign,
-                                AssignQuantity = d.AssignQuantity,
-                                AssignWorkloadQuantity = d.AssignWorkloadQuantity,
-                                AssignWorkHour = productivityByStep > 0 ? d.AssignWorkloadQuantity / productivityByStep.Value : 0,
+                                AssignQuantity = currentDepartmentAssign?.AssignQuantity,
+                                AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
+                                StartDate = currentDepartmentAssign?.StartDate?.GetUnix(),
+                                EndDate = currentDepartmentAssign?.EndDate?.GetUnix(),
+                                IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
+                                RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
+                                ByDates = currentDepartmentAssign?.ByDates,
+                                AssignWorkHour = currentDepartmentAssign?.AssignWorkHour,
+                                AssignInfos = assignInfos
+                            };
+                        }).ToList()
+                    };
+                })
+                .GroupBy(w => w.ProductionOrderId)
 
-                                StartDate = d.StartDate.GetUnix(),
-                                EndDate = d.EndDate.GetUnix(),
-                                IsManualSetDate = d.IsManualSetDate ?? false,
-                                RateInPercent = d.RateInPercent ?? 100,
-                                ByDates = d.ByDates
-
-                            }).ToList()
-                        };
-                        capacities.Add(capacity);
-                    }
-                }
-            }
-            return productionCapacityDetail;
-
+                .ToCustomDictionary(new CapacityStepByProduction(), w => w.Key, w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList()));
 
         }
 
