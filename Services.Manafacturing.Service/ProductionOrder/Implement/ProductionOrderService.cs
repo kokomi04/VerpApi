@@ -223,6 +223,49 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total);
         }
 
+        public async Task<PageData<ProductOrderModel>> GetProductionOrdersNotDetail(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        {
+            keyword = (keyword ?? "").Trim();
+
+            var query = _manufacturingDBContext.ProductionOrder.AsNoTracking();
+
+            if (!string.IsNullOrWhiteSpace(keyword))
+                query = query.Where(x => x.ProductionOrderCode.Contains(keyword));
+
+            if (fromDate > 0)
+            {
+                var time = fromDate.UnixToDateTime();
+                query = query.Where(q => q.Date >= time);
+            }
+
+            if (toDate > 0)
+            {
+                var time = toDate.UnixToDateTime();
+                query = query.Where(q => q.Date <= time);
+            }
+            var total = await query.CountAsync();
+            query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+
+            var lst = (await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync())
+                .Select(x => new ProductOrderModel
+                {
+                    ProductionOrderId = x.ProductionOrderId,
+                    ProductionOrderCode = x.ProductionOrderCode,
+                    StartDate = x.StartDate.GetUnix(),
+                    EndDate = x.EndDate.GetUnix(),
+                    Date = x.Date.GetUnix(),
+                    Description = x.Description,
+                    IsDraft = x.IsDraft,
+                    IsInvalid = x.IsInvalid,
+                    ProductionOrderStatus = (EnumProductionStatus)x.ProductionOrderStatus,
+                    IsUpdateQuantity = x.IsUpdateQuantity,
+                    IsUpdateProcessForAssignment = x.IsUpdateProcessForAssignment,
+                    
+                }).ToList();
+
+            return (lst, total);
+        }
+
         public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId)
         {
             var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
