@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -67,6 +68,14 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
         {
             return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/getByListIds")]
+        public async Task<DataTable> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
+        {
+            return await _inputDataService.GetListBillInfoRows(inputTypeId, fIds).ConfigureAwait(true);
         }
 
         [HttpGet]

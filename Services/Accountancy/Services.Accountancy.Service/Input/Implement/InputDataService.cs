@@ -340,6 +340,63 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
+        /// <summary>
+        /// 27/07/2022_Hautt_Lấy danh sách bản ghi từ list id
+        /// </summary>
+        /// <param name="inputTypeId"></param>
+        /// <param name="lstfId"></param>
+        /// <returns></returns>
+        public async Task<DataTable> GetListBillInfoRows(int inputTypeId, IList<long> lstfId)
+        {
+            var singleFields = (await (
+               from af in _accountancyDBContext.InputAreaField
+               join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
+               join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
+
+            var dataSql = @$"
+
+                SELECT     r.*
+                FROM {INPUTVALUEROW_VIEW} r 
+
+                WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+
+            ";
+
+            var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+
+            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+
+            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+
+            if (billEntryInfo.Rows.Count > 0)
+            {
+                for (var i = 0; i < data.Rows.Count; i++)
+                {
+                    var row = data.Rows[i];
+                    for (var j = 0; j < data.Columns.Count; j++)
+                    {
+                        var column = data.Columns[j];
+                        if (singleFields.Contains(column.ColumnName))
+                        {
+                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
+                        }
+                    }
+                }
+            }
+
+
+            return (data);
+        }
+
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             return (await GetBillInfos(inputTypeId, new[] { fId })).First().Value;
