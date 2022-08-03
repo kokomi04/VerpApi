@@ -243,8 +243,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var time = toDate.UnixToDateTime();
                 query = query.Where(q => q.Date <= time);
             }
-            var total = await query.CountAsync();
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
+
+            var total = await query.CountAsync();
 
             var lst = (await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync())
                 .Select(x => new ProductOrderModel
