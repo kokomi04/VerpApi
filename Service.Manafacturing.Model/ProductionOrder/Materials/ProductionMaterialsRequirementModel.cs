@@ -22,12 +22,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionMaterialsRequirement, ProductionMaterialsRequirementModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionMaterialsRequirement, ProductionMaterialsRequirementModel>()
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.RequirementDate.GetUnix()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.MaterialsRequirementDetails, v => v.MapFrom(m => m.ProductionMaterialsRequirementDetail))
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.ProductionMaterialsRequirementDetail, v => v.Ignore())
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
                 .ForMember(m => m.ProductionOrder, v => v.Ignore())
@@ -50,7 +50,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long? OutsourceStepRequestId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailListModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailListModel>()
                 .ForMember(m => m.RequirementDate, v => v.MapFrom(m => m.ProductionMaterialsRequirement.RequirementDate.GetUnix()))
                 .ForMember(m => m.RequirementContent, v => v.MapFrom(m => m.ProductionMaterialsRequirement.RequirementContent))
                 .ForMember(m => m.CensorStatus, v => v.MapFrom(m => m.ProductionMaterialsRequirement.CensorStatus))

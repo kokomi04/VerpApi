@@ -29,11 +29,11 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProductionScheduleTurnShift, ProductionScheduleTurnShiftModel>()
+//            profile.CreateMapIgnoreNoneExist<ProductionScheduleTurnShift, ProductionScheduleTurnShiftModel>()
 //                .ForMember(s => s.FromDate, d => d.MapFrom(m => DateTimeToUnix(m.FromDate)))
 //                .ForMember(s => s.ToDate, d => d.MapFrom(m => DateTimeToUnix(m.ToDate)))
 //                .ForMember(s => s.Users, d => d.Ignore())
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(s => s.FromDate, d => d.MapFrom(m => UnixToDateTime(m.FromDate)))
 //                .ForMember(s => s.ToDate, d => d.MapFrom(m => UnixToDateTime(m.ToDate)))
 //                .ForMember(s => s.ProductionScheduleTurnShiftUser, d => d.Ignore());

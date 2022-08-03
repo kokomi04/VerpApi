@@ -29,7 +29,7 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProcessingScheduleListEntity, ProcessingScheduleListModel>()
+//            profile.CreateMapIgnoreNoneExist<ProcessingScheduleListEntity, ProcessingScheduleListModel>()
 //                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
 //                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
 //        }

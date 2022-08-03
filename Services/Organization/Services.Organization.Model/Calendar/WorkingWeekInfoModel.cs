@@ -12,9 +12,9 @@ namespace VErp.Services.Organization.Model.Calendar
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<WorkingWeekInfo, WorkingWeekInfoModel>()
+            profile.CreateMapIgnoreNoneExist<WorkingWeekInfo, WorkingWeekInfoModel>()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(x => (DayOfWeek)x.DayOfWeek))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(x => (int)x.DayOfWeek));
         }
     }

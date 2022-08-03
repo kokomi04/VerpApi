@@ -1,5 +1,6 @@
 using AutoMapper;
 using System.Collections.Generic;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Infrastructure.EF.OrganizationDB;
 
@@ -16,7 +17,7 @@ namespace Services.Organization.Model.HrConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<HrType, HrTypeFullModel>()
+            profile.CreateMapIgnoreNoneExist<HrType, HrTypeFullModel>()
                 .ForMember(dest => dest.HrAreas, opt => opt.MapFrom(src => src.HrArea));
         }
     }

@@ -62,7 +62,7 @@ namespace VErp.Services.Stock.Model.Product
         }
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductBomEntity, ProductBomOutput>()
+            profile.CreateMapIgnoreNoneExist<ProductBomEntity, ProductBomOutput>()
                 .ForMember(m => m.PathProductIds, v => v.Ignore());
         }
     }

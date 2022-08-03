@@ -28,10 +28,10 @@ namespace VErp.Services.Master.Model.OutsideMapping
 
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsideMappingModelList, OutsideImportMappingFunction>()
+            profile.CreateMapIgnoreNoneExist<OutsideMappingModelList, OutsideImportMappingFunction>()
                .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
                .ForMember(d => d.OutsideImportMappingObject, s => s.Ignore())
-               .ReverseMap();
+               .ReverseMapIgnoreNoneExist();
         }
 
     }
@@ -52,12 +52,12 @@ namespace VErp.Services.Master.Model.OutsideMapping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsideMappingModel, OutsideImportMappingFunction>()
+            profile.CreateMapIgnoreNoneExist<OutsideMappingModel, OutsideImportMappingFunction>()
                 .ForMember(d => d.OutsideImportMapping, s => s.Ignore())
                 .ForMember(d => d.OutsideImportMappingObject, s => s.Ignore())
                 .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (int)f.ObjectTypeId))
                 .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (int?)f.SourceObjectTypeId))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.FieldMappings, d => d.Ignore())
                 .ForMember(d => d.ObjectTypeId, s => s.MapFrom(f => (EnumObjectType)f.ObjectTypeId))
                 .ForMember(d => d.SourceObjectTypeId, s => s.MapFrom(f => (EnumObjectType?)f.SourceObjectTypeId));
@@ -71,9 +71,9 @@ namespace VErp.Services.Master.Model.OutsideMapping
         public string DestinationFieldName { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsiteMappingModel, OutsideImportMapping>()
+            profile.CreateMapIgnoreNoneExist<OutsiteMappingModel, OutsideImportMapping>()
                 .ForMember(d => d.OutsideImportMappingFunction, s => s.Ignore())
-                .ReverseMap();
+                .ReverseMapIgnoreNoneExist();
         }
     }
 }

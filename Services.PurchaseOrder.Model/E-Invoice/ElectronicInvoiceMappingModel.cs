@@ -16,9 +16,9 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ElectronicInvoiceMappingModel, ElectronicInvoiceMapping>()
+            profile.CreateMapIgnoreNoneExist<ElectronicInvoiceMappingModel, ElectronicInvoiceMapping>()
               .ForMember(d => d.MappingFields, s => s.MapFrom(m => m.MappingFields.JsonSerialize()))
-              .ReverseMap()
+              .ReverseMapIgnoreNoneExist()
               .ForMember(d => d.MappingFields, s => s.MapFrom(m => m.MappingFields.JsonDeserialize<ElectronicInvoiceMappingFieldsModel>()));
         }
     }

@@ -35,7 +35,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? NeedDate { get; set; }
 
-        protected IMappingExpression<PurchasingRequest, T> MappingBase<T>(Profile profile) where T : PurchasingRequestOutputList => profile.CreateMap<PurchasingRequest, T>()
+        protected IMappingExpression<PurchasingRequest, T> MappingBase<T>(Profile profile) where T : PurchasingRequestOutputList => profile.CreateMapIgnoreNoneExist<PurchasingRequest, T>()
           .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
           .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.GetUnix()))
           .ForMember(m => m.PurchasingRequestStatusId, m => m.MapFrom(v => (EnumPurchasingRequestStatus)v.PurchasingRequestStatusId))

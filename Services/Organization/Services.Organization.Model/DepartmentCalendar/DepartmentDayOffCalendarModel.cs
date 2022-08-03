@@ -13,9 +13,9 @@
 //        public string Content { get; set; }
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<DepartmentDayOffCalendar, DepartmentDayOffCalendarModel>()
+//            profile.CreateMapIgnoreNoneExist<DepartmentDayOffCalendar, DepartmentDayOffCalendarModel>()
 //                .ForMember(dest => dest.Day, opt => opt.MapFrom(x =>x.Day.GetUnix()))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(dest => dest.Day, opt => opt.MapFrom(x => x.Day.UnixToDateTime()));
 //        }
 //    }

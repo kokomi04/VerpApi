@@ -32,7 +32,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<DepartmentHandoverEntity, DepartmentHandoverModel>()
+            profile.CreateMapIgnoreNoneExist<DepartmentHandoverEntity, DepartmentHandoverModel>()
                 .ForMember(m => m.StartDate, v => v.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
                 .ForMember(m => m.AssignedProgressStatus, v => v.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))

@@ -17,7 +17,7 @@
 
 //        public new void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProductionScheduleEntity, ProductionScheduleReportModel>()
+//            profile.CreateMapIgnoreNoneExist<ProductionScheduleEntity, ProductionScheduleReportModel>()
 //                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
 //                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
 //                .ForMember(dest => dest.ProductionScheduleStatus, opt => opt.MapFrom(source => (EnumScheduleStatus)source.ProductionScheduleStatus));

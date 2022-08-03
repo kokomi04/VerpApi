@@ -59,11 +59,11 @@ namespace ConfigApi
 
             var profile = new MappingProfile();
 
-            //profile.CreateMap<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
-            //profile.CreateMap<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
+            //profile.CreateMapIgnoreNoneExist<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            //profile.CreateMapIgnoreNoneExist<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
-            //profile.CreateMap<DateTime, long>().ConvertUsing(v => v.GetUnix());
-            //profile.CreateMap<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
+            //profile.CreateMapIgnoreNoneExist<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            //profile.CreateMapIgnoreNoneExist<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
 
             //profile.ApplyMappingsFromAssembly(OrganizationModelAssembly.Assembly);
             //profile.ApplyMappingsFromAssembly(AccountantModelAssembly.Assembly);

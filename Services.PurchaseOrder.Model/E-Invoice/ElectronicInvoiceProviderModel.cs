@@ -31,12 +31,12 @@ namespace VErp.Services.PurchaseOrder.Model.E_Invoice
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ElectronicInvoiceProviderModel, ElectronicInvoiceProvider>()
+            profile.CreateMapIgnoreNoneExist<ElectronicInvoiceProviderModel, ElectronicInvoiceProvider>()
                .ForMember(d => d.ElectronicInvoiceProviderId, s => s.MapFrom(m => (int)m.ElectronicInvoiceProviderId))
                .ForMember(d => d.ElectronicInvoiceProviderStatusId, s => s.MapFrom(m => (int)m.ElectronicInvoiceProviderStatusId))
                .ForMember(d => d.ConnectionConfig, s => s.MapFrom(m => SerializeConnection(m)))
                .ForMember(d => d.FieldsConfig, s => s.MapFrom(m => m.FieldsConfig.JsonSerialize()))
-               .ReverseMap()
+               .ReverseMapIgnoreNoneExist()
                .ForMember(d => d.ElectronicInvoiceProviderId, s => s.MapFrom(m => (EnumElectronicInvoiceProvider)m.ElectronicInvoiceProviderId))
                .ForMember(d => d.ElectronicInvoiceProviderStatusId, s => s.MapFrom(m => (EnumElectronicInvoiceProviderStatus)m.ElectronicInvoiceProviderStatusId))
                .ForMember(d => d.EasyInvoiceConnection, s => s.MapFrom(m => DeserializeConnection(m, EnumElectronicInvoiceProvider.EasyInvoice)))

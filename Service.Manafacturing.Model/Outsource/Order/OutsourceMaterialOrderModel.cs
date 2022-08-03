@@ -41,7 +41,7 @@
 
 //        public override void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceOrder, OutsourcePropertyOrderInput>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceOrder, OutsourcePropertyOrderInput>()
 //                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
 //                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
 //                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
@@ -51,7 +51,7 @@
 //                .ForMember(m => m.OutsourceOrderDetail, v => v.Ignore())
 //                .ForMember(m => m.OutsourceOrderMaterials, v => v.Ignore())
 //                .ForMember(m => m.OutsourceOrderExcesses, v => v.Ignore())
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.Value.UnixToDateTime()))
 //                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()))
 //                .ForMember(m => m.DeliveryDestination, v => v.MapFrom(m => m.DeliveryDestination.JsonSerialize()))
@@ -81,7 +81,7 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceOrderDetail, OutsourcePropertyOrderDetail>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceOrderDetail, OutsourcePropertyOrderDetail>()
 //                .ForMember(m => m.ProductId, v => v.MapFrom(m => m.ObjectId))
 //                .ForMember(m => m.OutsourceOrderPrice, v => v.MapFrom(m => m.Price))
 //                .ForMember(m => m.OutsourceOrderQuantity, v => v.MapFrom(m => m.Quantity))
@@ -89,7 +89,7 @@
 //                .ForMember(m => m.OutsourceOrderProductUnitConversionPrice, v => v.MapFrom(m => m.ProductUnitConversionPrice))
 //                .ForMember(m => m.OutsourceOrderProductUnitConversionQuantity, v => v.MapFrom(m => m.ProductUnitConversionQuantity))
 //                .ForMember(m => m.OutsourceOrderProductUnitConversionId, v => v.MapFrom(m => m.ProductUnitConversionId))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ProductId))
 //                .ForMember(m => m.Price, v => v.MapFrom(m => m.OutsourceOrderPrice))
 //                .ForMember(m => m.Quantity, v => v.MapFrom(m => m.OutsourceOrderQuantity))

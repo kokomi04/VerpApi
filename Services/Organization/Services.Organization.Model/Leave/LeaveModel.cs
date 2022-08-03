@@ -30,7 +30,7 @@ namespace VErp.Services.Organization.Model.Leave
 
         //public void Mapping(Profile profile)
         //{
-        //    profile.CreateMap<LeaveModel, LeaveBill>()
+        //    profile.CreateMapIgnoreNoneExist<LeaveModel, LeaveBill>()
         //        .ForMember(d => d.DateStart, s => s.MapFrom(m => m.DateStart.UnixToDateTime()))
         //        .ForMember(d => d.DateEnd, s => s.MapFrom(m => m.DateEnd.UnixToDateTime()))
         //        .ForMember(d => d.LeaveStatusId, s => s.MapFrom(m => (int)m.LeaveStatusId))
@@ -38,7 +38,7 @@ namespace VErp.Services.Organization.Model.Leave
         //        .ForMember(d => d.UpdatedDatetimeUtc, s => s.MapFrom(m => m.UpdatedDatetimeUtc.UnixToDateTime()))
         //        .ForMember(d => d.CheckedDatetimeUtc, s => s.MapFrom(m => m.CheckedDatetimeUtc.UnixToDateTime()))
         //        .ForMember(d => d.CensoredDatetimeUtc, s => s.MapFrom(m => m.CensoredDatetimeUtc.UnixToDateTime()))
-        //        .ReverseMap()
+        //        .ReverseMapIgnoreNoneExist()
         //        .ForMember(d => d.DateStart, s => s.MapFrom(m => m.DateStart.GetUnix()))
         //        .ForMember(d => d.DateEnd, s => s.MapFrom(m => m.DateEnd.GetUnix()))
         //        .ForMember(d => d.LeaveStatusId, s => s.MapFrom(m => (EnumLeaveStatus)m.LeaveStatusId))

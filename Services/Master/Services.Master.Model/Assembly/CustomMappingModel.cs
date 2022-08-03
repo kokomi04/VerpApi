@@ -9,8 +9,8 @@ namespace VErp.Services.Master.Model
     {
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ActionButton, ActionButtonModel>()
-                .ReverseMap();
+            profile.CreateMapIgnoreNoneExist<ActionButton, ActionButtonModel>()
+                .ReverseMapIgnoreNoneExist();
         }
     }
 }

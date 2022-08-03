@@ -24,12 +24,12 @@
 
 //        public new  void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceOrderDetail, OutsourceStepOrderDetailModel>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceOrderDetail, OutsourceStepOrderDetailModel>()
 //                .ForMember(m => m.ProductionStepLinkDataId, v => v.MapFrom(m => m.ObjectId))
 //                .ForMember(m => m.OutsourceOrderPrice, v => v.MapFrom(m => m.Price))
 //                .ForMember(m => m.OutsourceOrderQuantity, v => v.MapFrom(m => m.Quantity))
 //                .ForMember(m => m.OutsourceOrderTax, v => v.MapFrom(m => m.Tax))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ProductionStepLinkDataId))
 //                .ForMember(m => m.Price, v => v.MapFrom(m => m.OutsourceOrderPrice))
 //                .ForMember(m => m.Quantity, v => v.MapFrom(m => m.OutsourceOrderQuantity))

@@ -34,7 +34,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionInventoryRequirementEntity, ProductionInventoryRequirementModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionInventoryRequirementEntity, ProductionInventoryRequirementModel>()
                 .ForMember(m => m.InventoryTypeId, v => v.MapFrom(m => (EnumInventoryType)m.InventoryTypeId))
                 .ForMember(m => m.Status, v => v.MapFrom(m => (EnumProductionInventoryRequirementStatus)m.Status))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));

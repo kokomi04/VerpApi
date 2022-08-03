@@ -26,12 +26,12 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TimeSortConfiguration, TimeSortConfigurationModel>()
+            profile.CreateMapIgnoreNoneExist<TimeSortConfiguration, TimeSortConfigurationModel>()
             .ForMember(m => m.TimeEndCycles, v => v.MapFrom(m => m.TimeEndCycles.TotalSeconds))
             .ForMember(m => m.StartTimeIgnoreTimeShift, v => v.MapFrom(m => m.StartTimeIgnoreTimeShift.TotalSeconds))
             .ForMember(m => m.EndTimeIgnoreTimeShift, v => v.MapFrom(m => m.EndTimeIgnoreTimeShift.TotalSeconds))
             .ForMember(m => m.SplitHour, v => v.MapFrom(m => m.SplitHour))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.TimeEndCycles, v => v.MapFrom(m => TimeSpan.FromSeconds(m.TimeEndCycles)))
             .ForMember(m => m.StartTimeIgnoreTimeShift, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeIgnoreTimeShift)))
             .ForMember(m => m.EndTimeIgnoreTimeShift, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeIgnoreTimeShift)))

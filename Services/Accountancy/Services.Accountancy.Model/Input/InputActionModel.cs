@@ -21,9 +21,9 @@
     //    public string SqlAction { get; set; }
     //    public void Mapping(Profile profile)
     //    {
-    //        profile.CreateMap<InputAction, InputActionModel>()
+    //        profile.CreateMapIgnoreNoneExist<InputAction, InputActionModel>()
     //            .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (EnumActionType?)m.ActionTypeId))
-    //            .ReverseMap()
+    //            .ReverseMapIgnoreNoneExist()
     //            .ForMember(d => d.ActionTypeId, s => s.MapFrom(m => (int?)m.ActionTypeId));
     //    }
     //}

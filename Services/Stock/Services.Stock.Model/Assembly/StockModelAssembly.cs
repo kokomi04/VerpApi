@@ -18,13 +18,13 @@ namespace VErp.Services.Stock.Model
     {
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductEntity, ProductModel>()
+            profile.CreateMapIgnoreNoneExist<ProductEntity, ProductModel>()
                 .ForMember(d => d.StockInfo, s => s.Ignore())
                 .ForMember(d => d.Extra, s => s.Ignore())
                 .ForMember(d => d.ProductCustomers, s => s.Ignore())
                 .ForMember(d => d.BarcodeStandardId, s => s.MapFrom(s => (EnumBarcodeStandard?)s.BarcodeStandardId))
                 .ForMember(d => d.QuantitativeUnitTypeId, s => s.MapFrom(s => (EnumQuantitativeUnitType?)s.QuantitativeUnitTypeId))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.ProductCate, s => s.Ignore())
                 .ForMember(d => d.ProductType, s => s.Ignore())
                 .ForMember(d => d.ProductExtraInfo, s => s.Ignore())
@@ -43,27 +43,27 @@ namespace VErp.Services.Stock.Model
                 .ForMember(d => d.QuantitativeUnitTypeId, s => s.MapFrom(s => (int?)s.QuantitativeUnitTypeId));
 
 
-            profile.CreateMap<ProductExtraInfo, ProductModelExtra>()
-               .ReverseMap();
+            profile.CreateMapIgnoreNoneExist<ProductExtraInfo, ProductModelExtra>()
+               .ReverseMapIgnoreNoneExist();
 
 
-            profile.CreateMap<ProductStockInfo, ProductModelStock>()
+            profile.CreateMapIgnoreNoneExist<ProductStockInfo, ProductModelStock>()
                 .ForMember(d => d.UnitConversions, s => s.Ignore())
                 .ForMember(d => d.StockIds, s => s.Ignore())
                 .ForMember(d => d.TimeWarningTimeTypeId, s => s.MapFrom(v => (EnumTimeType?)v.TimeWarningTimeTypeId))
                 .ForMember(d => d.StockOutputRuleId, s => s.MapFrom(v => (EnumStockOutputRule?)v.StockOutputRuleId))
                 .ForMember(d => d.ExpireTimeTypeId, s => s.MapFrom(v => (EnumTimeType?)v.ExpireTimeTypeId))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.Product, s => s.Ignore())
                 .ForMember(d => d.TimeWarningTimeTypeId, s => s.MapFrom(v => (int?)v.TimeWarningTimeTypeId))
                 .ForMember(d => d.StockOutputRuleId, s => s.MapFrom(v => (int?)v.StockOutputRuleId))
                 .ForMember(d => d.ExpireTimeTypeId, s => s.MapFrom(v => (int?)v.ExpireTimeTypeId));
 
-            profile.CreateMap<ProductCustomer, ProductModelCustomer>()
-               .ReverseMap();
+            profile.CreateMapIgnoreNoneExist<ProductCustomer, ProductModelCustomer>()
+               .ReverseMapIgnoreNoneExist();
 
-            profile.CreateMap<ProductUnitConversion, ProductModelUnitConversion>()
-             .ReverseMap();
+            profile.CreateMapIgnoreNoneExist<ProductUnitConversion, ProductModelUnitConversion>()
+             .ReverseMapIgnoreNoneExist();
 
         }
     }
