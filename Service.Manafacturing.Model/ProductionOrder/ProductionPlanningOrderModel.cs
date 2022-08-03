@@ -16,7 +16,7 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProductionPlanningOrderEntity, ProductionPlanningOrderModel>()
+//            profile.CreateMapIgnoreNoneExist<ProductionPlanningOrderEntity, ProductionPlanningOrderModel>()
 //                .ForMember(dest => dest.ProductionDate, opt => opt.MapFrom(source => source.ProductionDate.GetUnix()))
 //                .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(source => source.FinishDate.GetUnix()));
 //        }

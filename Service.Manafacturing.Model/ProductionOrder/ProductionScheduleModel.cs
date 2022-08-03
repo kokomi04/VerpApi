@@ -22,7 +22,7 @@
 //        public string ScheduleCode { get; set; }
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProductionScheduleEntity, ProductionScheduleModel>()
+//            profile.CreateMapIgnoreNoneExist<ProductionScheduleEntity, ProductionScheduleModel>()
 //                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
 //                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
 //                .ForMember(dest => dest.ProductionScheduleStatus, opt => opt.MapFrom(source => (EnumScheduleStatus)source.ProductionScheduleStatus));
@@ -54,7 +54,7 @@
 //        public string ScheduleCode { get; set; }
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<ProductionScheduleInputModel, ProductionSchedule>()
+//            profile.CreateMapIgnoreNoneExist<ProductionScheduleInputModel, ProductionSchedule>()
 //                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
 //                .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()))
 //                .ForMember(dest => dest.ProductionScheduleStatus, opt => opt.MapFrom(source => (int)source.ProductionScheduleStatus));

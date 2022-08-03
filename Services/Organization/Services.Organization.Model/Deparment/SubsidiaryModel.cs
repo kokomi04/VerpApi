@@ -21,8 +21,8 @@ namespace Services.Organization.Model.Deparment
     //public class SubsidiaryCreateModel : SubsidiaryModel
     //{
     //    public SubsidiaryOwnerCreateModel Owner { get; set; }
-    //    public void Mapping(Profile profile) => profile.CreateMap<SubsidiaryCreateModel, Subsidiary>()
-    //        .ReverseMap()
+    //    public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<SubsidiaryCreateModel, Subsidiary>()
+    //        .ReverseMapIgnoreNoneExist()
     //        .ForMember(m => m.Owner, v => v.Ignore());
     //}
 

@@ -22,7 +22,7 @@ namespace VErp.Services.Stock.Model.StockTake
         public string ConclusionContent { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<StockTakePeriod, StockTakePeriotListModel>()
+            profile.CreateMapIgnoreNoneExist<StockTakePeriod, StockTakePeriotListModel>()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.GetUnix()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.Status))
                 .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(x => x.FinishDate.GetUnix()))
@@ -38,14 +38,14 @@ namespace VErp.Services.Stock.Model.StockTake
         public ICollection<StockTakeResultModel> StockTakeResult { get; set; }
         public new void Mapping(Profile profile)
         {
-            profile.CreateMap<StockTakePeriod, StockTakePeriotModel>()
+            profile.CreateMapIgnoreNoneExist<StockTakePeriod, StockTakePeriotModel>()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.GetUnix()))
                 .ForMember(dest => dest.StockTake, opt => opt.MapFrom(x => x.StockTake))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(x => (EnumStockTakePeriodStatus)x.Status))
                 .ForMember(dest => dest.StockTakeRepresentative, opt => opt.MapFrom(x => x.StockTakeRepresentative))
                 .ForMember(dest => dest.FinishDate, opt => opt.MapFrom(x => x.FinishDate.GetUnix()))
                 .ForMember(dest => dest.FinishAcDate, opt => opt.MapFrom(x => x.FinishAcDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.StockTakePeriodDate, opt => opt.MapFrom(x => x.StockTakePeriodDate.UnixToDateTime()))
                 .ForMember(dest => dest.StockTake, opt => opt.Ignore())
                 .ForMember(dest => dest.Status, opt => opt.Ignore())

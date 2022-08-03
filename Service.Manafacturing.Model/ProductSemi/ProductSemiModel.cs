@@ -21,9 +21,9 @@ namespace VErp.Services.Manafacturing.Model.ProductSemi
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductSemiEntity, ProductSemiModel>()
+            profile.CreateMapIgnoreNoneExist<ProductSemiEntity, ProductSemiModel>()
                 .ForMember(m => m.ProductSemiConversions, v => v.MapFrom(m => m.ProductSemiConversion))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.ProductSemiConversion, v => v.Ignore());
         }
     }

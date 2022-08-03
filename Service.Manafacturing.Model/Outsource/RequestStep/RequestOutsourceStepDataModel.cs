@@ -20,9 +20,9 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsourceStepRequestData, OutsourceStepRequestDataModel>()
+            profile.CreateMapIgnoreNoneExist<OutsourceStepRequestData, OutsourceStepRequestDataModel>()
                 .ForMember(m => m.OutsourceStepRequestDataQuantity, v => v.MapFrom(m => m.Quantity))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.Quantity, v => v.MapFrom(m => m.OutsourceStepRequestDataQuantity));
         }
     }

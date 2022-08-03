@@ -35,9 +35,9 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ArrangeShift, ArrangeShiftModel>()
+            profile.CreateMapIgnoreNoneExist<ArrangeShift, ArrangeShiftModel>()
             .ForMember(x => x.Items, v => v.MapFrom(m => m.ArrangeShiftItem))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(x => x.ArrangeShiftItem, v => v.Ignore());
         }
 
@@ -82,9 +82,9 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ArrangeShiftItem, ArrangeShiftItemModel>()
+            profile.CreateMapIgnoreNoneExist<ArrangeShiftItem, ArrangeShiftItemModel>()
             .ForMember(x => x.InnerItems, v => v.MapFrom(m => m.InverseParentArrangeShiftItem))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(x => x.InverseParentArrangeShiftItem, v => v.Ignore());
         }
 

@@ -22,10 +22,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<MonthPlan, MonthPlanModel>()
+            profile.CreateMapIgnoreNoneExist<MonthPlan, MonthPlanModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                  .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
                  .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()));
         }

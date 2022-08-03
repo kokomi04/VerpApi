@@ -32,14 +32,14 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TimeSheet, TimeSheetModel>()
+            profile.CreateMapIgnoreNoneExist<TimeSheet, TimeSheetModel>()
             .ForMember(m => m.TimeSheetDetails, v => v.MapFrom(m => m.TimeSheetDetail))
             .ForMember(m => m.TimeSheetDayOffs, v => v.MapFrom(m => m.TimeSheetDayOff))
             .ForMember(m => m.TimeSheetAggregates, v => v.MapFrom(m => m.TimeSheetAggregate))
             .ForMember(m => m.TimeSheetOvertimes, v => v.MapFrom(m => m.TimeSheetOvertime))
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.GetUnix()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.TimeSheetDetail, v => v.Ignore())
             .ForMember(m => m.TimeSheetDayOff, v => v.Ignore())
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.UnixToDateTime()))

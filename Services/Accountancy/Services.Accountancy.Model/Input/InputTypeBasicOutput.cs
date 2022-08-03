@@ -15,7 +15,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputType, InputTypeBasicOutput>()
+            profile.CreateMapIgnoreNoneExist<InputType, InputTypeBasicOutput>()
                 .ForMember(d => d.Areas, m => m.Ignore())
                 .ForMember(d => d.Views, m => m.Ignore());
         }
@@ -32,7 +32,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public IList<InputAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputArea, InputAreaBasicOutput>()
+            profile.CreateMapIgnoreNoneExist<InputArea, InputAreaBasicOutput>()
                 .ForMember(d => d.Fields, m => m.Ignore());
         }
     }

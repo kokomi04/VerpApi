@@ -25,8 +25,8 @@ namespace VErp.Services.Master.Model.CategoryConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutSideDataConfigModel, OutSideDataConfig>();
-            profile.CreateMap<OutSideDataConfig, OutSideDataConfigModel>()
+            profile.CreateMapIgnoreNoneExist<OutSideDataConfigModel, OutSideDataConfig>();
+            profile.CreateMapIgnoreNoneExist<OutSideDataConfig, OutSideDataConfigModel>()
                 .ForMember(dest => dest.ModuleTypeTitle, opt => opt.MapFrom(s => ((EnumModuleType)s.ModuleType).GetEnumDescription()));
         }
     }

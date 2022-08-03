@@ -16,12 +16,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepMoldLinkModel, ProductionStepMoldLink>()
+            profile.CreateMapIgnoreNoneExist<ProductionStepMoldLinkModel, ProductionStepMoldLink>()
                 .ForMember(m => m.FromProductionStepMold, v => v.Ignore())
                 .ForMember(m => m.ToProductionStepMold, v => v.Ignore())
                 .ForMember(m => m.FromProductionStepMoldId, v => v.MapFrom(m => m.FromProductionStepMoldId))
                 .ForMember(m => m.ToProductionStepMoldId, v => v.MapFrom(m => m.ToProductionStepMoldId))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.FromProductionStepMoldId, v => v.MapFrom(m => m.FromProductionStepMoldId))
                 .ForMember(m => m.ToProductionStepMoldId, v => v.MapFrom(m => m.ToProductionStepMoldId))
                 .ForMember(m => m.StepFromId, v => v.MapFrom(m => m.FromProductionStepMold.StepId))

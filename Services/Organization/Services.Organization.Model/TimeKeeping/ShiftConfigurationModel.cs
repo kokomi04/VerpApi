@@ -40,7 +40,7 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ShiftConfiguration, ShiftConfigurationModel>()
+            profile.CreateMapIgnoreNoneExist<ShiftConfiguration, ShiftConfigurationModel>()
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.TotalSeconds))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.TotalSeconds))
             .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart.TotalSeconds))
@@ -50,7 +50,7 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalSeconds))
             .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => m.StartTimeOutRecord.TotalSeconds))
             .ForMember(m => m.OvertimeConfiguration, v => v.Ignore())
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => TimeSpan.FromSeconds(m.BeginDate)))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndDate)))
             .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => TimeSpan.FromSeconds(m.LunchTimeStart)))

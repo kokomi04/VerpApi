@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public override void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHistory, ProductionHistoryModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionHistory, ProductionHistoryModel>()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataObjectType)m.ObjectTypeId))
                 .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()));
         }
@@ -30,7 +30,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string Note { get; set; }
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHistoryInputModel, ProductionHistory>()
+            profile.CreateMapIgnoreNoneExist<ProductionHistoryInputModel, ProductionHistory>()
                 .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
                 .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()));
         }

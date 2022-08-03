@@ -15,11 +15,11 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourcePartOrderDetailExtractInfo, OutsourcePartOrderDetailInfo>()
+//            profile.CreateMapIgnoreNoneExist<OutsourcePartOrderDetailExtractInfo, OutsourcePartOrderDetailInfo>()
 //                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()))
 //                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.GetUnix()))
 //                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.GetUnix()))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()))
 //                .ForMember(m => m.OutsourceOrderDate, v => v.MapFrom(m => m.OutsourceOrderDate.UnixToDateTime()))
 //                .ForMember(m => m.OutsourceOrderFinishDate, v => v.MapFrom(m => m.OutsourceOrderFinishDate.UnixToDateTime()));

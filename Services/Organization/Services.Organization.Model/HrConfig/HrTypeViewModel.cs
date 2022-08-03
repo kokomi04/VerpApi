@@ -21,9 +21,9 @@ namespace Services.Organization.Model.HrConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<HrTypeView, HrTypeViewModel>()
+            profile.CreateMapIgnoreNoneExist<HrTypeView, HrTypeViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.HrTypeViewField, m => m.Ignore())
                 .ForMember(d => d.HrType, m => m.Ignore());
         }
@@ -47,10 +47,10 @@ namespace Services.Organization.Model.HrConfig
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMap<HrTypeViewField, HrTypeViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<HrTypeViewField, HrTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.HrTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

@@ -32,9 +32,9 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceOrderDetail, OutsourcePartOrderDetailOutput>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceOrderDetail, OutsourcePartOrderDetailOutput>()
 //                .ForMember(m => m.OutsourcePartRequestDetailId, v => v.MapFrom(m => m.ObjectId))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.OutsourcePartRequestDetailId));
 //        }
 //    }

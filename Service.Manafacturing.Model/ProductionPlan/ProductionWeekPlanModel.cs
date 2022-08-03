@@ -18,9 +18,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionWeekPlan, ProductionWeekPlanModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionWeekPlan, ProductionWeekPlanModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
                 .ForMember(dest => dest.ProductionWeekPlanDetail, opt => opt.Ignore());
         }

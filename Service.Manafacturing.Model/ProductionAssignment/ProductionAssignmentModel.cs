@@ -38,12 +38,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionAssignmentEntity, ProductionAssignmentModel>()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.GetUnix()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(s => s.AssignedProgressStatus, d => d.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore())
@@ -91,9 +91,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
         }
 

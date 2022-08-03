@@ -37,7 +37,7 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourcePartOrderDetailInfo, OutsourceOrderDetailInfo>()
+//            profile.CreateMapIgnoreNoneExist<OutsourcePartOrderDetailInfo, OutsourceOrderDetailInfo>()
 //                .ForMember(m => m.OutsourceOrderDetailId, v => v.MapFrom(m => m.OutsourceOrderDetailId))
 //                .ForMember(m => m.OutsourceOrderId, v => v.MapFrom(m => m.OutsourceOrderId))
 //                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ObjectId))
@@ -51,7 +51,7 @@
 //                .ForMember(m => m.UnitName, v => v.MapFrom(m => m.UnitName))
 //                .ForMember(m => m.Quantity, v => v.MapFrom(m => m.Quantity))
 //                .ForMember(m => m.DecimalPlace, v => v.MapFrom(m => m.DecimalPlace))
-//                .ReverseMap();
+//                .ReverseMapIgnoreNoneExist();
 //        }
 //    }
 //}
