@@ -115,9 +115,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("CalcFixExchangeRateByOrder")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate, [FromQuery] string tk)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
         {
-            return await _calcBillService.CalcFixExchangeRateByOrder(toDate, currency, exchangeRate, tk);
+            return await _calcBillService.CalcFixExchangeRateByOrder(fromDate, toDate, currency, tk);
         }
 
 
