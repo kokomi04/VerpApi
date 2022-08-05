@@ -18,11 +18,13 @@ namespace VErpApi.Controllers.Accountancy.Data
     {
         private readonly ICalcProductPriceService _calcProductPriceService;
         private readonly ICalcPeriodService _calcPeriodService;
+        private readonly ICalcBillService _calcBillService;
 
-        public CalcProductPriceController(ICalcProductPriceService calcProductPriceService, ICalcPeriodService calcPeriodService)
+        public CalcProductPriceController(ICalcProductPriceService calcProductPriceService, ICalcPeriodService calcPeriodService, ICalcBillService calcBillService)
         {
             _calcProductPriceService = calcProductPriceService;
             _calcPeriodService = calcPeriodService;
+            _calcBillService = calcBillService;
         }
 
         [HttpPost]
@@ -110,5 +112,28 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _calcPeriodService.Delete(EnumCalcPeriodType.CalcProfitAndLoss, calcPeriodId).ConfigureAwait(true);
         }
 
+
+        [HttpGet]
+        [Route("CalcFixExchangeRateByOrder")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.CalcFixExchangeRateByOrder(fromDate, toDate, currency, tk);
+        }
+
+
+        [HttpGet]
+        [Route("CheckExistedFixExchangeRateByOrder")]
+        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.CheckExistedFixExchangeRateByOrder(fromDate, toDate, currency, tk);
+        }
+
+
+        [HttpDelete]
+        [Route("DeletedFixExchangeRateByOrder")]
+        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.DeletedFixExchangeRateByOrder(fromDate, toDate, currency, tk);
+        }
     }
 }

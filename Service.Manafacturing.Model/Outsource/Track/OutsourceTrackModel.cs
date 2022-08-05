@@ -27,10 +27,10 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceTrack, OutsourceTrackModel>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceTrack, OutsourceTrackModel>()
 //                .ForMember(m => m.OutsourceTrackDate, v => v.MapFrom(m => m.OutsourceTrackDate.GetUnix()))
 //                .ForMember(m => m.OutsourceTrackDescription, v => v.MapFrom(m => m.Description))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(m => m.OutsourceTrackDate, v => v.MapFrom(m => m.OutsourceTrackDate.UnixToDateTime()))
 //                .ForMember(m => m.Description, v => v.MapFrom(m => m.OutsourceTrackDescription));
 //        }

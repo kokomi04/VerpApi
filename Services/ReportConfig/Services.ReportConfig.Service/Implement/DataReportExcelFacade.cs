@@ -368,6 +368,267 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
 
             var mergeRanges = new List<CellRangeAddress>();
+
+            var groups = dataTable.Rows.List.GroupBy(row => string.Join('|', groupRowColumns.Select(c => row[c.Alias])));
+            var i = 0;
+            foreach (var groupRow in groups)
+            {
+                foreach(var row in groupRow)
+                {
+                    ExcelRow tbRow = table.NewRow();
+                    int columnIndx = 0;
+
+                    _mergeRows[i] = new bool[columns.Count];
+                    Array.Fill(_mergeRows[i], false);
+
+                    //customCellStyles
+                    ICellStyle rowStyle = null;
+                    var rowStyleStr = "";
+                    if (row.ContainsKey(ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS))
+                    {
+                        rowStyleStr = row[ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS]?.ToString();
+                        rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
+                    }
+                    cellStyles[i + currentRow] = new ICellStyle[columns.Count];
+                    Array.Fill(cellStyles[i + currentRow], rowStyle);
+
+                    foreach (var field in columns)
+                    {
+                        var charLengths = row[field.Alias]?.ToString()?.Length;
+                        if (charLengths > maxColumnLineLengths[columnIndx])
+                        {
+                            maxColumnLineLengths[columnIndx] = charLengths.Value;
+                        }
+
+                        var cellStyleStr = "";
+                        var cellStyleAlias = string.Format(ReportSpecialColumnConstants.ROW_COLUMN_CSS_STYLE_ALIAS_FORMAT, field.Alias);
+                        if (row.ContainsKey(cellStyleAlias))
+                        {
+                            cellStyleStr = row[cellStyleAlias]?.ToString();
+                        }
+
+                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
+
+                        if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
+                        {
+                            sumCalc.Add(columnIndx, field);
+                            //sumValues.Add(columnIndx, 0);
+                        }
+                        var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
+
+                        cellStyles[i + currentRow][columnIndx] = cellStyle;
+
+                        if (row.ContainsKey(field.Alias))
+                        {
+                            var value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset);
+                            tbRow[columnIndx] = new ExcelCell
+                            {
+                                Value = value,
+                                Type = dataType.GetExcelType(),
+                                CellStyle = cellStyle
+                            };
+
+                        }
+
+                        columnIndx++;
+                    }
+
+
+
+                    if (isMergeRow)
+                    {
+                        var mergeValue = string.Join('|', groupRowColumns.Select(c => row[c.Alias]));
+
+                        if (currentMergeValue == mergeValue)
+                        {
+                            lastGroupDataRow = i;
+                        }
+                        else
+                        {
+                            if (firstGroupDataRow.HasValue)
+                            {
+                                columnIndx = 0;
+                                foreach (var field in columns)
+                                {
+                                    if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
+                                    {
+                                        for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
+                                        {
+                                            _mergeRows[s][columnIndx] = true;
+                                        }
+                                        mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
+                                    }
+
+                                    columnIndx++;
+                                }
+                            }
+
+                            firstGroupDataRow = i;
+                            lastGroupDataRow = i;
+                            currentMergeValue = mergeValue;
+                        }
+                    }
+
+
+                    for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+                    {
+                        var col = conditionHiddenColumns[conditionIndex];
+                        if (row.ContainsKey(col))
+                        {
+                            var v = row[col];
+                            long.TryParse(v?.ToString(), out var vInNumber);
+                            if (v == (object)true || vInNumber > 0)
+                            {
+                                tbRow[columnIndx] = new ExcelCell
+                                {
+                                    Value = CONDITION_VALUE,
+                                    Type = EnumDataType.Int.GetExcelType()
+                                };
+                            }
+
+                        }
+
+                        columnIndx++;
+
+                    }
+
+
+                    tbRow.FillAllRow();
+                    table.Rows.Add(tbRow);
+                    i++;
+                }
+            }
+
+            
+            if (firstGroupDataRow.HasValue)
+            {
+                var columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
+                    {
+                        for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
+                        {
+                            _mergeRows[s][columnIndx] = true;
+                        }
+                        mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
+                    }
+                    columnIndx++;
+                }
+            }
+
+            mergeRanges.AddRange(MergeColumn(table, dataTable));
+
+            if (sumCalc.Count > 0)
+            {
+                ExcelRow sumRow = table.NewRow();
+                foreach (var (index, column) in sumCalc)
+                {
+
+                    var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
+
+                    var columnName = (index + 1).GetExcelColumnName();
+
+                    var conditionColum = conditionHiddenColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
+
+                    var sumRange = $"{columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()}";
+                    if (!string.IsNullOrWhiteSpace(column.CalcSumConditionCol) && conditionColum != null)
+                    {
+                        var aliasIndex = columns.Count + Array.IndexOf(conditionHiddenColumns, conditionColum);
+                        var aliasName = (aliasIndex + 1).GetExcelColumnName();
+
+                        var conditionRange = $"{aliasName}{currentRow + 1}:{aliasName}{currentRow + dataTable.Rows.List.Count()}";
+                        sumRow[index] = new ExcelCell
+                        {
+                            Value = $"SUMIF({conditionRange},{CONDITION_VALUE},{sumRange})",
+                            Type = EnumExcelType.Formula,
+                            CellStyle = GetCellStyle(sheet, column, true)
+                        };
+                    }
+                    else
+                    {
+                        sumRow[index] = new ExcelCell
+                        {
+                            Value = $"SUM({sumRange})",
+                            Type = EnumExcelType.Formula,
+                            CellStyle = GetCellStyle(sheet, column, true)
+                        };
+                    }
+
+                    //sumRow[index] = new ExcelCell
+                    //{
+                    //    Value = sumValues[index],
+                    //    Type = EnumExcelType.Number,
+                    //    CellStyle = GetCellStyle(sheet, column, true)
+                    //};
+
+                }
+                var columnIndx = 0;
+                foreach (var field in columns)
+                {
+                    if (!sumCalc.ContainsKey(columnIndx))
+                    {
+                        sumRow[columnIndx] = new ExcelCell
+                        {
+                            Value = $"",
+                            Type = EnumExcelType.String,
+                            CellStyle = GetCellStyle(sheet, field, true)
+                        };
+                    }
+                    columnIndx++;
+
+                }
+                sumRow.FillAllRow();
+                table.Rows.Add(sumRow);
+            }
+
+            xssfwb.WriteToSheet(sheet, table, out currentRow, startCollumn: 0, startRow: currentRow);
+            var wb = xssfwb.GetWorkbook();
+            mergeRanges.ForEach(m =>
+            {
+                sheet.AddMergedRegionUnsafe(m);
+                RegionUtil.SetBorderBottom(1, m, sheet);
+                RegionUtil.SetBorderLeft(1, m, sheet);
+                RegionUtil.SetBorderRight(1, m, sheet);
+                RegionUtil.SetBorderTop(1, m, sheet);
+                if (cellStyles.Length > m.FirstRow && cellStyles[m.FirstRow] != null)
+                    sheet.SetCellStyle(m.FirstRow, m.FirstColumn, cellStyles[m.FirstRow][m.FirstColumn]);
+            });
+        }
+
+        private void GenerateDataTable_bak()
+        {
+            var sheet = xssfwb.GetSheet(sheetName);
+            currentRow += 1;
+            ExcelData table = new ExcelData();
+
+            for (var index = 1; index <= columns.Count; index++)
+            {
+                table.Columns.Add($"Col-{index}");
+            }
+
+
+            var conditionHiddenColumns = allColumns.Select(c => c.CalcSumConditionCol).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToArray();
+            for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+            {
+                var col = conditionHiddenColumns[conditionIndex];
+                sheet.SetColumnHidden(columns.Count + conditionIndex, true);
+                table.Columns.Add($"Col-{columns.Count + conditionIndex + 1}");
+            }
+
+
+            var sumCalc = new Dictionary<int, ReportColumnModel>();
+            //var sumValues = new Dictionary<int, decimal>();
+
+            int? firstGroupDataRow = null;
+            int? lastGroupDataRow = null;
+            string currentMergeValue = null;
+
+            _mergeRows = new bool[dataTable.Rows.List.Count][];
+            cellStyles = new ICellStyle[dataTable.Rows.List.Count + currentRow][];
+
+
+            var mergeRanges = new List<CellRangeAddress>();
             for (var i = 0; i < dataTable.Rows.List.Count; i++)
             {
                 var row = dataTable.Rows.List[i];

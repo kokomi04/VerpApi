@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -14,6 +15,8 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
+
+        Task<DataTable> GetListBillInfoRows(int inputTypeId, IList<long> fIds);
 
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 

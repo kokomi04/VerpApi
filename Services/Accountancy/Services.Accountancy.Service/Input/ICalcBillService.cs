@@ -24,6 +24,12 @@ namespace VErp.Services.Accountancy.Service.Input
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock,
             int? department, string customer, int? fixedAsset, int? expenseItem, int? factory, int? product, int? stock);
 
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk);
+
+        Task<bool> CheckExistedFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk);
+
+        Task<bool> DeletedFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk);
+
         ICollection<CostTransferTypeModel> GetCostTransferTypes();
 
         Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);

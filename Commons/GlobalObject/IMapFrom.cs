@@ -1,13 +1,16 @@
 ﻿using AutoMapper;
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 
 namespace VErp.Commons.GlobalObject
 {
     public interface IMapFrom<T>
     {
-        void Mapping(Profile profile) => profile.CreateMap(typeof(T), GetType()).ReverseMap();
+        void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist(typeof(T), GetType())
+            .ReverseMapIgnoreNoneExist(GetType(), typeof(T));
     }
     public interface ICustomMapping
     {
@@ -18,11 +21,11 @@ namespace VErp.Commons.GlobalObject
     {
         public MappingProfile()
         {
-            CreateMap<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
-            CreateMap<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
+            this.CreateMapIgnoreNoneExist<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapIgnoreNoneExist<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
-            CreateMap<DateTime, long>().ConvertUsing(v => v.GetUnix());
-            CreateMap<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapIgnoreNoneExist<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapIgnoreNoneExist<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
         }
     }
 
@@ -60,5 +63,73 @@ namespace VErp.Commons.GlobalObject
 
             }
         }
+
+        public static IMappingExpression CreateMapIgnoreNoneExist(this Profile profile, Type sourceType, Type destinationType)
+        {
+            var expression = profile.CreateMap(sourceType, destinationType);
+            return MapIgnoreNoneExist(expression, sourceType, destinationType);
+        }
+
+
+        public static IMappingExpression<ISource, IDestination> CreateMapIgnoreNoneExist<ISource, IDestination>(this Profile profile)
+        {
+            var expression = profile.CreateMap<ISource, IDestination>();
+            return MapIgnoreNoneExist(expression);
+        }
+
+
+        public static IMappingExpression ReverseMapIgnoreNoneExist(this IMappingExpression expression, Type sourceType, Type destinationType)
+        {
+            expression = expression.ReverseMap();
+            return MapIgnoreNoneExist(expression, sourceType, destinationType);
+        }
+
+        public static IMappingExpression<IDestination, ISource> ReverseMapIgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
+        {
+            var reverseExpression = expression.ReverseMap();
+            return MapIgnoreNoneExist(reverseExpression);
+        }
+
+
+        public static IMappingExpression MapIgnoreNoneExist(this IMappingExpression expression, Type sourceType, Type destinationType)
+        {
+            if (!sourceType.IsClass) return expression;
+            if (!destinationType.IsClass) return expression;
+
+            var sourceProps = sourceType.GetProperties();
+
+            var desProps = destinationType.GetProperties();
+
+            foreach (var property in desProps)
+            {
+                if (!sourceProps.Any(d => d.Name == property.Name))
+                    expression.ForMember(property.Name, s => s.Ignore());
+            }
+
+            return expression;
+        }
+
+        public static IMappingExpression<ISource, IDestination> MapIgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
+        {
+            var sourceType = typeof(ISource);
+            var destinationType = typeof(IDestination);
+
+
+            if (!sourceType.IsClass) return expression;
+            if (!destinationType.IsClass) return expression;
+
+            var sourceProps = sourceType.GetProperties();
+
+            var desProps = destinationType.GetProperties();
+
+            foreach (var property in desProps)
+            {
+                if (!sourceProps.Any(d => d.Name == property.Name))
+                    expression.ForMember(property.Name, s => s.Ignore());
+            }
+
+            return expression;
+        }
+
     }
 }

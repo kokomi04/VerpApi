@@ -19,11 +19,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionConsumMaterial, ProductionConsumMaterialModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionConsumMaterial, ProductionConsumMaterialModel>()
                 .ForMember(s => s.FromDate, d => d.MapFrom(m => m.FromDate.GetUnix()))
                 .ForMember(s => s.ToDate, d => d.MapFrom(m => m.ToDate.GetUnix()))
                 .ForMember(s => s.Details, d => d.Ignore())
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.FromDate, d => d.MapFrom(m => m.FromDate.UnixToDateTime()))
                 .ForMember(s => s.ToDate, d => d.MapFrom(m => m.ToDate.UnixToDateTime()))
                 .ForMember(s => s.ProductionConsumMaterialDetail, d => d.Ignore());

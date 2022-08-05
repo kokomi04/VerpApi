@@ -21,7 +21,7 @@ namespace VErp.Services.Manafacturing.Model.Report
         public string UnfinishedStepTitle { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionOrderListEntity, ProductionReportModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionOrderListEntity, ProductionReportModel>()
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));

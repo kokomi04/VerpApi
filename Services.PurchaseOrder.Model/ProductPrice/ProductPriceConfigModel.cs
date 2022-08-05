@@ -23,11 +23,11 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public bool IsActived { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductPriceConfigVersionModel, ProductPriceConfigVersion>()
+            profile.CreateMapIgnoreNoneExist<ProductPriceConfigVersionModel, ProductPriceConfigVersion>()
                 .ForMember(d => d.ProductPriceConfigItem, s => s.Ignore())
                 .ForMember(d => d.UpdatedByUserId, s => s.Ignore())
                 .ForMember(d => d.UpdatedDatetimeUtc, s => s.Ignore())
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.Items, s => s.Ignore())
                 .ForMember(d => d.UpdatedDatetimeUtc, s => s.MapFrom(v => v.UpdatedDatetimeUtc.GetUnix()));
         }

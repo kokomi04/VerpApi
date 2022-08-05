@@ -26,7 +26,7 @@
 
 //        public new void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<OutsourceOrderDetailInfo, OutsourceOrderPartDetailOutput>()
+//            profile.CreateMapIgnoreNoneExist<OutsourceOrderDetailInfo, OutsourceOrderPartDetailOutput>()
 //                .ForMember(m => m.OutsourceOrderDetailId, v => v.MapFrom(m => m.OutsourceOrderDetailId))
 //                .ForMember(m => m.OutsourceOrderId, v => v.MapFrom(m => m.OutsourceOrderId))
 //                .ForMember(m => m.ObjectId, v => v.MapFrom(m => m.ObjectId))
@@ -38,7 +38,7 @@
 //                .ForMember(m => m.OutsourcePartRequestFinishDate , v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate))
 //                .ForMember(m => m.UnitName, v => v.MapFrom(m => m.UnitName))
 //                .ForMember(m => m.Quantity, v => v.MapFrom(m => m.Quantity))
-//                .ReverseMap();
+//                .ReverseMapIgnoreNoneExist();
 //        }
 //    }
 //}

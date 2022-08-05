@@ -17,9 +17,9 @@ namespace Verp.Services.ReportConfig.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ReportTypeView, ReportTypeViewModel>()
+            profile.CreateMapIgnoreNoneExist<ReportTypeView, ReportTypeViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.ReportTypeViewField, m => m.Ignore())
                 .ForMember(d => d.ReportType, m => m.Ignore())
                 .ForMember(d => d.ReportTypeViewId, m => m.Ignore());
@@ -49,10 +49,10 @@ namespace Verp.Services.ReportConfig.Model
         public string InputStyleJson { get; set; }
         public string HelpText { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMap<ReportTypeViewField, ReportTypeViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<ReportTypeViewField, ReportTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.ReportTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

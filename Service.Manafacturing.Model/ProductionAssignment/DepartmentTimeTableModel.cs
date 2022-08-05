@@ -20,9 +20,9 @@
 
 //        public void Mapping(Profile profile)
 //        {
-//            profile.CreateMap<DepartmentTimeTable, DepartmentTimeTableModel>()
+//            profile.CreateMapIgnoreNoneExist<DepartmentTimeTable, DepartmentTimeTableModel>()
 //                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
-//                .ReverseMap()
+//                .ReverseMapIgnoreNoneExist()
 //                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
 //        }
 //    }

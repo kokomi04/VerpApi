@@ -16,11 +16,11 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public ICollection<CuttingWorkSheetFileModel> CuttingWorkSheetFile { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<CuttingWorkSheet, CuttingWorkSheetModel>()
+            profile.CreateMapIgnoreNoneExist<CuttingWorkSheet, CuttingWorkSheetModel>()
                 .ForMember(dest => dest.CuttingWorkSheetDest, opt => opt.MapFrom(x => x.CuttingWorkSheetDest))
                 .ForMember(dest => dest.CuttingExcessMaterial, opt => opt.MapFrom(x => x.CuttingExcessMaterial))
                 .ForMember(dest => dest.CuttingWorkSheetFile, opt => opt.MapFrom(x => x.CuttingWorkSheetFile))
-                .ReverseMap();
+                .ReverseMapIgnoreNoneExist();
         }
     }
 }

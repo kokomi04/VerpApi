@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Product
@@ -15,9 +16,9 @@ namespace VErp.Services.Stock.Model.Product
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductMaterialsConsumption, ProductMaterialsConsumptionOutput>()
+            profile.CreateMapIgnoreNoneExist<ProductMaterialsConsumption, ProductMaterialsConsumptionOutput>()
                 .ForMember(m => m.UnitId, v => v.MapFrom(m => m.MaterialsConsumption != null ? m.MaterialsConsumption.UnitId : 0))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.MaterialsConsumption, v => v.Ignore());
         }
     }

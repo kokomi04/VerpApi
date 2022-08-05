@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
@@ -25,7 +26,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal? RateInPercent { get; set; }
 
 
-     
+
 
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
@@ -37,12 +38,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionAssignmentEntity, ProductionAssignmentModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionAssignmentEntity, ProductionAssignmentModel>()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.GetUnix()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.GetUnix()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(s => s.AssignedProgressStatus, d => d.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore())
@@ -87,12 +88,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
     {
         public long WorkDate { get; set; }
         public decimal? QuantityPerDay { get; set; }
-      
+
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
         }
 
@@ -142,5 +143,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsManualSetDate { get; set; }
         public decimal RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> Details { get; set; }
+    }
+
+    public class CapacityAssignInfo
+    {
+        public int DepartmentId { get; set; }
+        public decimal AssignQuantity { get; set; }
+        public decimal AssignWorkloadQuantity { get; set; }
+        public decimal AssignWorkHour { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public bool IsSelectionAssign { get; set; }
+        public bool IsManualSetDate { get; set; }
+        public decimal? RateInPercent { get; set; }
+        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
     }
 }

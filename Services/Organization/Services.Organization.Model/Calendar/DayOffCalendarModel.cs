@@ -12,9 +12,9 @@ namespace VErp.Services.Organization.Model.Calendar
         public EnumDayOffType? DayOffType { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<DayOffCalendar, DayOffCalendarModel>()
+            profile.CreateMapIgnoreNoneExist<DayOffCalendar, DayOffCalendarModel>()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(x => x.Day.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.Day, opt => opt.MapFrom(x => x.Day.UnixToDateTime()));
         }
     }
