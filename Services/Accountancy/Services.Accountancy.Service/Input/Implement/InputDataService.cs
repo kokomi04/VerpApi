@@ -346,7 +346,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         /// <param name="inputTypeId"></param>
         /// <param name="lstfId"></param>
         /// <returns></returns>
-        public async Task<DataTable> GetListBillInfoRows(int inputTypeId, IList<long> lstfId)
+        public async Task<List<NonCamelCaseDictionary>> GetListBillInfoRows(int inputTypeId, IList<long> lstfId)
         {
             var singleFields = (await (
                from af in _accountancyDBContext.InputAreaField
@@ -393,8 +393,29 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
             }
 
+            var lst = new List<NonCamelCaseDictionary>();
 
-            return (data);
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+                var dic = new NonCamelCaseDictionary();
+                foreach (DataColumn c in data.Columns)
+                {
+                    var v = row[c];
+                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    {
+                        var vInDateTime = (v as DateTime?).GetUnix();
+                        dic.Add(c.ColumnName, vInDateTime);
+                    }
+                    else
+                    {
+                        dic.Add(c.ColumnName, row[c]);
+                    }
+                }
+                lst.Add(dic);
+            }
+
+            return lst;
         }
 
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
