@@ -223,7 +223,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<ProductOrderModel>> GetProductionOrdersNotDetail(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        public async Task<PageData<ProductOrderModel>> GetProductionOrderList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 

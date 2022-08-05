@@ -89,8 +89,8 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
-        [Route("GetProductionOrdersNotDetail")]
-        public async Task<PageData<ProductOrderModel>> GetProductionOrdersNotDetail(
+        [Route("GetProductionOrderList")]
+        public async Task<PageData<ProductOrderModel>> GetProductionOrderList(
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
@@ -100,7 +100,7 @@ namespace VErpApi.Controllers.Manufacturing
             [FromQuery] long toDate,
             [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrdersNotDetail(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
+            return await _productionOrderService.GetProductionOrderList(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
         [HttpPost]
