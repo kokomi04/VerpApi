@@ -21,9 +21,9 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<VoucherTypeView, VoucherTypeViewModel>()
+            profile.CreateMapCustom<VoucherTypeView, VoucherTypeViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.VoucherTypeViewField, m => m.Ignore())
                 .ForMember(d => d.VoucherType, m => m.Ignore());
         }
@@ -47,10 +47,10 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<VoucherTypeViewField, VoucherTypeViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapCustom<VoucherTypeViewField, VoucherTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.VoucherTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

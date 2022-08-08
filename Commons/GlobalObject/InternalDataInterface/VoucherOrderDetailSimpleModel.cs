@@ -9,9 +9,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<VoucherOrderDetailSimpleEntity, VoucherOrderDetailSimpleModel>()
+            profile.CreateMapCustom<VoucherOrderDetailSimpleEntity, VoucherOrderDetailSimpleModel>()
             .ForMember(m => m.DeliveryDate, v => v.MapFrom(m => GetUnix(m.DeliveryDate)))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.DeliveryDate, v => v.Ignore());
         }
 

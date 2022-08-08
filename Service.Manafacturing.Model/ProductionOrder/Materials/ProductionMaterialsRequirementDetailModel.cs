@@ -17,9 +17,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long? OutsourceStepRequestId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailModel>()
+            profile.CreateMapCustom<ProductionMaterialsRequirementDetail, ProductionMaterialsRequirementDetailModel>()
                 .ForMember(m => m.ProductionStepTitle, v => v.MapFrom(m => string.Concat(m.ProductionStep.Step.StepName, $" (#{m.ProductionStepId})")))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.ProductionStep, v => v.Ignore());
         }
     }

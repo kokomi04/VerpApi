@@ -17,9 +17,9 @@ namespace Verp.Services.ReportConfig.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<DashboardTypeView, DashboardTypeViewModel>()
+            profile.CreateMapCustom<DashboardTypeView, DashboardTypeViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.DashboardTypeViewField, m => m.Ignore())
                 .ForMember(d => d.DashboardType, m => m.Ignore())
                 .ForMember(d => d.DashboardTypeViewId, m => m.Ignore());
@@ -49,10 +49,10 @@ namespace Verp.Services.ReportConfig.Model
         public string InputStyleJson { get; set; }
         public string HelpText { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<DashboardTypeViewField, DashboardTypeViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapCustom<DashboardTypeViewField, DashboardTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.DashboardTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

@@ -23,11 +23,11 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? NeedDate { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<PurchasingRequest, PurchasingRequestInput>()
+        public void Mapping(Profile profile) => profile.CreateMapCustom<PurchasingRequest, PurchasingRequestInput>()
            .ForMember(m => m.Details, m => m.Ignore())
            .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))
            .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.GetUnix()))
-           .ReverseMapIgnoreNoneExist()
+           .ReverseMapCustom()
            .ForMember(m => m.PurchasingRequestDetail, m => m.Ignore())
            .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.UnixToDateTime()))
            .ForMember(m => m.NeedDate, m => m.MapFrom(v => v.NeedDate.UnixToDateTime()));
@@ -56,8 +56,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public int? SortOrder { get; set; }
 
         public IMappingExpression<T, PurchasingRequestDetail> MappingBase<T>(Profile profile) where T : PurchasingRequestInputDetail
-            => profile.CreateMapIgnoreNoneExist<PurchasingRequestDetail, T>()
-          .ReverseMapIgnoreNoneExist()
+            => profile.CreateMapCustom<PurchasingRequestDetail, T>()
+          .ReverseMapCustom()
           .ForMember(m => m.PurchasingRequest, m => m.Ignore())
           .ForMember(m => m.PurchasingSuggestDetail, m => m.Ignore());
 

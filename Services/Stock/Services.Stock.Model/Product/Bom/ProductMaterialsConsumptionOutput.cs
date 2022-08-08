@@ -16,9 +16,9 @@ namespace VErp.Services.Stock.Model.Product
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductMaterialsConsumption, ProductMaterialsConsumptionOutput>()
+            profile.CreateMapCustom<ProductMaterialsConsumption, ProductMaterialsConsumptionOutput>()
                 .ForMember(m => m.UnitId, v => v.MapFrom(m => m.MaterialsConsumption != null ? m.MaterialsConsumption.UnitId : 0))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.MaterialsConsumption, v => v.Ignore());
         }
     }

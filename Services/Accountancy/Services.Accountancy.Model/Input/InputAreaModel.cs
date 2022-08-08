@@ -36,7 +36,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<InputArea, InputAreaModel>()
+            profile.CreateMapCustom<InputArea, InputAreaModel>()
                 .ForMember(dest => dest.InputAreaFields, opt => opt.MapFrom(src => src.InputAreaField));
         }
     }

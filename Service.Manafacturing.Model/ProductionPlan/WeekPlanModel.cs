@@ -20,10 +20,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionPlan
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<WeekPlan, WeekPlanModel>()
+            profile.CreateMapCustom<WeekPlan, WeekPlanModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                  .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
                  .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.UnixToDateTime()));
         }

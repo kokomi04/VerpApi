@@ -57,7 +57,7 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
 
         protected void MappingBase<T>(Profile profile) where T : PoProviderPricingOutputList
         {
-            profile.CreateMapIgnoreNoneExist<PoProviderPricingEntity, T>()
+            profile.CreateMapCustom<PoProviderPricingEntity, T>()
                 .ForMember(d => d.DeliveryDestination, s => s.MapFrom(f => f.DeliveryDestination.JsonDeserialize<DeliveryDestinationModel>()))
                 .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (EnumPoProviderPricingStatus?)f.PoProviderPricingStatusId))
                 .ForMember(d => d.PoProcessStatusId, s => s.MapFrom(f => (EnumPoProcessStatus?)f.PoProcessStatusId))
@@ -89,7 +89,7 @@ namespace VErp.Services.PurchaseOrder.Model.PoProviderPricing
         {
             MappingBase<PoProviderPricingModel>(profile);
 
-            profile.CreateMapIgnoreNoneExist<PoProviderPricingModel, PoProviderPricingEntity>()
+            profile.CreateMapCustom<PoProviderPricingModel, PoProviderPricingEntity>()
                .ForMember(d => d.DeliveryDestination, s => s.MapFrom(f => f.DeliveryDestination.JsonSerialize()))
                .ForMember(d => d.PoProviderPricingStatusId, s => s.MapFrom(f => (int?)f.PoProviderPricingStatusId))
                .ForMember(d => d.PoProcessStatusId, s => s.MapFrom(f => (int?)f.PoProcessStatusId))

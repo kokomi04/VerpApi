@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionOrderEntity, ProductionOrderOutputModel>()
+            profile.CreateMapCustom<ProductionOrderEntity, ProductionOrderOutputModel>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.MapFrom(x => x.ProductionOrderAttachment))
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
@@ -40,7 +40,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public virtual ICollection<ProductionOrderAttachmentModel> ProductionOrderAttachment { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionOrderInputModel, ProductionOrderEntity>()
+            profile.CreateMapCustom<ProductionOrderInputModel, ProductionOrderEntity>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.Ignore())
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))

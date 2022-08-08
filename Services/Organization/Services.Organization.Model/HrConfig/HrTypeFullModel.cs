@@ -17,7 +17,7 @@ namespace Services.Organization.Model.HrConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<HrType, HrTypeFullModel>()
+            profile.CreateMapCustom<HrType, HrTypeFullModel>()
                 .ForMember(dest => dest.HrAreas, opt => opt.MapFrom(src => src.HrArea));
         }
     }
