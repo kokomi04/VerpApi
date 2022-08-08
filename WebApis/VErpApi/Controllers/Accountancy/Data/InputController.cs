@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.MasterEnum;
@@ -69,6 +70,14 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
         }
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/getByListIds")]
+        public async Task<DataTable> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
+        {
+            return await _inputDataService.GetListBillInfoRows(inputTypeId, fIds).ConfigureAwait(true);
+        }
+
         [HttpGet]
         [Route("{inputTypeId}/{fId}/info")]
         public async Task<BillInfoModel> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId)
@@ -112,9 +121,9 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpGet]
         [Route("{inputTypeId}/fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId)
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId, [FromQuery] bool? isExport)
         {
-            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId);
+            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId, isExport);
         }
 
         [HttpPost]

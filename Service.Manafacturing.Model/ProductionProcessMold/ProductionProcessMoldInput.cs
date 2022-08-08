@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionProcessMoldInput, ProductionProcessMoldEntity>()
+            profile.CreateMapIgnoreNoneExist<ProductionProcessMoldInput, ProductionProcessMoldEntity>()
                 .ForMember(m => m.ProductionStepMold, v => v.Ignore())
                 .ForMember(m => m.ProductionProcessMoldId, v => v.MapFrom(m => m.ProductionProcessMoldId))
                 .ForMember(m => m.Title, v => v.MapFrom(m => m.Title));

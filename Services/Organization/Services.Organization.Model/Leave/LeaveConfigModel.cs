@@ -30,9 +30,9 @@ namespace VErp.Services.Organization.Model.Leave
         public bool IsDefault { get; set; }
 
         //public void CreateMapping<T>(Profile profile) where T : LeaveConfigListModel =>
-        //  profile.CreateMap<T, LeaveConfig>()
+        //  profile.CreateMapIgnoreNoneExist<T, LeaveConfig>()
         //  .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.UnixToDateTime()))
-        //  .ReverseMap()
+        //  .ReverseMapIgnoreNoneExist()
         //  .ForMember(d => d.OldYearAppliedToDate, s => s.MapFrom(f => f.OldYearAppliedToDate.GetUnix()));
 
         //public virtual void Mapping(Profile profile) => CreateMapping<LeaveConfigListModel>(profile);
@@ -96,9 +96,9 @@ namespace VErp.Services.Organization.Model.Leave
         public EnumLeaveRoleType LeaveRoleTypeId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<LeaveConfigRoleUserModel, LeaveConfigRole>()
+            profile.CreateMapIgnoreNoneExist<LeaveConfigRoleUserModel, LeaveConfigRole>()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (int)m.LeaveRoleTypeId))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (EnumLeaveRoleType)m.LeaveRoleTypeId));
         }
 

@@ -57,7 +57,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepLinkDataRole, ProductionStepLinkDataInfo>()
+            profile.CreateMapIgnoreNoneExist<ProductionStepLinkDataRole, ProductionStepLinkDataInfo>()
                 .ForMember(m => m.LinkDataObjectId, v => v.MapFrom(m => m.ProductionStepLinkData.LinkDataObjectId))
                 .ForMember(m => m.ProductionStepLinkDataId, v => v.MapFrom(m => m.ProductionStepLinkData.ProductionStepLinkDataId))
                 .ForMember(m => m.Quantity, v => v.MapFrom(m => m.ProductionStepLinkData.Quantity))
@@ -75,7 +75,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ConverterId, v => v.MapFrom(m => m.ProductionStepLinkData.ConverterId))
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataRoleType)m.ProductionStepLinkDataRoleTypeId))
                 //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.ProductionStepLinkData, v => v.Ignore())
                 .ForMember(m => m.ProductionStepLinkDataRoleTypeId, v => v.MapFrom(m => (int)m.ProductionStepLinkDataRoleTypeId));
             //.ForMember(m => m.ProductionStepLinkDataGroup, v => v.MapFrom(m => m.ProductionStepLinkDataGroup));

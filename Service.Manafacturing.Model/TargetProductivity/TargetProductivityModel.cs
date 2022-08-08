@@ -25,10 +25,10 @@ namespace VErp.Services.Manafacturing.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TargetProductivity, TargetProductivityModel>()
+            profile.CreateMapIgnoreNoneExist<TargetProductivity, TargetProductivityModel>()
             .ForMember(m => m.TargetProductivityDate, v => v.MapFrom(m => m.TargetProductivityDate.GetUnix()))
             .ForMember(m => m.TargetProductivityDetail, v => v.MapFrom(m => m.TargetProductivityDetail))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.TargetProductivityDetail, v => v.Ignore());
         }
     }
@@ -48,16 +48,17 @@ namespace VErp.Services.Manafacturing.Model
         public EnumProductivityTimeType ProductivityTimeTypeId { get; set; }
         [Display(Name = "Đối tượng tính năng suất")]
         public EnumProductivityResourceType ProductivityResourceTypeId { get; set; }
+        [Display(Name = "Ghi chú")]
         public string Note { get; set; }
         [Display(Name = "Cách tính KLCV")]
         public EnumWorkloadType WorkLoadTypeId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TargetProductivityDetail, TargetProductivityDetailModel>()
+            profile.CreateMapIgnoreNoneExist<TargetProductivityDetail, TargetProductivityDetailModel>()
             .ForMember(m => m.ProductivityTimeTypeId, v => v.MapFrom(m => (EnumProductivityTimeType)m.ProductivityTimeTypeId))
             .ForMember(m => m.ProductivityResourceTypeId, v => v.MapFrom(m => (EnumProductivityResourceType)m.ProductivityResourceTypeId))
             .ForMember(m => m.WorkLoadTypeId, v => v.MapFrom(m => (EnumWorkloadType)m.WorkLoadTypeId))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.ProductivityTimeTypeId, v => v.MapFrom(m => (int)m.ProductivityTimeTypeId))
             .ForMember(m => m.ProductivityResourceTypeId, v => v.MapFrom(m => (int)m.ProductivityResourceTypeId))
             .ForMember(m => m.WorkLoadTypeId, v => v.MapFrom(m => (int)m.WorkLoadTypeId));

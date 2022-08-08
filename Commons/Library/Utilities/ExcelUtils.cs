@@ -57,8 +57,10 @@ namespace VErp.Commons.Library
 
                 if (attrs != null && attrs.Count() > 0)
                 {
-                    title = attrs.First().Name;
-                    groupName = attrs.First().GroupName;
+                    var attr = attrs.First();
+                    title = attr.Name;
+                    if (!string.IsNullOrWhiteSpace(attr.GroupName))
+                        groupName = attr.GroupName;
 
                     if (attrs.First().GetOrder() > 0)
                         order = parentOrder + attrs.First().Order;

@@ -15,7 +15,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepWorkInfo, ProductionStepWorkInfoOutputModel>()
+            profile.CreateMapIgnoreNoneExist<ProductionStepWorkInfo, ProductionStepWorkInfoOutputModel>()
                 .ForMember(s => s.HandoverType, d => d.MapFrom(m => (EnumHandoverTypeStatus)m.HandoverType));
         }
     }
@@ -28,7 +28,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionStepWorkInfoInputModel, ProductionStepWorkInfo>()
+            profile.CreateMapIgnoreNoneExist<ProductionStepWorkInfoInputModel, ProductionStepWorkInfo>()
                 .ForMember(s => s.HandoverType, d => d.MapFrom(m => (int)m.HandoverType));
         }
     }

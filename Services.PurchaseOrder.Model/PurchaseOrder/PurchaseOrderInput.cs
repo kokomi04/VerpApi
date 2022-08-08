@@ -22,15 +22,17 @@ namespace VErp.Services.PurchaseOrder.Model
         public string PurchaseOrderCode { get; set; }
 
         [MaxLength(512)]
-        public string PaymentInfo { get; set; }
+        public string OtherPolicy { get; set; }
 
         public long? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
         public int? DeliveryCustomerId { get; set; }
 
         public DeliveryDestinationModel DeliveryDestination { get; set; }
-        public string Content { get; set; }
-        public string AdditionNote { get; set; }
+        [MaxLength(512)]
+        public string Requirement { get; set; }
+        [MaxLength(512)]
+        public string DeliveryPolicy { get; set; }
         public decimal DeliveryFee { get; set; }
         public decimal OtherFee { get; set; }
         public decimal TotalMoney { get; set; }
@@ -44,6 +46,15 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? ExchangeRate { get; set; }
 
         public EnumPurchasingOrderType PurchaseOrderType { get; set; }
+
+        [MaxLength(512)]
+        public string DeliveryMethod { get; set; }
+        [MaxLength(512)]
+        public string PaymentMethod { get; set; }
+        [MaxLength(512)]
+        public string AttachmentBill { get; set; }
+
+
     }
 
     public interface IPurchaseOrderInputDetail

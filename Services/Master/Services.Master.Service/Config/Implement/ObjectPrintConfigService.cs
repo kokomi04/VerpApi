@@ -162,12 +162,13 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var result = new List<ObjectPrintConfigSearch>();
 
-
+            var poTask = PurchaseOrderMappingTypeModels();
             var vourcherTask = VourcherMappingTypeModels();
             var hrTask = HrMappingTypeModels();
             var inputTask = InputMappingTypeModels();
             var manufactureTask = ManufactureMappingTypeModels();
 
+            result.AddRange(poTask);
             result.AddRange(await vourcherTask);
             result.AddRange(await inputTask);
             result.AddRange(await hrTask);
@@ -187,6 +188,39 @@ namespace VErp.Services.Master.Service.Config.Implement
                 result = result.Skip((page - 1) * size).Take(size).ToList();
             }
             return (result, total);
+        }
+
+        private IList<ObjectPrintConfigSearch> PurchaseOrderMappingTypeModels()
+        {
+            IList<ObjectPrintConfigSearch> result = new List<ObjectPrintConfigSearch>();
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.PurchaseOrder,
+                objectTypeId: EnumObjectType.PurchasingRequest,
+                objectId: 0,
+                objectTitle: "Yêu cầu vật tư")
+            );
+
+            result.Add(
+               GetObjectPrintConfigSearch(
+               moduleTypeId: EnumModuleType.PurchaseOrder,
+               objectTypeId: EnumObjectType.PurchasingSuggest,
+               objectId: 0,
+               objectTitle: "Đề nghị mua hàng")
+           );
+
+
+            result.Add(
+              GetObjectPrintConfigSearch(
+              moduleTypeId: EnumModuleType.PurchaseOrder,
+              objectTypeId: EnumObjectType.PurchaseOrder,
+              objectId: 0,
+              objectTitle: "Đơn đặt mua")
+          );
+
+
+            return result;
         }
 
         private IList<ObjectPrintConfigSearch> ManufactureMappingTypeModels()

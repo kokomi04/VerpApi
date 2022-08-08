@@ -44,7 +44,7 @@ namespace Services.Organization.Model.HrConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<HrArea, HrAreaModel>()
+            profile.CreateMapIgnoreNoneExist<HrArea, HrAreaModel>()
                 .ForMember(dest => dest.HrAreaFields, opt => opt.MapFrom(src => src.HrAreaField));
         }
     }

@@ -15,10 +15,10 @@ namespace VErp.Services.Organization.Model.DepartmentCalendar
         public string Content { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<DepartmentIncreaseInfo, DepartmentIncreaseInfoModel>()
+            profile.CreateMapIgnoreNoneExist<DepartmentIncreaseInfo, DepartmentIncreaseInfoModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(x => x.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(x => x.EndDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(x => x.StartDate.UnixToDateTime()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(x => x.EndDate.UnixToDateTime()));
         }

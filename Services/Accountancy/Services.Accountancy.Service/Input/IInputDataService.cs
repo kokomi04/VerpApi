@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -15,6 +16,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
+        Task<DataTable> GetListBillInfoRows(int inputTypeId, IList<long> fIds);
+
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 
         Task<long> CreateBill(int inputTypeId, BillInfoModel data);
@@ -23,9 +26,9 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
 
-        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isViewOnly = false);
+        Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isExport = false);
 
-        Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId);
+        Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId, bool? isExport);
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 

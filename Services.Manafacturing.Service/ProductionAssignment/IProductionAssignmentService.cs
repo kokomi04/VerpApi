@@ -19,8 +19,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
 
         Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data);
+        
 
-        Task<DepartmentAssignFreeDate> DepartmentFreeDate(int departmentId);
+        Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(DepartmentAssignFreeDateInput req);
 
         Task<PageData<DepartmentProductionAssignmentModel>> DepartmentProductionAssignment(int departmentId, string keyword, long? productionOrderId, int page, int size, string orderByFieldName, bool asc, long? fromDate, long? toDate);
 

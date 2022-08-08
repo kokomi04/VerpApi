@@ -21,9 +21,9 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<InputTypeView, InputTypeViewModel>()
+            profile.CreateMapIgnoreNoneExist<InputTypeView, InputTypeViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.InputTypeViewField, m => m.Ignore())
                 .ForMember(d => d.InputType, m => m.Ignore());
         }
@@ -47,10 +47,10 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsRequire { get; set; }
         public string RegularExpression { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMap<InputTypeViewField, InputTypeViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<InputTypeViewField, InputTypeViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.InputTypeView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

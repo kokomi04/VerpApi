@@ -23,9 +23,9 @@ namespace VErp.Services.Manafacturing.Model.Report
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OutsourcePartRequestDetailExtractInfo, OutsourcePartRequestReportModel>()
+            profile.CreateMapIgnoreNoneExist<OutsourcePartRequestDetailExtractInfo, OutsourcePartRequestReportModel>()
                 .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()));
         }
     }

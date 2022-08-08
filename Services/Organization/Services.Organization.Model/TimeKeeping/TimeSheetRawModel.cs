@@ -15,10 +15,10 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<TimeSheetRawModel, TimeSheetRaw>()
+            profile.CreateMapIgnoreNoneExist<TimeSheetRawModel, TimeSheetRaw>()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()))
             .ForMember(m => m.Time, v => v.MapFrom(m => TimeSpan.FromSeconds(m.Time)))
-            .ReverseMap()
+            .ReverseMapIgnoreNoneExist()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()))
             .ForMember(m => m.Time, v => v.MapFrom(m => m.Time.TotalSeconds));
         }

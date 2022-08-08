@@ -11,21 +11,21 @@ class ApiEndpointService {
     }
 
     removeMapping(moduleId, apiEndpointId) {
-        return ApiServiceCore.delete('/ApiEndpoint/DeleteMapping', { moduleId, apiEndpointId });
+        return ApiServiceCore.delete('/ApiEndpoint/DeleteMapping', { moduleId, apiEndpointId }).then(() => this.cleanCache());
     }
 
     addMapping(moduleId, apiEndpointId) {
-        return ApiServiceCore.post('/ApiEndpoint/AddMapping', { moduleId, apiEndpointId });
+        return ApiServiceCore.post('/ApiEndpoint/AddMapping', { moduleId, apiEndpointId }).then(() => this.cleanCache());
     }
 
     addSystemModuleGroup(data) {
-        return ApiServiceCore.post('/ApiEndpoint/addSystemModuleGroup', data);
+        return ApiServiceCore.post('/ApiEndpoint/addSystemModuleGroup', data).then(() => this.cleanCache());
     }
     updateSystemModuleGroup(data) {
-        return ApiServiceCore.put('/ApiEndpoint/UpdateSystemModuleGroup', data);
+        return ApiServiceCore.put('/ApiEndpoint/UpdateSystemModuleGroup', data).then(() => this.cleanCache());
     }
     removeSystemModuleGroup(data) {
-        return ApiServiceCore.delete('/ApiEndpoint/DeleteSystemModuleGroup', data);
+        return ApiServiceCore.delete('/ApiEndpoint/DeleteSystemModuleGroup', data).then(() => this.cleanCache());
     }
 
     getSystemModuleGroups() {
@@ -43,13 +43,13 @@ class ApiEndpointService {
     }
 
     addModule(data) {
-        return ApiServiceCore.post('/ApiEndpoint/addModule', data);
+        return ApiServiceCore.post('/ApiEndpoint/addModule', data).then(() => this.cleanCache());
     }
     updateModule(data) {
-        return ApiServiceCore.put('/ApiEndpoint/updateModule', data);
+        return ApiServiceCore.put('/ApiEndpoint/updateModule', data).then(() => this.cleanCache());
     }
     removeModule(data) {
-        return ApiServiceCore.delete('/ApiEndpoint/deleteModule', data);
+        return ApiServiceCore.delete('/ApiEndpoint/deleteModule', data).then(() => this.cleanCache());
     }
 
     cleanCache() {

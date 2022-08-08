@@ -38,13 +38,13 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public IList<MaterialCalcSummaryModel> Summary { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<MaterialCalcModel, MaterialCalc>()
+            profile.CreateMapIgnoreNoneExist<MaterialCalcModel, MaterialCalc>()
                 .ForMember(d => d.CreatedByUserId, s => s.Ignore())
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.Ignore())
                 .ForMember(d => d.MaterialCalcProduct, s => s.MapFrom(m => m.Products))
                 .ForMember(d => d.MaterialCalcSummary, s => s.MapFrom(m => m.Summary))
                 .ForMember(d => d.MaterialCalcConsumptionGroup, s => s.MapFrom(m => m.ConsumptionGroups))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
             //.ForMember(d => d.Products, s => s.MapFrom(m => m.MaterialCalcProduct))
             //.ForMember(d => d.Summary, s => s.MapFrom(m => m.MaterialCalcSummary));
@@ -65,10 +65,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<MaterialCalcProductModel, MaterialCalcProduct>()
+            profile.CreateMapIgnoreNoneExist<MaterialCalcProductModel, MaterialCalcProduct>()
                 .ForMember(d => d.MaterialCalcProductDetail, s => s.MapFrom(m => m.Details))
                 .ForMember(d => d.MaterialCalcProductOrder, s => s.MapFrom(m => m.Orders))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.Orders, s => s.MapFrom(m => m.MaterialCalcProductOrder))
                 .ForMember(d => d.Details, s => s.MapFrom(m => m.MaterialCalcProductDetail));
         }

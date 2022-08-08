@@ -23,11 +23,11 @@ namespace VErp.Infrastructure.ServiceCore.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<UserLoginLog, UserLoginLogModel>()
+            profile.CreateMapIgnoreNoneExist<UserLoginLog, UserLoginLogModel>()
                 .ForMember(d => d.Status, s => s.MapFrom(m => (EnumUserLoginStatus)m.Status))
                 .ForMember(d => d.MessageTypeId, s => s.MapFrom(m => (EnumCustomerType)m.MessageTypeId))
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
-                .ReverseMap()
+                .ReverseMapIgnoreNoneExist()
                 .ForMember(d => d.Status, s => s.MapFrom(m => (int)m.Status))
                 .ForMember(d => d.MessageTypeId, s => s.MapFrom(m => (int)m.MessageTypeId))
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.UnixToDateTime()));
