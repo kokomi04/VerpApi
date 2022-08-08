@@ -100,11 +100,11 @@ namespace VErp.Commons.GlobalObject
 
             var desProps = destinationType.GetProperties();
 
-            foreach (var property in desProps)
-            {
-                if (!sourceProps.Any(d => d.Name == property.Name))
-                    expression.ForMember(property.Name, s => s.Ignore());
-            }
+            //foreach (var property in desProps)
+            //{
+            //    if (!sourceProps.Any(d => d.Name == property.Name))
+            //        expression.ForMember(property.Name, s => s.Ignore());
+            //}
 
             return expression;
         }
@@ -122,11 +122,11 @@ namespace VErp.Commons.GlobalObject
 
             var desProps = destinationType.GetProperties();
 
-            foreach (var property in desProps)
-            {
-                if (!sourceProps.Any(d => d.Name == property.Name))
-                    expression.ForMember(property.Name, s => s.Ignore());
-            }
+            //foreach (var property in desProps)
+            //{
+            //    if (!sourceProps.Any(d => d.Name == property.Name))
+            //        expression.ForMember(property.Name, s => s.Ignore());
+            //}
 
             return expression;
         }
