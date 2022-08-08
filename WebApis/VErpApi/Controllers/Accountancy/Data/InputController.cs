@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/getByListIds")]
-        public async Task<DataTable> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
+        public async Task<List<NonCamelCaseDictionary>> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
         {
             return await _inputDataService.GetListBillInfoRows(inputTypeId, fIds).ConfigureAwait(true);
         }

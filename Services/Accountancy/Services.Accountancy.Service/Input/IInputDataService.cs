@@ -16,7 +16,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
-        Task<DataTable> GetListBillInfoRows(int inputTypeId, IList<long> fIds);
+        Task<List<NonCamelCaseDictionary>> GetListBillInfoRows(int inputTypeId, IList<long> fIds);
 
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 
