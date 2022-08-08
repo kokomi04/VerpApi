@@ -16,10 +16,10 @@ namespace VErp.Services.Master.Model.Notification
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<NotificationModel, NotificationEntity>()
+            profile.CreateMapCustom<NotificationModel, NotificationEntity>()
             .ForMember(x => x.ReadDateTimeUtc, v => v.MapFrom(m => m.ReadDateTimeUtc.UnixToDateTime()))
             .ForMember(x => x.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.UnixToDateTime()))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(x => x.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
             .ForMember(x => x.ReadDateTimeUtc, v => v.MapFrom(m => m.ReadDateTimeUtc.GetUnix()));
         }

@@ -34,7 +34,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<VoucherArea, VoucherAreaModel>()
+            profile.CreateMapCustom<VoucherArea, VoucherAreaModel>()
                 .ForMember(dest => dest.VoucherAreaFields, opt => opt.MapFrom(src => src.VoucherAreaField));
         }
     }

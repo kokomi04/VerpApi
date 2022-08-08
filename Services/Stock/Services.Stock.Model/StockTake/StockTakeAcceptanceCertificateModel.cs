@@ -15,10 +15,10 @@ namespace VErp.Services.Stock.Model.StockTake
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<StockTakeAcceptanceCertificate, StockTakeAcceptanceCertificateModel>()
+            profile.CreateMapCustom<StockTakeAcceptanceCertificate, StockTakeAcceptanceCertificateModel>()
                 .ForMember(dest => dest.StockTakeAcceptanceCertificateDate, opt => opt.MapFrom(x => x.StockTakeAcceptanceCertificateDate.GetUnix()))
                 .ForMember(dest => dest.StockTakeAcceptanceCertificateStatus, opt => opt.MapFrom(x => (EnumStockTakeAcceptanceCertificateStatus)x.StockTakeAcceptanceCertificateStatus))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(dest => dest.StockTakeAcceptanceCertificateDate, opt => opt.MapFrom(x => x.StockTakeAcceptanceCertificateDate.UnixToDateTime()))
                 .ForMember(dest => dest.StockTakeAcceptanceCertificateStatus, opt => opt.MapFrom(x => (int)x.StockTakeAcceptanceCertificateStatus));
         }

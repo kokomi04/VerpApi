@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Model.Report
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProcessingOrderListEntity, ProcessingOrderListModel>()
+            profile.CreateMapCustom<ProcessingOrderListEntity, ProcessingOrderListModel>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.GetUnix()))
                 .ForMember(dest => dest.EndDate, opt => opt.MapFrom(source => source.EndDate.GetUnix()));
         }

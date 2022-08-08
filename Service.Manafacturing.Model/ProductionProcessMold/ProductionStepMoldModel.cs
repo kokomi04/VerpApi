@@ -20,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionStepMoldModel, ProductionStepMold>()
+            profile.CreateMapCustom<ProductionStepMoldModel, ProductionStepMold>()
                 .ForMember(x => x.ProductionStepMoldId, v => v.MapFrom(m => m.ProductionStepMoldId))
                 .ForMember(x => x.StepId, v => v.MapFrom(m => m.StepId))
                 .ForMember(x => x.ProductionProcessMoldId, v => v.MapFrom(m => m.ProductionProcessMoldId))
@@ -29,7 +29,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionProcessMold
                 .ForMember(x => x.CoordinateY, v => v.MapFrom(x => x.CoordinateY))
                 .ForMember(x => x.CoordinateX, v => v.MapFrom(x => x.CoordinateX))
                 .ForMember(x => x.IsFinish, v => v.MapFrom(x => x.IsFinish))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(x => x.ProductionStepMoldId, v => v.MapFrom(m => m.ProductionStepMoldId))
                 .ForMember(x => x.StepId, v => v.MapFrom(m => m.StepId))
                 .ForMember(x => x.StepName, v => v.MapFrom(m => m.Step.StepName))

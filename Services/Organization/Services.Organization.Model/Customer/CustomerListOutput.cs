@@ -37,7 +37,7 @@ namespace VErp.Services.Organization.Model.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<CustomerEntity, CustomerListOutput>()
+            profile.CreateMapCustom<CustomerEntity, CustomerListOutput>()
                 .ForMember(d => d.CustomerTypeId, s => s.MapFrom(m => (EnumCustomerType)m.CustomerTypeId))
                 .ForMember(d => d.CustomerStatusId, s => s.MapFrom(m => (EnumCustomerStatus)m.CustomerStatusId))
                 .ForMember(d => d.DebtBeginningTypeId, s => s.MapFrom(m => (EnumBeginningType)m.DebtBeginningTypeId))

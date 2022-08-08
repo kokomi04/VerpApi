@@ -63,7 +63,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<InventoryRequirementDetail, InventoryRequirementListModel>()
+            profile.CreateMapCustom<InventoryRequirementDetail, InventoryRequirementListModel>()
                 .ForMember(dest => dest.InventoryRequirementCode, otp => otp.MapFrom(source => source.InventoryRequirement.InventoryRequirementCode))
                 .ForMember(dest => dest.Content, otp => otp.MapFrom(source => source.InventoryRequirement.Content))
                 .ForMember(dest => dest.Date, otp => otp.MapFrom(source => source.InventoryRequirement.Date.GetUnix()))
@@ -106,7 +106,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<InventoryRequirementInputModel, InventoryRequirementEntity>()
+            profile.CreateMapCustom<InventoryRequirementInputModel, InventoryRequirementEntity>()
                 .ForMember(dest => dest.InventoryRequirementDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.InventoryRequirementFile, opt => opt.Ignore())
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.UnixToDateTime()))
@@ -136,7 +136,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<InventoryRequirementEntity, InventoryRequirementOutputModel>()
+            profile.CreateMapCustom<InventoryRequirementEntity, InventoryRequirementOutputModel>()
                 .ForMember(dest => dest.Date, opt => opt.MapFrom(source => source.Date.GetUnix()))
                 .ForMember(dest => dest.CensorDatetimeUtc, opt => opt.MapFrom(source => source.CensorDatetimeUtc.GetUnix()))
                 .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.GetUnix()))

@@ -26,12 +26,12 @@ namespace VErp.Services.Manafacturing.Model.Outsource.RequestStep
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<OutsourceStepRequest, OutsourceStepRequestModel>()
+            profile.CreateMapCustom<OutsourceStepRequest, OutsourceStepRequestModel>()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestDate, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(m => m.OutsourceStepRequestData, v => v.MapFrom(m => m.OutsourceStepRequestData))
                 .ForMember(m => m.ProductionOrderCode, v => v.MapFrom(m => m.ProductionOrder.ProductionOrderCode))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.Ignore())
                 .ForMember(m => m.ProductionOrder, v => v.Ignore())

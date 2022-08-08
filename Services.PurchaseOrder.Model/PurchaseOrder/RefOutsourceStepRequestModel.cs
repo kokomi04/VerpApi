@@ -22,9 +22,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<RefOutsourceStepRequestModel, RefOutsourceStepRequest>()
+            profile.CreateMapCustom<RefOutsourceStepRequestModel, RefOutsourceStepRequest>()
             .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.UnixToDateTime()))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.OutsourceStepRequestFinishDate, v => v.MapFrom(m => m.OutsourceStepRequestFinishDate.GetUnix()));
         }
     }
