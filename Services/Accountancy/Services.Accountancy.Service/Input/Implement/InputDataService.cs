@@ -367,31 +367,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+                WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
 
             ";
 
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
-
-            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
-
-            var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
-
-            if (billEntryInfo.Rows.Count > 0)
-            {
-                for (var i = 0; i < data.Rows.Count; i++)
-                {
-                    var row = data.Rows[i];
-                    for (var j = 0; j < data.Columns.Count; j++)
-                    {
-                        var column = data.Columns[j];
-                        if (singleFields.Contains(column.ColumnName))
-                        {
-                            row[column] = billEntryInfo.Rows[0][column.ColumnName];
-                        }
-                    }
-                }
-            }
 
             var lst = new List<NonCamelCaseDictionary>();
 
