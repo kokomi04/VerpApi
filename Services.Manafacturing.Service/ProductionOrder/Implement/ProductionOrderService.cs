@@ -833,7 +833,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
 
-                if (data.ProductionOrderDetail.Count(x => x.Quantity <= 0) > 0)
+                if (data.ProductionOrderDetail.Any(x => x.Quantity <= 0))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
 
                 CustomGenCodeOutputModel currentConfig = null;
@@ -966,7 +966,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         .Where(x => x.Count() > 1)
                         .Count() > 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
-                    if (item.ProductionOrderDetail.Count(x => x.Quantity <= 0) > 0)
+                    if (item.ProductionOrderDetail.Any(x => x.Quantity <= 0))
                         throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
 
                     //string currentCode = currentConfig.CurrentLastValue.LastCode;
