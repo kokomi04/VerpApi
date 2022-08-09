@@ -61,6 +61,13 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         {
             return await _voucherDataService.GetVoucherBillInfoRows(voucherTypeId, fId, orderByFieldName, asc, page ?? 0, size ?? 0).ConfigureAwait(true);
         }
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{voucherTypeId}/getByListIds")]
+        public async Task<IDictionary<long, BillInfoModel>> GetListVoucherBillInfoRows([FromRoute] int voucherTypeId, [FromBody] IList<long> fIds)
+        {
+            return await _voucherDataService.GetListVoucherBillInfoRows(voucherTypeId, fIds).ConfigureAwait(true);
+        }
 
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/info")]
