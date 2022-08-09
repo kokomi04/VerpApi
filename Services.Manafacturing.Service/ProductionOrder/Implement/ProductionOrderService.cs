@@ -1483,6 +1483,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
                 entity.NumberOfDayPed = model.NumberOfDayPed;
+                entity.IsWeekPlanSplitByWeekOfYear = model.IsWeekPlanSplitByWeekOfYear;
             };
 
             await _manufacturingDBContext.SaveChangesAsync();
