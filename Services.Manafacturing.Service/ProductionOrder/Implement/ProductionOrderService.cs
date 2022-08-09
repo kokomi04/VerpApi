@@ -223,46 +223,102 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total);
         }
 
-        public async Task<PageData<ProductOrderModel>> GetProductionOrderList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        public async Task<PageData<ProductOrderModelExtra>> GetProductionOrderList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>();
 
-            var query = _manufacturingDBContext.ProductionOrder.AsNoTracking();
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-                query = query.Where(x => x.ProductionOrderCode.Contains(keyword));
-
-            if (fromDate > 0)
+            var whereCondition = new StringBuilder();
+            if (!string.IsNullOrEmpty(keyword))
             {
-                var time = fromDate.UnixToDateTime();
-                query = query.Where(q => q.Date >= time);
+                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+            if (fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
             }
 
-            if (toDate > 0)
+            if (filters != null)
             {
-                var time = toDate.UnixToDateTime();
-                query = query.Where(q => q.Date <= time);
-            }
-            query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
-
-            var total = await query.CountAsync();
-
-            var lst = (await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).ToListAsync())
-                .Select(x => new ProductOrderModel
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
                 {
-                    ProductionOrderId = x.ProductionOrderId,
-                    ProductionOrderCode = x.ProductionOrderCode,
-                    StartDate = x.StartDate.GetUnix(),
-                    EndDate = x.EndDate.GetUnix(),
-                    Date = x.Date.GetUnix(),
-                    Description = x.Description,
-                    IsDraft = x.IsDraft,
-                    IsInvalid = x.IsInvalid,
-                    ProductionOrderStatus = (EnumProductionStatus)x.ProductionOrderStatus,
-                    IsUpdateQuantity = x.IsUpdateQuantity,
-                    IsUpdateProcessForAssignment = x.IsUpdateProcessForAssignment,
-                    
-                }).ToList();
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
+            }
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "ProductionOrderId";
+                asc = true;
+            }
+
+            var sql = new StringBuilder(
+                @$";WITH tmp AS (
+                    SELECT ");
+
+
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+
+
+            sql.Append(@" g.ProductionOrderId
+                        FROM(
+                            SELECT * FROM vProductionOrderDetail v");
+
+            var totalSql = new StringBuilder(
+                @"SELECT 
+                    COUNT(*) Total
+                FROM (
+                    SELECT v.ProductionOrderId FROM vProductionOrderDetail v ");
+
+            if (whereCondition.Length > 0)
+            {
+                totalSql.Append(" WHERE ");
+                totalSql.Append(whereCondition);
+
+                sql.Append(" WHERE ");
+                sql.Append(whereCondition);
+            }
+            totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
+            sql.Append(
+                   @") g
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
+
+            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var total = 0;
+            // decimal additionResult = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+                // additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
+            }
+
+            if (size > 0)
+            {
+                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                            OFFSET {(page - 1) * size} ROWS
+                            FETCH NEXT {size}
+                            ROWS ONLY");
+            }
+
+            sql.Append(@")
+                SELECT * FROM tmp t
+                OUTER APPLY(SELECT TOP 1 * 
+                FROM vProductionOrderDetail v  
+                WHERE t.ProductionOrderId = v.ProductionOrderId
+                ORDER BY CAST(HasNewProductionProcessVersion AS int) DESC) u");
+
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<ProductOrderModelExtra>();
 
             return (lst, total);
         }

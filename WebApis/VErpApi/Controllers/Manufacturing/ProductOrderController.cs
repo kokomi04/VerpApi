@@ -90,7 +90,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetProductionOrderList")]
-        public async Task<PageData<ProductOrderModel>> GetProductionOrderList(
+        public async Task<PageData<ProductOrderModelExtra>> GetProductionOrderList(
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
