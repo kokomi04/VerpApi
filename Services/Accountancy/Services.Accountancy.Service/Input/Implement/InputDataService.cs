@@ -362,34 +362,54 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             )
             .ToHashSet();
 
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id IN ({string.Join(",", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
+
+            var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
+
+            var total = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+            }
+
             var dataSql = @$"
 
                 SELECT     r.*
                 FROM {INPUTVALUEROW_VIEW} r 
 
-                WHERE r.InputBill_F_Id IN ({string.Join(", ", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
-
+                WHERE r.InputBill_F_Id IN ({string.Join(",", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
 
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var lst = new List<NonCamelCaseDictionary>();
+            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id IN ({string.Join(",", lstfId)}) AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
+            var billEntryInfo = (await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>())).ConvertData();
+
+            var lst = new List<NonCamelCaseDictionary>();
             for (var i = 0; i < data.Rows.Count; i++)
             {
                 var row = data.Rows[i];
                 var dic = new NonCamelCaseDictionary();
+                var billEntryInfoRow = new NonCamelCaseDictionary();
+                if (billEntryInfo.Count > 0)
+                    billEntryInfoRow = billEntryInfo.FirstOrDefault(b => (long)b["InputBill_F_Id"] == (long)row["InputBill_F_Id"]);
                 foreach (DataColumn c in data.Columns)
                 {
                     var v = row[c];
-                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
-                    {
-                        var vInDateTime = (v as DateTime?).GetUnix();
-                        dic.Add(c.ColumnName, vInDateTime);
-                    }
+                    if (billEntryInfoRow != null && billEntryInfoRow.Count > 0 && singleFields.Contains(c.ColumnName))
+                        dic.Add(c.ColumnName, billEntryInfoRow[c.ColumnName]);
                     else
                     {
-                        dic.Add(c.ColumnName, row[c]);
+                        if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                        {
+                            var vInDateTime = (v as DateTime?).GetUnix();
+                            dic.Add(c.ColumnName, vInDateTime);
+                        }
+                        else
+                        {
+                            dic.Add(c.ColumnName, row[c]);
+                        }
                     }
                 }
                 lst.Add(dic);

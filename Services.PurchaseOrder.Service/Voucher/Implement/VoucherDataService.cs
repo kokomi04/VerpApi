@@ -320,6 +320,71 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (data, total);
         }
 
+        public async Task<List<NonCamelCaseDictionary>> GetListVoucherBillInfoRows(int voucherTypeId, IList<long> lstfId)
+        {
+            var singleFields = (await (
+               from af in _purchaseOrderDBContext.VoucherAreaField
+               join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
+               join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
+
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
+
+            var dataSql = @$"
+
+                SELECT     r.*
+                FROM {VOUCHERVALUEROW_VIEW} r 
+
+                WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+
+            ";
+           
+            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+
+            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+
+            var billEntryInfo = (await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>())).ConvertData();
+
+            var lst = new List<NonCamelCaseDictionary>();
+            for (var i = 0; i < data.Rows.Count; i++)
+            {
+                var row = data.Rows[i];
+                var dic = new NonCamelCaseDictionary();
+                var billEntryInfoRow = new NonCamelCaseDictionary();
+                if (billEntryInfo.Count > 0)
+                    billEntryInfoRow = billEntryInfo.FirstOrDefault(b => (long)b["VoucherBill_F_Id"] == (long)row["VoucherBill_F_Id"]);
+                foreach (DataColumn c in data.Columns)
+                {
+                    var v = row[c];
+                    if (billEntryInfoRow != null && billEntryInfoRow.Count > 0 && singleFields.Contains(c.ColumnName))
+                        dic.Add(c.ColumnName, billEntryInfoRow[c.ColumnName]);
+                    else
+                    {
+                        if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                        {
+                            var vInDateTime = (v as DateTime?).GetUnix();
+                            dic.Add(c.ColumnName, vInDateTime);
+                        }
+                        else
+                        {
+                            dic.Add(c.ColumnName, row[c]);
+                        }
+                    }
+                }
+                lst.Add(dic);
+            }
+
+            return lst;
+        }
+
         public async Task<BillInfoModel> GetVoucherBillInfo(int voucherTypeId, long fId)
         {
             var singleFields = (await (

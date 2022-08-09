@@ -16,6 +16,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher
         //Task<PageDataTable> GetBillInfoByMappingObject(string mappingFunctionKey, string objectId);
 
         Task<PageDataTable> GetVoucherBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
+        Task<List<NonCamelCaseDictionary>> GetListVoucherBillInfoRows(int inputTypeId, IList<long> fIds);
 
         Task<BillInfoModel> GetVoucherBillInfo(int inputTypeId, long fId);
 
