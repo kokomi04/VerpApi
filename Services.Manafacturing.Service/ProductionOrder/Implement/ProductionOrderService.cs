@@ -1029,7 +1029,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if (data.ProductionOrderDetail.Count == 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
-
+                if (data.ProductionOrderDetail.Any(x => x.Quantity <= 0))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
