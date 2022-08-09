@@ -41,7 +41,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool? IsUpdateQuantity { get; set; }
         public string ProductionOrderProcessVersion { get; set; }
         public bool? IsUpdateProcessForAssignment { get; set; }
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
 
+        public virtual WeekPlan FromWeekPlan { get; set; }
+        public virtual MonthPlan MonthPlan { get; set; }
+        public virtual WeekPlan ToWeekPlan { get; set; }
         public virtual ICollection<OutsourceStepRequest> OutsourceStepRequest { get; set; }
         public virtual ICollection<ProductionHandover> ProductionHandover { get; set; }
         public virtual ICollection<ProductionHumanResource> ProductionHumanResource { get; set; }
