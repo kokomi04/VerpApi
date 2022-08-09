@@ -31,8 +31,14 @@
     "Host": "",
     "Path": "/usr/resources/_tools/",
     "Version": "",
-    "Product": 0, // 0-Chrome, 1-Firefox
+    "Product": 0, 
     "ExecutablePath": ""
+  },
+  "WebPush": {
+    "PublicKey": "BPeuXekjhA4_UKDbK7zS00vgyuBxNOq_xqDC4wndYM4jxmzbVSoSoH6mWW1kYluYEm71ZijTy2T152ZWoNvHg-Y",
+    "PrivateKey": "ZotXJXg1N0QZ-EhStuKo8gLYNTrvpYChsDq5ZoHYTsI",
+    "ActionUrl": "http://localhost:8005/",
+    "EnableWorker": false
   }
 
 }
