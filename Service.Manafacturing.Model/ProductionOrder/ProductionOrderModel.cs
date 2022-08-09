@@ -71,6 +71,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public bool? IsUpdateQuantity { get; set; }
         public bool? IsUpdateProcessForAssignment { get; set; }
+
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
     }
 
     public class ProductionOrderStatusDataModel
