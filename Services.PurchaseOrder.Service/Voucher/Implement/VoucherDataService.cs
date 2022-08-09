@@ -320,7 +320,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (data, total);
         }
 
-        public async Task<List<NonCamelCaseDictionary>> GetListVoucherBillInfoRows(int voucherTypeId, IList<long> lstfId)
+        public async Task<IDictionary<long, BillInfoModel>> GetListVoucherBillInfoRows(int voucherTypeId, IList<long> lstfId)
         {
             var singleFields = (await (
                from af in _purchaseOrderDBContext.VoucherAreaField
@@ -336,52 +336,57 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             )
             .ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
-
             var dataSql = @$"
 
                 SELECT     r.*
                 FROM {VOUCHERVALUEROW_VIEW} r 
-
-                WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+                JOIN @FIds v ON r.VoucherBill_F_Id = v.[Value]
+                WHERE r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
             ";
            
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+            var data = (await _purchaseOrderDBContext.QueryDataTable(dataSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
 
-            var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id IN ({string.Join(",", lstfId)}) AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = @$"
 
-            var billEntryInfo = (await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>())).ConvertData();
+                SELECT     r.*
+                FROM {VOUCHERVALUEROW_VIEW} r 
+                JOIN @FIds v ON r.VoucherBill_F_Id = v.[Value]
+                WHERE r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
 
-            var lst = new List<NonCamelCaseDictionary>();
-            for (var i = 0; i < data.Rows.Count; i++)
+            ";
+            var billEntryInfos = (await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
+
+            var lst = new Dictionary<long, BillInfoModel>();
+            foreach (var fId in lstfId)
             {
-                var row = data.Rows[i];
-                var dic = new NonCamelCaseDictionary();
-                var billEntryInfoRow = new NonCamelCaseDictionary();
-                if (billEntryInfo.Count > 0)
-                    billEntryInfoRow = billEntryInfo.FirstOrDefault(b => (long)b["VoucherBill_F_Id"] == (long)row["VoucherBill_F_Id"]);
-                foreach (DataColumn c in data.Columns)
+                var result = new BillInfoModel();
+
+                var rows = data.Where(r => (long)r["VoucherBill_F_Id"] == fId).ToList();
+
+                var billEntryInfo = billEntryInfos.FirstOrDefault(b => (long)b["VoucherBill_F_Id"] == fId);
+                result.Info = billEntryInfo;
+                if (billEntryInfo != null && billEntryInfo.Count > 0)
                 {
-                    var v = row[c];
-                    if (billEntryInfoRow != null && billEntryInfoRow.Count > 0 && singleFields.Contains(c.ColumnName))
-                        dic.Add(c.ColumnName, billEntryInfoRow[c.ColumnName]);
-                    else
+                    foreach (var row in rows)
                     {
-                        if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                        foreach (var k in row.Keys)
                         {
-                            var vInDateTime = (v as DateTime?).GetUnix();
-                            dic.Add(c.ColumnName, vInDateTime);
-                        }
-                        else
-                        {
-                            dic.Add(c.ColumnName, row[c]);
+                            if (singleFields.Contains(k))
+                            {
+                                row[k] = billEntryInfo[k];
+                            }
                         }
                     }
                 }
-                lst.Add(dic);
-            }
+                else
+                {
+                    result.Info = rows.FirstOrDefault()?.CloneNew();
+                }
 
+                result.Rows = rows;
+                lst.Add(fId, result);
+            }
             return lst;
         }
 
