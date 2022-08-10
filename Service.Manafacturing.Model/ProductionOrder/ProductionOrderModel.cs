@@ -75,6 +75,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? MonthPlanId { get; set; }
         public int? FromWeekPlanId { get; set; }
         public int? ToWeekPlanId { get; set; }
+        public int? FactoryDepartmentId { get; set; }
     }
 
     public class ProductionOrderStatusDataModel

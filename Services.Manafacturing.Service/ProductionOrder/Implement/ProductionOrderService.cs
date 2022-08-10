@@ -93,7 +93,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderCodes
             };
 
-            var result = await GetProductionOrders(null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
@@ -108,11 +108,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderIds
             };
 
-            var result = await GetProductionOrders(null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, int? factoryDepartmentId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
@@ -121,12 +121,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (monthPlanId > 0)
             {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
                 whereCondition.Append("v.MonthPlanId = @MonthPlanId ");
+
                 parammeters.Add(new SqlParameter("@MonthPlanId", monthPlanId));
+            }
+
+            if (factoryDepartmentId > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append("v.FactoryDepartmentId = @FactoryDepartmentId ");
+
+                parammeters.Add(new SqlParameter("@FactoryDepartmentId", factoryDepartmentId));
             }
 
             if (!string.IsNullOrEmpty(keyword))
             {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
