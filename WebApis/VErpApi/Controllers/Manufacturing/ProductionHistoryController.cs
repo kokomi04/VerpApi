@@ -48,9 +48,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("completionActualWorkload")]
-        public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload([FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload([FromQuery] int? monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionHistoryService.GetCompletionActualWorkload(startDate, endDate);
+            return await _productionHistoryService.GetCompletionActualWorkload(monthPlanId, startDate, endDate);
         }
 
         [HttpDelete]

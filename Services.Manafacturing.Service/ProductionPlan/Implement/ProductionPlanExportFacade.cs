@@ -83,13 +83,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return this;
         }
         public async Task<(Stream stream, string fileName, string contentType)> Export(
+            int? monthPlanId,
             long startDate,
             long endDate,
             ProductionPlanExportModel data,
             IList<string> mappingFunctionKeys = null)
         {
             maxColumnIndex = 23 + data.ProductCateIds.Length;
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
 
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
@@ -249,8 +250,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     if (i == 14)
                     {
                         style = productPurityCell;
-                    }    
-                    else if (i == 3 || (i >= 10 && i <= 17 ))
+                    }
+                    else if (i == 3 || (i >= 10 && i <= 17))
                     {
                         style = numberCell;
                     }
@@ -275,7 +276,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     if (voucherOrder.DeliveryDate > 0)
                     {
                         sheet.EnsureCell(currentRow, 22).SetCellValue(voucherOrder.DeliveryDate.UnixToDateTime(_currentContext.TimeZoneOffset));
-                    }    
+                    }
                 }
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.ProductCode);
                 sheet.EnsureCell(currentRow, 8).SetCellValue(item.ProductName);
@@ -286,7 +287,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 sheet.EnsureCell(currentRow, 13).SetCellValue((double)totalQuantity);
                 if (product != null && product.ProductPurity.HasValue)
                 {
-                    sheet.EnsureCell(currentRow, 14).SetCellValue((double)(product.ProductPurity.Value * totalQuantity)); 
+                    sheet.EnsureCell(currentRow, 14).SetCellValue((double)(product.ProductPurity.Value * totalQuantity));
                 }
                 sheet.EnsureCell(currentRow, 15).SetCellValue((double)item.UnitPrice);
                 sheet.EnsureCell(currentRow, 16).SetCellValue((double)(item.UnitPrice * totalQuantity));
@@ -337,6 +338,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
         public async Task<(Stream stream, string fileName, string contentType)> WorkloadExport(
+          int? monthPlanId,
           long startDate,
           long endDate,
           string monthPlanName,
@@ -345,7 +347,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             maxColumnIndex = 7 + _allSteps.Count * 2;
 
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, startDate, endDate);
 
             var sortOrderMax = 0;
             foreach (var p in productionPlanInfo)
@@ -384,7 +386,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             // Sắp xếp
             productionPlanInfo = productionPlanInfo.OrderBy(p => extraPlanInfos[p.ProductionOrderDetailId.Value].SortOrder).ToList();
 
-            var workloads = await _productionPlanService.GetWorkloadPlanByDate(startDate, endDate);
+            var workloads = await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, startDate, endDate);
 
             var productIds = new List<int>();
             var productSemiIds = new List<long>();

@@ -74,6 +74,7 @@ namespace VErpApi.Controllers.Manufacturing
         [VErpAction(EnumActionType.View)]
         [Route("Search")]
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(
+            [FromQuery] int? monthPlanId,
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
@@ -84,7 +85,7 @@ namespace VErpApi.Controllers.Manufacturing
             [FromQuery] bool? hasNewProductionProcessVersion,
             [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, hasNewProductionProcessVersion, filters);
+            return await _productionOrderService.GetProductionOrders(monthPlanId, keyword, page, size, orderByFieldName, asc, fromDate, toDate, hasNewProductionProcessVersion, filters);
         }
 
         [HttpPost]
@@ -203,7 +204,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("capacity")]
-        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? assignDepartmentId)
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] int monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? assignDepartmentId)
         {
             return await _productionOrderService.GetProductionCapacity(startDate, endDate, assignDepartmentId);
         }

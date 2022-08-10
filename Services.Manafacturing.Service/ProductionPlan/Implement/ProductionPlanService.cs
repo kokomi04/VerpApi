@@ -58,13 +58,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _currentContext = currentContext;
         }
 
-        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate)
+        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(int? monthPlanId, long startDate, long endDate)
         {
-            var productionOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
-                .Include(pod => pod.ProductionOrder)
-                .Where(pod => pod.ProductionOrder.StartDate <= endDate.UnixToDateTime() && pod.ProductionOrder.EndDate >= startDate.UnixToDateTime())
-                .Select(pod => pod.ProductionOrderDetailId)
-                .ToList();
+            IQueryable<long> productionOrderDetailIds;
+
+            if (monthPlanId > 0)
+            {
+                productionOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
+                   .Include(pod => pod.ProductionOrder)
+                   .Where(pod => pod.ProductionOrder.MonthPlanId == monthPlanId)
+                   .Select(pod => pod.ProductionOrderDetailId);
+            }
+            else
+            {
+                productionOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
+                   .Include(pod => pod.ProductionOrder)
+                   .Where(pod => pod.ProductionOrder.StartDate <= endDate.UnixToDateTime() && pod.ProductionOrder.EndDate >= startDate.UnixToDateTime())
+                   .Select(pod => pod.ProductionOrderDetailId);
+            }
 
             var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
                 .Include(p => p.ProductionWeekPlanDetail)
@@ -224,7 +235,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             }
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(int? monthPlanId, long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
         {
             var productionPlanExport = new ProductionPlanExportFacade();
             productionPlanExport.SetProductionPlanService(this);
@@ -233,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetProductBomHelperService(_productBomHelperService);
             productionPlanExport.SetCurrentContextService(_currentContext);
             productionPlanExport.SetVoucherTypeHelperService(_voucherTypeHelperService);
-            return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
+            return await productionPlanExport.Export(monthPlanId, startDate, endDate, data, mappingFunctionKeys);
         }
 
 
@@ -265,7 +276,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         }
 
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionPlans(long startDate, long endDate)
+        public async Task<IList<ProductionOrderListModel>> GetProductionPlans(int? monthPlanId, long startDate, long endDate)
         {
 
             var parammeters = new List<SqlParameter>();
@@ -306,16 +317,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return lst;
         }
 
-        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate)
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(int? monthPlanId, long startDate, long endDate)
         {
-            var startDateTime = startDate.UnixToDateTime();
-            var endDateTime = endDate.UnixToDateTime();
+            IList<long> productionOrderIds;
+            if (monthPlanId > 0)
+            {
+                productionOrderIds = _manufacturingDBContext.ProductionOrder
+                  .Where(po => po.MonthPlanId == monthPlanId)
+                  .Select(po => po.ProductionOrderId)
+                  .ToList();
+            }
+            else
+            {
+                var startDateTime = startDate.UnixToDateTime();
+                var endDateTime = endDate.UnixToDateTime();
 
-            var productionOrderIds = _manufacturingDBContext.ProductionOrder
-                .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime)
-                .Select(po => po.ProductionOrderId)
-                .ToList();
+                productionOrderIds = _manufacturingDBContext.ProductionOrder
+                   .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime)
+                   .Select(po => po.ProductionOrderId)
+                   .ToList();
 
+            }
             return await GetWorkloadPlan(productionOrderIds);
         }
 
@@ -521,9 +543,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var currentWeekPlan = _manufacturingDBContext.WeekPlan.Where(w => w.StartDate <= lastestDate).OrderBy(w => w.StartDate).LastOrDefault();
             if (currentWeekPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tuần");
 
+
             var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
                 .Include(pd => pd.ProductionOrder)
-                .Where(pd => pd.ProductionOrder.PlanEndDate >= monthPlan.StartDate && pd.ProductionOrder.StartDate <= monthPlan.EndDate)
+                .Where(pd => pd.ProductionOrder.MonthPlanId == monthPlanId)
                 .ToList();
 
             var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();
