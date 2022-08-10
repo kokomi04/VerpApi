@@ -267,7 +267,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
 
-            return await productionPlanExport.WorkloadExport(startDate, endDate, monthPlanName, extraInfos, mappingFunctionKeys);
+            return await productionPlanExport.WorkloadExport(monthPlanId, startDate, endDate, monthPlanName, extraInfos, mappingFunctionKeys);
         }
 
         public List<ProductSemiEntity> GetProductSemis(List<long> productSemiIds)
