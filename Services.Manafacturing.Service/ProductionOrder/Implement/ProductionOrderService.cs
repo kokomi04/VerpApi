@@ -93,7 +93,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderCodes
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
@@ -108,16 +108,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderIds
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
 
             var whereCondition = new StringBuilder();
+
+            if (monthPlanId > 0)
+            {
+                whereCondition.Append("v.MonthPlanId = @MonthPlanId ");
+                parammeters.Add(new SqlParameter("@MonthPlanId", monthPlanId));
+            }
+
             if (!string.IsNullOrEmpty(keyword))
             {
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
@@ -345,16 +352,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         }
 
 
-        public async Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate, int? assignDepartmentId)
+        public async Task<ProductionCapacityModel> GetProductionCapacity(int? monthPlanId, long fromDate, long toDate, int? assignDepartmentId)
         {
 
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+            IList<ProductionOrderEntity> productionOrders;
 
-            var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
-                    .Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime)
+            if (monthPlanId > 0)
+            {
+                var monthPlanInfo = await _manufacturingDBContext.MonthPlan.FirstOrDefaultAsync(m => m.MonthPlanId == monthPlanId);
+                if (monthPlanInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                fromDate = monthPlanInfo.StartDate.GetUnix();
+                toDate = monthPlanInfo.EndDate.GetUnix();
+
+                productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                    .Where(po => po.MonthPlanId == monthPlanId)
                     .ToListAsync();
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
 
+                productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                        .Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime)
+                        .ToListAsync();
+            }
 
             // Lấy thông tin đầu ra và số giờ công cần
             var productionCapacityDetail = await GetProductionWorkLoads(productionOrders, assignDepartmentId);

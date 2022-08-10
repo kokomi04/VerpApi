@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes);
         Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds(IList<long> productionOrderIds);
 
-        Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null);
+        Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null);
         Task<PageData<ProductOrderModelExtra>> GetProductionOrderList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null);
         Task<IList<ProductionOrderExtraInfo>> GetProductionOrderExtraInfo(long orderId);
         Task<ProductionOrderOutputModel> GetProductionOrder(long productionOrderId);
@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<bool> EditNote(long productionOrderDetailId, string note);
         Task<bool> EditDate(long[] productionOrderDetailId, long startDate, long planEndDate, long endDate);
 
-        Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate, int? assignDepartmentId);
+        Task<ProductionCapacityModel> GetProductionCapacity(int? monthPlanId, long fromDate, long toDate, int? assignDepartmentId);
 
         Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId);
 

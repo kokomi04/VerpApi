@@ -200,15 +200,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload(long fromDate, long toDate)
+        public async Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload(int? monthPlanId, long fromDate, long toDate)
         {
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+            IList<long> productionOrderIds;
 
-            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.PlanEndDate >= fromDateTime).ToList();
-            var productionOrderIds = productionOrders.Select(po => po.ProductionOrderId).ToList();
+            if (monthPlanId > 0)
+            {
+                productionOrderIds = _manufacturingDBContext.ProductionOrder.Where(po => po.MonthPlanId == monthPlanId)
+                      .Select(po => po.ProductionOrderId).ToList();
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
 
-            productionOrderIds = productionOrderIds.Distinct().ToList();
+                productionOrderIds = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.PlanEndDate >= fromDateTime)
+                    .Select(po => po.ProductionOrderId).ToList();
+
+            }
+
+
 
             var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
                                              join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
