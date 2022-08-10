@@ -15,5 +15,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [MaxLength(128, ErrorMessage = "Tên thuộc tính quá dài")]
         public string PropertyName { get; set; }
 
+        [MinLength(1, ErrorMessage = "Nhóm thuộc tính quá ngắn")]
+        [MaxLength(512, ErrorMessage = "Nhóm thuộc tính quá dài")]
+        public string PropertyGroup { get; set; }
+
     }
 }

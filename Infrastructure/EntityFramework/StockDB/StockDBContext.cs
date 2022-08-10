@@ -862,6 +862,8 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.Property(e => e.PropertyCode).HasMaxLength(128);
 
+                entity.Property(e => e.PropertyGroup).HasMaxLength(512);
+
                 entity.Property(e => e.PropertyName).IsRequired();
             });
 
@@ -903,6 +905,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.ToView("RefTargetProductivity");
 
+                entity.Property(e => e.Description).HasMaxLength(512);
+
                 entity.Property(e => e.Note).HasMaxLength(1024);
 
                 entity.Property(e => e.TargetProductivityCode)
@@ -910,6 +914,8 @@ namespace VErp.Infrastructure.EF.StockDB
                     .HasMaxLength(50);
 
                 entity.Property(e => e.TargetProductivityId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Title).HasMaxLength(128);
             });
 
             modelBuilder.Entity<Stock>(entity =>
