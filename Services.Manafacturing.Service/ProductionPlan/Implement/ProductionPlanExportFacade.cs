@@ -84,13 +84,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         }
         public async Task<(Stream stream, string fileName, string contentType)> Export(
             int? monthPlanId,
+            int? factoryDepartmentId,
             long startDate,
             long endDate,
             ProductionPlanExportModel data,
             IList<string> mappingFunctionKeys = null)
         {
             maxColumnIndex = 23 + data.ProductCateIds.Length;
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, factoryDepartmentId, startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
 
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
@@ -339,6 +340,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> WorkloadExport(
           int? monthPlanId,
+          int? factoryDepartmentId,
           long startDate,
           long endDate,
           string monthPlanName,
@@ -347,7 +349,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             maxColumnIndex = 7 + _allSteps.Count * 2;
 
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, factoryDepartmentId, startDate, endDate);
 
             var sortOrderMax = 0;
             foreach (var p in productionPlanInfo)
@@ -386,7 +388,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             // Sắp xếp
             productionPlanInfo = productionPlanInfo.OrderBy(p => extraPlanInfos[p.ProductionOrderDetailId.Value].SortOrder).ToList();
 
-            var workloads = await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, startDate, endDate);
+            var workloads = await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, factoryDepartmentId, startDate, endDate);
 
             var productIds = new List<int>();
             var productSemiIds = new List<long>();
