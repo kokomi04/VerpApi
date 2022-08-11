@@ -20,9 +20,9 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
         [HttpGet]
-        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan([FromQuery] int? monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan([FromQuery] int? monthPlanId, [FromQuery] int? factoryDepartmentId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionPlanService.GetProductionPlan(monthPlanId, startDate, endDate);
+            return await _productionPlanService.GetProductionPlan(monthPlanId, factoryDepartmentId, startDate, endDate);
         }
 
         [HttpPost]
@@ -40,9 +40,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("export")]
-        public async Task<FileStreamResult> ProductionPlanExport([FromQuery] int? monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate, [FromBody] ProductionPlanExportModel data)
+        public async Task<FileStreamResult> ProductionPlanExport([FromQuery] int? monthPlanId, [FromQuery] int? factoryDepartmentId, [FromQuery] long startDate, [FromQuery] long endDate, [FromBody] ProductionPlanExportModel data)
         {
-            var (stream, fileName, contentType) = await _productionPlanService.ProductionPlanExport(monthPlanId, startDate, endDate, data);
+            var (stream, fileName, contentType) = await _productionPlanService.ProductionPlanExport(monthPlanId, factoryDepartmentId, startDate, endDate, data);
 
             return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
 
@@ -57,9 +57,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("workloadByDate")]
-        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate([FromQuery] int? monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate)
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate([FromQuery] int? monthPlanId, [FromQuery] int? factoryDepartmentId, [FromQuery] long startDate, [FromQuery] long endDate)
         {
-            return await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, startDate, endDate);
+            return await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, factoryDepartmentId, startDate, endDate);
         }
 
         [HttpGet]
@@ -71,9 +71,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("workload/export")]
-        public async Task<FileStreamResult> ProductionWorkloadPlanExport([FromQuery] int monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] string monthPlanName)
+        public async Task<FileStreamResult> ProductionWorkloadPlanExport([FromQuery] int monthPlanId, [FromQuery] int? factoryDepartmentId, [FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] string monthPlanName)
         {
-            var (stream, fileName, contentType) = await _productionPlanService.ProductionWorkloadPlanExport(monthPlanId, startDate, endDate, monthPlanName);
+            var (stream, fileName, contentType) = await _productionPlanService.ProductionWorkloadPlanExport(monthPlanId, factoryDepartmentId, startDate, endDate, monthPlanName);
 
             return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
 
