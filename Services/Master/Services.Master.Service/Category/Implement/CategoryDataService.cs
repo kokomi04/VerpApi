@@ -1041,7 +1041,7 @@ namespace VErp.Services.Accountancy.Service.Category
                                     break;
                                 default:
                                     dataSql.Append($"SELECT [NValue] FROM {pName}");
-                                    sqlParam = values.Select(v => v.ToString()).ToList().ToSqlParameter(pName);
+                                    sqlParam = values.Select(v => v?.ToString()).ToList().ToSqlParameter(pName);
                                     break;
 
                             }
