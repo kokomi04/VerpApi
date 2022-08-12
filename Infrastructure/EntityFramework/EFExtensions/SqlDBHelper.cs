@@ -593,7 +593,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                                 break;
                             default:
                                 condition.Append($"SELECT [NValue] FROM {paramName}");
-                                sqlParam = values.Select(v => v.ToString()).ToList().ToSqlParameter(paramName);
+                                sqlParam = values.Select(v => v?.ToString()).ToList().ToSqlParameter(paramName);
                                 break;
 
                         }
