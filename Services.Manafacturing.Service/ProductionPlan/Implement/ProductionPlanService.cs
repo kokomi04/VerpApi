@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -38,6 +40,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private readonly IProductBomHelperService _productBomHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ICurrentContextService _currentContext;
+        private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IPhysicalFileService _physicalFileService;
+        private readonly AppSetting _appSetting;
         public ProductionPlanService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionPlanService> logger
@@ -46,7 +51,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IProductCateHelperService productCateHelperService
             , IProductBomHelperService productBomHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
-            , ICurrentContextService currentContext)
+            , ICurrentContextService currentContext
+            , IOrganizationHelperService organizationHelperService
+            , IPhysicalFileService physicalFileService
+            , IOptions<AppSetting> appSetting)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -57,6 +65,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _productBomHelperService = productBomHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _currentContext = currentContext;
+            _organizationHelperService = organizationHelperService;
+            _physicalFileService = physicalFileService;
+            _appSetting = appSetting.Value;
         }
 
         public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(int? monthPlanId, int? factoryDepartmentId, long startDate, long endDate)
@@ -251,6 +262,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetProductBomHelperService(_productBomHelperService);
             productionPlanExport.SetCurrentContextService(_currentContext);
             productionPlanExport.SetVoucherTypeHelperService(_voucherTypeHelperService);
+            productionPlanExport.SetOrganizationHelperService(_organizationHelperService);
+            productionPlanExport.SetPhysicalFileService(_physicalFileService);
+            productionPlanExport.SetAppSetting(_appSetting);
             return await productionPlanExport.Export(monthPlanId, factoryDepartmentId, startDate, endDate, data, mappingFunctionKeys);
         }
 
