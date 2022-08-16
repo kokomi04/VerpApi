@@ -106,5 +106,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public long PlanEndDate { get; set; }
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
     }
 }
