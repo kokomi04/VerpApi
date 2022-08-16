@@ -28,6 +28,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public bool? IsUpdateQuantity { get; set; }
 
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
+        public int? FactoryDepartmentId { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionOrderListEntity, ProductionOrderListModel>()
@@ -61,5 +66,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public bool HasAssignment { get; set; }
         public bool IsInvalid { get; set; }
         public bool? IsUpdateQuantity { get; set; }
+
+
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
+        public int? FactoryDepartmentId { get; set; }
     }
 }
