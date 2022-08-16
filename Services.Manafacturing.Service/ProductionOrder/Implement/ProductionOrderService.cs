@@ -1454,8 +1454,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> EditDate(long[] productionOrderDetailId, long startDate, long planEndDate, long endDate)
+        public async Task<bool> EditDate(UpdateDatetimeModel data)
         {
+            long[] productionOrderDetailIds = data.ProductionOrderDetailIds;
+            long startDate = data.StartDate;
+            long planEndDate = data.PlanEndDate;
+            long endDate = data.EndDate;
+
+
+
             if (startDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
             if (endDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
             if (planEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
@@ -1463,7 +1470,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (planEndDate > endDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
 
             var productionOrderDetails = await _manufacturingDBContext.ProductionOrderDetail
-                .Where(pod => productionOrderDetailId.Contains(pod.ProductionOrderDetailId))
+                .Where(pod => productionOrderDetailIds.Contains(pod.ProductionOrderDetailId))
                 .ToListAsync();
 
             var productionOrderIds = productionOrderDetails.Select(pod => pod.ProductionOrderId).Distinct().ToList();
@@ -1489,6 +1496,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     productionOrder.StartDate = startDate.UnixToDateTime().Value;
                     productionOrder.EndDate = endDate.UnixToDateTime().Value;
                     productionOrder.PlanEndDate = planEndDate.UnixToDateTime().Value;
+                    productionOrder.MonthPlanId = data.MonthPlanId;
+                    productionOrder.FromWeekPlanId = data.FromWeekPlanId;
+                    productionOrder.ToWeekPlanId = data.ToWeekPlanId;
                 }
                 _manufacturingDBContext.SaveChanges();
 
