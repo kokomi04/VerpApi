@@ -1035,7 +1035,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                 }
 
-                await UpdateProductionProcessManual(containerTypeId, containerId, req);
+                await UpdateProductionProcessManual(containerTypeId, containerId, req, false);
 
                 if (containerTypeId == EnumContainerType.Product)
                     await _productHelperService.UpdateProductionProcessVersion(containerId);
@@ -1080,8 +1080,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req)
+        private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req, bool isFromCopy)
         {
+            foreach (var s in req.ProductionSteps)
+            {
+                s.ContainerTypeId = containerTypeId;
+                s.ContainerId = containerId;
+            }
+
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
@@ -1161,10 +1167,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
                 else
                 {
-                    if (containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
+                    if (!isFromCopy && containerTypeId == EnumContainerType.ProductionOrder && (dest.OutsourceQuantity.GetValueOrDefault() > 0 || dest.ExportOutsourceQuantity.GetValueOrDefault() > 0))
                     {
                         throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData,
-                            $"Không thể xóa chi tiết liên quan đến YCGC công đoạn");
+                            $"Cần xóa liên kết gia công trong quy trình trước khi xóa dữ liệu của công đoạn liên quan");
                     }
                     dest.IsDeleted = true;
                 }
@@ -1187,8 +1193,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     _mapper.Map(source, dest);
                 else
                 {
-                    if (containerTypeId == EnumContainerType.ProductionOrder && dest.OutsourceStepRequestId.GetValueOrDefault() > 0)
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn có liên quan đến YCGC công đoạn");
+
+                    if (!isFromCopy && containerTypeId == EnumContainerType.ProductionOrder && dest.OutsourceStepRequestId.GetValueOrDefault() > 0)
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Không thể xóa công đoạn có liên quan đến YCGC công đoạn. Cần xóa gia công công đoạn trước");
+
                     dest.IsDeleted = true;
                 }
             }
@@ -1747,9 +1755,42 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(x => x.ContainerId == toContainerId && (int)containerTypeId == x.ContainerTypeId)
                     .ToListAsync();
 
-                process.ProductionSteps.ForEach(x => { x.ProductionStepId = 0; x.ContainerId = toContainerId; });
+                //Filter not outsource data
+
+                //remove outsource link
+                process.ProductionStepLinkDatas = process.ProductionStepLinkDatas.Where(d => d.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.None).ToList();
+
+                //remove outsource step and outsource data from roles
+                process.ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles
+                    .Where(r => process.ProductionSteps.Select(s => s.ProductionStepId).Contains(r.ProductionStepId)
+                    && process.ProductionStepLinkDatas.Select(l => l.ProductionStepLinkDataId).Contains(r.ProductionStepLinkDataId)
+                    )
+                    .ToList();
+
+
+                //reset id and outsource data
+
+                //reset id and outsource step
+                process.ProductionSteps.ForEach(x =>
+                {
+                    x.ProductionStepId = 0;
+                    x.ContainerId = toContainerId;
+                    x.OutsourceStepRequestCode = null;
+                    x.OutsourceStepRequestId = null;
+                    x.ParentId = null;
+                });
+
+              
+                //reset id and quantity, outsource data
                 process.ProductionStepLinkDatas.ForEach(x =>
                 {
+                    x.Quantity = x.QuantityOrigin;
+                    x.OutsourceQuantity = 0;
+                    x.ExportOutsourceQuantity = 0;
+                    x.OutsourcePartQuantity = null;
+                    x.OutsourceRequestDetailId = null;
+                    x.ProductionOutsourcePartMappingId = null;
+
                     x.ProductionStepLinkDataId = 0;
                     if (x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
                     {
@@ -1782,6 +1823,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     }
                 });
+
+             
+
+                //reset id
                 process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });
 
                 await UpdateProductionProcessManual(containerTypeId, toContainerId, new ProductionProcessModel
@@ -1792,7 +1837,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionStepLinkDatas = process.ProductionStepLinkDatas,
                     ProductionSteps = process.ProductionSteps,
                     ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>()
-                });
+                }, true);
 
                 var d1 = await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking().FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == fromContainerId);
                 var d2 = await _manufacturingDBContext.ProductionStepRoleClient.FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == toContainerId);
