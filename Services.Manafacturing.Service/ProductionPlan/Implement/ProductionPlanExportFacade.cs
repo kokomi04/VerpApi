@@ -53,6 +53,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private IList<VoucherOrderDetailSimpleModel> mapVoucherOrder;
         private BusinessInfoModel bussinessInfo = null;
         private AppSetting _appSetting;
+        private ManufacturingDBContext _manufacturingDBContext;
+
         private readonly Dictionary<string, PictureType> drImageType = new Dictionary<string, PictureType>
         {
             {".jpeg", PictureType.JPEG },
@@ -82,6 +84,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         public ProductionPlanExportFacade SetOrganizationHelperService(IOrganizationHelperService organizationHelperService)
         {
             _organizationHelperService = organizationHelperService;
+            return this;
+        }
+        public ProductionPlanExportFacade SetManufacturingDBContext(ManufacturingDBContext manufacturingDB)
+        {
+            _manufacturingDBContext = manufacturingDB;
             return this;
         }
         public ProductionPlanExportFacade SetProductHelperService(IProductHelperService productHelperService)
@@ -232,10 +239,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                                    "Website: " + (!string.IsNullOrEmpty(bussinessInfo.Website) ? bussinessInfo.Website : "");
             sheet.AddMergedRegion(new CellRangeAddress(0, 0, 2, lCol));
             sheet.EnsureCell(0, 2).SetCellValue(infoBussiness);
-            sheet.SetCellStyle(0, 2, 12, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true); 
+            sheet.SetCellStyle(0, 2, 12, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true);
             #endregion
 
-            WriteGeneralInfo(startDate, endDate);
+            //Nếu truyền monthPlanId thì lấy từ ngày đến ngày theo monthPlanId
+            long startDateReturn = startDate;
+            long endDateReturn = endDate;
+            var monthPlan = _manufacturingDBContext.MonthPlan
+                    .Where(mp => mp.MonthPlanId == monthPlanId)
+                    .ToList();
+            if(monthPlan != null && monthPlan.Count > 0)
+            {
+                startDateReturn = monthPlan[0].StartDate.GetUnix();
+                endDateReturn = monthPlan[0].EndDate.GetUnix();
+            }
+
+            WriteGeneralInfo(startDateReturn, endDateReturn);
 
             currentRow = currentRowTmp;
             WriteFooter(data.Note);
@@ -245,7 +264,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"KHSX#{startDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}#{endDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}.xlsx";
+            var fileName = $"KHSX#{startDateReturn.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}#{endDateReturn.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}.xlsx";
             return (stream, fileName, contentType);
         }
 
@@ -333,6 +352,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var dateCell = sheet.GetCellStyle(isBorder: true, dataFormat: "dd/MM/yyyy");
             var productPurityCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0.00###");
             var stt = 1;
+            var lstVoucher = new List<long>();
             foreach (var item in productionPlanInfo)
             {
                 var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
@@ -360,7 +380,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 var voucherOrder = mapVoucherOrder.FirstOrDefault(x => x.OrderCode == item.OrderCode && x.ProductId == item.ProductId);
                 if (voucherOrder != null)
                 {
-                    sheet.EnsureCell(currentRow, 3).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    if (lstVoucher.Any(x => x == voucherOrder.OrderId))
+                        sheet.EnsureCell(currentRow, 3).SetCellValue("");
+                    else
+                    {
+                        lstVoucher.Add(voucherOrder.OrderId);
+                        sheet.EnsureCell(currentRow, 3).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    }
                     sheet.EnsureCell(currentRow, 4).SetCellValue(voucherOrder.CustomerPO);
                     sheet.EnsureCell(currentRow, 5).SetCellValue(voucherOrder.PartnerCode);
                     sheet.EnsureCell(currentRow, 6).SetCellValue(voucherOrder.PartnerName != null ? voucherOrder.PartnerName : "N/A");

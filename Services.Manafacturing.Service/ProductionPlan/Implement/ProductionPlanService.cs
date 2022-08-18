@@ -265,6 +265,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetOrganizationHelperService(_organizationHelperService);
             productionPlanExport.SetPhysicalFileService(_physicalFileService);
             productionPlanExport.SetAppSetting(_appSetting);
+            productionPlanExport.SetManufacturingDBContext(_manufacturingDBContext);
             return await productionPlanExport.Export(monthPlanId, factoryDepartmentId, startDate, endDate, data, mappingFunctionKeys);
 
         }
