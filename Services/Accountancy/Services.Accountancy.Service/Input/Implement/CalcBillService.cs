@@ -175,8 +175,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return result;
         }
 
-      
 
+        #region CalcFixExchangeRateByOrder
         public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk)
         {
             if (tk == null) tk = string.Empty;
@@ -225,7 +225,58 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_DeleteCalcFixExchangeRateByOrder", sqlParams);
             return (result.Value as bool?).GetValueOrDefault();
         }
+        #endregion
 
+        #region CalcFixExchangeRateByLoanConvenant
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk)
+        {
+            if (tk == null) tk = string.Empty;
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
+                new SqlParameter("@Tk", tk),
+            };
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcFixExchangeRateByLoanConvenant", sqlParams);
+            var rows = data.ConvertData();
+            return rows;
+        }
+
+        public async Task<bool> CheckExistedFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            if (tk == null) tk = string.Empty;
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
+                new SqlParameter("@Tk", tk),
+                result
+            };
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CheckExistedCalcFixExchangeRateByLoanConvenant", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+
+
+
+        public async Task<bool> DeleteFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk)
+        {
+            var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
+            if (tk == null) tk = string.Empty;
+            var sqlParams = new SqlParameter[]
+            {
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@Currency", currency),
+                new SqlParameter("@Tk", tk),
+                result
+            };
+            var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_DeleteCalcFixExchangeRateByLoanConvenant", sqlParams);
+            return (result.Value as bool?).GetValueOrDefault();
+        }
+        #endregion
 
         public ICollection<CostTransferTypeModel> GetCostTransferTypes()
         {

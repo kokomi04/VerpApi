@@ -30,6 +30,12 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> DeletedFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk);
 
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk);
+
+        Task<bool> CheckExistedFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk);
+
+        Task<bool> DeleteFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk);
+
         ICollection<CostTransferTypeModel> GetCostTransferTypes();
 
         Task<bool> CheckExistedCostTransfer(EnumCostTransfer type, long fromDate, long toDate);
