@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -23,6 +25,7 @@ using VErp.Services.Manafacturing.Model.ProductionPlan;
 using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
+using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
@@ -37,6 +40,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private readonly IProductBomHelperService _productBomHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ICurrentContextService _currentContext;
+        private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IPhysicalFileService _physicalFileService;
+        private readonly AppSetting _appSetting;
         public ProductionPlanService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionPlanService> logger
@@ -45,7 +51,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IProductCateHelperService productCateHelperService
             , IProductBomHelperService productBomHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
-            , ICurrentContextService currentContext)
+            , ICurrentContextService currentContext
+            , IOrganizationHelperService organizationHelperService
+            , IPhysicalFileService physicalFileService
+            , IOptions<AppSetting> appSetting)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -56,15 +65,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             _productBomHelperService = productBomHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _currentContext = currentContext;
+            _organizationHelperService = organizationHelperService;
+            _physicalFileService = physicalFileService;
+            _appSetting = appSetting.Value;
         }
 
-        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(long startDate, long endDate)
+        public async Task<IDictionary<long, List<ProductionWeekPlanModel>>> GetProductionPlan(int? monthPlanId, int? factoryDepartmentId, long startDate, long endDate)
         {
-            var productionOrderDetailIds = _manufacturingDBContext.ProductionOrderDetail
-                .Include(pod => pod.ProductionOrder)
-                .Where(pod => pod.ProductionOrder.StartDate <= endDate.UnixToDateTime() && pod.ProductionOrder.EndDate >= startDate.UnixToDateTime())
-                .Select(pod => pod.ProductionOrderDetailId)
-                .ToList();
+
+            IQueryable<ProductionOrderDetail> productionOrderDetails;
+            if (monthPlanId > 0)
+            {
+                productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                   .Include(pod => pod.ProductionOrder)
+                   .Where(pod => pod.ProductionOrder.MonthPlanId == monthPlanId);
+            }
+            else
+            {
+                productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
+                   .Include(pod => pod.ProductionOrder)
+                   .Where(pod => pod.ProductionOrder.StartDate <= endDate.UnixToDateTime() && pod.ProductionOrder.EndDate >= startDate.UnixToDateTime());
+
+            }
+
+            if (factoryDepartmentId > 0)
+            {
+                productionOrderDetails = productionOrderDetails.Where(pod => pod.ProductionOrder.FactoryDepartmentId == factoryDepartmentId);
+            }
+
+            IQueryable<long> productionOrderDetailIds = productionOrderDetails.Select(pod => pod.ProductionOrderDetailId);
 
             var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
                 .Include(p => p.ProductionWeekPlanDetail)
@@ -224,7 +253,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             }
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ProductionPlanExport(int? monthPlanId, int? factoryDepartmentId, long startDate, long endDate, ProductionPlanExportModel data, IList<string> mappingFunctionKeys = null)
         {
             var productionPlanExport = new ProductionPlanExportFacade();
             productionPlanExport.SetProductionPlanService(this);
@@ -233,11 +262,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             productionPlanExport.SetProductBomHelperService(_productBomHelperService);
             productionPlanExport.SetCurrentContextService(_currentContext);
             productionPlanExport.SetVoucherTypeHelperService(_voucherTypeHelperService);
-            return await productionPlanExport.Export(startDate, endDate, data, mappingFunctionKeys);
+            productionPlanExport.SetOrganizationHelperService(_organizationHelperService);
+            productionPlanExport.SetPhysicalFileService(_physicalFileService);
+            productionPlanExport.SetAppSetting(_appSetting);
+            productionPlanExport.SetManufacturingDBContext(_manufacturingDBContext);
+            return await productionPlanExport.Export(monthPlanId, factoryDepartmentId, startDate, endDate, data, mappingFunctionKeys);
+
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ProductionWorkloadPlanExport(int monthPlanId, long startDate, long endDate, string monthPlanName, IList<string> mappingFunctionKeys = null)
+        public async Task<(Stream stream, string fileName, string contentType)> ProductionWorkloadPlanExport(int monthPlanId, int? factoryDepartmentId, long startDate, long endDate, string monthPlanName, IList<string> mappingFunctionKeys = null)
         {
             var groupSteps = _manufacturingDBContext.StepGroup.ToList();
             var steps = _manufacturingDBContext.Step.ToList();
@@ -256,7 +290,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
 
-            return await productionPlanExport.WorkloadExport(startDate, endDate, monthPlanName, extraInfos, mappingFunctionKeys);
+            return await productionPlanExport.WorkloadExport(monthPlanId, factoryDepartmentId, startDate, endDate, monthPlanName, extraInfos, mappingFunctionKeys);
         }
 
         public List<ProductSemiEntity> GetProductSemis(List<long> productSemiIds)
@@ -265,7 +299,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         }
 
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionPlans(long startDate, long endDate)
+        public async Task<IList<ProductionOrderListModel>> GetProductionPlans(int? monthPlanId, int? factoryDepartmentId, long startDate, long endDate)
         {
 
             var parammeters = new List<SqlParameter>();
@@ -281,13 +315,37 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             sql.Append(@" g.ProductionOrderId
                         FROM(
                             SELECT * FROM vProductionOrderDetail v");
-            if (startDate > 0 && endDate > 0)
+
+            var condition = new StringBuilder();
+            if (monthPlanId > 0)
+            {
+                condition.Append("v.MonthPlanId = @MonthPlanId");
+                parammeters.Add(new SqlParameter("@MonthPlanId", monthPlanId));
+            }
+            else
+            {
+                if (startDate > 0 && endDate > 0)
+                {
+                    condition.Append("v.StartDate <= @ToDate AND v.PlanEndDate >= @FromDate");
+                    parammeters.Add(new SqlParameter("@FromDate", startDate.UnixToDateTime()));
+                    parammeters.Add(new SqlParameter("@ToDate", endDate.UnixToDateTime()));
+                }
+            }
+
+            if (factoryDepartmentId > 0)
+            {
+                if (condition.Length > 0)
+                    condition.Append(" AND ");
+                condition.Append("v.FactoryDepartmentId = @FactoryDepartmentId");
+                parammeters.Add(new SqlParameter("@FactoryDepartmentId", factoryDepartmentId));
+            }
+
+            if (condition.Length > 0)
             {
                 sql.Append(" WHERE ");
-                sql.Append("v.StartDate <= @ToDate AND v.PlanEndDate >= @FromDate");
-                parammeters.Add(new SqlParameter("@FromDate", startDate.UnixToDateTime()));
-                parammeters.Add(new SqlParameter("@ToDate", endDate.UnixToDateTime()));
+                sql.Append(condition);
             }
+
 
             sql.Append(
                    @") g
@@ -306,16 +364,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return lst;
         }
 
-        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(long startDate, long endDate)
+        public async Task<IDictionary<long, WorkloadPlanModel>> GetWorkloadPlanByDate(int? monthPlanId, int? factoryDepartmentId, long startDate, long endDate)
         {
-            var startDateTime = startDate.UnixToDateTime();
-            var endDateTime = endDate.UnixToDateTime();
 
-            var productionOrderIds = _manufacturingDBContext.ProductionOrder
-                .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime)
-                .Select(po => po.ProductionOrderId)
-                .ToList();
+            IQueryable<ProductionOrderEntity> productionOrders;
+            if (monthPlanId > 0)
+            {
+                productionOrders = _manufacturingDBContext.ProductionOrder
+                  .Where(po => po.MonthPlanId == monthPlanId);
 
+            }
+            else
+            {
+                var startDateTime = startDate.UnixToDateTime();
+                var endDateTime = endDate.UnixToDateTime();
+
+                productionOrders = _manufacturingDBContext.ProductionOrder
+                   .Where(po => po.PlanEndDate >= startDateTime && po.StartDate <= endDateTime);
+
+            }
+
+            if (factoryDepartmentId > 0)
+            {
+                productionOrders = productionOrders.Where(o => o.FactoryDepartmentId == factoryDepartmentId);
+            }
+
+            IList<long> productionOrderIds = productionOrders.Select(po => po.ProductionOrderId)
+                   .ToList();
             return await GetWorkloadPlan(productionOrderIds);
         }
 
@@ -521,9 +596,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var currentWeekPlan = _manufacturingDBContext.WeekPlan.Where(w => w.StartDate <= lastestDate).OrderBy(w => w.StartDate).LastOrDefault();
             if (currentWeekPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại kế hoạch tuần");
 
+
             var productionOrderDetails = _manufacturingDBContext.ProductionOrderDetail
                 .Include(pd => pd.ProductionOrder)
-                .Where(pd => pd.ProductionOrder.PlanEndDate >= monthPlan.StartDate && pd.ProductionOrder.StartDate <= monthPlan.EndDate)
+                .Where(pd => pd.ProductionOrder.MonthPlanId == monthPlanId)
                 .ToList();
 
             var productOderIds = productionOrderDetails.Select(pd => pd.ProductionOrderId).Distinct().ToList();

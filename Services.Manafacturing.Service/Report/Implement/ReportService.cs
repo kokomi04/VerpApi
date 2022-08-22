@@ -24,7 +24,7 @@ using VErp.Services.Manafacturing.Model.ProductionStep;
 using VErp.Services.Manafacturing.Model.Report;
 using VErp.Services.Manafacturing.Model.Step;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-
+using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.Report.Implement
 {
@@ -48,29 +48,48 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             _currentContextService = currentContextService;
         }
 
-        public async Task<IList<StepModel>> GetSteps(long fromDate, long toDate)
+        public async Task<IList<StepModel>> GetSteps(int? monthPlanId, long fromDate, long toDate)
         {
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+            IQueryable<ProductionOrderEntity> productionOrders;
+            if (monthPlanId > 0)
+            {
+                productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.MonthPlanId == monthPlanId);
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
+                productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime);
+            }
+
             var steps = await (from s in _manufacturingDBContext.Step
                                join ps in _manufacturingDBContext.ProductionStep on s.StepId equals ps.StepId
                                //join pso in _manufacturingDBContext.ProductionStepOrder on ps.ProductionStepId equals pso.ProductionStepId
                                //join pod in _manufacturingDBContext.ProductionOrderDetail on pso.ProductionOrderDetailId equals pod.ProductionOrderDetailId
-                               join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerId, ps.ContainerTypeId } equals new { ContainerId = po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder }
-                               where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
+                               join po in productionOrders on new { ps.ContainerId, ps.ContainerTypeId } equals new { ContainerId = po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder }
+                               //where po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                select s).Distinct().ProjectTo<StepModel>(_mapper.ConfigurationProvider).ToListAsync();
 
             return steps;
         }
 
-        public async Task<IList<StepProgressModel>> GetProductionProgressReport(long fromDate, long toDate, int[] stepIds)
+        public async Task<IList<StepProgressModel>> GetProductionProgressReport(int? monthPlanId, long fromDate, long toDate, int[] stepIds)
         {
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+            IQueryable<ProductionOrderEntity> productionOrders;
+            if (monthPlanId > 0)
+            {
+                productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.MonthPlanId == monthPlanId);
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
+                productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime);
+            }
 
             var productionSteps = (from ps in _manufacturingDBContext.ProductionStep
-                                   join po in _manufacturingDBContext.ProductionOrder on new { ps.ContainerId, ps.ContainerTypeId } equals new { ContainerId = po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder }
-                                   where stepIds.Contains(ps.StepId.Value) && po.StartDate <= toDateTime && po.EndDate >= fromDateTime
+                                   join po in productionOrders on new { ps.ContainerId, ps.ContainerTypeId } equals new { ContainerId = po.ProductionOrderId, ContainerTypeId = (int)EnumContainerType.ProductionOrder }
+                                   where stepIds.Contains(ps.StepId.Value)// && po.StartDate <= toDateTime && po.EndDate >= fromDateTime
                                    select new
                                    {
                                        StepId = ps.StepId.Value,
@@ -224,18 +243,35 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
         }
 
 
-        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress(long fromDate, long toDate)
+        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress(int? monthPlanId, long fromDate, long toDate)
         {
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+
             var report = new ProductionOrderStepModel();
 
-            var productionOrderParammeters = new List<SqlParameter>
+            List<SqlParameter> productionOrderParammeters;
+            string sql;
+
+            if (monthPlanId > 0)
             {
-                new SqlParameter("@FromDate", fromDateTime),
-                new SqlParameter("@ToDate", toDateTime)
-            };
-            string sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
+                productionOrderParammeters = new List<SqlParameter>
+                {
+                    new SqlParameter("@MonthPlanId", monthPlanId)
+                };
+                sql = "SELECT * FROM vProductionOrderDetail v WHERE v.MonthPlanId = @MonthPlanId ORDER BY v.ProductionOrderId";
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
+
+                productionOrderParammeters = new List<SqlParameter>
+                {
+                    new SqlParameter("@FromDate", fromDateTime),
+                    new SqlParameter("@ToDate", toDateTime),
+                };
+                sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
+            }
+
             var productionOrderData = await _manufacturingDBContext.QueryDataTable(sql, productionOrderParammeters.ToArray());
             var productionOrderDetails = productionOrderData
                 .ConvertData<ProductionOrderListEntity>()
@@ -396,18 +432,35 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
         }
 
 
-        public async Task<IList<ProductionReportModel>> GetProductionOrderReport(long fromDate, long toDate)
+        public async Task<IList<ProductionReportModel>> GetProductionOrderReport(int? monthPlanId, long fromDate, long toDate)
         {
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
-            if (!fromDateTime.HasValue || !toDateTime.HasValue)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
-            var parammeters = new List<SqlParameter>
+
+            List<SqlParameter> parammeters;
+            string sql;
+
+            if (monthPlanId > 0)
             {
-                new SqlParameter("@FromDate", fromDateTime),
-                new SqlParameter("@ToDate", toDateTime)
-            };
-            string sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
+                parammeters = new List<SqlParameter>
+                {
+                    new SqlParameter("@MonthPlanId", monthPlanId)
+                };
+                sql = "SELECT * FROM vProductionOrderDetail v WHERE v.MonthPlanId = @MonthPlanId ORDER BY v.ProductionOrderId";
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
+                if (!fromDateTime.HasValue || !toDateTime.HasValue)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Vui lòng chọn ngày bắt đầu, ngày kết thúc");
+
+                parammeters = new List<SqlParameter>
+                {
+                    new SqlParameter("@FromDate", fromDateTime),
+                    new SqlParameter("@ToDate", toDateTime),
+                };
+                sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
+            }
+
             var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters.ToArray());
             var productionOrderDetails = resultData
                 .ConvertData<ProductionOrderListEntity>()
@@ -910,7 +963,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             var step = _manufacturingDBContext.Step.FirstOrDefault(s => s.StepId == stepId);
             if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại công đoạn");
 
-            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.StartDate <= monthPlan.EndDate && po.PlanEndDate >= monthPlan.StartDate).ToList();
+            var productionOrders = _manufacturingDBContext.ProductionOrder.Where(po => po.MonthPlanId == monthPlanId).ToList();
             var productionOrderIds = productionOrders.Select(po => po.ProductionOrderId).ToList();
 
             productionOrderIds = productionOrderIds.Distinct().ToList();

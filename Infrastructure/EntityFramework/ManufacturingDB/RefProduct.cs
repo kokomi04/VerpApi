@@ -39,5 +39,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string ProductNameEng { get; set; }
         public decimal? Quantitative { get; set; }
         public int? QuantitativeUnitTypeId { get; set; }
+        public long? ProductionProcessVersion { get; set; }
     }
 }

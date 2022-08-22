@@ -19,11 +19,11 @@ namespace Services.Organization.Model.TimeKeeping
         public long? MinsEarly { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<TimeSheetDetailModel, TimeSheetDetail>()
+            profile.CreateMapCustom<TimeSheetDetailModel, TimeSheetDetail>()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()))
             .ForMember(m => m.TimeIn, v => v.MapFrom(m => m.TimeIn.HasValue ? (TimeSpan?)TimeSpan.FromSeconds(m.TimeIn.Value) : null))
             .ForMember(m => m.TimeOut, v => v.MapFrom(m => m.TimeOut.HasValue ? (TimeSpan?)TimeSpan.FromSeconds(m.TimeOut.Value) : null))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()))
             .ForMember(m => m.TimeIn, v => v.MapFrom(m => m.TimeIn.HasValue ? (double?)m.TimeIn.Value.TotalSeconds : null))
             .ForMember(m => m.TimeOut, v => v.MapFrom(m => m.TimeOut.HasValue ? (double?)m.TimeOut.Value.TotalSeconds : null));

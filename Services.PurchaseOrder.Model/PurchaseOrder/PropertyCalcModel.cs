@@ -38,14 +38,14 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public IList<CuttingWorkSheetModel> CuttingWorkSheet { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<PropertyCalcModel, PropertyCalc>()
+            profile.CreateMapCustom<PropertyCalcModel, PropertyCalc>()
                 .ForMember(d => d.CreatedByUserId, s => s.Ignore())
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.Ignore())
                 .ForMember(d => d.PropertyCalcProduct, s => s.MapFrom(m => m.Products))
                 .ForMember(d => d.PropertyCalcSummary, s => s.MapFrom(m => m.Summary))
                 .ForMember(d => d.PropertyCalcProperty, s => s.MapFrom(m => m.Properties))
                 .ForMember(d => d.CuttingWorkSheet, s => s.MapFrom(m => m.CuttingWorkSheet))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }
     }
@@ -64,10 +64,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<PropertyCalcProductModel, PropertyCalcProduct>()
+            profile.CreateMapCustom<PropertyCalcProductModel, PropertyCalcProduct>()
                 .ForMember(d => d.PropertyCalcProductDetail, s => s.MapFrom(m => m.Details))
                 .ForMember(d => d.PropertyCalcProductOrder, s => s.MapFrom(m => m.Orders))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.Orders, s => s.MapFrom(m => m.PropertyCalcProductOrder))
                 .ForMember(d => d.Details, s => s.MapFrom(m => m.PropertyCalcProductDetail));
         }

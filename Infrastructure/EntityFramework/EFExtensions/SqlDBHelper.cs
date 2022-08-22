@@ -560,8 +560,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     case EnumOperator.InList:
                         ope = not ? "NOT IN" : "IN";
                         condition.Append($"{aliasField} {ope} (");
-                        int inSuffix = 0;
-                        var paramNames = new StringBuilder();
+                        // int inSuffix = 0;
+                        // var paramNames = new StringBuilder();
                         IList<object> values = new List<object>();
                         //if (clause.Value is IList<string> lst)
                         //{
@@ -572,25 +572,37 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             foreach (object v in (dynamic)clause.Value)
                             {
-                                values.Add(v);
+                                if (!values.Contains(v))
+                                    values.Add(v);
                             }
                         }
 
                         if (clause.Value is string str)
                         {
-                            values = (str ?? "").Split(",").Select(v => (object)v.Trim()).ToList();
+                            values = (str ?? "").Split(",").Distinct().Select(v => (object)v.Trim()).ToList();
                         }
 
-                        foreach (var value in values)
+
+                        SqlParameter sqlParam;
+
+                        switch (clause.DataType)
                         {
-                            var inParamName = $"{paramName}_{inSuffix}";
-                            paramNames.Append(inParamName);
-                            paramNames.Append(",");
-                            sqlParams.Add(new SqlParameter(inParamName, clause.DataType.GetSqlValue(value)));
-                            inSuffix++;
+                            case EnumDataType.BigInt:
+                                condition.Append($"SELECT [Value] FROM {paramName}");
+                                sqlParam = values.Select(v => (long)v).ToList().ToSqlParameter(paramName);
+                                break;
+                            default:
+                                condition.Append($"SELECT [NValue] FROM {paramName}");
+                                sqlParam = values.Select(v => v?.ToString()).ToList().ToSqlParameter(paramName);
+                                break;
+
                         }
-                        condition.Append(paramNames.ToString().TrimEnd(','));
+
                         condition.Append(")");
+
+                        sqlParams.Add(sqlParam);
+
+
                         break;
                     case EnumOperator.IsLeafNode:
                         ope = not ? "EXISTS" : "NOT EXISTS";

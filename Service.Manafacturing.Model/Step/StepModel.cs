@@ -23,9 +23,9 @@ namespace VErp.Services.Manafacturing.Model.Step
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<StepEntity, StepModel>()
+            profile.CreateMapCustom<StepEntity, StepModel>()
                 .ForMember(m => m.StepDetail, v => v.MapFrom(m => m.StepDetail))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.StepDetail, v => v.Ignore());
         }
     }

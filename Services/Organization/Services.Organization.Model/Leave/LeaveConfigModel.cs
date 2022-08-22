@@ -96,9 +96,9 @@ namespace VErp.Services.Organization.Model.Leave
         public EnumLeaveRoleType LeaveRoleTypeId { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<LeaveConfigRoleUserModel, LeaveConfigRole>()
+            profile.CreateMapCustom<LeaveConfigRoleUserModel, LeaveConfigRole>()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (int)m.LeaveRoleTypeId))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.LeaveRoleTypeId, s => s.MapFrom(m => (EnumLeaveRoleType)m.LeaveRoleTypeId));
         }
 

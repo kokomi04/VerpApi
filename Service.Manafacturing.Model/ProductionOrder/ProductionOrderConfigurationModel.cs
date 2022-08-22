@@ -7,5 +7,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public bool IsEnablePlanEndDate { get; set; } = false;
         public int NumberOfDayPed { get; set; } = 0;
+
+        public bool IsWeekPlanSplitByWeekOfYear { get; set; }
     }
 }

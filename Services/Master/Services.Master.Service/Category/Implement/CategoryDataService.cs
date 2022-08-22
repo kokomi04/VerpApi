@@ -1018,24 +1018,38 @@ namespace VErp.Services.Accountancy.Service.Category
                     foreach (var groupByField in groupByFields)
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
-                        var values = groupByField.Select(v => ((EnumDataType)inputField.DataTypeId).GetSqlValue(v.Value)).ToList();
+                        var values = groupByField.Select(v => ((EnumDataType)inputField.DataTypeId).GetSqlValue(v.Value)).Distinct().ToList();
+                        
                         if (values.Count() > 0)
                         {
                             if (suffix > 0)
                             {
                                 dataSql.Append(" OR ");
                             }
+
+                            var pName = $"@{inputField.CategoryFieldName}_in_{suffix}";
+
+                            SqlParameter sqlParam;
+
                             dataSql.Append($" [{viewAlias}].{inputField.CategoryFieldName} IN (");
-                            var paramNames = new List<string>();
-                            foreach (var value in values)
+
+                            switch ((EnumDataType)inputField.DataTypeId)
                             {
-                                var paramName = $"@{inputField.CategoryFieldName}_in_{suffix}";
-                                paramNames.Add(paramName);
-                                sqlParams.Add(new SqlParameter(paramName, value));
-                                suffix++;
+                                case EnumDataType.BigInt:
+                                    dataSql.Append($"SELECT [Value] FROM {pName}");
+                                    sqlParam = values.Select(v => (long)v).ToList().ToSqlParameter(pName);
+                                    break;
+                                default:
+                                    dataSql.Append($"SELECT [NValue] FROM {pName}");
+                                    sqlParam = values.Select(v => v?.ToString()).ToList().ToSqlParameter(pName);
+                                    break;
+
                             }
-                            dataSql.Append(string.Join(",", paramNames));
+                           
                             dataSql.Append(")");
+
+                            sqlParams.Add(sqlParam);
+                            suffix++;
                         }
                     }
                     dataSql.Append(")");

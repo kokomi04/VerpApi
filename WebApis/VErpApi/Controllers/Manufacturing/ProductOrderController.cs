@@ -67,13 +67,15 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("update-datetime")]
         public async Task<bool> EditDate([FromBody] UpdateDatetimeModel data)
         {
-            return await _productionOrderService.EditDate(data.ProductionOrderDetailIds, data.StartDate, data.PlanEndDate, data.EndDate);
+            return await _productionOrderService.EditDate(data);
         }
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("Search")]
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(
+            [FromQuery] int? monthPlanId,
+            [FromQuery] int? factoryDepartmentId,
             [FromQuery] string keyword,
             [FromQuery] int page,
             [FromQuery] int size,
@@ -84,7 +86,23 @@ namespace VErpApi.Controllers.Manufacturing
             [FromQuery] bool? hasNewProductionProcessVersion,
             [FromBody] Clause filters = null)
         {
-            return await _productionOrderService.GetProductionOrders(keyword, page, size, orderByFieldName, asc, fromDate, toDate, hasNewProductionProcessVersion, filters);
+            return await _productionOrderService.GetProductionOrders(monthPlanId, factoryDepartmentId, keyword, page, size, orderByFieldName, asc, fromDate, toDate, hasNewProductionProcessVersion, filters);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetProductionOrderList")]
+        public async Task<PageData<ProductOrderModelExtra>> GetProductionOrderList(
+            [FromQuery] string keyword,
+            [FromQuery] int page,
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName,
+            [FromQuery] bool asc,
+            [FromQuery] long fromDate,
+            [FromQuery] long toDate,
+            [FromBody] Clause filters = null)
+        {
+            return await _productionOrderService.GetProductionOrderList(keyword, page, size, orderByFieldName, asc, fromDate, toDate, filters);
         }
 
         [HttpPost]
@@ -187,9 +205,9 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("capacity")]
-        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? assignDepartmentId)
+        public async Task<ProductionCapacityModel> GetProductionCapacity([FromQuery] int monthPlanId, [FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? assignDepartmentId)
         {
-            return await _productionOrderService.GetProductionCapacity(startDate, endDate, assignDepartmentId);
+            return await _productionOrderService.GetProductionCapacity(monthPlanId, startDate, endDate, assignDepartmentId);
         }
 
         [HttpGet]

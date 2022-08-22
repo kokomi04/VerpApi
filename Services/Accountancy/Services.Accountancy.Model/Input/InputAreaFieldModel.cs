@@ -47,11 +47,11 @@ namespace VErp.Services.Accountancy.Model.Input
 
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
-            profile.CreateMapIgnoreNoneExist<InputField, T>()
+            profile.CreateMapCustom<InputField, T>()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (EnumDataType)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (EnumFormType)f.FormTypeId))
                  .ForMember(d => d.Structure, m => m.MapFrom(f => string.IsNullOrEmpty(f.Structure) ? null : JsonConvert.DeserializeObject<ControlStructureModel>(f.Structure)))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.DataTypeId, m => m.MapFrom(f => (int)f.DataTypeId))
                 .ForMember(d => d.FormTypeId, m => m.MapFrom(f => (int)f.FormTypeId))
                 .ForMember(d => d.Structure, m => m.MapFrom(f => f.Structure == null ? string.Empty : JsonConvert.SerializeObject(f.Structure))); ;

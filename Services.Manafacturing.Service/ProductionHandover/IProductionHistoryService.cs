@@ -13,6 +13,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<IList<ProductionHistoryModel>> CreateMultipleProductionHistory(long productionOrderId, IList<ProductionHistoryInputModel> data);
         Task<bool> DeleteProductionHistory(long productionHistoryId);
         Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkloadByDate(long fromDate, long toDate);
-        Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload(long fromDate, long toDate);
+        Task<IDictionary<long, ActualWorkloadModel>> GetCompletionActualWorkload(int? monthPlanId, long fromDate, long toDate);
     }
 }

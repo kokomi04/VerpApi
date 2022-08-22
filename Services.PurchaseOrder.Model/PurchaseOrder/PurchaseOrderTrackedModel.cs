@@ -17,9 +17,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<purchaseOrderTrackedModel, PurchaseOrderTracked>()
+            profile.CreateMapCustom<purchaseOrderTrackedModel, PurchaseOrderTracked>()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()));
         }
     }

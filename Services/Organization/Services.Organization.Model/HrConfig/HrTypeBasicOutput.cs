@@ -15,7 +15,7 @@ namespace Services.Organization.Model.HrConfig
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<HrType, HrTypeBasicOutput>()
+            profile.CreateMapCustom<HrType, HrTypeBasicOutput>()
                 .ForMember(d => d.Areas, m => m.Ignore())
                 .ForMember(d => d.Views, m => m.Ignore());
         }
@@ -32,7 +32,7 @@ namespace Services.Organization.Model.HrConfig
         public IList<HrAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<HrArea, HrAreaBasicOutput>()
+            profile.CreateMapCustom<HrArea, HrAreaBasicOutput>()
                 .ForMember(d => d.Fields, m => m.Ignore());
         }
     }

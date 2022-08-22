@@ -13,9 +13,9 @@ namespace VErp.Services.Master.Model.Config
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ObjectPrintConfigMapping, ObjectPrintConfigMappingModel>()
+            profile.CreateMapCustom<ObjectPrintConfigMapping, ObjectPrintConfigMappingModel>()
                 .ForMember(m => m.PrintConfigId, v => v.MapFrom(m => m.PrintConfigCustomId))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.PrintConfigCustomId, v => v.MapFrom(m => m.PrintConfigId));
         }
     }

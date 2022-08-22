@@ -9,23 +9,31 @@ namespace VErp.Commons.GlobalObject
 {
     public interface IMapFrom<T>
     {
-        void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist(typeof(T), GetType())
-            .ReverseMapIgnoreNoneExist(GetType(), typeof(T));
+        void Mapping(Profile profile) => profile.CreateMapCustom(typeof(T), GetType())
+            .ReverseMapCustom(GetType(), typeof(T));
     }
     public interface ICustomMapping
     {
         void Mapping(Profile profile);
     }
 
+    public interface IMapIgnoreNoneExistsPropFrom<T>
+    {
+        void Mapping(Profile profile) => profile.CreateMapCustom(typeof(T), GetType())
+            .MapIgnoreNoneExist(typeof(T), GetType())
+            .ReverseMap()
+            .MapIgnoreNoneExist(GetType(), typeof(T));
+    }
+
     public class MappingProfile : Profile
     {
         public MappingProfile()
         {
-            this.CreateMapIgnoreNoneExist<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
-            this.CreateMapIgnoreNoneExist<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
+            this.CreateMapCustom<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapCustom<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
-            this.CreateMapIgnoreNoneExist<DateTime, long>().ConvertUsing(v => v.GetUnix());
-            this.CreateMapIgnoreNoneExist<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
         }
     }
 
@@ -62,32 +70,53 @@ namespace VErp.Commons.GlobalObject
                 methodInfo?.Invoke(instance, new object[] { profile });
 
             }
+
+            var typeIngoreNoneExists = assembly.GetExportedTypes()
+                .Where(t => t.GetInterfaces().Any(i =>
+                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMapIgnoreNoneExistsPropFrom<>)))
+                .ToList();
+
+            foreach (var type in typeIngoreNoneExists)
+            {
+                var instance = Activator.CreateInstance(type);
+
+                var methodInfo = type.GetMethod("Mapping")
+                    ?? type.GetInterface("IMapIgnoreNoneExistsPropFrom`1").GetMethod("Mapping");
+
+                methodInfo?.Invoke(instance, new object[] { profile });
+
+            }
+
         }
 
-        public static IMappingExpression CreateMapIgnoreNoneExist(this Profile profile, Type sourceType, Type destinationType)
+        public static IMappingExpression CreateMapCustom(this Profile profile, Type sourceType, Type destinationType)
         {
-            var expression = profile.CreateMap(sourceType, destinationType);
-            return MapIgnoreNoneExist(expression, sourceType, destinationType);
+            return profile.CreateMap(sourceType, destinationType);
+            //var expression = profile.CreateMap(sourceType, destinationType);
+            //return MapIgnoreNoneExist(expression, sourceType, destinationType);
         }
 
 
-        public static IMappingExpression<ISource, IDestination> CreateMapIgnoreNoneExist<ISource, IDestination>(this Profile profile)
+        public static IMappingExpression<ISource, IDestination> CreateMapCustom<ISource, IDestination>(this Profile profile)
         {
-            var expression = profile.CreateMap<ISource, IDestination>();
-            return MapIgnoreNoneExist(expression);
+            return profile.CreateMap<ISource, IDestination>();
+            //var expression = profile.CreateMap<ISource, IDestination>();
+            //return MapIgnoreNoneExist(expression);
         }
 
 
-        public static IMappingExpression ReverseMapIgnoreNoneExist(this IMappingExpression expression, Type sourceType, Type destinationType)
+        public static IMappingExpression ReverseMapCustom(this IMappingExpression expression, Type sourceType, Type destinationType)
         {
-            expression = expression.ReverseMap();
-            return MapIgnoreNoneExist(expression, sourceType, destinationType);
+            return expression.ReverseMap();
+            //expression = expression.ReverseMap();
+            //return MapIgnoreNoneExist(expression, sourceType, destinationType);
         }
 
-        public static IMappingExpression<IDestination, ISource> ReverseMapIgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
+        public static IMappingExpression<IDestination, ISource> ReverseMapCustom<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
         {
-            var reverseExpression = expression.ReverseMap();
-            return MapIgnoreNoneExist(reverseExpression);
+            return expression.ReverseMap();
+            //var reverseExpression = expression.ReverseMap();
+            //return MapIgnoreNoneExist(reverseExpression);
         }
 
 
@@ -100,14 +129,16 @@ namespace VErp.Commons.GlobalObject
 
             var desProps = destinationType.GetProperties();
 
-            //foreach (var property in desProps)
-            //{
-            //    if (!sourceProps.Any(d => d.Name == property.Name))
-            //        expression.ForMember(property.Name, s => s.Ignore());
-            //}
+            foreach (var property in desProps)
+            {
+                if (!sourceProps.Any(d => d.Name == property.Name))
+                    expression.ForMember(property.Name, s => s.Ignore());
+            }
 
             return expression;
         }
+
+
 
         public static IMappingExpression<ISource, IDestination> MapIgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
         {
@@ -122,11 +153,32 @@ namespace VErp.Commons.GlobalObject
 
             var desProps = destinationType.GetProperties();
 
-            //foreach (var property in desProps)
-            //{
-            //    if (!sourceProps.Any(d => d.Name == property.Name))
-            //        expression.ForMember(property.Name, s => s.Ignore());
-            //}
+            foreach (var property in desProps)
+            {
+                if (!sourceProps.Any(d => d.Name == property.Name))
+                    expression.ForMember(property.Name, s => s.Ignore());
+            }
+
+            return expression;
+        }
+
+        public static IMappingExpression<ISource, IDestination> IgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
+        {
+            var sourceType = typeof(ISource);
+            var destinationType = typeof(IDestination);
+
+            if (!sourceType.IsClass) return expression;
+            if (!destinationType.IsClass) return expression;
+
+            var sourceProps = sourceType.GetProperties();
+
+            var desProps = destinationType.GetProperties();
+
+            expression.ForAllOtherMembers(opts =>
+            {
+                if (!sourceProps.Any(d => d.Name == opts.DestinationMember.Name))
+                    opts.Ignore();
+            });
 
             return expression;
         }
