@@ -10,7 +10,7 @@ namespace VErp.Commons.Library
         private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            PreserveReferencesHandling = PreserveReferencesHandling.None
+            PreserveReferencesHandling = PreserveReferencesHandling.None,
         };
 
         public static string JsonSerialize(this object obj, bool isIgnoreSensitiveData)
@@ -27,6 +27,16 @@ namespace VErp.Commons.Library
                     cfg.ContractResolver = null;
                 }
 
+                var fullTypeName = obj.GetType().FullName;
+                if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
+                {
+                    cfg.MaxDepth = 2;
+                }
+                else
+                {
+                    cfg.MaxDepth = 10;
+                }
+
                 return JsonConvert.SerializeObject(obj, cfg);
             }
             catch (Exception)
@@ -40,7 +50,6 @@ namespace VErp.Commons.Library
         public static string JsonSerialize(this object obj)
         {
             return obj.JsonSerialize(false);
-
         }
 
 
