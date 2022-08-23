@@ -209,6 +209,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await ChangeAssignedProgressStatus(productionOrderId, productionHandover.ToProductionStepId, productionHandover.ToDepartmentId);
                 }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandover.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
+
+                var podInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionHandover.ProductionOrderId);
+
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podInfo?.ProductionOrderCode);
+
                 return _mapper.Map<ProductionHandoverModel>(productionHandover);
             }
             catch (Exception ex)
@@ -236,6 +242,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await ChangeAssignedProgressStatus(productionHandover.ProductionOrderId, productionHandover.FromProductionStepId, productionHandover.FromDepartmentId);
                 }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, productionHandoverId, $"Xoá bàn giao công việc", productionHandover.JsonSerialize());
+
+                var podInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionHandover.ProductionOrderId);
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podInfo?.ProductionOrderCode); ;
+
                 return true;
             }
             catch (Exception ex)
@@ -252,6 +263,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)
         {
+            var poInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+
             var insertData = new List<ProductionHandoverEntity>();
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
@@ -301,6 +314,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 }
 
                 trans.Commit();
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, poInfo?.ProductionOrderCode);
 
                 return result;
             }
