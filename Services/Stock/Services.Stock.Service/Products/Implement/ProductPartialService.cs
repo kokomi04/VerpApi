@@ -472,7 +472,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw ExistMoreSameCustomerProduct.BadRequest();
                 }
 
-                var removeProductCustomers = productCustomers.Where(c => !model.ProductCustomers.Select(c1 => c.CustomerId).Contains(c.CustomerId));
+                var removeProductCustomers = productCustomers.Where(c => !model.ProductCustomers.Select(c1 => c1.CustomerId).Contains(c.CustomerId));
                 _stockContext.ProductCustomer.RemoveRange(removeProductCustomers);
 
                 foreach (var c in model.ProductCustomers)
