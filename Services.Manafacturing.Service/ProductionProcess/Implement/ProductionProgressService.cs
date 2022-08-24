@@ -133,9 +133,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
                 }
 
-                if (endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
+                var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
+
+
+                var inputInventories = data.Inventories;
+
+                bool isFinish = true;
+
+                foreach (var productionOrderDetail in prodDetails)
+                {
+                    var quantity = inputInventories
+                        .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+                        .Sum(i => i.ActualQuantity);
+
+                    if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
+                    {
+                        isFinish = false;
+                        break;
+                    }
+                }
+               
+
+                if (isFinish || endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
                 {
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Completed;
+
+                    if (assignments.Any(a => !(a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
+                    {
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
+                    }
+
                 }
                 else
                 {
@@ -144,31 +171,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.OverDeadline;
                     }
-
-                    var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
-
-
-                    var inputInventories = data.Inventories;
-
-                    bool isFinish = true;
-
-                    foreach (var productionOrderDetail in prodDetails)
-                    {
-                        var quantity = inputInventories
-                            .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                            .Sum(i => i.ActualQuantity);
-
-                        if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
-                        {
-                            isFinish = false;
-                            break;
-                        }
-                    }
-                    if (isFinish)
-                    {
-                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
-                    }
+                    
                 }
+
+                
 
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {
