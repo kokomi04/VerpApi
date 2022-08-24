@@ -136,7 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
 
-                var result = insertData.AsQueryable().ProjectTo<ProductionHumanResourceModel>(_mapper.ConfigurationProvider).ToList();
+                var result = insertData.Select(d => _mapper.Map<ProductionHumanResourceModel>(d)).ToList();
 
                 foreach (var item in insertData)
                 {
