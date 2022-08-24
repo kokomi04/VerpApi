@@ -27,14 +27,17 @@ namespace VErp.Commons.Library
                     cfg.ContractResolver = null;
                 }
 
-                var fullTypeName = obj.GetType().FullName;
-                if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
+                if (obj != null)
                 {
-                    cfg.MaxDepth = 2;
-                }
-                else
-                {
-                    cfg.MaxDepth = 10;
+                    var fullTypeName = obj.GetType().FullName;
+                    if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
+                    {
+                        cfg.MaxDepth = 2;
+                    }
+                    else
+                    {
+                        cfg.MaxDepth = 10;
+                    }
                 }
 
                 return JsonConvert.SerializeObject(obj, cfg);
