@@ -300,7 +300,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     foreach (var assignment in productionStepAssignments.ProductionAssignments)
                     {
                         var sourceData = linkDatas[assignment.ProductionStepLinkDataId];
-                        totalAssignmentQuantity += assignment.AssignmentQuantity * linkData.Value / sourceData;
+                        totalAssignmentQuantity += sourceData > 0 ? assignment.AssignmentQuantity * linkData.Value / sourceData : 0;
                     }
 
                     if (totalAssignmentQuantity.SubProductionDecimal(linkData.Value) > 0)
@@ -733,7 +733,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-     
+
         public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(DepartmentAssignFreeDateInput req)
         {
 
