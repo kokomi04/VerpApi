@@ -139,7 +139,7 @@
     <value>Cấu hình chứng từ nguồn không tồn tại</value>
   </data>
   <data name="UniqueValueAlreadyExisted" xml:space="preserve">
-    <value>Trường thông tin {0} có giá trị đã tồn tại</value>
+    <value>Trường thông tin {0} có giá trị "{1}" đã tồn tại </value>
   </data>
   <data name="VoucherActionNotFound" xml:space="preserve">
     <value>Không tìm thấy chức năng</value>
