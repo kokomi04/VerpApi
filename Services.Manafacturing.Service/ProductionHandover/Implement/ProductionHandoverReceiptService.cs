@@ -1,0 +1,566 @@
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Ocsp;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionHandover;
+
+namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
+{
+    public class ProductionHandoverReceiptService : StatusProcessService, IProductionHandoverReceiptService
+    {
+        private readonly ManufacturingDBContext _manufacturingDBContext;
+        private readonly ICurrentContextService _currentContextService;
+        private readonly IActivityLogService _activityLogService;
+        private readonly ILogger _logger;
+        private readonly IMapper _mapper;
+        private const int STOCK_DEPARTMENT_ID = -1;
+        private readonly IQueueProcessHelperService _queueProcessHelperService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+
+        public ProductionHandoverReceiptService(ManufacturingDBContext manufacturingDB
+            , IActivityLogService activityLogService
+            , ILogger<ProductionHandoverService> logger
+            , IMapper mapper
+            , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
+        {
+            _manufacturingDBContext = manufacturingDB;
+            _activityLogService = activityLogService;
+            _logger = logger;
+            _mapper = mapper;
+            _currentContextService = currentContextService;
+            _queueProcessHelperService = queueProcessHelperService;
+            _customGenCodeHelperService = customGenCodeHelperService;
+        }
+
+        public async Task<ProductionHandoverReceiptModel> Info(long receiptId)
+        {
+            var infoDb = await _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefaultAsync(r => r.ProductionHandoverReceiptId == receiptId);
+            var info = _mapper.Map<ProductionHandoverReceiptModel>(infoDb);
+            info.Handovers = infoDb.ProductionHandover.Select(h => _mapper.Map<ProductionHandoverInputModel>(h)).ToList();
+            return info;
+        }
+
+        public async Task<bool> AcceptProductionHandoverBatch(IList<long> receiptIds)
+        {
+            var receipts = await _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).Where(ho => receiptIds.Contains(ho.ProductionHandoverReceiptId)).ToListAsync();
+
+
+            var productionOrderIds = receipts.SelectMany(r => r.ProductionHandover.Select(h => h.ProductionOrderId)).Distinct().ToList();
+            var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
+
+            using (var batchLog = _activityLogService.BeginBatchLog())
+            {
+                try
+                {
+
+
+                    foreach (var item in receiptIds)
+                    {
+                        var info = receipts.FirstOrDefault(r => r.ProductionHandoverReceiptId == item);
+
+                        if (info == null)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                        }
+                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+                        info.HandoverStatusId = (int)EnumHandoverStatus.Accepted;
+                        info.AcceptByUserId = _currentContextService.UserId;
+
+                        _manufacturingDBContext.SaveChanges();
+
+                        if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
+                        {
+                            foreach (var h in info.ProductionHandover)
+                            {
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                            }
+                        }
+
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận bàn giao công việc", info.JsonSerialize());
+
+                    }
+
+
+                    await batchLog.CommitAsync();
+
+                    foreach (var code in productionOrderCodes)
+                    {
+                        await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                    }
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "AcceptProductionHandoverBatch");
+                    throw;
+                }
+            }
+        }
+
+        public async Task<bool> Confirm(long receiptId, EnumHandoverStatus status)
+        {
+            var info = _manufacturingDBContext.ProductionHandoverReceipt.FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
+            if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+            if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+
+            var productionOrderIds = info.ProductionHandover.Select(h => h.ProductionOrderId).Distinct().ToList();
+            var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
+
+            try
+            {
+                info.HandoverStatusId = (int)status;
+
+                if (status == EnumHandoverStatus.Accepted)
+                    info.AcceptByUserId = _currentContextService.UserId;
+
+                _manufacturingDBContext.SaveChanges();
+
+                if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
+                {
+                    foreach (var h in info.ProductionHandover)
+                    {
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                    }
+                }
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} bàn giao công việc {info.ProductionHandoverReceiptCode}", info.JsonSerialize());
+
+
+                foreach (var code in productionOrderCodes)
+                {
+                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
+        public async Task<long> Create(long productionOrderId, ProductionHandoverReceiptModel data)
+        {
+            foreach (var h in data.Handovers)
+            {
+                h.ProductionOrderId = productionOrderId;
+            }
+            return await CreateProductionHandover(data, EnumHandoverStatus.Waiting);
+        }
+
+        public async Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverReceiptModel> datas)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var data in datas)
+                {
+                    await CreateProductionHandover(data, EnumHandoverStatus.Waiting);
+                }
+
+                await trans.CommitAsync();
+                return true;
+            }
+            catch (System.Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
+        private async Task<long> CreateProductionHandover(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
+        {
+            try
+            {
+
+                foreach (var h in data.Handovers)
+                {
+                    if (h.FromDepartmentId == STOCK_DEPARTMENT_ID && h.ToDepartmentId == STOCK_DEPARTMENT_ID)
+                    {
+                        if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == h.FromProductionStepId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
+                        if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == h.ToProductionStepId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không có gia công công đoạn");
+                    }
+                    else
+                    {
+                        if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.FromProductionStepId && a.DepartmentId == h.FromDepartmentId && a.ProductionOrderId == h.ProductionOrderId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");
+                        if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.ToProductionStepId && a.DepartmentId == h.ToDepartmentId && a.ProductionOrderId == h.ProductionOrderId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không tồn tại phân công công việc cho tổ nhận");
+                    }
+                }
+
+
+                var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
+
+                var code = await ctx
+                    .SetConfig(EnumObjectType.ProductionHandoverReceipt, EnumObjectType.ProductionHandoverReceipt)
+                    .SetConfigData(0, data.Handovers.FirstOrDefault()?.HandoverDatetime)
+                    .TryValidateAndGenerateCode(_manufacturingDBContext.ProductionHandoverReceipt, data.ProductionHandoverReceiptCode, (s, code) => s.ProductionHandoverReceiptCode == code);
+
+                data.ProductionHandoverReceiptCode = code;
+
+                var receiptInfo = new ProductionHandoverReceipt()
+                {
+                    ProductionHandoverReceiptCode = data.ProductionHandoverReceiptCode,
+                    HandoverStatusId = (int)status
+                };
+
+                _manufacturingDBContext.ProductionHandoverReceipt.Add(receiptInfo);
+
+                _manufacturingDBContext.SaveChanges();
+
+                var hanovers = new List<ProductionHandoverEntity>();
+                foreach (var h in data.Handovers)
+                {
+                    var productionHandover = _mapper.Map<ProductionHandoverEntity>(h);
+                    productionHandover.Status = (int)status;
+                    productionHandover.ProductionHandoverReceiptId = receiptInfo.ProductionHandoverReceiptId;
+                    hanovers.Add(productionHandover);
+                }
+
+                await _manufacturingDBContext.ProductionHandover.AddRangeAsync(hanovers);
+
+                _manufacturingDBContext.SaveChanges();
+                foreach (var h in hanovers)
+                {
+                    if (h.Status == (int)EnumHandoverStatus.Accepted && h.FromDepartmentId != STOCK_DEPARTMENT_ID && h.ToDepartmentId != STOCK_DEPARTMENT_ID)
+                    {
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                    }
+                }
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu bàn giao công việc / yêu cầu xuất kho {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
+
+                await ctx.ConfirmCode();
+
+                var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => data.Handovers.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
+                foreach (var podCode in podCodes)
+                {
+                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+                }
+
+                var handovers = _manufacturingDBContext.ProductionHandover.Where(h => h.ProductionHandoverReceiptId == receiptInfo.ProductionHandoverReceiptId);
+
+                return receiptInfo.ProductionHandoverReceiptId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
+        public async Task<bool> Delete(long productionHandoverReceiptId)
+        {
+            try
+            {
+                var receiptInfo = _manufacturingDBContext.ProductionHandoverReceipt
+                    .Include(r => r.ProductionHandover)
+                    .Where(h => h.ProductionHandoverReceiptId == productionHandoverReceiptId)
+                    .FirstOrDefault();
+
+                if (receiptInfo == null)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu bàn giao công việc");
+                receiptInfo.IsDeleted = true;
+                foreach (var h in receiptInfo.ProductionHandover)
+                {
+                    h.IsDeleted = true;
+                }
+                _manufacturingDBContext.SaveChanges();
+                if (receiptInfo.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
+                {
+                    foreach (var h in receiptInfo.ProductionHandover)
+                    {
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                    }
+                }
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+
+                var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
+                foreach (var podCode in podCodes)
+                {
+                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+                }
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }
+
+        public async Task<bool> Update(long productionHandoverReceiptId, ProductionHandoverReceiptModel data, EnumHandoverStatus status)
+        {
+            var receiptInfo = _manufacturingDBContext.ProductionHandoverReceipt
+                .Include(r => r.ProductionHandover)
+                .Where(h => h.ProductionHandoverReceiptId == productionHandoverReceiptId)
+                .FirstOrDefault();
+
+            if (receiptInfo == null)
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu bàn giao công việc");
+
+            var productionOrderIds = receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).ToList();
+            productionOrderIds.AddRange(data.Handovers.Select(d => d.ProductionOrderId).ToList());
+
+            _mapper.Map(data, receiptInfo);
+            receiptInfo.HandoverStatusId = (int)status;
+            var changedHandovers = new List<ProductionHandoverEntity>();
+
+            foreach (var h in receiptInfo.ProductionHandover)
+            {
+                var handoverData = data.Handovers.FirstOrDefault(d => d.ProductionHandoverId == h.ProductionHandoverId);
+                if (handoverData == null)
+                {
+                    h.IsDeleted = true;
+                }
+                else
+                {
+                    _mapper.Map(handoverData, h);
+                    h.Status = (int)status;
+                    h.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                }
+                changedHandovers.Add(h);
+            }
+
+
+            foreach (var h in data.Handovers)
+            {
+                if (h.ProductionHandoverId == null || h.ProductionHandoverId == 0)
+                {
+                    var handoverInfo = _mapper.Map<ProductionHandoverEntity>(h);
+                    handoverInfo.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                    _manufacturingDBContext.ProductionHandover.Add(handoverInfo);
+                    handoverInfo.Status = (int)status;
+                    changedHandovers.Add(handoverInfo);
+                }
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+
+            foreach (var h in changedHandovers)
+            {
+                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+            }
+
+            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+
+
+            var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
+            foreach (var podCode in podCodes)
+            {
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+            }
+            return true;
+
+        }
+
+        public async Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data)
+        {
+            foreach (var h in data.Handovers)
+            {
+                h.ProductionOrderId = productionOrderId;
+            }
+            return await CreateProductionHandover(data, EnumHandoverStatus.Accepted);
+        }
+        /*
+        public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)
+        {
+            var poInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+
+            var insertData = new List<ProductionHandoverEntity>();
+            using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                foreach (var item in data)
+                {
+                    if (item.FromDepartmentId == STOCK_DEPARTMENT_ID && item.ToDepartmentId == STOCK_DEPARTMENT_ID)
+                    {
+                        if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == item.FromProductionStepId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
+                        if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == item.ToProductionStepId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không có gia công công đoạn");
+                    }
+                    else
+                    {
+                        if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == item.FromProductionStepId && a.DepartmentId == item.FromDepartmentId && a.ProductionOrderId == productionOrderId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");
+                        if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == item.ToProductionStepId && a.DepartmentId == item.ToDepartmentId && a.ProductionOrderId == productionOrderId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không tồn tại phân công công việc cho tổ nhận");
+                    }
+
+                    var productionHandover = _mapper.Map<ProductionHandoverEntity>(item);
+                    productionHandover.Status = (int)EnumHandoverStatus.Accepted;
+                    productionHandover.ProductionOrderId = productionOrderId;
+                    _manufacturingDBContext.ProductionHandover.Add(productionHandover);
+
+                    insertData.Add(productionHandover);
+                }
+
+                _manufacturingDBContext.SaveChanges();
+
+                var result = insertData.AsQueryable().ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider).ToList();
+
+
+                var departmentHandoverDetails = await GetDepartmentHandoverDetail(productionOrderId);
+
+                // Đổi trạng thái phân công
+                foreach (var item in insertData)
+                {
+                    if (item.FromDepartmentId != STOCK_DEPARTMENT_ID && item.ToDepartmentId != STOCK_DEPARTMENT_ID)
+                    {
+                        await ChangeAssignedProgressStatus(productionOrderId, item.FromProductionStepId, item.FromDepartmentId, null, departmentHandoverDetails);
+                        await ChangeAssignedProgressStatus(productionOrderId, item.ToProductionStepId, item.ToDepartmentId, null, departmentHandoverDetails);
+                    }
+
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, item.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
+                }
+
+                trans.Commit();
+
+                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, poInfo?.ProductionOrderCode);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                trans.Rollback();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+        }*/
+
+        public async Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId)
+        {
+            var handovers = _manufacturingDBContext.ProductionHandover.Where(h => h.ProductionOrderId == productionOrderId);
+
+            return await GetProductionHandovers(handovers);
+        }
+
+
+
+        public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)
+        {
+            keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>()
+            {
+                new SqlParameter("@Keyword", keyword),
+                new SqlParameter("@DepartmentId", departmentId),
+                new SqlParameter("@Size", size),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@StepId", stepId.GetValueOrDefault()),
+                new SqlParameter("@ProductId", productId.GetValueOrDefault()),
+                new SqlParameter("@ProductionStepLinkDataRoleTypeId", (int?)productionStepLinkDataRoleTypeId),
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish)
+            };
+
+            var dataSet = await _manufacturingDBContext.ExecuteMultipleDataProcedure("asp_ProductionDepartmentHandover", parammeters.ToArray());
+
+            var total = 0;
+            IList<DepartmentHandoverModel> lst = null;
+            Dictionary<string, object> additionResult = new Dictionary<string, object>();
+            if (dataSet != null && dataSet.Tables.Count > 0)
+            {
+                IList<NonCamelCaseDictionary> data = dataSet.Tables[0].ConvertData();
+                total = (data[0]["Total"] as int?).GetValueOrDefault();
+                foreach (var item in dataSet.Tables[0].ConvertFirstRowData())
+                {
+                    additionResult.Add(item.Key, item.Value.value);
+                }
+                IList<DepartmentHandoverEntity> resultData = dataSet.Tables[1].ConvertData<DepartmentHandoverEntity>();
+                lst = resultData.AsQueryable().ProjectTo<DepartmentHandoverModel>(_mapper.ConfigurationProvider).ToList();
+            }
+
+            return (lst, total, additionResult);
+        }
+
+        public async Task<PageData<ProductionHandoverReceiptByDateModel>> GetDepartmentHandoversByDate(IList<long> fromDepartmentIds, IList<long> toDepartmentIds, IList<long> fromStepIds, IList<long> toStepIds, long? fromDate, long? toDate, bool? isInFinish, bool? isOutFinish, int page, int size)
+        {
+            var parammeters = new List<SqlParameter>()
+            {
+                fromDepartmentIds.ToSqlParameter("@FromDepartmentIds"),
+                toDepartmentIds.ToSqlParameter("@ToDepartmentIds"),
+                fromStepIds.ToSqlParameter("@FromStepIds"),
+                toStepIds.ToSqlParameter("@ToStepIds"),
+
+                new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate)),
+                new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate)),
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish),
+                new SqlParameter("@Size", size),
+                new SqlParameter("@Page", page),
+            };
+
+            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDate", parammeters.ToArray());
+
+            var totalRecord = 0;
+            if (dataTable.Rows.Count > 0)
+            {
+                totalRecord = Convert.ToInt32(dataTable.Rows[0]["TotalRecord"]);
+            }
+            var lst = dataTable.ConvertData<ProductionHandoverReceiptByDateModel>();
+
+            return (lst, totalRecord);
+        }
+
+
+        private async Task<IList<ProductionHandoverModel>> GetProductionHandovers(IQueryable<ProductionHandoverEntity> handovers)
+        {
+            return await (from r in _manufacturingDBContext.ProductionHandoverReceipt
+                          join h in handovers on r.ProductionHandoverReceiptId equals h.ProductionHandoverReceiptId
+                          select new ProductionHandoverModel
+                          {
+                              ProductionHandoverReceiptId = r.ProductionHandoverReceiptId,
+                              ProductionHandoverReceiptCode = r.ProductionHandoverReceiptCode,
+                              ProductionHandoverId = h.ProductionHandoverId,
+                              Status = (EnumHandoverStatus)r.HandoverStatusId,
+                              CreatedByUserId = r.CreatedByUserId,
+                              AcceptByUserId = r.AcceptByUserId,
+
+                              HandoverQuantity = h.HandoverQuantity,
+                              ObjectId = h.ObjectId,
+                              ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
+                              FromDepartmentId = h.FromDepartmentId,
+                              FromProductionStepId = h.FromProductionStepId,
+                              ToDepartmentId = h.ToDepartmentId,
+                              ToProductionStepId = h.ToProductionStepId,
+                              HandoverDatetime = h.HandoverDatetime.GetUnix(),
+                              Note = h.Note,
+                              ProductionOrderId = h.ProductionOrderId
+                          }).ToListAsync();
+        }
+
+
+    }
+}

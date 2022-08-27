@@ -618,6 +618,13 @@ namespace VErp.Services.Master.Service.Config.Implement
                 fieldName: "Mã yêu cầu vật tư thêm")
             );
 
+            result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Manufacturing,
+               targeObjectTypeId: EnumObjectType.ProductionHandoverReceipt,
+               fieldName: "Mã phiếu bàn giao")
+           );
+
             return Task.FromResult(result);
         }
 
