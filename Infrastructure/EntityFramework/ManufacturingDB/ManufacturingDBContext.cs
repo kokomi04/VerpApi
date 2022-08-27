@@ -32,6 +32,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionHandoverReceipt> ProductionHandoverReceipt { get; set; }
         public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
         public virtual DbSet<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
@@ -331,6 +332,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_FromProductionStep");
 
+                entity.HasOne(d => d.ProductionHandoverReceipt)
+                    .WithMany(p => p.ProductionHandover)
+                    .HasForeignKey(d => d.ProductionHandoverReceiptId)
+                    .HasConstraintName("FK_ProductionHandover_ProductionHandoverReceipt");
+
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionHandover)
                     .HasForeignKey(d => d.ProductionOrderId)
@@ -342,6 +348,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ToProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_ToProductionStep");
+            });
+
+            modelBuilder.Entity<ProductionHandoverReceipt>(entity =>
+            {
+                entity.Property(e => e.ProductionHandoverReceiptCode).HasMaxLength(128);
             });
 
             modelBuilder.Entity<ProductionHistory>(entity =>

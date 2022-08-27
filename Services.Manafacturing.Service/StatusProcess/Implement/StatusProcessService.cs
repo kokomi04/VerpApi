@@ -224,10 +224,34 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 .ToList();
 
             // Lấy thông tin bàn giao
-            var allHandovers = _manufacturingDBContext.ProductionHandover
+            var allHandovers = _manufacturingDBContext.ProductionHandover.Include(h => h.ProductionHandoverReceipt)
                     .Where(h => h.ProductionOrderId == productionOrderId
                     && ((departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
                     || (departmentIds.Contains(h.ToDepartmentId) && productionStepIds.Contains(h.ToProductionStepId))))
+                    .Select(h => new ProductionHandoverModel()
+                    {
+
+                        ProductionHandoverReceiptId = h.ProductionHandoverReceipt.ProductionHandoverReceiptId,
+                        ProductionHandoverReceiptCode = h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
+
+                        ProductionHandoverId = h.ProductionHandoverId,
+                        Status = (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
+                        CreatedByUserId = h.ProductionHandoverReceipt.CreatedByUserId,
+                        AcceptByUserId = h.ProductionHandoverReceipt.AcceptByUserId,
+
+
+                        HandoverQuantity = h.HandoverQuantity,
+                        ObjectId = h.ObjectId,
+                        ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
+                        FromDepartmentId = h.FromDepartmentId,
+                        FromProductionStepId = h.FromProductionStepId,
+                        ToDepartmentId = h.ToDepartmentId,
+                        ToProductionStepId = h.ToProductionStepId,
+                        HandoverDatetime = h.HandoverDatetime.GetUnix(),
+                        Note = h.Note,
+
+                        ProductionOrderId = h.ProductionOrderId
+                    })
                     .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
                     .ToList();
 
