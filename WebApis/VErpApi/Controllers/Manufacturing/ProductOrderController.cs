@@ -177,10 +177,10 @@ namespace VErpApi.Controllers.Manufacturing
         }
         [HttpPut]
         [Route("multiple")]
-        public async Task<bool> UpdateMultipleProductionOrders([FromBody] UpdateMultipleModel data)
+        public async Task<bool> UpdateMultipleProductionOrders([FromBody] ProductionOrderMultipleUpdateModel data)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productionOrderService.UpdateMultipleProductionOrders(data.lstInfoUpdate, data.ProductionOrderIds);
+            return await _productionOrderService.UpdateMultipleProductionOrders(data.lstProductionOrderPropertyUpdate, data.ProductionOrderIds);
         }
         [HttpGet]
         [Route("{productionOrderId}/materials-calc")]

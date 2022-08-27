@@ -110,12 +110,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? FromWeekPlanId { get; set; }
         public int? ToWeekPlanId { get; set; }
     }
-    public class UpdateMultipleModel
+    public class ProductionOrderMultipleUpdateModel
     {
-        public List<InfoUpdate> lstInfoUpdate { get; set; }
+        public List<ProductionOrderPropertyUpdate> lstProductionOrderPropertyUpdate { get; set; }
         public List<long> ProductionOrderIds { get; set; }
     }
-    public class InfoUpdate
+    public class ProductionOrderPropertyUpdate
     {
         public string FieldName { get; set; }
         public object NewValue { get; set; }
