@@ -901,7 +901,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         // Check unique trong danh sách values thêm mới/sửa
                         if (values.Count != values.Distinct().Count())
                         {
-                            throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                            var dupValue = values.GroupBy(v => v).Where(v => v.Count() > 1).FirstOrDefault()?.Key?.ToString();
+                            throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, dupValue });
                         }
                         if (values.Count == 0)
                         {
@@ -941,7 +942,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             if (isExisted)
             {
-                throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, result.Rows[0][field.FieldName]?.ToString() });
             }
         }
 
@@ -2194,10 +2195,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 // Check unique trong danh sách values thêm mới
                 if (values.Distinct().Count() < values.Count)
                 {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", values.Distinct())});
                 }
                 // Checkin unique trong db
-                var existSql = $"SELECT F_Id FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
+                var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
 
                 existSql += $" AND {field.FieldName} IN (";
                 List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -2218,7 +2219,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", result.AsEnumerable().Select(r => r[field.FieldName]?.ToString()).ToList())});
                 }
             }
 
