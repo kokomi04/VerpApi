@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -253,7 +254,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
-                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                whereCondition.Append("v.ProductionOrderCode LIKE @KeyWord ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
             if (fromDate > 0 && toDate > 0)
@@ -1513,6 +1514,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "UpdateProductOrderDateTime");
                 throw;
             }
+        }
+        public async Task<bool> UpdateMultipleProductionOrders(List<InfoUpdate> lstInfoUpdate, List<long> ProductionOrderIds)
+        {
+            if (ProductionOrderIds.Count > 0)
+            {
+                var sql = $"SELECT * FROM ProductionOrder p JOIN @PIds v ON p.ProductionOrderId = v.[Value]";
+                var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { ProductionOrderIds.ToSqlParameter("@PIds") });
+
+                //Check trùng theo mã LSX
+                if (lstInfoUpdate.Any(x => x.FieldName == "ProductionOrderCode"))
+                {
+                    var newProductionOrderCode = lstInfoUpdate.SingleOrDefault(y => y.FieldName == "ProductionOrderCode").NewValue.ToString();
+                    if (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == newProductionOrderCode))
+                        throw new BadRequestException(ProductOrderErrorCode.ProductOrderCodeAlreadyExisted);
+                }
+                foreach (DataRow row in resultData.Rows)
+                {
+                    var sqlParams = new List<SqlParameter>();
+                    foreach (InfoUpdate column in lstInfoUpdate)
+                    {
+                        sqlParams.Add(new SqlParameter("@" + column.FieldName, (row[column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
+                    }
+                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", lstInfoUpdate.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
+                    await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
+                }
+            }
+            else
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            return true;
         }
 
         #region Production Order Configuration
