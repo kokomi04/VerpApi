@@ -251,8 +251,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         Note = h.Note,
 
                         ProductionOrderId = h.ProductionOrderId
-                    })
-                    .ProjectTo<ProductionHandoverModel>(_mapper.ConfigurationProvider)
+                    })                    
                     .ToList();
 
             var allLinkDataIds = (allInputLinkDatas.Select(ld => ld.ProductionStepLinkData.ProductionStepLinkDataId)
