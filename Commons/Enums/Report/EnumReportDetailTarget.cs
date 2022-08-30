@@ -13,6 +13,7 @@
         PackageInfo = 81,
         PurchaseOrder = 9,
         ProductionHandover = 10,
-        Customer = 11
+        Customer = 11,
+        ProductionHandoverReceipt = 12
     }
 }
