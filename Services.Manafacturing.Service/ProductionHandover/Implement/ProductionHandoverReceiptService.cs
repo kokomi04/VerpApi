@@ -231,7 +231,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var receiptInfo = new ProductionHandoverReceipt()
                 {
                     ProductionHandoverReceiptCode = data.ProductionHandoverReceiptCode,
-                    HandoverStatusId = (int)status
+                    HandoverStatusId = (int)status,
+                    AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null
                 };
 
                 _manufacturingDBContext.ProductionHandoverReceipt.Add(receiptInfo);
@@ -244,6 +245,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var productionHandover = _mapper.Map<ProductionHandoverEntity>(h);
                     productionHandover.Status = (int)status;
                     productionHandover.ProductionHandoverReceiptId = receiptInfo.ProductionHandoverReceiptId;
+                    productionHandover.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
                     hanovers.Add(productionHandover);
                 }
 
@@ -336,6 +338,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             _mapper.Map(data, receiptInfo);
             receiptInfo.HandoverStatusId = (int)status;
+            receiptInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
+
             var changedHandovers = new List<ProductionHandoverEntity>();
 
             foreach (var h in receiptInfo.ProductionHandover)
@@ -350,6 +354,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     _mapper.Map(handoverData, h);
                     h.Status = (int)status;
                     h.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                    h.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
                 }
                 changedHandovers.Add(h);
             }
@@ -363,6 +368,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     handoverInfo.ProductionHandoverReceiptId = productionHandoverReceiptId;
                     _manufacturingDBContext.ProductionHandover.Add(handoverInfo);
                     handoverInfo.Status = (int)status;
+                    handoverInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
                     changedHandovers.Add(handoverInfo);
                 }
             }
