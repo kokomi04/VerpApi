@@ -11,18 +11,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
     public class ProductionHandoverModel : ProductionHandoverInputModel
     {
         public long ProductionHandoverReceiptId { get; set; }
-        public string ProductionHandoverReceiptCode { get; set; }        
+        public string ProductionHandoverReceiptCode { get; set; }
         public EnumHandoverStatus Status { get; set; }
         public int CreatedByUserId { get; set; }
         public int? AcceptByUserId { get; set; }
 
-       
+
     }
 
     public class ProductionHandoverReceiptModel : IMapFrom<ProductionHandoverReceipt>
     {
         public long? ProductionHandoverReceiptId { get; set; }
         public string ProductionHandoverReceiptCode { get; set; }
+        public int? AcceptByUserId { get; set; }
         public IList<ProductionHandoverInputModel> Handovers { get; set; }
         public void Mapping(Profile profile)
         {
@@ -49,6 +50,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public long ProductionOrderId { get; set; }
 
-       
+
     }
 }
