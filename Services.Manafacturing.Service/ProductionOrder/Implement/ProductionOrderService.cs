@@ -1519,28 +1519,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
-        public async Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> lstProductionOrderPropertyUpdate, List<long> ProductionOrderIds)
+        public async Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> productionOrderPropertyUpdateDatas, List<long> productionOrderIds)
         {
-            if (ProductionOrderIds.Count > 0)
+            if (productionOrderIds.Count > 0)
             {
                 var sql = $"SELECT * FROM ProductionOrder p JOIN @PIds v ON p.ProductionOrderId = v.[Value]";
-                var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { ProductionOrderIds.ToSqlParameter("@PIds") });
+                var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
 
                 //Check trùng theo mã LSX
-                if (lstProductionOrderPropertyUpdate.Any(x => x.FieldName == "ProductionOrderCode"))
+                if (productionOrderPropertyUpdateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
                 {
-                    var newProductionOrderCode = lstProductionOrderPropertyUpdate.SingleOrDefault(y => y.FieldName == "ProductionOrderCode").NewValue.ToString();
-                    if (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == newProductionOrderCode))
-                        throw new BadRequestException(ProductOrderErrorCode.ProductOrderCodeAlreadyExisted);
+                    throw new BadRequestException($@"Không thể sửa đồng loạt giá trị cột Mã LSX");
                 }
                 foreach (DataRow row in resultData.Rows)
                 {
                     var sqlParams = new List<SqlParameter>();
-                    foreach (ProductionOrderPropertyUpdate column in lstProductionOrderPropertyUpdate)
+                    foreach (ProductionOrderPropertyUpdate column in productionOrderPropertyUpdateDatas)
                     {
                         sqlParams.Add(new SqlParameter("@" + column.FieldName, (row[column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
                     }
-                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", lstProductionOrderPropertyUpdate.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
+                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", productionOrderPropertyUpdateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
                     await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
                 }
             }
