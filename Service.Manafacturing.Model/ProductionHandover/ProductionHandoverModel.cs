@@ -16,13 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int CreatedByUserId { get; set; }
         public int? AcceptByUserId { get; set; }
 
-        public override void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHandoverEntity, ProductionHandoverModel>()
-                //.ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataObjectType)m.ObjectTypeId))
-                //.ForMember(m => m.Status, v => v.MapFrom(m => (EnumHandoverStatus)m.Status))
-                .ForMember(m => m.HandoverDatetime, v => v.MapFrom(m => m.HandoverDatetime.GetUnix()));
-        }
+       
     }
 
     public class ProductionHandoverReceiptModel : IMapFrom<ProductionHandoverReceipt>
@@ -55,11 +49,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public long ProductionOrderId { get; set; }
 
-        public virtual void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHandoverInputModel, ProductionHandoverEntity>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
-                .ForMember(m => m.HandoverDatetime, v => v.MapFrom(m => m.HandoverDatetime.UnixToDateTime()));
-        }
+       
     }
 }
