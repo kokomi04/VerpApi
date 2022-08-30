@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -174,7 +175,13 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
         }
-
+        [HttpPut]
+        [Route("multiple")]
+        public async Task<bool> UpdateMultipleProductionOrders([FromBody] ProductionOrderMultipleUpdateModel data)
+        {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _productionOrderService.UpdateMultipleProductionOrders(data.UpdateDatas, data.ProductionOrderIds);
+        }
         [HttpGet]
         [Route("{productionOrderId}/materials-calc")]
         public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterials([FromRoute] int productionOrderId)
