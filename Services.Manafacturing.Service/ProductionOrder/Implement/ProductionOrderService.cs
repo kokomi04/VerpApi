@@ -1525,22 +1525,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var sql = $"SELECT * FROM ProductionOrder p JOIN @PIds v ON p.ProductionOrderId = v.[Value]";
                 var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
-
-                //Check trùng theo mã LSX
-                if (updateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
+                if (resultData.Rows.Count > 0)
                 {
-                    throw new BadRequestException($@"Không thể sửa đồng loạt giá trị cột Mã LSX");
-                }
-                foreach (DataRow row in resultData.Rows)
-                {
+                    if (updateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
+                    {
+                        throw new BadRequestException($@"Không thể sửa đồng loạt giá trị cột Mã LSX");
+                    }
                     var sqlParams = new List<SqlParameter>();
+                    sqlParams.Add(productionOrderIds.ToSqlParameter("@productionOrderIds"));
                     foreach (ProductionOrderPropertyUpdate column in updateDatas)
                     {
-                        sqlParams.Add(new SqlParameter("@" + column.FieldName, (row[column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
+                        sqlParams.Add(new SqlParameter("@" + column.FieldName, (resultData.Rows[0][column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
                     }
-                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
+                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId IN (SELECT [Value] FROM @productionOrderIds)";
                     await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
-                }
+                }else
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
             }
             else
                 throw new BadRequestException(GeneralCode.ItemNotFound);
