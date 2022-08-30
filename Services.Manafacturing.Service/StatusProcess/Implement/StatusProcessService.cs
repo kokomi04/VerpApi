@@ -235,7 +235,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         ProductionHandoverReceiptCode = h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
 
                         ProductionHandoverId = h.ProductionHandoverId,
-                        Status = (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
+                        HandoverStatusId = (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
                         CreatedByUserId = h.ProductionHandoverReceipt.CreatedByUserId,
                         AcceptByUserId = h.ProductionHandoverReceipt.AcceptByUserId,
 
@@ -524,7 +524,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                 && h.ObjectTypeId == (EnumProductionStepLinkDataObjectType)inputLinkData.LinkDataObjectTypeId
                                 && h.FromProductionStepId == fromStepId.Value)
                                 .ToList();
-                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity);
+                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.HandoverStatusId == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity);
                         }
                         else
                         {
@@ -540,7 +540,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                 .Where(mr => mr.ProductId == inputLinkData.LinkDataObjectId && !mr.OutsourceStepRequestId.HasValue)
                                 .ToList();
 
-                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
+                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.HandoverStatusId == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
                                 + item.InventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
 
@@ -680,7 +680,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                     && h.ToProductionStepId == toStepId.Value)
                                     .ToList();
 
-                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity);
+                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.HandoverStatusId == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity);
                         }
                         else
                         {
@@ -692,7 +692,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                                     && !h.OutsourceStepRequestId.HasValue)
                                     .ToList();
 
-                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.Status == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
+                            item.ReceivedQuantity = item.HandoverHistories.Where(h => h.HandoverStatusId == EnumHandoverStatus.Accepted).Sum(h => h.HandoverQuantity)
                                 + item.InventoryRequirementHistories.Where(h => h.Status == EnumProductionInventoryRequirementStatus.Accepted).Sum(h => h.ActualQuantity);
 
                             // Xử lý các phiếu nhập kho chưa phân bổ công đoạn

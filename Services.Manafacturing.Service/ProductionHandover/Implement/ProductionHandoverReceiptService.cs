@@ -554,7 +554,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                               ProductionHandoverReceiptId = r.ProductionHandoverReceiptId,
                               ProductionHandoverReceiptCode = r.ProductionHandoverReceiptCode,
                               ProductionHandoverId = h.ProductionHandoverId,
-                              Status = (EnumHandoverStatus)r.HandoverStatusId,
+                              HandoverStatusId = (EnumHandoverStatus)r.HandoverStatusId,
                               CreatedByUserId = r.CreatedByUserId,
                               AcceptByUserId = r.AcceptByUserId,
 
