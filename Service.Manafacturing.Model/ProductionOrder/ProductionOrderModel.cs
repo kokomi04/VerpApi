@@ -112,7 +112,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     }
     public class ProductionOrderMultipleUpdateModel
     {
-        public List<ProductionOrderPropertyUpdate> ProductionOrderPropertyUpdateDatas { get; set; }
+        public List<ProductionOrderPropertyUpdate> UpdateDatas { get; set; }
         public List<long> ProductionOrderIds { get; set; }
     }
     public class ProductionOrderPropertyUpdate

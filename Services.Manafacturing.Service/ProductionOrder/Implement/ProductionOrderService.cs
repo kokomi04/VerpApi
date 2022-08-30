@@ -1519,7 +1519,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 throw;
             }
         }
-        public async Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> productionOrderPropertyUpdateDatas, List<long> productionOrderIds)
+        public async Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> updateDatas, List<long> productionOrderIds)
         {
             if (productionOrderIds.Count > 0)
             {
@@ -1527,18 +1527,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
 
                 //Check trùng theo mã LSX
-                if (productionOrderPropertyUpdateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
+                if (updateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
                 {
                     throw new BadRequestException($@"Không thể sửa đồng loạt giá trị cột Mã LSX");
                 }
                 foreach (DataRow row in resultData.Rows)
                 {
                     var sqlParams = new List<SqlParameter>();
-                    foreach (ProductionOrderPropertyUpdate column in productionOrderPropertyUpdateDatas)
+                    foreach (ProductionOrderPropertyUpdate column in updateDatas)
                     {
                         sqlParams.Add(new SqlParameter("@" + column.FieldName, (row[column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
                     }
-                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", productionOrderPropertyUpdateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
+                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId = {row["ProductionOrderId"]}";
                     await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
                 }
             }
