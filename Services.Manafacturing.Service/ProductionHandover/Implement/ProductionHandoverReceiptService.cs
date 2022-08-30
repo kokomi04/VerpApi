@@ -55,6 +55,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public async Task<ProductionHandoverReceiptModel> Info(long receiptId)
         {
             var infoDb = await _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefaultAsync(r => r.ProductionHandoverReceiptId == receiptId);
+            if (infoDb == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+            }
             var info = _mapper.Map<ProductionHandoverReceiptModel>(infoDb);
             info.Handovers = infoDb.ProductionHandover.Select(h => _mapper.Map<ProductionHandoverInputModel>(h)).ToList();
             return info;
