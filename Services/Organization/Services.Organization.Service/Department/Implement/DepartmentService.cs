@@ -70,7 +70,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ImageFileId = data.ImageFileId,
                 IsDeleted = false,
                 NumberOfPerson = data.NumberOfPerson,
-                NumberOfMachine = data.NumberOfMachine
+                NumberOfMachine = data.NumberOfMachine,
+                IsFactory = data.IsFactory
             };
 
             await _organizationContext.Department.AddAsync(department);
@@ -143,7 +144,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = department.IsProduction,
                 ImageFileId = department.ImageFileId,
                 NumberOfPerson = department.NumberOfPerson,
-                NumberOfMachine = department.NumberOfMachine
+                NumberOfMachine = department.NumberOfMachine,
+                IsFactory = department.IsFactory
             };
         }
 
@@ -181,7 +183,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
                 NumberOfPerson = d.NumberOfPerson,
-                NumberOfMachine = d.NumberOfMachine
+                NumberOfMachine = d.NumberOfMachine,
+                IsFactory = d.IsFactory
             }).ToListAsync();
 
             var total = await query.CountAsync();
@@ -210,7 +213,8 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
                 NumberOfPerson = d.NumberOfPerson,
-                NumberOfMachine = d.NumberOfMachine
+                NumberOfMachine = d.NumberOfMachine,
+                IsFactory = d.IsFactory
             }).ToListAsync();
 
             return lst;
@@ -279,6 +283,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.ImageFileId = data.ImageFileId;
             department.NumberOfPerson = data.NumberOfPerson;
             department.NumberOfMachine = data.NumberOfMachine;
+            department.IsFactory = data.IsFactory;
 
             await _organizationContext.SaveChangesAsync();
 

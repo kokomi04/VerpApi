@@ -10,5 +10,6 @@ namespace VErp.Services.Organization.Model.Department
         public bool IsActived { get; set; }
         public bool IsProduction { get; set; }
         public long? ImageFileId { get; set; }
+        public bool IsFactory { get; set; }
     }
 }
