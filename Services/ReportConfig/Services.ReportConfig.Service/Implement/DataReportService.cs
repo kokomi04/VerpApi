@@ -523,7 +523,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var data = table.ConvertData();
 
-            IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().Where(col => !col.IsHidden).OrderBy(col => col.SortOrder).ToList();
+            IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().OrderBy(col => col.SortOrder).ToList();//.Where(col => !col.IsHidden)
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
 
             var calSumColumns = columns.Where(c => c.IsCalcSum);
