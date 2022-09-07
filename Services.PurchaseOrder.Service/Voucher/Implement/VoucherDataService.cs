@@ -2195,7 +2195,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 // Check unique trong danh sách values thêm mới
                 if (values.Distinct().Count() < values.Count)
                 {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", values.Distinct())});
+                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", values.Distinct().Take(5))});
                 }
                 // Checkin unique trong db
                 var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
@@ -2219,7 +2219,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", result.AsEnumerable().Select(r => r[field.FieldName]?.ToString()).ToList())});
+                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", result.AsEnumerable().Select(r => r[field.FieldName]?.ToString()).ToList().Distinct().Take(5))});
                 }
             }
 

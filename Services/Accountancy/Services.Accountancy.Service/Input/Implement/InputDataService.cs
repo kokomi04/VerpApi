@@ -2242,7 +2242,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     case EnumImportDuplicateOption.Denied:
                         var errField = fields.First(f => f.FieldName == columnKey.FieldName);
-                        throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { errField.Title, string.Join(", ", existKeys.Select(c => c.Key).ToArray()), "" });
+                        throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { errField.Title, string.Join(", ", existKeys.Select(c => c.Key).Distinct().Take(5).ToArray()), "" });
                     case EnumImportDuplicateOption.Ignore:
                         createGroups = groups.Where(g => !existKeys.ContainsKey(g.Key)).ToDictionary(g => g.Key, g => g.Value);
                         break;
@@ -2274,7 +2274,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // Check unique trong danh sách values thêm mới
                 if (values.Distinct().Count() < values.Count)
                 {
-                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(",", values), "" });
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(",", values.Distinct().Take(5)), "" });
                 }
                 // Checkin unique trong db
                 if (values.Count == 0) continue;
@@ -2312,7 +2312,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (string.IsNullOrWhiteSpace(inputType_Title))
                             inputType_Title = result.Rows[i][typeTitleField]?.ToString();
                     }
-                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", dupValues.ToArray()), inputType_Title });
+                    throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", dupValues.Take(5).ToArray()), inputType_Title });
                 }
             }
 
