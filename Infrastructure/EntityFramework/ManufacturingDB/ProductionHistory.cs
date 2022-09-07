@@ -24,7 +24,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
         public decimal? OvertimeProductionQuantity { get; set; }
+        public long? ProductionHandoverReceiptId { get; set; }
 
+        public virtual ProductionHandoverReceipt ProductionHandoverReceipt { get; set; }
         public virtual ProductionStep ProductionOrder { get; set; }
     }
 }
