@@ -13,12 +13,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public int CreatedByUserId { get; set; }
 
-        public override void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHistory, ProductionHistoryModel>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataObjectType)m.ObjectTypeId))
-                .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()));
-        }
+      
     }
 
     public class ProductionHistoryInputModel : IMapFrom<ProductionHistory>
@@ -33,12 +28,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? Date { get; set; }
         public string Note { get; set; }
         public long ProductionOrderId { get; set; }
-
-        public virtual void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHistoryInputModel, ProductionHistory>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
-                .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()));
-        }
+       
     }
 }
