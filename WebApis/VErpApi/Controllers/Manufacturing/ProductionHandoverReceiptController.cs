@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
@@ -104,6 +107,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHandoverReceiptService.Update(receiptId, data, EnumHandoverStatus.Waiting);
         }
 
+        [HttpPost]
+        [Route("HandoverHistoryReceipts")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<ProductionHandoverHistoryReceiptModel>> HandoverHistoryReceipts([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, 
+            [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody]  Clause filters = null)
+        {
+            return await _productionHandoverReceiptService.GetList(keyword, fromDate, toDate, page, size, orderByFieldName, asc, filters);
+        }
+
         [HttpGet]
         [Route("{receiptId}")]
         public async Task<ProductionHandoverReceiptModel> Info([FromRoute] long receiptId)
@@ -115,19 +127,19 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("AcceptBatch")]
         public async Task<bool> AcceptBatch([FromBody] IList<long> receiptIds)
         {
-            return await _productionHandoverReceiptService.AcceptProductionHandoverBatch(receiptIds);
+            return await _productionHandoverReceiptService.AcceptBatch(receiptIds);
         }
 
         [HttpPut]
         [Route("{receiptId}/accept")]
-        public async Task<bool> AcceptProductionHandover([FromRoute] long receiptId)
+        public async Task<bool> Accept([FromRoute] long receiptId)
         {
             return await _productionHandoverReceiptService.Confirm(receiptId, EnumHandoverStatus.Accepted);
         }
 
         [HttpPut]
         [Route("{receiptId}/reject")]
-        public async Task<bool> RejectProductionHandover([FromRoute] long receiptId)
+        public async Task<bool> Reject([FromRoute] long receiptId)
         {
             return await _productionHandoverReceiptService.Confirm(receiptId, EnumHandoverStatus.Rejected);
         }
@@ -136,7 +148,7 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("patch")]
         public async Task<bool> CreateProductionHandoverPatch([FromBody] IList<ProductionHandoverReceiptModel> data)
         {
-            return await _productionHandoverReceiptService.CreateProductionHandoverPatch(data);
+            return await _productionHandoverReceiptService.CreateBatch(data);
         }
     }
 }
