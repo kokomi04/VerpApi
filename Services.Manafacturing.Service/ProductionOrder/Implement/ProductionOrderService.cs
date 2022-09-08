@@ -216,7 +216,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc, g.IsUpdateQuantity, g.HasNewProductionProcessVersion ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -319,7 +319,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
