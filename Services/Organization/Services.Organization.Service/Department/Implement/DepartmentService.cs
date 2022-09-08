@@ -9,6 +9,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -23,13 +24,16 @@ namespace VErp.Services.Organization.Service.Department.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly ObjectActivityLogFacade _departmentActivityLog;
+        private readonly ManufacturingDBContext _manufacturingDBContext;
 
         public DepartmentService(OrganizationDBContext organizationContext
             , IActivityLogService activityLogService
-            , IAsyncRunnerService asyncRunnerService
+            , IAsyncRunnerService asyncRunnerService,
+            ManufacturingDBContext manufacturingDB
             )
         {
             _organizationContext = organizationContext;
+            _manufacturingDBContext = manufacturingDB;
             _asyncRunnerService = asyncRunnerService;
             _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
@@ -106,6 +110,14 @@ namespace VErp.Services.Organization.Service.Department.Implement
             if (_organizationContext.Department.Any(d => d.ParentId == departmentId))
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
+            }
+            if (_manufacturingDBContext.ProductionAssignment.Any(d => d.DepartmentId == departmentId))
+            {
+                throw new BadRequestException("Bộ phận đã được phân công sản xuất, không được phép xóa");
+            }
+            if (_manufacturingDBContext.ProductionOrder.Any(d => d.FactoryDepartmentId == departmentId))
+            {
+                throw new BadRequestException("Bộ phận đã được sử dụng là nhà máy sản xuất, không được phép xóa");
             }
             department.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
@@ -261,6 +273,24 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 if (isExisted)
                 {
                     throw new BadRequestException(DepartmentErrorCode.DepartmentUserActivedAlreadyExisted);
+                }
+            }
+            //Kiểm tra nếu bỏ tích BPSX
+            if (department.IsProduction && !data.IsProduction)
+            {
+                // Check đã được phân công chưa
+                if (_manufacturingDBContext.ProductionAssignment.Any(d => d.DepartmentId == departmentId))
+                {
+                    throw new BadRequestException("Bộ phận đã được phân công sản xuất, không được phép bỏ thiết lập là bộ phận sản xuất");
+                }
+            }
+            //Kiểm tra nếu bỏ tích nhà máy
+            if (department.IsFactory && !data.IsFactory)
+            {
+                // Check đã được thiết lập trong LSX chưa
+                if (_manufacturingDBContext.ProductionOrder.Any(d => d.FactoryDepartmentId == departmentId))
+                {
+                    throw new BadRequestException("Bộ phận đã được sử dụng là nhà máy sản xuất, không được phép bỏ thiết lập nhà máy");
                 }
             }
 
