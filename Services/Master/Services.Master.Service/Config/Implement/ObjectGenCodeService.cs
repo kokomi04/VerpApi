@@ -622,7 +622,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                GetObjectGenCodeMappingTypeModel(
                moduleTypeId: EnumModuleType.Manufacturing,
                targeObjectTypeId: EnumObjectType.ProductionHandoverReceipt,
-               fieldName: "Mã phiếu bàn giao")
+               fieldName: "Mã phiếu thống kê sản xuất")
            );
 
             return Task.FromResult(result);
