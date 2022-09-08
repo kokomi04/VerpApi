@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
     public class ProductionProgressService : StatusProcessService, IProductionProgressService
     {
 
-        private readonly IProductionHandoverService _productionHandoverService;
+        private readonly IProductionHandoverReceiptService _productionHandoverReceiptService;
         private readonly IMaterialAllocationService _materialAllocationService;
         private readonly IProductionOrderService _productionOrderService;
         private readonly ManufacturingDBContext _manufacturingDBContext;
@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
 
-        public ProductionProgressService(IProductionHandoverService productionHandoverService,
+        public ProductionProgressService(IProductionHandoverReceiptService productionHandoverReceiptService,
             IMaterialAllocationService materialAllocationService,
             IProductionOrderService productionOrderService,
             ManufacturingDBContext manufacturingDBContext,
@@ -42,7 +42,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             ILogger<ProductionProgressService> logger,
             IProductionAssignmentService productionAssignmentService) : base(manufacturingDBContext, activityLogService, logger, mapper)
         {
-            _productionHandoverService = productionHandoverService;
+            _productionHandoverReceiptService = productionHandoverReceiptService;
             _materialAllocationService = materialAllocationService;
             _productionOrderService = productionOrderService;
             _manufacturingDBContext = manufacturingDBContext;
@@ -57,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode }, true);
 
-            await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
+            await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
 
 
             var productionOrder = _manufacturingDBContext.ProductionOrder

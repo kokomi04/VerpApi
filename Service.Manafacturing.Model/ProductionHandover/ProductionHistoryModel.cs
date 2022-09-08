@@ -7,7 +7,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHistoryModel : ProductionHistoryInputModel
     {
-        public long? ProductionHistoryId { get; set; }
+        
+        public long ProductionHandoverReceiptId { get; set; }
+        public string ProductionHandoverReceiptCode { get; set; }
+
         public int CreatedByUserId { get; set; }
 
         public override void Mapping(Profile profile)
@@ -20,6 +23,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class ProductionHistoryInputModel : IMapFrom<ProductionHistory>
     {
+        public long? ProductionHistoryId { get; set; }
         public decimal ProductionQuantity { get; set; }
         public decimal? OvertimeProductionQuantity { get; set; }
         public long ObjectId { get; set; }
@@ -28,6 +32,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ProductionStepId { get; set; }
         public long? Date { get; set; }
         public string Note { get; set; }
+        public long ProductionOrderId { get; set; }
+
         public virtual void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionHistoryInputModel, ProductionHistory>()

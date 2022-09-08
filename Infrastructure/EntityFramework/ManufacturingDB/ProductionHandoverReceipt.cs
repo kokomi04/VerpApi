@@ -10,6 +10,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public ProductionHandoverReceipt()
         {
             ProductionHandover = new HashSet<ProductionHandover>();
+            ProductionHistory = new HashSet<ProductionHistory>();
         }
 
         public long ProductionHandoverReceiptId { get; set; }
@@ -25,5 +26,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
 
         public virtual ICollection<ProductionHandover> ProductionHandover { get; set; }
+        public virtual ICollection<ProductionHistory> ProductionHistory { get; set; }
     }
 }

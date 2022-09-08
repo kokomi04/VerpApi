@@ -28,6 +28,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string Note { get; set; }
         public int? AcceptByUserId { get; set; }
         public long? ProductionHandoverReceiptId { get; set; }
+        public int RowIndex { get; set; }
 
         public virtual ProductionStep FromProductionStep { get; set; }
         public virtual ProductionHandoverReceipt ProductionHandoverReceipt { get; set; }

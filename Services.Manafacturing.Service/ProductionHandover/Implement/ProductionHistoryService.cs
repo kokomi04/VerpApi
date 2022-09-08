@@ -18,6 +18,7 @@ using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFaca
 using VErp.Services.Manafacturing.Service.Facade;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using OpenXmlPowerTools;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -42,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _productHelperService = productHelperService;
         }
 
-
+        /*
         public async Task<ProductionHistoryModel> CreateProductionHistory(long productionOrderId, ProductionHistoryInputModel data)
         {
             try
@@ -149,18 +150,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 throw;
             }
         }
-
+        */
 
         public async Task<IList<ProductionHistoryModel>> GetProductionHistories(long productionOrderId)
         {
-            return await _manufacturingDBContext.ProductionHistory
-                .Where(h => h.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionHistoryModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var histories = _manufacturingDBContext.ProductionHistory
+                .Where(h => h.ProductionOrderId == productionOrderId);
+            return await GetProductionHistories(histories);
 
         }
 
 
+        private async Task<IList<ProductionHistoryModel>> GetProductionHistories(IQueryable<ProductionHistory> histories)
+        {
+            return await (from r in _manufacturingDBContext.ProductionHandoverReceipt
+                          join h in histories on r.ProductionHandoverReceiptId equals h.ProductionHandoverReceiptId
+                          select new ProductionHistoryModel
+                          {
+                              ProductionHandoverReceiptId = r.ProductionHandoverReceiptId,
+                              ProductionHandoverReceiptCode = r.ProductionHandoverReceiptCode,
+
+                              CreatedByUserId = r.CreatedByUserId,
+                              ProductionHistoryId = h.ProductionHistoryId,
+                              ProductionQuantity = h.ProductionQuantity,
+                              OvertimeProductionQuantity = h.OvertimeProductionQuantity,
+                              ObjectId = h.ObjectId,
+                              ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
+                              DepartmentId = h.DepartmentId,
+                              ProductionStepId = h.ProductionStepId,
+                              Date = h.Date.GetUnix(),
+                              Note = h.Note
+                          }).ToListAsync();
+        }
 
 
         public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkloadByDate(long fromDate, long toDate)

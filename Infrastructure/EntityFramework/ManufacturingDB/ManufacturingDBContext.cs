@@ -352,6 +352,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionHandoverReceipt>(entity =>
             {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductionHandoverReceiptCode }, "IX_ProductionHandoverReceipt_ProductionHandoverReceiptCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.ProductionHandoverReceiptCode).HasMaxLength(128);
             });
 
@@ -360,6 +364,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.OvertimeProductionQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.ProductionHandoverReceipt)
+                    .WithMany(p => p.ProductionHistory)
+                    .HasForeignKey(d => d.ProductionHandoverReceiptId)
+                    .HasConstraintName("FK_ProductionHistory_ProductionHandoverReceipt");
 
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionHistory)

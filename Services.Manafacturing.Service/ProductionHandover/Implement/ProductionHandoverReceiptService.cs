@@ -7,6 +7,7 @@ using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -19,6 +20,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
@@ -39,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public ProductionHandoverReceiptService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger<ProductionHandoverService> logger
+            , ILogger<ProductionHandoverReceiptService> logger
             , IMapper mapper
             , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
@@ -52,19 +54,113 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _customGenCodeHelperService = customGenCodeHelperService;
         }
 
+        public async Task<PageData<ProductionHandoverHistoryReceiptModel>> GetList(string keyword, long? fromDate, long? toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
+        {
+            keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>();
+
+            var whereCondition = new StringBuilder();
+           
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+
+                whereCondition.Append("(v.ProductionHandoverReceiptCode LIKE @KeyWord ");
+                whereCondition.Append("OR v.DepartmentCode LIKE @Keyword ");
+                whereCondition.Append("OR v.DepartmentName LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductionStepTitle LIKE @Keyword ");
+                whereCondition.Append("OR v.StepName LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductName LIKE @Keyword ");
+                whereCondition.Append("OR v.HandoverNote LIKE @Keyword ");                
+                whereCondition.Append("OR v.ProductionNote LIKE @Keyword ) ");
+                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+
+
+            if (fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
+            }
+
+            if (filters != null)
+            {
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vProductionHandoverHistoryReceipt", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
+                {
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
+            }
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "Date";
+                asc = false;
+            }
+
+            var sql = new StringBuilder(@$"SELECT * FROM vProductionHandoverHistoryReceipt v");
+
+
+            var totalSql = new StringBuilder(@$"SELECT COUNT(0) Total FROM vProductionHandoverHistoryReceipt v");
+
+            if (whereCondition.Length > 0)
+            {
+                totalSql.Append(" WHERE ");
+                totalSql.Append(whereCondition);
+
+                sql.Append(" WHERE ");
+                sql.Append(whereCondition);
+            }
+       
+           
+            var totalData = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var total = 0;
+            
+            if (totalData != null && totalData.Rows.Count > 0)
+            {
+                total = (totalData.Rows[0]["Total"] as int?).GetValueOrDefault();
+            }
+
+            if (size > 0)
+            {
+                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                            OFFSET {(page - 1) * size} ROWS
+                            FETCH NEXT {size}
+                            ROWS ONLY");
+            }
+
+            var lst = await _manufacturingDBContext.QueryList<ProductionHandoverHistoryReceiptModel>(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+
+            return (lst, total);
+        }
+
         public async Task<ProductionHandoverReceiptModel> Info(long receiptId)
         {
-            var infoDb = await _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefaultAsync(r => r.ProductionHandoverReceiptId == receiptId);
+            var infoDb = await _manufacturingDBContext.ProductionHandoverReceipt
+                .Include(r => r.ProductionHandover)
+                .Include(r => r.ProductionHistory)
+                .FirstOrDefaultAsync(r => r.ProductionHandoverReceiptId == receiptId);
             if (infoDb == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
             }
             var info = _mapper.Map<ProductionHandoverReceiptModel>(infoDb);
             info.Handovers = infoDb.ProductionHandover.Select(h => _mapper.Map<ProductionHandoverInputModel>(h)).ToList();
+            info.Histories = infoDb.ProductionHistory.Select(h => _mapper.Map<ProductionHistoryInputModel>(h)).ToList();
             return info;
         }
 
-        public async Task<bool> AcceptProductionHandoverBatch(IList<long> receiptIds)
+        public async Task<bool> AcceptBatch(IList<long> receiptIds)
         {
             var receipts = await _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).Where(ho => receiptIds.Contains(ho.ProductionHandoverReceiptId)).ToListAsync();
 
@@ -171,17 +267,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 h.ProductionOrderId = productionOrderId;
             }
-            return await CreateProductionHandover(data, EnumHandoverStatus.Waiting);
+
+            foreach (var h in data.Histories)
+            {
+                h.ProductionOrderId = productionOrderId;
+            }
+
+            return await Create(data, EnumHandoverStatus.Waiting);
         }
 
-        public async Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverReceiptModel> datas)
+        public async Task<bool> CreateBatch(IList<ProductionHandoverReceiptModel> datas)
         {
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
                 foreach (var data in datas)
                 {
-                    await CreateProductionHandover(data, EnumHandoverStatus.Waiting);
+                    await Create(data, EnumHandoverStatus.Waiting);
                 }
 
                 await trans.CommitAsync();
@@ -195,7 +297,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
-        private async Task<long> CreateProductionHandover(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
+        private async Task<long> Create(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
         {
             try
             {
@@ -215,6 +317,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");
                         if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.ToProductionStepId && a.DepartmentId == h.ToDepartmentId && a.ProductionOrderId == h.ProductionOrderId))
                             throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn nhận không tồn tại phân công công việc cho tổ nhận");
+                    }
+                }
+
+                foreach (var h in data.Histories)
+                {
+                    if (h.DepartmentId == STOCK_DEPARTMENT_ID)
+                    {
+                        if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == h.ProductionStepId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
+                      
+                    }
+                    else
+                    {
+                        if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.ProductionStepId && a.DepartmentId == h.DepartmentId && a.ProductionOrderId == h.ProductionOrderId))
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");                       
                     }
                 }
 
@@ -239,20 +356,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
 
-                var hanovers = new List<ProductionHandoverEntity>();
+                var handovers = new List<ProductionHandoverEntity>();
                 foreach (var h in data.Handovers)
                 {
                     var productionHandover = _mapper.Map<ProductionHandoverEntity>(h);
                     productionHandover.Status = (int)status;
                     productionHandover.ProductionHandoverReceiptId = receiptInfo.ProductionHandoverReceiptId;
                     productionHandover.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
-                    hanovers.Add(productionHandover);
+                    handovers.Add(productionHandover);
                 }
 
-                await _manufacturingDBContext.ProductionHandover.AddRangeAsync(hanovers);
+
+                var histories = new List<ProductionHistory>();
+                foreach (var h in data.Histories)
+                {
+                    var his = _mapper.Map<ProductionHistory>(h);
+                    his.ProductionHandoverReceiptId = receiptInfo.ProductionHandoverReceiptId;
+                    histories.Add(his);
+                }
+
+
+                SetRowIndex(handovers, histories);
+
+                await _manufacturingDBContext.ProductionHandover.AddRangeAsync(handovers);
+
+                await _manufacturingDBContext.ProductionHistory.AddRangeAsync(histories);
 
                 _manufacturingDBContext.SaveChanges();
-                foreach (var h in hanovers)
+                foreach (var h in handovers)
                 {
                     if (h.Status == (int)EnumHandoverStatus.Accepted && h.FromDepartmentId != STOCK_DEPARTMENT_ID && h.ToDepartmentId != STOCK_DEPARTMENT_ID)
                     {
@@ -261,7 +392,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
                 }
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu bàn giao công việc / yêu cầu xuất kho {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
 
                 await ctx.ConfirmCode();
 
@@ -271,16 +402,61 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
                 }
 
-                var handovers = _manufacturingDBContext.ProductionHandover.Where(h => h.ProductionHandoverReceiptId == receiptInfo.ProductionHandoverReceiptId);
-
                 return receiptInfo.ProductionHandoverReceiptId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "CreateProductHandover");
+                _logger.LogError(ex, "Create");
                 throw;
             }
         }
+
+
+        private void SetRowIndex(ICollection<ProductionHandoverEntity> handovers, ICollection<ProductionHistory> histories)
+        {
+            var handoverGroups = handovers.GroupBy(h => new
+            {
+                h.ProductionHandoverReceiptId,
+                h.HandoverDatetime,
+                h.FromDepartmentId,
+                h.FromProductionStepId,
+                h.ProductionOrderId,
+                h.ObjectTypeId,
+                h.ObjectId
+            }).ToList();
+
+            foreach (var g in handoverGroups)
+            {
+                var rowIndex = 0;
+                foreach (var row in g)
+                {
+                    row.RowIndex = rowIndex++;
+                }
+            }
+
+
+            var historyGroups = histories.GroupBy(h => new
+            {
+                h.ProductionHandoverReceiptId,
+                h.Date,
+                h.DepartmentId,
+                h.ProductionStepId,
+                h.ProductionOrderId,
+                h.ObjectTypeId,
+                h.ObjectId
+            }).ToList();
+
+            foreach (var g in historyGroups)
+            {
+                var rowIndex = 0;
+                foreach (var row in g)
+                {
+                    row.RowIndex = rowIndex++;
+                }
+            }
+
+        }
+
 
         public async Task<bool> Delete(long productionHandoverReceiptId)
         {
@@ -288,6 +464,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 var receiptInfo = _manufacturingDBContext.ProductionHandoverReceipt
                     .Include(r => r.ProductionHandover)
+                    .Include(r => r.ProductionHistory)
                     .Where(h => h.ProductionHandoverReceiptId == productionHandoverReceiptId)
                     .FirstOrDefault();
 
@@ -298,6 +475,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 {
                     h.IsDeleted = true;
                 }
+
+                foreach (var h in receiptInfo.ProductionHistory)
+                {
+                    h.IsDeleted = true;
+                }
+
                 _manufacturingDBContext.SaveChanges();
                 if (receiptInfo.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
                 {
@@ -327,6 +510,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             var receiptInfo = _manufacturingDBContext.ProductionHandoverReceipt
                 .Include(r => r.ProductionHandover)
+                .Include(r => r.ProductionHistory)
                 .Where(h => h.ProductionHandoverReceiptId == productionHandoverReceiptId)
                 .FirstOrDefault();
 
@@ -335,54 +519,100 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var productionOrderIds = receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).ToList();
             productionOrderIds.AddRange(data.Handovers.Select(d => d.ProductionOrderId).ToList());
+            productionOrderIds.AddRange(data.Histories.Select(d => d.ProductionOrderId).ToList());
 
-            _mapper.Map(data, receiptInfo);
-            receiptInfo.HandoverStatusId = (int)status;
-            receiptInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
-
-            var changedHandovers = new List<ProductionHandoverEntity>();
-
-            foreach (var h in receiptInfo.ProductionHandover)
+            using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
-                var handoverData = data.Handovers.FirstOrDefault(d => d.ProductionHandoverId == h.ProductionHandoverId);
-                if (handoverData == null)
+
+                _mapper.Map(data, receiptInfo);
+                receiptInfo.HandoverStatusId = (int)status;
+                receiptInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
+
+                //handover
+                var changedHandovers = new List<ProductionHandoverEntity>();
+
+                foreach (var h in receiptInfo.ProductionHandover)
                 {
-                    h.IsDeleted = true;
+                    var handoverData = data.Handovers.FirstOrDefault(d => d.ProductionHandoverId == h.ProductionHandoverId);
+                    if (handoverData == null)
+                    {
+                        h.IsDeleted = true;
+                    }
+                    else
+                    {
+                        _mapper.Map(handoverData, h);
+                        h.Status = (int)status;
+                        h.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                        h.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
+                    }
+                    changedHandovers.Add(h);
                 }
-                else
+
+
+                foreach (var h in data.Handovers)
                 {
-                    _mapper.Map(handoverData, h);
-                    h.Status = (int)status;
-                    h.ProductionHandoverReceiptId = productionHandoverReceiptId;
-                    h.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
+                    if (h.ProductionHandoverId == null || h.ProductionHandoverId == 0)
+                    {
+                        var handoverInfo = _mapper.Map<ProductionHandoverEntity>(h);
+                        handoverInfo.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                        _manufacturingDBContext.ProductionHandover.Add(handoverInfo);
+                        handoverInfo.Status = (int)status;
+                        handoverInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
+                        changedHandovers.Add(handoverInfo);
+                    }
                 }
-                changedHandovers.Add(h);
-            }
 
 
-            foreach (var h in data.Handovers)
-            {
-                if (h.ProductionHandoverId == null || h.ProductionHandoverId == 0)
+                //history
+
+                foreach (var h in receiptInfo.ProductionHistory)
                 {
-                    var handoverInfo = _mapper.Map<ProductionHandoverEntity>(h);
-                    handoverInfo.ProductionHandoverReceiptId = productionHandoverReceiptId;
-                    _manufacturingDBContext.ProductionHandover.Add(handoverInfo);
-                    handoverInfo.Status = (int)status;
-                    handoverInfo.AcceptByUserId = status == EnumHandoverStatus.Accepted ? (int?)_currentContextService.UserId : null;
-                    changedHandovers.Add(handoverInfo);
+                    var historyData = data.Histories.FirstOrDefault(d => d.ProductionHistoryId == h.ProductionHistoryId);
+                    if (historyData == null)
+                    {
+                        h.IsDeleted = true;
+                    }
+                    else
+                    {
+                        _mapper.Map(historyData, h);
+                        h.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                    }
                 }
+
+
+                foreach (var h in data.Histories)
+                {
+                    if (h.ProductionHistoryId == null || h.ProductionHistoryId == 0)
+                    {
+                        var hisInfo = _mapper.Map<ProductionHistory>(h);
+                        hisInfo.ProductionHandoverReceiptId = productionHandoverReceiptId;
+                        _manufacturingDBContext.ProductionHistory.Add(hisInfo);
+                    }
+                }
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+
+                receiptInfo = _manufacturingDBContext.ProductionHandoverReceipt
+               .Include(r => r.ProductionHandover)
+               .Include(r => r.ProductionHistory)
+               .Where(h => h.ProductionHandoverReceiptId == productionHandoverReceiptId)
+               .FirstOrDefault();
+
+                SetRowIndex(receiptInfo.ProductionHandover, receiptInfo.ProductionHistory);
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                foreach (var h in changedHandovers)
+                {
+                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                }
+
+                await trans.CommitAsync();
+
             }
-
-            await _manufacturingDBContext.SaveChangesAsync();
-
-            foreach (var h in changedHandovers)
-            {
-                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
-                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
-            }
-
             await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
-
 
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
@@ -399,7 +629,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 h.ProductionOrderId = productionOrderId;
             }
-            return await CreateProductionHandover(data, EnumHandoverStatus.Accepted);
+            return await Create(data, EnumHandoverStatus.Accepted);
         }
         /*
         public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)
@@ -474,7 +704,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             return await GetProductionHandovers(handovers);
         }
-
 
 
         public async Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId)

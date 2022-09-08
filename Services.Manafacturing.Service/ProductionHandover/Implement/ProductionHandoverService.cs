@@ -25,6 +25,7 @@ using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.Producti
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
+    /*
     public class ProductionHandoverService : StatusProcessService, IProductionHandoverService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
@@ -403,5 +404,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return (lst, totalRecord);
         }
 
-    }
+    }*/
 }

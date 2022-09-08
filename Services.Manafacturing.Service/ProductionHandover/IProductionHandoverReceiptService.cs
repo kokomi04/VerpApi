@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Service.StatusProcess;
@@ -17,16 +18,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
 
         Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId);
         Task<long> Create(long productionOrderId, ProductionHandoverReceiptModel data);
+        Task<PageData<ProductionHandoverHistoryReceiptModel>> GetList(string keyword, long? fromDate, long? toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<ProductionHandoverReceiptModel> Info(long receiptId);
         Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data);
       
         Task<bool> Confirm(long receiptId, EnumHandoverStatus status);
-        Task<bool> AcceptProductionHandoverBatch(IList<long> receiptIds);
+        Task<bool> AcceptBatch(IList<long> receiptIds);
 
         Task<bool> Delete(long productionHandoverReceiptId);
 
         Task<bool> Update(long productionHandoverReceiptId, ProductionHandoverReceiptModel data, EnumHandoverStatus status);
 
-        Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverReceiptModel> datas);
+        Task<bool> CreateBatch(IList<ProductionHandoverReceiptModel> datas);
     }
 }
