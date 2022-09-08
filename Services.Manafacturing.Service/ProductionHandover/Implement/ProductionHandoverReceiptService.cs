@@ -152,7 +152,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .FirstOrDefaultAsync(r => r.ProductionHandoverReceiptId == receiptId);
             if (infoDb == null)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
             }
             var info = _mapper.Map<ProductionHandoverReceiptModel>(infoDb);
             info.Handovers = infoDb.ProductionHandover.Select(h => _mapper.Map<ProductionHandoverInputModel>(h)).ToList();
@@ -180,9 +180,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                         if (info == null)
                         {
-                            throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
                         }
-                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
                         info.HandoverStatusId = (int)EnumHandoverStatus.Accepted;
                         info.AcceptByUserId = _currentContextService.UserId;
 
@@ -197,7 +197,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             }
                         }
 
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận bàn giao công việc", info.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận phiếu thống kê sản xuất", info.JsonSerialize());
 
                     }
 
@@ -221,8 +221,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public async Task<bool> Confirm(long receiptId, EnumHandoverStatus status)
         {
             var info = _manufacturingDBContext.ProductionHandoverReceipt.FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
-            if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Bàn giao công việc không tồn tại");
-            if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận các bàn giao đang chờ xác nhận");
+            if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
+            if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
 
             var productionOrderIds = info.ProductionHandover.Select(h => h.ProductionOrderId).Distinct().ToList();
             var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
@@ -244,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} bàn giao công việc {info.ProductionHandoverReceiptCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}", info.JsonSerialize());
 
 
                 foreach (var code in productionOrderCodes)
@@ -392,7 +392,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
                 }
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
 
                 await ctx.ConfirmCode();
 
@@ -469,7 +469,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .FirstOrDefault();
 
                 if (receiptInfo == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu bàn giao công việc");
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu thống kê sản xuất");
                 receiptInfo.IsDeleted = true;
                 foreach (var h in receiptInfo.ProductionHandover)
                 {
@@ -490,7 +490,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
 
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
@@ -515,7 +515,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .FirstOrDefault();
 
             if (receiptInfo == null)
-                throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu bàn giao công việc");
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại phiếu thống kê sản xuất");
 
             var productionOrderIds = receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).ToList();
             productionOrderIds.AddRange(data.Handovers.Select(d => d.ProductionOrderId).ToList());
@@ -612,7 +612,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await trans.CommitAsync();
 
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu bàn giao công việc {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
 
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
