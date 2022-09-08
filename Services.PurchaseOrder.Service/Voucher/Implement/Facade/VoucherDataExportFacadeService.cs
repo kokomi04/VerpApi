@@ -174,6 +174,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
             var textStyle = sheet.GetCellStyle(isBorder: true);
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
+            var dateStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
 
             foreach (var p in data)
             {
@@ -227,6 +228,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
                                 {
                                     sheet.EnsureCell(currentRow, sColIndex, decimalStyle);
                                 }
+                                break;
+                            case EnumDataType.DateRange:
+                            case EnumDataType.Date:
+                                if (!v.value.IsNullObject())
+                                {
+                                    sheet.EnsureCell(currentRow, sColIndex, dateStyle).SetCellValue(((long)v.value).UnixToDateTime(currentContextService.TimeZoneOffset));
+                                }
+
+                                else
+                                {
+                                    sheet.EnsureCell(currentRow, sColIndex, dateStyle);
+                                }
+
                                 break;
                             default:
                                 sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(v.value?.ToString());
