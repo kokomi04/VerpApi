@@ -2199,23 +2199,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 // Checkin unique trong db
                 var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
-
-                existSql += $" AND {field.FieldName} IN (";
-                List<SqlParameter> sqlParams = new List<SqlParameter>();
-                var suffix = 0;
-                foreach (var value in values)
-                {
-                    var paramName = $"@{field.FieldName}_{suffix}";
-                    if (suffix > 0)
-                    {
-                        existSql += ",";
-                    }
-                    existSql += paramName;
-                    sqlParams.Add(new SqlParameter(paramName, value));
-                    suffix++;
-                }
-                existSql += ")";
-                var result = await _purchaseOrderDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+                existSql += $" AND {field.FieldName} IN (SELECT NValue FROM @Values)";
+                var existKeyParams = new List<SqlParameter>() { values.ToSqlParameter("@Values") };
+                var result = await _purchaseOrderDBContext.QueryDataTable(existSql, existKeyParams.ToArray());
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
