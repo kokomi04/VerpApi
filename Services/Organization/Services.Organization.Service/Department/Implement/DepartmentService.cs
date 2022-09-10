@@ -114,7 +114,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             var checkParams = new[]
             {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.AssignmentAndProductionOrder),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.AssignmentAndProductionOrder),
                     isInUsed
                 };
 
@@ -287,7 +287,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 var checkParams = new[]
                 {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.Assignment),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.Assignment),
                     isInUsed
                 };
 
@@ -305,7 +305,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 var checkParams = new[]
                 {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.ProductionOrder),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.ProductionOrder),
                     isInUsed
                 };
 

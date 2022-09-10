@@ -1,6 +1,6 @@
 ﻿namespace VErp.Commons.Enums.Organization
 {
-    public enum EnumTypeCheckUsed
+    public enum EnumTypeDepartmentCheckUsed
     {
         //Kiểm tra bộ phận chuyên trách từ thông tin phân công
         Assignment = 1,
