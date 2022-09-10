@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Department;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -113,7 +114,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             var checkParams = new[]
             {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",3),
+                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.AssignmentAndProductionOrder),
                     isInUsed
                 };
 
@@ -286,7 +287,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 var checkParams = new[]
                 {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",1),
+                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.Assignment),
                     isInUsed
                 };
 
@@ -304,7 +305,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 var checkParams = new[]
                 {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",2),
+                    new SqlParameter("@TypeCheck",EnumTypeCheckUsed.ProductionOrder),
                     isInUsed
                 };
 
