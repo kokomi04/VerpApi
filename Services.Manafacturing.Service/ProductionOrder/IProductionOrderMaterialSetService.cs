@@ -10,7 +10,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
 {
     public interface IProductionOrderMaterialSetService
     {
-        Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialsCalc(long productionOrderId);
+        Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialInfo(long productionOrderId);
 
         Task<bool> UpdateAll(long productionOrderId, IList<ProductionOrderMaterialSetModel> model);
 

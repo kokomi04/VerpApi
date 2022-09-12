@@ -27,6 +27,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public EnumInventoryRequirementType InventoryRequirementTypeId { get; set; }
         public EnumInventoryOutsideMappingType InventoryOutsideMappingTypeId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+        public long? ProductionOrderMaterialSetId { get; set; }
 
         public int? CensorByUserId { get; set; }
         public long? CensorDatetimeUtc { get; set; }

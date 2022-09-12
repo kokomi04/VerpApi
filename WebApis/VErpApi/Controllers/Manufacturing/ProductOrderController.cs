@@ -190,14 +190,14 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("{productionOrderId}/materials-sets")]
         public async Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialInfo([FromRoute] int productionOrderId)
         {
-            return await _productionOrderMaterialSetService.GetProductionOrderMaterialsCalc(productionOrderId);
+            return await _productionOrderMaterialSetService.GetProductionOrderMaterialInfo(productionOrderId);
         }
 
         [HttpPut]
         [Route("{productionOrderId}/materials-sets")]
-        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialSetModel> materials)
+        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialSetModel> sets)
         {
-            return await _productionOrderMaterialSetService.UpdateAll(productionOrderId, materials);
+            return await _productionOrderMaterialSetService.UpdateAll(productionOrderId, sets);
         }
 
         [HttpGet]

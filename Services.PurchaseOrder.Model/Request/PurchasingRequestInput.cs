@@ -18,6 +18,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string Content { get; set; }
         public long? ProductionOrderId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+        public long? ProductionOrderMaterialSetId { get; set; }
 
         public List<PurchasingRequestInputDetail> Details { set; get; }
 
