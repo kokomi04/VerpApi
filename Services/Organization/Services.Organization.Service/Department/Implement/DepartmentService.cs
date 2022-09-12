@@ -1,10 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Department;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -106,6 +109,20 @@ namespace VErp.Services.Organization.Service.Department.Implement
             if (_organizationContext.Department.Any(d => d.ParentId == departmentId))
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
+            }
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                    new SqlParameter("@DepartmentId",departmentId),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.AssignmentAndProductionOrder),
+                    isInUsed
+                };
+
+            await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true)
+            {
+                throw new BadRequestException("Bộ phận đã được sử dụng, không được phép xóa");
             }
             department.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
@@ -261,6 +278,42 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 if (isExisted)
                 {
                     throw new BadRequestException(DepartmentErrorCode.DepartmentUserActivedAlreadyExisted);
+                }
+            }
+            //Kiểm tra nếu bỏ tích BPSX
+            if (department.IsProduction && !data.IsProduction)
+            {
+                var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                var checkParams = new[]
+                {
+                    new SqlParameter("@DepartmentId",departmentId),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.Assignment),
+                    isInUsed
+                };
+
+                await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
+                // Check đã được phân công chưa
+                if (isInUsed.Value as bool? == true)
+                {
+                    throw new BadRequestException("Bộ phận đã được phân công sản xuất, không được phép bỏ thiết lập là bộ phận sản xuất");
+                }
+            }
+            //Kiểm tra nếu bỏ tích nhà máy
+            if (department.IsFactory && !data.IsFactory)
+            {
+                var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                var checkParams = new[]
+                {
+                    new SqlParameter("@DepartmentId",departmentId),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.ProductionOrder),
+                    isInUsed
+                };
+
+                await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
+                // Check đã được thiết lập trong LSX chưa
+                if (isInUsed.Value as bool? == true)
+                {
+                    throw new BadRequestException("Bộ phận đã được sử dụng là nhà máy sản xuất, không được phép bỏ thiết lập nhà máy");
                 }
             }
 
