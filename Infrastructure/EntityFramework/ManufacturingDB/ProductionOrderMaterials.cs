@@ -14,7 +14,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
         public long ProductionOrderMaterialsId { get; set; }
         public long ProductionOrderId { get; set; }
-        public long ProductionStepLinkDataId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
         public long ProductId { get; set; }
         public decimal ConversionRate { get; set; }
         public decimal Quantity { get; set; }
@@ -30,9 +30,12 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public long? ProductionOrderMaterialSetId { get; set; }
+        public int? ProductMaterialsConsumptionGroupId { get; set; }
 
         public virtual ProductionOrderMaterials Parent { get; set; }
         public virtual ProductionOrder ProductionOrder { get; set; }
+        public virtual ProductionOrderMaterialSet ProductionOrderMaterialSet { get; set; }
         public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }
         public virtual ICollection<ProductionOrderMaterials> InverseParent { get; set; }
     }

@@ -526,11 +526,11 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
 
-                entity.Property(e => e.DeliveryPolicy).HasMaxLength(512);
+                entity.Property(e => e.AdditionNote).HasMaxLength(512);
 
                 entity.Property(e => e.AttachmentBill).HasMaxLength(512);
 
-                entity.Property(e => e.Requirement).HasMaxLength(512);
+                entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.Property(e => e.DeliveryDestination).HasMaxLength(1024);
 
@@ -538,11 +538,15 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
 
                 entity.Property(e => e.DeliveryMethod).HasMaxLength(512);
 
+                entity.Property(e => e.DeliveryPolicy).HasMaxLength(512);
+
                 entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherFee).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.OtherPolicy).HasMaxLength(512);
+
+                entity.Property(e => e.PaymentInfo).HasMaxLength(512);
 
                 entity.Property(e => e.PaymentMethod).HasMaxLength(512);
 
@@ -551,6 +555,8 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                 entity.Property(e => e.PurchaseOrderCode)
                     .IsRequired()
                     .HasMaxLength(128);
+
+                entity.Property(e => e.Requirement).HasMaxLength(512);
 
                 entity.Property(e => e.TaxInMoney).HasColumnType("decimal(18, 5)");
 
