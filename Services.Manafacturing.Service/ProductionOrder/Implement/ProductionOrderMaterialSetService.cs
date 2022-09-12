@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _productHelperService = productHelperService;
         }
 
-        public async Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialsCalc(long productionOrderId)
+        public async Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialInfo(long productionOrderId)
         {
             var productionOrder = await _manufacturingDBContext.ProductionOrder.AsNoTracking().Include(x => x.ProductionOrderDetail).FirstOrDefaultAsync(o => o.ProductionOrderId == productionOrderId);
             if (productionOrder == null)
@@ -98,13 +98,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             standards.AddRange(consumStandardMaterials);
 
             var materialSets = await _manufacturingDBContext.ProductionOrderMaterialSet.Include(s => s.ProductionOrderMaterialSetConsumptionGroup).Include(s => s.ProductionOrderMaterials).ToListAsync();
-            var calcs = materialSets.Select(s => GetMaterialSetModel(s, standards)).ToList();
+            var sets = materialSets.Select(s => GetMaterialSetModel(s, standards)).ToList();
 
             return new ProductionOrderMaterialInfo
             {
                 IsReset = productionOrder.IsResetProductionProcess,
                 Standards = standards,
-                Calcs = calcs
+                Sets = sets
             };
         }
 

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Stock;
@@ -101,9 +102,16 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement")]
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId)
+        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId, [FromQuery] int productionOrderMaterialSetId)
         {
-            return await _inventoryRequirementService.GetInventoryRequirementByProductionOrderId(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId);
+            return (await _inventoryRequirementService.GetByProductionOrder(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId, productionOrderMaterialSetId)).FirstOrDefault();
+        }
+
+        [HttpGet]
+        [Route("inventoryType/{inventoryType}/GetByProductionOrder")]
+        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int productMaterialsConsumptionGroupId, [FromQuery] int productionOrderMaterialSetId)
+        {
+            return await _inventoryRequirementService.GetByProductionOrder(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId, productionOrderMaterialSetId);
         }
     }
 }

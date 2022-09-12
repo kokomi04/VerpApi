@@ -53,6 +53,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     {
         public bool IsReset { get; set; }
         public IList<ProductionOrderMaterialGroupStandardModel> Standards { get; set; }
-        public IList<ProductionOrderMaterialSetModel> Calcs { get; set; }
+        public IList<ProductionOrderMaterialSetModel> Sets { get; set; }
     }
 }

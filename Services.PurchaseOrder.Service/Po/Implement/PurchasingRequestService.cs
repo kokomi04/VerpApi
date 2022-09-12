@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -775,7 +776,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId(long productionOrderId, int? productMaterialsConsumptionGroupId)
+        public async Task<IList<PurchasingRequestOutput>> GetPurchasingRequestByProductionOrder(long productionOrderId, int? productMaterialsConsumptionGroupId, long? productionOrderMaterialSetId)
         {
             var query = _purchaseOrderDBContext
                 .PurchasingRequest
@@ -785,22 +786,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (productMaterialsConsumptionGroupId.HasValue)
                 query = query.Where(r => r.ProductMaterialsConsumptionGroupId == productMaterialsConsumptionGroupId);
 
-            var info = await query
-                .FirstOrDefaultAsync();
+            if (productionOrderMaterialSetId.HasValue)
+            {
+                query = query.Where(r => r.ProductionOrderMaterialSetId == productionOrderMaterialSetId);
+            }
 
-            if (info == null) return null;
+            var lst = await query.ToListAsync();
+
+            var requestIds = lst.Select(r => r.PurchasingRequestId).ToList();
 
             var details = await _purchaseOrderDBContext.PurchasingRequestDetail.AsNoTracking()
-                .Where(d => d.PurchasingRequestId == info.PurchasingRequestId)
+                .Where(d => requestIds.Contains(d.PurchasingRequestId))
                 .ToListAsync();
 
-            var data = _mapper.Map<PurchasingRequestOutput>(info);
+            return lst.Select(r =>
+            {
+                var data = _mapper.Map<PurchasingRequestOutput>(r);
 
-            data.Details = details.Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
-                    .OrderBy(d => d.SortOrder)
-                    .ToList();
+                data.Details = details.Where(d => d.PurchasingRequestId == r.PurchasingRequestId)
+                        .Select(d => _mapper.Map<PurchasingRequestOutputDetail>(d))
+                        .OrderBy(d => d.SortOrder)
+                        .ToList();
 
-            return data;
+                return data;
+            }).ToList();
+
         }
 
         private async Task DeleteOldDetails(long purchasingRequestId)

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
@@ -266,17 +267,28 @@ namespace VErpApi.Controllers.PurchaseOrder
             return await _purchasingRequestService.UpdatePoProcessStatus(purchasingRequestId, poProcessStatusModel.PoProcessStatusId).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("GetByProductionOrder")]
+        public async Task<IList<PurchasingRequestOutput>> GetByProductionOrder([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
+        {
+            return await _purchasingRequestService.GetPurchasingRequestByProductionOrder(productionOrderId, productMaterialsConsumptionGroupId, productionOrderMaterialSetId);
+        }
+
+
         /// <summary>
         /// Lấy thông tin phiếu yêu cầu vật tư theo LSX
         /// </summary>
         /// <param name="productionOrderId"></param>
         /// <param name="productMaterialsConsumptionGroupId"></param>
+        /// <param name="productionOrderMaterialSetId"></param>
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId)
+        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
         {
-            return await _purchasingRequestService.GetPurchasingRequestByProductionOrderId(productionOrderId, productMaterialsConsumptionGroupId);
+            return (await _purchasingRequestService.GetPurchasingRequestByProductionOrder(productionOrderId, productMaterialsConsumptionGroupId, productionOrderMaterialSetId)).FirstOrDefault();
         }
+
+
     }
 }
