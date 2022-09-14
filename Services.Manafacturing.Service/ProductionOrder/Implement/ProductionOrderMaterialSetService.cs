@@ -78,7 +78,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Select(g =>
                     {
                         var f = g.First();
-                        var quantity = x.Select(x => (x.Quantity + x.TotalQuantityInheritance) * productQuantity[x.ProductId]).Sum();
+                        var quantity = g.Select(m => (m.Quantity + m.TotalQuantityInheritance) * productQuantity[m.ProductId]).Sum();
 
                         return new ProductionOrderMaterialStandard
                         {
