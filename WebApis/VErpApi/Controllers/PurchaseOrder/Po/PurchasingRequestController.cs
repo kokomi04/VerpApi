@@ -284,7 +284,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         /// <returns></returns>
         [HttpGet]
         [Route("")]
-        public async Task<PurchasingRequestOutput> GetPurchasingRequestByProductionOrderId([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
+        public async Task<PurchasingRequestOutput> GetSinglePurchasingRequestByProductionOrder([FromQuery] long productionOrderId, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
         {
             return (await _purchasingRequestService.GetPurchasingRequestByProductionOrder(productionOrderId, productMaterialsConsumptionGroupId, productionOrderMaterialSetId)).FirstOrDefault();
         }
