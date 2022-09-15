@@ -116,6 +116,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (productionOrder == null)
                 throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
+            var updateSetIds = model.Select(s => s.ProductionOrderMaterialSetId).ToList();
+            var removeSets = await _manufacturingDBContext.ProductionOrderMaterialSet.Where(s => s.ProductionOrderId == productionOrderId && !updateSetIds.Contains(s.ProductionOrderMaterialSetId)).ToListAsync();
+            foreach (var set in removeSets)
+            {
+                set.IsDeleted = true;
+            }
+
             foreach (var calc in model)
             {
                 if (calc.ProductionOrderMaterialSetId > 0)
@@ -127,7 +134,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await CreateMaterialSet(productionOrderId, calc);
                 }
             }
-        
+
             productionOrder.IsResetProductionProcess = false;
 
             await _manufacturingDBContext.SaveChangesAsync();
@@ -369,7 +376,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     ProductionStepLinkDataId = m.ProductionStepLinkDataId,
                     ProductId = m.ProductId,
                     ConversionRate = m.ConversionRate,
-                    Quantity = m.Quantity,
+                    Quantity = m.AssignmentQuantity ?? 0,
                     UnitId = 0,
                     StepId = m.StepId,
                     DepartmentId = m.DepartmentId,
