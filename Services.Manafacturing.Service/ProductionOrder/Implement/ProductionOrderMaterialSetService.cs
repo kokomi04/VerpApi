@@ -97,7 +97,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             standards.AddRange(consumStandardMaterials);
 
-            var materialSets = await _manufacturingDBContext.ProductionOrderMaterialSet.Include(s => s.ProductionOrderMaterialSetConsumptionGroup).Include(s => s.ProductionOrderMaterials).ToListAsync();
+            var materialSets = await _manufacturingDBContext.ProductionOrderMaterialSet.Include(s => s.ProductionOrderMaterialSetConsumptionGroup).Include(s => s.ProductionOrderMaterials).Where(s => s.ProductionOrderId == productionOrderId).ToListAsync();
             var sets = materialSets.Select(s => GetMaterialSetModel(s, standards)).ToList();
 
             return new ProductionOrderMaterialInfo
