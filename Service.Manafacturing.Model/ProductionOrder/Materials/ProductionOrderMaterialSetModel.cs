@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.ManufacturingDB;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
@@ -11,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
     {
         public long ProductionOrderMaterialSetId { get; set; }
         //public EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
-        public string Title { get; set; }        
+        public string Title { get; set; }
         public IList<int> ProductMaterialsConsumptionGroupIds { get; set; }
         //public int ProductionOrderMaterialSetTypeId { get; set; }
         public int CreatedByUserId { get; set; }
@@ -40,13 +41,20 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public decimal RateQuantity { get; set; }
     }
 
-    public class ProductionOrderMaterialAssign : ProductionOrderMaterialStandard, IMapFrom<ProductionOrderMaterialStandard>
+    public class ProductionOrderMaterialAssign : IMapFrom<ProductionOrderMaterials>
     {
-        public long? ProductionOrderMaterialsId { get; set; }
+        public long? ProductionOrderMaterialsId { get; set; }        
+        public int? StepId { get; set; }
+        public long ProductId { get; set; }
+        public decimal Quantity { get; set; }
+        public int? DepartmentId { get; set; }
+        public long? ProductionStepLinkDataId { get; set; }
         public long? ParentId { get; set; }
         public decimal? AssignmentQuantity { get; set; }
         public decimal ConversionRate { get; set; }
         public bool IsReplacement { get; set; }
+        public string IdClient { get; set; }
+        public string ParentIdClient { get; set; }
     }
 
     public class ProductionOrderMaterialInfo

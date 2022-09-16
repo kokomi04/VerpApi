@@ -146,6 +146,29 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private ProductionOrderMaterialSetModel GetMaterialSetModel(ProductionOrderMaterialSet set, IList<ProductionOrderMaterialGroupStandardModel> standards)
         {
             var groupIds = set.ProductionOrderMaterialSetConsumptionGroup.Select(g => g.ProductMaterialsConsumptionGroupId).ToList();
+
+            var lst = set.ProductionOrderMaterials
+                    .Select(r => _mapper.Map<ProductionOrderMaterialAssign>(r))
+                    .ToList();
+
+
+            return new ProductionOrderMaterialSetModel()
+            {
+                ProductionOrderMaterialSetId = set.ProductionOrderMaterialSetId,
+                //EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
+                Title = set.Title,
+                ProductMaterialsConsumptionGroupIds = groupIds,
+                //ProductionOrderMaterialSetTypeId = set.ProductionOrderMaterialSetTypeId,
+                CreatedByUserId = set.CreatedByUserId,
+                UpdatedByUserId = set.UpdatedByUserId,
+                Materials = lst.OrderBy(m => m.ProductId).ThenBy(m => m.DepartmentId).ToList()
+            };
+        }
+        /*
+
+        private ProductionOrderMaterialSetModel GetMaterialSetModel(ProductionOrderMaterialSet set, IList<ProductionOrderMaterialGroupStandardModel> standards)
+        {
+            var groupIds = set.ProductionOrderMaterialSetConsumptionGroup.Select(g => g.ProductMaterialsConsumptionGroupId).ToList();
             var lst = standards.Where(s => groupIds.Contains(s.ProductMaterialsConsumptionGroupId))
                 .SelectMany(s => s.Materials)
                 .GroupBy(m => new { m.ProductId, m.DepartmentId })
@@ -209,7 +232,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Materials = lst.OrderBy(m => m.ProductId).ThenBy(m => m.DepartmentId).ToList()
             };
         }
-
+        */
         private async Task<List<ProductionOrderMaterialStandard>> GetMainMaterials(long productionOrderId)
         {
             var roles = await _manufacturingDBContext.ProductionStepLinkDataRole.AsNoTracking()
@@ -383,7 +406,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     //InventoryRequirementStatusId =,
                     ParentId = m.ParentId,
                     IsReplacement = m.IsReplacement,
-                    ProductionOrderMaterialSetId = info.ProductionOrderMaterialSetId
+                    ProductionOrderMaterialSetId = info.ProductionOrderMaterialSetId,
+                    IdClient = m.IdClient,
+                    ParentIdClient = m.IsReplacement ? m.ParentIdClient : null
 
                 }).ToList();
 
@@ -394,7 +419,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             foreach (var item in allMaterials.Where(m => m.IsReplacement).ToList())
             {
                 var parent = originMaterials.Where(x => !x.IsReplacement)
-                    .FirstOrDefault(x => x.DepartmentId == item.DepartmentId && x.ProductionStepLinkDataId == item.ProductionStepLinkDataId);
+                    .FirstOrDefault(x => item.ParentIdClient == x.IdClient && x.DepartmentId == item.DepartmentId && x.ProductionStepLinkDataId == item.ProductionStepLinkDataId);
                 if (parent == null)
                     throw new BadRequestException(ProductOrderErrorCode.NotFoundMaterials, "Vật liệu thay thế không được gắn với vật liệu được thay thế");
 

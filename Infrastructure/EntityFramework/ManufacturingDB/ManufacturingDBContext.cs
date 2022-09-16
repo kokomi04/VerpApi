@@ -548,7 +548,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.IdClient).HasMaxLength(128);
+
                 entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ParentIdClient).HasMaxLength(128);
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
