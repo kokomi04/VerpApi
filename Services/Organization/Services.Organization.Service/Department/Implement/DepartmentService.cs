@@ -114,7 +114,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             var checkParams = new[]
             {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.AssignmentAndProductionOrder),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.All),
                     isInUsed
                 };
 
@@ -287,7 +287,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 var checkParams = new[]
                 {
                     new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.Assignment),
+                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.AssignmentAndStep),
                     isInUsed
                 };
 
@@ -295,7 +295,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 // Check đã được phân công chưa
                 if (isInUsed.Value as bool? == true)
                 {
-                    throw new BadRequestException("Bộ phận đã được phân công sản xuất, không được phép bỏ thiết lập là bộ phận sản xuất");
+                    throw new BadRequestException("Bộ phận đã được sử dụng là bộ phận sản xuất, không được phép bỏ thiết lập là bộ phận sản xuất");
                 }
             }
             //Kiểm tra nếu bỏ tích nhà máy
