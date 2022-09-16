@@ -32,6 +32,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public DateTime? DeletedDatetimeUtc { get; set; }
         public long? ProductionOrderMaterialSetId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+        public string IdClient { get; set; }
+        public string ParentIdClient { get; set; }
 
         public virtual ProductionOrderMaterials Parent { get; set; }
         public virtual ProductionOrder ProductionOrder { get; set; }

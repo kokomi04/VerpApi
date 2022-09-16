@@ -16,7 +16,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionOrderMaterialSetId { get; set; }
         public string Title { get; set; }
         public long ProductionOrderId { get; set; }
-        public bool IsMultipleConsumptionGroupId { get; set; }        
+        public bool IsMultipleConsumptionGroupId { get; set; }
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
