@@ -7,7 +7,7 @@ namespace VErp.Services.Stock.Service.Products
     {
         Task<ProductPartialGeneralModel> GeneralInfo(int productId);
 
-        Task<bool> UpdateGeneralInfo(int productId, ProductPartialGeneralModel model);
+        Task<bool> UpdateGeneralInfo(int productId, ProductPartialGeneralUpdateWithExtraModel model);
 
         Task<ProductPartialStockModel> StockInfo(int productId);
 

@@ -151,7 +151,7 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpPut]
         [Route("{productId}/GeneralInfo")]
-        public async Task<bool> UpdateGeneralInfo([FromRoute] int productId, [FromBody] ProductPartialGeneralModel model)
+        public async Task<bool> UpdateGeneralInfo([FromRoute] int productId, [FromBody] ProductPartialGeneralUpdateWithExtraModel model)
         {
             return await _productPartialService.UpdateGeneralInfo(productId, model);
         }

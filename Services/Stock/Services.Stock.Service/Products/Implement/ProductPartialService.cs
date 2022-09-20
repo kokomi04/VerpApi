@@ -107,7 +107,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             };
         }
 
-        public async Task<bool> UpdateGeneralInfo(int productId, ProductPartialGeneralModel model)
+        public async Task<bool> UpdateGeneralInfo(int productId, ProductPartialGeneralUpdateWithExtraModel model)
         {
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
@@ -121,118 +121,144 @@ namespace VErp.Services.Stock.Service.Products.Implement
             {
                 throw UnitOfProductNotFound.BadRequestFormat(model.ProductCode);
             }
-
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            using (var batchLog = _productActivityLog.BeginBatchLog())
             {
-                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
-                if (productInfo == null)
+                using (var trans = await _stockContext.Database.BeginTransactionAsync())
                 {
-                    throw new BadRequestException(ProductErrorCode.ProductNotFound);
-                }
 
-                if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
-                {
-                    var usedProductId = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
-                    if (usedProductId.HasValue)
+                    var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                    if (productInfo == null)
                     {
-                        throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                        throw new BadRequestException(ProductErrorCode.ProductNotFound);
                     }
-                }
 
-                /*
-                if (productInfo.UnitId != model.UnitId)
-                {
-                    var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-                    var checkParams = new[]
+                    if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
                     {
-                            new SqlParameter("@ProductId",productId),
-                            isInUsed
-                        };
-
-                    await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
-
-                    if (isInUsed.Value as bool? == true)
-                    {
-                        throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(model.ProductCode);
+                        var usedProductId = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
+                        if (usedProductId.HasValue)
+                        {
+                            throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                        }
                     }
+
+                    /*
+                    if (productInfo.UnitId != model.UnitId)
+                    {
+                        var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+                        var checkParams = new[]
+                        {
+                                new SqlParameter("@ProductId",productId),
+                                isInUsed
+                            };
+
+                        await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+
+                        if (isInUsed.Value as bool? == true)
+                        {
+                            throw CanNotUpdateUnitProductWhichInUsed.BadRequestFormat(model.ProductCode);
+                        }
+                    }
+                    */
+
+                    if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
+                    {
+                        model.IsProduct = true;
+                    }
+
+                    var defaultPuConversion = await _stockContext.ProductUnitConversion.FirstOrDefaultAsync(pu => pu.IsDefault && pu.ProductId == productId);
+
+                    if (defaultPuConversion == null)
+                    {
+                        throw DefaultProductUnitNotFound.BadRequest();
+                    }
+
+                    var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+                    var extraInfo = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+
+                    productInfo.ProductTypeId = model.ProductTypeId;
+
+                    productInfo.ProductCode = model.ProductCode;
+
+                    productInfo.ProductName = model.ProductName;
+
+                    productInfo.ProductNameEng = model.ProductNameEng;
+
+                    productInfo.MainImageFileId = model.MainImageFileId;
+
+                    productInfo.Long = model.Long;
+                    productInfo.Width = model.Width;
+                    productInfo.Height = model.Height;
+
+                    productInfo.Color = model.Color;
+
+
+                    defaultPuConversion.SecondaryUnitId = model.UnitId;
+                    defaultPuConversion.ProductUnitConversionName = unitInfo.UnitName;
+                    defaultPuConversion.DecimalPlace = productInfo.UnitId != model.UnitId ? unitInfo.DecimalPlace : defaultPuConversion.DecimalPlace;
+
+                    productInfo.UnitId = model.UnitId;
+
+                    productInfo.ProductCateId = model.ProductCateId;
+
+                    stockInfo.ExpireTimeAmount = model.ExpireTimeAmount;
+                    stockInfo.ExpireTimeTypeId = (int?)model.ExpireTimeTypeId;
+
+                    extraInfo.Description = model.Description;
+
+                    productInfo.BarcodeConfigId = model.BarcodeConfigId;
+                    productInfo.BarcodeStandardId = (int?)model.BarcodeStandardId;
+                    productInfo.Barcode = model.Barcode;
+
+                    productInfo.Quantitative = model.Quantitative;
+                    productInfo.QuantitativeUnitTypeId = (int?)model.QuantitativeUnitTypeId;
+
+                    productInfo.ProductPurity = model.ProductPurity;
+
+                    extraInfo.Specification = model.Specification;
+
+                    productInfo.EstimatePrice = model.EstimatePrice;
+
+                    productInfo.IsProductSemi = model.IsProductSemi;
+
+                    productInfo.IsProduct = model.IsProduct;
+
+                    productInfo.IsMaterials = model.IsMaterials;
+                    productInfo.TargetProductivityId = model.TargetProductivityId;
+
+                    if (model.ProductTargetProductivities != null)
+                    {
+                        var productInfos = await _stockContext.Product.Where(p => model.ProductTargetProductivities.Select(t => t.ProductId).Distinct().Contains(p.ProductId)).ToListAsync();
+                        foreach (var p in model.ProductTargetProductivities)
+                        {
+                            var pInfo = productInfos.FirstOrDefault(inf => inf.ProductId == p.ProductId);
+                            if (pInfo != null && pInfo.TargetProductivityId != p.TargetProductivityId)
+                            {
+                                pInfo.TargetProductivityId = p.TargetProductivityId;
+
+                                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProductProducitity)
+                                  .MessageResourceFormatDatas(pInfo.ProductCode, productInfo.ProductCode)
+                                  .ObjectId(p.ProductId)
+                                  .JsonData(p.JsonSerialize())
+                                  .CreateLog();
+
+                            }
+                        }
+                    }
+
+                    await _stockContext.SaveChangesAsync();
+
+                    await trans.CommitAsync();
+
+
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateGeneralInfo)
+                          .MessageResourceFormatDatas(productInfo.ProductCode)
+                          .ObjectId(productId)
+                          .JsonData(model.JsonSerialize())
+                          .CreateLog();
+                    
                 }
-                */
 
-                if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
-                {
-                    model.IsProduct = true;
-                }
-
-                var defaultPuConversion = await _stockContext.ProductUnitConversion.FirstOrDefaultAsync(pu => pu.IsDefault && pu.ProductId == productId);
-
-                if (defaultPuConversion == null)
-                {
-                    throw DefaultProductUnitNotFound.BadRequest();
-                }
-
-                var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-                var extraInfo = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-
-                productInfo.ProductTypeId = model.ProductTypeId;
-
-                productInfo.ProductCode = model.ProductCode;
-
-                productInfo.ProductName = model.ProductName;
-
-                productInfo.ProductNameEng = model.ProductNameEng;
-
-                productInfo.MainImageFileId = model.MainImageFileId;
-
-                productInfo.Long = model.Long;
-                productInfo.Width = model.Width;
-                productInfo.Height = model.Height;
-
-                productInfo.Color = model.Color;
-
-
-                defaultPuConversion.SecondaryUnitId = model.UnitId;
-                defaultPuConversion.ProductUnitConversionName = unitInfo.UnitName;
-                defaultPuConversion.DecimalPlace = productInfo.UnitId != model.UnitId ? unitInfo.DecimalPlace : defaultPuConversion.DecimalPlace;
-
-                productInfo.UnitId = model.UnitId;
-
-                productInfo.ProductCateId = model.ProductCateId;
-
-                stockInfo.ExpireTimeAmount = model.ExpireTimeAmount;
-                stockInfo.ExpireTimeTypeId = (int?)model.ExpireTimeTypeId;
-
-                extraInfo.Description = model.Description;
-
-                productInfo.BarcodeConfigId = model.BarcodeConfigId;
-                productInfo.BarcodeStandardId = (int?)model.BarcodeStandardId;
-                productInfo.Barcode = model.Barcode;
-
-                productInfo.Quantitative = model.Quantitative;
-                productInfo.QuantitativeUnitTypeId = (int?)model.QuantitativeUnitTypeId;
-
-                productInfo.ProductPurity = model.ProductPurity;
-
-                extraInfo.Specification = model.Specification;
-
-                productInfo.EstimatePrice = model.EstimatePrice;
-
-                productInfo.IsProductSemi = model.IsProductSemi;
-
-                productInfo.IsProduct = model.IsProduct;
-
-                productInfo.IsMaterials = model.IsMaterials;
-                productInfo.TargetProductivityId = model.TargetProductivityId;
-
-                await _stockContext.SaveChangesAsync();
-
-                await trans.CommitAsync();
-
-
-                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateGeneralInfo)
-                      .MessageResourceFormatDatas(productInfo.ProductCode)
-                      .ObjectId(productId)
-                      .JsonData(model.JsonSerialize())
-                      .CreateLog();
+                await batchLog.CommitAsync();
 
                 return true;
             }

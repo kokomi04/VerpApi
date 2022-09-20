@@ -205,6 +205,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cập nhật năng suất mục tiêu mặt hàng &quot;{0}&quot; khi cập nhật &quot;{1}&quot;.
+        /// </summary>
+        public static string UpdateProductProducitity {
+            get {
+                return ResourceManager.GetString("UpdateProductProducitity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cập nhật TT bán mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateSellInfo {
