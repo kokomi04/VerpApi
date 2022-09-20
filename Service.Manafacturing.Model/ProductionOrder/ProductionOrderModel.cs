@@ -16,7 +16,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionOrderEntity, ProductionOrderOutputModel>()
+            profile.CreateMapCustom<ProductionOrderEntity, ProductionOrderOutputModel>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.MapFrom(x => x.ProductionOrderAttachment))
                 .ForMember(dest => dest.ProductionOrderStatus, opt => opt.MapFrom(source => (EnumProductionStatus)source.ProductionOrderStatus))
@@ -40,7 +40,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public virtual ICollection<ProductionOrderAttachmentModel> ProductionOrderAttachment { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionOrderInputModel, ProductionOrderEntity>()
+            profile.CreateMapCustom<ProductionOrderInputModel, ProductionOrderEntity>()
                 .ForMember(dest => dest.ProductionOrderDetail, opt => opt.Ignore())
                 .ForMember(dest => dest.ProductionOrderAttachment, opt => opt.Ignore())
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(source => source.StartDate.UnixToDateTime()))
@@ -52,7 +52,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.IsUpdateProcessForAssignment, opt => opt.Ignore());
         }
     }
-
+    public class ProductOrderModelExtra: ProductOrderModel
+    {
+        public bool HasNewProductionProcessVersion { get; set; }
+    }
     public class ProductOrderModel
     {
         public long ProductionOrderId { get; set; }
@@ -68,6 +71,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionStatus ProductionOrderStatus { get; set; }
         public bool? IsUpdateQuantity { get; set; }
         public bool? IsUpdateProcessForAssignment { get; set; }
+
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
+        public int? FactoryDepartmentId { get; set; }
     }
 
     public class ProductionOrderStatusDataModel
@@ -98,5 +106,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long StartDate { get; set; }
         public long EndDate { get; set; }
         public long PlanEndDate { get; set; }
+        public int? MonthPlanId { get; set; }
+        public int? FromWeekPlanId { get; set; }
+        public int? ToWeekPlanId { get; set; }
     }
 }

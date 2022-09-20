@@ -215,6 +215,25 @@
           }
         }
       },
+      "Lib.Net.Http.EncryptedContentEncoding/2.1.0": {
+        "runtime": {
+          "lib/netstandard2.1/Lib.Net.Http.EncryptedContentEncoding.dll": {
+            "assemblyVersion": "2.1.0.0",
+            "fileVersion": "2.1.0.0"
+          }
+        }
+      },
+      "Lib.Net.Http.WebPush/3.1.0": {
+        "dependencies": {
+          "Lib.Net.Http.EncryptedContentEncoding": "2.1.0"
+        },
+        "runtime": {
+          "lib/net5.0/Lib.Net.Http.WebPush.dll": {
+            "assemblyVersion": "3.1.0.0",
+            "fileVersion": "3.1.0.0"
+          }
+        }
+      },
       "libsodium/1.0.18": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0"
@@ -247,6 +266,18 @@
           }
         }
       },
+      "Microsoft.AspNetCore.Authorization/2.2.0": {
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
+          "Microsoft.Extensions.Options": "5.0.0"
+        }
+      },
+      "Microsoft.AspNetCore.Connections.Abstractions/2.2.0": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Http.Features": "2.2.0",
+          "System.IO.Pipelines": "4.5.2"
+        }
+      },
       "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
         "dependencies": {
           "Microsoft.AspNetCore.Http.Features": "2.2.0",
@@ -271,6 +302,31 @@
           "Microsoft.AspNetCore.Http.Extensions": "2.2.0",
           "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
           "Microsoft.Extensions.Options": "5.0.0"
+        }
+      },
+      "Microsoft.AspNetCore.SignalR.Common/1.1.0": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Connections.Abstractions": "2.2.0",
+          "Microsoft.Extensions.Options": "5.0.0",
+          "Newtonsoft.Json": "12.0.3",
+          "System.Buffers": "4.5.0"
+        }
+      },
+      "Microsoft.AspNetCore.SignalR.Core/1.1.0": {
+        "dependencies": {
+          "Microsoft.AspNetCore.Authorization": "2.2.0",
+          "Microsoft.AspNetCore.SignalR.Common": "1.1.0",
+          "Microsoft.AspNetCore.SignalR.Protocols.Json": "1.1.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "5.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "5.0.0",
+          "System.Reflection.Emit": "4.7.0",
+          "System.Threading.Channels": "4.5.0"
+        }
+      },
+      "Microsoft.AspNetCore.SignalR.Protocols.Json/1.1.0": {
+        "dependencies": {
+          "Microsoft.AspNetCore.SignalR.Common": "1.1.0",
+          "Newtonsoft.Json": "12.0.3"
         }
       },
       "Microsoft.AspNetCore.WebUtilities/2.0.2": {
@@ -688,29 +744,29 @@
           }
         }
       },
-      "NPOI/2.5.1": {
+      "NPOI/2.5.5": {
         "dependencies": {
-          "Portable.BouncyCastle": "1.8.6",
-          "SharpZipLib": "1.3.1",
+          "Portable.BouncyCastle": "1.8.9",
+          "SharpZipLib": "1.3.2",
           "System.Configuration.ConfigurationManager": "4.7.0",
           "System.Drawing.Common": "5.0.2"
         },
         "runtime": {
-          "lib/netstandard2.0/NPOI.OOXML.dll": {
-            "assemblyVersion": "2.5.1.0",
-            "fileVersion": "2.5.1.0"
+          "lib/netstandard2.1/NPOI.OOXML.dll": {
+            "assemblyVersion": "2.5.5.0",
+            "fileVersion": "2.5.5.0"
           },
-          "lib/netstandard2.0/NPOI.OpenXml4Net.dll": {
-            "assemblyVersion": "2.5.1.0",
-            "fileVersion": "2.5.1.0"
+          "lib/netstandard2.1/NPOI.OpenXml4Net.dll": {
+            "assemblyVersion": "2.5.5.0",
+            "fileVersion": "2.5.5.0"
           },
-          "lib/netstandard2.0/NPOI.OpenXmlFormats.dll": {
-            "assemblyVersion": "2.5.1.0",
-            "fileVersion": "2.5.1.0"
+          "lib/netstandard2.1/NPOI.OpenXmlFormats.dll": {
+            "assemblyVersion": "2.5.5.0",
+            "fileVersion": "2.5.5.0"
           },
-          "lib/netstandard2.0/NPOI.dll": {
-            "assemblyVersion": "2.5.1.0",
-            "fileVersion": "2.5.1.0"
+          "lib/netstandard2.1/NPOI.dll": {
+            "assemblyVersion": "2.5.5.0",
+            "fileVersion": "2.5.5.0"
           }
         }
       },
@@ -726,11 +782,11 @@
           }
         }
       },
-      "Portable.BouncyCastle/1.8.6": {
+      "Portable.BouncyCastle/1.8.9": {
         "runtime": {
           "lib/netstandard2.0/BouncyCastle.Crypto.dll": {
-            "assemblyVersion": "1.8.6.0",
-            "fileVersion": "1.8.6.1"
+            "assemblyVersion": "1.8.9.0",
+            "fileVersion": "1.8.9.1"
           }
         }
       },
@@ -740,7 +796,7 @@
           "Microsoft.Bcl.AsyncInterfaces": "1.1.0",
           "Microsoft.Extensions.Logging": "5.0.0",
           "Newtonsoft.Json": "12.0.3",
-          "SharpZipLib": "1.3.1",
+          "SharpZipLib": "1.3.2",
           "System.Net.Http": "4.3.3",
           "System.Threading.Tasks.Extensions": "4.5.4"
         },
@@ -845,11 +901,11 @@
           }
         }
       },
-      "SharpZipLib/1.3.1": {
+      "SharpZipLib/1.3.2": {
         "runtime": {
-          "lib/netstandard2.0/ICSharpCode.SharpZipLib.dll": {
-            "assemblyVersion": "1.3.1.9",
-            "fileVersion": "1.3.1.9"
+          "lib/netstandard2.1/ICSharpCode.SharpZipLib.dll": {
+            "assemblyVersion": "1.3.2.10",
+            "fileVersion": "1.3.2.10"
           }
         }
       },
@@ -1222,6 +1278,7 @@
           }
         }
       },
+      "System.IO.Pipelines/4.5.2": {},
       "System.Linq/4.3.0": {
         "dependencies": {
           "System.Collections": "4.3.0",
@@ -1738,6 +1795,7 @@
           "System.Threading.Tasks": "4.3.0"
         }
       },
+      "System.Threading.Channels/4.5.0": {},
       "System.Threading.Tasks/4.3.0": {
         "dependencies": {
           "Microsoft.NETCore.Platforms": "5.0.0",
@@ -1874,8 +1932,10 @@
       "VErp.Commons.Library/1.0.0": {
         "dependencies": {
           "CoreCLR-NCalc": "2.2.80",
+          "Lib.Net.Http.WebPush": "3.1.0",
+          "Microsoft.AspNetCore.SignalR.Core": "1.1.0",
           "Microsoft.Extensions.Logging.Console": "5.0.0",
-          "NPOI": "2.5.1",
+          "NPOI": "2.5.5",
           "Newtonsoft.Json": "12.0.3",
           "OpenXmlPowerToolsStandard": "5.0.89",
           "PuppeteerSharp": "4.0.0",
@@ -2038,12 +2098,40 @@
       "path": "elasticsearch.net/7.6.0",
       "hashPath": "elasticsearch.net.7.6.0.nupkg.sha512"
     },
+    "Lib.Net.Http.EncryptedContentEncoding/2.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-4i7lOuMNvYF8K9/ZqqW2ecQxS9TEtQ808Ty7BXMTiy1zC5nBVDG2UDiKWfhFOpTPMoaDgd+ye6qfI6l3klW92g==",
+      "path": "lib.net.http.encryptedcontentencoding/2.1.0",
+      "hashPath": "lib.net.http.encryptedcontentencoding.2.1.0.nupkg.sha512"
+    },
+    "Lib.Net.Http.WebPush/3.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-xLFOi2e5R1BT0EsOQZt7tYyd/j+FzmROp77Y1DYtXZjFfWlEoW6IHbob0CL5mDXMw5KeTBBORi/LwoGeYLxQ5Q==",
+      "path": "lib.net.http.webpush/3.1.0",
+      "hashPath": "lib.net.http.webpush.3.1.0.nupkg.sha512"
+    },
     "libsodium/1.0.18": {
       "type": "package",
       "serviceable": true,
       "sha512": "sha512-Ajv3AR9Qg/C4SQcE2ONx/UieeKnn5lSvVNc6egC3p6NP6qjZzWJ+Xg2vJURNYjkpHui/KctBwQjMPqpZK8/CHA==",
       "path": "libsodium/1.0.18",
       "hashPath": "libsodium.1.0.18.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Authorization/2.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/L0W8H3jMYWyaeA9gBJqS/tSWBegP9aaTM0mjRhxTttBY9z4RVDRYJ2CwPAmAXIuPr3r1sOw+CS8jFVRGHRezQ==",
+      "path": "microsoft.aspnetcore.authorization/2.2.0",
+      "hashPath": "microsoft.aspnetcore.authorization.2.2.0.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.Connections.Abstractions/2.2.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-Aqr/16Cu5XmGv7mLKJvXRxhhd05UJ7cTTSaUV4MZ3ynAzfgWjsAdpIU8FWuxwAjmVdmI8oOWuVDrbs+sRkhKnA==",
+      "path": "microsoft.aspnetcore.connections.abstractions/2.2.0",
+      "hashPath": "microsoft.aspnetcore.connections.abstractions.2.2.0.nupkg.sha512"
     },
     "Microsoft.AspNetCore.Http.Abstractions/2.2.0": {
       "type": "package",
@@ -2072,6 +2160,27 @@
       "sha512": "sha512-pOlLQyNKQduGbtbgB55RyTHFeshSfKi3DmofrVjk+UBQjyp+Tm0RNNJFQf+sv34hlFsel+VnD79QyO9Zk/c3oA==",
       "path": "microsoft.aspnetcore.httpoverrides/2.2.0",
       "hashPath": "microsoft.aspnetcore.httpoverrides.2.2.0.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.SignalR.Common/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-TyLgQ4y4RVUIxiYFnHT181/rJ33/tL/NcBWC9BwLpulDt5/yGCG4EvsToZ49EBQ7256zj+R6OGw6JF+jj6MdPQ==",
+      "path": "microsoft.aspnetcore.signalr.common/1.1.0",
+      "hashPath": "microsoft.aspnetcore.signalr.common.1.1.0.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.SignalR.Core/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-mk69z50oFk2e89d3F/AfKeAvP3kvGG7MHG4ErydZiUd3ncSRq0kl0czq/COn/QVKYua9yGr2LIDwuR1C6/pu8Q==",
+      "path": "microsoft.aspnetcore.signalr.core/1.1.0",
+      "hashPath": "microsoft.aspnetcore.signalr.core.1.1.0.nupkg.sha512"
+    },
+    "Microsoft.AspNetCore.SignalR.Protocols.Json/1.1.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-BOsjatDJnvnnXCMajOlC0ISmiFnJi/EyJzMo0i//5fZJVCLrQ4fyV/HzrhhAhSJuwJOQDdDozKQ9MB9jHq84pg==",
+      "path": "microsoft.aspnetcore.signalr.protocols.json/1.1.0",
+      "hashPath": "microsoft.aspnetcore.signalr.protocols.json.1.1.0.nupkg.sha512"
     },
     "Microsoft.AspNetCore.WebUtilities/2.0.2": {
       "type": "package",
@@ -2353,12 +2462,12 @@
       "path": "newtonsoft.json/12.0.3",
       "hashPath": "newtonsoft.json.12.0.3.nupkg.sha512"
     },
-    "NPOI/2.5.1": {
+    "NPOI/2.5.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-2RkrIi+h6hDcrdR8EIxMpBb7vSz5Lgsr1HKgrA7Q+9/zQ17ky5b+3eHuJeuautFhRSrUTRxUfOpF5l9Vooy8/A==",
-      "path": "npoi/2.5.1",
-      "hashPath": "npoi.2.5.1.nupkg.sha512"
+      "sha512": "sha512-xTCJOXdcBWV9GUAVRJTC73L5bU3Ahgtuk13U/rOix8Gi05XWf9E4K+vGx63JZt35WoroXq+hM0RZ+aad2y8Ceg==",
+      "path": "npoi/2.5.5",
+      "hashPath": "npoi.2.5.5.nupkg.sha512"
     },
     "OpenXmlPowerToolsStandard/5.0.89": {
       "type": "package",
@@ -2367,12 +2476,12 @@
       "path": "openxmlpowertoolsstandard/5.0.89",
       "hashPath": "openxmlpowertoolsstandard.5.0.89.nupkg.sha512"
     },
-    "Portable.BouncyCastle/1.8.6": {
+    "Portable.BouncyCastle/1.8.9": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-y+GvZomzhY+Lwu5mMeNmFFYLHiEr2xFDOANhABn/wgg64/QpTzfgpNGPct+pXgQHjmutd363ZCur/91DLaBxOw==",
-      "path": "portable.bouncycastle/1.8.6",
-      "hashPath": "portable.bouncycastle.1.8.6.nupkg.sha512"
+      "sha512": "sha512-wlJo8aFoeyl+W93iFXTK5ShzDYk5WBqoUPjTNEM0Xv9kn1H+4hmuCjF0/n8HLm9Nnp1aY6KNndWqQTNk+NGgRQ==",
+      "path": "portable.bouncycastle/1.8.9",
+      "hashPath": "portable.bouncycastle.1.8.9.nupkg.sha512"
     },
     "PuppeteerSharp/4.0.0": {
       "type": "package",
@@ -2535,12 +2644,12 @@
       "path": "runtime.win-x86.runtime.native.system.data.sqlclient.sni/4.4.0",
       "hashPath": "runtime.win-x86.runtime.native.system.data.sqlclient.sni.4.4.0.nupkg.sha512"
     },
-    "SharpZipLib/1.3.1": {
+    "SharpZipLib/1.3.2": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-/iMph6bLdKzDhwM/vkAo4BU8z5QQnyodlkZon3XRMtRmVuWv5Rph1kaDmd9XjrQxjPJPuLquTSrkEoSPq/flVw==",
-      "path": "sharpziplib/1.3.1",
-      "hashPath": "sharpziplib.1.3.1.nupkg.sha512"
+      "sha512": "sha512-WSdeDReL8eugMCw5BH/tFAZpgR+YsYMwm6kIvqg3J8LbfRjbbebmEzn63AbEveqyMOljBO68g6tCCv165wMkSg==",
+      "path": "sharpziplib/1.3.2",
+      "hashPath": "sharpziplib.1.3.2.nupkg.sha512"
     },
     "Sodium.Core/1.2.3": {
       "type": "package",
@@ -2772,6 +2881,13 @@
       "sha512": "sha512-9VV4KAbgRQZ79iEoG40KIeZy38O30oWwewScAST879+oki8g/Wa2HXZQgrhDDxQM4GkP1PnRJll05NMiVPbYAw==",
       "path": "system.io.packaging/4.7.0",
       "hashPath": "system.io.packaging.4.7.0.nupkg.sha512"
+    },
+    "System.IO.Pipelines/4.5.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-NOC/SO4gSX6t0tB25xxDPqPEzkksuzW7NVFBTQGAkjXXUPQl7ZtyE83T7tUCP2huFBbPombfCKvq1Ox1aG8D9w==",
+      "path": "system.io.pipelines/4.5.2",
+      "hashPath": "system.io.pipelines.4.5.2.nupkg.sha512"
     },
     "System.Linq/4.3.0": {
       "type": "package",
@@ -3115,6 +3231,13 @@
       "sha512": "sha512-VkUS0kOBcUf3Wwm0TSbrevDDZ6BlM+b/HRiapRFWjM5O0NS0LviG0glKmFK+hhPDd1XFeSdU1GmlLhb2CoVpIw==",
       "path": "system.threading/4.3.0",
       "hashPath": "system.threading.4.3.0.nupkg.sha512"
+    },
+    "System.Threading.Channels/4.5.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MEH06N0rIGmRT4LOKQ2BmUO0IxfvmIY/PaouSq+DFQku72OL8cxfw8W99uGpTCFf2vx2QHLRSh374iSM3asdTA==",
+      "path": "system.threading.channels/4.5.0",
+      "hashPath": "system.threading.channels.4.5.0.nupkg.sha512"
     },
     "System.Threading.Tasks/4.3.0": {
       "type": "package",

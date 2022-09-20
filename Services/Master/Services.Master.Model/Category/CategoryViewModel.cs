@@ -17,9 +17,9 @@ namespace VErp.Services.Master.Model.Category
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<CategoryView, CategoryViewModel>()
+            profile.CreateMapCustom<CategoryView, CategoryViewModel>()
                 .ForMember(d => d.Fields, m => m.Ignore())
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.CategoryViewField, m => m.Ignore())
                 .ForMember(d => d.Category, m => m.Ignore())
                 .ForMember(d => d.CategoryViewId, m => m.Ignore());
@@ -49,10 +49,10 @@ namespace VErp.Services.Master.Model.Category
         public string InputStyleJson { get; set; }
         public string HelpText { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<CategoryViewField, CategoryViewFieldModel>()
+        public void Mapping(Profile profile) => profile.CreateMapCustom<CategoryViewField, CategoryViewFieldModel>()
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (EnumDataType)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (EnumFormType)s.FormTypeId))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.CategoryView, m => m.Ignore())
             .ForMember(m => m.DataTypeId, m => m.MapFrom(s => (int)s.DataTypeId))
             .ForMember(m => m.FormTypeId, m => m.MapFrom(s => (int)s.FormTypeId));

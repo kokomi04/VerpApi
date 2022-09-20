@@ -15,7 +15,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<VoucherType, VoucherTypeBasicOutput>()
+            profile.CreateMapCustom<VoucherType, VoucherTypeBasicOutput>()
                 .ForMember(d => d.Areas, m => m.Ignore())
                 .ForMember(d => d.Views, m => m.Ignore());
         }
@@ -32,7 +32,7 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
         public IList<VoucherAreaFieldBasicOutput> Fields { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<VoucherArea, VoucherAreaBasicOutput>()
+            profile.CreateMapCustom<VoucherArea, VoucherAreaBasicOutput>()
                 .ForMember(d => d.Fields, m => m.Ignore());
         }
     }

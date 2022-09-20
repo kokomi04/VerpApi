@@ -440,6 +440,21 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductionOrderStatus).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.StartDate).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.FromWeekPlan)
+                    .WithMany(p => p.ProductionOrderFromWeekPlan)
+                    .HasForeignKey(d => d.FromWeekPlanId)
+                    .HasConstraintName("FK_ProductionOrder_FromWeekPlan");
+
+                entity.HasOne(d => d.MonthPlan)
+                    .WithMany(p => p.ProductionOrder)
+                    .HasForeignKey(d => d.MonthPlanId)
+                    .HasConstraintName("FK_ProductionOrder_MonthPlan");
+
+                entity.HasOne(d => d.ToWeekPlan)
+                    .WithMany(p => p.ProductionOrderToWeekPlan)
+                    .HasForeignKey(d => d.ToWeekPlanId)
+                    .HasConstraintName("FK_ProductionOrder_ToWeekPlan");
             });
 
             modelBuilder.Entity<ProductionOrderAttachment>(entity =>

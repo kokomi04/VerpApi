@@ -1,5 +1,6 @@
 ﻿using NPOI.SS.UserModel;
 using NPOI.SS.Util;
+using NPOI.Util;
 using NPOI.XSSF.UserModel;
 using System;
 using System.Collections.Generic;
@@ -7,11 +8,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -24,6 +28,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
     public class ProductionPlanExportFacade
     {
         private IProductionPlanService _productionPlanService;
+        private IOrganizationHelperService _organizationHelperService;
+        private IPhysicalFileService _physicalFileService;
         private IProductHelperService _productHelperService;
         private IProductBomHelperService _productBomHelperService;
         private IProductCateHelperService _productCateHelperService;
@@ -45,10 +51,44 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         private int currentRow = 0;
         private int maxColumnIndex = 0;
         private IList<VoucherOrderDetailSimpleModel> mapVoucherOrder;
+        private BusinessInfoModel bussinessInfo = null;
+        private AppSetting _appSetting;
+        private ManufacturingDBContext _manufacturingDBContext;
 
+        private readonly Dictionary<string, PictureType> drImageType = new Dictionary<string, PictureType>
+        {
+            {".jpeg", PictureType.JPEG },
+            {".jpg", PictureType.JPEG },
+            {".png", PictureType.PNG },
+            {".gif", PictureType.GIF },
+            {".emf", PictureType.EMF },
+            {".wmf", PictureType.WMF },
+            {".pict", PictureType.PICT },
+            {".dib", PictureType.DIB },
+            {".tiff", PictureType.TIFF },
+            {".eps", PictureType.EPS },
+            {".bmp", PictureType.BMP },
+            {".wpg", PictureType.WPG },
+        };
+        private readonly Dictionary<string, HorizontalAlignment> drTextAlign = new Dictionary<string, HorizontalAlignment>
+        {
+            {"center", HorizontalAlignment.Center },
+            {"left", HorizontalAlignment.Left },
+            {"right", HorizontalAlignment.Right }
+        };
         public ProductionPlanExportFacade SetProductionPlanService(IProductionPlanService productionPlanService)
         {
             _productionPlanService = productionPlanService;
+            return this;
+        }
+        public ProductionPlanExportFacade SetOrganizationHelperService(IOrganizationHelperService organizationHelperService)
+        {
+            _organizationHelperService = organizationHelperService;
+            return this;
+        }
+        public ProductionPlanExportFacade SetManufacturingDBContext(ManufacturingDBContext manufacturingDB)
+        {
+            _manufacturingDBContext = manufacturingDB;
             return this;
         }
         public ProductionPlanExportFacade SetProductHelperService(IProductHelperService productHelperService)
@@ -83,13 +123,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             return this;
         }
         public async Task<(Stream stream, string fileName, string contentType)> Export(
+            int? monthPlanId,
+            int? factoryDepartmentId,
             long startDate,
             long endDate,
             ProductionPlanExportModel data,
             IList<string> mappingFunctionKeys = null)
         {
             maxColumnIndex = 23 + data.ProductCateIds.Length;
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, factoryDepartmentId, startDate, endDate);
             productCates = (await _productCateHelperService.Search(null, string.Empty, -1, -1, string.Empty, true)).List.Where(pc => data.ProductCateIds.Contains(pc.ProductCateId)).ToList();
 
             var productIds = productionPlanInfo.Select(p => p.ProductId.Value).Distinct().ToList();
@@ -154,7 +196,65 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 }
             }
 
-            WriteGeneralInfo(data.MonthPlanName);
+            bussinessInfo = await _organizationHelperService.BusinessInfo();
+
+            var lCol = maxColumnIndex - 1;
+            #region Thêm logo doanh nghiệp
+            if (bussinessInfo.LogoFileId.HasValue)
+            {
+
+                var fileInfo = await _physicalFileService.GetSimpleFileInfo((long)bussinessInfo.LogoFileId.Value);
+                var pictureType = GetPictureType(Path.GetExtension(fileInfo.FileName).ToLower());
+
+                if (fileInfo != null && pictureType != PictureType.None)
+                {
+                    var filePath = GetPhysicalFilePath(fileInfo.FilePath);
+                    if (!File.Exists(filePath))
+                    {
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Logo file {fileInfo.FilePath} was not found!");
+                    }
+                    var fileStream = File.OpenRead(filePath);
+                    byte[] bytes = IOUtils.ToByteArray(fileStream);
+                    int pictureIdx = xssfwb.AddPicture(bytes, pictureType);
+                    fileStream.Close();
+
+                    var helper = xssfwb.GetCreationHelper();
+                    var drawing = sheet.CreateDrawingPatriarch();
+                    var anchor = helper.CreateClientAnchor();
+
+                    anchor.Col1 = 0;
+                    anchor.Row1 = 0;
+                    anchor.Col2 = 2;
+                    anchor.Row2 = 1;
+                    anchor.AnchorType = AnchorType.MoveDontResize;
+                    var picture = drawing.CreatePicture(anchor, pictureIdx);
+                    picture.Resize(1, 1);
+                }
+            }
+            #endregion
+            #region Thêm thông tin doanh nghiệp
+            var infoBussiness = "Tên đơn vị: " + (!string.IsNullOrEmpty(bussinessInfo.CompanyName) ? bussinessInfo.CompanyName : "" )+ "\n" +
+                                   "Địa chỉ: " + (!string.IsNullOrEmpty(bussinessInfo.Address) ? bussinessInfo.Address : "") + "\n" +
+                                   "MST: " + (!string.IsNullOrEmpty(bussinessInfo.TaxIdNo) ? bussinessInfo.TaxIdNo : "") + "\n" +
+                                   "Website: " + (!string.IsNullOrEmpty(bussinessInfo.Website) ? bussinessInfo.Website : "");
+            sheet.AddMergedRegion(new CellRangeAddress(0, 0, 2, lCol));
+            sheet.EnsureCell(0, 2).SetCellValue(infoBussiness);
+            sheet.SetCellStyle(0, 2, 12, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true);
+            #endregion
+
+            //Nếu truyền monthPlanId thì lấy từ ngày đến ngày theo monthPlanId
+            long startDateReturn = startDate;
+            long endDateReturn = endDate;
+            var monthPlan = _manufacturingDBContext.MonthPlan
+                    .Where(mp => mp.MonthPlanId == monthPlanId)
+                    .ToList();
+            if(monthPlan != null && monthPlan.Count > 0)
+            {
+                startDateReturn = monthPlan[0].StartDate.GetUnix();
+                endDateReturn = monthPlan[0].EndDate.GetUnix();
+            }
+
+            WriteGeneralInfo(startDateReturn, endDateReturn);
 
             currentRow = currentRowTmp;
             WriteFooter(data.Note);
@@ -164,23 +264,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"KHSX#{startDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}#{endDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}.xlsx";
+            var fileName = $"KHSX#{startDateReturn.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}#{endDateReturn.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd_MM_yyyy")}.xlsx";
             return (stream, fileName, contentType);
         }
 
 
-        private void WriteGeneralInfo(string monthPlanName)
+        private void WriteGeneralInfo(long startDate, long endDate)
         {
-            sheet.AddMergedRegion(new CellRangeAddress(0, 0, 0, maxColumnIndex));
-            sheet.EnsureCell(0, 0).SetCellValue($"LỊCH SẢN XUẤT XƯỞNG THÁNG {monthPlanName}");
+            sheet.AddMergedRegion(new CellRangeAddress(2, 2, 0, maxColumnIndex));
+            sheet.EnsureCell(2, 0).SetCellValue($"KẾ HOẠCH SẢN XUẤT - TỪ NGÀY {startDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd/MM/yyyy")} ĐẾN NGÀY {endDate.UnixToDateTime(_currentContext.TimeZoneOffset).ToString("dd/MM/yyyy")}");
             sheet.GetRow(0).Height = 1500;
-            sheet.SetCellStyle(0, 0, 20, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, false);
+            sheet.SetCellStyle(2, 0, 20, true, false, VerticalAlignment.Center, HorizontalAlignment.Center, false);
         }
 
+        private PictureType GetPictureType(string extension)
+        {
+            if (!string.IsNullOrWhiteSpace(extension) && drImageType.ContainsKey(extension))
+                return drImageType[extension];
+            return PictureType.None;
+        }
+        private string GetPhysicalFilePath(string filePath)
+        {
+            return Utils.GetPhysicalFilePath(filePath, _appSetting);
+        }
+        internal void SetAppSetting(AppSetting appSetting) => _appSetting = appSetting;
 
+        internal void SetPhysicalFileService(IPhysicalFileService physicalFileService) => _physicalFileService = physicalFileService;
         private async Task WriteTable()
         {
-            currentRow = 2;
+            currentRow = 4;
 
             var fRow = currentRow;
 
@@ -240,6 +352,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             var dateCell = sheet.GetCellStyle(isBorder: true, dataFormat: "dd/MM/yyyy");
             var productPurityCell = sheet.GetCellStyle(isBorder: true, dataFormat: "#,##0.00###");
             var stt = 1;
+            var lstVoucher = new List<long>();
             foreach (var item in productionPlanInfo)
             {
                 var product = products.FirstOrDefault(p => p.ProductId == item.ProductId);
@@ -249,8 +362,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     if (i == 14)
                     {
                         style = productPurityCell;
-                    }    
-                    else if (i == 3 || (i >= 10 && i <= 17 ))
+                    }
+                    else if (i == 3 || (i >= 10 && i <= 17))
                     {
                         style = numberCell;
                     }
@@ -267,7 +380,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 var voucherOrder = mapVoucherOrder.FirstOrDefault(x => x.OrderCode == item.OrderCode && x.ProductId == item.ProductId);
                 if (voucherOrder != null)
                 {
-                    sheet.EnsureCell(currentRow, 3).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    if (lstVoucher.Any(x => x == voucherOrder.OrderId))
+                        sheet.EnsureCell(currentRow, 3).SetCellValue("");
+                    else
+                    {
+                        lstVoucher.Add(voucherOrder.OrderId);
+                        sheet.EnsureCell(currentRow, 3).SetCellValue((double)(voucherOrder.ContainerQuantity));
+                    }
                     sheet.EnsureCell(currentRow, 4).SetCellValue(voucherOrder.CustomerPO);
                     sheet.EnsureCell(currentRow, 5).SetCellValue(voucherOrder.PartnerCode);
                     sheet.EnsureCell(currentRow, 6).SetCellValue(voucherOrder.PartnerName != null ? voucherOrder.PartnerName : "N/A");
@@ -275,7 +394,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     if (voucherOrder.DeliveryDate > 0)
                     {
                         sheet.EnsureCell(currentRow, 22).SetCellValue(voucherOrder.DeliveryDate.UnixToDateTime(_currentContext.TimeZoneOffset));
-                    }    
+                    }
                 }
                 sheet.EnsureCell(currentRow, 7).SetCellValue(item.ProductCode);
                 sheet.EnsureCell(currentRow, 8).SetCellValue(item.ProductName);
@@ -286,7 +405,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 sheet.EnsureCell(currentRow, 13).SetCellValue((double)totalQuantity);
                 if (product != null && product.ProductPurity.HasValue)
                 {
-                    sheet.EnsureCell(currentRow, 14).SetCellValue((double)(product.ProductPurity.Value * totalQuantity)); 
+                    sheet.EnsureCell(currentRow, 14).SetCellValue((double)(product.ProductPurity.Value * totalQuantity));
                 }
                 sheet.EnsureCell(currentRow, 15).SetCellValue((double)item.UnitPrice);
                 sheet.EnsureCell(currentRow, 16).SetCellValue((double)(item.UnitPrice * totalQuantity));
@@ -337,6 +456,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
 
         public async Task<(Stream stream, string fileName, string contentType)> WorkloadExport(
+          int? monthPlanId,
+          int? factoryDepartmentId,
           long startDate,
           long endDate,
           string monthPlanName,
@@ -345,7 +466,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             maxColumnIndex = 7 + _allSteps.Count * 2;
 
-            productionPlanInfo = await _productionPlanService.GetProductionPlans(startDate, endDate);
+            productionPlanInfo = await _productionPlanService.GetProductionPlans(monthPlanId, factoryDepartmentId, startDate, endDate);
 
             var sortOrderMax = 0;
             foreach (var p in productionPlanInfo)
@@ -384,7 +505,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             // Sắp xếp
             productionPlanInfo = productionPlanInfo.OrderBy(p => extraPlanInfos[p.ProductionOrderDetailId.Value].SortOrder).ToList();
 
-            var workloads = await _productionPlanService.GetWorkloadPlanByDate(startDate, endDate);
+            var workloads = await _productionPlanService.GetWorkloadPlanByDate(monthPlanId, factoryDepartmentId, startDate, endDate);
 
             var productIds = new List<int>();
             var productSemiIds = new List<long>();

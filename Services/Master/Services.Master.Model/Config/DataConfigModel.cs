@@ -14,10 +14,10 @@ namespace VErp.Services.Master.Model.Config
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<DataConfig, DataConfigModel>()
+            profile.CreateMapCustom<DataConfig, DataConfigModel>()
                 .ForMember(m => m.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonDeserialize<FreqClosingDate>()))
                 .ForMember(m => m.ClosingDate, m => m.MapFrom(v => v.ClosingDate.GetUnix()))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(d => d.FreqClosingDate, m => m.MapFrom(v => v.FreqClosingDate.JsonSerialize()))
                 .ForMember(m => m.ClosingDate, m => m.MapFrom(v => v.ClosingDate.UnixToDateTime()));
         }

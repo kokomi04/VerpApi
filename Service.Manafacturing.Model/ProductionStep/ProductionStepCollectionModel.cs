@@ -12,9 +12,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionStepCollection, ProductionStepCollectionModel>()
+            profile.CreateMapCustom<ProductionStepCollection, ProductionStepCollectionModel>()
                 .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonDeserialize<IList<StepCollection>>()))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonSerialize()));
         }
     }
@@ -26,9 +26,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public string Description { get; set; }
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<ProductionStepCollection, ProductionStepCollectionSearch>()
+            profile.CreateMapCustom<ProductionStepCollection, ProductionStepCollectionSearch>()
                 .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonDeserialize<IList<StepCollectionSearch>>()))
-                .ReverseMapIgnoreNoneExist()
+                .ReverseMapCustom()
                 .ForMember(m => m.Collections, v => v.MapFrom(x => x.Collections.JsonSerialize()));
         }
 

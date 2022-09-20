@@ -45,7 +45,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<InputType, InputTypeFullModel>()
+            profile.CreateMapCustom<InputType, InputTypeFullModel>()
                 .ForMember(dest => dest.InputAreas, opt => opt.MapFrom(src => src.InputArea));
         }
     }

@@ -320,6 +320,76 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (data, total);
         }
 
+        public async Task<IDictionary<long, BillInfoModel>> GetListVoucherBillInfoRows(int voucherTypeId, IList<long> lstfId)
+        {
+            var singleFields = (await (
+               from af in _purchaseOrderDBContext.VoucherAreaField
+               join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
+               join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               select f
+            ).ToListAsync()
+            )
+            .SelectMany(f => !string.IsNullOrWhiteSpace(f.RefTableCode) && ((EnumFormType)f.FormTypeId).IsJoinForm() ?
+             f.RefTableTitle.Split(',').Select(t => $"{f.FieldName}_{t.Trim()}").Union(new[] { f.FieldName }) :
+             new[] { f.FieldName }
+            )
+            .ToHashSet();
+
+            var dataSql = @$"
+
+                SELECT     r.*
+                FROM {VOUCHERVALUEROW_VIEW} r 
+                JOIN @FIds v ON r.VoucherBill_F_Id = v.[Value]
+                WHERE r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
+
+            ";
+           
+            var data = (await _purchaseOrderDBContext.QueryDataTable(dataSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
+
+            var billEntryInfoSql = @$"
+
+                SELECT     r.*
+                FROM {VOUCHERVALUEROW_VIEW} r 
+                JOIN @FIds v ON r.VoucherBill_F_Id = v.[Value]
+                WHERE r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
+
+            ";
+            var billEntryInfos = (await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
+
+            var lst = new Dictionary<long, BillInfoModel>();
+            foreach (var fId in lstfId)
+            {
+                var result = new BillInfoModel();
+
+                var rows = data.Where(r => (long)r["VoucherBill_F_Id"] == fId).ToList();
+
+                var billEntryInfo = billEntryInfos.FirstOrDefault(b => (long)b["VoucherBill_F_Id"] == fId);
+                result.Info = billEntryInfo;
+                if (billEntryInfo != null && billEntryInfo.Count > 0)
+                {
+                    foreach (var row in rows)
+                    {
+                        foreach (var k in row.Keys)
+                        {
+                            if (singleFields.Contains(k))
+                            {
+                                row[k] = billEntryInfo[k];
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    result.Info = rows.FirstOrDefault()?.CloneNew();
+                }
+
+                result.Rows = rows;
+                lst.Add(fId, result);
+            }
+            return lst;
+        }
+
         public async Task<BillInfoModel> GetVoucherBillInfo(int voucherTypeId, long fId)
         {
             var singleFields = (await (

@@ -93,7 +93,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderCodes
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
@@ -108,18 +108,40 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 Value = productionOrderIds
             };
 
-            var result = await GetProductionOrders(string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
+            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
             return result.List;
         }
 
-        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
+        public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, int? factoryDepartmentId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var parammeters = new List<SqlParameter>();
 
             var whereCondition = new StringBuilder();
+
+            if (monthPlanId > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append("v.MonthPlanId = @MonthPlanId ");
+
+                parammeters.Add(new SqlParameter("@MonthPlanId", monthPlanId));
+            }
+
+            if (factoryDepartmentId > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append("v.FactoryDepartmentId = @FactoryDepartmentId ");
+
+                parammeters.Add(new SqlParameter("@FactoryDepartmentId", factoryDepartmentId));
+            }
+
             if (!string.IsNullOrEmpty(keyword))
             {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+
                 whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
@@ -223,6 +245,106 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return (lst, total);
         }
 
+        public async Task<PageData<ProductOrderModelExtra>> GetProductionOrderList(string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, Clause filters = null)
+        {
+            keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>();
+
+            var whereCondition = new StringBuilder();
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
+            }
+            if (fromDate > 0 && toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+                parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
+            }
+
+            if (filters != null)
+            {
+                var suffix = 0;
+                var filterCondition = new StringBuilder();
+                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                if (filterCondition.Length > 2)
+                {
+                    if (whereCondition.Length > 0) whereCondition.Append(" AND ");
+                    whereCondition.Append(filterCondition);
+                }
+            }
+
+            if (string.IsNullOrEmpty(orderByFieldName))
+            {
+                orderByFieldName = "ProductionOrderId";
+                asc = true;
+            }
+
+            var sql = new StringBuilder(
+                @$";WITH tmp AS (
+                    SELECT ");
+
+
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+
+
+            sql.Append(@" g.ProductionOrderId
+                        FROM(
+                            SELECT * FROM vProductionOrderDetail v");
+
+            var totalSql = new StringBuilder(
+                @"SELECT 
+                    COUNT(*) Total
+                FROM (
+                    SELECT v.ProductionOrderId FROM vProductionOrderDetail v ");
+
+            if (whereCondition.Length > 0)
+            {
+                totalSql.Append(" WHERE ");
+                totalSql.Append(whereCondition);
+
+                sql.Append(" WHERE ");
+                sql.Append(whereCondition);
+            }
+            totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
+            sql.Append(
+                   @") g
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
+
+            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var total = 0;
+            // decimal additionResult = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+                // additionResult = (table.Rows[0]["AdditionResult"] as decimal?).GetValueOrDefault();
+            }
+
+            if (size > 0)
+            {
+                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                            OFFSET {(page - 1) * size} ROWS
+                            FETCH NEXT {size}
+                            ROWS ONLY");
+            }
+
+            sql.Append(@")
+                SELECT * FROM tmp t
+                OUTER APPLY(SELECT TOP 1 * 
+                FROM vProductionOrderDetail v  
+                WHERE t.ProductionOrderId = v.ProductionOrderId
+                ORDER BY CAST(HasNewProductionProcessVersion AS int) DESC) u");
+
+
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = resultData.ConvertData<ProductOrderModelExtra>();
+
+            return (lst, total);
+        }
+
         public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId)
         {
             var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
@@ -245,16 +367,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         }
 
 
-        public async Task<ProductionCapacityModel> GetProductionCapacity(long fromDate, long toDate, int? assignDepartmentId)
+        public async Task<ProductionCapacityModel> GetProductionCapacity(int? monthPlanId, long fromDate, long toDate, int? assignDepartmentId)
         {
 
-            var fromDateTime = fromDate.UnixToDateTime();
-            var toDateTime = toDate.UnixToDateTime();
+            IList<ProductionOrderEntity> productionOrders;
 
-            var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
-                    .Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime)
+            if (monthPlanId > 0)
+            {
+                var monthPlanInfo = await _manufacturingDBContext.MonthPlan.FirstOrDefaultAsync(m => m.MonthPlanId == monthPlanId);
+                if (monthPlanInfo == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+                fromDate = monthPlanInfo.StartDate.GetUnix();
+                toDate = monthPlanInfo.EndDate.GetUnix();
+
+                productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                    .Where(po => po.MonthPlanId == monthPlanId)
                     .ToListAsync();
+            }
+            else
+            {
+                var fromDateTime = fromDate.UnixToDateTime();
+                var toDateTime = toDate.UnixToDateTime();
 
+                productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                        .Where(po => po.StartDate <= toDateTime && po.EndDate >= fromDateTime)
+                        .ToListAsync();
+            }
 
             // Lấy thông tin đầu ra và số giờ công cần
             var productionCapacityDetail = await GetProductionWorkLoads(productionOrders, assignDepartmentId);
@@ -789,6 +927,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Count() > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
 
+                if (data.ProductionOrderDetail.Any(x => x.Quantity <= 0))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
+
                 CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
@@ -919,8 +1060,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         .Where(x => x.Count() > 1)
                         .Count() > 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, "Xuất hiện mặt hàng trùng lặp trong lệch sản xuất");
-
-
+                    if (item.ProductionOrderDetail.Any(x => x.Quantity <= 0))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
 
                     //string currentCode = currentConfig.CurrentLastValue.LastCode;
                     do
@@ -982,7 +1123,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if (data.ProductionOrderDetail.Count == 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Cần có thông tin mặt hàng cần sản xuất");
-
+                if (data.ProductionOrderDetail.Any(x => x.Quantity <= 0))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
                 var productionOrder = _manufacturingDBContext.ProductionOrder
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
@@ -1312,8 +1454,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
         }
 
-        public async Task<bool> EditDate(long[] productionOrderDetailId, long startDate, long planEndDate, long endDate)
+        public async Task<bool> EditDate(UpdateDatetimeModel data)
         {
+            long[] productionOrderDetailIds = data.ProductionOrderDetailIds;
+            long startDate = data.StartDate;
+            long planEndDate = data.PlanEndDate;
+            long endDate = data.EndDate;
+
+
+
             if (startDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
             if (endDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc sản xuất.");
             if (planEndDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày kết thúc hàng trắng.");
@@ -1321,7 +1470,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (planEndDate > endDate) throw new BadRequestException(GeneralCode.InvalidParams, "Ngày kết thúc hàng trắng không được lớn hơn ngày kết thúc. Vui lòng chọn lại kế hoạch sản xuất!");
 
             var productionOrderDetails = await _manufacturingDBContext.ProductionOrderDetail
-                .Where(pod => productionOrderDetailId.Contains(pod.ProductionOrderDetailId))
+                .Where(pod => productionOrderDetailIds.Contains(pod.ProductionOrderDetailId))
                 .ToListAsync();
 
             var productionOrderIds = productionOrderDetails.Select(pod => pod.ProductionOrderId).Distinct().ToList();
@@ -1347,6 +1496,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     productionOrder.StartDate = startDate.UnixToDateTime().Value;
                     productionOrder.EndDate = endDate.UnixToDateTime().Value;
                     productionOrder.PlanEndDate = planEndDate.UnixToDateTime().Value;
+                    productionOrder.MonthPlanId = data.MonthPlanId;
+                    productionOrder.FromWeekPlanId = data.FromWeekPlanId;
+                    productionOrder.ToWeekPlanId = data.ToWeekPlanId;
                 }
                 _manufacturingDBContext.SaveChanges();
 
@@ -1383,6 +1535,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 entity.IsEnablePlanEndDate = model.IsEnablePlanEndDate;
                 entity.NumberOfDayPed = model.NumberOfDayPed;
+                entity.IsWeekPlanSplitByWeekOfYear = model.IsWeekPlanSplitByWeekOfYear;
             };
 
             await _manufacturingDBContext.SaveChangesAsync();

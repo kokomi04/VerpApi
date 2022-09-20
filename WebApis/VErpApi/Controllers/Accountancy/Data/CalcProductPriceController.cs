@@ -131,9 +131,36 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpDelete]
         [Route("DeletedFixExchangeRateByOrder")]
-        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        public async Task<bool> DeletedFixExchangeRateByOrder([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
         {
             return await _calcBillService.DeletedFixExchangeRateByOrder(fromDate, toDate, currency, tk);
+        }
+
+
+
+
+        [HttpGet]
+        [Route("CalcFixExchangeRateByLoanCovenant")]
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRateByLoanCovenant([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.CalcFixExchangeRateByLoanCovenant(fromDate, toDate, currency, tk);
+        }
+
+
+        [HttpGet]
+        [Route("CheckExistedFixExchangeRateByLoanCovenant")]
+        public async Task<bool> CheckExistedFixExchangeRateByLoanCovenant([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.CheckExistedFixExchangeRateByLoanCovenant(fromDate, toDate, currency, tk);
+        }
+
+
+        [HttpDelete]
+        [Route("DeleteFixExchangeRateByLoanCovenant")]
+        public async Task<bool> DeleteFixExchangeRateByLoanCovenant([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string tk)
+        {
+            return await _calcBillService.DeleteFixExchangeRateByLoanCovenant(fromDate, toDate, currency, tk);
+            
         }
     }
 }

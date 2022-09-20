@@ -73,12 +73,12 @@ namespace Verp.Services.ReportConfig.Model
 
         public int ReportModuleTypeId { get; set; }
 
-        public void Mapping(Profile profile) => profile.CreateMapIgnoreNoneExist<ReportType, ReportTypeModel>()
+        public void Mapping(Profile profile) => profile.CreateMapCustom<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => ParseBscConfig(v.BscConfig)))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonDeserialize<ReportDisplayConfigModel>()))
        .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
-       .ReverseMapIgnoreNoneExist()
+       .ReverseMapCustom()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonSerialize()))

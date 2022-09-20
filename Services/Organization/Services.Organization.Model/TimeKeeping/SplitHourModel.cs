@@ -16,12 +16,12 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<SplitHour, SplitHourModel>()
+            profile.CreateMapCustom<SplitHour, SplitHourModel>()
             .ForMember(m => m.StartTimeOn, v => v.MapFrom(m => m.StartTimeOn.TotalSeconds))
             .ForMember(m => m.EndTimeOn, v => v.MapFrom(m => m.EndTimeOn.TotalSeconds))
             .ForMember(m => m.StartTimeOut, v => v.MapFrom(m => m.StartTimeOut.TotalSeconds))
             .ForMember(m => m.EndTimeOut, v => v.MapFrom(m => m.EndTimeOut.TotalSeconds))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.StartTimeOn, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOn)))
             .ForMember(m => m.EndTimeOn, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOn)))
             .ForMember(m => m.StartTimeOut, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOut)))

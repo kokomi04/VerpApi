@@ -19,9 +19,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<RefOutsourcePartRequestModel, RefOutsourcePartRequest>()
+            profile.CreateMapCustom<RefOutsourcePartRequestModel, RefOutsourcePartRequest>()
             .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.UnixToDateTime()))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(m => m.OutsourcePartRequestDetailFinishDate, v => v.MapFrom(m => m.OutsourcePartRequestDetailFinishDate.GetUnix()));
         }
     }

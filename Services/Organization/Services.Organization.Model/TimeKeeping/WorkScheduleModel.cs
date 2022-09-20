@@ -36,9 +36,9 @@ namespace Services.Organization.Model.TimeKeeping
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMapIgnoreNoneExist<WorkSchedule, WorkScheduleModel>()
+            profile.CreateMapCustom<WorkSchedule, WorkScheduleModel>()
             .ForMember(x => x.ArrangeShifts, v => v.MapFrom(m => m.ArrangeShift))
-            .ReverseMapIgnoreNoneExist()
+            .ReverseMapCustom()
             .ForMember(x => x.ArrangeShift, v => v.Ignore());
         }
     }

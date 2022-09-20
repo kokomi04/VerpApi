@@ -23,30 +23,30 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("steps")]
-        public async Task<IList<StepModel>> CreateStep([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<IList<StepModel>> GetSteps([FromQuery] int? monthPlanId, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _reportService.GetSteps(fromDate, toDate);
+            return await _reportService.GetSteps(monthPlanId, fromDate, toDate);
         }
 
         [HttpPost]
         [Route("ProductionProgress")]
-        public async Task<IList<StepProgressModel>> GetProductionProgressReport([FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] int[] stepIds)
+        public async Task<IList<StepProgressModel>> GetProductionProgressReport([FromQuery] int? monthPlanId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromBody] int[] stepIds)
         {
-            return await _reportService.GetProductionProgressReport(fromDate, toDate, stepIds);
+            return await _reportService.GetProductionProgressReport(monthPlanId, fromDate, toDate, stepIds);
         }
 
         [HttpGet]
         [Route("ProductionOrderStepProgress")]
-        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<ProductionOrderStepModel> GetProductionOrderStepProgress([FromQuery] int? monthPlanId, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _reportService.GetProductionOrderStepProgress(fromDate, toDate);
+            return await _reportService.GetProductionOrderStepProgress(monthPlanId, fromDate, toDate);
         }
 
         [HttpGet]
         [Route("ProductionOrder")]
-        public async Task<IList<ProductionReportModel>> GetProductionOrderReport([FromQuery] long fromDate, [FromQuery] long toDate)
+        public async Task<IList<ProductionReportModel>> GetProductionOrderReport([FromQuery] int? monthPlanId, [FromQuery] long fromDate, [FromQuery] long toDate)
         {
-            return await _reportService.GetProductionOrderReport(fromDate, toDate);
+            return await _reportService.GetProductionOrderReport(monthPlanId, fromDate, toDate);
         }
 
         [HttpGet]
