@@ -526,95 +526,111 @@ namespace Verp.Services.ReportConfig.Service.Implement
             IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().OrderBy(col => col.SortOrder).ToList();//.Where(col => !col.IsHidden)
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
 
-            var calSumColumns = columns.Where(c => c.IsCalcSum);
 
-            foreach (var column in calSumColumns)
-            {
-                totals.Add(column.Alias, 0M);
-            }
-
-            var groupLevel1Alias = columns.Where(c => c.IsGroupRow).Select(c => c.Alias).ToHashSet();
-            var isSumByGroup = groupLevel1Alias.Count > 0;
 
             var totalRecord = 0;
             var pagedData = new List<NonCamelCaseDictionary>();
 
+            var calSumColumns = columns.Where(c => c.IsCalcSum);
 
-            Action<NonCamelCaseDictionary, ReportColumnModel> calcSum = (NonCamelCaseDictionary row, ReportColumnModel column) =>
+            if (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value)
             {
-                var colData = row[column.Alias];
+                var groupLevel1Alias = columns.Where(c => c.IsGroupRow).Select(c => c.Alias).ToHashSet();
+                var isSumByGroup = groupLevel1Alias.Count > 0;
 
-                if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                foreach (var column in calSumColumns)
                 {
-                    var decimalValue = Convert.ToDecimal(colData);
-
-                    totals[column.Alias] += decimalValue;
+                    totals.Add(column.Alias, 0M);
                 }
-            };
 
-
-            if (isSumByGroup)
-            {
-                var groupLevel1 = data.GroupBy(row => string.Join("|", groupLevel1Alias.Select(columnAlias => row[columnAlias])));
-
-                totalRecord = groupLevel1.Count();
-
-                var groupLevel2Alias = columns.Where(c => c.isGroupRowLevel2).Select(c => c.Alias).ToHashSet();
-
-                foreach (var g1 in groupLevel1)
+                Action<NonCamelCaseDictionary, ReportColumnModel> calcSum = (NonCamelCaseDictionary row, ReportColumnModel column) =>
                 {
-                    var groupLevel2 = g1.GroupBy(row => string.Join("|", groupLevel2Alias.Select(columnAlias => row[columnAlias])));
-                    foreach (var column in calSumColumns)
+                    var colData = row[column.Alias];
+
+                    if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
                     {
-                        if (groupLevel1Alias.Contains(column.Alias))
+                        var decimalValue = Convert.ToDecimal(colData);
+
+                        totals[column.Alias] += decimalValue;
+                    }
+                };
+
+
+                if (isSumByGroup)
+                {
+                    var groupLevel1 = data.GroupBy(row => string.Join("|", groupLevel1Alias.Select(columnAlias => row[columnAlias])));
+
+                    totalRecord = groupLevel1.Count();
+
+                    var groupLevel2Alias = columns.Where(c => c.isGroupRowLevel2).Select(c => c.Alias).ToHashSet();
+
+                    foreach (var g1 in groupLevel1)
+                    {
+                        var groupLevel2 = g1.GroupBy(row => string.Join("|", groupLevel2Alias.Select(columnAlias => row[columnAlias])));
+                        foreach (var column in calSumColumns)
                         {
-                            calcSum(g1.First(), column);
-                        }
-                        else if (groupLevel2Alias.Contains(column.Alias))
-                        {
-                            foreach (var g2 in groupLevel2)
+                            if (groupLevel1Alias.Contains(column.Alias))
                             {
-                                calcSum(g2.First(), column);
+                                calcSum(g1.First(), column);
                             }
-                        }
-                        else
-                        {
-                            foreach (var row in g1)
+                            else if (groupLevel2Alias.Contains(column.Alias))
                             {
-                                calcSum(row, column);
+                                foreach (var g2 in groupLevel2)
+                                {
+                                    calcSum(g2.First(), column);
+                                }
+                            }
+                            else
+                            {
+                                foreach (var row in g1)
+                                {
+                                    calcSum(row, column);
+                                }
                             }
                         }
                     }
+
+
+                    pagedData = groupLevel1.Skip((page - 1) * size).Take(size).SelectMany(g => g).ToList();
                 }
-
-
-                pagedData = groupLevel1.Skip((page - 1) * size).Take(size).SelectMany(g => g).ToList();
-            }
-            else
-            {
-                totalRecord = data.Count;
-
-                foreach (var row in data)
+                else
                 {
-                    foreach (var column in calSumColumns)
+                    totalRecord = data.Count;
+
+                    foreach (var row in data)
                     {
-                        calcSum(row, column);
+                        foreach (var column in calSumColumns)
+                        {
+                            calcSum(row, column);
+                        }
                     }
+
+                    pagedData = data.Skip((page - 1) * size).Take(size).ToList();
+
                 }
-
-                pagedData = data.Skip((page - 1) * size).Take(size).ToList();
-
             }
 
             //var total = data.Count;
             if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value && data.Count > 0 && data[0].ContainsKey("TotalRecord"))
             {
                 totalRecord = Convert.ToInt32(data[0]["TotalRecord"]);
+
+                totals = new NonCamelCaseDictionary<decimal>();
+                foreach (var column in calSumColumns)
+                {
+                    var sumColum = $"{column.Alias}_Sum";
+                    if (data[0].ContainsKey(sumColum))
+                    {
+                        totals.Add(column.Alias, Convert.ToDecimal(data[0][sumColum]));
+                    }
+
+                }
+
             }
 
-            pagedData = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? pagedData : data;
+            var lst = size > 0 && (!reportInfo.IsDbPaging.HasValue || !reportInfo.IsDbPaging.Value) ? pagedData : data;
 
-            return (new PageDataTable() { List = pagedData, Total = totalRecord }, totals);
+            return (new PageDataTable() { List = lst, Total = totalRecord }, totals);
         }
 
         //class ColumnGroupHasBeenSum : HashSet<string>
@@ -969,7 +985,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             var fromDate = "";
             var toDate = "";
-            foreach(var key in filters.Filters.Keys)
+            foreach (var key in filters.Filters.Keys)
             {
                 if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
                 {
