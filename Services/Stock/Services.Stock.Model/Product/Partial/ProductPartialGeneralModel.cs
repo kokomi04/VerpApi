@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Services.Stock.Model.Product.Partial
@@ -49,5 +51,16 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public bool? IsMaterials { get; set; }
         public int? TargetProductivityId { get; set; }
         public bool? ConfirmFlag { get; set; }
+    }
+
+    public class ProductPartialGeneralUpdateWithExtraModel : ProductPartialGeneralModel
+    {
+        public IList<ProductPartialGeneralProductivityUpdateModel> ProductTargetProductivities { get; set; }
+    }
+
+    public class ProductPartialGeneralProductivityUpdateModel
+    {
+        public int ProductId { get; set; }
+        public int? TargetProductivityId { get; set; }
     }
 }
