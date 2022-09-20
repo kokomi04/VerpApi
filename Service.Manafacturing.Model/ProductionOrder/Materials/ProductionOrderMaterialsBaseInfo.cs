@@ -2,6 +2,7 @@
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionOrderMaterials;
 
 namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
 {
@@ -17,7 +18,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public long? ParentId { get; set; }
         public bool IsReplacement { get; set; }
         public long ProductionStepLinkDataId { get; set; }
-        public EnumProductionOrderMaterials.EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
+        public EnumInventoryRequirementStatus InventoryRequirementStatusId { get; set; }
+        public long? ProductionOrderMaterialSetId { get; set; }
         public int ProductMaterialsConsumptionGroupId { get; set; }
     }
 

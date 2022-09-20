@@ -24,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
     public class ProductionProgressService : StatusProcessService, IProductionProgressService
     {
 
-        private readonly IProductionHandoverService _productionHandoverService;
+        private readonly IProductionHandoverReceiptService _productionHandoverReceiptService;
         private readonly IMaterialAllocationService _materialAllocationService;
         private readonly IProductionOrderService _productionOrderService;
         private readonly ManufacturingDBContext _manufacturingDBContext;
@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
 
-        public ProductionProgressService(IProductionHandoverService productionHandoverService,
+        public ProductionProgressService(IProductionHandoverReceiptService productionHandoverReceiptService,
             IMaterialAllocationService materialAllocationService,
             IProductionOrderService productionOrderService,
             ManufacturingDBContext manufacturingDBContext,
@@ -42,7 +42,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             ILogger<ProductionProgressService> logger,
             IProductionAssignmentService productionAssignmentService) : base(manufacturingDBContext, activityLogService, logger, mapper)
         {
-            _productionHandoverService = productionHandoverService;
+            _productionHandoverReceiptService = productionHandoverReceiptService;
             _materialAllocationService = materialAllocationService;
             _productionOrderService = productionOrderService;
             _manufacturingDBContext = manufacturingDBContext;
@@ -57,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode }, true);
 
-            await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
+            await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
 
 
             var productionOrder = _manufacturingDBContext.ProductionOrder
@@ -133,9 +133,36 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
                 }
 
-                if (endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
+                var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
+
+
+                var inputInventories = data.Inventories;
+
+                bool isFinish = true;
+
+                foreach (var productionOrderDetail in prodDetails)
+                {
+                    var quantity = inputInventories
+                        .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+                        .Sum(i => i.ActualQuantity);
+
+                    if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
+                    {
+                        isFinish = false;
+                        break;
+                    }
+                }
+               
+
+                if (isFinish || endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
                 {
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Completed;
+
+                    if (assignments.Any(a => !(a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
+                    {
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
+                    }
+
                 }
                 else
                 {
@@ -144,31 +171,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.OverDeadline;
                     }
-
-                    var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
-
-
-                    var inputInventories = data.Inventories;
-
-                    bool isFinish = true;
-
-                    foreach (var productionOrderDetail in prodDetails)
-                    {
-                        var quantity = inputInventories
-                            .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                            .Sum(i => i.ActualQuantity);
-
-                        if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
-                        {
-                            isFinish = false;
-                            break;
-                        }
-                    }
-                    if (isFinish)
-                    {
-                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
-                    }
+                    
                 }
+
+                
 
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {

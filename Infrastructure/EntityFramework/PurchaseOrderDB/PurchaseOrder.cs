@@ -21,13 +21,13 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string PurchaseOrderCode { get; set; }
         public int CustomerId { get; set; }
         public DateTime? Date { get; set; }
-        public string OtherPolicy { get; set; }
+        public string PaymentInfo { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public int? DeliveryUserId { get; set; }
         public int? DeliveryCustomerId { get; set; }
         public string DeliveryDestination { get; set; }
-        public string Requirement { get; set; }
-        public string DeliveryPolicy { get; set; }
+        public string Content { get; set; }
+        public string AdditionNote { get; set; }
         public int PurchaseOrderStatusId { get; set; }
         public int? PoProcessStatusId { get; set; }
         public decimal DeliveryFee { get; set; }
@@ -55,6 +55,9 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public string DeliveryMethod { get; set; }
         public string PaymentMethod { get; set; }
         public string AttachmentBill { get; set; }
+        public string Requirement { get; set; }
+        public string DeliveryPolicy { get; set; }
+        public string OtherPolicy { get; set; }
 
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
         public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; }

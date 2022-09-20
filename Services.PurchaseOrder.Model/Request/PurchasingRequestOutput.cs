@@ -31,7 +31,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public long? ProductionOrderId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
-      
+        public long? ProductionOrderMaterialSetId { get; set; }
+
+
 
         public long? NeedDate { get; set; }
 

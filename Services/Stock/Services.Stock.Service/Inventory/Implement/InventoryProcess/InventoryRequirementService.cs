@@ -676,36 +676,29 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             await ValidateBill(billDate, oldDate);
         }
 
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirementByProductionOrderId(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int productMaterialsConsumptionGroupId)
+        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int? productMaterialsConsumptionGroupId, long? productionOrderMaterialSetId)
         {
-            var inventoryRequirements = await _stockDbContext.InventoryRequirement
+            var query = _stockDbContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
                 .Include(r => r.InventoryRequirementDetail)
                 .ThenInclude(d => d.ProductUnitConversion)
                 .Where(r => r.InventoryTypeId == (int)inventoryType
                     && r.InventoryRequirementDetail.Any(rd => rd.ProductionOrderCode == productionOrderCode)
-                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete)
-                .ToListAsync();
+                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
 
-            var entity = inventoryRequirements.FirstOrDefault(x => x.ProductMaterialsConsumptionGroupId.GetValueOrDefault() == productMaterialsConsumptionGroupId);
-
-            if (entity == null)
-                return null;
-
-            var model = _mapper.Map<InventoryRequirementOutputModel>(entity);
-
-            var fileIds = model.InventoryRequirementFile.Select(q => q.FileId).ToList();
-
-            var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
-
-            if (attachedFiles == null)
-                attachedFiles = new List<FileToDownloadInfo>();
-
-            foreach (var item in model.InventoryRequirementFile)
+            if (productMaterialsConsumptionGroupId.HasValue)
             {
-                item.FileToDownloadInfo = attachedFiles.FirstOrDefault(f => f.FileId == item.FileId);
+                query = query.Where(x => x.ProductMaterialsConsumptionGroupId == productMaterialsConsumptionGroupId);
             }
-            return model;
+
+            if (productionOrderMaterialSetId.HasValue)
+            {
+                query = query.Where(x => x.ProductionOrderMaterialSetId == productionOrderMaterialSetId);
+            }
+            var lst = await query.ToListAsync();
+
+            return lst.Select(r => _mapper.Map<InventoryRequirementOutputModel>(r)).ToList();
+
         }
 
 

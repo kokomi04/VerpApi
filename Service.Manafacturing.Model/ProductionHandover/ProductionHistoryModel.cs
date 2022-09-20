@@ -7,19 +7,18 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHistoryModel : ProductionHistoryInputModel
     {
-        public long? ProductionHistoryId { get; set; }
+        
+        public long ProductionHandoverReceiptId { get; set; }
+        public string ProductionHandoverReceiptCode { get; set; }
+
         public int CreatedByUserId { get; set; }
 
-        public override void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHistory, ProductionHistoryModel>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (EnumProductionProcess.EnumProductionStepLinkDataObjectType)m.ObjectTypeId))
-                .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()));
-        }
+      
     }
 
     public class ProductionHistoryInputModel : IMapFrom<ProductionHistory>
     {
+        public long? ProductionHistoryId { get; set; }
         public decimal ProductionQuantity { get; set; }
         public decimal? OvertimeProductionQuantity { get; set; }
         public long ObjectId { get; set; }
@@ -28,11 +27,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ProductionStepId { get; set; }
         public long? Date { get; set; }
         public string Note { get; set; }
-        public virtual void Mapping(Profile profile)
-        {
-            profile.CreateMapCustom<ProductionHistoryInputModel, ProductionHistory>()
-                .ForMember(m => m.ObjectTypeId, v => v.MapFrom(m => (int)m.ObjectTypeId))
-                .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.UnixToDateTime()));
-        }
+        public long ProductionOrderId { get; set; }
+       
     }
 }

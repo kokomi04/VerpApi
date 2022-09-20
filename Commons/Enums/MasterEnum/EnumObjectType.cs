@@ -261,8 +261,13 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Phân công sản xuất")]
         ProductionAssignment = 73,
         ProductionProcess = 74,
+        
         [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
         ProductionHandover = 75,
+
+        [Description("Phiếu Bàn giao công đoạn / Yêu cầu xuất kho")]
+        ProductionHandoverReceipt = 7501,
+
         [Description("Lịch sử sản xuất")]
         ProductionHistory = 76,
         [Description("Nhân công sản xuất")]

@@ -32,6 +32,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
+        public virtual DbSet<ProductionHandoverReceipt> ProductionHandoverReceipt { get; set; }
         public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
         public virtual DbSet<ProductionHumanResource> ProductionHumanResource { get; set; }
         public virtual DbSet<ProductionMaterialsRequirement> ProductionMaterialsRequirement { get; set; }
@@ -40,6 +41,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionOrderAttachment> ProductionOrderAttachment { get; set; }
         public virtual DbSet<ProductionOrderConfiguration> ProductionOrderConfiguration { get; set; }
         public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
+        public virtual DbSet<ProductionOrderMaterialSet> ProductionOrderMaterialSet { get; set; }
+        public virtual DbSet<ProductionOrderMaterialSetConsumptionGroup> ProductionOrderMaterialSetConsumptionGroup { get; set; }
         public virtual DbSet<ProductionOrderMaterials> ProductionOrderMaterials { get; set; }
         public virtual DbSet<ProductionOrderMaterialsConsumption> ProductionOrderMaterialsConsumption { get; set; }
         public virtual DbSet<ProductionOrderStatus> ProductionOrderStatus { get; set; }
@@ -331,6 +334,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHandover_FromProductionStep");
 
+                entity.HasOne(d => d.ProductionHandoverReceipt)
+                    .WithMany(p => p.ProductionHandover)
+                    .HasForeignKey(d => d.ProductionHandoverReceiptId)
+                    .HasConstraintName("FK_ProductionHandover_ProductionHandoverReceipt");
+
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionHandover)
                     .HasForeignKey(d => d.ProductionOrderId)
@@ -344,11 +352,25 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_ProductionHandover_ToProductionStep");
             });
 
+            modelBuilder.Entity<ProductionHandoverReceipt>(entity =>
+            {
+                entity.HasIndex(e => new { e.SubsidiaryId, e.ProductionHandoverReceiptCode }, "IX_ProductionHandoverReceipt_ProductionHandoverReceiptCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.ProductionHandoverReceiptCode).HasMaxLength(128);
+            });
+
             modelBuilder.Entity<ProductionHistory>(entity =>
             {
                 entity.Property(e => e.OvertimeProductionQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.ProductionQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.ProductionHandoverReceipt)
+                    .WithMany(p => p.ProductionHistory)
+                    .HasForeignKey(d => d.ProductionHandoverReceiptId)
+                    .HasConstraintName("FK_ProductionHistory_ProductionHandoverReceipt");
 
                 entity.HasOne(d => d.ProductionOrder)
                     .WithMany(p => p.ProductionHistory)
@@ -494,13 +516,43 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasConstraintName("FK_ProductionOrderDetail_ProductionOrder");
             });
 
+            modelBuilder.Entity<ProductionOrderMaterialSet>(entity =>
+            {
+                entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+
+                entity.HasOne(d => d.ProductionOrder)
+                    .WithMany(p => p.ProductionOrderMaterialSet)
+                    .HasForeignKey(d => d.ProductionOrderId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionOrderMaterialSet_ProductionOrder");
+            });
+
+            modelBuilder.Entity<ProductionOrderMaterialSetConsumptionGroup>(entity =>
+            {
+                entity.HasKey(e => new { e.ProductionOrderMaterialSetId, e.ProductMaterialsConsumptionGroupId });
+
+                entity.HasOne(d => d.ProductionOrderMaterialSet)
+                    .WithMany(p => p.ProductionOrderMaterialSetConsumptionGroup)
+                    .HasForeignKey(d => d.ProductionOrderMaterialSetId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_ProductionOrderMaterialSetConsumptionGroup_ProductionOrderMaterialSet");
+            });
+
             modelBuilder.Entity<ProductionOrderMaterials>(entity =>
             {
                 entity.Property(e => e.ConversionRate)
                     .HasColumnType("decimal(32, 12)")
                     .HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.IdClient).HasMaxLength(128);
+
                 entity.Property(e => e.InventoryRequirementStatusId).HasDefaultValueSql("((1))");
+
+                entity.Property(e => e.ParentIdClient).HasMaxLength(128);
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
@@ -515,10 +567,14 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderMaterials_ProductionOrder");
 
+                entity.HasOne(d => d.ProductionOrderMaterialSet)
+                    .WithMany(p => p.ProductionOrderMaterials)
+                    .HasForeignKey(d => d.ProductionOrderMaterialSetId)
+                    .HasConstraintName("FK_ProductionOrderMaterials_ProductionOrderMaterialSet");
+
                 entity.HasOne(d => d.ProductionStepLinkData)
                     .WithMany(p => p.ProductionOrderMaterials)
                     .HasForeignKey(d => d.ProductionStepLinkDataId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionOrderMaterials_ProductionStepLinkData");
             });
 

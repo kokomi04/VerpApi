@@ -171,4 +171,7 @@
   <data name="UpdateProcessInfo" xml:space="preserve">
     <value>Cập nhật TT quy trình sản xuất mặt hàng "{0}"</value>
   </data>
+  <data name="UpdateProductProducitity" xml:space="preserve">
+    <value>Cập nhật năng suất mục tiêu mặt hàng "{0}" khi cập nhật "{1}"</value>
+  </data>
 </root>

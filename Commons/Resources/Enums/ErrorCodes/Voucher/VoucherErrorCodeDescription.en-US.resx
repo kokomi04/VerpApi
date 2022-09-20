@@ -139,7 +139,7 @@
     <value>The bill type was not found</value>
   </data>
   <data name="UniqueValueAlreadyExisted" xml:space="preserve">
-    <value>The unique field {0} value already exists</value>
+    <value>The unique field {0} value "{1}" already exists</value>
   </data>
   <data name="VoucherActionNotFound" xml:space="preserve">
     <value>The action was not found</value>

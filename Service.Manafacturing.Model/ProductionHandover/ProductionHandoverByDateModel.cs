@@ -1,4 +1,6 @@
-﻿using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+﻿using System;
+using VErp.Commons.Enums.Manafacturing;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -19,6 +21,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public decimal AssignmentQuantity { get; set; }
         public decimal Quantity { get; set; }
         public long Date { get; set; }
-        public string Note { get; set; }
+        public string Note { get; set; }     
+    }
+
+    public class ProductionHandoverReceiptByDateModel: ProductionHandoverByDateModel
+    {        
+        public long ProductionHandoverReceiptId { get; set; }
+        public string ProductionHandoverReceiptCode { get; set; }
+        public EnumHandoverStatus HandoverStatusId { get; set; }        
     }
 }

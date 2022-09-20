@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -146,7 +147,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
                 whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
-                whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
+                whereCondition.Append("OR v.OrderCode LIKE @Keyword ");
+                whereCondition.Append("OR v.Description LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
 
@@ -214,7 +216,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc, g.IsUpdateQuantity, g.HasNewProductionProcessVersion ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -253,7 +255,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var whereCondition = new StringBuilder();
             if (!string.IsNullOrEmpty(keyword))
             {
-                whereCondition.Append("(v.ProductionOrderCode LIKE @KeyWord ");
+                whereCondition.Append("( v.ProductionOrderCode LIKE @KeyWord ");
+                whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
+                whereCondition.Append("OR v.ProductName LIKE @Keyword ");
+                whereCondition.Append("OR v.CustomerPO LIKE @Keyword ");
+                whereCondition.Append("OR v.Description LIKE @Keyword ");
+                whereCondition.Append("OR v.OrderCode LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
             if (fromDate > 0 && toDate > 0)
@@ -312,7 +319,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus ");
+	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -1513,6 +1520,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "UpdateProductOrderDateTime");
                 throw;
             }
+        }
+        public async Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> updateDatas, List<long> productionOrderIds)
+        {
+            if (productionOrderIds.Count > 0)
+            {
+                var sql = $"SELECT * FROM ProductionOrder p JOIN @PIds v ON p.ProductionOrderId = v.[Value]";
+                var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
+                if (resultData.Rows.Count > 0)
+                {
+                    if (updateDatas.Any(x => x.FieldName == "ProductionOrderCode"))
+                    {
+                        throw new BadRequestException($@"Không thể sửa đồng loạt giá trị cột Mã LSX");
+                    }
+                    var sqlParams = new List<SqlParameter>();
+                    sqlParams.Add(productionOrderIds.ToSqlParameter("@productionOrderIds"));
+                    foreach (ProductionOrderPropertyUpdate column in updateDatas)
+                    {
+                        sqlParams.Add(new SqlParameter("@" + column.FieldName, (resultData.Rows[0][column.FieldName].GetType().GetDataType()).GetSqlValue(column.NewValue)));
+                    }
+                    var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId IN (SELECT [Value] FROM @productionOrderIds)";
+                    await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
+                }else
+                    throw new BadRequestException(GeneralCode.ItemNotFound);
+            }
+            else
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            return true;
         }
 
         #region Production Order Configuration
