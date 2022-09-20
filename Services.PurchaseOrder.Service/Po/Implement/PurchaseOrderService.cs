@@ -817,16 +817,20 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
+                    if (item.SubCalculations != null)
                     {
-                        PrimaryQuantity = x.PrimaryQuantity,
-                        ProductBomId = x.ProductBomId,
-                        PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
-                        PrimaryUnitPrice = x.PrimaryUnitPrice,
-                        UnitConversionId = x.UnitConversionId
-                    });
+                        var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
+                        {
+                            PrimaryQuantity = x.PrimaryQuantity,
+                            ProductBomId = x.ProductBomId,
+                            PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
+                            PrimaryUnitPrice = x.PrimaryUnitPrice,
+                            UnitConversionId = x.UnitConversionId
+                        });
 
-                    await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+                        await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+                    }
+
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     if (item.OutsourceMappings.Count > 0)
