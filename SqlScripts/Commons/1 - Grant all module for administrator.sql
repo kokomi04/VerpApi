@@ -1,3 +1,5 @@
+USE MasterDB
+GO
 DECLARE @CategoryDataModuleId INT = 702;
 DECLARE @InputTypeModuleId INT = 802;
 DECLARE @SalesBillModuleId INT = 902;

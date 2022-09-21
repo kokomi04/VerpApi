@@ -436,7 +436,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         {
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
-                var sets = await _manufacturingDBContext.ProductionOrderMaterialSet.Include(s => s.ProductionOrderMaterialSetConsumptionGroup).ToListAsync();
+                var sets = await _manufacturingDBContext.ProductionOrderMaterialSet.Where(s => s.ProductionOrderId == productionOrderId)
+                    .Include(s => s.ProductionOrderMaterialSetConsumptionGroup).ToListAsync();
                 var groups = sets.SelectMany(s => s.ProductionOrderMaterialSetConsumptionGroup).ToList();
 
                 _manufacturingDBContext.ProductionOrderMaterialSetConsumptionGroup.RemoveRange(groups);
