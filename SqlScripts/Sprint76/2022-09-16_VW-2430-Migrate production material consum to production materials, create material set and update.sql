@@ -92,6 +92,8 @@ WHERE NOT EXISTS(
 	AND c.ProductMaterialsConsumptionGroupId = m.ProductMaterialsConsumptionGroupId
 );
 
+UPDATE dbo.ProductionOrderMaterials SET ProductMaterialsConsumptionGroupId = 0 WHERE ProductMaterialsConsumptionGroupId IS NULL;
+
 INSERT INTO dbo.ProductionOrderMaterials
 (
 	ProductionOrderMaterialsId,
@@ -167,7 +169,7 @@ DECLARE @Set TABLE (
 	[ProductionOrderMaterialSetId] BIGINT NOT NULL,
 	[Title] NVARCHAR(128) NULL,
 	[ProductionOrderId] BIGINT NOT NULL,
-	[ProductionOrderCode] NVARCHAR(128),
+	[ProductionOrderCode] NVARCHAR(128) NULL,
 	ProductMaterialsConsumptionGroupId INT NULL,
 	[IsMultipleConsumptionGroupId] BIT NOT NULL,
 	[CreatedByUserId] INT NOT NULL,
@@ -246,6 +248,7 @@ FROM @Set s
 		AND s.ProductMaterialsConsumptionGroupId = m.ProductMaterialsConsumptionGroupId
 WHERE m.ProductionOrderMaterialSetId IS NULL;
 print 'Done UPDATE @Set'
+
 
 UPDATE m
 	SET m.ProductionOrderMaterialSetId = s.ProductionOrderMaterialSetId
