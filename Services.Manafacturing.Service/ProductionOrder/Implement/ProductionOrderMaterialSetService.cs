@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -139,7 +141,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             await _manufacturingDBContext.SaveChangesAsync();
 
+
             await trans.CommitAsync();
+
+            await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật bảng tính nhu cầu vật tư {productionOrder.ProductionOrderCode}", model.JsonSerialize());
+
             return true;
         }
 
@@ -436,7 +442,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         {
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
-                var sets = await _manufacturingDBContext.ProductionOrderMaterialSet.Include(s => s.ProductionOrderMaterialSetConsumptionGroup).ToListAsync();
+                var sets = await _manufacturingDBContext.ProductionOrderMaterialSet.Where(s => s.ProductionOrderId == productionOrderId)
+                    .Include(s => s.ProductionOrderMaterialSetConsumptionGroup).ToListAsync();
                 var groups = sets.SelectMany(s => s.ProductionOrderMaterialSetConsumptionGroup).ToList();
 
                 _manufacturingDBContext.ProductionOrderMaterialSetConsumptionGroup.RemoveRange(groups);

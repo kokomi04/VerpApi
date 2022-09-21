@@ -1,3 +1,5 @@
+USE MasterDB
+GO
 BEGIN TRY
   BEGIN TRAN
 
