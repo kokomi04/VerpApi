@@ -373,6 +373,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
+        public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds)
+        {
+            var productionOrderInfos = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                  .Where(po => productionOrderIds.Contains(po.ProductionOrderId))
+                  .ToListAsync();
+
+         
+            var workLoads = await GetProductionWorkLoads(productionOrderInfos, null);
+
+           
+            return workLoads.SelectMany(production =>
+                                        production.Value.SelectMany(step =>
+                                                                        step.Value.SelectMany(group =>
+                                                                                                    group.Details.Select(v => (ProductionStepWorkloadModel)v)
+                                                                                              )
+                                                                    )
+                                    )
+                .ToList();
+        }
+
 
         public async Task<ProductionCapacityModel> GetProductionCapacity(int? monthPlanId, long fromDate, long toDate, int? assignDepartmentId)
         {
@@ -1541,7 +1561,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                     var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId IN (SELECT [Value] FROM @productionOrderIds)";
                     await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
-                }else
+                }
+                else
                     throw new BadRequestException(GeneralCode.ItemNotFound);
             }
             else
