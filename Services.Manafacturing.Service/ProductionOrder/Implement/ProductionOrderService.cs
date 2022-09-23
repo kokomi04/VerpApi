@@ -817,6 +817,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
                             return new ProductionStepWorkloadAssignModel
                             {
+                                StepId = d.StepId,
                                 ProductionStepId = d.ProductionStepId,
                                 ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
