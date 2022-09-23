@@ -373,24 +373,30 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 .ToList();
         }
 
-        public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds)
+        public async Task<IList<ProductionOrderStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds)
         {
             var productionOrderInfos = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
                   .Where(po => productionOrderIds.Contains(po.ProductionOrderId))
                   .ToListAsync();
 
-         
+
             var workLoads = await GetProductionWorkLoads(productionOrderInfos, null);
 
-           
-            return workLoads.SelectMany(production =>
-                                        production.Value.SelectMany(step =>
+            var result = new List<ProductionOrderStepWorkloadModel>();
+            foreach (var (productionOrderId, stepWorkloads) in workLoads)
+            {
+                var pStepWorkload = new ProductionOrderStepWorkloadModel()
+                {
+                    ProductionOrderId = productionOrderId,
+                    StepWorkLoads = stepWorkloads.SelectMany(step =>
                                                                         step.Value.SelectMany(group =>
                                                                                                     group.Details.Select(v => (ProductionStepWorkloadModel)v)
                                                                                               )
                                                                     )
-                                    )
-                .ToList();
+                    .ToList()
+                };
+            }
+            return result;
         }
 
 

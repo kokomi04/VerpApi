@@ -245,7 +245,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("WorkloadsByProductionOrders")]
-        public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders([FromBody] IList<long> productionOrderIds)
+        public async Task<IList<ProductionOrderStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders([FromBody] IList<long> productionOrderIds)
         {
             return await _productionOrderService.ListWorkLoadsByMultipleProductionOrders(productionOrderIds);
         }

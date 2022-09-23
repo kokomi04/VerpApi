@@ -36,7 +36,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionCapacityModel> GetProductionCapacity(int? monthPlanId, long fromDate, long toDate, int? assignDepartmentId);
 
         Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId);
-        Task<IList<ProductionStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds);
+        Task<IList<ProductionOrderStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds);
         Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId);
         Task<bool> UpdateMultipleProductionOrders(List<ProductionOrderPropertyUpdate> updateDatas, List<long> productionOrderIds);
 
