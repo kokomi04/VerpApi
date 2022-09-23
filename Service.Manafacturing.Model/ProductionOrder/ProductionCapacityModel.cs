@@ -127,4 +127,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     }
 
+    public class ProductionOrderStepWorkloadModel
+    {
+        public long ProductionOrderId { get; set; }
+        public IList<ProductionStepWorkloadModel> StepWorkLoads { get; set; }
+    }
 }
