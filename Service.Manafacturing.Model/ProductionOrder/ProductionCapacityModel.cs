@@ -117,11 +117,17 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     }
 
 
+    /// <summary>
+    /// Key is stepId
+    /// </summary>
     public class CapacityByStep : Dictionary<int, IList<ProductionCapacityDetailModel>>
     {
 
     }
 
+    /// <summary>
+    /// Key is ProductionOrderId
+    /// </summary>
     public class CapacityStepByProduction : Dictionary<long, CapacityByStep>
     {
 
