@@ -395,6 +395,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                                                     )
                     .ToList()
                 };
+                result.Add(pStepWorkload);
             }
             return result;
         }
