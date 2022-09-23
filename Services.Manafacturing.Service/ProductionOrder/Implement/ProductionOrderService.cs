@@ -608,8 +608,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var productionCapacityDetail = await GetProductionWorkLoads(productionOrders, null);
 
 
-            var stepIds = assigns.Select(c => c.StepId).Distinct().ToList();
-
+            // var stepIds = assigns.Select(c => c.StepId).Distinct().ToList();
+            var lstStepIds = new HashSet<int>();
 
             var departmentIds = assigns.Select(a => a.DepartmentId).Distinct().ToList();
 
@@ -629,6 +629,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
 
                     assignedHours[stepId] += capacities.Sum(s => s.Details.Sum(d => d.AssignInfos.Sum(a => a.ByDates.Where(date => date.WorkDate >= fromDate && date.WorkDate <= toDate).Sum(date => date.WorkHourPerDay ?? 0))));
+                    if (assignedHours[stepId] > 0 && !lstStepIds.Contains(stepId))
+                    {
+                        lstStepIds.Add(stepId);
+                    }
                 }
             }
 
@@ -734,7 +738,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
             var stepInfo = _manufacturingDBContext.Step
-             .Where(s => stepIds.Contains(s.StepId))
+             .Where(s => lstStepIds.Contains(s.StepId))
              .Select(s => new StepInfo
              {
                  StepId = s.StepId,
