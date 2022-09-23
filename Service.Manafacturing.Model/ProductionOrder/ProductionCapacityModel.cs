@@ -70,6 +70,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionStepWorkloadModel
     {
+        public int StepId { get; set; }
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
         public long ProductionStepLinkDataId { get; set; }
