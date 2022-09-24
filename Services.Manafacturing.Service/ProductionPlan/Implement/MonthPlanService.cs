@@ -272,8 +272,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             monthPlans = monthPlans.InternalOrderBy(orderByFieldName, asc);
             var total = await monthPlans.CountAsync();
 
-            var lstMonthPlans = (size > 0 ? monthPlans.Skip((page - 1) * size).Take(size) : monthPlans).ProjectTo<MonthPlanModel>(_mapper.ConfigurationProvider).ToList();
+            monthPlans = size > 0 ? monthPlans.Skip((page - 1) * size).Take(size) : monthPlans;
+            var weekPlans = await (from w in _manufacturingDBContext.WeekPlan
+                                   join m in monthPlans on w.MonthPlanId equals m.MonthPlanId
+                                   select w)
+                            .ProjectTo<WeekPlanModel>(_mapper.ConfigurationProvider)
+                            .ToListAsync();
 
+            var lstMonthPlans = monthPlans.ProjectTo<MonthPlanModel>(_mapper.ConfigurationProvider).ToList();
+
+            foreach (var m in lstMonthPlans)
+            {
+                m.WeekPlans = weekPlans.Where(w => w.MonthPlanId == m.MonthPlanId).ToList();
+            }
             return (lstMonthPlans, total);
         }
 

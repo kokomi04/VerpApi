@@ -187,7 +187,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường thông tin {0} có giá trị đã tồn tại.
+        ///   Looks up a localized string similar to Trường thông tin {0} có giá trị &quot;{1}&quot; đã tồn tại .
         /// </summary>
         public static string UniqueValueAlreadyExisted {
             get {

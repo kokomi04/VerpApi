@@ -8,6 +8,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover
 {
+    /*
     public interface IProductionHandoverService : IStatusProcessService
     {
         Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId);
@@ -23,5 +24,5 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
 
         Task<bool> DeleteProductionHandover(long productionHandoverId);
         Task<bool> CreateProductionHandoverPatch(IList<ProductionHandoverInputModel> datas);
-    }
+    }*/
 }

@@ -4,6 +4,9 @@ using VErp.Services.Manafacturing.Model.ProductionAssignment;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
+    /// <summary>
+    /// Khai báo vật tư tiêu hao
+    /// </summary>
     public interface IProductionConsumMaterialService
     {
         Task<IDictionary<long, List<ProductionConsumMaterialModel>>> GetConsumMaterials(int departmentId, long productionOrderId, long[] productionStepIds);

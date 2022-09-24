@@ -165,6 +165,9 @@
   <data name="UpdateProcessInfo" xml:space="preserve">
     <value>Updated production process product info "{0}"</value>
   </data>
+  <data name="UpdateProductProducitity" xml:space="preserve">
+    <value>Update product productivity of "{0}" cause by "{1}"</value>
+  </data>
   <data name="UpdateSellInfo" xml:space="preserve">
     <value>Updated sell product info "{0}"</value>
   </data>

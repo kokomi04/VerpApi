@@ -25,6 +25,7 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHistoryService.GetProductionHistories(productionOrderId);
         }
 
+        /*
         [HttpPost]
         [Route("{productionOrderId}")]
         public async Task<ProductionHistoryModel> CreateProductionHistory([FromRoute] long productionOrderId, [FromBody] ProductionHistoryInputModel data)
@@ -38,7 +39,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionHistoryService.CreateMultipleProductionHistory(productionOrderId, data);
         }
-
+        */
         [HttpGet]
         [Route("actualWorkload")]
         public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkload([FromQuery] long startDate, [FromQuery] long endDate)
@@ -53,11 +54,12 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionHistoryService.GetCompletionActualWorkload(monthPlanId, startDate, endDate);
         }
 
+        /*
         [HttpDelete]
         [Route("{productionHistoryId}")]
         public async Task<bool> DeleteProductionHistory([FromRoute] long productionHistoryId)
         {
             return await _productionHistoryService.DeleteProductionHistory(productionHistoryId);
-        }
+        }*/
     }
 }

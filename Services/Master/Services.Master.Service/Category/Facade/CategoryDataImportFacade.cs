@@ -506,7 +506,7 @@ namespace VErp.Services.Master.Service.Category
                 var fieldsFilter = categoryQuery.FieldQuery;
                 foreach (var fieldFilter in fieldsFilter)
                 {
-                    dataSql.Append(" OR ");
+                 
 
                     var field = categoryInfo.Fields.FirstOrDefault(f => f.CategoryFieldName == fieldFilter.Key);
 
@@ -514,6 +514,8 @@ namespace VErp.Services.Master.Service.Category
 
                     if (queryValues.Count > 0)
                     {
+                        dataSql.Append(" OR ");
+
                         if (queryValues.Count == 1)
                         {
                             idx++;

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -9,6 +10,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
+using VErp.Services.Manafacturing.Service.ProductionOrder.Implement;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -18,12 +20,14 @@ namespace VErpApi.Controllers.Manufacturing
     {
         private readonly IProductionOrderService _productionOrderService;
         private readonly IProductionOrderMaterialsService _productionOrderMaterialsService;
+        private readonly IProductionOrderMaterialSetService _productionOrderMaterialSetService;
         private readonly IValidateProductionOrderService _validateProductionOrderService;
 
-        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IValidateProductionOrderService validateProductionOrderService)
+        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IProductionOrderMaterialSetService productionOrderMaterialSetService, IValidateProductionOrderService validateProductionOrderService)
         {
             _productionOrderService = productionOrderService;
             _productionOrderMaterialsService = productionOrderMaterialsService;
+            _productionOrderMaterialSetService = productionOrderMaterialSetService;
             _validateProductionOrderService = validateProductionOrderService;
         }
 
@@ -173,6 +177,27 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusDataModel status)
         {
             return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
+        }
+        [HttpPut]
+        [Route("multiple")]
+        public async Task<bool> UpdateMultipleProductionOrders([FromBody] ProductionOrderMultipleUpdateModel data)
+        {
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _productionOrderService.UpdateMultipleProductionOrders(data.UpdateDatas, data.ProductionOrderIds);
+        }
+
+        [HttpGet]
+        [Route("{productionOrderId}/materials-sets")]
+        public async Task<ProductionOrderMaterialInfo> GetProductionOrderMaterialInfo([FromRoute] int productionOrderId)
+        {
+            return await _productionOrderMaterialSetService.GetProductionOrderMaterialInfo(productionOrderId);
+        }
+
+        [HttpPut]
+        [Route("{productionOrderId}/materials-sets")]
+        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialSetModel> sets)
+        {
+            return await _productionOrderMaterialSetService.UpdateAll(productionOrderId, sets);
         }
 
         [HttpGet]

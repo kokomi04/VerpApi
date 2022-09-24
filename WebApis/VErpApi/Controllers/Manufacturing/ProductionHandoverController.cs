@@ -11,6 +11,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
+    /*
     [Route("api/[controller]")]
     [ApiController]
     public class ProductionHandoverController : VErpBaseController
@@ -126,5 +127,5 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionHandoverService.CreateProductionHandoverPatch(data);
         }
-    }
+    }*/
 }

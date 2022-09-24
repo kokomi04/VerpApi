@@ -41,6 +41,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public DateTime? BillDate { get; set; }
         public int ModuleTypeId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
+        public long? ProductionOrderMaterialSetId { get; set; }
 
         public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; }
         public virtual ICollection<InventoryRequirementFile> InventoryRequirementFile { get; set; }

@@ -10,12 +10,12 @@ namespace VErpApi.Controllers.Manufacturing.Internal
     [ApiController]
     public class InternalProductionHandoverController : CrossServiceBaseController
     {
-        private readonly IProductionHandoverService _productionHandoverService;
+        private readonly IProductionHandoverReceiptService _productionHandoverReceiptService;
         private readonly IMaterialAllocationService _materialAllocationService;
 
-        public InternalProductionHandoverController(IProductionHandoverService productionHandoverService, IMaterialAllocationService materialAllocationService)
+        public InternalProductionHandoverController(IProductionHandoverReceiptService productionHandoverReceiptService, IMaterialAllocationService materialAllocationService)
         {
-            _productionHandoverService = productionHandoverService;
+            _productionHandoverReceiptService = productionHandoverReceiptService;
             _materialAllocationService = materialAllocationService;
         }
 
@@ -23,7 +23,7 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         [Route("status")]
         public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProductionOrderStatusDataModel data)
         {
-            return await _productionHandoverService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
+            return await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
         }
 
         [HttpPut]

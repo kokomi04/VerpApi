@@ -32,7 +32,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public MaterialAllocationService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger<ProductionHandoverService> logger
+            , ILogger<MaterialAllocationService> logger
             , IMapper mapper
             , IProductHelperService productHelperService, IQueueProcessHelperService queueProcessHelperService)
         {

@@ -13,6 +13,12 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
+using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFacade;
+using VErp.Services.Manafacturing.Service.Facade;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using OpenXmlPowerTools;
+using VErp.Commons.Enums.Manafacturing;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -23,18 +29,21 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private const int STOCK_DEPARTMENT_ID = -1;
+        private readonly IProductHelperService _productHelperService;
         public ProductionHistoryService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHistoryService> logger
-            , IMapper mapper)
+            , IMapper mapper,
+            IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
+            _productHelperService = productHelperService;
         }
 
-
+        /*
         public async Task<ProductionHistoryModel> CreateProductionHistory(long productionOrderId, ProductionHistoryInputModel data)
         {
             try
@@ -141,18 +150,38 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 throw;
             }
         }
-
+        */
 
         public async Task<IList<ProductionHistoryModel>> GetProductionHistories(long productionOrderId)
         {
-            return await _manufacturingDBContext.ProductionHistory
-                .Where(h => h.ProductionOrderId == productionOrderId)
-                .ProjectTo<ProductionHistoryModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
+            var histories = _manufacturingDBContext.ProductionHistory
+                .Where(h => h.ProductionOrderId == productionOrderId);
+            return await GetProductionHistories(histories);
 
         }
 
 
+        private async Task<IList<ProductionHistoryModel>> GetProductionHistories(IQueryable<ProductionHistory> histories)
+        {
+            return await (from r in _manufacturingDBContext.ProductionHandoverReceipt
+                          join h in histories on r.ProductionHandoverReceiptId equals h.ProductionHandoverReceiptId
+                          select new ProductionHistoryModel
+                          {
+                              ProductionHandoverReceiptId = r.ProductionHandoverReceiptId,
+                              ProductionHandoverReceiptCode = r.ProductionHandoverReceiptCode,
+
+                              CreatedByUserId = r.CreatedByUserId,
+                              ProductionHistoryId = h.ProductionHistoryId,
+                              ProductionQuantity = h.ProductionQuantity,
+                              OvertimeProductionQuantity = h.OvertimeProductionQuantity,
+                              ObjectId = h.ObjectId,
+                              ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
+                              DepartmentId = h.DepartmentId,
+                              ProductionStepId = h.ProductionStepId,
+                              Date = h.Date.GetUnix(),
+                              Note = h.Note
+                          }).ToListAsync();
+        }
 
 
         public async Task<IDictionary<long, ActualWorkloadModel>> GetActualWorkloadByDate(long fromDate, long toDate)
@@ -165,18 +194,60 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             productionOrderIds = productionOrderIds.Distinct().ToList();
 
+
+
+            var outputRateInfo = from r in _manufacturingDBContext.ProductionStepLinkDataRole.Where(rt => rt.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                                 join ld in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                 join s in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals s.ProductionStepId
+                                 where productionOrderIds.Contains(s.ContainerId) && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                                 group ld by new
+                                 {
+                                     ld.LinkDataObjectTypeId,
+                                     ld.LinkDataObjectId,
+                                     r.ProductionStepId
+                                 } into gs
+                                 select new
+                                 {
+                                     gs.Key.LinkDataObjectTypeId,
+                                     gs.Key.LinkDataObjectId,
+                                     gs.Key.ProductionStepId,
+                                     WorkloadConvertRate = gs.Max(r => r.WorkloadConvertRate)
+                                 };
+
+
             var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
                                              join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
                                              join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                             join d in outputRateInfo on new
+                                             {
+                                                 g.ProductionStepId,
+                                                 LinkDataObjectTypeId = ph.ObjectTypeId,
+                                                 LinkDataObjectId = ph.ObjectId,
+                                             } equals new
+                                             {
+                                                 d.ProductionStepId,
+                                                 d.LinkDataObjectTypeId,
+                                                 d.LinkDataObjectId,
+                                             } into ds
+                                             from d in ds
                                              where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
+
                                              select new
                                              {
+                                                 ph.ProductionOrderId,
                                                  StepId = ps.StepId.Value,
                                                  ph.ObjectId,
                                                  ph.ObjectTypeId,
                                                  ph.ProductionQuantity,
+                                                 d.WorkloadConvertRate,
                                                  Date = ph.Date.Value
                                              }).ToListAsync();
+
+            var productIds = productionHistories.Where(p => p.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product).Select(p => (int)p.ObjectId).ToList();
+            var semiIds = productionHistories.Where(p => p.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.ProductSemi).Select(p => p.ObjectId).ToList();
+
+            var workloadFacade = new ProductivityWorkloadFacade(_manufacturingDBContext, _productHelperService);
+            var (productTargets, semiTargets) = await workloadFacade.GetProductivities(productIds, semiIds);
 
             var result = productionHistories
                 .GroupBy(ph => ph.Date.GetUnix())
@@ -185,11 +256,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var actualWorkload = new ActualWorkloadModel();
                     actualWorkload.ActualWorkloadOutput = g
                         .GroupBy(ph => ph.StepId)
-                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph => new ActualWorkloadOutputModel
+                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph =>
                         {
-                            ObjectId = ph.ObjectId,
-                            ObjectTypeId = ph.ObjectTypeId,
-                            Quantity = ph.ProductionQuantity
+                            ProductTargetProductivityByStep target = null;
+                            if (ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.ProductSemi)
+                            {
+                                semiTargets.TryGetValue(ph.ObjectId, out target);
+                            }
+                            else
+                            {
+                                productTargets.TryGetValue((int)ph.ObjectId, out target);
+                            }
+
+                            ProductStepTargetProductivityDetail targetByStep = null;
+                            target?.TryGetValue(ph.StepId, out targetByStep);
+
+                            var rate = ph.WorkloadConvertRate;
+                            if (!rate.HasValue || rate <= 0)
+                            {
+                                rate = targetByStep?.Rate ?? 1;
+                            }
+
+                            return new ActualWorkloadOutputModel
+                            {
+                                ObjectId = ph.ObjectId,
+                                ObjectTypeId = ph.ObjectTypeId,
+                                Quantity = ph.ProductionQuantity,
+                                WorkloadQuantity = ph.ProductionQuantity * (rate ?? 1)
+                            };
                         }).ToList());
 
 
@@ -220,19 +314,57 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
 
+            var outputRateInfo = from r in _manufacturingDBContext.ProductionStepLinkDataRole.Where(rt => rt.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                                 join ld in _manufacturingDBContext.ProductionStepLinkData on r.ProductionStepLinkDataId equals ld.ProductionStepLinkDataId
+                                 join s in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals s.ProductionStepId
+                                 where productionOrderIds.Contains(s.ContainerId) && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                                 group ld by new
+                                 {
+                                     ld.LinkDataObjectTypeId,
+                                     ld.LinkDataObjectId,
+                                     r.ProductionStepId
+                                 } into gs
+                                 select new
+                                 {
+                                     gs.Key.LinkDataObjectTypeId,
+                                     gs.Key.LinkDataObjectId,
+                                     gs.Key.ProductionStepId,
+                                     WorkloadConvertRate = gs.Max(r => r.WorkloadConvertRate)
+                                 };
 
             var productionHistories = await (from ph in _manufacturingDBContext.ProductionHistory
                                              join g in _manufacturingDBContext.ProductionStep on ph.ProductionStepId equals g.ProductionStepId
                                              join ps in _manufacturingDBContext.ProductionStep on g.ParentId equals ps.ProductionStepId
+                                             join d in outputRateInfo on new
+                                             {
+                                                 g.ProductionStepId,
+                                                 LinkDataObjectTypeId = ph.ObjectTypeId,
+                                                 LinkDataObjectId = ph.ObjectId,
+                                             } equals new
+                                             {
+                                                 d.ProductionStepId,
+                                                 d.LinkDataObjectTypeId,
+                                                 d.LinkDataObjectId,
+                                             } into ds
+                                             from d in ds
                                              where productionOrderIds.Contains(ph.ProductionOrderId) && ps.StepId.HasValue
+
                                              select new
                                              {
                                                  ph.ProductionOrderId,
                                                  StepId = ps.StepId.Value,
                                                  ph.ObjectId,
                                                  ph.ObjectTypeId,
-                                                 ph.ProductionQuantity
+                                                 ph.ProductionQuantity,
+                                                 d.WorkloadConvertRate
                                              }).ToListAsync();
+
+            var productIds = productionHistories.Where(p => p.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product).Select(p => (int)p.ObjectId).ToList();
+            var semiIds = productionHistories.Where(p => p.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.ProductSemi).Select(p => p.ObjectId).ToList();
+
+            var workloadFacade = new ProductivityWorkloadFacade(_manufacturingDBContext, _productHelperService);
+            var (productTargets, semiTargets) = await workloadFacade.GetProductivities(productIds, semiIds);
+
 
             var result = productionHistories
                 .GroupBy(ph => ph.ProductionOrderId)
@@ -241,12 +373,37 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     var actualWorkload = new ActualWorkloadModel();
                     actualWorkload.ActualWorkloadOutput = g
                         .GroupBy(ph => ph.StepId)
-                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph => new ActualWorkloadOutputModel
+                        .ToDictionary(sg => sg.Key, sg => sg.Select(ph =>
                         {
-                            ObjectId = ph.ObjectId,
-                            ObjectTypeId = ph.ObjectTypeId,
-                            Quantity = ph.ProductionQuantity
-                        }).ToList());
+
+                            ProductTargetProductivityByStep target = null;
+                            if (ph.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.ProductSemi)
+                            {
+                                semiTargets.TryGetValue(ph.ObjectId, out target);
+                            }
+                            else
+                            {
+                                productTargets.TryGetValue((int)ph.ObjectId, out target);
+                            }
+
+                            ProductStepTargetProductivityDetail targetByStep = null;
+                            target?.TryGetValue(ph.StepId, out targetByStep);
+
+                            var rate = ph.WorkloadConvertRate;
+                            if (!rate.HasValue || rate <= 0)
+                            {
+                                rate = targetByStep?.Rate ?? 1;
+                            }
+
+                            return new ActualWorkloadOutputModel
+                            {
+                                ObjectId = ph.ObjectId,
+                                ObjectTypeId = ph.ObjectTypeId,
+                                Quantity = ph.ProductionQuantity,
+                                WorkloadQuantity = ph.ProductionQuantity * (rate ?? 1)
+                            };
+                        }
+                        ).ToList());
 
 
                     return actualWorkload;

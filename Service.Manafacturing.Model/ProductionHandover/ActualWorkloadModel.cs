@@ -17,6 +17,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long ObjectId { get; set; }
         public int ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal WorkloadQuantity { get; set; }
         public ActualWorkloadOutputModel()
         {
         }
