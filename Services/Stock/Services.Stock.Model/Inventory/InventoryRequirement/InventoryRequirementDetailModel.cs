@@ -28,13 +28,26 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
 
     public class InventoryRequirementDetailOutputModel : InventoryRequirementDetailInputModel
     {
-        public ProductUnitConversion ProductUnitConversion { set; get; }
+        public ProductUnitConversionModel ProductUnitConversion { set; get; }
         public IList<InventorySimpleInfo> InventoryInfo { set; get; }
         public decimal InventoryQuantity { get; set; }
         public InventoryRequirementDetailOutputModel()
         {
             InventoryInfo = new List<InventorySimpleInfo>();
         }
+    }
+
+    public class ProductUnitConversionModel : IMapFrom<ProductUnitConversion>
+    {
+        public int ProductUnitConversionId { get; set; }
+        public string ProductUnitConversionName { get; set; }
+        public int ProductId { get; set; }
+        public int SecondaryUnitId { get; set; }
+        public string FactorExpression { get; set; }
+        public string ConversionDescription { get; set; }
+        public bool? IsFreeStyle { get; set; }
+        public bool IsDefault { get; set; }
+        public int DecimalPlace { get; set; }
     }
 
     public class InventorySimpleInfo
