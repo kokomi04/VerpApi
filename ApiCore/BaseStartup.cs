@@ -340,6 +340,7 @@ namespace VErp.Infrastructure.ApiCore
             serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
             serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
+            //serializerSettings.MaxDepth = 10;
             return serializerSettings;
         }
     }
