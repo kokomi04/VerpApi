@@ -388,11 +388,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var pStepWorkload = new ProductionOrderStepWorkloadModel()
                 {
                     ProductionOrderId = productionOrderId,
-                    StepWorkLoads = stepWorkloads.SelectMany(step =>
-                                                                        step.Value.SelectMany(group =>
-                                                                                                    group.Details.Select(v => (ProductionStepWorkloadModel)v)
-                                                                                              )
-                                                                    )
+                    StepWorkLoads = stepWorkloads.Select(step => new ProductionStepOutputObjectWorkloadModel()
+                    {
+                        StepId = step.Key,
+                        Outputs = step.Value
+                    })
                     .ToList()
                 };
                 result.Add(pStepWorkload);

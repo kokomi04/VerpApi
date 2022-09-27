@@ -137,6 +137,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     public class ProductionOrderStepWorkloadModel
     {
         public long ProductionOrderId { get; set; }
-        public IList<ProductionStepWorkloadModel> StepWorkLoads { get; set; }
+        public IList<ProductionStepOutputObjectWorkloadModel> StepWorkLoads { get; set; }
+    }
+
+    public class ProductionStepOutputObjectWorkloadModel
+    {
+        public int StepId { get; set; }
+        public IList<ProductionCapacityDetailModel> Outputs { get; set; }
     }
 }
