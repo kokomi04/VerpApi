@@ -749,17 +749,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
 
                 }
-
-                var departmentStepIds = departmentAssigns[departmentId].Select(d => d.StepId).Distinct().ToList();
-
-                var totalAssignHours = departmentAssigns[departmentId].Sum(s => s.Hours);
-
-                // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
-                foreach (var departmentStepId in departmentStepIds)
+                if (departmentAssigns.ContainsKey(departmentId))
                 {
-                    if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
-                    var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
-                    departmentHour[departmentStepId] += totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+                    var departmentStepIds = departmentAssigns[departmentId].Select(d => d.StepId).Distinct().ToList();
+
+                    var totalAssignHours = departmentAssigns[departmentId].Sum(s => s.Hours);
+
+                    // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
+                    foreach (var departmentStepId in departmentStepIds)
+                    {
+                        if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                        var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
+                        departmentHour[departmentStepId] += totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+                    }
                 }
             }
 
