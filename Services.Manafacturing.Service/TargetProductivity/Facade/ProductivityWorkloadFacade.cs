@@ -34,7 +34,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
 
             var productInfos = await _productHelperService.GetListProducts(productIds);
 
-            var targetProductivityIds = productInfos.Where(p => p.TargetProductivity.HasValue).Select(p => p.TargetProductivity.Value).ToList();
+            var targetProductivityIds = productInfos.Where(p => p.TargetProductivityId.HasValue).Select(p => p.TargetProductivityId.Value).ToList();
 
             var targetProductivityInfos = (await _manufacturingDBContext.TargetProductivity.Include(t => t.TargetProductivityDetail)
                 .Where(t => targetProductivityIds.Contains(t.TargetProductivityId) || t.IsDefault)
@@ -90,7 +90,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
                     && productByIds.TryGetValue(productId.Value, out var productInfo))
                 {
                     productPurity = productInfo.ProductPurity;
-                    targetProductivityInfos.TryGetValue(productInfo.TargetProductivity ?? targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Key, out targetProductivityInfo);
+                    targetProductivityInfos.TryGetValue(productInfo.TargetProductivityId ?? targetProductivityInfos.FirstOrDefault(t => t.Value.Info.IsDefault).Key, out targetProductivityInfo);
                 }
 
                 if (targetProductivityInfo == null)
