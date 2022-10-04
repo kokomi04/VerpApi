@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -187,12 +188,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 asc = true;
             }
 
+
+            Type t = typeof(ProductionOrderListModel);
+
+            var sortingPropertyInfo = t.GetProperties().FirstOrDefault(prop => prop.Name?.ToLower() == orderByFieldName.ToLower());
+
+            var orderByExp = $"g.{orderByFieldName}";
+
+            if (sortingPropertyInfo?.PropertyType == typeof(bool))
+            {
+                orderByExp = $"CONVERT(int,g.{orderByFieldName})";
+            }
+
+            orderByExp = asc ? $"MIN({orderByExp})" : $"MAX({orderByExp})";
+
+
             var sql = new StringBuilder(
                 @$";WITH tmp AS (
                     SELECT ");
 
-
-            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY {orderByExp} {(asc ? "" : "DESC")}) AS RowNum,");
 
 
             sql.Append(@" g.ProductionOrderId
@@ -216,7 +231,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc, g.IsUpdateQuantity, g.HasNewProductionProcessVersion ");
+	                GROUP BY g.ProductionOrderId ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -229,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$"ORDER BY {orderByExp} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
@@ -290,12 +305,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 asc = true;
             }
 
+            Type t = typeof(ProductionOrderListModel);
+
+            var sortingPropertyInfo = t.GetProperties().FirstOrDefault(prop => prop.Name?.ToLower() == orderByFieldName.ToLower());
+
+            var orderByExp = $"g.{orderByFieldName}";
+
+            if (sortingPropertyInfo?.PropertyType == typeof(bool))
+            {
+                orderByExp = $"CONVERT(int,g.{orderByFieldName})";
+            }
+
+            orderByExp = asc ? $"MIN({orderByExp})" : $"MAX({orderByExp})";
+
             var sql = new StringBuilder(
                 @$";WITH tmp AS (
                     SELECT ");
 
 
-            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY {orderByExp} {(asc ? "" : "DESC")}) AS RowNum,");
 
 
             sql.Append(@" g.ProductionOrderId
@@ -319,7 +347,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc ");
+	                GROUP BY g.ProductionOrderId ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -332,7 +360,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$"ORDER BY {orderByExp} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
