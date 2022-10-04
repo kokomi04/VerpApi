@@ -680,6 +680,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString(),
                             ProductionStepLinkTypeId = item.ProductionStepLinkTypeId,
                             ProductionStepLinkDataTypeId = item.ProductionStepLinkDataTypeId,
+                            //ConverterId = item.ConverterId,
+                            //ExportOutsourceQuantity = item.ExportOutsourceQuantity,
+                            //OutsourcePartQuantity = item.OutsourcePartQuantity,
+                            //OutsourceQuantity = item.OutsourceQuantity,
+                            //OutsourceRequestDetailId = item.OutsourceRequestDetailId,
+                            //ProductionOutsourcePartMappingId = item.ProductionOutsourcePartMappingId,
+                            WorkloadConvertRate = item.WorkloadConvertRate
                         };
 
                         _manufacturingDBContext.ProductionStepLinkData.Add(newLinkData);
