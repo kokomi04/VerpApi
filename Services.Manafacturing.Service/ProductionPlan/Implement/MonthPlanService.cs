@@ -157,11 +157,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                         throw new BadRequestException(GeneralCode.InvalidParams, "Thời gian của kế hoạch tuần đã bị trùng lặp. Vui lòng kiểm tra lại.");
                     }
                 }
+
                 // Xóa
-                foreach (var item in currentWeekPlans)
+                var toDeleteWeekPlanIds = currentWeekPlans.Select(w => (int?)w.WeekPlanId).ToList();
+                if (toDeleteWeekPlanIds.Count > 0)
                 {
-                    item.IsDeleted = true;
+                    var usedProductionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => toDeleteWeekPlanIds.Contains(p.FromWeekPlanId) || toDeleteWeekPlanIds.Contains(p.ToWeekPlanId));
+                    if (usedProductionOrder != null)
+                    {
+                        var weekInfo = currentWeekPlans.FirstOrDefault(w => w.WeekPlanId == usedProductionOrder.FromWeekPlanId || w.WeekPlanId == usedProductionOrder.ToWeekPlanId);
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể xóa Kế hoạch tuần {weekInfo?.WeekPlanName} đang được sử dụng bởi lệnh: " + usedProductionOrder.ProductionOrderCode);
+                    }
+
+                    foreach (var item in currentWeekPlans)
+                    {
+                        item.IsDeleted = true;
+                    }
                 }
+
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlan.MonthPlanId, $"Cập nhật kế hoạch tháng {monthPlan.MonthPlanName}", data.JsonSerialize());
@@ -179,6 +192,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
         {
             try
             {
+                var usedProductionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.MonthPlanId == monthPlanId);
+                if (usedProductionOrder != null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa Kế hoạch tháng đang được sử dụng bởi lệnh: " + usedProductionOrder.ProductionOrderCode);
+                }
+
                 var monthPlan = _manufacturingDBContext.MonthPlan.Where(mp => mp.MonthPlanId == monthPlanId).FirstOrDefault();
 
                 if (monthPlan == null) throw new BadRequestException(GeneralCode.InvalidParams, "Kế hoạch tháng không tồn tại");
@@ -200,6 +219,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 throw;
             }
         }
+
 
         public async Task<MonthPlanModel> GetMonthPlan(int monthPlanId)
         {
