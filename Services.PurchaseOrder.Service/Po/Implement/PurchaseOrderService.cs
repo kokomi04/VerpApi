@@ -1003,6 +1003,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             detail.SortOrder = item.SortOrder;
                             detail.IsSubCalculation = item.IsSubCalculation;
 
+                            if (item.SubCalculations == null)
+                            {
+                                item.SubCalculations = new List<PurchaseOrderDetailSubCalculationModel>();
+                            }
+
                             var arrEntitySubCalculation = _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
                             foreach (var sub in arrEntitySubCalculation)
                             {
