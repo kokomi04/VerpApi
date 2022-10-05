@@ -409,7 +409,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => productionStepIds.Contains(w.ProductionStepId)).ToList();
                 // Xóa phân công có công đoạn bị xóa khỏi quy trình
-             
+
                 await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
 
                 _manufacturingDBContext.SaveChanges();
@@ -533,7 +533,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     .Where(hr => hr.ProductionStepId == oldProductionAssignment.ProductionStepId && hr.DepartmentId == oldProductionAssignment.DepartmentId)
                     .ToList();
 
-                _manufacturingDBContext.ProductionHumanResource.RemoveRange(deleteHumanResources);
+                // _manufacturingDBContext.ProductionHumanResource.RemoveRange(deleteHumanResources);
+                foreach (var r in deleteHumanResources)
+                {
+                    r.IsDeleted = true;
+                }
 
 
                 // Xóa chi tiết phân công
