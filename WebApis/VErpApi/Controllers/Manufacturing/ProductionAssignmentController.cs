@@ -55,13 +55,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionAssignmentService.GetProductionAssignment(productionOrderId, productionStepId, departmentId);
         }
 
-        [HttpPut]
-        [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
-        public async Task<bool> UpdateProductionAssignment([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromBody] ProductionAssignmentInputModel data)
-        {
-            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _productionAssignmentService.UpdateProductionAssignment(productionOrderId, productionStepId, data.ProductionAssignments, data.ProductionStepWorkInfo);
-        }
+        //[HttpPut]
+        //[Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}")]
+        //public async Task<bool> UpdateProductionAssignment([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromBody] ProductionAssignmentInputModel data)
+        //{
+        //    if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+        //    return await _productionAssignmentService.UpdateProductionAssignment(productionOrderId, productionStepId, data.ProductionAssignments, data.ProductionStepWorkInfo);
+        //}
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/dismissWarning")]
