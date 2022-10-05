@@ -1089,7 +1089,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productModel.StockInfo.UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(unitConverions);
 
                 productModel.ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers);
-
+                
                 result.Add(productModel);
             }
 

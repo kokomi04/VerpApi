@@ -22,6 +22,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;
+using VErp.Services.Manafacturing.Service.ProductionAssignment;
+using VErp.Services.Manafacturing.Service.ProductionAssignment.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using ProductSemiEnity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 
@@ -35,13 +37,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
         private readonly IValidateProductionProcessService _validateProductionProcessService;
+        private readonly IProductionAssignmentService _productionAssignmentService;
 
         public ProductionProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionProcessService> logger
             , IMapper mapper
             , IProductHelperService productHelperService
-            , IValidateProductionProcessService validateProductionProcessService)
+            , IValidateProductionProcessService validateProductionProcessService
+            , IProductionAssignmentService productionAssignmentService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -49,6 +53,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _mapper = mapper;
             _productHelperService = productHelperService;
             _validateProductionProcessService = validateProductionProcessService;
+            _productionAssignmentService = productionAssignmentService;
         }
 
         public async Task<long> CreateProductionStep(ProductionStepInfo req)
@@ -680,6 +685,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ProductionStepLinkDataCode = Guid.NewGuid().ToString(),
                             ProductionStepLinkTypeId = item.ProductionStepLinkTypeId,
                             ProductionStepLinkDataTypeId = item.ProductionStepLinkDataTypeId,
+                            //ConverterId = item.ConverterId,
+                            //ExportOutsourceQuantity = item.ExportOutsourceQuantity,
+                            //OutsourcePartQuantity = item.OutsourcePartQuantity,
+                            //OutsourceQuantity = item.OutsourceQuantity,
+                            //OutsourceRequestDetailId = item.OutsourceRequestDetailId,
+                            //ProductionOutsourcePartMappingId = item.ProductionOutsourcePartMappingId,
+                            WorkloadConvertRate = item.WorkloadConvertRate
                         };
 
                         _manufacturingDBContext.ProductionStepLinkData.Add(newLinkData);
@@ -1281,36 +1293,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(s => s.ProductionOrderId == containerId && !currentProductionStepIds.Contains(s.ProductionStepId))
                     .ToList();
 
-                var handovers = _manufacturingDBContext.ProductionHandover
-                    .Where(h => h.ProductionOrderId == containerId)
-                    .ToList();
-
-                var humanResources = _manufacturingDBContext.ProductionHumanResource
-                    .Where(hr => hr.ProductionOrderId == containerId)
-                    .ToList();
-
-                foreach (var oldProductionAssignment in deletedProductionStepAssignments)
-                {
-                    // Xóa bàn giao liên quan tới phân công bị xóa
-                    var deleteHandovers = handovers
-                        .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
-                        && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
-                        .ToList();
-
-                    _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
-
-                    // Xóa khai báo nhân công
-                    var deleteHumanResources = humanResources
-                        .Where(hr => hr.ProductionStepId == oldProductionAssignment.ProductionStepId && hr.DepartmentId == oldProductionAssignment.DepartmentId)
-                        .ToList();
-
-                    _manufacturingDBContext.ProductionHumanResource.RemoveRange(deleteHumanResources);
-
-
-                    // Xóa chi tiết phân công
-                    oldProductionAssignment.ProductionAssignmentDetail.Clear();
-                }
-                _manufacturingDBContext.ProductionAssignment.RemoveRange(deletedProductionStepAssignments);
+                await _productionAssignmentService.DeleteAssignmentRef(containerId, deletedProductionStepAssignments);
 
                 await _manufacturingDBContext.SaveChangesAsync();
             }
@@ -1780,7 +1763,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     x.ParentId = null;
                 });
 
-              
+
                 //reset id and quantity, outsource data
                 process.ProductionStepLinkDatas.ForEach(x =>
                 {
@@ -1824,7 +1807,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     }
                 });
 
-             
+
 
                 //reset id
                 process.ProductionStepLinkDataRoles.ForEach(r => { r.ProductionStepId = 0; r.ProductionStepLinkDataId = 0; });

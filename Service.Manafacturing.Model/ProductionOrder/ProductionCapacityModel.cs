@@ -70,6 +70,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionStepWorkloadModel
     {
+        public int StepId { get; set; }
         public long ProductionStepId { get; set; }
         public string ProductionStepTitle { get; set; }
         public long ProductionStepLinkDataId { get; set; }
@@ -117,14 +118,31 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     }
 
 
+    /// <summary>
+    /// Key is stepId
+    /// </summary>
     public class CapacityByStep : Dictionary<int, IList<ProductionCapacityDetailModel>>
     {
 
     }
 
+    /// <summary>
+    /// Key is ProductionOrderId
+    /// </summary>
     public class CapacityStepByProduction : Dictionary<long, CapacityByStep>
     {
 
     }
 
+    public class ProductionOrderStepWorkloadModel
+    {
+        public long ProductionOrderId { get; set; }
+        public IList<ProductionStepOutputObjectWorkloadModel> StepWorkLoads { get; set; }
+    }
+
+    public class ProductionStepOutputObjectWorkloadModel
+    {
+        public int StepId { get; set; }
+        public IList<ProductionCapacityDetailModel> Outputs { get; set; }
+    }
 }
