@@ -1014,6 +1014,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //InventoryRequirementCode = detail.InventoryRequirementCode
                     IsSubCalculation = detail.IsSubCalculation
                 };
+                if (detail.InProductSubs == null)
+                {
+                    detail.InProductSubs = new List<InventoryDetailSubCalculationModel>();
+                }
 
                 var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
                 {

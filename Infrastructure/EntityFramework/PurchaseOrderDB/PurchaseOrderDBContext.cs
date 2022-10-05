@@ -58,6 +58,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<PurchasingRequestDetail> PurchasingRequestDetail { get; set; }
         public virtual DbSet<PurchasingSuggest> PurchasingSuggest { get; set; }
         public virtual DbSet<PurchasingSuggestDetail> PurchasingSuggestDetail { get; set; }
+        public virtual DbSet<PurchasingSuggestDetailSubCalculation> PurchasingSuggestDetailSubCalculation { get; set; }
         public virtual DbSet<PurchasingSuggestFile> PurchasingSuggestFile { get; set; }
         public virtual DbSet<RefCustomer> RefCustomer { get; set; }
         public virtual DbSet<RefEmployee> RefEmployee { get; set; }
@@ -818,6 +819,19 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.PurchasingSuggestId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingSuggest");
+            });
+
+            modelBuilder.Entity<PurchasingSuggestDetailSubCalculation>(entity =>
+            {
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.PrimaryUnitPrice).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.PurchasingSuggestDetail)
+                    .WithMany(p => p.PurchasingSuggestDetailSubCalculation)
+                    .HasForeignKey(d => d.PurchasingSuggestDetailId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PurchasingSuggestDetailSubCalculation_PurchasingSuggestDetail");
             });
 
             modelBuilder.Entity<PurchasingSuggestFile>(entity =>
