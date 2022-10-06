@@ -7,7 +7,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.System.Config
 {
     [Route("api/units")]
 
