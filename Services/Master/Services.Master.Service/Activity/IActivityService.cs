@@ -14,7 +14,8 @@ namespace VErp.Services.Master.Service.Activity
 
         Task<bool> AddNote(int? billTypeId, long objectId, int objectTypeId, string message);
 
-        Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20);
+        Task<PageData<UserActivityLogOuputModel>> GetUserLogByObject(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20);
+        Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20);
 
         Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId);
 

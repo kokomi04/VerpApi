@@ -11,7 +11,7 @@ using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErpApi.Models;
 
-namespace VErpApi.Controllers.System
+namespace VErpApi.Controllers.System.Config
 {
     [Route("api/[controller]")]
     public class UtilityController : VErpBaseController

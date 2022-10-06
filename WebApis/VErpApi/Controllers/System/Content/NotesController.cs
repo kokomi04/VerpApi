@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] int? billTypeId, [FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
-            return await _activityService.GetListUserActivityLog(billTypeId, objectId, objectTypeId, page, size);
+            return await _activityService.GetUserLogByObject(billTypeId, objectId, objectTypeId, page, size);
         }
 
         [HttpPost]

@@ -195,18 +195,62 @@ namespace VErp.Services.Master.Service.Activity.Implement
         }
 
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetUserLogByObject(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _activityLogContext.UserActivityLog.AsQueryable();
+            return await GetListUserActivityLog(null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
+        }
+
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
+        {
+            var query = _activityLogContext.UserActivityLog.AsNoTracking().AsQueryable();
+            if (fromDate.HasValue)
+            {
+                query = query.Where(q => q.CreatedDatetimeUtc >= fromDate.Value.UnixToDateTime());
+            }
+            if (toDate.HasValue)
+            {
+                query = query.Where(q => q.CreatedDatetimeUtc <= toDate.Value.UnixToDateTime());
+            }
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(q => q.Message.Contains(keyword));
+            }
+            if (userId.HasValue)
+            {
+                query = query.Where(q => q.UserId == userId.Value);
+            }
+
+            if (actionTypeId.HasValue)
+            {
+                query = query.Where(q => q.ActionId == actionTypeId.Value);
+            }
+
             if (billTypeId.HasValue)
             {
                 query = query.Where(q => q.BillTypeId == billTypeId.Value);
             }
+            if (objectTypeId.HasValue)
+            {
+                query = query.Where(q => q.ObjectTypeId == (int)objectTypeId);
+            }
+            if (objectId.HasValue)
+            {
+                query = query.Where(q => q.ObjectId == objectId);
+            }
 
-            query = query.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
+            var properies = typeof(UserActivityLog).GetProperties();
+            if (string.IsNullOrWhiteSpace(sortBy) || !properies.Any(p => p.Name == sortBy))
+            {
+                sortBy = nameof(UserActivityLog.UserActivityLogId);
+            }
 
             var total = query.Count();
-            var ualDataList = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList() : query.AsNoTracking().ToList();
+
+            query = query.SortByFieldName(sortBy, asc);
+
+
+            var ualDataList = await (size > 0 ? query.AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : query.ToListAsync());
 
             var userIds = ualDataList.Select(q => q.UserId).ToList();
 
