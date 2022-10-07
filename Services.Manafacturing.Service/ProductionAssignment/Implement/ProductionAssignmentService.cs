@@ -409,18 +409,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => productionStepIds.Contains(w.ProductionStepId)).ToList();
                 // Xóa phân công có công đoạn bị xóa khỏi quy trình
-                foreach (var oldProductionAssignment in deletedProductionStepAssignments)
-                {
-                    // Xóa bàn giao liên quan tới phân công bị xóa
-                    var deleteHandovers = handovers
-                        .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
-                        && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
-                        .ToList();
 
-                    _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
-                    oldProductionAssignment.ProductionAssignmentDetail.Clear();
-                }
-                _manufacturingDBContext.ProductionAssignment.RemoveRange(deletedProductionStepAssignments);
+                await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
+
                 _manufacturingDBContext.SaveChanges();
 
                 foreach (var productionStepAssignments in data.ProductionStepAssignment)
@@ -497,6 +488,67 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
+
+        public async Task DeleteAssignmentRef(long productionOrderId, IList<ProductionAssignmentEntity> deletedProductionStepAssignments)
+        {
+
+            var handovers = await _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ProductionOrderId == productionOrderId)
+                .ToListAsync();
+
+            var histories = await _manufacturingDBContext.ProductionHistory
+               .Where(h => h.ProductionOrderId == productionOrderId)
+               .ToListAsync();
+
+            var humanResources = await _manufacturingDBContext.ProductionHumanResource
+                .Where(hr => hr.ProductionOrderId == productionOrderId)
+                .ToListAsync();
+
+            foreach (var oldProductionAssignment in deletedProductionStepAssignments)
+            {
+                // Xóa bàn giao liên quan tới phân công bị xóa
+                var deleteHandovers = handovers
+                    .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                    && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                    .ToList();
+
+                foreach (var h in deleteHandovers)
+                {
+                    h.IsDeleted = true;
+                }
+
+                // Xóa lịch sử sx liên quan tới phân công bị xóa
+                var deleteHistories = histories
+                    .Where(h => h.ProductionStepId == oldProductionAssignment.ProductionStepId
+                    && h.DepartmentId == oldProductionAssignment.DepartmentId)
+                    .ToList();
+
+                foreach (var h in deleteHistories)
+                {
+                    h.IsDeleted = true;
+                }
+
+                // Xóa khai báo nhân công
+                var deleteHumanResources = humanResources
+                    .Where(hr => hr.ProductionStepId == oldProductionAssignment.ProductionStepId && hr.DepartmentId == oldProductionAssignment.DepartmentId)
+                    .ToList();
+
+                // _manufacturingDBContext.ProductionHumanResource.RemoveRange(deleteHumanResources);
+                foreach (var r in deleteHumanResources)
+                {
+                    r.IsDeleted = true;
+                }
+
+
+                // Xóa chi tiết phân công
+                oldProductionAssignment.ProductionAssignmentDetail.Clear();
+
+            }
+            _manufacturingDBContext.ProductionAssignment.RemoveRange(deletedProductionStepAssignments);
+        }
+
+
+        /*
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
@@ -731,7 +783,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _logger.LogError(ex, "UpdateProductAssignment");
                 throw;
             }
-        }
+        }*/
 
 
         public async Task<IList<DepartmentAssignFreeDate>> DepartmentsFreeDates(DepartmentAssignFreeDateInput req)

@@ -235,6 +235,15 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionCapacity(monthPlanId, startDate, endDate, assignDepartmentId);
         }
 
+
+        [HttpGet]
+        [Route("capacity-by-assignment-date")]
+        public async Task<ProductionCapacityModel> GetProductionCapacityByAssignmentDate([FromQuery] long startDate, [FromQuery] long endDate, [FromQuery] int? factoryDepartmentId)
+        {
+            return await _productionOrderService.GetProductionCapacityByAssignmentDate(startDate, endDate, factoryDepartmentId);
+        }
+
+
         [HttpGet]
         [Route("Workloads")]
         public async Task<IList<ProductionStepWorkloadModel>> ListWorkLoads(long productionOrderId)
@@ -242,6 +251,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.ListWorkLoads(productionOrderId);
         }
 
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("WorkloadsByProductionOrders")]
+        public async Task<IList<ProductionOrderStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders([FromBody] IList<long> productionOrderIds)
+        {
+            return await _productionOrderService.ListWorkLoadsByMultipleProductionOrders(productionOrderIds);
+        }
+        
 
         [HttpGet]
         [Route("configuration")]

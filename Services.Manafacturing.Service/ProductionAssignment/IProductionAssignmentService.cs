@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
+using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 {
@@ -14,8 +15,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
         Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate);
 
         Task<ProductionAssignmentModel> GetProductionAssignment(long productionOrderId, long productionStepId, int departmentId);
-
+        /*
         Task<bool> UpdateProductionAssignment(long productionOrderId, long productionStepId, ProductionAssignmentModel[] data, ProductionStepWorkInfoInputModel info);
+        */
+
+        Task DeleteAssignmentRef(long productionOrderId, IList<ProductionAssignmentEntity> deletedProductionStepAssignments);
+
         Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data);
 
         Task<bool> UpdateDepartmentAssignmentDate(int departmentId, IList<DepartmentAssignUpdateDateModel> data);

@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -187,12 +188,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 asc = true;
             }
 
+
+            Type t = typeof(ProductionOrderListModel);
+
+            var sortingPropertyInfo = t.GetProperties().FirstOrDefault(prop => prop.Name?.ToLower() == orderByFieldName.ToLower());
+
+            var orderByExp = $"g.{orderByFieldName}";
+
+            if (sortingPropertyInfo?.PropertyType == typeof(bool))
+            {
+                orderByExp = $"CONVERT(int,g.{orderByFieldName})";
+            }
+
+            orderByExp = asc ? $"MIN({orderByExp})" : $"MAX({orderByExp})";
+
+
             var sql = new StringBuilder(
                 @$";WITH tmp AS (
                     SELECT ");
 
-
-            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY {orderByExp} {(asc ? "" : "DESC")}) AS RowNum,");
 
 
             sql.Append(@" g.ProductionOrderId
@@ -216,7 +231,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc, g.IsUpdateQuantity, g.HasNewProductionProcessVersion ");
+	                GROUP BY g.ProductionOrderId ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -229,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$"ORDER BY {orderByExp} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
@@ -290,12 +305,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 asc = true;
             }
 
+            Type t = typeof(ProductionOrderListModel);
+
+            var sortingPropertyInfo = t.GetProperties().FirstOrDefault(prop => prop.Name?.ToLower() == orderByFieldName.ToLower());
+
+            var orderByExp = $"g.{orderByFieldName}";
+
+            if (sortingPropertyInfo?.PropertyType == typeof(bool))
+            {
+                orderByExp = $"CONVERT(int,g.{orderByFieldName})";
+            }
+
+            orderByExp = asc ? $"MIN({orderByExp})" : $"MAX({orderByExp})";
+
             var sql = new StringBuilder(
                 @$";WITH tmp AS (
                     SELECT ");
 
 
-            sql.Append($"ROW_NUMBER() OVER (ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}) AS RowNum,");
+            sql.Append($"ROW_NUMBER() OVER (ORDER BY {orderByExp} {(asc ? "" : "DESC")}) AS RowNum,");
 
 
             sql.Append(@" g.ProductionOrderId
@@ -319,7 +347,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             totalSql.Append(" GROUP BY v.ProductionOrderId ) g");
             sql.Append(
                    @") g
-	                GROUP BY g.ProductionOrderCode, g.ProductionOrderId, g.Date, g.StartDate, g.EndDate, g.PlanEndDate, g.ProductionOrderStatus, g.FactoryDepartmentId, g.Description, g.MonthPlanId, g.FromWeekPlanId, g.ToWeekPlanId, g.IsInvalid, g.CreatedDatetimeUtc ");
+	                GROUP BY g.ProductionOrderId ");
 
             var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
@@ -332,7 +360,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY g.{orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$"ORDER BY {orderByExp} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
@@ -371,6 +399,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                                                     )
                                     )
                 .ToList();
+        }
+
+        public async Task<IList<ProductionOrderStepWorkloadModel>> ListWorkLoadsByMultipleProductionOrders(IList<long> productionOrderIds)
+        {
+            var productionOrderInfos = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                  .Where(po => productionOrderIds.Contains(po.ProductionOrderId))
+                  .ToListAsync();
+
+
+            var workLoads = await GetProductionWorkLoads(productionOrderInfos, null);
+
+            var result = new List<ProductionOrderStepWorkloadModel>();
+            foreach (var (productionOrderId, stepWorkloads) in workLoads)
+            {
+                var pStepWorkload = new ProductionOrderStepWorkloadModel()
+                {
+                    ProductionOrderId = productionOrderId,
+                    StepWorkLoads = stepWorkloads.Select(step => new ProductionStepOutputObjectWorkloadModel()
+                    {
+                        StepId = step.Key,
+                        Outputs = step.Value
+                    })
+                    .ToList()
+                };
+                result.Add(pStepWorkload);
+            }
+            return result;
         }
 
 
@@ -523,6 +578,224 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var stepInfo = _manufacturingDBContext.Step
              .Where(s => stepIds.Contains(s.StepId))
+             .Select(s => new StepInfo
+             {
+                 StepId = s.StepId,
+                 StepName = s.StepName
+             })
+             .ToList();
+
+            var result = new ProductionCapacityModel
+            {
+                StepInfo = stepInfo,
+                DepartmentHour = departmentHour,
+                AssignedStepHours = assignedHours
+            };
+
+            foreach (var productionOrder in productionOrders)
+            {
+                var productionOrderDetail = productionOrder
+                    .ProductionOrderDetail
+                    .Select(pc => new ProductionOrderDetailQuantityModel
+                    {
+                        OrderCode = pc.OrderCode,
+                        ProductId = pc.ProductId,
+                        ProductionOrderDetailId = pc.ProductionOrderDetailId,
+                        Quantity = pc.Quantity,
+                        ReserveQuantity = pc.ReserveQuantity
+                    })
+                    .ToList();
+
+
+                if (!productionCapacityDetail.TryGetValue(productionOrder.ProductionOrderId, out var prodCap))
+                {
+                    prodCap = new CapacityByStep();
+                }
+
+                result.ProductionOrder.Add(new ProductionOrderCapacityModel
+                {
+                    ProductionOrderId = productionOrder.ProductionOrderId,
+                    ProductionOrderCode = productionOrder.ProductionOrderCode,
+                    StartDate = productionOrder.StartDate.GetUnix(),
+                    EndDate = productionOrder.EndDate.GetUnix(),
+                    ProductionCapacityDetail = prodCap,
+                    ProductionOrderDetail = productionOrderDetail
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<ProductionCapacityModel> GetProductionCapacityByAssignmentDate(long fromDate, long toDate, int? factoryDepartmentId)
+        {
+
+            IList<ProductionOrderEntity> productionOrders;
+
+
+            var fromDateTime = fromDate.UnixToDateTime();
+            var toDateTime = toDate.UnixToDateTime();
+
+            var assigns = await (
+                from a in _manufacturingDBContext.ProductionAssignment
+                join ps in _manufacturingDBContext.ProductionStep on a.ProductionStepId equals ps.ProductionStepId
+                join parent in _manufacturingDBContext.ProductionStep on ps.ParentId equals parent.ProductionStepId
+                where a.EndDate >= fromDateTime && a.StartDate <= toDateTime
+                select new
+                {
+                    a.ProductionOrderId,
+                    a.DepartmentId,
+                    a.ProductionStepId,
+                    ParentProductionStepId = parent.ProductionStepId,
+                    parent.StepId
+                }
+                )
+                .ToListAsync();
+
+            var productionOrderIds = assigns.Select(a => a.ProductionOrderId)
+                .Distinct()
+                .ToList();
+
+            productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail)
+                    .Where(po => (!factoryDepartmentId.HasValue || po.FactoryDepartmentId == factoryDepartmentId) && productionOrderIds.Contains(po.ProductionOrderId))
+                    .ToListAsync();
+
+            // Lấy thông tin đầu ra và số giờ công cần
+            var productionCapacityDetail = await GetProductionWorkLoads(productionOrders, null);
+
+
+            // var stepIds = assigns.Select(c => c.StepId).Distinct().ToList();
+            var lstStepIds = new HashSet<int>();
+
+            var departmentIds = assigns.Select(a => a.DepartmentId).Distinct().ToList();
+
+            // Lấy thông tin phong ban
+            var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
+            var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
+            var departmentHour = new Dictionary<int, decimal>();
+
+            var assignedHours = new Dictionary<int, decimal>();
+            foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
+            {
+                foreach (var (stepId, capacities) in stepCapacity)
+                {
+                    if (!assignedHours.ContainsKey(stepId))
+                    {
+                        assignedHours.Add(stepId, 0);
+                    }
+
+                    assignedHours[stepId] += capacities.Sum(s => s.Details.Sum(d => d.AssignInfos.Sum(a => a.ByDates.Where(date => date.WorkDate >= fromDate && date.WorkDate <= toDate).Sum(date => date.WorkHourPerDay ?? 0))));
+                    if (assignedHours[stepId] > 0 && !lstStepIds.Contains(stepId))
+                    {
+                        lstStepIds.Add(stepId);
+                    }
+                }
+            }
+
+            var departmentAssigns = new Dictionary<int, IList<DepartmentStepAssignHours>>();
+            foreach (var (productionOrderId, productionCapacities) in productionCapacityDetail)
+            {
+
+                foreach (var (stepId, pStepCapac) in productionCapacities)
+                {
+                    foreach (var c in pStepCapac)
+                    {
+                        foreach (var assign in c.Details)
+                        {
+                            foreach (var departmentAssign in assign.AssignInfos)
+                            {
+
+                                var dates = departmentAssign.ByDates.Where(d => d.WorkDate >= fromDate && d.WorkDate <= toDate).ToList();
+                                if (dates.Count > 0)
+                                {
+                                    if (!departmentAssigns.ContainsKey(departmentAssign.DepartmentId))
+                                    {
+                                        departmentAssigns.Add(departmentAssign.DepartmentId, new List<DepartmentStepAssignHours>());
+                                    }
+                                    var departmentAssignHour = departmentAssigns[departmentAssign.DepartmentId];
+                                    var depStepHour = departmentAssignHour.FirstOrDefault(s => s.StepId == stepId);
+                                    var total = dates.Sum(d => d.WorkHourPerDay ?? 0);
+                                    if (depStepHour == null)
+                                    {
+                                        depStepHour = new DepartmentStepAssignHours()
+                                        {
+                                            StepId = stepId,
+                                            Hours = total
+                                        };
+                                        departmentAssignHour.Add(depStepHour);
+                                    }
+                                    else
+                                    {
+                                        depStepHour.Hours += total;
+                                    }
+                                }
+
+
+                            }
+                        }
+                    }
+                }
+            }
+
+
+            foreach (var departmentId in departmentIds)
+            {
+
+                var calendar = departmentCalendar.FirstOrDefault(c => c.DepartmentId == departmentId);
+                var department = departments.FirstOrDefault(d => d.DepartmentId == departmentId);
+                decimal totalHour = 0;
+
+                var offDays = calendar.DepartmentDayOffCalendar.Select(o => o.Day.UnixToDateTime(_currentContextService.TimeZoneOffset).Date).ToList();
+
+                var departmentStepsWorkHours = new Dictionary<int, decimal>();
+
+                for (var workDateUnix = fromDate; workDateUnix <= toDate; workDateUnix += 24 * 60 * 60)
+                {
+                    var date = workDateUnix.UnixToDateTime(_currentContextService.TimeZoneOffset).Date;
+
+                    var dayOfWeek = date.DayOfWeek;
+                    // Tính số giờ làm việc theo ngày của tổ
+                    var workingHourInfo = calendar.DepartmentWorkingHourInfo.Where(wh => wh.StartDate <= workDateUnix).OrderByDescending(wh => wh.StartDate).FirstOrDefault();
+                    var overHour = calendar.DepartmentOverHourInfo.FirstOrDefault(oh => oh.StartDate <= workDateUnix && oh.EndDate >= workDateUnix);
+                    var increase = calendar.DepartmentIncreaseInfo.FirstOrDefault(i => i.StartDate <= workDateUnix && i.EndDate >= workDateUnix);
+
+                    var workingHourPerDay = workingHourInfo?.WorkingHourPerDay ?? 0;
+                    var numberOfPerson = department?.NumberOfPerson ?? 0;
+                    var increasePerson = increase?.NumberOfPerson ?? 0;
+
+                    var overHourPerday = overHour?.OverHour ?? 0;
+                    var overPerson = overHour?.NumberOfPerson ?? 0;
+
+                    var totalWorkingHour = workingHourPerDay * (numberOfPerson + increasePerson);
+
+                    if (offDays.Contains(date))
+                    {
+                        totalWorkingHour = 0;
+                    }
+
+                    var totalOverHour = overHourPerday * overPerson;
+
+                    totalHour += (decimal)(totalWorkingHour + totalOverHour);
+
+                }
+                if (departmentAssigns.ContainsKey(departmentId))
+                {
+                    var departmentStepIds = departmentAssigns[departmentId].Select(d => d.StepId).Distinct().ToList();
+
+                    var totalAssignHours = departmentAssigns[departmentId].Sum(s => s.Hours);
+
+                    // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
+                    foreach (var departmentStepId in departmentStepIds)
+                    {
+                        if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                        var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
+                        departmentHour[departmentStepId] += totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+                    }
+                }
+            }
+
+
+            var stepInfo = _manufacturingDBContext.Step
+             .Where(s => lstStepIds.Contains(s.StepId))
              .Select(s => new StepInfo
              {
                  StepId = s.StepId,
@@ -725,13 +998,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 var byDates = new List<ProductionAssignmentDetailModel>();
 
-                                var workInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
                                 var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
-                                if (workInfo != null)
+                                if (assignWorkInfo != null)
                                 {
-                                    var rateQuantiy = workInfo.Quantity > 0 ? assignStep.AssignmentQuantity / workInfo.Quantity : 0;
 
-                                    assignQuantity = d.Quantity * rateQuantiy;
+                                    var rateQuantiy = assignWorkInfo.Quantity > 0 ? d.Quantity / assignWorkInfo.Quantity : 0;
+
+                                    assignQuantity = assignStep.AssignmentQuantity * rateQuantiy;
 
                                     byDates = byDateAssign.Select(a =>
                                     {
@@ -741,21 +1015,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                             QuantityPerDay = a.QuantityPerDay * rateQuantiy
                                         };
 
-                                        var workloads = workloadInfos.Where(s => s.ProductionStepId == d.ProductionStepId).ToList();
-                                        var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                                        //var workloads = workloadInfos.Where(s => s.ProductionStepId == d.ProductionStepId).ToList();
+                                        //var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+
+
+                                        //decimal? totalWorkload = 0;
+                                        //decimal? totalHours = 0;
+                                        //foreach (var w in workloads)
+                                        //{
+                                        //    var assignQuantity = workloadInfo.Quantity > 0 ? a.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
+                                        //    var workload = assignQuantity * w.WorkloadConvertRate;
+                                        //    var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
+                                        //    totalWorkload += workload;
+                                        //    totalHours += hour;
+
+                                        //}
+                                        //=> Only one
+
+                                        var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
 
 
                                         decimal? totalWorkload = 0;
                                         decimal? totalHours = 0;
-                                        foreach (var w in workloads)
-                                        {
-                                            var assignQuantity = workloadInfo.Quantity > 0 ? a.QuantityPerDay * w.Quantity / workloadInfo.Quantity : 0;
-                                            var workload = assignQuantity * w.WorkloadConvertRate;
-                                            var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
-                                            totalWorkload += workload;
-                                            totalHours += hour;
 
-                                        }
+                                        var assignQuantity = a.QuantityPerDay * rateQuantiy;
+                                        var workload = assignQuantity * workloadInfo.WorkloadConvertRate;
+                                        var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
+                                        totalWorkload += workload;
+                                        totalHours += hour;
+
 
                                         byDate.SetWorkHourPerDay(totalHours);
                                         byDate.SetWorkloadPerDay(totalWorkload);
@@ -790,6 +1078,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
                             return new ProductionStepWorkloadAssignModel
                             {
+                                StepId = d.StepId,
                                 ProductionStepId = d.ProductionStepId,
                                 ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
@@ -1541,7 +1830,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                     var sqlupdate = $"UPDATE [ProductionOrder] SET {string.Join(",", updateDatas.Select(c => $"[{c.FieldName}] = @{c.FieldName}"))} WHERE ProductionOrderId IN (SELECT [Value] FROM @productionOrderIds)";
                     await _manufacturingDBContext.Database.ExecuteSqlRawAsync($"{sqlupdate}", sqlParams);
-                }else
+                }
+                else
                     throw new BadRequestException(GeneralCode.ItemNotFound);
             }
             else
@@ -1577,7 +1867,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return true;
         }
         #endregion
+        private class DepartmentStepAssignHours
+        {
+            public int StepId { get; set; }
+            public decimal Hours { get; set; }
+        }
     }
+
+
 
 
 
