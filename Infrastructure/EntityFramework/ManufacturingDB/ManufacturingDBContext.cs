@@ -726,9 +726,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
 
-                entity.Property(e => e.WorkloadConvertRate)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.WorkloadConvertRate).HasColumnType("decimal(18, 5)");
 
                 entity.HasOne(d => d.OutsourceRequestDetail)
                     .WithMany(p => p.ProductionStepLinkData)
