@@ -197,12 +197,16 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public async Task<PageData<UserActivityLogOuputModel>> GetUserLogByObject(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            return await GetListUserActivityLog(null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
+            return await GetListUserActivityLog(null, null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
         }
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
         {
             var query = _activityLogContext.UserActivityLog.AsNoTracking().AsQueryable();
+            if (userActivityLogIds?.Length > 0)
+            {
+                query = query.Where(q => userActivityLogIds.Contains(q.UserActivityLogId));
+            }
             if (fromDate.HasValue)
             {
                 query = query.Where(q => q.CreatedDatetimeUtc >= fromDate.Value.UnixToDateTime());
@@ -297,73 +301,17 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
                     IpAddress = item.IpAddress,
-                    UserActivityLogId = item.UserActivityLogId
+                    UserActivityLogId = item.UserActivityLogId,
+                    BillTypeId = item.BillTypeId,
+                    ObjectId = item.ObjectId,
+                    ObjectTypeId = (EnumObjectType)item.ObjectTypeId
                 };
                 result.Add(actLogOutput);
             }
             return (result, total);
         }
 
-        public async Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId)
-        {
-            var query = _activityLogContext.UserActivityLog.Where(x => arrActivityLogId.Contains(x.UserActivityLogId));
-
-            var ualDataList = query.AsNoTracking().ToList();
-
-            var userIds = ualDataList.Select(q => q.UserId).ToList();
-
-            var userInfos = (await _userService.GetBasicInfos(userIds))
-                 .ToDictionary(u => u.UserId, u => u);
-
-            var results = new List<UserActivityLogOuputModel>(ualDataList.Count);
-
-            foreach (var item in ualDataList)
-            {
-                var message = item.Message;
-                if (!string.IsNullOrWhiteSpace(item.MessageResourceName))
-                {
-                    string format = "";
-                    try
-                    {
-                        var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
-                        data = _activityLogService.ParseActivityLogData(data);
-                        format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
-                        if (!string.IsNullOrWhiteSpace(format))
-                        {
-                            message = string.Format(format, data);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, "ResourceFormat {0}", format);
-                    }
-                }
-
-                userInfos.TryGetValue(item.UserId, out var userInfo);
-                var actLogOutput = new UserActivityLogOuputModel
-                {
-                    UserId = item.UserId,
-                    UserName = userInfo?.UserName,
-                    FullName = userInfo?.FullName,
-                    AvatarFileId = userInfo?.AvatarFileId,
-                    ActionId = (EnumActionType?)item.ActionId,
-                    Message = message,
-                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
-                    MessageTypeId = (EnumMessageType)item.MessageTypeId,
-                    //MessageResourceName = item.MessageResourceName,
-                    //MessageResourceFormatData = item.MessageResourceFormatData,
-                    SubsidiaryId = item.SubsidiaryId,
-                    IpAddress = item.IpAddress,
-                    UserActivityLogId = item.UserActivityLogId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    BillTypeId = item.BillTypeId
-                };
-                results.Add(actLogOutput);
-            }
-            return results;
-        }
-
+    
         private async Task AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
         {
             var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);
