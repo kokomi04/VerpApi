@@ -49,9 +49,10 @@ namespace VErpApi.Controllers.System
         [HttpPost]
         [Route("byArrayId")]
         [GlobalApi]
-        public async Task<IList<UserActivityLogOuputModel>> GetNoteList([FromBody] long[] arrActivityLogId)
+        public async Task<IList<UserActivityLogOuputModel>> GetNoteList([FromBody] long[] userActivityLogIds)
         {
-            return await _activityService.GetListUserActivityLogByArrayId(arrActivityLogId);
+            var pagedData = await _activityService.GetListUserActivityLog(userActivityLogIds, null, null, null, null, null, null, null, null, null, false);
+            return pagedData.List;
         }
 
         [HttpPost]

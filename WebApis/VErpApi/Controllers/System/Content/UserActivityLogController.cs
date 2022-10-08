@@ -29,7 +29,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] int? userId, [FromQuery] int? billTypeId, [FromQuery] long? objectId, [FromQuery] EnumObjectType? objectTypeId, [FromQuery] int? actionTypeId, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page = 1, [FromQuery] int size = 20)
         {
-            return await _activityService.GetListUserActivityLog(keyword, fromDate, toDate, userId, billTypeId, objectId, objectTypeId, actionTypeId, sortBy, asc, page, size);
+            return await _activityService.GetListUserActivityLog(null, keyword, fromDate, toDate, userId, billTypeId, objectId, objectTypeId, actionTypeId, sortBy, asc, page, size);
         }
 
 
