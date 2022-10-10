@@ -499,10 +499,23 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            if (reportInfo.BodySql.Contains("$INPUT_PARAMS"))
+            if (reportInfo.BodySql.Contains("$INPUT_PARAMS_DECLARE"))
             {
-                var dynamicParam = string.Join(", ", sqlParams?.Select(p => p.ParameterName)?.ToArray());
-                sql = sql.Replace("$INPUT_PARAMS", string.IsNullOrWhiteSpace(dynamicParam) ? "" : ", " + dynamicParam);
+                var dynamicParamDeclare = string.Join(", ", sqlParams?.Select(p => p.ToDeclareString())?.ToArray());
+
+                sql = sql.Replace("$INPUT_PARAMS_DECLARE", string.IsNullOrWhiteSpace(dynamicParamDeclare) ? "" : ", " + dynamicParamDeclare);
+            }
+
+            if (reportInfo.BodySql.Contains("$INPUT_PARAMS_VALUE"))
+            {
+                var dynamicParam = string.Join(", ", sqlParams?.Select(p =>
+                {
+                    var declare = $"{p.ParameterName}";
+
+                    return declare;
+                })?.ToArray());
+
+                sql = sql.Replace("$INPUT_PARAMS_VALUE", string.IsNullOrWhiteSpace(dynamicParam) ? "" : ", " + dynamicParam);
             }
 
             string orderBy = reportInfo?.OrderBy ?? "";

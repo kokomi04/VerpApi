@@ -190,7 +190,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         DataTable dt = new DataTable();
                         dt.Load(result);
                         st.Stop();
-                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", parammeters.Select(p => p.ParameterName + "=" + p.Value).ToArray())}], CommandText={command.CommandText}");
+                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", parammeters.Select(p => p.ToDeclareString() + " = N'" + p.Value + "'").ToArray())}], CommandText={command.CommandText}");
                         return dt;
                     }
                 }
@@ -199,7 +199,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ToDeclareString() + " = '" + p.Value + "'"))}] {rawSql}", ex);
             }
         }
 
@@ -748,6 +748,29 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             return new SqlParameter(parameterName, SqlDbType.Decimal) { Value = value.HasValue ? (object)value : DBNull.Value };
         }
+
+        public static string ToDeclareString(this SqlParameter p)
+        {
+            var declare = $"{p.ParameterName} {p.SqlDbType}";
+
+            if (p.DbType == DbType.String)
+            {
+                var length = p.Value?.ToString()?.Length;
+                if (!length.HasValue || length < 128)
+                {
+                    length = 128;
+                }
+                declare += $" ({length})";
+            }
+
+            if (p.DbType == DbType.Decimal)
+            {
+                declare += $" (32,12)";
+            }
+
+            return declare;
+        }
+
 
         public static DataTable ConvertToDataTable(NonCamelCaseDictionary info, IList<NonCamelCaseDictionary> rows, Dictionary<string, EnumDataType> fields)
         {
