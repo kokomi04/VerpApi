@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -481,15 +482,55 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
+        private string ReplaceCustom(string sql, string token, string value, string defaultValue = "")
+        {
+            token = token.Replace("$", "\\$");
+            var regex = new Regex($"{token}(?<param>[\\S\\\\n]*)");
+            return regex.Replace(sql, (Match match) =>
+            {
+                var param = match.Groups["param"]?.Value;
+                if (!string.IsNullOrWhiteSpace(param))
+                {
+                    var paramsData = param.Split('|');
+                    var defaultValueSetting = paramsData.Length > 1 ? paramsData[1] : null;
+                    if (string.IsNullOrWhiteSpace(value) && !string.IsNullOrWhiteSpace(defaultValueSetting))
+                    {
+                        value = defaultValueSetting;
+                    }
+                    var preFixIfHaveValue = "";
+                    if (paramsData.Length > 2)
+                    {
+                        preFixIfHaveValue = paramsData[2];
+                    }
+
+
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        return preFixIfHaveValue + " " + value;
+                    }
+                    else
+                    {
+                        return "";
+                    }
+                }
+                return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
+            });
+
+        }
+
         private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
             var sql = reportInfo.BodySql;
 
+            Regex regex;
+
+            regex = new Regex("\\$FILTER(?<param>[\\S\\\\n]*)");
+
             if (reportInfo.BodySql.Contains("$FILTER"))
             {
-                sql = sql.Replace("$FILTER", string.IsNullOrWhiteSpace(filterCondition) ? " 1 = 1 " : filterCondition);
+                sql = ReplaceCustom(sql, "$FILTER", filterCondition, " 1 = 1 ");
             }
             else
             {
@@ -503,19 +544,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 var dynamicParamDeclare = string.Join(", ", sqlParams?.Select(p => p.ToDeclareString())?.ToArray());
 
-                sql = sql.Replace("$INPUT_PARAMS_DECLARE", string.IsNullOrWhiteSpace(dynamicParamDeclare) ? "" : ", " + dynamicParamDeclare);
+                sql = ReplaceCustom(sql, "$INPUT_PARAMS_DECLARE", dynamicParamDeclare);
+
             }
 
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_VALUE"))
             {
-                var dynamicParam = string.Join(", ", sqlParams?.Select(p =>
-                {
-                    var declare = $"{p.ParameterName}";
-
-                    return declare;
-                })?.ToArray());
-
-                sql = sql.Replace("$INPUT_PARAMS_VALUE", string.IsNullOrWhiteSpace(dynamicParam) ? "" : ", " + dynamicParam);
+                var dynamicParam = string.Join(", ", sqlParams?.Select(p => $"{p.ParameterName}")?.ToArray());
+                sql = ReplaceCustom(sql, "$INPUT_PARAMS_VALUE", dynamicParam);
             }
 
             string orderBy = reportInfo?.OrderBy ?? "";
@@ -526,9 +562,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 orderBy += $"{orderByFieldName}" + (asc ? "" : " DESC");
             }
 
+
             if (reportInfo.BodySql.Contains("$ORDERBY"))
             {
-                sql = sql.Replace("$ORDERBY", string.IsNullOrWhiteSpace(orderBy) ? " 1 " : orderBy);
+                sql = ReplaceCustom(sql, "$ORDERBY", orderBy, " 1 ");
             }
             else if (!string.IsNullOrWhiteSpace(orderBy))
             {
