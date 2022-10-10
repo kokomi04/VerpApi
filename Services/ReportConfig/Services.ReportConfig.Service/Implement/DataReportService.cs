@@ -485,13 +485,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private string ReplaceCustom(string sql, string token, string value, string defaultValue = "")
         {
             token = token.Replace("$", "\\$");
-            var regex = new Regex($"{token}(?<param>[\\S\\\\n]*)");
-            return regex.Replace(sql, (Match match) =>
+
+
+            MatchEvaluator replace = (Match match) =>
             {
                 var param = match.Groups["param"]?.Value;
                 if (!string.IsNullOrWhiteSpace(param))
                 {
-                    var paramsData = param.Split('|');
+                    var paramsData = param.Split(':');
                     var defaultValueSetting = paramsData.Length > 1 ? paramsData[1] : null;
                     if (string.IsNullOrWhiteSpace(value) && !string.IsNullOrWhiteSpace(defaultValueSetting))
                     {
@@ -514,7 +515,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
                 return string.IsNullOrWhiteSpace(value) ? defaultValue : value;
-            });
+            };
+
+            //   \(token(?<param>[^\$\n]*\:[^\$\n]*)\)
+            sql = new Regex($"\\({token}(?<param>[^\\$\\n]*\\:[^\\$\\n]*)\\)").Replace(sql, replace);
+
+            return new Regex($"{token}(?<param>\\S*)").Replace(sql, replace);
 
         }
 
