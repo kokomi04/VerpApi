@@ -499,6 +499,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+            if (reportInfo.BodySql.Contains("$INPUT_PARAMS"))
+            {
+                var dynamicParam = string.Join(", ", sqlParams?.Select(p => p.ParameterName)?.ToArray());
+                sql = sql.Replace("$INPUT_PARAMS", dynamicParam);
+            }
 
             string orderBy = reportInfo?.OrderBy ?? "";
 
