@@ -502,7 +502,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS"))
             {
                 var dynamicParam = string.Join(", ", sqlParams?.Select(p => p.ParameterName)?.ToArray());
-                sql = sql.Replace("$INPUT_PARAMS", dynamicParam);
+                sql = sql.Replace("$INPUT_PARAMS", string.IsNullOrWhiteSpace(dynamicParam) ? "" : ", " + dynamicParam);
             }
 
             string orderBy = reportInfo?.OrderBy ?? "";
