@@ -97,20 +97,29 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Kho xuất và kho nhập phải khác nhau.
+        ///   Looks up a localized string similar to Vui lòng nhập kho nhập.
         /// </summary>
-        public static string RotationRequireDiffStock {
+        public static string RotationInputStockIsRequired {
             get {
-                return ResourceManager.GetString("RotationRequireDiffStock", resourceCulture);
+                return ResourceManager.GetString("RotationInputStockIsRequired", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to Vui lòng nhập kho xuất.
         /// </summary>
-        public static string RotationStockIsRequired {
+        public static string RotationOutputStockIsRequired {
             get {
-                return ResourceManager.GetString("RotationStockIsRequired", resourceCulture);
+                return ResourceManager.GetString("RotationOutputStockIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kho xuất và kho nhập phải khác nhau.
+        /// </summary>
+        public static string RotationRequireDiffStock {
+            get {
+                return ResourceManager.GetString("RotationRequireDiffStock", resourceCulture);
             }
         }
     }

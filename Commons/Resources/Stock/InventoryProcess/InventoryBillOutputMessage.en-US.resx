@@ -129,6 +129,12 @@
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>The package was empty</value>
   </data>
+  <data name="RotationInputStockIsRequired" xml:space="preserve">
+    <value>Input stock is required</value>
+  </data>
+  <data name="RotationOutputStockIsRequired" xml:space="preserve">
+    <value>Output stock is required</value>
+  </data>
   <data name="RotationRequireDiffStock" xml:space="preserve">
     <value>Stock input and stock output must be different</value>
   </data>
