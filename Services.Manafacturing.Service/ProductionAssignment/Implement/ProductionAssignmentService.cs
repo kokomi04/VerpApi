@@ -138,10 +138,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                     )
                 .ToList();
 
+            var workloadsByStep = workloadInfos.GroupBy(w => w.ProductionStepId)
+                .ToDictionary(w => w.Key, w => w.ToList());
+
             foreach (var a in assignments)
             {
-                var workloads = workloadInfos.Where(s => s.ProductionStepId == a.ProductionStepId).ToList();
-                var workloadInfo = workloads.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
+
+                workloadsByStep.TryGetValue(a.ProductionStepId ?? 0, out var workloads);
+                var workloadInfo = workloads?.FirstOrDefault(w => w.ProductionStepLinkDataId == a.ProductionStepLinkDataId);
 
 
                 if (workloadInfo != null)
