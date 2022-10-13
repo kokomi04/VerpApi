@@ -38,8 +38,20 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Development' ">
     <StartAction>Project</StartAction>
+    <EnvironmentVariables>
+      <Variable name="ASPNETCORE_ENVIRONMENT" value="Development" />
+    </EnvironmentVariables>
     <LaunchBrowser></LaunchBrowser>
   </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Sandbox' ">
+    <StartAction>Project</StartAction>
+    <EnvironmentVariables>
+      <Variable name="ASPNETCORE_ENVIRONMENT" value="Sandbox" />
+    </EnvironmentVariables>
+    <LaunchBrowser></LaunchBrowser>
+  </PropertyGroup>
+  
   <ItemGroup>
     <Compile Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
     <Content Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
