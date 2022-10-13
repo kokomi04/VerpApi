@@ -921,8 +921,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin đầu ra và số giờ công cần
             // var productionCapacityDetail = new CapacityStepByProduction();
 
+            Dictionary<string, decimal?> ProductivitiesCaches = new Dictionary<string, decimal?>();
             Func<EnumProductionStepLinkDataObjectType, long, int, decimal?> getProductivity = (EnumProductionStepLinkDataObjectType objectTypeId, long objectId, int stepId) =>
             {
+                var key = $"{objectTypeId}|{objectId}|{stepId}";
+                if (ProductivitiesCaches.ContainsKey(key)) return ProductivitiesCaches[key];
+
                 decimal? productivityByStep = null;
 
                 ProductTargetProductivityByStep target = null;
@@ -949,9 +953,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 }
 
+                ProductivitiesCaches.Add(key, productivityByStep);
                 return productivityByStep;
             };
 
+            var assignmentsByStep = productionAssignments1.GroupBy(a => a.ProductionStepId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            var workloadInfosByLinkedData = workloadInfos.GroupBy(w => w.ProductionStepLinkDataId)
+                .ToDictionary(w => w.Key, w => w.FirstOrDefault());
+
+            //TODO Optimize
             return workloadInfos
                 .GroupBy(w => new
                 {
@@ -985,7 +997,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             //    assignQuantity = assign.AssignmentQuantity;
                             //}
 
-                            var departmentIds = productionAssignments1.Where(a => a.ProductionStepId == d.ProductionStepId).Select(a => a.DepartmentId).ToList();
+                            assignmentsByStep.TryGetValue(d.ProductionStepId, out var assignmentStep);
+                            if (assignmentStep == null)
+                            {
+                                assignmentStep = new List<Infrastructure.EF.ManufacturingDB.ProductionAssignment>();
+                            }
+
+                            var departmentIds = assignmentStep.Select(a => a.DepartmentId).Distinct().ToList();
 
 
                             var assignInfos = new List<CapacityAssignInfo>();
@@ -994,11 +1012,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 decimal assignQuantity = 0;
                                 bool isSelectionAssign = false;
 
-                                var assignStep = productionAssignments1.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId && w.DepartmentId == depId);
+                                var assignStep = assignmentStep.FirstOrDefault(w => w.DepartmentId == depId);
 
                                 var byDates = new List<ProductionAssignmentDetailModel>();
 
-                                var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                //var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                workloadInfosByLinkedData.TryGetValue(assignStep.ProductionStepLinkDataId, out var assignWorkInfo);
                                 var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
                                 if (assignWorkInfo != null)
                                 {
@@ -1032,8 +1051,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         //}
                                         //=> Only one
 
-                                        var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-
+                                        //var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                                        workloadInfosByLinkedData.TryGetValue(d.ProductionStepLinkDataId, out var workloadInfo);
 
                                         decimal? totalWorkload = 0;
                                         decimal? totalHours = 0;
@@ -1063,8 +1082,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                     AssignQuantity = assignQuantity,
                                     AssignWorkloadQuantity = wokloadQuantiy,
                                     AssignWorkHour = productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
-                                    StartDate = assignStep?.StartDate,
-                                    EndDate = assignStep?.EndDate,
+                                    StartDate = assignStep?.StartDate?.GetUnix(),
+                                    EndDate = assignStep?.EndDate?.GetUnix(),
                                     IsManualSetDate = assignStep.IsManualSetDate,
                                     RateInPercent = assignStep.RateInPercent,
                                     IsSelectionAssign = isSelectionAssign,
@@ -1093,8 +1112,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 AssignQuantity = currentDepartmentAssign?.AssignQuantity,
                                 AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
-                                StartDate = currentDepartmentAssign?.StartDate?.GetUnix(),
-                                EndDate = currentDepartmentAssign?.EndDate?.GetUnix(),
+                                StartDate = currentDepartmentAssign?.StartDate,
+                                EndDate = currentDepartmentAssign?.EndDate,
                                 IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
                                 RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
                                 ByDates = currentDepartmentAssign?.ByDates,
@@ -1106,7 +1125,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 })
                 .GroupBy(w => w.ProductionOrderId)
 
-                .ToCustomDictionary(new CapacityStepByProduction(), w => w.Key, w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList()));
+                .ToCustomDictionary(new CapacityStepByProduction(), 
+                    w => w.Key, 
+                    w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList())
+                );
 
         }
 
