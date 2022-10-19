@@ -16,6 +16,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public long ProductionStepId { get; set; }
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
+        public decimal? AssignmentWorkload { get; set; }
+        public decimal? AssignmentHours { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
@@ -24,6 +26,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int AssignedProgressStatus { get; set; }
         public bool IsManualFinish { get; set; }
         public bool IsManualSetDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
         public decimal RateInPercent { get; set; }
 
         public virtual ProductionStepLinkData ProductionStepLinkData { get; set; }

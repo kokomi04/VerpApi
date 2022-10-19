@@ -269,10 +269,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    .Where(s => s.ProductionOrderId == productionOrderId)
             //    .ToList();
 
-            foreach (var productionStepAssignments in data.ProductionStepAssignment)
+            foreach (var pStepAssignment in data.ProductionStepAssignment)
             {
-                var step = steps.FirstOrDefault(s => s.ProductionStepId == productionStepAssignments.ProductionStepId);
-                if (productionStepAssignments.ProductionAssignments.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != productionStepAssignments.ProductionStepId))
+                var step = steps.FirstOrDefault(s => s.ProductionStepId == pStepAssignment.ProductionStepId);
+                if (pStepAssignment.ProductionAssignments.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != pStepAssignment.ProductionStepId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin kế công đoạn sản xuất giữa các tổ không khớp");
                 if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
@@ -284,7 +284,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
                 });
 
-                if (productionStepAssignments.ProductionAssignments.Any(d => d.AssignmentQuantity <= 0))
+                if (pStepAssignment.ProductionAssignments.Any(d => d.AssignmentQuantity <= 0))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
 
                 // Lấy thông tin outsource
@@ -301,7 +301,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() / outSource.ProductionStepLinkData.Quantity;
                     }
 
-                    foreach (var assignment in productionStepAssignments.ProductionAssignments)
+                    foreach (var assignment in pStepAssignment.ProductionAssignments)
                     {
                         var sourceData = linkDatas[assignment.ProductionStepLinkDataId];
                         totalAssignmentQuantity += sourceData > 0 ? assignment.AssignmentQuantity * linkData.Value / sourceData : 0;
@@ -312,12 +312,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
 
                 var oldProductionStepAssignments = oldProductionAssignments
-                    .Where(s => s.ProductionStepId == productionStepAssignments.ProductionStepId)
+                    .Where(s => s.ProductionStepId == pStepAssignment.ProductionStepId)
                     .ToList();
 
                 var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
                 var newAssignments = new List<ProductionAssignmentModel>();
-                foreach (var item in productionStepAssignments.ProductionAssignments)
+                foreach (var item in pStepAssignment.ProductionAssignments)
                 {
                     var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == item.DepartmentId);
                     if (entity == null)
@@ -359,7 +359,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
                 //}
 
-                mapData.Add(productionStepAssignments.ProductionStepId, (oldProductionStepAssignments, updateAssignments, newAssignments));
+                mapData.Add(pStepAssignment.ProductionStepId, (oldProductionStepAssignments, updateAssignments, newAssignments));
             }
 
             // Danh sách phân công của các công đoạn bị xóa
