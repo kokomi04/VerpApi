@@ -15,14 +15,17 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long ProductionOrderId { get; set; }
         public int DepartmentId { get; set; }
         public decimal AssignmentQuantity { get; set; }
-        public int CompletedQuantity { get; set; }
+        //public decimal AssignmentWorkload { get; set; }
+        public decimal AssignmentHours { get; set; }
+        //public int CompletedQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         //public decimal Productivity { get; set; }
         public long? StartDate { get; set; }
         public long? EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public bool IsManualFinish { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }
 
 
@@ -53,6 +56,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public bool IsChange(ProductionAssignmentEntity entity)
         {
+            return true;
             var isChange = entity.AssignmentQuantity != AssignmentQuantity
                 || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
                 || entity.StartDate.GetUnix() != StartDate
@@ -154,7 +158,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long? StartDate { get; set; }
         public long? EndDate { get; set; }
         public bool IsSelectionAssign { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
     }

@@ -84,18 +84,18 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
 
     public class ProductionStepWorkloadAssignModel : ProductionStepWorkloadModel
     {
-        public bool IsSelectionAssign { get; set; }
-        public decimal? AssignQuantity { get; set; }
-        public decimal? AssignWorkloadQuantity { get; set; }
+        //public bool IsSelectionAssign { get; set; }
+        //public decimal? AssignQuantity { get; set; }
+        //public decimal? AssignWorkloadQuantity { get; set; }
 
-        public decimal? AssignWorkHour { get; set; }
+        //public decimal? AssignWorkHour { get; set; }
 
-        public long? StartDate { get; set; }
-        public long? EndDate { get; set; }
-        public bool IsManualSetDate { get; set; }
-        public decimal RateInPercent { get; set; }
+        //public long? StartDate { get; set; }
+        //public long? EndDate { get; set; }
+        //public bool IsManualSetDate { get; set; }
+        //public decimal RateInPercent { get; set; }
 
-        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
+        //public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
 
         public IList<CapacityAssignInfo> AssignInfos { get; set; }
 

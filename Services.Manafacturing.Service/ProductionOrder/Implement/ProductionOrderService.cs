@@ -844,7 +844,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return result;
         }
 
-        public async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId)
+        public async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId1)
         {
 
             var productionOrderIds = productionOrders.Select(p => p.ProductionOrderId).Distinct().ToList();
@@ -1084,7 +1084,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                     AssignWorkHour = productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
                                     StartDate = assignStep?.StartDate?.GetUnix(),
                                     EndDate = assignStep?.EndDate?.GetUnix(),
-                                    IsManualSetDate = assignStep.IsManualSetDate,
+                                    IsManualSetStartDate = assignStep.IsManualSetStartDate,
+                                    IsManualSetEndDate = assignStep.IsManualSetEndDate,
                                     RateInPercent = assignStep.RateInPercent,
                                     IsSelectionAssign = isSelectionAssign,
                                     ByDates = byDates
@@ -1092,7 +1093,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             }
 
 
-                            var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
+                            //var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
 
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
                             return new ProductionStepWorkloadAssignModel
@@ -1102,7 +1103,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                                 Quantity = d.Quantity,
-                                IsSelectionAssign = currentDepartmentAssign?.IsSelectionAssign ?? false,
+                                //IsSelectionAssign = currentDepartmentAssign?.IsSelectionAssign ?? false,
                                 WorkloadConvertRate = d.WorkloadConvertRate.Value,
                                 WorkloadQuantity = workloadQuantity,
 
@@ -1110,14 +1111,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 WorkHour = productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
 
-                                AssignQuantity = currentDepartmentAssign?.AssignQuantity,
-                                AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
-                                StartDate = currentDepartmentAssign?.StartDate,
-                                EndDate = currentDepartmentAssign?.EndDate,
-                                IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
-                                RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
-                                ByDates = currentDepartmentAssign?.ByDates,
-                                AssignWorkHour = currentDepartmentAssign?.AssignWorkHour,
+                                //AssignQuantity = currentDepartmentAssign?.AssignQuantity,
+                                //AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
+                                //StartDate = currentDepartmentAssign?.StartDate,
+                                //EndDate = currentDepartmentAssign?.EndDate,
+                                //IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
+                                //RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
+                                //ByDates = currentDepartmentAssign?.ByDates,
+                                //AssignWorkHour = currentDepartmentAssign?.AssignWorkHour,
                                 AssignInfos = assignInfos
                             };
                         }).ToList()

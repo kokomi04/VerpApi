@@ -261,7 +261,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.ProductionStepId).HasDefaultValueSql("((1))");
 
+                entity.Property(e => e.AssignmentHours).HasColumnType("decimal(32, 12)");
+
                 entity.Property(e => e.AssignmentQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.AssignmentWorkload).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.RateInPercent)
                     .HasColumnType("decimal(18, 5)")
@@ -279,7 +283,11 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.WorkDate, e.ProductionOrderId })
                     .HasName("PK_ProductionAssignment_copy2");
 
+                entity.Property(e => e.HoursPerDay).HasColumnType("decimal(32, 12)");
+
                 entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(32, 12)");
+
+                entity.Property(e => e.WorkloadPerDay).HasColumnType("decimal(32, 12)");
 
                 entity.HasOne(d => d.ProductionAssignment)
                     .WithMany(p => p.ProductionAssignmentDetail)
