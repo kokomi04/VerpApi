@@ -79,6 +79,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
         public decimal? Productivity { get; set; }
+        public decimal OutsourceQuantity { get; set; }
     }
 
 
@@ -110,6 +111,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int StepId { get; set; }
 
         public long ProductionStepLinkDataId { get; set; }
+        public decimal OutsourceQuantity { get; set; }
         public decimal Quantity { get; set; }
         public long ObjectId { get; set; }
 

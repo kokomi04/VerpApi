@@ -482,7 +482,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _manufacturingDBContext.SaveChanges();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
-
+                
                 return true;
             }
             catch (Exception ex)
@@ -806,11 +806,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
+                
                 var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
                 var assignsByDepartment = await _manufacturingDBContext.ProductionAssignment
                      .Include(a => a.ProductionAssignmentDetail)
                      .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId))
                      .ToListAsync();
+
+                var productionOrderIds = assignsByDepartment.Select(a=>a.ProductionOrderId).Distinct().ToList();
 
                 var removingDetails = new List<ProductionAssignmentDetail>();
 
@@ -840,6 +843,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await _manufacturingDBContext.ProductionAssignmentDetail.AddRangeAsync(addingDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
+
+                await UpdateProductionOrderAssignmentStatus(productionOrderIds);
+
                 await trans.CommitAsync();
                 return true;
             }
@@ -1358,6 +1364,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 throw;
             }
         }
+
+        
         private class AssignmentCapacityDetail
         {
             public DateTime WorkDate { get; set; }
