@@ -864,7 +864,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
              .Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder && productionOrderIds.Contains(s.ContainerId))
              .ToListAsync();
 
-            var assigns = await _manufacturingDBContext.ProductionAssignment.Where(a => productionOrderIds.Contains(a.ProductionOrderId)).ToListAsync();
+            var assigns = await _manufacturingDBContext.ProductionAssignment.Include(a => a.ProductionAssignmentDetail).Where(a => productionOrderIds.Contains(a.ProductionOrderId)).ToListAsync();
 
             var infos = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).ToListAsync();
 
@@ -880,9 +880,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     var isAssignmentCompleted = false;
                     foreach (var o in outputs)
                     {
-                        var stepAssigns = assigns.Where(a => a.ProductionStepLinkDataId == o.ProductionStepLinkDataId)
-                            .Sum(a => a.AssignmentQuantity);
-                        if (stepAssigns.SubProductionDecimal(o.ProductionStepLinkData.Quantity) == 0)
+                        var stepAssigns = assigns.Where(a => a.ProductionStepLinkDataId == o.ProductionStepLinkDataId);
+
+                        var assignQuantity = stepAssigns.Sum(a => a.AssignmentQuantity);
+
+                        var isCompletedAssignDate = stepAssigns.All(a => a.StartDate.HasValue && a.EndDate.HasValue && a.ProductionAssignmentDetail.Count > 0);
+
+                        if (assignQuantity.SubProductionDecimal(o.ProductionStepLinkData.Quantity) == 0 && isCompletedAssignDate)
                         {
                             isAssignmentCompleted = true;
                         }
