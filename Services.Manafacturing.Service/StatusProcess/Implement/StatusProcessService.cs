@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -251,7 +252,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         Note = h.Note,
 
                         ProductionOrderId = h.ProductionOrderId
-                    })                    
+                    })
                     .ToList();
 
             var allLinkDataIds = (allInputLinkDatas.Select(ld => ld.ProductionStepLinkData.ProductionStepLinkDataId)
@@ -854,8 +855,64 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             }
         }
 
+
+        public async Task UpdateProductionOrderAssignmentStatus(IList<long> productionOrderIds)
+        {
+            var steps = await _manufacturingDBContext.ProductionStep
+             .Include(s => s.ProductionStepLinkDataRole.Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output))
+             .ThenInclude(r => r.ProductionStepLinkData)
+             .Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder && productionOrderIds.Contains(s.ContainerId))
+             .ToListAsync();
+
+            var assigns = await _manufacturingDBContext.ProductionAssignment.Where(a => productionOrderIds.Contains(a.ProductionOrderId)).ToListAsync();
+
+            var infos = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).ToListAsync();
+
+            foreach (var productionOrderId in productionOrderIds)
+            {
+                var productionOrderAssignmentStatus = assigns.Count > 0 ? EnumProductionOrderAssignmentStatus.AssignProcessing : EnumProductionOrderAssignmentStatus.NoAssignment;
+
+                var allCompleted = true;
+
+                foreach (var productionStep in steps.Where(s => s.ContainerId == productionOrderId))
+                {
+                    var outputs = productionStep.ProductionStepLinkDataRole;
+                    var isAssignmentCompleted = false;
+                    foreach (var o in outputs)
+                    {
+                        var stepAssigns = assigns.Where(a => a.ProductionStepLinkDataId == o.ProductionStepLinkDataId)
+                            .Sum(a => a.AssignmentQuantity);
+                        if (stepAssigns.SubProductionDecimal(o.ProductionStepLinkData.Quantity) == 0)
+                        {
+                            isAssignmentCompleted = true;
+                        }
+                    }
+                    if (!isAssignmentCompleted)
+                    {
+                        allCompleted = false;
+                    }
+                }
+
+                if (allCompleted)
+                {
+                    productionOrderAssignmentStatus = EnumProductionOrderAssignmentStatus.Completed;
+                }
+                var info = infos.FirstOrDefault(o => o.ProductionOrderId == productionOrderId);
+
+                if (info != null)
+                {
+                    info.ProductionOrderAssignmentStatusId = (int)productionOrderAssignmentStatus;
+                }
+            }
+
+            await _manufacturingDBContext.SaveChangesAsync();
+        }
+
+
         public async Task<bool> UpdateFullAssignedProgressStatus(long productionOrderId)
         {
+            await UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
+
             var departmentHandoverDetails = await GetDepartmentHandoverDetail(productionOrderId);
             // Danh sách công việc
             var assignments = await _manufacturingDBContext.ProductionAssignment.Where(pa => pa.ProductionOrderId == productionOrderId).ToListAsync();

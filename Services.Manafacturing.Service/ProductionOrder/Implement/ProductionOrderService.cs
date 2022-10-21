@@ -900,6 +900,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                            StepId = p.StepId.Value,
                                            ProductionStepLinkDataId = ld.ProductionStepLinkDataId,
                                            Quantity = ld.Quantity,
+                                           OutsourceQuantity = (ld.OutsourcePartQuantity ?? 0) + (ld.OutsourceQuantity ?? 0) + (ld.ExportOutsourceQuantity ?? 0),
                                            ObjectId = ld.LinkDataObjectId,
                                            ObjectTypeId = (EnumProductionStepLinkDataObjectType)ld.LinkDataObjectTypeId,
                                            WorkloadConvertRate = ld.WorkloadConvertRate
@@ -1146,7 +1147,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 Productivity = productivityByStep ?? 0,
 
                                 WorkHour = productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
-
+                                OutsourceQuantity = d.OutsourceQuantity,
                                 //AssignQuantity = currentDepartmentAssign?.AssignQuantity,
                                 //AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
                                 //StartDate = currentDepartmentAssign?.StartDate,
@@ -1337,6 +1338,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             productionOrder.IsResetProductionProcess = false;
             productionOrder.IsInvalid = true;
             productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+            productionOrder.ProductionOrderAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.NoAssignment;
+
             _manufacturingDBContext.ProductionOrder.Add(productionOrder);
             await _manufacturingDBContext.SaveChangesAsync();
 
@@ -1487,6 +1490,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 bool invalidPlan = productionOrder.StartDate.GetUnix() != data.StartDate || productionOrder.EndDate.GetUnix() != data.EndDate;
 
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+
+                data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
+
                 _mapper.Map(data, productionOrder);
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
