@@ -84,34 +84,70 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return true;
         }
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
         {
-            if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderListModel>();
-            var filter = new SingleClause()
-            {
-                DataType = EnumDataType.Text,
-                FieldName = nameof(ProductionOrderListModel.ProductionOrderCode),
-                Operator = EnumOperator.InList,
-                Value = productionOrderCodes
-            };
+            if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderOutputModel>();
 
-            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
-            return result.List;
+            var productOrders = _manufacturingDBContext.ProductionOrder
+                .Include(x => x.ProductionOrderAttachment)
+                .Where(o => productionOrderCodes.Contains(o.ProductionOrderCode));
+            var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderCode IN (SELECT [NValue] FROM @ProductionOrderCodes)";
+            var parammeters = new SqlParameter[]
+            {
+                    productionOrderCodes.ToSqlParameter("@ProductionOrderCodes")
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+            var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+
+
+            var lst = new List<ProductionOrderOutputModel>();
+            foreach (var productOrder in productOrders)
+            {
+
+
+                var model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
+
+                model.ProductionOrderDetail = details.Where(d => d.ProductionOrderId == productOrder.ProductionOrderId).ToList();
+                lst.Add(model);
+
+            }
+
+            return lst;
         }
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds(IList<long> productionOrderIds)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrdersByIds(IList<long> productionOrderIds)
         {
-            if (productionOrderIds.Count == 0) return Array.Empty<ProductionOrderListModel>();
-            var filter = new SingleClause()
-            {
-                DataType = EnumDataType.BigInt,
-                FieldName = nameof(ProductionOrderListModel.ProductionOrderId),
-                Operator = EnumOperator.InList,
-                Value = productionOrderIds
-            };
+            if (productionOrderIds.Count == 0) return Array.Empty<ProductionOrderOutputModel>();
 
-            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
-            return result.List;
+            var productOrders = _manufacturingDBContext.ProductionOrder
+                .Include(x => x.ProductionOrderAttachment)
+                .Where(o => productionOrderIds.Contains(o.ProductionOrderId));
+            var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId IN (SELECT [Value] FROM @ProductionOrderIds)";
+            var parammeters = new SqlParameter[]
+            {
+                    productionOrderIds.ToSqlParameter("@ProductionOrderIds")
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+            var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+
+
+            var lst = new List<ProductionOrderOutputModel>();
+            foreach (var productOrder in productOrders)
+            {
+
+
+                var model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
+
+                model.ProductionOrderDetail = details.Where(d => d.ProductionOrderId == productOrder.ProductionOrderId).ToList();
+                lst.Add(model);
+
+            }
+
+            return lst;
         }
 
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, int? factoryDepartmentId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
@@ -1126,8 +1162,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 })
                 .GroupBy(w => w.ProductionOrderId)
 
-                .ToCustomDictionary(new CapacityStepByProduction(), 
-                    w => w.Key, 
+                .ToCustomDictionary(new CapacityStepByProduction(),
+                    w => w.Key,
                     w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList())
                 );
 
