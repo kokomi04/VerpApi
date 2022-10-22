@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.WebApis.VErpApi;
@@ -24,6 +25,7 @@ namespace MasterTests
         protected UnAuthorizeMasterDBContext _unAuthorizeMasterDBContext;
         protected StockDBContext _stockDBContext;
         protected AccountancyDBContext _accountancyDBContext;
+        protected ManufacturingDBContext _manufacturingDBContext;
 
 
         public int UserId { get; set; }
@@ -48,6 +50,7 @@ namespace MasterTests
 
             _accountancyDBContext = (AccountancyDBContext)webHost.Services.GetService(typeof(AccountancyDBContext));
 
+            _manufacturingDBContext = (ManufacturingDBContext)webHost.Services.GetService(typeof(ManufacturingDBContext));
 
         }
 
