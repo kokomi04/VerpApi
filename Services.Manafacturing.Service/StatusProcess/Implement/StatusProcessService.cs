@@ -33,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
         private readonly IMapper _mapper;
         public StatusProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
-            , ILogger logger
+            , ILogger<StatusProcessService> logger
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
@@ -891,7 +891,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                             isAssignmentCompleted = true;
                         }
                     }
-                    if (!isAssignmentCompleted)
+                    if (outputs.Count > 0 && !isAssignmentCompleted)
                     {
                         allCompleted = false;
                     }

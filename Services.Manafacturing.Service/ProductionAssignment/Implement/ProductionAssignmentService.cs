@@ -476,10 +476,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 // Update reset process status
                 productionOrder.IsResetProductionProcess = true;
 
-                // Cập nhật trạng thái cho lệnh và phân công
-                await UpdateFullAssignedProgressStatus(productionOrderId);
-
                 _manufacturingDBContext.SaveChanges();
+
+                // Cập nhật trạng thái cho lệnh và phân công
+                await UpdateFullAssignedProgressStatus(productionOrderId);                
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
                 
