@@ -874,7 +874,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 
                 var allCompleted = true;
 
-                foreach (var productionStep in steps.Where(s => s.ContainerId == productionOrderId))
+                var productionSteps = steps.Where(s => s.ContainerId == productionOrderId).ToList();
+                foreach (var productionStep in productionSteps)
                 {
                     var outputs = productionStep.ProductionStepLinkDataRole;
                     var isAssignmentCompleted = false;
@@ -897,7 +898,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     }
                 }
 
-                if (allCompleted)
+                if (allCompleted && productionSteps.Count > 0)
                 {
                     productionOrderAssignmentStatus = EnumProductionOrderAssignmentStatus.Completed;
                 }
