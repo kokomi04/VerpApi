@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -43,9 +44,13 @@ namespace VErpApi.Controllers.Stock.Products
         [Route("Search")]
         [GlobalApi]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null, [FromBody] Clause filters = null)
+        public async Task<PageData<ProductListOutput>> Search([FromQuery] string keyword, [FromQuery] IList<int> productIds, [FromQuery] string productName, [FromQuery] int page, [FromQuery] int size, 
+            [FromQuery] int[] productTypeIds = null, [FromQuery] int[] productCateIds = null, 
+            [FromQuery] bool? isProductSemi = null, [FromQuery] bool? isProduct = null, [FromQuery] bool? isMaterials = null,
+            [FromQuery] EnumProductionProcessStatus? productionProcessStatusId = null,
+            [FromBody] Clause filters = null)
         {
-            var req = new ProductFilterRequestModel(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials, filters);
+            var req = new ProductFilterRequestModel(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials, productionProcessStatusId: productionProcessStatusId, filters);
             //return await _productService.GetList(keyword, productIds, productName, productTypeIds, productCateIds, page, size, isProductSemi: isProductSemi, isProduct: isProduct, isMaterials: isMaterials, filters);
             return await _productService.GetList(req, page, size);
         }

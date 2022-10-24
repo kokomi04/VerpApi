@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -247,6 +248,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var productInfo = _mapper.Map<Product>(req);
             productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
+            productInfo.ProductionProcessStatusId = (int)EnumProductionProcessStatus.NotCreatedYet;
 
             await _stockDbContext.Product.AddAsync(productInfo);
 
@@ -837,6 +839,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Long,
                   p.Width,
                   p.CreatedDatetimeUtc,
+                  p.ProductionProcessStatusId,
                   //p.CustomerId,
 
                   p.PackingMethod,
@@ -941,6 +944,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Coefficient = item.Coefficient,
                     IsProduct = item.IsProduct ?? false,
                     IsMaterials = item.IsMaterials ?? false,
+                    ProductionProcessStatusId = (EnumProductionProcessStatus)item.ProductionProcessStatusId,
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
@@ -1089,7 +1093,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productModel.StockInfo.UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(unitConverions);
 
                 productModel.ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers);
-                
+
+                productModel.ProductionProcessStatusId = (EnumProductionProcessStatus)productInfo.ProductionProcessStatusId;
                 result.Add(productModel);
             }
 
