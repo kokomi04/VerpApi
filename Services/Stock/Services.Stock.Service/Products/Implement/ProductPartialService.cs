@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -255,7 +256,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                           .ObjectId(productId)
                           .JsonData(model.JsonSerialize())
                           .CreateLog();
-                    
+
                 }
 
                 await batchLog.CommitAsync();
@@ -544,7 +545,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return new ProductProcessModel()
             {
-                Coefficient = productInfo.Coefficient
+                Coefficient = productInfo.Coefficient,
+                ProductionProcessStatusId = (EnumProductionProcessStatus)productInfo.ProductionProcessStatusId
             };
         }
 
@@ -559,7 +561,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
 
                 productInfo.Coefficient = model.Coefficient;
-
+                productInfo.ProductionProcessStatusId = (int)EnumProductionProcessStatus.Created;
 
                 await _stockContext.SaveChangesAsync();
 

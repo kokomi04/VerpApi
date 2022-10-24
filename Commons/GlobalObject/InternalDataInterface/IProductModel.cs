@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
@@ -38,6 +39,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public bool IsProductSemi { get; set; }
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
+        public EnumProductionProcessStatus ProductionProcessStatusId { get; set; }
         public decimal Coefficient { get; set; }
         public string Color { get; set; }
 

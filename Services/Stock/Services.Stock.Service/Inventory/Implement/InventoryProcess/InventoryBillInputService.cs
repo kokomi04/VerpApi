@@ -739,7 +739,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// <returns></returns>
         public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20)
         {
-            var req = new ProductFilterRequestModel(keyword, new int[0], "", new int[0], productCateIds.ToArray(), null, null, null);
+            var req = new ProductFilterRequestModel(keyword, new int[0], "", new int[0], productCateIds.ToArray(), null, null, null, null);
             //var productList = await _productService.GetList(keyword, new int[0], "", new int[0], productCateIds, page, size, null, null, null);
             var productList = await _productService.GetList(req, page, size);
 
