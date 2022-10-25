@@ -144,7 +144,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long ProductionStepId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> Details { get; set; }
     }
