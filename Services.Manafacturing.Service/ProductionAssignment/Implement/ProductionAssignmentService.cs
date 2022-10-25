@@ -284,6 +284,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
                 });
 
+                foreach (var d in pStepAssignment.ProductionAssignments)
+                {
+                    var sumByDays = (d.ProductionAssignmentDetail?.Sum(d => d.QuantityPerDay) ?? 0);
+                    if (d.AssignmentQuantity.SubDecimal(sumByDays) != 0)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Tổng số lượng phân công từng ngày phải bằng số lượng phân công!");
+                    }
+                }
+
+
                 if (pStepAssignment.ProductionAssignments.Any(d => d.AssignmentQuantity <= 0))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
 
@@ -479,10 +489,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 _manufacturingDBContext.SaveChanges();
 
                 // Cập nhật trạng thái cho lệnh và phân công
-                await UpdateFullAssignedProgressStatus(productionOrderId);                
+                await UpdateFullAssignedProgressStatus(productionOrderId);
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -806,14 +816,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
             {
-                
+
                 var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
                 var assignsByDepartment = await _manufacturingDBContext.ProductionAssignment
                      .Include(a => a.ProductionAssignmentDetail)
                      .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId))
                      .ToListAsync();
 
-                var productionOrderIds = assignsByDepartment.Select(a=>a.ProductionOrderId).Distinct().ToList();
+                var productionOrderIds = assignsByDepartment.Select(a => a.ProductionOrderId).Distinct().ToList();
 
                 var removingDetails = new List<ProductionAssignmentDetail>();
 
@@ -824,18 +834,31 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     var updateInfo = data.FirstOrDefault(d => d.ProductionStepId == assign.ProductionStepId);
                     if (updateInfo != null)
                     {
+
+
                         assign.StartDate = updateInfo.StartDate.UnixToDateTime();
                         assign.EndDate = updateInfo.EndDate.UnixToDateTime();
-                        assign.IsManualSetDate = updateInfo.IsManualSetDate;
+                        assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate;
+                        assign.IsManualSetEndDate = updateInfo.IsManualSetEndDate;
                         assign.RateInPercent = updateInfo.RateInPercent;
+
                         removingDetails.AddRange(assign.ProductionAssignmentDetail);
                         var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
+
                         foreach (var d in details)
                         {
                             d.ProductionOrderId = assign.ProductionOrderId;
                             d.ProductionStepId = assign.ProductionStepId;
                             d.DepartmentId = assign.DepartmentId;
                         }
+
+
+                        var sumByDays = addingDetails?.Sum(d => d.QuantityPerDay) ?? 0;
+                        if (assign.AssignmentQuantity.SubDecimal(sumByDays) != 0)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Tổng số lượng phân công từng ngày phải bằng số lượng phân công!");
+                        }
+
                         addingDetails.AddRange(details);
                     }
                 }
@@ -1365,7 +1388,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
         }
 
-        
+
         private class AssignmentCapacityDetail
         {
             public DateTime WorkDate { get; set; }
