@@ -369,7 +369,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     ContainerId = id,
                     ContainerTypeId = containerTypeId,
-                    ProductionSteps = steps,
+                    ProductionSteps = steps.OrderBy(s => s.SortOrder).ToList(),
                     ProductionStepLinkDataRoles = roleData,
                     ProductionStepLinkDatas = stepLinkDatas.Where(l => linkDataIds.Contains(l.ProductionStepLinkDataId)).ToList(),
                     ProductionStepLinks = stepLinks,
