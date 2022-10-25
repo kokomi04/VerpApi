@@ -1100,6 +1100,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 s.ContainerId = containerId;
             }
 
+            var toRemoveLinkDatas = new List<ProductionStepLinkDataInput>();
+            foreach (var d in req.ProductionStepLinkDatas)
+            {
+                if (!req.ProductionStepLinkDataRoles.Any(r => r.ProductionStepLinkDataId == d.ProductionStepLinkDataId || string.Compare(r.ProductionStepLinkDataCode, d.ProductionStepLinkDataCode, true) == 0))
+                {
+                    toRemoveLinkDatas.Add(d);
+                }
+            }
+            foreach (var d in toRemoveLinkDatas)
+            {
+                req.ProductionStepLinkDatas.Remove(d);
+            }
+
+
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
