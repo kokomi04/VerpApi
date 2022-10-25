@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
@@ -12,9 +13,9 @@ namespace VErp.Services.PurchaseOrder.Service
 {
     public interface IPurchaseOrderService
     {
-        Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
+        Task<PageData<PurchaseOrderOutputList>> GetList(PurchaseOrderFilterRequestModel req);
 
-        Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size);
+        Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(PurchaseOrderFilterRequestModel req);
 
         Task<PurchaseOrderOutput> GetInfo(long purchaseOrderId);
 

@@ -28,6 +28,9 @@ using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
 using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using VErp.Infrastructure.EF.EFExtensions;
+using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Office2010.Excel;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -103,8 +106,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             });
         }
 
-        public async Task<PageData<PurchaseOrderOutputList>> GetList(string keyword, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputList>> GetList(PurchaseOrderFilterRequestModel req)
         {
+            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
+
             keyword = keyword?.Trim();
 
             var query = from po in _purchaseOrderDBContext.PurchaseOrder
@@ -164,6 +169,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.AttachmentBill,
 
                         };
+
+
+
             if (!string.IsNullOrWhiteSpace(keyword))
             {
 
@@ -229,6 +237,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query.Where(p => purchaseOrderTypes.Contains(p.PurchaseOrderType));
             }
 
+            query = query.InternalFilter(filters);
+
             var poQuery = _purchaseOrderDBContext.PurchaseOrder.Where(po => query.Select(p => p.PurchaseOrderId).Contains(po.PurchaseOrderId));
 
             var total = await poQuery.CountAsync();
@@ -283,8 +293,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return (result, total, additionResult);
         }
 
-        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(string keyword, IList<string> poCodes, IList<int> purchaseOrderTypes, IList<int> productIds, EnumPurchaseOrderStatus? purchaseOrderStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isChecked, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(PurchaseOrderFilterRequestModel req)
         {
+            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
+
             keyword = (keyword ?? "").Trim();
 
             var poQuery = _purchaseOrderDBContext.PurchaseOrder.AsQueryable();
@@ -460,6 +472,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 query = query.Where(p => purchaseOrderTypes.Contains(p.PurchaseOrderType));
             }
+
+            query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
             query = query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder);
