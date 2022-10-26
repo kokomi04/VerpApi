@@ -101,7 +101,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         public async Task<IList<ProductionAssignmentModel>> GetByDateRange(long fromDate, long toDate)
         {
             var assignmentQuery = _manufacturingDBContext.ProductionAssignment
-              .Where(a => a.StartDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime());
+                .Include(a => a.ProductionAssignmentDetail)
+              .Where(a => a.ProductionAssignmentDetail.Any(d => d.WorkDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime()));
 
             return await GetProductionAssignment(assignmentQuery);
         }
@@ -120,10 +121,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         private async Task<IList<ProductionAssignmentModel>> GetProductionAssignment(IQueryable<ProductionAssignmentEntity> productionAssignments)
         {
+            productionAssignments = from a in productionAssignments
+                                        //join s in _manufacturingDBContext.ProductionStep on a.ProductionOrderId equals s.ContainerId
+                                    join o in _manufacturingDBContext.ProductionOrder on a.ProductionOrderId equals o.ProductionOrderId
+                                    //where s.ContainerTypeId==(int)EnumContainerType.ProductionOrder
+                                    select a;
+
             var assignments = await productionAssignments
                 .Include(a => a.ProductionAssignmentDetail)
                 .ProjectTo<ProductionAssignmentModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+
 
             var poIds = assignments.Select(a => a.ProductionOrderId).Distinct().ToList();
             var productionOrders = await _manufacturingDBContext.ProductionOrder.Include(po => po.ProductionOrderDetail).Where(p => poIds.Contains(p.ProductionOrderId)).ToListAsync();
@@ -192,7 +200,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         d.SetWorkloadPerDay(totalWorkload);
                         d.SetWorkHourPerDay(totalHours);
 
-                    }
+                    }                  
                 }
             }
 
