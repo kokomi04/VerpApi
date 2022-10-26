@@ -201,7 +201,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data)
         {
-            // 
+            if (data.ProductionStepAssignment == null)
+            {
+                data.ProductionStepAssignment = new GeneralProductionStepAssignmentModel[0];
+            }
+            data.ProductionStepAssignment = data.ProductionStepAssignment.Where(a => a.ProductionAssignments?.Length > 0).ToArray();
+
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
 
@@ -374,7 +379,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             // Danh sách phân công của các công đoạn bị xóa
             var productionStepIds = data.ProductionStepAssignment
-                .Where(a => a.ProductionAssignments?.Length > 0)
                 .Select(a => a.ProductionStepId)
                 .ToList();
 
@@ -403,106 +407,109 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    //}
             //}
 
-            try
-            {
-                // Thêm thông tin thời gian biểu làm việc
-                var startDate = productionOderDetails[0].StartDate;
-                var endDate = productionOderDetails[0].EndDate;
-
-                //// Xử lý thông tin làm việc của tổ theo từng ngày
-                //var departmentIds = data.DepartmentTimeTable.Select(d => d.DepartmentId).ToList();
-
-                //var oldTimeTable = _manufacturingDBContext.DepartmentTimeTable
-                //    .Where(t => departmentIds.Contains(t.DepartmentId) && t.WorkDate >= startDate && t.WorkDate <= endDate).ToList();
-
-                //_manufacturingDBContext.DepartmentTimeTable.RemoveRange(oldTimeTable);
-
-                //foreach (var item in data.DepartmentTimeTable)
-                //{
-                //    var entity = _mapper.Map<DepartmentTimeTable>(item);
-                //    _manufacturingDBContext.DepartmentTimeTable.Add(entity);
-                //}
-
-
-                var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => productionStepIds.Contains(w.ProductionStepId)).ToList();
-                // Xóa phân công có công đoạn bị xóa khỏi quy trình
-
-                await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
-
-                _manufacturingDBContext.SaveChanges();
-
-                foreach (var productionStepAssignments in data.ProductionStepAssignment)
+            using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
+                try
                 {
-                    // Thêm thông tin công việc
-                    var productionStepWorkInfo = productionStepWorkInfos.FirstOrDefault(w => w.ProductionStepId == productionStepAssignments.ProductionStepId);
-                    if (productionStepWorkInfo == null)
-                    {
-                        productionStepWorkInfo = _mapper.Map<ProductionStepWorkInfo>(productionStepAssignments.ProductionStepWorkInfo);
-                        productionStepWorkInfo.ProductionStepId = productionStepAssignments.ProductionStepId;
-                        _manufacturingDBContext.ProductionStepWorkInfo.Add(productionStepWorkInfo);
-                    }
-                    else
-                    {
-                        _mapper.Map(productionStepAssignments.ProductionStepWorkInfo, productionStepWorkInfo);
-                    }
+                    // Thêm thông tin thời gian biểu làm việc
+                    var startDate = productionOderDetails[0].StartDate;
+                    var endDate = productionOderDetails[0].EndDate;
 
-                    // Xóa phân công
-                    if (mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments.Count > 0)
+                    //// Xử lý thông tin làm việc của tổ theo từng ngày
+                    //var departmentIds = data.DepartmentTimeTable.Select(d => d.DepartmentId).ToList();
+
+                    //var oldTimeTable = _manufacturingDBContext.DepartmentTimeTable
+                    //    .Where(t => departmentIds.Contains(t.DepartmentId) && t.WorkDate >= startDate && t.WorkDate <= endDate).ToList();
+
+                    //_manufacturingDBContext.DepartmentTimeTable.RemoveRange(oldTimeTable);
+
+                    //foreach (var item in data.DepartmentTimeTable)
+                    //{
+                    //    var entity = _mapper.Map<DepartmentTimeTable>(item);
+                    //    _manufacturingDBContext.DepartmentTimeTable.Add(entity);
+                    //}
+
+
+                    var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => productionStepIds.Contains(w.ProductionStepId)).ToList();
+                    // Xóa phân công có công đoạn bị xóa khỏi quy trình
+
+                    await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
+
+                    _manufacturingDBContext.SaveChanges();
+
+                    foreach (var productionStepAssignments in data.ProductionStepAssignment)
                     {
-                        foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
+                        // Thêm thông tin công việc
+                        var productionStepWorkInfo = productionStepWorkInfos.FirstOrDefault(w => w.ProductionStepId == productionStepAssignments.ProductionStepId);
+                        if (productionStepWorkInfo == null)
                         {
-                            // Xóa bàn giao liên quan tới phân công bị xóa
-                            var deleteHandovers = handovers
-                                .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
-                                && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
-                                .ToList();
-
-                            _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
-
-                            oldProductionAssignment.ProductionAssignmentDetail.Clear();
+                            productionStepWorkInfo = _mapper.Map<ProductionStepWorkInfo>(productionStepAssignments.ProductionStepWorkInfo);
+                            productionStepWorkInfo.ProductionStepId = productionStepAssignments.ProductionStepId;
+                            _manufacturingDBContext.ProductionStepWorkInfo.Add(productionStepWorkInfo);
                         }
-                        _manufacturingDBContext.SaveChanges();
-                        _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
-                    }
-
-                    // Thêm mới phân công
-                    if (mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.Count > 0)
-                    {
-                        var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
-                           .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
-                           .ToList();
-                        foreach (var newEntitie in newEntities)
+                        else
                         {
-                            newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                            _mapper.Map(productionStepAssignments.ProductionStepWorkInfo, productionStepWorkInfo);
                         }
-                        _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
+
+                        // Xóa phân công
+                        if (mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments.Count > 0)
+                        {
+                            foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
+                            {
+                                // Xóa bàn giao liên quan tới phân công bị xóa
+                                var deleteHandovers = handovers
+                                    .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                                    && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                                    .ToList();
+
+                                _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
+
+                                oldProductionAssignment.ProductionAssignmentDetail.Clear();
+                            }
+                            _manufacturingDBContext.SaveChanges();
+                            _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
+                        }
+
+                        // Thêm mới phân công
+                        if (mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.Count > 0)
+                        {
+                            var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
+                               .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
+                               .ToList();
+                            foreach (var newEntitie in newEntities)
+                            {
+                                newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
+                            }
+                            _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
+                        }
+
+                        // Cập nhật phân công
+                        foreach (var tuple in mapData[productionStepAssignments.ProductionStepId].UpdateProductionStepAssignments)
+                        {
+                            tuple.Entity.ProductionAssignmentDetail.Clear();
+                            _mapper.Map(tuple.Model, tuple.Entity);
+                        }
                     }
 
-                    // Cập nhật phân công
-                    foreach (var tuple in mapData[productionStepAssignments.ProductionStepId].UpdateProductionStepAssignments)
-                    {
-                        tuple.Entity.ProductionAssignmentDetail.Clear();
-                        _mapper.Map(tuple.Model, tuple.Entity);
-                    }
+                    // Update reset process status
+                    productionOrder.IsResetProductionProcess = true;
+
+                    _manufacturingDBContext.SaveChanges();
+
+                    // Cập nhật trạng thái cho lệnh và phân công
+                    await UpdateFullAssignedProgressStatus(productionOrderId);
+
+                    await trans.CommitAsync();
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
+
+                    return true;
                 }
-
-                // Update reset process status
-                productionOrder.IsResetProductionProcess = true;
-
-                _manufacturingDBContext.SaveChanges();
-
-                // Cập nhật trạng thái cho lệnh và phân công
-                await UpdateFullAssignedProgressStatus(productionOrderId);
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateProductAssignment");
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    await trans.RollbackAsync();
+                    _logger.LogError(ex, "UpdateProductAssignment");
+                    throw;
+                }
         }
 
 
