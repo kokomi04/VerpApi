@@ -373,7 +373,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             }
 
             // Danh sách phân công của các công đoạn bị xóa
-            var productionStepIds = data.ProductionStepAssignment.Select(a => a.ProductionStepId).ToList();
+            var productionStepIds = data.ProductionStepAssignment
+                .Where(a => a.ProductionAssignments?.Length > 0)
+                .Select(a => a.ProductionStepId)
+                .ToList();
 
             var deletedProductionStepAssignments = oldProductionAssignments
                     .Where(s => !productionStepIds.Contains(s.ProductionStepId))
