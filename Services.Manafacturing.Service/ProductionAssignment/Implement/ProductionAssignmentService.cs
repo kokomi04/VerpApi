@@ -201,7 +201,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
         public async Task<bool> UpdateProductionAssignment(long productionOrderId, GeneralAssignmentModel data)
         {
-            // 
+            if (data.ProductionStepAssignment == null)
+            {
+                data.ProductionStepAssignment = new GeneralProductionStepAssignmentModel[0];
+            }
+            data.ProductionStepAssignment = data.ProductionStepAssignment.Where(a => a.ProductionAssignments?.Length > 0).ToArray();
+
             var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
             if (productionOrder == null) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
 
@@ -374,7 +379,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             // Danh sách phân công của các công đoạn bị xóa
             var productionStepIds = data.ProductionStepAssignment
-                .Where(a => a.ProductionAssignments?.Length > 0)
                 .Select(a => a.ProductionStepId)
                 .ToList();
 
