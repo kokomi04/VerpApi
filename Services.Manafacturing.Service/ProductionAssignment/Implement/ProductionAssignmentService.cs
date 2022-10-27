@@ -102,7 +102,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         {
             var assignmentQuery = _manufacturingDBContext.ProductionAssignment
                 .Include(a => a.ProductionAssignmentDetail)
-              .Where(a => a.ProductionAssignmentDetail.Any(d => d.WorkDate >= fromDate.UnixToDateTime() && a.EndDate <= toDate.UnixToDateTime()));
+              .Where(a => a.ProductionAssignmentDetail.Any(d => d.WorkDate >= fromDate.UnixToDateTime() && d.WorkDate <= toDate.UnixToDateTime()));
 
             return await GetProductionAssignment(assignmentQuery);
         }
