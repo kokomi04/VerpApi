@@ -170,13 +170,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         totalWorkload += workload;
                         totalHours += hour;
 
-
-
                     }
 
-
-                    a.SetAssignmentWorkload(totalWorkload);
-                    a.SetAssignmentWorkHour(totalHours);
+                    a.AssignmentWorkload = a.AssignmentWorkload ?? totalWorkload;
+                    a.AssignmentHours = a.AssignmentHours ?? totalHours;
+                    //a.SetAssignmentWorkload(totalWorkload);
+                    //a.SetAssignmentWorkHour(totalHours);
                 }
 
                 foreach (var d in a.ProductionAssignmentDetail)
@@ -197,10 +196,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                         }
 
-                        d.SetWorkloadPerDay(totalWorkload);
-                        d.SetWorkHourPerDay(totalHours);
+                        d.WorkloadPerDay = d.WorkloadPerDay ?? totalWorkload;
+                        d.WorkHourPerDay = d.WorkHourPerDay ?? totalHours;
+                        //d.SetWorkloadPerDay(totalWorkload);
+                        //d.SetWorkHourPerDay(totalHours);
 
-                    }                  
+                    }
                 }
             }
 
