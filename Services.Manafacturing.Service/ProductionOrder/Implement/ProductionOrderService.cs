@@ -1101,8 +1101,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         totalHours += hour;
 
 
-                                        byDate.SetWorkHourPerDay(totalHours);
-                                        byDate.SetWorkloadPerDay(totalWorkload);
+                                        //byDate.SetWorkHourPerDay(totalHours);
+                                        //byDate.SetWorkloadPerDay(totalWorkload);
+
+                                        byDate.WorkloadPerDay = byDate.WorkloadPerDay ?? totalWorkload;
+                                        byDate.WorkHourPerDay = byDate.WorkHourPerDay ?? totalHours;
 
                                         return byDate;
 
