@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.Library
 {
@@ -69,6 +70,18 @@ namespace VErp.Commons.Library
         public static bool IsNumber(this Type objectType)
         {
             return NumericTypes.Contains(objectType);
+        }
+
+        private static readonly HashSet<EnumDataType> NumberDataTypes = new HashSet<EnumDataType>()
+        {
+            EnumDataType.Int,
+            EnumDataType.BigInt,
+            EnumDataType.Decimal,
+            EnumDataType.Percentage,
+        };
+        public static bool IsNumber(this EnumDataType dataTypeId)
+        {
+            return NumberDataTypes.Contains(dataTypeId);
         }
 
         public static bool InRange(this long dateTime, long from, long to)
