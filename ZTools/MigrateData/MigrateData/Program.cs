@@ -25,9 +25,14 @@ namespace MigrateData
 
             SetEnviroment();
             DI();
-            var service = ServiceProvider.GetRequiredService<IMigrateProductionProcessStatusToProductService>();
-            service.Execute().ConfigureAwait(true).GetAwaiter().GetResult();
-            Console.WriteLine("Success!");
+            var migrateProductionProcessStatusService = ServiceProvider.GetRequiredService<IMigrateProductionProcessStatusToProductService>();
+            migrateProductionProcessStatusService.Execute().ConfigureAwait(true).GetAwaiter().GetResult();
+            Console.WriteLine("Success migrate production process status to products !");
+
+            var migrateAssignStatusService = ServiceProvider.GetRequiredService<IMigrateProductionOrderAssignmentStatusService>();
+            migrateAssignStatusService.Execute().ConfigureAwait(true).GetAwaiter().GetResult();
+            Console.WriteLine("Success migrate production order assignment status!");
+            
             Console.ReadLine();
         }
 

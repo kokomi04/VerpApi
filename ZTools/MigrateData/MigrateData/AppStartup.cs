@@ -89,6 +89,7 @@ namespace MigrateData
         private static void ResolveCustomService(IServiceCollection services)
         {
             services.AddScoped<IMigrateProductionProcessStatusToProductService, MigrateProductionProcessStatusToProductService>();
+            services.AddScoped<IMigrateProductionOrderAssignmentStatusService, MigrateProductionOrderAssignmentStatusService>();
         }
     }
 }
