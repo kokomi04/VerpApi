@@ -445,40 +445,55 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var propertyNames = clause.FieldName.Split(".");
                 Expression prop = param;
+                var nullable = false;
                 foreach (var propertyName in propertyNames)
                 {
                     prop = Expression.PropertyOrField(prop, propertyName);
                     if (Nullable.GetUnderlyingType(prop.Type) != null)
                     {
-                        var getValueMethod = prop.Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
-                        prop = Expression.Call(prop, getValueMethod);
+                        //var getValueMethod = prop.Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
+                        //prop = Expression.Call(prop, getValueMethod);
+                        nullable = true;
                     }
                 }
 
 
-                if (clause.DataType == EnumDataType.Date && prop.Type == typeof(Int64))
+                if (clause.DataType == EnumDataType.Date && prop.Type == typeof(long))
                     clause.DataType = EnumDataType.BigInt;
 
                 //var prop = Expression.Property(param, clause.FieldName);
                 // Check value
-                ConstantExpression value;
+                Expression value = null;
                 MethodInfo method;
 
                 var toStringMethod = prop.Type.GetMethod("ToString", Type.EmptyTypes);
                 var propExpression = Expression.Call(prop, toStringMethod);
 
+
+                var dbValue = clause.DataType.GetSqlValue(clause.Value, timeZoneOffset);
+                if (clause.Operator != EnumOperator.InList)
+                {
+                    //value = Expression.Constant(dbValue, prop.Type);
+                    //if (nullable)
+                    //{
+                    //    value = Expression.Convert(value, prop.Type);
+                    //}
+                    value = Expression.PropertyOrField(Expression.Constant(new { p = dbValue }), "p");
+                    if (nullable)
+                    {
+                        value = Expression.Convert(value, prop.Type);
+                    }
+
+                }
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.Equal(prop, value);
                         break;
                     case EnumOperator.NotEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.NotEqual(prop, value);
                         break;
                     case EnumOperator.Contains:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
 
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
@@ -492,7 +507,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         break;
                     case EnumOperator.NotContains:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
 
                         method = typeof(string).GetMethod(nameof(string.Contains), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
@@ -515,10 +529,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item, timeZoneOffset) });
                         }
                         method = constructedListType.GetMethod("Contains");
-                        expression = Expression.Call(Expression.Constant(instance), method, prop);
+                        expression = Expression.Call(Expression.Constant(instance, prop.Type), method, prop);
                         break;
                     case EnumOperator.StartsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
 
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
@@ -531,7 +544,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
                         break;
                     case EnumOperator.NotStartsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
 
                         method = typeof(string).GetMethod(nameof(string.StartsWith), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
@@ -544,7 +556,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
                         break;
                     case EnumOperator.EndsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
                         {
@@ -556,7 +567,6 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
                         break;
                     case EnumOperator.NotEndsWith:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         method = typeof(string).GetMethod(nameof(string.EndsWith), new[] { typeof(string) });
                         if (prop.Type == typeof(string))
                         {
@@ -568,19 +578,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         }
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.GreaterThanOrEqual(prop, value);
                         break;
                     case EnumOperator.LessThanOrEqual:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.LessThanOrEqual(prop, value);
                         break;
                     case EnumOperator.Greater:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.GreaterThan(prop, value);
                         break;
                     case EnumOperator.LessThan:
-                        value = Expression.Constant(clause.DataType.GetSqlValue(clause.Value, timeZoneOffset));
                         expression = Expression.LessThan(prop, value);
                         break;
                     default:
