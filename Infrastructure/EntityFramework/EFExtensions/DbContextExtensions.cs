@@ -445,7 +445,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             {
                 var propertyNames = clause.FieldName.Split(".");
                 Expression prop = param;
-                var nullable = false;
+                //var nullable = false;
                 foreach (var propertyName in propertyNames)
                 {
                     prop = Expression.PropertyOrField(prop, propertyName);
@@ -453,7 +453,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         //var getValueMethod = prop.Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
                         //prop = Expression.Call(prop, getValueMethod);
-                        nullable = true;
+                        //nullable = true;
                     }
                 }
 
@@ -479,10 +479,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     //    value = Expression.Convert(value, prop.Type);
                     //}
                     value = Expression.PropertyOrField(Expression.Constant(new { p = dbValue }), "p");
-                    if (nullable)
-                    {
-                        value = Expression.Convert(value, prop.Type);
-                    }
+
+                    value = Expression.Convert(value, prop.Type);
+
 
                 }
                 switch (clause.Operator)
