@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NPOI.SS.Formula.Functions;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -542,7 +543,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
-            var departmentHour = new Dictionary<int, decimal>();
+            var stepHourTotal = new Dictionary<int, decimal>();
 
             var assignedHours = new Dictionary<int, decimal>();
             foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
@@ -558,8 +559,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
             }
 
+            var stepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
+
+            var deparmentHourTotal = new Dictionary<int, decimal>();
+
             foreach (var departmentId in departmentIds)
             {
+                
                 // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId)
                     .Select(sd => sd.StepId)
@@ -601,13 +607,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
                 }
 
+                if (!deparmentHourTotal.ContainsKey(departmentId))
+                {
+                    deparmentHourTotal.Add(departmentId, totalHour);
+                }
+              
+
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
                 // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                 foreach (var departmentStepId in departmentStepIds)
                 {
-                    if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                    if (!stepHourTotal.ContainsKey(departmentStepId)) stepHourTotal[departmentStepId] = 0;
                     var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId) ? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
-                    departmentHour[departmentStepId] += totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
+                    var h = totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
+                    stepHourTotal[departmentStepId] += h;
+
+                    if (!stepHoursDetail.ContainsKey(departmentStepId))
+                    {
+                        stepHoursDetail.Add(departmentStepId, new List<StepDepartmentHour>());
+                    }
+                    var detail = stepHoursDetail[departmentStepId].FirstOrDefault(d => d.DepartmentId == departmentId);
+                    if (detail == null)
+                    {
+                        detail = new StepDepartmentHour() { DepartmentId = departmentId, AssignedHours = 0, HourTotal = 0 };
+                        stepHoursDetail[departmentStepId].Add(detail);
+                    }
+                    detail.AssignedHours += stepWorkHour;
+                    detail.HourTotal += h;
                 }
             }
 
@@ -624,9 +650,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var result = new ProductionCapacityModel
             {
                 StepInfo = stepInfo,
-                DepartmentHour = departmentHour,
-                AssignedStepHours = assignedHours
+                StepHourTotal = stepHourTotal,
+                AssignedStepHours = assignedHours,                
+                StepHoursDetail = stepHoursDetail,
+                DeparmentHourTotal = deparmentHourTotal,
             };
+
 
             foreach (var productionOrder in productionOrders)
             {
@@ -707,7 +736,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
-            var departmentHour = new Dictionary<int, decimal>();
+            var stepHourTotal = new Dictionary<int, decimal>();
 
             var assignedHours = new Dictionary<int, decimal>();
             foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
@@ -728,6 +757,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             var departmentAssigns = new Dictionary<int, IList<DepartmentStepAssignHours>>();
+            var stepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
+
+            var deparmentHourTotal = new Dictionary<int, decimal>();
+
             foreach (var (productionOrderId, productionCapacities) in productionCapacityDetail)
             {
 
@@ -813,6 +846,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
 
                 }
+
+                if (!deparmentHourTotal.ContainsKey(departmentId))
+                {
+                    deparmentHourTotal.Add(departmentId, totalHour);
+                }
+
                 if (departmentAssigns.ContainsKey(departmentId))
                 {
                     var departmentStepIds = departmentAssigns[departmentId].Select(d => d.StepId).Distinct().ToList();
@@ -822,9 +861,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                     foreach (var departmentStepId in departmentStepIds)
                     {
-                        if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                        if (!stepHourTotal.ContainsKey(departmentStepId)) stepHourTotal[departmentStepId] = 0;
                         var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
-                        departmentHour[departmentStepId] += totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+                        
+                        var h = totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+
+                        stepHourTotal[departmentStepId] += h;
+
+                        if (!stepHoursDetail.ContainsKey(departmentStepId))
+                        {
+                            stepHoursDetail.Add(departmentStepId, new List<StepDepartmentHour>());
+                        }
+                        var detail = stepHoursDetail[departmentStepId].FirstOrDefault(d => d.DepartmentId == departmentId);
+                        if (detail == null)
+                        {
+                            detail = new StepDepartmentHour() { DepartmentId = departmentId, AssignedHours = 0, HourTotal = 0 };
+                            stepHoursDetail[departmentStepId].Add(detail);
+                        }
+                        detail.AssignedHours += stepWorkHour;
+                        detail.HourTotal += h;
                     }
                 }
             }
@@ -842,8 +897,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var result = new ProductionCapacityModel
             {
                 StepInfo = stepInfo,
-                DepartmentHour = departmentHour,
-                AssignedStepHours = assignedHours
+                StepHourTotal = stepHourTotal,
+                AssignedStepHours = assignedHours,
+                StepHoursDetail = stepHoursDetail,
+                DeparmentHourTotal = deparmentHourTotal,
             };
 
             foreach (var productionOrder in productionOrders)
