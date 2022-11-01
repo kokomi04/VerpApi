@@ -561,7 +561,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             var stepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
 
-            var deparmentHourTotal = new Dictionary<int, decimal>();
+            var departmentHourTotal = new Dictionary<int, decimal>();
 
             foreach (var departmentId in departmentIds)
             {
@@ -607,9 +607,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
                 }
 
-                if (!deparmentHourTotal.ContainsKey(departmentId))
+                if (!departmentHourTotal.ContainsKey(departmentId))
                 {
-                    deparmentHourTotal.Add(departmentId, totalHour);
+                    departmentHourTotal.Add(departmentId, totalHour);
                 }
               
 
@@ -653,7 +653,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 StepHourTotal = stepHourTotal,
                 AssignedStepHours = assignedHours,                
                 StepHoursDetail = stepHoursDetail,
-                DeparmentHourTotal = deparmentHourTotal,
+                DepartmentHourTotal = departmentHourTotal,
             };
 
 
@@ -900,7 +900,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 StepHourTotal = stepHourTotal,
                 AssignedStepHours = assignedHours,
                 StepHoursDetail = stepHoursDetail,
-                DeparmentHourTotal = deparmentHourTotal,
+                DepartmentHourTotal = deparmentHourTotal,
             };
 
             foreach (var productionOrder in productionOrders)
