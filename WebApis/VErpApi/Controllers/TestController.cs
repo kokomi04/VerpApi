@@ -23,14 +23,14 @@ namespace VErpApi.Controllers.System
     {
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
-        private readonly IActivityService _activityService;
+        private readonly IUserLogActionService _activityService;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
 
         public TestController(
             MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
-            , IActivityService activityService
+            , IUserLogActionService activityService
             , IAsyncRunnerService asyncRunnerService
             , IQueueProcessHelperService queueProcessHelperService)
         {

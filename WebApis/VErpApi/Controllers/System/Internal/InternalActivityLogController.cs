@@ -8,8 +8,8 @@ namespace VErpApi.Controllers.System.Internal
     [Route("api/internal/[controller]")]
     public class InternalActivityLogController : CrossServiceBaseController
     {
-        private readonly IActivityService _activityService;
-        public InternalActivityLogController(IActivityService activityService)
+        private readonly IUserLogActionService _activityService;
+        public InternalActivityLogController(IUserLogActionService activityService)
         {
             _activityService = activityService;
         }

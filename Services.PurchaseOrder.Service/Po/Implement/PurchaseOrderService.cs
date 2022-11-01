@@ -1247,7 +1247,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return result;
         }
 
-        public IAsyncEnumerable<PurchaseOrderInputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
+        public IAsyncEnumerable<PurchaseOrderInputDetail> ParseDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream)
         {
             return new PurchaseOrderParseExcelFacade(_productHelperService)
                  .ParseInvoiceDetails(mapping, extra, stream);

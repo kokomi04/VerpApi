@@ -52,7 +52,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IVoucherConfigService _voucherConfigService;
-
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _voucherDataActivityLog;
 
         public VoucherDataService(PurchaseOrderDBContext purchaseOrderDBContext
@@ -65,6 +65,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , ICategoryHelperService httpCategoryHelperService
             , IOutsideMappingHelperService outsideMappingHelperService
             , IVoucherConfigService voucherConfigService
+            , ILongTaskResourceLockService longTaskResourceLockService
             )
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
@@ -75,6 +76,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _voucherConfigService = voucherConfigService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _voucherDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherBill);
         }
 
@@ -2155,296 +2157,307 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var fields = await GetVoucherFields(voucherTypeId);
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-            var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
-
-            if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
-
-            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
-            var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-
-            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
-
-
-            var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
-            if (columnKey == null)
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập chứng từ bán hàng \"{voucherType.Title}\" từ excel"))
             {
-                throw BillCodeError.BadRequest();
-            }
+                longTask.SetTotalRows(data.Rows.Count());
+                longTask.SetCurrentStep("Kiểm tra dữ liệu");
 
-            var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
+                var requiredField = fields.FirstOrDefault(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters) && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
-            var groups = data.Rows.Select((r, i) => new
-            {
-                Data = r,
-                Index = i + mapping.FromRow
-            })
-                .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
-                .Where(r => !string.IsNullOrWhiteSpace(r.Data[columnKey.Column]))
-                .GroupBy(r => r.Data[columnKey.Column]);
-            List<BillInfoModel> bills = new List<BillInfoModel>();
+                if (requiredField != null) throw FieldRequired.BadRequestFormat(requiredField.Title);
 
-            // Validate unique single field
-            foreach (var field in fields.Where(f => f.IsUnique))
-            {
-                var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
-                if (mappingField == null) continue;
+                var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
+                var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
 
-                var values = field.IsMultiRow ? groups.SelectMany(b => b.Select(r => r.Data[mappingField.Column]?.ToString())).ToList() : groups.Where(b => b.Count() > 0).Select(b => b.First().Data[mappingField.Column]?.ToString()).ToList();
+                var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
 
-                // Check unique trong danh sách values thêm mới
-                if (values.Distinct().Count() < values.Count)
+
+                var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
+                if (columnKey == null)
                 {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", values.Distinct().Take(5))});
+                    throw BillCodeError.BadRequest();
                 }
-                // Checkin unique trong db
-                var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
-                existSql += $" AND {field.FieldName} IN (SELECT NValue FROM @Values)";
-                var existKeyParams = new List<SqlParameter>() { values.ToSqlParameter("@Values") };
-                var result = await _purchaseOrderDBContext.QueryDataTable(existSql, existKeyParams.ToArray());
-                bool isExisted = result != null && result.Rows.Count > 0;
-                if (isExisted)
-                {
-                    throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", result.AsEnumerable().Select(r => r[field.FieldName]?.ToString()).ToList().Distinct().Take(5))});
-                }
-            }
 
-            foreach (var bill in groups)
-            {
-                var info = new NonCamelCaseDictionary();
-                var rows = new List<NonCamelCaseDictionary>();
-                int count = bill.Count();
-                for (int rowIndx = 0; rowIndx < count; rowIndx++)
+                var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
+
+                var groups = data.Rows.Select((r, i) => new
                 {
-                    var mapRow = new NonCamelCaseDictionary();
-                    var row = bill.ElementAt(rowIndx);
-                    foreach (var mappingField in mapping.MappingFields)
+                    Data = r,
+                    Index = i + mapping.FromRow
+                })
+                    .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
+                    .Where(r => !string.IsNullOrWhiteSpace(r.Data[columnKey.Column]))
+                    .GroupBy(r => r.Data[columnKey.Column]);
+                List<BillInfoModel> bills = new List<BillInfoModel>();
+
+                // Validate unique single field
+                foreach (var field in fields.Where(f => f.IsUnique))
+                {
+                    var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
+                    if (mappingField == null) continue;
+
+                    var values = field.IsMultiRow ? groups.SelectMany(b => b.Select(r => r.Data[mappingField.Column]?.ToString())).ToList() : groups.Where(b => b.Count() > 0).Select(b => b.First().Data[mappingField.Column]?.ToString()).ToList();
+
+                    // Check unique trong danh sách values thêm mới
+                    if (values.Distinct().Count() < values.Count)
                     {
-                        var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
+                        throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", values.Distinct().Take(5)) });
+                    }
+                    // Checkin unique trong db
+                    var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
+                    existSql += $" AND {field.FieldName} IN (SELECT NValue FROM @Values)";
+                    var existKeyParams = new List<SqlParameter>() { values.ToSqlParameter("@Values") };
+                    var result = await _purchaseOrderDBContext.QueryDataTable(existSql, existKeyParams.ToArray());
+                    bool isExisted = result != null && result.Rows.Count > 0;
+                    if (isExisted)
+                    {
+                        throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, string.Join(", ", result.AsEnumerable().Select(r => r[field.FieldName]?.ToString()).ToList().Distinct().Take(5)) });
+                    }
+                }
 
-                        // Validate mapping required
-                        if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
-                        if (field == null) continue;
-                        //if (!field.IsMultiRow && rowIndx > 0) continue;
-
-                        string value = null;
-                        if (row.Data.ContainsKey(mappingField.Column))
-                            value = row.Data[mappingField.Column]?.ToString();
-                        // Validate require
-                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
-
-                        if (string.IsNullOrWhiteSpace(value)) continue;
-                        value = value.Trim();
-
-                        if (value.StartsWith(PREFIX_ERROR_CELL))
+                foreach (var bill in groups)
+                {
+                    var info = new NonCamelCaseDictionary();
+                    var rows = new List<NonCamelCaseDictionary>();
+                    int count = bill.Count();
+                    for (int rowIndx = 0; rowIndx < count; rowIndx++)
+                    {
+                        var mapRow = new NonCamelCaseDictionary();
+                        var row = bill.ElementAt(rowIndx);
+                        foreach (var mappingField in mapping.MappingFields)
                         {
-                            throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
-                        }
+                            var field = fields.FirstOrDefault(f => f.FieldName == mappingField.FieldName);
 
-                        if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
-                        {
-                            if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                                throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
-                            value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
-                        }
+                            // Validate mapping required
+                            if (field == null && mappingField.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty) throw new BadRequestException(GeneralCode.ItemNotFound, $"Trường dữ liệu {mappingField.FieldName} không tìm thấy");
+                            if (field == null) continue;
+                            //if (!field.IsMultiRow && rowIndx > 0) continue;
 
-                        // Validate refer
-                        if (!((EnumFormType)field.FormTypeId).IsSelectForm())
-                        {
-                            // Validate value
-                            if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
+                            string value = null;
+                            if (row.Data.ContainsKey(mappingField.Column))
+                                value = row.Data[mappingField.Column]?.ToString();
+                            // Validate require
+                            if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
+
+                            if (string.IsNullOrWhiteSpace(value)) continue;
+                            value = value.Trim();
+
+                            if (value.StartsWith(PREFIX_ERROR_CELL))
                             {
-                                string regex = ((EnumDataType)field.DataTypeId).GetRegex();
-                                if ((field.DataSize > 0 && value.Length > field.DataSize)
-                                    || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                                    || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
-                                {
-                                    throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
-                                }
-                            }
-                        }
-                        else
-                        {
-                            int suffix = 0;
-                            var paramName = $"@{mappingField.RefFieldName}_{suffix}";
-                            var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
-                            if (referField == null)
-                            {
-                                throw RefFieldNotExisted.BadRequestFormat(field.Title, mappingField.FieldName);
-                            }
-                            var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
-                            var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                            suffix++;
-                            if (!string.IsNullOrEmpty(field.Filters))
-                            {
-                                var filters = field.Filters;
-                                var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
-                                Regex rx = new Regex(pattern);
-                                MatchCollection match = rx.Matches(field.Filters);
-
-                                for (int i = 0; i < match.Count; i++)
-                                {
-                                    var fieldName = match[i].Groups["word"].Value;
-                                    var startText = match[i].Groups["start"].Value;
-                                    var lengthText = match[i].Groups["length"].Value;
-                                    mapRow.TryGetValue(fieldName, out string filterValue);
-                                    if (string.IsNullOrEmpty(filterValue))
-                                    {
-                                        info.TryGetValue(fieldName, out filterValue);
-                                    }
-                                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
-                                    {
-                                        filterValue = filterValue.Substring(start, length);
-                                    }
-                                    if (string.IsNullOrEmpty(filterValue))
-                                    {
-                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
-                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
-                                    }
-                                    filters = filters.Replace(match[i].Value, filterValue);
-                                }
-
-                                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
-                                if (filterClause != null)
-                                {
-                                    var whereCondition = new StringBuilder();
-
-
-                                    try
-                                    {
-                                        var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                                        foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
-                                        {
-                                            parameters.Add(key, val);
-                                        }
-
-                                        filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
-
-                                    }
-                                    catch (EvalObjectArgException agrEx)
-                                    {
-                                        var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
-                                        throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
-                                    }
-                                    catch (Exception)
-                                    {
-                                        throw;
-                                    }
-
-                                    if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
-                                }
+                                throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
                             }
 
-                            var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
-                            if (referData == null || referData.Rows.Count == 0)
+                            if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                             {
-                                // Check tồn tại
-                                var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
-                                var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                                referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
-                                if (referData == null || referData.Rows.Count == 0)
-                                {
-                                    throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
-                                }
-                                else
-                                {
-                                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
-                                }
+                                if (!DateTime.TryParse(value.ToString(), out DateTime date))
+                                    throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
+                                value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                             }
-                            value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                        }
-                        if (!field.IsMultiRow)
-                        {
-                            if (info.ContainsKey(field.FieldName))
+
+                            // Validate refer
+                            if (!((EnumFormType)field.FormTypeId).IsSelectForm())
                             {
-                                if (info[field.FieldName]?.ToString() != value)
+                                // Validate value
+                                if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
                                 {
-                                    throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                                    string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+                                    if ((field.DataSize > 0 && value.Length > field.DataSize)
+                                        || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
+                                        || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                                    {
+                                        throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
+                                    }
                                 }
                             }
                             else
                             {
-                                info.Add(field.FieldName, value);
+                                int suffix = 0;
+                                var paramName = $"@{mappingField.RefFieldName}_{suffix}";
+                                var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
+                                if (referField == null)
+                                {
+                                    throw RefFieldNotExisted.BadRequestFormat(field.Title, mappingField.FieldName);
+                                }
+                                var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
+                                var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
+                                suffix++;
+                                if (!string.IsNullOrEmpty(field.Filters))
+                                {
+                                    var filters = field.Filters;
+                                    var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
+                                    Regex rx = new Regex(pattern);
+                                    MatchCollection match = rx.Matches(field.Filters);
+
+                                    for (int i = 0; i < match.Count; i++)
+                                    {
+                                        var fieldName = match[i].Groups["word"].Value;
+                                        var startText = match[i].Groups["start"].Value;
+                                        var lengthText = match[i].Groups["length"].Value;
+                                        mapRow.TryGetValue(fieldName, out string filterValue);
+                                        if (string.IsNullOrEmpty(filterValue))
+                                        {
+                                            info.TryGetValue(fieldName, out filterValue);
+                                        }
+                                        if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
+                                        {
+                                            filterValue = filterValue.Substring(start, length);
+                                        }
+                                        if (string.IsNullOrEmpty(filterValue))
+                                        {
+                                            var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
+                                            throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                        }
+                                        filters = filters.Replace(match[i].Value, filterValue);
+                                    }
+
+                                    Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
+                                    if (filterClause != null)
+                                    {
+                                        var whereCondition = new StringBuilder();
+
+
+                                        try
+                                        {
+                                            var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                            foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                            {
+                                                parameters.Add(key, val);
+                                            }
+
+                                            filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+
+                                        }
+                                        catch (EvalObjectArgException agrEx)
+                                        {
+                                            var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
+                                            throw RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
+                                        }
+                                        catch (Exception)
+                                        {
+                                            throw;
+                                        }
+
+                                        if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
+                                    }
+                                }
+
+                                var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
+                                if (referData == null || referData.Rows.Count == 0)
+                                {
+                                    // Check tồn tại
+                                    var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
+                                    var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
+                                    referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                                    if (referData == null || referData.Rows.Count == 0)
+                                    {
+                                        throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                                    }
+                                    else
+                                    {
+                                        throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
+                                    }
+                                }
+                                value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                            }
+                            if (!field.IsMultiRow)
+                            {
+                                if (info.ContainsKey(field.FieldName))
+                                {
+                                    if (info[field.FieldName]?.ToString() != value)
+                                    {
+                                        throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                                    }
+                                }
+                                else
+                                {
+                                    info.Add(field.FieldName, value);
+                                }
+                            }
+                            else
+                            {
+                                mapRow.Add(field.FieldName, value);
                             }
                         }
-                        else
-                        {
-                            mapRow.Add(field.FieldName, value);
-                        }
+                        rows.Add(mapRow);
                     }
-                    rows.Add(mapRow);
-                }
-                var billInfo = new BillInfoModel
-                {
-                    Info = info,
-                    Rows = rows.Count > 0 ? rows.ToArray() : new NonCamelCaseDictionary[]
+                    var billInfo = new BillInfoModel
                     {
+                        Info = info,
+                        Rows = rows.Count > 0 ? rows.ToArray() : new NonCamelCaseDictionary[]
+                        {
                         new NonCamelCaseDictionary()
-                    }
-                };
+                        }
+                    };
 
-                await ValidateSaleVoucherConfig(billInfo?.Info, null);
+                    await ValidateSaleVoucherConfig(billInfo?.Info, null);
 
-                bills.Add(billInfo);
-            }
+                    bills.Add(billInfo);
+                }
+                
+                longTask.SetCurrentStep("Cập nhật vào cơ sở dữ liệu");
 
-            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
-            {
-                try
+                using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
                 {
-                    var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
-
-                    // Get all fields
-                    var voucherFields = _purchaseOrderDBContext.VoucherField
-                     .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
-                     .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
-
-                    foreach (var bill in bills)
+                    try
                     {
-                        // validate require
-                        ValidateRowModel checkInfo = new ValidateRowModel(bill.Info, null);
+                        var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                        List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
-                        checkRows = bill.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
+                        // Get all fields
+                        var voucherFields = _purchaseOrderDBContext.VoucherField
+                         .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                         .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
-                        // Validate info
-                        var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-                        // Check field required
-                        await CheckRequired(checkInfo, checkRows, requiredFields, fields);
-
-                        // Before saving action (SQL)
-                        await ProcessActionAsync(voucherTypeId, voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
-
-                        var billInfo = new VoucherBill()
+                        foreach (var bill in bills)
                         {
-                            VoucherTypeId = voucherTypeId,
-                            LatestBillVersion = 1,
-                            SubsidiaryId = _currentContextService.SubsidiaryId,
-                            IsDeleted = false
-                        };
+                           
+                            // validate require
+                            ValidateRowModel checkInfo = new ValidateRowModel(bill.Info, null);
 
-                        await _purchaseOrderDBContext.VoucherBill.AddAsync(billInfo);
+                            List<ValidateRowModel> checkRows = new List<ValidateRowModel>();
+                            checkRows = bill.Rows.Select(r => new ValidateRowModel(r, null)).ToList();
 
-                        await _purchaseOrderDBContext.SaveChangesAsync();
+                            // Validate info
+                            var requiredFields = fields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
+                            // Check field required
+                            await CheckRequired(checkInfo, checkRows, requiredFields, fields);
 
-                        await CreateBillVersion(voucherTypeId, billInfo, bill, generateTypeLastValues);
+                            // Before saving action (SQL)
+                            await ProcessActionAsync(voucherTypeId, voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
 
-                        // After saving action (SQL)
-                        await ProcessActionAsync(voucherTypeId, voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
+                            var billInfo = new VoucherBill()
+                            {
+                                VoucherTypeId = voucherTypeId,
+                                LatestBillVersion = 1,
+                                SubsidiaryId = _currentContextService.SubsidiaryId,
+                                IsDeleted = false
+                            };
+
+                            await _purchaseOrderDBContext.VoucherBill.AddAsync(billInfo);
+
+                            await _purchaseOrderDBContext.SaveChangesAsync();
+
+                            await CreateBillVersion(voucherTypeId, billInfo, bill, generateTypeLastValues);
+
+                            // After saving action (SQL)
+                            await ProcessActionAsync(voucherTypeId, voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
+
+                            longTask.IncProcessedRows();
+
+                        }
+
+                        await ConfirmCustomGenCode(generateTypeLastValues);
+
+                        trans.Commit();
                     }
-
-                    await ConfirmCustomGenCode(generateTypeLastValues);
-
-                    trans.Commit();
+                    catch (Exception ex)
+                    {
+                        trans.TryRollbackTransaction();
+                        _logger.LogError(ex, "Import");
+                        throw;
+                    }
                 }
-                catch (Exception ex)
-                {
-                    trans.TryRollbackTransaction();
-                    _logger.LogError(ex, "Import");
-                    throw;
-                }
+                return true;
             }
-            return true;
         }
 
         public async Task<(MemoryStream Stream, string FileName)> ExportVoucherBill(int voucherTypeId, long fId)

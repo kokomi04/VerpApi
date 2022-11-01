@@ -46,6 +46,7 @@ namespace VErp.Services.Accountancy.Service.Category
         private readonly IDataProtectionProvider _protectionProvider;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _categoryDataActivityLog;
 
         public CategoryDataService(MasterDBContext masterContext
@@ -57,6 +58,7 @@ namespace VErp.Services.Accountancy.Service.Category
             , IDataProtectionProvider protectionProvider
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICategoryHelperService httpCategoryHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
             )
         {
             _logger = logger;
@@ -67,7 +69,7 @@ namespace VErp.Services.Accountancy.Service.Category
             _protectionProvider = protectionProvider;
             _customGenCodeHelperService = customGenCodeHelperService;
             _httpCategoryHelperService = httpCategoryHelperService;
-
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _categoryDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CategoryData);
         }
 
@@ -1019,7 +1021,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         var inputField = fields.First(f => f.CategoryFieldName == groupByField.Key.CategoryFieldName);
                         var values = groupByField.Select(v => ((EnumDataType)inputField.DataTypeId).GetSqlValue(v.Value)).Distinct().ToList();
-                        
+
                         if (values.Count() > 0)
                         {
                             if (suffix > 0)
@@ -1045,7 +1047,7 @@ namespace VErp.Services.Accountancy.Service.Category
                                     break;
 
                             }
-                           
+
                             dataSql.Append(")");
 
                             sqlParams.Add(sqlParam);
@@ -1091,7 +1093,7 @@ namespace VErp.Services.Accountancy.Service.Category
         public async Task<bool> ImportCategoryRowFromMapping(int categoryId, ImportExcelMapping mapping, Stream stream)
         {
             var facade = new CategoryDataImportFacade(categoryId, _masterContext, this, _categoryDataActivityLog, _currentContextService);
-            await facade.ImportData(mapping, stream);
+            await facade.ImportData(longTaskResourceLockService, mapping, stream);
 
             return true;
 

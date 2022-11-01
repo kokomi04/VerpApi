@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
@@ -12,6 +13,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
@@ -109,45 +111,60 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
 
         private ImportExcelMapping _mapping = null;
-        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream, int? productId)
+        public async Task<bool> ProcessData(ILongTaskResourceLockService longTaskResourceLockService, ImportExcelMapping mapping, Stream stream, int? productId)
         {
             _mapping = mapping;
-            ReadExcelData(mapping, stream);
-
-            if (productId.HasValue)
-                await ValidWithProductBOM(productId);
-
-            await ValidExcelData();
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu vật tư tiêu hao từ excel"))
             {
-                using (var logBath = _productActivityLog.BeginBatchLog())
+                ReadExcelData(longTask, mapping, stream);
+
+                longTask.SetTotalRows(_importData.Count);
+
+                if (productId.HasValue)
+                    await ValidWithProductBOM(productId);
+
+                await ValidExcelData();
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    await AddMissingProductType();
-                    await AddMissingProductCate();
-                    await AddMissingUnit();
-                    await AddMissingProduct();
-                    await AddMissingMaterialConsumptionGroup();
-
-                    if (!IsPreview)
+                    using (var logBath = _productActivityLog.BeginBatchLog())
                     {
+                        longTask.SetCurrentStep("Thêm loại mặt hàng");
+                        await AddMissingProductType();
 
-                        await ImportProcess();
+                        longTask.SetCurrentStep("Thêm danh mục mặt hàng");
+                        await AddMissingProductCate();
 
-                        await trans.CommitAsync();
-                        await logBath.CommitAsync();
+                        longTask.SetCurrentStep("Thêm đơn vị tính");
+                        await AddMissingUnit();
+
+                        longTask.SetCurrentStep("Thêm mặt hàng");
+
+                        await AddMissingProduct();
+
+                        longTask.SetCurrentStep("Thêm nhóm vật tư tiêu hao");
+                        await AddMissingMaterialConsumptionGroup();
+
+                        if (!IsPreview)
+                        {
+
+                            await ImportProcess(longTask);
+
+                            await trans.CommitAsync();
+                            await logBath.CommitAsync();
+                        }
+                        else
+                        {
+                            PreviewData = new List<MaterialsConsumptionByProduct>();
+                            var allUsageProductCode = _importData.Select(x => x.UsageProductCode).Distinct();
+                            var allProductBoms = await _productBomService.GetBoms(_existedProducts.Values.Where(x => allUsageProductCode.Contains(x.ProductCode) && x.ProductId > 0).Select(x => x.ProductId).ToArray());
+
+                            await LoadPreviewData(allProductBoms, longTask);
+                        }
+
                     }
-                    else
-                    {
-                        PreviewData = new List<MaterialsConsumptionByProduct>();
-                        var allUsageProductCode = _importData.Select(x => x.UsageProductCode).Distinct();
-                        var allProductBoms = await _productBomService.GetBoms(_existedProducts.Values.Where(x => allUsageProductCode.Contains(x.ProductCode) && x.ProductId > 0).Select(x => x.ProductId).ToArray());
-
-                        await LoadPreviewData(allProductBoms);
-                    }
-
                 }
+                return true;
             }
-            return true;
         }
 
         private async Task ValidWithProductBOM(int? productId)
@@ -199,17 +216,22 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             }
         }
 
-        private void ReadExcelData(ImportExcelMapping mapping, Stream stream)
+        private void ReadExcelData(LongTaskResourceLock longTask, ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
+            reader.RegisterLongTaskEvent(longTask);
             _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping);
         }
 
-        private async Task ImportProcess()
+        private async Task ImportProcess(LongTaskResourceLock longTask)
         {
             var data = _importData.GroupBy(x => x.GroupTitle.NormalizeAsInternalName());
 
             var lsMaterialConsumption = new List<ProductMaterialsConsumption>();
+
+            longTask.SetCurrentStep("Xử lý dữ liệu lưu vào cơ sở dữ liệu");
+
+            longTask.SetTotalRows(data.Count());
 
             foreach (var d in data)
             {
@@ -249,6 +271,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
 
                 }
+                longTask.IncProcessedRows();
             }
 
             if (!IsPreview)
@@ -273,7 +296,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             }
         }
 
-        private async Task LoadPreviewData(IDictionary<int, IList<ProductBomOutput>> allProductBoms)
+        private async Task LoadPreviewData(IDictionary<int, IList<ProductBomOutput>> allProductBoms, LongTaskResourceLock longTask)
         {
             var allUsageProductCode = _importData.Select(x => x.UsageProductCode.NormalizeAsInternalName()).Distinct();
             var rootProductIds = FoundRelationshipBom(allProductBoms);

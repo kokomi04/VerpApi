@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject.Attributes;
 
@@ -10,6 +11,7 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
     public interface IBroadcastHubClient
     {
         Task BroadcastMessage();
+        Task LongTaskStatus(ILongTaskResourceInfo status);
     }
 
     [PatternHub("notify")]

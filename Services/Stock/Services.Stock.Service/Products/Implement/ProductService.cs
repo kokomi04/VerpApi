@@ -48,6 +48,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IMapper _mapper;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IBarcodeConfigHelperService _barcodeConfigHelperService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductService(
@@ -61,7 +62,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IManufacturingHelperService manufacturingHelperService
             , IMapper mapper
             , IOrganizationHelperService organizationHelperService
-            , IBarcodeConfigHelperService barcodeConfigHelperService)
+            , IBarcodeConfigHelperService barcodeConfigHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
+            )
         {
             _masterDBContext = masterDBContext;
             _stockDbContext = stockContext;
@@ -73,6 +76,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _mapper = mapper;
             _organizationHelperService = organizationHelperService;
             _barcodeConfigHelperService = barcodeConfigHelperService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
@@ -1104,7 +1108,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog, this)
-                   .ImportProductFromMapping(mapping, stream);
+                   .ImportProductFromMapping(longTaskResourceLockService, mapping, stream);
 
         }
 

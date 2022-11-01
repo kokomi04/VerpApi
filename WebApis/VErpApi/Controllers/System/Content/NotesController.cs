@@ -16,8 +16,8 @@ namespace VErpApi.Controllers.System
     [Route("api/notes")]
     public class NotesController : VErpBaseController
     {
-        private readonly IActivityService _activityService;
-        public NotesController(IActivityService activityService)
+        private readonly IUserLogActionService _activityService;
+        public NotesController(IUserLogActionService activityService)
         {
             _activityService = activityService;
         }

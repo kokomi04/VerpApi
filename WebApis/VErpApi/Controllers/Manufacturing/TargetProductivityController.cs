@@ -71,7 +71,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
         [VErpAction(EnumActionType.View)]
-        public Task<IList<TargetProductivityDetailModel>> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        public Task<IList<TargetProductivityDetailModel>> ParseDetails([FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
             if (file == null || mapping == null)
             {

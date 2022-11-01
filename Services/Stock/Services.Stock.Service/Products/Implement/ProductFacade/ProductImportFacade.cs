@@ -1,4 +1,5 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -7,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -17,7 +19,9 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Product;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
@@ -68,7 +72,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         IList<RefTargetProductivity> targetProductivities = null;
 
-        public async Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportProductFromMapping(ILongTaskResourceLockService longTaskResourceLockService, ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
 
@@ -79,12 +83,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             productTypes = _stockContext.ProductType.ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), ProductType = t }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductType);
             productCates = _stockContext.ProductCate.ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), ProductCate = c }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCate);
-            var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name.NormalizeAsInternalName(), c => c.BarcodeConfigId);
+
             unitInfos = _masterDBContext.Unit.ToList().ToDictionary(u => u.UnitId, u => u);
 
             units = unitInfos.GroupBy(u => u.Value.UnitName.NormalizeAsInternalName()).ToDictionary(u => u.Key, u => u.First().Key);
 
-            var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
 
             var customers = await _organizationHelperService.AllCustomers();
 
@@ -96,10 +99,265 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                .GroupBy(c => c.Name)
                .ToDictionary(c => c.Key, c => (int?)c.First().CustomerId);
 
+
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu vật tư tiêu hao từ excel"))
+            {
+                reader.RegisterLongTaskEvent(longTask);
+
+                var data = ReadExcel(reader, mapping);
+
+                var includeProductCates = new List<ProductCate>();
+                var includeProductTypes = new List<ProductType>();
+                var includeUnits = new List<Unit>();
+
+
+                defaultTypeId = productTypes.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductTypeId;
+                defaultCateId = productCates.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductCateId;
+
+
+                foreach (var row in data)
+                {
+                    if (!mapping.MappingFields.Any(f => f.FieldName == nameof(ProductImportModel.IsProduct)))
+                    {
+                        row.IsProduct = true;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(row.Unit) && !units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
+                    {
+                        includeUnits.Add(new Unit
+                        {
+                            UnitName = row.Unit,
+                            UnitStatusId = (int)EnumUnitStatus.Using,
+                            DecimalPlace = row.DecimalPlaceDefault.GetValueOrDefault()
+
+                        });
+                    }
+                    for (int suffix = 2; suffix <= 5; suffix++)
+                    {
+                        var unitText = $"{productUnitConversionNamePropPrefix}0{suffix}";
+                        var decimalPlaceText = $"{productUnitDecimalPlacePropPrefix}0{suffix}";
+                        var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
+                        var decimalPlace = (int?)typeInfo.GetProperty(decimalPlaceText).GetValue(row);
+                        if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
+                        {
+                            includeUnits.Add(new Unit
+                            {
+                                UnitName = unit,
+                                UnitStatusId = (int)EnumUnitStatus.Using,
+                                DecimalPlace = decimalPlace.GetValueOrDefault()
+                            });
+                        }
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(row.ProductCate) && !productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
+                    {
+                        includeProductCates.Add(new ProductCate
+                        {
+                            ProductCateName = row.ProductCate,
+                            SortOrder = 9999
+                        });
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(row.ProductTypeCode) && !productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
+                    {
+                        includeProductTypes.Add(new ProductType
+                        {
+                            IdentityCode = row.ProductTypeCode,
+                            ProductTypeName = string.IsNullOrEmpty(row.ProductTypeName) ? row.ProductTypeCode : row.ProductTypeName
+                        });
+                    }
+                }
+
+                longTask.SetCurrentStep("Lưu dữ liệu còn thiếu");
+
+                _masterDBContext.Unit.AddRange(includeUnits);
+                _stockContext.ProductType.AddRange(includeProductTypes);
+                _stockContext.ProductCate.AddRange(includeProductCates);
+
+                _masterDBContext.SaveChanges();
+                _stockContext.SaveChanges();
+
+                foreach (var unit in includeUnits)
+                {
+                    unitInfos.Add(unit.UnitId, unit);
+                    units.Add(unit.UnitName.NormalizeAsInternalName(), unit.UnitId);
+                }
+                foreach (var productCate in includeProductCates)
+                {
+                    productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate);
+                }
+                foreach (var productType in includeProductTypes)
+                {
+                    productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
+                }
+
+                // Validate unique product code
+                var productCodes = data.Select(p => p.ProductCode).ToList();
+
+                var existsProduct = await _stockContext.Product.Where(p => productCodes.Contains(p.ProductCode))
+                    .Include(p => p.ProductExtraInfo)
+                    .Include(p => p.ProductStockInfo)
+                    .Include(p => p.ProductCustomer)
+                    .Include(p => p.ProductUnitConversion)
+                    .Include(p => p.ProductStockValidation)
+                    .ToListAsync();
+
+                var existsProductCodes = existsProduct.Select(p => p.ProductCode).Distinct().ToHashSet();
+
+                var dupCodes = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
+                if (mapping.ImportDuplicateOptionId == null || mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                {
+                    if (dupCodes.Count > 0)
+                        throw ImportMultipleProductsFound.BadRequestFormat(string.Join(",", dupCodes));
+                    if (existsProductCodes.Count > 0)
+                        throw ProductCodeAlreadyExisted.BadRequestFormat(string.Join(",", existsProductCodes));
+                }
+                //else
+                //{
+                //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
+                //}
+
+                existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
+
+                var newProducts = data.Where(x => !existsProductCodes.Contains(x.ProductCode?.ToLower()))
+                    .GroupBy(x => x.ProductCode)
+                    .Select(y => y.ToList().MergeData())
+                    .ToList();
+
+
+                newProducts.ForEach(p =>
+                {
+                    var rowNumber = "";
+                    if (p is MappingDataRowAbstract entity)
+                    {
+                        rowNumber = ",  " + ImportRowTitle + entity.RowNumber;
+                    }
+
+                    if (p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
+                    {
+                        p.IsProduct = true;
+                    }
+
+                    //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
+                    //{
+                    //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
+                    //}
+
+                    var productCodeRowTitle = p.ProductCode + " " + rowNumber;
+                    if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
+                    {
+                        throw ImportNeedProductCateForProduct.BadRequestFormat(productCodeRowTitle);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(p.Unit))
+                    {
+                        throw UnitOfProductNotFound.BadRequestFormat(productCodeRowTitle);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(p.ProductName))
+                    {
+                        throw ProductNameOfCodeEmpty.BadRequestFormat(productCodeRowTitle);
+                    }
+                });
+                var updateProducts = data.Where(x => existsProductCodes.Contains(x.ProductCode?.ToLower()))
+                    .GroupBy(x => x.ProductCode)
+                    .Select(y => y.ToList().MergeData())
+                    .ToList();
+
+                //check product is in used
+                if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
+                {
+                    var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
+                    if (listProductIds.Count() > 0)
+                    {
+                        var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
+                        if (usedProductId.HasValue)
+                        {
+                            var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
+                            throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
+                        }
+                    }
+                }
+
+                longTask.SetCurrentStep("Lưu mặt hàng vào cơ sở dữ liệu", data.Count);
+
+                using var trans = await _stockContext.Database.BeginTransactionAsync();
+                try
+                {
+                    using (var logBatch = _productActivityLog.BeginBatchLog())
+                    {
+                        var productsMap = new Dictionary<ProductImportModel, Product>();
+                        foreach (var row in newProducts)
+                        {
+                            var newProduct = new Product();
+                            await ParseProductInfoEntity(newProduct, row);
+
+                            _stockContext.Product.Add(newProduct);
+                            productsMap.Add(row, newProduct);
+
+                            longTask.IncProcessedRows();
+                        }
+
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                        {
+                            if (updateProducts.Count > 0)
+                            {
+                                await UpdateProduct(longTask, productsMap, updateProducts, existsProduct);
+                            }
+                        }
+
+                        _stockContext.SaveChanges();
+
+                        foreach (var row in newProducts)
+                        {
+
+                            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
+                                  .MessageResourceFormatDatas(row.ProductCode)
+                                  .ObjectId(productsMap[row].ProductId)
+                                  .JsonData(row.JsonSerialize())
+                                  .CreateLog();
+
+                        }
+
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                        {
+                            foreach (var row in updateProducts)
+                            {
+
+                                await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
+                                      .MessageResourceFormatDatas(row.ProductCode)
+                                      .ObjectId(productsMap[row].ProductId)
+                                      .JsonData(row.JsonSerialize())
+                                      .CreateLog();
+
+                            }
+                        }
+
+                        await trans.CommitAsync();
+                        await logBatch.CommitAsync();
+                        return data.Count > 0;
+                    }
+                }
+                catch (Exception)
+                {
+                    trans.TryRollbackTransaction();
+                    throw;
+                }
+            }
+        }
+
+
+        private IList<ProductImportModel> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
+        {
+            var barcodeConfigs = _masterDBContext.BarcodeConfig.Where(c => c.IsActived).Select(c => new { c.BarcodeConfigId, c.Name }).ToDictionary(c => c.Name.NormalizeAsInternalName(), c => c.BarcodeConfigId);
             var stockRules = EnumExtensions.GetEnumMembers<EnumStockOutputRule>();
             var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
             var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
-            var data = reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
+
+            var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
+
+
+            return reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
             {
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
@@ -222,240 +480,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 return false;
             });
 
-            var includeProductCates = new List<ProductCate>();
-            var includeProductTypes = new List<ProductType>();
-            var includeUnits = new List<Unit>();
-
-
-            defaultTypeId = productTypes.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductTypeId;
-            defaultCateId = productCates.FirstOrDefault(t => t.Value.IsDefault).Value?.ProductCateId;
-
-            foreach (var row in data)
-            {
-                if (!mapping.MappingFields.Any(f => f.FieldName == nameof(ProductImportModel.IsProduct)))
-                {
-                    row.IsProduct = true;
-                }
-
-                if (!string.IsNullOrWhiteSpace(row.Unit) && !units.ContainsKey(row.Unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == row.Unit.NormalizeAsInternalName()))
-                {
-                    includeUnits.Add(new Unit
-                    {
-                        UnitName = row.Unit,
-                        UnitStatusId = (int)EnumUnitStatus.Using,
-                        DecimalPlace = row.DecimalPlaceDefault.GetValueOrDefault()
-
-                    });
-                }
-                for (int suffix = 2; suffix <= 5; suffix++)
-                {
-                    var unitText = $"{productUnitConversionNamePropPrefix}0{suffix}";
-                    var decimalPlaceText = $"{productUnitDecimalPlacePropPrefix}0{suffix}";
-                    var unit = typeInfo.GetProperty(unitText).GetValue(row) as string;
-                    var decimalPlace = (int?)typeInfo.GetProperty(decimalPlaceText).GetValue(row);
-                    if (!string.IsNullOrEmpty(unit) && !units.ContainsKey(unit.NormalizeAsInternalName()) && !includeUnits.Any(u => u.UnitName.NormalizeAsInternalName() == unit.NormalizeAsInternalName()))
-                    {
-                        includeUnits.Add(new Unit
-                        {
-                            UnitName = unit,
-                            UnitStatusId = (int)EnumUnitStatus.Using,
-                            DecimalPlace = decimalPlace.GetValueOrDefault()
-                        });
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(row.ProductCate) && !productCates.ContainsKey(row.ProductCate.NormalizeAsInternalName()) && !includeProductCates.Any(c => c.ProductCateName.NormalizeAsInternalName() == row.ProductCate.NormalizeAsInternalName()))
-                {
-                    includeProductCates.Add(new ProductCate
-                    {
-                        ProductCateName = row.ProductCate,
-                        SortOrder = 9999
-                    });
-                }
-
-                if (!string.IsNullOrWhiteSpace(row.ProductTypeCode) && !productTypes.ContainsKey(row.ProductTypeCode.NormalizeAsInternalName()) && !includeProductTypes.Any(t => t.IdentityCode.NormalizeAsInternalName() == row.ProductTypeCode.NormalizeAsInternalName()))
-                {
-                    includeProductTypes.Add(new ProductType
-                    {
-                        IdentityCode = row.ProductTypeCode,
-                        ProductTypeName = string.IsNullOrEmpty(row.ProductTypeName) ? row.ProductTypeCode : row.ProductTypeName
-                    });
-                }
-            }
-
-            _masterDBContext.Unit.AddRange(includeUnits);
-            _stockContext.ProductType.AddRange(includeProductTypes);
-            _stockContext.ProductCate.AddRange(includeProductCates);
-
-            _masterDBContext.SaveChanges();
-            _stockContext.SaveChanges();
-
-            foreach (var unit in includeUnits)
-            {
-                unitInfos.Add(unit.UnitId, unit);
-                units.Add(unit.UnitName.NormalizeAsInternalName(), unit.UnitId);
-            }
-            foreach (var productCate in includeProductCates)
-            {
-                productCates.Add(productCate.ProductCateName.NormalizeAsInternalName(), productCate);
-            }
-            foreach (var productType in includeProductTypes)
-            {
-                productTypes.Add(productType.IdentityCode.NormalizeAsInternalName(), productType);
-            }
-
-            // Validate unique product code
-            var productCodes = data.Select(p => p.ProductCode).ToList();
-
-            var existsProduct = await _stockContext.Product.Where(p => productCodes.Contains(p.ProductCode))
-                .Include(p => p.ProductExtraInfo)
-                .Include(p => p.ProductStockInfo)
-                .Include(p => p.ProductCustomer)
-                .Include(p => p.ProductUnitConversion)
-                .Include(p => p.ProductStockValidation)
-                .ToListAsync();
-
-            var existsProductCodes = existsProduct.Select(p => p.ProductCode).Distinct().ToHashSet();
-
-            var dupCodes = productCodes.GroupBy(c => c).Where(g => g.Count() > 1).Select(y => y.Key).ToList();
-            if (mapping.ImportDuplicateOptionId == null || mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-            {
-                if (dupCodes.Count > 0)
-                    throw ImportMultipleProductsFound.BadRequestFormat(string.Join(",", dupCodes));
-                if (existsProductCodes.Count > 0)
-                    throw ProductCodeAlreadyExisted.BadRequestFormat(string.Join(",", existsProductCodes));
-            }
-            //else
-            //{
-            //    data = data.Where(x => !existsProductCodes.Contains(x.ProductCode)).GroupBy(x => x.ProductCode).Select(y => y.FirstOrDefault()).ToList();
-            //}
-
-            existsProductCodes = existsProductCodes.Select(c => c.ToLower()).Distinct().ToHashSet();
-
-            var newProducts = data.Where(x => !existsProductCodes.Contains(x.ProductCode?.ToLower()))
-                .GroupBy(x => x.ProductCode)
-                .Select(y => y.ToList().MergeData())
-                .ToList();
-
-
-            newProducts.ForEach(p =>
-            {
-                var rowNumber = "";
-                if (p is MappingDataRowAbstract entity)
-                {
-                    rowNumber = ",  " + ImportRowTitle + entity.RowNumber;
-                }
-
-                if (p.IsMaterials == false && p.IsProduct == false && p.IsProductSemi == false)
-                {
-                    p.IsProduct = true;
-                }
-
-                //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
-                //{
-                //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
-                //}
-
-                var productCodeRowTitle = p.ProductCode + " " + rowNumber;
-                if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
-                {
-                    throw ImportNeedProductCateForProduct.BadRequestFormat(productCodeRowTitle);
-                }
-
-                if (string.IsNullOrWhiteSpace(p.Unit))
-                {
-                    throw UnitOfProductNotFound.BadRequestFormat(productCodeRowTitle);
-                }
-
-                if (string.IsNullOrWhiteSpace(p.ProductName))
-                {
-                    throw ProductNameOfCodeEmpty.BadRequestFormat(productCodeRowTitle);
-                }
-            });
-            var updateProducts = data.Where(x => existsProductCodes.Contains(x.ProductCode?.ToLower()))
-                .GroupBy(x => x.ProductCode)
-                .Select(y => y.ToList().MergeData())
-                .ToList();
-
-            //check product is in used
-            if (mapping.ConfirmFlag != true && updateProducts.Count() > 0)
-            {
-                var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
-                if (listProductIds.Count() > 0)
-                {
-                    var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
-                    if (usedProductId.HasValue)
-                    {
-                        var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                        throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
-                    }
-                }
-            }
-
-            using var trans = await _stockContext.Database.BeginTransactionAsync();
-            try
-            {
-                using (var logBatch = _productActivityLog.BeginBatchLog())
-                {
-                    var productsMap = new Dictionary<ProductImportModel, Product>();
-                    foreach (var row in newProducts)
-                    {
-                        var newProduct = new Product();
-                        await ParseProductInfoEntity(newProduct, row);
-
-                        _stockContext.Product.Add(newProduct);
-                        productsMap.Add(row, newProduct);
-                    }
-
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
-                    {
-                        if (updateProducts.Count > 0)
-                        {
-                            await UpdateProduct(productsMap, updateProducts, existsProduct);
-                        }
-                    }
-
-                    _stockContext.SaveChanges();
-
-                    foreach (var row in newProducts)
-                    {
-
-                        await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
-                              .MessageResourceFormatDatas(row.ProductCode)
-                              .ObjectId(productsMap[row].ProductId)
-                              .JsonData(row.JsonSerialize())
-                              .CreateLog();
-
-                    }
-
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
-                    {
-                        foreach (var row in updateProducts)
-                        {
-
-                            await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
-                                  .MessageResourceFormatDatas(row.ProductCode)
-                                  .ObjectId(productsMap[row].ProductId)
-                                  .JsonData(row.JsonSerialize())
-                                  .CreateLog();
-
-                        }
-                    }
-
-                    await trans.CommitAsync();
-                    await logBatch.CommitAsync();
-                    return data.Count > 0;
-                }
-            }
-            catch (Exception)
-            {
-                trans.TryRollbackTransaction();
-                throw;
-            }
-
         }
-
-        private async Task UpdateProduct(Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
+        private async Task UpdateProduct(LongTaskResourceLock longTask, Dictionary<ProductImportModel, Product> productsMap, IList<ProductImportModel> updateProducts, IList<Product> existsProduct)
         {
 
             var existsProductInLowerCase = existsProduct.GroupBy(g => g.ProductCode.ToLower())
@@ -478,6 +504,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 productsMap.Add(row, existedProduct);
 
+                longTask.IncProcessedRows();
             }
 
         }

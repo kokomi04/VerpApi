@@ -16,8 +16,8 @@ namespace VErpApi.Controllers.System
     [Route("api/UserActivityLog")]
     public class UserActivityLogController : VErpBaseController
     {
-        private readonly IActivityService _activityService;
-        public UserActivityLogController(IActivityService activityService)
+        private readonly IUserLogActionService _activityService;
+        public UserActivityLogController(IUserLogActionService activityService)
         {
             _activityService = activityService;
         }

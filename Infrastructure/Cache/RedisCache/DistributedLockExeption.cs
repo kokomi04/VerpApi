@@ -10,4 +10,13 @@ namespace Verp.Cache.RedisCache
 
         }
     }
+
+    public class LongTaskResourceLockException :Exception
+    {
+        public ILongTaskResourceInfo Data { get; }
+        public LongTaskResourceLockException(ILongTaskResourceInfo data)
+        {
+            Data = data;
+        }
+    }
 }

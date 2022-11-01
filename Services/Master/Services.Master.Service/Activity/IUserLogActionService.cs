@@ -7,7 +7,7 @@ using VErp.Services.Master.Model.Activity;
 
 namespace VErp.Services.Master.Service.Activity
 {
-    public interface IActivityService
+    public interface IUserLogActionService
     {
         void CreateActivityAsync(ActivityInput input);
         Task<long> CreateActivityTask(ActivityInput input);
