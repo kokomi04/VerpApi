@@ -12,7 +12,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public IDictionary<int, decimal> StepHourTotal { get; set; }
         public IDictionary<int, decimal> AssignedStepHours { get; set; }
         public IDictionary<int, IList<StepDepartmentHour>> StepHoursDetail { get; set; }
-        public IDictionary<int, decimal> DeparmentHourTotal { get; set; }
+        public IDictionary<int, decimal> DepartmentHourTotal { get; set; }
         public ProductionCapacityModel()
         {
             StepInfo = new List<StepInfo>();
@@ -20,7 +20,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
             StepHourTotal = new Dictionary<int, decimal>();
             AssignedStepHours = new Dictionary<int, decimal>();
             StepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
-            DeparmentHourTotal = new Dictionary<int, decimal>();
+            DepartmentHourTotal = new Dictionary<int, decimal>();
         }
     }
 
