@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 
@@ -14,7 +15,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long? ProductionStepId { get; set; }
         public long ProductionOrderId { get; set; }
         public int DepartmentId { get; set; }
-        public decimal AssignmentQuantity { get; set; }        
+        [GreaterThan(0, ErrorMessage = "Số lượng phân công phải >0")]
+        public decimal AssignmentQuantity { get; set; }
         public decimal? AssignmentHours { get; set; }
         //public int CompletedQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
@@ -67,13 +69,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
             }
             return isChange;
         }
-      
-        public decimal? AssignmentWorkload { get; set; }        
+
+        public decimal? AssignmentWorkload { get; set; }
     }
 
     public class ProductionAssignmentDetailModel : IMapFrom<ProductionAssignmentDetail>
     {
         public long WorkDate { get; set; }
+        [GreaterThan(0, ErrorMessage = "Số lượng phân công theo ngày phải >0")]
         public decimal? QuantityPerDay { get; set; }
 
         public void Mapping(Profile profile)
