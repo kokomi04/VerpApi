@@ -11,7 +11,7 @@ namespace VErp.Infrastructure.ServiceCore.SignalR
     public interface IBroadcastHubClient
     {
         Task BroadcastMessage();
-        Task LongTaskStatus(ILongTaskResourceInfo status);
+        Task LongTaskStatus(ILongTaskResourceInfo info);
     }
 
     [PatternHub("notify")]

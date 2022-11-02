@@ -16,10 +16,10 @@ namespace VErpApi.Controllers.System
     [Route("api/notes")]
     public class NotesController : VErpBaseController
     {
-        private readonly IUserLogActionService _activityService;
-        public NotesController(IUserLogActionService activityService)
+        private readonly IUserLogActionService _userLogActionService;
+        public NotesController(IUserLogActionService userLogActionService)
         {
-            _activityService = activityService;
+            _userLogActionService = userLogActionService;
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.System
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _activityService.AddNote(req.BillTypeId, req.ObjectId, (int)req.ObjectTypeId, req.Message);
+            return await _userLogActionService.AddNote(req.BillTypeId, req.ObjectId, (int)req.ObjectTypeId, req.Message);
         }
 
         [HttpGet]
@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public async Task<PageData<UserActivityLogOuputModel>> GetNoteList([FromQuery] int? billTypeId, [FromQuery] EnumObjectType objectTypeId, [FromQuery] long objectId, int page = 1, int size = 20)
         {
-            return await _activityService.GetUserLogByObject(billTypeId, objectId, objectTypeId, page, size);
+            return await _userLogActionService.GetUserLogByObject(billTypeId, objectId, objectTypeId, page, size);
         }
 
         [HttpPost]
@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.System
         [GlobalApi]
         public async Task<IList<UserActivityLogOuputModel>> GetNoteList([FromBody] long[] userActivityLogIds)
         {
-            var pagedData = await _activityService.GetListUserActivityLog(userActivityLogIds, null, null, null, null, null, null, null, null, null, false);
+            var pagedData = await _userLogActionService.GetListUserActivityLog(userActivityLogIds, null, null, null, null, null, null, null, null, null, false);
             return pagedData.List;
         }
 
@@ -66,7 +66,7 @@ namespace VErpApi.Controllers.System
             [FromQuery] long toDate,
             [FromBody] Clause filter)
         {
-            return await _activityService.GetUserLoginLogs(page, size, keyword, orderByFieldName, asc, fromDate, toDate, filter);
+            return await _userLogActionService.GetUserLoginLogs(page, size, keyword, orderByFieldName, asc, fromDate, toDate, filter);
         }
     }
 }

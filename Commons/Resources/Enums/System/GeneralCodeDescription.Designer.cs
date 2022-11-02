@@ -19,7 +19,7 @@ namespace Verp.Resources.Enums.System {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class GeneralCodeDescription {
@@ -70,6 +70,15 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tồn tại Công đoạn trùng nhau trong Năng suất mục tiêu.
+        /// </summary>
+        public static string DuplicateProductionStep {
+            get {
+                return ResourceManager.GetString("DuplicateProductionStep", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Bạn không có quyền thực hiện chức năng này.
         /// </summary>
         public static string Forbidden {
@@ -97,7 +106,7 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Mã item đã tồn tại, vui lòng chọn mã khác!.
+        ///   Looks up a localized string similar to Mã đã tồn tại, vui lòng chọn mã khác!.
         /// </summary>
         public static string ItemCodeExisted {
             get {
@@ -106,7 +115,7 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Item không tồn tại.
+        ///   Looks up a localized string similar to Bản ghi không tồn tại.
         /// </summary>
         public static string ItemNotFound {
             get {
@@ -115,11 +124,11 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tài khoản không có quyền truy cập vào hệ thống.
+        ///   Looks up a localized string similar to Đang có tác vụ xử lý mất thời gian chờ đợi.
         /// </summary>
-        public static string LockedOut {
+        public static string LongTaskIsRunning {
             get {
-                return ResourceManager.GetString("LockedOut", resourceCulture);
+                return ResourceManager.GetString("LongTaskIsRunning", resourceCulture);
             }
         }
         
@@ -142,20 +151,20 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tài khoản không có quyền truy cập vào hệ thống.
+        /// </summary>
+        public static string UserInActived {
+            get {
+                return ResourceManager.GetString("UserInActived", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to X-Module header was not found.
         /// </summary>
         public static string X_ModuleMissing {
             get {
                 return ResourceManager.GetString("X_ModuleMissing", resourceCulture);
-            }
-        }
-
-        /// <summary>
-        ///   Looks up a localized string similar to Tồn tại Công đoạn trùng nhau trong Năng suất mục tiêu.
-        /// </summary>
-        public static string DuplicateProductionStep {
-            get {
-                return ResourceManager.GetString("DuplicateProductionStep", resourceCulture);
             }
         }
     }

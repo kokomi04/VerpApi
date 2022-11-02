@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -96,6 +97,7 @@ namespace VErpApi.Controllers.Stock.Products
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             mapping.FileName = file.FileName;
+         
             return await _productService.ImportProductFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 

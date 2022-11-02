@@ -66,6 +66,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly ICachingService _cachingService;
         private IAuthDataCacheService _authDataCacheService;
 
+        private string _traceIdentifier = "";
         private int _userId = 0;
         private string _userName = "";
         private int _subsidiaryId = 0;
@@ -173,6 +174,17 @@ namespace VErp.Infrastructure.ServiceCore.Service
                     httpContext.Items.Add(HttpContextActionConstants.Action, action);
                 }
 
+            }
+        }
+        public string TraceIdentifier
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(_traceIdentifier))
+                    return _traceIdentifier;
+
+                _traceIdentifier = _httpContextAccessor.HttpContext.TraceIdentifier;
+                return _traceIdentifier;
             }
         }
 

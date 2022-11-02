@@ -23,20 +23,20 @@ namespace VErpApi.Controllers.System
     {
         private readonly MasterDBContext _masterDBContext;
         private readonly AppSetting _appSetting;
-        private readonly IUserLogActionService _activityService;
+        private readonly IUserLogActionService _userLogActionService;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
 
         public TestController(
             MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
-            , IUserLogActionService activityService
+            , IUserLogActionService userLogActionService
             , IAsyncRunnerService asyncRunnerService
             , IQueueProcessHelperService queueProcessHelperService)
         {
             _masterDBContext = masterDBContext;
             _appSetting = appSetting?.Value;
-            _activityService = activityService;
+            _userLogActionService = userLogActionService;
             _asyncRunnerService = asyncRunnerService;
             _queueProcessHelperService = queueProcessHelperService;
         }

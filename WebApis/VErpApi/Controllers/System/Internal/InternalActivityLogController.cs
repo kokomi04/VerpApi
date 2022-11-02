@@ -8,17 +8,17 @@ namespace VErpApi.Controllers.System.Internal
     [Route("api/internal/[controller]")]
     public class InternalActivityLogController : CrossServiceBaseController
     {
-        private readonly IUserLogActionService _activityService;
-        public InternalActivityLogController(IUserLogActionService activityService)
+        private readonly IUserLogActionService _userLogActionService;
+        public InternalActivityLogController(IUserLogActionService userLogActionService)
         {
-            _activityService = activityService;
+            _userLogActionService = userLogActionService;
         }
 
         [Route("Log")]
         [HttpPost]
         public bool Log([FromBody] ActivityInput req)
         {
-            _activityService.CreateActivityAsync(req);
+            _userLogActionService.CreateActivityAsync(req);
             return true;
         }
 

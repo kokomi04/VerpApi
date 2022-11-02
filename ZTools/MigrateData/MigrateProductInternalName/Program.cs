@@ -64,7 +64,7 @@ namespace MigrateProductInternalName
             AppSetting = setting.AppSetting;
             ServiceProvider = new AppStartup(setting).ConfigureServices(serviceCollection);
             var contextFactory = ServiceProvider.GetRequiredService<ICurrentContextFactory>();
-            contextFactory.SetCurrentContext(new ScopeCurrentContextService(0, VErp.Commons.Enums.MasterEnum.EnumActionType.Censor, null, null, 0, null, null, null, null));
+            contextFactory.SetCurrentContext(new ScopeCurrentContextService(null, 0, VErp.Commons.Enums.MasterEnum.EnumActionType.Censor, null, null, 0, null, null, null, null));
         }
     }
 }
