@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject
 {
     public interface ICurrentContextService
     {
+        string TraceIdentifier { get; }
         int UserId { get; }
         int SubsidiaryId { get; }
         EnumActionType Action { get; }
@@ -24,6 +26,7 @@ namespace VErp.Commons.GlobalObject
     {
         public ScopeCurrentContextService(ICurrentContextService currentContextService)
         : this(
+              currentContextService.TraceIdentifier,
                 currentContextService.UserId,
                 currentContextService.Action,
                 currentContextService.RoleInfo,
@@ -38,8 +41,9 @@ namespace VErp.Commons.GlobalObject
 
         }
 
-        public ScopeCurrentContextService(int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress, string domain)
+        public ScopeCurrentContextService(string traceIdentifier, int userId, EnumActionType action, RoleInfo roleInfo, IList<int> stockIds, int subsidiaryId, int? timeZoneOffset, string language, string ipAddress, string domain)
         {
+            TraceIdentifier = traceIdentifier;
             UserId = userId;
             SubsidiaryId = subsidiaryId;
             Action = action;
@@ -55,7 +59,7 @@ namespace VErp.Commons.GlobalObject
         {
             SubsidiaryId = subsidiaryId;
         }
-
+        public string TraceIdentifier { get; }
         public int UserId { get; } = 0;
         public int SubsidiaryId { get; private set; } = 0;
         public EnumActionType Action { get; }

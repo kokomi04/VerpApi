@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Resources.GlobalObject;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -15,7 +16,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 using static Verp.Resources.Master.Category.CategoryDataValidationMessage;
 using static VErp.Commons.Library.ExcelReader;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
@@ -28,7 +31,6 @@ namespace VErp.Services.Master.Service.Category
         private readonly MasterDBContext _masterContext;
         private readonly ICategoryDataService _categoryDataService;
         private readonly ICurrentContextService _currentContextService;
-
         private CategoryEntity _category;
         private ExcelSheetDataModel _importData;
         private List<CategoryField> _categoryFields;
@@ -51,120 +53,128 @@ namespace VErp.Services.Master.Service.Category
             _currentContextService = currentContextService;
         }
 
-        public async Task<bool> ImportData(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportData(ILongTaskResourceLockService longTaskResourceLockService, ImportExcelMapping mapping, Stream stream)
         {
-            _category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == _categoryId);
-
-            await ValidateCategory();
-            await GetCategoryFieldInfo(mapping);
-
-            await ReadExcelData(mapping, stream);
-
-            await RefCategoryForParent(mapping);
-            await RefCategoryForProperty(mapping);
-            await MappingCategoryDate(mapping);
-
-            var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, 0, 0, "", true)).List;
-
-            var lsUpdateRow = new List<NonCamelCaseDictionary>();
-            var lsAddRow = new List<NonCamelCaseDictionary>();
-            foreach (var row in _categoryDataRows)
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu vật tư tiêu hao từ excel"))
             {
-                var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
+                _category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == _categoryId);
 
-                var uniqueFieldMessage = $"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}";
+                await ValidateCategory();
+                await GetCategoryFieldInfo(mapping);
 
-                if (oldRow != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
+                await ReadExcelData(longTask, mapping, stream);
 
+                await RefCategoryForParent(mapping);
+                await RefCategoryForProperty(mapping);
+                await MappingCategoryDate(mapping);
 
-                if (oldRow == null)
+                var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, 0, 0, "", true)).List;
+
+                var lsUpdateRow = new List<NonCamelCaseDictionary>();
+                var lsAddRow = new List<NonCamelCaseDictionary>();
+                foreach (var row in _categoryDataRows)
                 {
-                    if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                            throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
-                        else
+                    var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
+
+                    var uniqueFieldMessage = $"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}";
+
+                    if (oldRow != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                        throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
+
+
+                    if (oldRow == null)
+                    {
+                        if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
+                            if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                                throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
+                            else
+                                continue;
+
+                        lsAddRow.Add(row);
+                    }
+                    else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
                             continue;
 
-                    lsAddRow.Add(row);
-                }
-                else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
-                {
-                    if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
-                        continue;
+                        if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
+                            row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
 
-                    if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
-                        row.Add(CategoryFieldConstants.ParentId, oldRow[CategoryFieldConstants.ParentId].ToString());
-
-                    row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
-                    lsUpdateRow.Add(row);
-                }
-            }
-
-            using (var trans = await _masterContext.Database.BeginTransactionAsync())
-            {
-                using (var logBath = _categoryDataActivityLog.BeginBatchLog())
-                {
-                    var parentField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == CategoryFieldConstants.ParentId);
-
-                    string GetParentId(NonCamelCaseDictionary row)
-                    {
-                        if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !row[CategoryFieldConstants.ParentId].IsNullObject())
-                        {
-                            var refValue = row[CategoryFieldConstants.ParentId].ToString();
-
-                            return _refCategoryDataForParent.FirstOrDefault(x => x[parentField.RefFieldName].ToString().ToLower() == refValue.ToLower())?[CategoryFieldConstants.F_Id]?.ToString();
-                        }
-                        return "";
+                        row.Add(CategoryFieldConstants.F_Id, oldRow[CategoryFieldConstants.F_Id].ToString());
+                        lsUpdateRow.Add(row);
                     }
+                }
 
-                    IEnumerable<NonCamelCaseDictionary> GetElementByTreeView(IList<NonCamelCaseDictionary> data)
+                longTask.SetCurrentStep("Lưu vào cơ sở dữ liệu", lsAddRow.Count);
+                using (var trans = await _masterContext.Database.BeginTransactionAsync())
+                {
+                    using (var logBath = _categoryDataActivityLog.BeginBatchLog())
                     {
-                        var loopData = new List<NonCamelCaseDictionary>();
+                        var parentField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == CategoryFieldConstants.ParentId);
 
-                        foreach (var row in data)
+                        string GetParentId(NonCamelCaseDictionary row)
                         {
-                            if (!row.ContainsKey(CategoryFieldConstants.ParentId))
-                                yield return row;
-                            else if (!string.IsNullOrWhiteSpace(GetParentId(row)))
-                                yield return row;
-                            else
-                                loopData.Add(row);
+                            if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !row[CategoryFieldConstants.ParentId].IsNullObject())
+                            {
+                                var refValue = row[CategoryFieldConstants.ParentId].ToString();
+
+                                return _refCategoryDataForParent.FirstOrDefault(x => x[parentField.RefFieldName].ToString().ToLower() == refValue.ToLower())?[CategoryFieldConstants.F_Id]?.ToString();
+                            }
+                            return "";
                         }
 
-                        if (loopData.Count > 0)
-                            foreach (var l in GetElementByTreeView(loopData)) yield return l;
+                        IEnumerable<NonCamelCaseDictionary> GetElementByTreeView(IList<NonCamelCaseDictionary> data)
+                        {
+                            var loopData = new List<NonCamelCaseDictionary>();
+
+                            foreach (var row in data)
+                            {
+                                if (!row.ContainsKey(CategoryFieldConstants.ParentId))
+                                    yield return row;
+                                else if (!string.IsNullOrWhiteSpace(GetParentId(row)))
+                                    yield return row;
+                                else
+                                    loopData.Add(row);
+                            }
+
+                            if (loopData.Count > 0)
+                                foreach (var l in GetElementByTreeView(loopData)) yield return l;
+                        }
+
+                        foreach (var cRow in GetElementByTreeView(lsAddRow))
+                        {
+                            var parentId = GetParentId(cRow);
+                            if (!string.IsNullOrWhiteSpace(parentId))
+                                cRow[CategoryFieldConstants.ParentId] = GetParentId(cRow);
+
+                            var categoryId = await _categoryDataService.AddCategoryRowToDb(_categoryId, cRow);
+
+                            cRow.Add(CategoryFieldConstants.F_Id, categoryId.ToString());
+
+                            _refCategoryDataForParent.Add(cRow.ToNonCamelCaseDictionary(k => k.Key, v => v.Value));
+
+                            longTask.IncProcessedRows();
+                        }
+
+                        foreach (var uRow in lsUpdateRow)
+                        {
+                            var parentId = GetParentId(uRow);
+                            if (!string.IsNullOrWhiteSpace(parentId))
+                                uRow[CategoryFieldConstants.ParentId] = GetParentId(uRow);
+
+                            var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]?.ToString());
+
+                            await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
+
+                            longTask.IncProcessedRows();
+                        }
+
+                        await trans.CommitAsync();
+                        await logBath.CommitAsync();
                     }
-
-                    foreach (var cRow in GetElementByTreeView(lsAddRow))
-                    {
-                        var parentId = GetParentId(cRow);
-                        if (!string.IsNullOrWhiteSpace(parentId))
-                            cRow[CategoryFieldConstants.ParentId] = GetParentId(cRow);
-
-                        var categoryId = await _categoryDataService.AddCategoryRowToDb(_categoryId, cRow);
-
-                        cRow.Add(CategoryFieldConstants.F_Id, categoryId.ToString());
-
-                        _refCategoryDataForParent.Add(cRow.ToNonCamelCaseDictionary(k => k.Key, v => v.Value));
-                    }
-
-                    foreach (var uRow in lsUpdateRow)
-                    {
-                        var parentId = GetParentId(uRow);
-                        if (!string.IsNullOrWhiteSpace(parentId))
-                            uRow[CategoryFieldConstants.ParentId] = GetParentId(uRow);
-
-                        var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]?.ToString());
-
-                        await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
-                    }
-
-                    await trans.CommitAsync();
-                    await logBath.CommitAsync();
                 }
+                return true;
             }
-            return true;
         }
 
         private bool EqualityBetweenTwoCategory(NonCamelCaseDictionary f1, NonCamelCaseDictionary f2, CategoryField[] u)
@@ -443,9 +453,10 @@ namespace VErp.Services.Master.Service.Category
                 throw ImportRequiredFieldNotMapped.BadRequestFormat(string.Join(", ", _uniqueFields.Select(x => x.Title)));
         }
 
-        private async Task ReadExcelData(ImportExcelMapping mapping, Stream stream)
+        private async Task ReadExcelData(LongTaskResourceLock longTask, ImportExcelMapping mapping, Stream stream)
         {
             var reader = new ExcelReader(stream);
+            reader.RegisterLongTaskEvent(longTask);
             _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
             await Task.CompletedTask;
@@ -506,7 +517,7 @@ namespace VErp.Services.Master.Service.Category
                 var fieldsFilter = categoryQuery.FieldQuery;
                 foreach (var fieldFilter in fieldsFilter)
                 {
-                 
+
 
                     var field = categoryInfo.Fields.FirstOrDefault(f => f.CategoryFieldName == fieldFilter.Key);
 

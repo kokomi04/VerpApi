@@ -946,7 +946,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
             return result;
         }
 
-        public IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, Stream stream)
+        public IAsyncEnumerable<PoProviderPricingOutputDetail> ParseDetails(ImportExcelMapping mapping, Stream stream)
         {
             return new PoProviderPricingParseExcelFacade(_productHelperService)
                  .ParseInvoiceDetails(mapping, stream);

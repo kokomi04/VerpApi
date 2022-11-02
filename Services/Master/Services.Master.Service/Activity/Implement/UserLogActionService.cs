@@ -32,7 +32,7 @@ using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
-    public class ActivityService : IActivityService
+    public class UserLogActionService : IUserLogActionService
     {
         private readonly ActivityLogDBContext _activityLogContext;
         private readonly IUserService _userService;
@@ -46,10 +46,10 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
         private readonly PushServiceClient _pushClient;
 
-        public ActivityService(ActivityLogDBContext activityLogContext
+        public UserLogActionService(ActivityLogDBContext activityLogContext
             , IUserService userService
             , IOptions<AppSetting> appSetting
-            , ILogger<ActivityService> logger
+            , ILogger<UserLogActionService> logger
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
@@ -75,7 +75,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public void CreateActivityAsync(ActivityInput input)
         {
-            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
+            _asyncRunnerService.RunAsync<IUserLogActionService>(a => a.CreateActivityTask(input));
         }
 
         public async Task<long> CreateActivityTask(ActivityInput input)

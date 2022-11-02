@@ -35,6 +35,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IUserHelperService _userHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _customerActivityLog;
 
         public CustomerService(OrganizationDBContext organizationContext
@@ -43,13 +44,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IUserHelperService userHelperService
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
+            )
         {
             _organizationContext = organizationContext;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _customerActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Customer);
         }
 
@@ -676,7 +680,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         {
             var importFacade = new CusomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
 
-            var customerModels = await importFacade.ParseCustomerFromMapping(mapping, stream);
+            var customerModels = await importFacade.ParseCustomerFromMapping(longTaskResourceLockService, mapping, stream);
 
             // var insertedData = await AddBatchCustomers(customerModels);
 

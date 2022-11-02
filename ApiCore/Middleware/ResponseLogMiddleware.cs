@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ApiCore.Middleware
@@ -22,6 +23,8 @@ namespace VErp.Infrastructure.ApiCore.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
+
+
             if (context.Request.ContentType?.Contains("grpc") == true)
             {
                 await _next(context);
@@ -43,20 +46,26 @@ namespace VErp.Infrastructure.ApiCore.Middleware
                         )
                     {
                         memStream.Position = 0;
-                        var responseBody = new StreamReader(memStream).ReadToEnd();
-                        if (responseBody != null && responseBody.Length > 2000)
+                        var responseBodyFull = new StreamReader(memStream).ReadToEnd();
+                        var responseBodyCut = "";
+                        if (responseBodyFull != null && responseBodyFull.Length > 2000)
                         {
-                            responseBody = responseBody.Substring(0, 2000);
+                            responseBodyCut = responseBodyFull.Substring(0, 2000);
                         }
                         var log = new
                         {
-                            Response = responseBody,
+                            Response = responseBodyCut,
                             XHeaders = context.Request.Headers?.Where(h => h.Key?.ToLower()?.StartsWith('x') == true),
                             ResponseCode = context.Response.StatusCode.ToString(),
                             IsSuccessStatusCode = (context.Response.StatusCode == 200 || context.Response.StatusCode == 201),
                             Status = context.Response.StatusCode
                         };
                         _logger.LogInformation("ResponseContent: " + log.JsonSerialize());
+
+                        //if (context.RequestAborted.IsCancellationRequested)
+                        //{
+                        LongTaskResourceLockFactory.SetResponse(context.TraceIdentifier, context.Response.StatusCode, responseBodyFull);
+                        //}
                     }
 
                     memStream.Position = 0;

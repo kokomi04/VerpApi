@@ -150,4 +150,7 @@
   <data name="DuplicateProductionStep" xml:space="preserve">
     <value>Tồn tại Công đoạn trùng nhau trong Năng suất mục tiêu</value>
   </data>
+  <data name="LongTaskIsRunning" xml:space="preserve">
+    <value>Đang có tác vụ xử lý mất thời gian chờ đợi</value>
+  </data>
 </root>
