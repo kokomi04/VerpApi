@@ -207,4 +207,7 @@
   <data name="TargetProductivityWithCodeNotFound" xml:space="preserve">
     <value>Không tìm thấy năng suất mục tiêu "{0}"</value>
   </data>
+  <data name="PuConversionDuplicated" xml:space="preserve">
+    <value>Đơn vị tính "{0}" trùng nhau, mặt hàng "{1}"</value>
+  </data>
 </root>
