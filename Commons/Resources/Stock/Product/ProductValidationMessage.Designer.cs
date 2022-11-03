@@ -268,6 +268,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Đơn vị tính &quot;{0}&quot; trùng nhau, mặt hàng &quot;{1}&quot;.
+        /// </summary>
+        public static string PuConversionDuplicated {
+            get {
+                return ResourceManager.GetString("PuConversionDuplicated", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Lỗi không thể tính toán biểu thức đơn vị chuyển đổi &quot;{0}&quot; của mặt hàng &quot;{1}&quot;.
         /// </summary>
         public static string PuConversionExpressionError {

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -364,6 +365,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     .Select(u => _mapper.Map<ProductUnitConversion>(u))
                     .ToList();
 
+                var newUnitConversionList = new List<ProductUnitConversion>();
                 if (lstNewUnitConverions != null)
                 {
                     foreach (var c in lstNewUnitConverions)
@@ -373,7 +375,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                         ValidatePu(c);
                     }
-
+                    newUnitConversionList.AddRange(lstNewUnitConverions);
                     await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                 }
 
@@ -386,6 +388,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         _mapper.Map(u, db);
                         ValidatePu(db);
                     }
+                    newUnitConversionList.Add(db);
                 }
 
                 var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
@@ -396,6 +399,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     defaultUnitConversion.IsFreeStyle = false;
                     defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
                     defaultUnitConversion.DecimalPlace = model?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == defaultUnitConversion.ProductUnitConversionId || u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
+
+                    if (!newUnitConversionList.Contains(defaultUnitConversion))
+                        newUnitConversionList.Add(defaultUnitConversion);
+                }
+                var duplicateUnit = newUnitConversionList.GroupBy(u => u.ProductUnitConversionName?.NormalizeAsInternalName())
+                   .Where(g => g.Count() > 1)
+                   .FirstOrDefault();
+
+                if (duplicateUnit != null)
+                {
+                    await trans.RollbackAsync();
+                    throw PuConversionDuplicated.BadRequestFormat(duplicateUnit.First()?.ProductUnitConversionName, productInfo.ProductCode);
                 }
 
                 await _stockContext.SaveChangesAsync();
