@@ -21,6 +21,7 @@ namespace Verp.Services.ReportConfig.Model
         public bool IsHidden { get; set; }
         public string RowSpan { get; set; }
         public string ColSpan { get; set; }
+        public bool IsDockLeft { get; set; }
         public bool IsGroup { get; set; }
         public bool IsGroupRow { get; set; }
         public bool isGroupRowLevel2 { get; set; }
