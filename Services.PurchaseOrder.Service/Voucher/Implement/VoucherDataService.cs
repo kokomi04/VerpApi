@@ -917,10 +917,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
         private async Task ValidUniqueAsync(int voucherTypeId, List<object> values, ValidateVoucherField field, long? voucherValueBillId = null)
         {
-            var existSql = $"SELECT F_Id FROM vVoucherValueRow WHERE VoucherTypeId = {voucherTypeId} ";
+            var existSql = $"SELECT F_Id, {field.FieldName} FROM vVoucherValueRow WHERE VoucherTypeId = {voucherTypeId} ";
             if (voucherValueBillId.HasValue)
             {
-                existSql += $"AND VoucherBill_F_Id != {voucherValueBillId}";
+                existSql += $"AND VoucherBill_F_Id <> {voucherValueBillId}";
             }
             existSql += $" AND {field.FieldName} IN (";
             List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -939,7 +939,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             existSql += ")";
             var result = await _purchaseOrderDBContext.QueryDataTable(existSql, sqlParams.ToArray());
             bool isExisted = result != null && result.Rows.Count > 0;
-
+           
             if (isExisted)
             {
                 throw new BadRequestException(VoucherErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title, result.Rows[0][field.FieldName]?.ToString() });
