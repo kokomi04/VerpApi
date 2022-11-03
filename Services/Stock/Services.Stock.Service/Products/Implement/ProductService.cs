@@ -416,7 +416,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-                    var keepPuIds = req.StockInfo?.UnitConversions?.Select(c => c.ProductUnitConversionId);
+                    var keepPuIds = req.StockInfo?.UnitConversions?.Select(c => c.ProductUnitConversionId).Where(productUnitConversionId => productUnitConversionId > 0)?.ToList();
                     var toRemovePus = unitConverions.Where(c => !keepPuIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
                     if (toRemovePus.Count > 0)
                     {
