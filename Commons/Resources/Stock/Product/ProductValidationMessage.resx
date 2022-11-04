@@ -199,7 +199,7 @@
     <value>Xuất hiện các chi tiết sử dụng không tồn tại trong BOM mặt hàng. Các chi tiết sử dụng: {0}</value>
   </data>
   <data name="ImportConsumDuplicateSamePartInSameGroup" xml:space="preserve">
-    <value>Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: {0}</value>
+    <value>Trùng dữ liệu vật tư của chi tiết cùng nhóm. Vật tư: "{0}", nhóm "{1}", chi tiết "{2}", các dòng trùng "{3}"</value>
   </data>
   <data name="CanNotUpdateUnitProductWhichInUsed" xml:space="preserve">
     <value>Không thể thay đổi đơn vị tính mặt hàng "{0}" do mặt hàng đã vào dữ liệu</value>

@@ -182,18 +182,27 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         private async Task ValidExcelData()
         {
-            var hasGreatThanTwoUsageProductUsingMaterialConsumption = _importData
-                .Where(x => !string.IsNullOrWhiteSpace(x.ProductCode))
-                .GroupBy(x => new { x.ProductCode, GroupTitle = x.GroupTitle.NormalizeAsInternalName() })
-                .Where(x => x.GroupBy(y => y.UsageProductCode).Where(y => y.Count() > 1).Count() > 1)
-                .Select(x => new
-                {
-                    productCode = x.Key.ProductCode,
-                    usageProductCode = x.GroupBy(y => y.UsageProductCode).Where(y => y.Count() > 1).Select(y => y.Select(t => t.UsageProductCode))
-                }).ToList();
 
-            if (hasGreatThanTwoUsageProductUsingMaterialConsumption.Count > 0)
-                throw ImportConsumDuplicateSamePartInSameGroup.BadRequestFormat(string.Join(", ", hasGreatThanTwoUsageProductUsingMaterialConsumption.Select(x => x.productCode)));
+            var groupProductByConsumGroups = _importData
+                .Where(x => !string.IsNullOrWhiteSpace(x.UsageProductCode))
+                .GroupBy(x => new { x.UsageProductCode, GroupTitle = x.GroupTitle.NormalizeAsInternalName() })
+                .ToList();
+            foreach (var consumGroupProduct in groupProductByConsumGroups)
+            {
+                var groupMaterial = consumGroupProduct.GroupBy(x => x.ProductCode).ToList();
+                foreach (var material in groupMaterial)
+                {
+                    if (material.Count() > 1)
+                    {
+                        var marterialCode = material.First().ProductCode;
+                        var groupTitle = consumGroupProduct.First().GroupTitle;
+                        var partOfProduct = consumGroupProduct.Key.UsageProductCode;
+                        var excelRows = material.Select(m => m.RowNumber).ToArray();
+                        var excelRowsStr = string.Join(", ", excelRows);
+                        throw ImportConsumDuplicateSamePartInSameGroup.BadRequestFormat(marterialCode, groupTitle, partOfProduct, excelRowsStr);
+                    }
+                }
+            }
 
             _departments = await _organizationHelperService.GetAllDepartmentSimples();
             _steps = (await _manufacturingHelperService.GetSteps()).GroupBy(x => x.StepName.NormalizeAsInternalName())
