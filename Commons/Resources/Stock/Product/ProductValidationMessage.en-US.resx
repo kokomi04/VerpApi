@@ -199,7 +199,7 @@
     <value>Some parts that used consumption material do not exist in product BOM, parts: {0}</value>
   </data>
   <data name="ImportConsumDuplicateSamePartInSameGroup" xml:space="preserve">
-    <value>Duplicate parts have same consumption material and group. Consumption materials: {0}</value>
+    <value>Duplicated material same group in a part of product. Material "{0}", group "{1}", part of product "{2}", excel rows "{4}"</value>
   </data>
   <data name="CanNotUpdateUnitProductWhichInUsed" xml:space="preserve">
     <value>Can not update primary unit of product "{0}" that has been had reference data</value>
