@@ -58,6 +58,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         public async Task<int> AddPrintConfigStandard(PrintConfigStandardModel model, IFormFile file)
         {
+            if (long.TryParse(model.Background, out var v))
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Background không hợp lệ");
+            }
+
             var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -160,6 +165,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         public async Task<bool> UpdatePrintConfigStandard(int printConfigId, PrintConfigStandardModel model, IFormFile file)
         {
+            if (long.TryParse(model.Background, out var v))
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Background không hợp lệ");
+            }
+
             var trans = await _masterDBContext.Database.BeginTransactionAsync();
             try
             {

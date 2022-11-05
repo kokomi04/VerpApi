@@ -9,11 +9,13 @@ namespace VErpApi.Controllers.Stock.Files
     public class FileStorageController : Controller
     {
         private readonly IFileStoreService _fileStoreService;
+
         public FileStorageController(IFileStoreService fileStoreService)
         {
             _fileStoreService = fileStoreService;
         }
-
+        
+      
         [AllowAnonymous]
         [Route("view/{fileName}")]
         [HttpGet]
@@ -26,5 +28,17 @@ namespace VErpApi.Controllers.Stock.Files
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
+
+        [AllowAnonymous]
+        [Route("template/{fileName}")]
+        [HttpGet]
+        public async Task<IActionResult> Template([FromRoute] string fileName, [FromQuery] string fileKey)
+        {
+            if (string.IsNullOrWhiteSpace(fileName)) return NotFound();
+
+            var r = await _fileStoreService.GetTemplateStream(fileKey);
+
+            return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
     }
 }

@@ -162,9 +162,7 @@ namespace VErp.Commons.Library
         }
 
 
-
-
-
+        public const string DOCUMENT_TEMPLATE_FOLDER = "_document_template_";
         public static string GetPhysicalFilePath(this string filePath, AppSetting appSetting)
         {
             filePath = filePath.Replace('\\', '/');
@@ -176,7 +174,7 @@ namespace VErp.Commons.Library
 
             return appSetting.Configuration.FileUploadFolder.TrimEnd('/').TrimEnd('\\') + "/" + filePath;
         }
-
+       
 
         public static void ValidateCodeSpecialCharactors(this string code, string desc = "")
         {
