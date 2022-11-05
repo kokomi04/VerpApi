@@ -13,7 +13,7 @@ using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.Stock.Files
 {
-    [Route("api/files")]
+    [Route("api/templates")]
     public class TemplateFilesController : VErpBaseController
     {
         private readonly ITemplateFileService _templateFileService;
