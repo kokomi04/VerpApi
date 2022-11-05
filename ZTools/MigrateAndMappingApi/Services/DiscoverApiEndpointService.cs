@@ -6,13 +6,52 @@ using System.Linq;
 using System.Reflection;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.MasterDB;
+using VErpApi.Controllers.System.Config;
 
 namespace MigrateAndMappingApi.Services
 {
+
+    public class ControllerMethod
+    {
+        public Type Controller { get; set; }
+        public MethodInfo Method { get; set; }
+    }
+
     public class DiscoverApiEndpointService
     {
+
+        public void GetAllMethodsOfControler(Type controller, Type type, List<ControllerMethod> methods)
+        {
+            if (type == typeof(Microsoft.AspNetCore.Mvc.ControllerBase)
+                || type == typeof(Microsoft.AspNetCore.Mvc.Controller)
+                || type == typeof(VErpBaseController)
+                )
+            {
+                return;
+            }
+
+            var lst = type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.FlattenHierarchy).ToList();
+
+            foreach (var item in lst)
+            {
+                if (!methods.Any(m => m.Method.Name == item.Name && m.Method.GetParameters().Length == m.Method.GetParameters().Length))
+                {
+                    methods.Add(new ControllerMethod()
+                    {
+                        Controller = controller,
+                        Method = item
+                    });
+                }
+            }
+            if (type.BaseType != null)
+            {
+                GetAllMethodsOfControler(controller, type.BaseType, methods);
+            }
+        }
+
         public List<ApiEndpoint> GetActionsControllerFromAssenbly(Type assemblyType, int serviceId)
         {
             var assembly = assemblyType.Assembly;
@@ -23,24 +62,36 @@ namespace MigrateAndMappingApi.Services
                 .Where(type => typeof(Microsoft.AspNetCore.Mvc.ControllerBase).IsAssignableFrom(type)
                 || typeof(Microsoft.AspNetCore.Mvc.Controller).IsAssignableFrom(type)
                 )
-                .Where(type => !type.Name.StartsWith("Test"));
+                .Where(type => !type.Name.StartsWith("Test") && !type.IsAbstract);
 
-            var v3 = v2.SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public));
-            var v4 = v3.Where(m => !m.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), true).Any());
-            var controllerActionList = v4.Select(x => new
+            var v3 = v2.SelectMany(type =>
             {
-                Controller = x.DeclaringType.Name.ToLower(),
-                IsMvcController = typeof(Microsoft.AspNetCore.Mvc.Controller).IsAssignableFrom(x.DeclaringType),
-                ControllerAttributes = x.DeclaringType.GetCustomAttributes(),
-                Action = x.Name,
-                ReturnType = x.ReturnType.Name,
-                Attributes = x.GetCustomAttributes(),
+                var methods = new List<ControllerMethod>();
+                GetAllMethodsOfControler(type, type, methods);
+                return methods;
             }
+            //type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.FlattenHierarchy)            
             );
+            var v4 = v3.Where(m => !m.Method.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), true).Any());
+            var controllerActionList = v4.Where(x => !x.Method.IsAbstract)
+                .Select(x => new
+                {
+                    Controller = x.Controller.Name.ToLower(),
+                    IsMvcController = typeof(Microsoft.AspNetCore.Mvc.Controller).IsAssignableFrom(x.Controller),
+                    ControllerAttributes = x.Controller.GetCustomAttributes(),
+                    Action = x.Method.Name,
+                    ReturnType = x.Method.ReturnType.Name,
+                    Attributes = x.Method.GetCustomAttributes()
+                }
+            );
+
+
+          
 
             /*discover api list*/
             foreach (var item in controllerActionList)
             {
+
                 var endpoint = new ApiEndpoint()
                 {
                     MethodId = (int)EnumMethod.Get,

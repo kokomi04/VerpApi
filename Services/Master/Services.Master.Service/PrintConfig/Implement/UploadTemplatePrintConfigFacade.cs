@@ -20,6 +20,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         {
             { ".doc" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
+
+            { ".jpg", EnumFileType.Image },
+            { ".jpeg", EnumFileType.Image },
+            { ".bmp", EnumFileType.Image },
+            { ".png"  , EnumFileType.Image },
         };
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
