@@ -12,7 +12,7 @@ using VErp.Services.Master.Service.PrintConfig;
 
 namespace VErpApi.Controllers.System.Config
 {
-    public class PrintConfigControllerAbstract<TModel> : VErpBaseController
+    public abstract class PrintConfigControllerAbstract<TModel> : VErpBaseController
     {
         private readonly IPrintConfigService<TModel> _printConfigService;
 
