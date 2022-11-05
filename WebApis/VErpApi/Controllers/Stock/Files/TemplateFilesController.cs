@@ -23,6 +23,11 @@ namespace VErpApi.Controllers.Stock.Files
         }
 
 
+        /// <summary>
+        /// Get file url base on file paths
+        /// </summary>
+        /// <param name="filePaths"></param>
+        /// <returns></returns>
         [GlobalApi]
         [HttpPost]
         [VErpAction(EnumActionType.View)]
@@ -32,9 +37,14 @@ namespace VErpApi.Controllers.Stock.Files
             return _templateFileService.GetFilesUrls(filePaths);
         }
 
-
+        /// <summary>
+        /// Uoload file template
+        /// </summary>
+        /// <param name="fileTypeId"></param>
+        /// <param name="file"></param>
+        /// <returns>string file path</returns>
         [HttpPost]
-        [Route("{objectTypeId}/upload")]
+        [Route("{fileTypeId}/upload")]
         public async Task<string> Upload([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _templateFileService.Upload(fileTypeId, file).ConfigureAwait(true);

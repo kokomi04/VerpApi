@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
@@ -28,6 +29,10 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             { ".doc" , "application/msword" },
             { ".pdf" , "application/pdf" },
             { ".docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document" },
+            { ".jpg", "image/jpg" },
+            { ".jpeg", "image/jpg" },
+            { ".bmp", "image/bmp" },
+            { ".png", "image/png" },
         };
 
         public FileStoreService(
@@ -105,7 +110,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 var contentType = "";
                 if (ContentTypes.ContainsKey(ext))
                 {
-                    contentType=ContentTypes[ext];
+                    contentType = ContentTypes[ext];
                 }
                 else
                 {
