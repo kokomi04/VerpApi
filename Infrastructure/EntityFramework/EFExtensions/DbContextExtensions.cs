@@ -413,8 +413,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 else if (clause is ArrayClause)
                 {
                     var arrClause = clause as ArrayClause;
-                    bool isNot = not ^ arrClause.Not;
-                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    //bool isNot = not ^ arrClause.Not;
+                    //bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+
+                    var isNot = arrClause.Not;
+                    bool isOr = arrClause.Condition == EnumLogicOperator.Or;
                     foreach (var item in arrClause.Rules)
                     {
                         if (exp == null)
@@ -433,6 +436,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             }
                         }
                     }
+
+                    if (isNot)
+                    {
+                        exp = Expression.Not(exp);
+                    }
+
                 }
             }
             return exp;
