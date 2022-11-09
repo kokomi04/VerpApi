@@ -172,11 +172,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //    $"{(errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? "Nhập" : "Xuất")} {errorInfo.InventoryCode} không đủ. Số tồn là " +
                     //   $"{errorInfo.PrimaryQuantityRemaning.Value.Format()} không hợp lệ";
 
-                    var date = errorInfo.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? 0);
+                    //var date = errorInfo.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? 0);
                     var billInfo = errorInfo.InventoryTypeId == (int)EnumInventoryType.Input ? InventoryInput : InventoryOuput;
                     billInfo += " " + errorInfo.InventoryCode;
 
-                    throw BillDetailError.BadRequestFormat(errorInfo.ProductCode, date.Format(), billInfo, errorInfo.PrimaryQuantityRemaning.Value.Format());
+                    throw BillDetailError.BadRequestFormat(errorInfo.ProductCode, errorInfo.Date.Format(_currentContextService.TimeZoneOffset ?? 0), billInfo, errorInfo.PrimaryQuantityRemaning.Value.Format());
 
                 }
             }

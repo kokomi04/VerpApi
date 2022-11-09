@@ -28,8 +28,16 @@ namespace VErp.Commons.Library
         }
 
 
+        public static object GetSqlValueAtTimezone(this EnumDataType dataType, object value, int? timeZoneOffset)
+        {
+            return GetSqlValueWithCustomTimezone(dataType, value, timeZoneOffset);
+        }
 
-        public static object GetSqlValue(this EnumDataType dataType, object value, int? timeZoneOffset = null)
+        public static object GetSqlValue(this EnumDataType dataType, object value)
+        {
+            return GetSqlValueWithCustomTimezone(dataType, value, null);
+        }
+        private static object GetSqlValueWithCustomTimezone(this EnumDataType dataType, object value, int? timeZoneOffset)
         {
             if (value.IsNullObject()) return DBNull.Value;
 
