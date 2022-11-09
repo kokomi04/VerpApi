@@ -47,7 +47,6 @@ namespace VErp.Services.PurchaseOrder.Model.ProductPrice
         public bool IsPricing { get; set; }
         public bool IsForeignPrice { get; set; }
         public string OnChange { get; set; }
-
-
+        public bool IsHidden { get; set; }
     }
 }

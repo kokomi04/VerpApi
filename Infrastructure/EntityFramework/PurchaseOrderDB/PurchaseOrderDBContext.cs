@@ -395,8 +395,6 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.OnChange).HasColumnName("onChange");
-
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.HasOne(d => d.ProductPriceConfigVersion)
