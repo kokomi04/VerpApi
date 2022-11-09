@@ -9,6 +9,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.MasterDB;
+using VErpApi.Controllers.Stock.Products;
 using VErpApi.Controllers.System.Config;
 
 namespace MigrateAndMappingApi.Services
@@ -37,14 +38,14 @@ namespace MigrateAndMappingApi.Services
 
             foreach (var item in lst)
             {
-                if (!methods.Any(m => m.Method.Name == item.Name && m.Method.GetParameters().Length == m.Method.GetParameters().Length))
+                if (!methods.Any(m => m.Method.Name == item.Name && m.Method.GetParameters().Length == item.GetParameters().Length))
                 {
                     methods.Add(new ControllerMethod()
                     {
                         Controller = controller,
                         Method = item
                     });
-                }
+                }                
             }
             if (type.BaseType != null)
             {
