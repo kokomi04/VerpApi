@@ -24,34 +24,6 @@ namespace MigrateAndMappingApi.Services
     public class DiscoverApiEndpointService
     {
 
-        public void GetAllMethodsOfControler(Type controller, Type type, List<ControllerMethod> methods)
-        {
-            if (type == typeof(Microsoft.AspNetCore.Mvc.ControllerBase)
-                || type == typeof(Microsoft.AspNetCore.Mvc.Controller)
-                || type == typeof(VErpBaseController)
-                )
-            {
-                return;
-            }
-
-            var lst = type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.FlattenHierarchy).ToList();
-
-            foreach (var item in lst)
-            {
-                if (!methods.Any(m => m.Method.Name == item.Name && m.Method.GetParameters().Length == item.GetParameters().Length))
-                {
-                    methods.Add(new ControllerMethod()
-                    {
-                        Controller = controller,
-                        Method = item
-                    });
-                }                
-            }
-            if (type.BaseType != null)
-            {
-                GetAllMethodsOfControler(controller, type.BaseType, methods);
-            }
-        }
 
         public List<ApiEndpoint> GetActionsControllerFromAssenbly(Type assemblyType, int serviceId)
         {
@@ -87,7 +59,7 @@ namespace MigrateAndMappingApi.Services
             );
 
 
-          
+
 
             /*discover api list*/
             foreach (var item in controllerActionList)
@@ -182,6 +154,49 @@ namespace MigrateAndMappingApi.Services
             }
 
             return lst;
+        }
+
+        private void GetAllMethodsOfControler(Type controller, Type type, List<ControllerMethod> methods)
+        {
+            if (type == typeof(ControllerBase)
+                || type == typeof(Controller)
+                || type == typeof(VErpBaseController)
+                )
+            {
+                return;
+            }
+
+            var lst = type.GetMethods(BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.FlattenHierarchy).ToList();
+
+            var methodsInCurrentClass = new List<ControllerMethod>();
+            foreach (var item in lst)
+            {
+                if (!methods.Any(m => m.Method.Name == item.Name && CompareListParams(m.Method.GetParameters(), item.GetParameters())))
+                {
+                    methodsInCurrentClass.Add(new ControllerMethod()
+                    {
+                        Controller = controller,
+                        Method = item
+                    });
+                }
+            }
+
+            methods.AddRange(methodsInCurrentClass);
+
+            if (type.BaseType != null)
+            {
+                GetAllMethodsOfControler(controller, type.BaseType, methods);
+            }
+        }
+
+        private bool CompareListParams(ParameterInfo[] lst1, ParameterInfo[] lst2)
+        {
+            if (lst1.Length != lst2.Length) return false;
+            for (var i = 0; i < lst1.Length; i++)
+            {
+                if (lst1[i].ParameterType != lst2[i].ParameterType) return false;
+            }
+            return true;
         }
 
         private static string GetRouteTemplateFromHttpMethodAttr(Attribute attribute, string controllerRoute)
