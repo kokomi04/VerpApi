@@ -420,7 +420,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         if (row.ContainsKey(field.Alias))
                         {
-                            var value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset);
+                            var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
                             tbRow[columnIndx] = new ExcelCell
                             {
                                 Value = value,
@@ -678,7 +678,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     if (row.ContainsKey(field.Alias))
                     {
-                        var value = dataType.GetSqlValue(row[field.Alias], _currentContextService.TimeZoneOffset);
+                        var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
                         tbRow[columnIndx] = new ExcelCell
                         {
                             Value = value,

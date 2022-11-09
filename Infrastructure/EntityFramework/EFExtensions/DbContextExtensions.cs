@@ -413,8 +413,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 else if (clause is ArrayClause)
                 {
                     var arrClause = clause as ArrayClause;
-                    bool isNot = not ^ arrClause.Not;
-                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+                    //bool isNot = not ^ arrClause.Not;
+                    //bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
+
+                    var isNot = arrClause.Not;
+                    bool isOr = arrClause.Condition == EnumLogicOperator.Or;
                     foreach (var item in arrClause.Rules)
                     {
                         if (exp == null)
@@ -433,6 +436,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             }
                         }
                     }
+
+                    if (isNot)
+                    {
+                        exp = Expression.Not(exp);
+                    }
+                    
                 }
             }
             return exp;
@@ -470,7 +479,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var propExpression = Expression.Call(prop, toStringMethod);
 
 
-                var dbValue = clause.DataType.GetSqlValue(clause.Value, timeZoneOffset);
+                var dbValue = clause.DataType.GetSqlValue(clause.Value);
                 if (clause.Operator != EnumOperator.InList)
                 {
                     //value = Expression.Constant(dbValue, prop.Type);
@@ -525,7 +534,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
                             MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item, timeZoneOffset) });
+                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
                         }
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance, prop.Type), method, prop);

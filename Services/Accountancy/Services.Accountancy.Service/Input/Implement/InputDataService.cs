@@ -2074,6 +2074,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     IsMultiRow = a.IsMultiRow,
                                     RequireFilters = af.RequireFilters,
                                     AreaTitle = a.Title,
+                                    AreaId = a.InputAreaId
+
                                 }).ToListAsync();
 
             if (isExport)
@@ -2414,7 +2416,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             // Thêm mới chứng từ
                             foreach (var bill in createBills)
                             {
-                               
+
                                 var excelRowsIndexs = bill.GetExcelRowNumbers();
 
                                 // validate require
@@ -2474,7 +2476,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             // Cập nhật chứng từ
                             foreach (var bill in updateBills)
                             {
-                               
+
                                 var oldBillInfo = infos[bill.Key];
 
                                 var newBillInfo = new BillInfoModel
@@ -2637,6 +2639,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
+        /// <summary>
+        /// Convert excel data to string, datetime => unix => string = "1667985449"
+        /// </summary>
+        /// <param name="bill"></param>
+        /// <param name="mapping"></param>
+        /// <param name="fields"></param>
+        /// <param name="referFields"></param>
+        /// <returns></returns>
+        /// <exception cref="BadRequestException"></exception>
         private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateField> fields, List<ReferFieldModel> referFields)
         {
             var info = new NonCamelCaseDictionary();
@@ -2662,6 +2673,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     //if (!field.IsMultiRow && rowIndx > 0 && info.ContainsKey(field.FieldName)) continue;
 
                     string value = null;
+                    var titleValues = new Dictionary<string, string>();
                     if (row.Data.ContainsKey(mappingField.Column))
                         value = row.Data[mappingField.Column]?.ToString();
 
@@ -2700,12 +2712,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         int suffix = 0;
                         var paramName = $"@{mappingField.RefFieldName}_{suffix}";
+
+                        var titleRefConfigs = field.RefTableTitle.Split(',')?.Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+                        titleValues = referFields.Where(f => f.CategoryCode == field.RefTableCode && titleRefConfigs.Contains(f.CategoryFieldName))
+                            .ToList()
+                            .ToDictionary(f => f.CategoryFieldName, f => (string)null);
+
+                        var titleFieldSelect = string.Join(", ", titleValues.Keys.ToArray());
+                        if (!string.IsNullOrWhiteSpace(titleFieldSelect))
+                        {
+                            titleFieldSelect = ", " + titleFieldSelect;
+                        }
                         var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
                         if (referField == null)
                         {
                             throw RefFieldNotExisted.BadRequestFormat(field.Title, mappingField.FieldName);
                         }
-                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
+                        var referSql = $"SELECT TOP 1 {field.RefTableField} {titleFieldSelect} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                         var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                         suffix++;
                         if (!string.IsNullOrEmpty(field.Filters))
@@ -2792,7 +2815,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
                             }
                         }
-                        value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                        var refRow = referData.Rows[0];
+                        value = refRow[field.RefTableField]?.ToString() ?? string.Empty;
+
+                        foreach (var titleFieldName in titleValues.Keys.ToArray())
+                        {
+                            titleValues[titleFieldName] = refRow[titleFieldName]?.ToString();
+                        }
                     }
                     if (!field.IsMultiRow)
                     {
@@ -2806,12 +2835,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         else
                         {
                             info.Add(field.FieldName, value);
+                            foreach (var titleField in titleValues)
+                            {
+                                info.Add(field.FieldName + "_" + titleField.Key, titleField.Value);
+                            }
                         }
 
                     }
                     else
                     {
                         mapRow.Add(field.FieldName, value);
+                        foreach (var titleField in titleValues)
+                        {
+                            mapRow.Add(field.FieldName + "_" + titleField.Key, titleField.Value);
+                        }
                     }
                 }
 
@@ -2853,6 +2890,78 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             // await ValidateAccountantConfig(billInfo?.Info, null);
 
             return billInfo;
+        }
+
+
+        public async Task<BillInfoModel> ParseBillFromMapping(int inputTypeId, BillParseMapping parseMapping, Stream stream)
+        {
+            var mapping = parseMapping.Mapping;
+            var bill = parseMapping.Bill;
+
+            var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
+
+            var reader = new ExcelReader(stream);
+            var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+
+            // Lấy thông tin field
+            var fields = await GetInputFields(inputTypeId);
+            foreach (var f in fields)
+            {
+                f.IsRequire = false;
+                f.RequireFilters = null;
+            };
+
+            //var infoFields = fields.Where(f => f.AreaId != areaId).ToList();
+
+
+            var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
+            var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
+
+
+            var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
+
+            var insertRows = data.Rows.Select((r, i) => new ImportExcelRowModel
+            {
+                Data = r,
+                Index = i + mapping.FromRow
+            })
+            .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
+            .ToList();
+
+            foreach (var row in insertRows)
+            {
+                foreach (var infoData in bill.Info)
+                {
+                    var field = fields.FirstOrDefault(f => f.FieldName == infoData.Key);
+                    if (field != null && !row.Data.ContainsKey(infoData.Key))
+                    {
+                        var valueData = ((EnumDataType)field.DataTypeId).GetSqlValue(infoData.Value);
+                        row.Data.Add(infoData.Key, valueData?.ToString());
+                    }
+                }
+            }
+
+
+            var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
+
+            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields);
+
+            foreach (var row in billInfo.Rows)
+            {
+                foreach (var fieldName in row.Keys.ToArray())
+                {
+                    var field = fields.FirstOrDefault(f => f.FieldName == fieldName);
+                    if (field != null)
+                    {
+                        row[fieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(row[fieldName]);
+                    }
+
+                }
+            }
+            return billInfo;
+
         }
 
         public async Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId)
@@ -3230,6 +3339,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RequireFilters { get; set; }
 
             public string AreaTitle { get; set; }
+            public int AreaId { get; set; }
         }
     }
 }

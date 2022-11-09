@@ -137,6 +137,20 @@ namespace VErpApi.Controllers.Accountancy.Data
             return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
+
+
+        [HttpPost]
+        [Route("{inputTypeId}/parseExcelFromMapping")]
+        public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int inputTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _inputDataService.ParseBillFromMapping(inputTypeId, parseMapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
         [HttpGet]
         [Route("{inputTypeId}/{fId}/datafile")]
         public async Task<FileStreamResult> ExportBill([FromRoute] int inputTypeId, [FromRoute] long fId)

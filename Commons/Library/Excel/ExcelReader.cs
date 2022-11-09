@@ -104,7 +104,15 @@ namespace VErp.Commons.Library
         }
 
 
-
+        /// <summary>
+        /// Read exel data (datetime => .DateTime.ToString()  = 5/1/2009 9:00:00 AM)
+        /// </summary>
+        /// <param name="sheetName"></param>
+        /// <param name="fromRow"></param>
+        /// <param name="toRow"></param>
+        /// <param name="maxrows"></param>
+        /// <param name="titleRow"></param>
+        /// <returns></returns>
         public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
             var sheetDatas = new List<ExcelSheetDataModel>();

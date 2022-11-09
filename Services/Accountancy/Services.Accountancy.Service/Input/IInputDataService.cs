@@ -32,6 +32,8 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
 
+        Task<BillInfoModel> ParseBillFromMapping(int inputTypeId, BillParseMapping parseMapping, Stream stream);
+
         Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId);
 
         Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds);
