@@ -131,6 +131,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
 
         [HttpPost]
         [Route("{voucherTypeId}/parseExcelFromMapping")]
+        [VErpAction(EnumActionType.View)]
         public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
         {
             if (file == null)

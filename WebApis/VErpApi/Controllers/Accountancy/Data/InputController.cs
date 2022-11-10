@@ -140,6 +140,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/parseExcelFromMapping")]
         public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int inputTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
         {
