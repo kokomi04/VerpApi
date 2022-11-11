@@ -2339,14 +2339,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     foreach (var bill in createGroups)
                     {
-                        var billInfo = await GetBillFromRows(bill, mapping, fields, referFields);
+                        var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false);
                         createBills.Add(billInfo);
                     }
                 }
 
                 foreach (var bill in updateGroups)
                 {
-                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields);
+                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false);
                     if (updateBills.ContainsKey(existKeys[bill.Key]))
                     {
                         updateBills[existKeys[bill.Key]] = billInfo;
@@ -2648,7 +2648,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         /// <param name="referFields"></param>
         /// <returns></returns>
         /// <exception cref="BadRequestException"></exception>
-        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateField> fields, List<ReferFieldModel> referFields)
+        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateField> fields, List<ReferFieldModel> referFields, bool isGetRefObj)
         {
             var info = new NonCamelCaseDictionary();
             var rows = new List<NonCamelCaseDictionary>();
@@ -2714,7 +2714,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         var paramName = $"@{mappingField.RefFieldName}_{suffix}";
 
                         var titleRefConfigs = field.RefTableTitle.Split(',')?.Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
-                        titleValues = referFields.Where(f => f.CategoryCode == field.RefTableCode && titleRefConfigs.Contains(f.CategoryFieldName))
+                        titleValues = referFields.Where(f => f.CategoryCode == field.RefTableCode
+                        && (isGetRefObj || titleRefConfigs.Contains(f.CategoryFieldName))
+                        )
                             .ToList()
                             .ToDictionary(f => f.CategoryFieldName, f => (string)null);
 
@@ -2882,9 +2884,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var value = v?.ToString();
                     var field = fields.FirstOrDefault(f => f.FieldName == fieldName);
 
-                    // Validate require
-                    if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters))
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { rowIndexs[billInfo.Rows[i]], field.Title });
+                    if (field != null)
+                    {
+                        // Validate require
+                        if (string.IsNullOrWhiteSpace(value) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters))
+                            throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { rowIndexs[billInfo.Rows[i]], field.Title });
+                    }
                 }
             }
             // await ValidateAccountantConfig(billInfo?.Info, null);
@@ -2917,7 +2922,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, null);
 
 
             var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
@@ -2946,7 +2951,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
 
-            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields);
+            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true);
 
             foreach (var row in billInfo.Rows)
             {
