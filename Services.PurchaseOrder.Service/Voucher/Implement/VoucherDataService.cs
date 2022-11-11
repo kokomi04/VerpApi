@@ -2224,7 +2224,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 foreach (var bill in groups)
                 {
-                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields);
+                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false);
 
                     await ValidateSaleVoucherConfig(billInfo?.Info, null);
 
@@ -2321,7 +2321,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
+            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, null);
 
 
             var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
@@ -2350,7 +2350,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
 
-            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields);
+            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true);
 
             foreach (var row in billInfo.Rows)
             {
@@ -2378,7 +2378,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         /// <param name="referFields"></param>
         /// <returns></returns>
         /// <exception cref="BadRequestException"></exception>
-        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateVoucherField> fields, List<ReferFieldModel> referFields)
+        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateVoucherField> fields, List<ReferFieldModel> referFields, bool isGetRefObj)
         {
             var info = new NonCamelCaseDictionary();
             var rows = new List<NonCamelCaseDictionary>();
@@ -2397,6 +2397,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     //if (!field.IsMultiRow && rowIndx > 0) continue;
 
                     string value = null;
+                    var titleValues = new Dictionary<string, string>();
+
                     if (row.Data.ContainsKey(mappingField.Column))
                         value = row.Data[mappingField.Column]?.ToString();
                     // Validate require
@@ -2436,12 +2438,25 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     {
                         int suffix = 0;
                         var paramName = $"@{mappingField.RefFieldName}_{suffix}";
+                        var titleRefConfigs = field.RefTableTitle.Split(',')?.Select(t => t.Trim()).Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+                        titleValues = referFields.Where(f => f.CategoryCode == field.RefTableCode
+                        && (isGetRefObj || titleRefConfigs.Contains(f.CategoryFieldName))
+                        )
+                            .ToList()
+                            .ToDictionary(f => f.CategoryFieldName, f => (string)null);
+
+                        var titleFieldSelect = string.Join(", ", titleValues.Keys.ToArray());
+                        if (!string.IsNullOrWhiteSpace(titleFieldSelect))
+                        {
+                            titleFieldSelect = ", " + titleFieldSelect;
+                        }
+
                         var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
                         if (referField == null)
                         {
                             throw RefFieldNotExisted.BadRequestFormat(field.Title, mappingField.FieldName);
                         }
-                        var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
+                        var referSql = $"SELECT TOP 1 {field.RefTableField} {titleFieldSelect} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                         var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
                         suffix++;
                         if (!string.IsNullOrEmpty(field.Filters))
@@ -2520,7 +2535,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
                             }
                         }
-                        value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
+                        var refRow = referData.Rows[0];
+                        value = refRow[field.RefTableField]?.ToString() ?? string.Empty;
+                        foreach (var titleFieldName in titleValues.Keys.ToArray())
+                        {
+                            titleValues[titleFieldName] = refRow[titleFieldName]?.ToString();
+                        }
                     }
                     if (!field.IsMultiRow)
                     {
@@ -2534,11 +2554,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         else
                         {
                             info.Add(field.FieldName, value);
+                            foreach (var titleField in titleValues)
+                            {
+                                info.Add(field.FieldName + "_" + titleField.Key, titleField.Value);
+                            }
                         }
                     }
                     else
                     {
                         mapRow.Add(field.FieldName, value);
+                        foreach (var titleField in titleValues)
+                        {
+                            mapRow.Add(field.FieldName + "_" + titleField.Key, titleField.Value);
+                        }
                     }
                 }
                 rows.Add(mapRow);
