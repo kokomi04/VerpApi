@@ -2672,37 +2672,37 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (field == null) continue;
                     //if (!field.IsMultiRow && rowIndx > 0 && info.ContainsKey(field.FieldName)) continue;
 
-                    string value = null;
-                    var titleValues = new Dictionary<string, string>();
+                    object value = null;
+                    var titleValues = new Dictionary<string, object>();
                     if (row.Data.ContainsKey(mappingField.Column))
                         value = row.Data[mappingField.Column]?.ToString();
 
+                    var strValue = value?.ToString()?.Trim();
+                    if (string.IsNullOrWhiteSpace(strValue)) continue;
 
-                    if (string.IsNullOrWhiteSpace(value)) continue;
-                    value = value.Trim();
 
-                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    if (strValue.StartsWith(PREFIX_ERROR_CELL))
                     {
-                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {strValue}");
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                     {
-                        if (!DateTime.TryParse(value.ToString(), out DateTime date))
+                        if (!DateTime.TryParse(strValue, out DateTime date))
                             throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
-                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
+                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
                     }
 
                     // Validate refer
                     if (!((EnumFormType)field.FormTypeId).IsSelectForm())
                     {
                         // Validate value
-                        if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
+                        if (!field.IsAutoIncrement)
                         {
                             string regex = ((EnumDataType)field.DataTypeId).GetRegex();
-                            if ((field.DataSize > 0 && value.Length > field.DataSize)
-                                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                            if ((field.DataSize > 0 && strValue.Length > field.DataSize)
+                                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(strValue, regex))
+                                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(strValue, field.RegularExpression)))
                             {
                                 throw new BadRequestException(InputErrorCode.InputValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
                             }
@@ -2718,7 +2718,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         && (isGetRefObj || titleRefConfigs.Contains(f.CategoryFieldName))
                         )
                             .ToList()
-                            .ToDictionary(f => f.CategoryFieldName, f => (string)null);
+                            .ToDictionary(f => f.CategoryFieldName, f => (object)null);
 
                         var titleFieldSelect = string.Join(", ", titleValues.Keys.ToArray());
                         if (!string.IsNullOrWhiteSpace(titleFieldSelect))
@@ -2818,25 +2818,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                         }
                         var refRow = referData.Rows[0];
-                        value = refRow[field.RefTableField]?.ToString() ?? string.Empty;
+                        value = refRow[field.RefTableField];
 
                         foreach (var titleFieldName in titleValues.Keys.ToArray())
                         {
-                            titleValues[titleFieldName] = refRow[titleFieldName]?.ToString();
+                            titleValues[titleFieldName] = refRow[titleFieldName];
                         }
                     }
                     if (!field.IsMultiRow)
                     {
                         if (info.ContainsKey(field.FieldName))
                         {
-                            if (info[field.FieldName]?.ToString() != value)
+                            if (info[field.FieldName]?.ToString() != strValue)
                             {
                                 throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
                             }
                         }
                         else
                         {
+
                             info.Add(field.FieldName, value);
+
+
                             foreach (var titleField in titleValues)
                             {
                                 info.Add(field.FieldName + "_" + titleField.Key, titleField.Value);
