@@ -10,6 +10,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
@@ -38,7 +39,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         }
 
         /// <summary>
-        /// Lấy danh sách đơn đặt hàng
+        /// Lấy danh sách đơn đặt mua
         /// </summary>
         /// <param name="keyword"></param>
         /// <param name="purchaseOrderTypes"></param>
@@ -58,14 +59,34 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetList")]
         public async Task<PageData<PurchaseOrderOutputList>> GetList([FromQuery] string keyword, [FromQuery] IList<int> purchaseOrderTypes, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
+            var req = new PurchaseOrderFilterRequestModel()
+            {
+                Keyword = keyword,
+                //PoCodes = poCodes,
+                PurchaseOrderTypes = purchaseOrderTypes,
+                ProductIds = productIds,
+                PurchaseOrderStatusId = purchaseOrderStatusId,
+                PoProcessStatusId = poProcessStatusId,
+                IsChecked = isChecked,
+                IsApproved = isApproved,
+                FromDate = fromDate,
+                ToDate = toDate,
+                SortBy = sortBy,
+                Asc = asc,
+                Page = page,
+                Size = size,
+
+                Filters = null// filters
+
+            };
             return await _purchaseOrderService
-                .GetList(keyword, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetList(req)
                 .ConfigureAwait(true);
         }
 
 
         /// <summary>
-        /// Lấy danh sách đơn đặt hàng chi tiết theo sản phẩm
+        /// Lấy danh sách đơn đặt mua chi tiết theo sản phẩm
         /// </summary>
         /// <param name="keyword"></param>
         /// <param name="purchaseOrderTypes"></param>
@@ -85,8 +106,59 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("GetListByProduct")]
         public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct([FromQuery] string keyword, [FromQuery] IList<int> purchaseOrderTypes, [FromQuery] IList<int> productIds, [FromQuery] EnumPurchaseOrderStatus? purchaseOrderStatusId, [FromQuery] EnumPoProcessStatus? poProcessStatusId, [FromQuery] bool? isChecked, [FromQuery] bool? isApproved, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] string sortBy, [FromQuery] bool asc, [FromQuery] int page, [FromQuery] int size)
         {
+            var req = new PurchaseOrderFilterRequestModel()
+            {
+                Keyword = keyword,
+                //PoCodes = poCodes,
+                PurchaseOrderTypes = purchaseOrderTypes,
+                ProductIds = productIds,
+                PurchaseOrderStatusId = purchaseOrderStatusId,
+                PoProcessStatusId = poProcessStatusId,
+                IsChecked = isChecked,
+                IsApproved = isApproved,
+                FromDate = fromDate,
+                ToDate = toDate,
+                SortBy = sortBy,
+                Asc = asc,
+                Page = page,
+                Size = size,
+
+                Filters = null// filters
+
+            };
             return await _purchaseOrderService
-                .GetListByProduct(keyword, null, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size)
+                .GetListByProduct(req)
+                .ConfigureAwait(true);
+        }
+
+        /// <summary>
+        /// Lấy danh sách đơn đặt mua
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetListV2")]
+        public async Task<PageData<PurchaseOrderOutputList>> GetListV2([FromBody] PurchaseOrderFilterRequestModel req)
+        {
+            return await _purchaseOrderService
+                .GetList(req)
+                .ConfigureAwait(true);
+        }
+
+
+        /// <summary>
+        /// Lấy danh sách đơn đặt mua chi tiết theo sản phẩm
+        /// </summary>
+        /// <param name="req"></param>
+        /// <returns></returns>
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetListByProductV2")]
+        public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProductV2([FromBody] PurchaseOrderFilterRequestModel req)
+        {
+            return await _purchaseOrderService
+                .GetListByProduct(req)
                 .ConfigureAwait(true);
         }
 
@@ -95,7 +167,16 @@ namespace VErpApi.Controllers.PurchaseOrder
         [GlobalApi]
         public async Task<IList<PurchaseOrderOutputListByProduct>> GetRowsByCodes([FromBody] IList<string> poCodes)
         {
-            var data = await _purchaseOrderService.GetListByProduct(string.Empty, poCodes, null, null, null, null, null, null, null, null, string.Empty, false, 1, 0);
+            var req = new PurchaseOrderFilterRequestModel()
+            {
+                Keyword = string.Empty,
+                PoCodes = poCodes,
+                SortBy = string.Empty,
+                Asc = false,
+                Page = 1,
+                Size = 0
+            };
+            var data = await _purchaseOrderService.GetListByProduct(req);
             return data.List;
         }
 
@@ -146,14 +227,14 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchaseOrderInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
+        public IAsyncEnumerable<PurchaseOrderInputDetail> ParseDetails([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
             if (file == null || data == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             data.Mapping.FileName = file.FileName;
-            return _purchaseOrderService.ParseInvoiceDetails(data.Mapping, data.Extra, file.OpenReadStream());
+            return _purchaseOrderService.ParseDetails(data.Mapping, data.Extra, file.OpenReadStream());
         }
 
         /// <summary>

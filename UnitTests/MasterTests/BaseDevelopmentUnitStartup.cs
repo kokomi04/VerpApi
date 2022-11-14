@@ -6,6 +6,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.AccountancyDB;
+using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.WebApis.VErpApi;
@@ -24,6 +25,7 @@ namespace MasterTests
         protected UnAuthorizeMasterDBContext _unAuthorizeMasterDBContext;
         protected StockDBContext _stockDBContext;
         protected AccountancyDBContext _accountancyDBContext;
+        protected ManufacturingDBContext _manufacturingDBContext;
 
 
         public int UserId { get; set; }
@@ -40,7 +42,7 @@ namespace MasterTests
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(userId, EnumActionType.Add, RoleInfo, null, subsidiaryId, null, "", null, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(null, userId, EnumActionType.Add, RoleInfo, null, subsidiaryId, null, "", null, null));
 
             _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
 
@@ -48,6 +50,7 @@ namespace MasterTests
 
             _accountancyDBContext = (AccountancyDBContext)webHost.Services.GetService(typeof(AccountancyDBContext));
 
+            _manufacturingDBContext = (ManufacturingDBContext)webHost.Services.GetService(typeof(ManufacturingDBContext));
 
         }
 
@@ -64,7 +67,7 @@ namespace MasterTests
 
             var currentContextFactory = (ICurrentContextFactory)webHost.Services.GetService(typeof(ICurrentContextFactory));
 
-            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(UserId, EnumActionType.Add, RoleInfo, null, 2, null, "", null, null));
+            currentContextFactory.SetCurrentContext(new ScopeCurrentContextService(null, UserId, EnumActionType.Add, RoleInfo, null, 2, null, "", null, null));
 
             _masterDBContext = (MasterDBContext)webHost.Services.GetService(typeof(MasterDBContext));
 

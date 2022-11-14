@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.Product;
 using Verp.Resources.Stock.Product.ProductImport;
 using VErp.Commons.Enums.MasterEnum;
@@ -13,6 +14,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
@@ -97,31 +99,48 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
         private ImportExcelMapping _mapping = null;
-        public async Task<bool> ProcessData(ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ProcessData(ILongTaskResourceLockService longTaskResourceLockService, ImportExcelMapping mapping, Stream stream)
         {
             _mapping = mapping;
 
             _steps = await _manufacturingHelperService.GetSteps();
 
-            ReadExcelData(mapping, stream);
-
-            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập BOM mặt hàng từ excel"))
             {
-                using (var logBath = _productActivityLog.BeginBatchLog())
+                longTask.SetCurrentStep("Đọc dữ liệu từ tệp excel");
+
+                ReadExcelData(mapping, stream);
+
+                longTask.SetCurrentStep("Xử lý dữ liệu");
+                longTask.SetTotalRows(_importData.Count);
+
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
-                    await AddMissingProductType();
-                    await AddMissingProductCate();
-                    await AddMissingUnit();
-                    await AddMissingProduct();
-                    await ImportBom();
-                    if (!IsPreview)
+                    using (var logBath = _productActivityLog.BeginBatchLog())
                     {
-                        await trans.CommitAsync();
-                        await logBath.CommitAsync();
+                        longTask.SetCurrentStep("Thêm loại mặt hàng");
+                        await AddMissingProductType();
+
+                        longTask.SetCurrentStep("Thêm danh mục mặt hàng");
+                        await AddMissingProductCate();
+
+                        longTask.SetCurrentStep("Thêm đơn vị tính");
+                        await AddMissingUnit();
+
+                        longTask.SetCurrentStep("Thêm mặt hàng");
+                        await AddMissingProduct();
+
+                        longTask.SetCurrentStep("Thêm BOM");
+                        await ImportBom(longTask);
+                        if (!IsPreview)
+                        {
+                            await trans.CommitAsync();
+                            await logBath.CommitAsync();
+                        }
                     }
                 }
+                return true;
             }
-            return true;
         }
 
 
@@ -240,7 +259,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
         }
 
-        private async Task ImportBom()
+        private async Task ImportBom(LongTaskResourceLock longTask)
         {
             _bomByProductCodes = _importData.GroupBy(b => b.ProductCode.NormalizeAsInternalName()).ToDictionary(b => b.Key, b => b.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).Select(g => g.First()).ToList());
 
@@ -253,6 +272,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             foreach (var bom in _bomByProductCodes)
             {
+
+
                 _existedProducts.TryGetValue(bom.Key, out var rootProductInfo);
 
                 var productBoms = bom.Value.Select(b =>
@@ -305,6 +326,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 {
                     bomData.AddRange(productBoms);
                 }
+
+                longTask.IncProcessedRows();
             }
 
             if (IsPreview)

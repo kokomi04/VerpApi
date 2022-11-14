@@ -27,4 +27,6 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string ObjectId { get; set; }
     }
 
+
+   
 }

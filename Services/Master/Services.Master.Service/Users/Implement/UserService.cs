@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.RedisCache;
 using Verp.Resources.Master.User;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -20,6 +21,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -44,6 +46,7 @@ namespace VErp.Services.Master.Service.Users.Implement
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _userActivityLog;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
 
         public UserService(MasterDBContext masterContext
             , UnAuthorizeMasterDBContext unAuthorizeMasterDBContext
@@ -56,7 +59,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             , IAsyncRunnerService asyncRunnerService
             , IServiceScopeFactory serviceScopeFactory
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService)
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
+            )
         {
             _masterContext = masterContext;
             _unAuthorizeMasterDBContext = unAuthorizeMasterDBContext;
@@ -70,6 +75,7 @@ namespace VErp.Services.Master.Service.Users.Implement
             _mapper = mapper;
             _userActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.UserAndEmployee);
             _customGenCodeHelperService = customGenCodeHelperService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
         }
 
 
@@ -673,143 +679,148 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         public async Task<bool> ImportUserFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var reader = new ExcelReader(stream);
+            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập danh sách người dùng từ excel"))
+            {
+                var reader = new ExcelReader(stream);
+                reader.RegisterLongTaskEvent(longTask);
 
-            var genderData = new Dictionary<string, EnumGender> {
+                var genderData = new Dictionary<string, EnumGender> {
                 { EnumGender.Male.GetEnumDescription(), EnumGender.Male },
                 { EnumGender.Female.GetEnumDescription(), EnumGender.Female }
             };
-            var userStatusData = new Dictionary<string, EnumUserStatus> {
+                var userStatusData = new Dictionary<string, EnumUserStatus> {
                 { EnumUserStatus.InActived.GetEnumDescription(), EnumUserStatus.InActived },
                 { EnumUserStatus.Actived.GetEnumDescription(), EnumUserStatus.Actived },
                 { EnumUserStatus.Locked.GetEnumDescription(), EnumUserStatus.Locked }
             };
-            var roleData = _masterContext.Role
-                .Select(r => new { r.RoleId, r.RoleName })
-                .ToList()
-                .GroupBy(r => r.RoleName)
-                .ToDictionary(r => r.Key, r => r.First().RoleId);
+                var roleData = _masterContext.Role
+                    .Select(r => new { r.RoleId, r.RoleName })
+                    .ToList()
+                    .GroupBy(r => r.RoleName)
+                    .ToDictionary(r => r.Key, r => r.First().RoleId);
 
-            var departments = await _organizationContext.Department.ToListAsync();
+                var departments = await _organizationContext.Department.ToListAsync();
 
-            var departmentByCodes = departments
-                .GroupBy(d => d.DepartmentCode.NormalizeAsInternalName(), d => d.DepartmentId)
-                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+                var departmentByCodes = departments
+                    .GroupBy(d => d.DepartmentCode.NormalizeAsInternalName(), d => d.DepartmentId)
+                    .ToDictionary(g => g.Key, g => g.FirstOrDefault());
 
-            var departmentIds = departments.Select(d => d.DepartmentId.ToString()).ToHashSet();
+                var departmentIds = departments.Select(d => d.DepartmentId.ToString()).ToHashSet();
 
-            var departmentByNames = departments
-                .GroupBy(d => d.DepartmentName.NormalizeAsInternalName(), d => d.DepartmentId)
-                .ToDictionary(g => g.Key, g => g.FirstOrDefault());
+                var departmentByNames = departments
+                    .GroupBy(d => d.DepartmentName.NormalizeAsInternalName(), d => d.DepartmentId)
+                    .ToDictionary(g => g.Key, g => g.FirstOrDefault());
 
-            var userDepartment = new Dictionary<UserImportModel, IList<int>>();
+                var userDepartment = new Dictionary<UserImportModel, IList<int>>();
 
-            var departmentProp = nameof(UserImportModel.Department1).TrimEnd('1');
+                var departmentProp = nameof(UserImportModel.Department1).TrimEnd('1');
 
-            var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
-            {
-                if (string.IsNullOrWhiteSpace(value)) return true;
-                switch (propertyName)
+                var lstData = reader.ReadSheetEntity<UserImportModel>(mapping, (entity, propertyName, value) =>
                 {
-                    case nameof(UserImportModel.GenderId):
-                        if (!genderData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.GenderTypeInvalid, $"Giới tính {value} không đúng");
-                        entity.GenderId = genderData[value];
-                        return true;
-                    case nameof(UserImportModel.UserStatusId):
-                        if (!userStatusData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.StatusTypeInvalid, $"Trạng thái {value} không đúng");
-                        entity.UserStatusId = userStatusData[value];
-                        return true;
-                    case nameof(UserImportModel.RoleId):
-                        if (!roleData.ContainsKey(value)) throw new BadRequestException(RoleErrorCode.RoleNotFound, $"Nhóm quyền {value} không đúng");
-                        entity.RoleId = roleData[value];
-                        return true;
-
-                }
-
-                if (propertyName.StartsWith(departmentProp))
-                {
-                    var number = propertyName.Substring(0, departmentProp.Length);
-
-                    var mappingField = mapping.MappingFields.FirstOrDefault(m => m.FieldName == propertyName);
-                    if (mappingField != null)
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    switch (propertyName)
                     {
-                        int departmentId = 0;
+                        case nameof(UserImportModel.GenderId):
+                            if (!genderData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.GenderTypeInvalid, $"Giới tính {value} không đúng");
+                            entity.GenderId = genderData[value];
+                            return true;
+                        case nameof(UserImportModel.UserStatusId):
+                            if (!userStatusData.ContainsKey(value)) throw new BadRequestException(UserErrorCode.StatusTypeInvalid, $"Trạng thái {value} không đúng");
+                            entity.UserStatusId = userStatusData[value];
+                            return true;
+                        case nameof(UserImportModel.RoleId):
+                            if (!roleData.ContainsKey(value)) throw new BadRequestException(RoleErrorCode.RoleNotFound, $"Nhóm quyền {value} không đúng");
+                            entity.RoleId = roleData[value];
+                            return true;
 
-                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentId))
+                    }
+
+                    if (propertyName.StartsWith(departmentProp))
+                    {
+                        var number = propertyName.Substring(0, departmentProp.Length);
+
+                        var mappingField = mapping.MappingFields.FirstOrDefault(m => m.FieldName == propertyName);
+                        if (mappingField != null)
                         {
-                            if (departmentIds.Contains(value.NormalizeAsInternalName()))
+                            int departmentId = 0;
+
+                            if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentId))
                             {
-                                departmentId = int.Parse(value.NormalizeAsInternalName());
+                                if (departmentIds.Contains(value.NormalizeAsInternalName()))
+                                {
+                                    departmentId = int.Parse(value.NormalizeAsInternalName());
+                                }
                             }
+
+                            if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentCode))
+                            {
+                                departmentByCodes.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
+                            }
+
+                            if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentName))
+                            {
+                                departmentByNames.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
+                            }
+
+                            if (departmentId == 0) throw DepartmentNotFound.BadRequestFormat(value);
+
+                            if (!userDepartment.ContainsKey(entity))
+                            {
+                                userDepartment.Add(entity, new List<int>());
+                            }
+
+                            entity.GetType().GetProperty(propertyName).SetValue(entity, new UserImportDepartmentModel()
+                            {
+                                DepartmentId = departmentId,
+                            });
                         }
-
-                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentCode))
-                        {
-                            departmentByCodes.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
-                        }
-
-                        if (mappingField.RefFieldName == nameof(UserImportDepartmentModel.DepartmentName))
-                        {
-                            departmentByNames.TryGetValue(value.NormalizeAsInternalName(), out departmentId);
-                        }
-
-                        if (departmentId == 0) throw DepartmentNotFound.BadRequestFormat(value);
-
-                        if (!userDepartment.ContainsKey(entity))
-                        {
-                            userDepartment.Add(entity, new List<int>());
-                        }
-
-                        entity.GetType().GetProperty(propertyName).SetValue(entity, new UserImportDepartmentModel()
-                        {
-                            DepartmentId = departmentId,
-                        });
+                        return true;
                     }
-                    return true;
-                }
 
-                return false;
-            });
+                    return false;
+                });
 
-            var userModels = new List<UserInfoInput>();
+                var userModels = new List<UserInfoInput>();
 
-            var departmentEffectiveDate = nameof(UserImportModel.EffectiveDate1).TrimEnd('1');
-            var departmentExpirationDate = nameof(UserImportModel.ExpirationDate1).TrimEnd('1');
+                var departmentEffectiveDate = nameof(UserImportModel.EffectiveDate1).TrimEnd('1');
+                var departmentExpirationDate = nameof(UserImportModel.ExpirationDate1).TrimEnd('1');
 
-            foreach (var userModel in lstData)
-            {
-                var userInfo = _mapper.Map<UserInfoInput>(userModel);
-
-                userInfo.Departments = new List<UserDepartmentMappingModel>();
-
-                var props = userModel.GetType().GetProperties().ToList();
-
-                foreach (var prop in props.Where(p => p.Name.StartsWith(departmentProp)))
+                longTask.SetCurrentStep("Thêm người dùng vào cơ sở dữ liệu");
+                foreach (var userModel in lstData)
                 {
-                    var number = prop.Name.Substring(departmentProp.Length);
+                    var userInfo = _mapper.Map<UserInfoInput>(userModel);
 
-                    var departnemtImportModel = (UserImportDepartmentModel)prop.GetValue(userModel);
+                    userInfo.Departments = new List<UserDepartmentMappingModel>();
 
-                    if (departnemtImportModel != null && departnemtImportModel.DepartmentId > 0)
+                    var props = userModel.GetType().GetProperties().ToList();
+
+                    foreach (var prop in props.Where(p => p.Name.StartsWith(departmentProp)))
                     {
-                        var effectiveDateProp = props.FirstOrDefault(p => p.Name == $"{departmentEffectiveDate}{number}");
-                        var expirationDateProp = props.FirstOrDefault(p => p.Name == $"{departmentExpirationDate}{number}");
+                        var number = prop.Name.Substring(departmentProp.Length);
 
-                        userInfo.Departments.Add(new UserDepartmentMappingModel()
+                        var departnemtImportModel = (UserImportDepartmentModel)prop.GetValue(userModel);
+
+                        if (departnemtImportModel != null && departnemtImportModel.DepartmentId > 0)
                         {
-                            DepartmentId = departnemtImportModel.DepartmentId.Value,
-                            EffectiveDate = (long?)effectiveDateProp.GetValue(userModel),
-                            ExpirationDate = (long?)expirationDateProp.GetValue(userModel),
-                        });
+                            var effectiveDateProp = props.FirstOrDefault(p => p.Name == $"{departmentEffectiveDate}{number}");
+                            var expirationDateProp = props.FirstOrDefault(p => p.Name == $"{departmentExpirationDate}{number}");
+
+                            userInfo.Departments.Add(new UserDepartmentMappingModel()
+                            {
+                                DepartmentId = departnemtImportModel.DepartmentId.Value,
+                                EffectiveDate = (long?)effectiveDateProp.GetValue(userModel),
+                                ExpirationDate = (long?)expirationDateProp.GetValue(userModel),
+                            });
+                        }
                     }
+
+                    userModels.Add(userInfo);
                 }
 
-                userModels.Add(userInfo);
+                await CreateBatchUser(userModels, EnumEmployeeType.Normal);
+
+                return true;
             }
-
-            await CreateBatchUser(userModels, EnumEmployeeType.Normal);
-
-            return true;
         }
 
         #region private

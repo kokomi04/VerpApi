@@ -142,7 +142,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xuất hiện chi tiết sử dụng có mã trùng nhau cùng sử dụng vật liệu tiêu hao trong cùng 1 nhóm. Các vật liệu tiêu hao: {0}.
+        ///   Looks up a localized string similar to Trùng dữ liệu vật tư của chi tiết cùng nhóm. Vật tư: &quot;{0}&quot;, nhóm &quot;{1}&quot;, chi tiết &quot;{2}&quot;, các dòng trùng &quot;{3}&quot;.
         /// </summary>
         public static string ImportConsumDuplicateSamePartInSameGroup {
             get {
@@ -264,6 +264,15 @@ namespace Verp.Resources.Stock.Product {
         public static string ProductNameOfCodeEmpty {
             get {
                 return ResourceManager.GetString("ProductNameOfCodeEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Đơn vị tính &quot;{0}&quot; trùng nhau, mặt hàng &quot;{1}&quot;.
+        /// </summary>
+        public static string PuConversionDuplicated {
+            get {
+                return ResourceManager.GetString("PuConversionDuplicated", resourceCulture);
             }
         }
         

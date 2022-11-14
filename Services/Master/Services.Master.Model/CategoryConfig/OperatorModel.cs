@@ -8,7 +8,12 @@ namespace VErp.Services.Master.Model.CategoryConfig
         public EnumDataType[] AllowedDataType { get; set; }
     }
 
-    public class LogicOperatorModel
+    public class LogicOperatorModel: ValueTitleModel
+    {
+       
+    }
+
+    public class ValueTitleModel
     {
         public int Value { get; set; }
         public string Title { get; set; }

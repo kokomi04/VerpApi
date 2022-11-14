@@ -179,14 +179,14 @@ namespace VErpApi.Controllers.PurchaseOrder
 
         [HttpPost]
         [Route("parseDetailsFromExcelMapping")]
-        public IAsyncEnumerable<PurchasingRequestInputDetail> ImportFromMapping([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
+        public IAsyncEnumerable<PurchasingRequestInputDetail> ParseDetails([FromFormString] ImportExcelMappingExtra<SingleInvoiceStaticContent> data, IFormFile file)
         {
             if (file == null || data == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             data.Mapping.FileName = file.FileName;
-            return _purchasingRequestService.ParseInvoiceDetails(data.Mapping, data.Extra, file.OpenReadStream());
+            return _purchasingRequestService.ParseDetails(data.Mapping, data.Extra, file.OpenReadStream());
         }
 
         /// <summary>

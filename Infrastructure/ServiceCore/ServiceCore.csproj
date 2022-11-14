@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\AppSettings\AppSettings.csproj" />
     <ProjectReference Include="..\Cache\MemCache\MemCache.csproj" />
+    <ProjectReference Include="..\Cache\RedisCache\RedisCache.csproj" />
     <ProjectReference Include="..\EntityFramework\ActivityLogDB\ActivityLogDB.csproj" />
     <ProjectReference Include="..\EntityFramework\MasterDB\MasterDB.csproj" />
     <ProjectReference Include="..\EntityFramework\OrganizationDB\OrganizationDB.csproj" />

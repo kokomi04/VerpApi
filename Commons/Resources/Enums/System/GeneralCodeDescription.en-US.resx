@@ -138,6 +138,9 @@
   <data name="ItemNotFound" xml:space="preserve">
     <value>The record was not found</value>
   </data>
+  <data name="LongTaskIsRunning" xml:space="preserve">
+    <value>Long task is running</value>
+  </data>
   <data name="NotYetSupported" xml:space="preserve">
     <value>The function does not support yet</value>
   </data>

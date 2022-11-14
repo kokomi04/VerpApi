@@ -5,6 +5,7 @@
     {
         EmptyUnitName = 1,
         UnitNotFound = 2,
-        UnitNameAlreadyExisted = 3
+        UnitNameAlreadyExisted = 3,
+        UnitIsUnUsed = 4
     }
 }

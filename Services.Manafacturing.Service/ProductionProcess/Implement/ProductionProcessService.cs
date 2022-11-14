@@ -369,7 +369,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     ContainerId = id,
                     ContainerTypeId = containerTypeId,
-                    ProductionSteps = steps,
+                    ProductionSteps = steps.OrderBy(s => s.SortOrder).ToList(),
                     ProductionStepLinkDataRoles = roleData,
                     ProductionStepLinkDatas = stepLinkDatas.Where(l => linkDataIds.Contains(l.ProductionStepLinkDataId)).ToList(),
                     ProductionStepLinks = stepLinks,
@@ -1100,6 +1100,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 s.ContainerId = containerId;
             }
 
+            var toRemoveLinkDatas = new List<ProductionStepLinkDataInput>();
+            foreach (var d in req.ProductionStepLinkDatas)
+            {
+                if (!req.ProductionStepLinkDataRoles.Any(r => r.ProductionStepLinkDataId == d.ProductionStepLinkDataId || string.Compare(r.ProductionStepLinkDataCode, d.ProductionStepLinkDataCode, true) == 0))
+                {
+                    toRemoveLinkDatas.Add(d);
+                }
+            }
+            foreach (var d in toRemoveLinkDatas)
+            {
+                req.ProductionStepLinkDatas.Remove(d);
+            }
+
+
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
@@ -1287,10 +1301,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .ToList();
 
 
+                lsStepLinkDataId = (from s in _manufacturingDBContext.ProductionStep
+                                    join r in _manufacturingDBContext.ProductionStepLinkDataRole on s.ProductionStepId equals r.ProductionStepId
+                                    where s.ContainerId == containerId && s.ContainerTypeId == (int)containerTypeId
+                                    select r.ProductionStepLinkDataId).Distinct();
+
                 // Xóa phân công cho các công đoạn bị xóa khỏi quy trình
                 var deletedProductionStepAssignments = _manufacturingDBContext.ProductionAssignment
                     .Include(a => a.ProductionAssignmentDetail)
-                    .Where(s => s.ProductionOrderId == containerId && !currentProductionStepIds.Contains(s.ProductionStepId))
+                    .Where(s => s.ProductionOrderId == containerId && (!currentProductionStepIds.Contains(s.ProductionStepId) || !lsStepLinkDataId.Contains(s.ProductionStepLinkDataId)))
                     .ToList();
 
                 await _productionAssignmentService.DeleteAssignmentRef(containerId, deletedProductionStepAssignments);

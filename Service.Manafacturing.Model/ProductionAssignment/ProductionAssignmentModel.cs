@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
 
@@ -14,18 +15,19 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long? ProductionStepId { get; set; }
         public long ProductionOrderId { get; set; }
         public int DepartmentId { get; set; }
+        [GreaterThan(0, ErrorMessage = "Số lượng phân công phải >0")]
         public decimal AssignmentQuantity { get; set; }
-        public int CompletedQuantity { get; set; }
+        public decimal? AssignmentHours { get; set; }
+        //public int CompletedQuantity { get; set; }
         public long ProductionStepLinkDataId { get; set; }
         //public decimal Productivity { get; set; }
         public long? StartDate { get; set; }
         public long? EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
         public bool IsManualFinish { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }
-
-
 
 
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
@@ -53,6 +55,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public bool IsChange(ProductionAssignmentEntity entity)
         {
+            return true;
             var isChange = entity.AssignmentQuantity != AssignmentQuantity
                 || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
                 || entity.StartDate.GetUnix() != StartDate
@@ -67,51 +70,44 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
             return isChange;
         }
 
-        private decimal? _assignmentWorkload;
-        private decimal? _assignmentWorkHour;
-
-        public decimal? AssignmentWorkload { get { return _assignmentWorkload; } }
-        public decimal? AssignmentWorkHour { get { return _assignmentWorkHour; } }
-
-        public void SetAssignmentWorkload(decimal? assignmentWorkload)
-        {
-            _assignmentWorkload = assignmentWorkload;
-        }
-
-        public void SetAssignmentWorkHour(decimal? assignmentWorkHour)
-        {
-            _assignmentWorkHour = assignmentWorkHour;
-        }
+        public decimal? AssignmentWorkload { get; set; }
     }
 
     public class ProductionAssignmentDetailModel : IMapFrom<ProductionAssignmentDetail>
     {
         public long WorkDate { get; set; }
+        [GreaterThan(0, ErrorMessage = "Số lượng phân công theo ngày phải >0")]
         public decimal? QuantityPerDay { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionAssignmentDetail, ProductionAssignmentDetailModel>()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.GetUnix()))
+                .ForMember(s => s.QuantityPerDay, d => d.MapFrom(m => m.QuantityPerDay))
+                .ForMember(s => s.WorkloadPerDay, d => d.MapFrom(m => m.WorkloadPerDay))
+                .ForMember(s => s.WorkHourPerDay, d => d.MapFrom(m => m.HoursPerDay))
                 .ReverseMapCustom()
-                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()));
+                .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()))
+                .ForMember(s => s.QuantityPerDay, d => d.MapFrom(m => m.QuantityPerDay))
+                .ForMember(s => s.WorkloadPerDay, d => d.MapFrom(m => m.WorkloadPerDay))
+                .ForMember(s => s.HoursPerDay, d => d.MapFrom(m => m.WorkHourPerDay));
         }
 
-        private decimal? _workloadPerDay;
-        private decimal? _workHourPerDay;
+        //private decimal? _workloadPerDay;
+        //private decimal? _workHourPerDay;
 
-        public decimal? WorkloadPerDay { get { return _workloadPerDay; } }
-        public decimal? WorkHourPerDay { get { return _workHourPerDay; } }
+        public decimal? WorkloadPerDay { get; set; }
+        public decimal? WorkHourPerDay { get; set; }
 
-        public void SetWorkloadPerDay(decimal? workloadPerDay)
-        {
-            _workloadPerDay = workloadPerDay;
-        }
+        //public void SetWorkloadPerDay(decimal? workloadPerDay)
+        //{
+        //    _workloadPerDay = workloadPerDay;
+        //}
 
-        public void SetWorkHourPerDay(decimal? workHourPerDay)
-        {
-            _workHourPerDay = workHourPerDay;
-        }
+        //public void SetWorkHourPerDay(decimal? workHourPerDay)
+        //{
+        //    _workHourPerDay = workHourPerDay;
+        //}
     }
 
     public class ProductionAssignmentInputModel
@@ -140,7 +136,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long ProductionStepId { get; set; }
         public long StartDate { get; set; }
         public long EndDate { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> Details { get; set; }
     }
@@ -151,10 +148,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal AssignQuantity { get; set; }
         public decimal AssignWorkloadQuantity { get; set; }
         public decimal AssignWorkHour { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public long? StartDate { get; set; }
+        public long? EndDate { get; set; }
         public bool IsSelectionAssign { get; set; }
-        public bool IsManualSetDate { get; set; }
+        public bool IsManualSetStartDate { get; set; }
+        public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }
         public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
     }

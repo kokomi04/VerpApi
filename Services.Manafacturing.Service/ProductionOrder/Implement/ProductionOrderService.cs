@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NPOI.SS.Formula.Functions;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -84,34 +85,70 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return true;
         }
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrdersByCodes(IList<string> productionOrderCodes)
         {
-            if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderListModel>();
-            var filter = new SingleClause()
-            {
-                DataType = EnumDataType.Text,
-                FieldName = nameof(ProductionOrderListModel.ProductionOrderCode),
-                Operator = EnumOperator.InList,
-                Value = productionOrderCodes
-            };
+            if (productionOrderCodes.Count == 0) return Array.Empty<ProductionOrderOutputModel>();
 
-            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
-            return result.List;
+            var productOrders = _manufacturingDBContext.ProductionOrder
+                .Include(x => x.ProductionOrderAttachment)
+                .Where(o => productionOrderCodes.Contains(o.ProductionOrderCode));
+            var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderCode IN (SELECT [NValue] FROM @ProductionOrderCodes)";
+            var parammeters = new SqlParameter[]
+            {
+                    productionOrderCodes.ToSqlParameter("@ProductionOrderCodes")
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+            var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+
+
+            var lst = new List<ProductionOrderOutputModel>();
+            foreach (var productOrder in productOrders)
+            {
+
+
+                var model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
+
+                model.ProductionOrderDetail = details.Where(d => d.ProductionOrderId == productOrder.ProductionOrderId).ToList();
+                lst.Add(model);
+
+            }
+
+            return lst;
         }
 
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds(IList<long> productionOrderIds)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrdersByIds(IList<long> productionOrderIds)
         {
-            if (productionOrderIds.Count == 0) return Array.Empty<ProductionOrderListModel>();
-            var filter = new SingleClause()
-            {
-                DataType = EnumDataType.BigInt,
-                FieldName = nameof(ProductionOrderListModel.ProductionOrderId),
-                Operator = EnumOperator.InList,
-                Value = productionOrderIds
-            };
+            if (productionOrderIds.Count == 0) return Array.Empty<ProductionOrderOutputModel>();
 
-            var result = await GetProductionOrders(null, null, string.Empty, 1, 0, string.Empty, true, 0, 0, null, filter);
-            return result.List;
+            var productOrders = _manufacturingDBContext.ProductionOrder
+                .Include(x => x.ProductionOrderAttachment)
+                .Where(o => productionOrderIds.Contains(o.ProductionOrderId));
+            var sql = $"SELECT * FROM vProductionOrderDetail WHERE ProductionOrderId IN (SELECT [Value] FROM @ProductionOrderIds)";
+            var parammeters = new SqlParameter[]
+            {
+                    productionOrderIds.ToSqlParameter("@ProductionOrderIds")
+            };
+            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+
+            var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
+
+
+            var lst = new List<ProductionOrderOutputModel>();
+            foreach (var productOrder in productOrders)
+            {
+
+
+                var model = _mapper.Map<ProductionOrderOutputModel>(productOrder);
+
+
+                model.ProductionOrderDetail = details.Where(d => d.ProductionOrderId == productOrder.ProductionOrderId).ToList();
+                lst.Add(model);
+
+            }
+
+            return lst;
         }
 
         public async Task<PageData<ProductionOrderListModel>> GetProductionOrders(int? monthPlanId, int? factoryDepartmentId, string keyword, int page, int size, string orderByFieldName, bool asc, long fromDate, long toDate, bool? hasNewProductionProcessVersion = null, Clause filters = null)
@@ -506,7 +543,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
-            var departmentHour = new Dictionary<int, decimal>();
+            var stepHourTotal = new Dictionary<int, decimal>();
 
             var assignedHours = new Dictionary<int, decimal>();
             foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
@@ -522,8 +559,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 }
             }
 
+            var stepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
+
+            var departmentHourTotal = new Dictionary<int, decimal>();
+
             foreach (var departmentId in departmentIds)
             {
+                
                 // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId)
                     .Select(sd => sd.StepId)
@@ -565,13 +607,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
                 }
 
+                if (!departmentHourTotal.ContainsKey(departmentId))
+                {
+                    departmentHourTotal.Add(departmentId, totalHour);
+                }
+              
+
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
                 // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                 foreach (var departmentStepId in departmentStepIds)
                 {
-                    if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                    if (!stepHourTotal.ContainsKey(departmentStepId)) stepHourTotal[departmentStepId] = 0;
                     var stepWorkHour = productionCapacityDetail.Sum(pc => pc.Value.ContainsKey(departmentStepId) ? pc.Value[departmentStepId].Sum(w => w.WorkHour) : 0);
-                    departmentHour[departmentStepId] += totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
+                    var h = totalWorkHour > 0 ? totalHour * stepWorkHour / totalWorkHour : 0;
+                    stepHourTotal[departmentStepId] += h;
+
+                    if (!stepHoursDetail.ContainsKey(departmentStepId))
+                    {
+                        stepHoursDetail.Add(departmentStepId, new List<StepDepartmentHour>());
+                    }
+                    var detail = stepHoursDetail[departmentStepId].FirstOrDefault(d => d.DepartmentId == departmentId);
+                    if (detail == null)
+                    {
+                        detail = new StepDepartmentHour() { DepartmentId = departmentId, AssignedHours = 0, HourTotal = 0 };
+                        stepHoursDetail[departmentStepId].Add(detail);
+                    }
+                    detail.AssignedHours += stepWorkHour;
+                    detail.HourTotal += h;
                 }
             }
 
@@ -588,9 +650,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var result = new ProductionCapacityModel
             {
                 StepInfo = stepInfo,
-                DepartmentHour = departmentHour,
-                AssignedStepHours = assignedHours
+                StepHourTotal = stepHourTotal,
+                AssignedStepHours = assignedHours,                
+                StepHoursDetail = stepHoursDetail,
+                DepartmentHourTotal = departmentHourTotal,
             };
+
 
             foreach (var productionOrder in productionOrders)
             {
@@ -671,7 +736,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin phong ban
             var departmentCalendar = (await _organizationHelperService.GetListDepartmentCalendar(fromDate, toDate, departmentIds.ToArray()));
             var departments = (await _organizationHelperService.GetDepartmentSimples(departmentIds.ToArray()));
-            var departmentHour = new Dictionary<int, decimal>();
+            var stepHourTotal = new Dictionary<int, decimal>();
 
             var assignedHours = new Dictionary<int, decimal>();
             foreach (var (productionOrderId, stepCapacity) in productionCapacityDetail)
@@ -692,6 +757,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             }
 
             var departmentAssigns = new Dictionary<int, IList<DepartmentStepAssignHours>>();
+            var stepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
+
+            var deparmentHourTotal = new Dictionary<int, decimal>();
+
             foreach (var (productionOrderId, productionCapacities) in productionCapacityDetail)
             {
 
@@ -777,6 +846,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     totalHour += (decimal)(totalWorkingHour + totalOverHour);
 
                 }
+
+                if (!deparmentHourTotal.ContainsKey(departmentId))
+                {
+                    deparmentHourTotal.Add(departmentId, totalHour);
+                }
+
                 if (departmentAssigns.ContainsKey(departmentId))
                 {
                     var departmentStepIds = departmentAssigns[departmentId].Select(d => d.StepId).Distinct().ToList();
@@ -786,9 +861,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
                     foreach (var departmentStepId in departmentStepIds)
                     {
-                        if (!departmentHour.ContainsKey(departmentStepId)) departmentHour[departmentStepId] = 0;
+                        if (!stepHourTotal.ContainsKey(departmentStepId)) stepHourTotal[departmentStepId] = 0;
                         var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
-                        departmentHour[departmentStepId] += totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+                        
+                        var h = totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
+
+                        stepHourTotal[departmentStepId] += h;
+
+                        if (!stepHoursDetail.ContainsKey(departmentStepId))
+                        {
+                            stepHoursDetail.Add(departmentStepId, new List<StepDepartmentHour>());
+                        }
+                        var detail = stepHoursDetail[departmentStepId].FirstOrDefault(d => d.DepartmentId == departmentId);
+                        if (detail == null)
+                        {
+                            detail = new StepDepartmentHour() { DepartmentId = departmentId, AssignedHours = 0, HourTotal = 0 };
+                            stepHoursDetail[departmentStepId].Add(detail);
+                        }
+                        detail.AssignedHours += stepWorkHour;
+                        detail.HourTotal += h;
                     }
                 }
             }
@@ -806,8 +897,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var result = new ProductionCapacityModel
             {
                 StepInfo = stepInfo,
-                DepartmentHour = departmentHour,
-                AssignedStepHours = assignedHours
+                StepHourTotal = stepHourTotal,
+                AssignedStepHours = assignedHours,
+                StepHoursDetail = stepHoursDetail,
+                DepartmentHourTotal = deparmentHourTotal,
             };
 
             foreach (var productionOrder in productionOrders)
@@ -844,7 +937,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             return result;
         }
 
-        public async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId)
+        public async Task<CapacityStepByProduction> GetProductionWorkLoads(IList<ProductionOrderEntity> productionOrders, long? assignDepartmentId1)
         {
 
             var productionOrderIds = productionOrders.Select(p => p.ProductionOrderId).Distinct().ToList();
@@ -864,6 +957,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                            StepId = p.StepId.Value,
                                            ProductionStepLinkDataId = ld.ProductionStepLinkDataId,
                                            Quantity = ld.Quantity,
+                                           OutsourceQuantity = (ld.OutsourcePartQuantity ?? 0) + (ld.OutsourceQuantity ?? 0) + (ld.ExportOutsourceQuantity ?? 0),
                                            ObjectId = ld.LinkDataObjectId,
                                            ObjectTypeId = (EnumProductionStepLinkDataObjectType)ld.LinkDataObjectTypeId,
                                            WorkloadConvertRate = ld.WorkloadConvertRate
@@ -921,8 +1015,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin đầu ra và số giờ công cần
             // var productionCapacityDetail = new CapacityStepByProduction();
 
+            Dictionary<string, decimal?> ProductivitiesCaches = new Dictionary<string, decimal?>();
             Func<EnumProductionStepLinkDataObjectType, long, int, decimal?> getProductivity = (EnumProductionStepLinkDataObjectType objectTypeId, long objectId, int stepId) =>
             {
+                var key = $"{objectTypeId}|{objectId}|{stepId}";
+                if (ProductivitiesCaches.ContainsKey(key)) return ProductivitiesCaches[key];
+
                 decimal? productivityByStep = null;
 
                 ProductTargetProductivityByStep target = null;
@@ -949,9 +1047,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 }
 
+                ProductivitiesCaches.Add(key, productivityByStep);
                 return productivityByStep;
             };
 
+            var assignmentsByStep = productionAssignments1.GroupBy(a => a.ProductionStepId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+
+            var workloadInfosByLinkedData = workloadInfos.GroupBy(w => w.ProductionStepLinkDataId)
+                .ToDictionary(w => w.Key, w => w.FirstOrDefault());
+
+            //TODO Optimize
             return workloadInfos
                 .GroupBy(w => new
                 {
@@ -985,7 +1091,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             //    assignQuantity = assign.AssignmentQuantity;
                             //}
 
-                            var departmentIds = productionAssignments1.Where(a => a.ProductionStepId == d.ProductionStepId).Select(a => a.DepartmentId).ToList();
+                            assignmentsByStep.TryGetValue(d.ProductionStepId, out var assignmentStep);
+                            if (assignmentStep == null)
+                            {
+                                assignmentStep = new List<Infrastructure.EF.ManufacturingDB.ProductionAssignment>();
+                            }
+
+                            var departmentIds = assignmentStep.Select(a => a.DepartmentId).Distinct().ToList();
 
 
                             var assignInfos = new List<CapacityAssignInfo>();
@@ -994,11 +1106,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 decimal assignQuantity = 0;
                                 bool isSelectionAssign = false;
 
-                                var assignStep = productionAssignments1.FirstOrDefault(w => w.ProductionStepId == d.ProductionStepId && w.DepartmentId == depId);
+                                var assignStep = assignmentStep.FirstOrDefault(w => w.DepartmentId == depId);
 
                                 var byDates = new List<ProductionAssignmentDetailModel>();
 
-                                var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                //var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
+                                workloadInfosByLinkedData.TryGetValue(assignStep.ProductionStepLinkDataId, out var assignWorkInfo);
                                 var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
                                 if (assignWorkInfo != null)
                                 {
@@ -1032,8 +1145,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         //}
                                         //=> Only one
 
-                                        var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-
+                                        //var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
+                                        workloadInfosByLinkedData.TryGetValue(d.ProductionStepLinkDataId, out var workloadInfo);
 
                                         decimal? totalWorkload = 0;
                                         decimal? totalHours = 0;
@@ -1045,8 +1158,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         totalHours += hour;
 
 
-                                        byDate.SetWorkHourPerDay(totalHours);
-                                        byDate.SetWorkloadPerDay(totalWorkload);
+                                        //byDate.SetWorkHourPerDay(totalHours);
+                                        //byDate.SetWorkloadPerDay(totalWorkload);
+
+                                        byDate.WorkloadPerDay = byDate.WorkloadPerDay ?? totalWorkload;
+                                        byDate.WorkHourPerDay = byDate.WorkHourPerDay ?? totalHours;
 
                                         return byDate;
 
@@ -1063,9 +1179,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                     AssignQuantity = assignQuantity,
                                     AssignWorkloadQuantity = wokloadQuantiy,
                                     AssignWorkHour = productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
-                                    StartDate = assignStep?.StartDate,
-                                    EndDate = assignStep?.EndDate,
-                                    IsManualSetDate = assignStep.IsManualSetDate,
+                                    StartDate = assignStep?.StartDate?.GetUnix(),
+                                    EndDate = assignStep?.EndDate?.GetUnix(),
+                                    IsManualSetStartDate = assignStep.IsManualSetStartDate,
+                                    IsManualSetEndDate = assignStep.IsManualSetEndDate,
                                     RateInPercent = assignStep.RateInPercent,
                                     IsSelectionAssign = isSelectionAssign,
                                     ByDates = byDates
@@ -1073,7 +1190,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             }
 
 
-                            var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
+                            //var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
 
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
                             return new ProductionStepWorkloadAssignModel
@@ -1083,22 +1200,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 ProductionStepTitle = d.ProductionStepTitle,
                                 ProductionStepLinkDataId = d.ProductionStepLinkDataId,
                                 Quantity = d.Quantity,
-                                IsSelectionAssign = currentDepartmentAssign?.IsSelectionAssign ?? false,
+                                //IsSelectionAssign = currentDepartmentAssign?.IsSelectionAssign ?? false,
                                 WorkloadConvertRate = d.WorkloadConvertRate.Value,
                                 WorkloadQuantity = workloadQuantity,
 
                                 Productivity = productivityByStep ?? 0,
 
                                 WorkHour = productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
-
-                                AssignQuantity = currentDepartmentAssign?.AssignQuantity,
-                                AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
-                                StartDate = currentDepartmentAssign?.StartDate?.GetUnix(),
-                                EndDate = currentDepartmentAssign?.EndDate?.GetUnix(),
-                                IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
-                                RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
-                                ByDates = currentDepartmentAssign?.ByDates,
-                                AssignWorkHour = currentDepartmentAssign?.AssignWorkHour,
+                                OutsourceQuantity = d.OutsourceQuantity,
+                                //AssignQuantity = currentDepartmentAssign?.AssignQuantity,
+                                //AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,
+                                //StartDate = currentDepartmentAssign?.StartDate,
+                                //EndDate = currentDepartmentAssign?.EndDate,
+                                //IsManualSetDate = currentDepartmentAssign?.IsManualSetDate ?? false,
+                                //RateInPercent = currentDepartmentAssign?.RateInPercent ?? 100,
+                                //ByDates = currentDepartmentAssign?.ByDates,
+                                //AssignWorkHour = currentDepartmentAssign?.AssignWorkHour,
                                 AssignInfos = assignInfos
                             };
                         }).ToList()
@@ -1106,7 +1223,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 })
                 .GroupBy(w => w.ProductionOrderId)
 
-                .ToCustomDictionary(new CapacityStepByProduction(), w => w.Key, w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList()));
+                .ToCustomDictionary(new CapacityStepByProduction(),
+                    w => w.Key,
+                    w => w.GroupBy(c => c.StepId).ToCustomDictionary(new CapacityByStep(), c => c.Key, c => c.ToIList())
+                );
 
         }
 
@@ -1278,6 +1398,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             productionOrder.IsResetProductionProcess = false;
             productionOrder.IsInvalid = true;
             productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+            productionOrder.ProductionOrderAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.NoAssignment;
+
             _manufacturingDBContext.ProductionOrder.Add(productionOrder);
             await _manufacturingDBContext.SaveChangesAsync();
 
@@ -1428,6 +1550,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 bool invalidPlan = productionOrder.StartDate.GetUnix() != data.StartDate || productionOrder.EndDate.GetUnix() != data.EndDate;
 
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+
+                data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
+
                 _mapper.Map(data, productionOrder);
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập

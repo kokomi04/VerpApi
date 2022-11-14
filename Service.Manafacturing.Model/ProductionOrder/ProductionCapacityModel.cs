@@ -9,16 +9,26 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
     {
         public IList<StepInfo> StepInfo { get; set; }
         public IList<ProductionOrderCapacityModel> ProductionOrder { get; set; }
-        public IDictionary<int, decimal> DepartmentHour { get; set; }
+        public IDictionary<int, decimal> StepHourTotal { get; set; }
         public IDictionary<int, decimal> AssignedStepHours { get; set; }
-
+        public IDictionary<int, IList<StepDepartmentHour>> StepHoursDetail { get; set; }
+        public IDictionary<int, decimal> DepartmentHourTotal { get; set; }
         public ProductionCapacityModel()
         {
             StepInfo = new List<StepInfo>();
             ProductionOrder = new List<ProductionOrderCapacityModel>();
-            DepartmentHour = new Dictionary<int, decimal>();
+            StepHourTotal = new Dictionary<int, decimal>();
             AssignedStepHours = new Dictionary<int, decimal>();
+            StepHoursDetail = new Dictionary<int, IList<StepDepartmentHour>>();
+            DepartmentHourTotal = new Dictionary<int, decimal>();
         }
+    }
+
+    public class StepDepartmentHour
+    {
+        public int DepartmentId { get; set; }
+        public decimal AssignedHours { get; set; }
+        public decimal HourTotal { get; set; }
     }
 
     public class StepInfo
@@ -79,23 +89,24 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
         public decimal? Productivity { get; set; }
+        public decimal OutsourceQuantity { get; set; }
     }
 
 
     public class ProductionStepWorkloadAssignModel : ProductionStepWorkloadModel
     {
-        public bool IsSelectionAssign { get; set; }
-        public decimal? AssignQuantity { get; set; }
-        public decimal? AssignWorkloadQuantity { get; set; }
+        //public bool IsSelectionAssign { get; set; }
+        //public decimal? AssignQuantity { get; set; }
+        //public decimal? AssignWorkloadQuantity { get; set; }
 
-        public decimal? AssignWorkHour { get; set; }
+        //public decimal? AssignWorkHour { get; set; }
 
-        public long? StartDate { get; set; }
-        public long? EndDate { get; set; }
-        public bool IsManualSetDate { get; set; }
-        public decimal RateInPercent { get; set; }
+        //public long? StartDate { get; set; }
+        //public long? EndDate { get; set; }
+        //public bool IsManualSetDate { get; set; }
+        //public decimal RateInPercent { get; set; }
 
-        public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
+        //public IList<ProductionAssignmentDetailModel> ByDates { get; set; }
 
         public IList<CapacityAssignInfo> AssignInfos { get; set; }
 
@@ -110,6 +121,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int StepId { get; set; }
 
         public long ProductionStepLinkDataId { get; set; }
+        public decimal OutsourceQuantity { get; set; }
         public decimal Quantity { get; set; }
         public long ObjectId { get; set; }
 

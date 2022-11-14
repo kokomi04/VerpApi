@@ -21,6 +21,9 @@ using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFac
 using LocationEntity = VErp.Infrastructure.EF.StockDB.Location;
 using static Verp.Resources.Stock.InventoryProcess.InventoryBillInputMessage;
 using Verp.Resources.Stock.Inventory.InventoryFileData;
+using Verp.Cache.RedisCache;
+using DocumentFormat.OpenXml.InkML;
+using VErp.Infrastructure.ServiceCore.Extensions;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {
@@ -69,12 +72,28 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
 
         private ImportExcelMapping _mapping;
-        public async Task ProcessExcelFile(ImportExcelMapping mapping, Stream stream)
+        public async Task ProcessExcelFile(LongTaskResourceLock longTask, ImportExcelMapping mapping, Stream stream)
         {
             _mapping = mapping;
 
             var reader = new ExcelReader(stream);
+            reader.RegisterLongTaskEvent(longTask);
 
+            _excelRows = await ReadExcel(reader, mapping);
+
+            longTask.SetCurrentStep("Thêm danh mục mặt hàng");
+            await AddMissingProductCates();
+            longTask.SetCurrentStep("Thêm loại mặt hàng");
+            await AddMissingProductTypes();
+            longTask.SetCurrentStep("Thêm đơn vị tính");
+            await AddMissingUnit();
+            longTask.SetCurrentStep("Thêm mặt hàng");
+            await AddMissingProducts();
+        }
+
+
+        private async Task<IList<ImportInvInputModel>> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
+        {
             var currentCateName = string.Empty;
             var currentCatePrefixCode = string.Empty;
 
@@ -114,7 +133,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                  .GroupBy(l => l.DepartmentName?.NormalizeAsInternalName())
                 .ToDictionary(l => l.Key, l => l.ToList());
 
-            _excelRows = reader.ReadSheetEntity<ImportInvInputModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
+
+            return reader.ReadSheetEntity<ImportInvInputModel>(mapping, (entity, propertyName, value, refObj, refProperty) =>
             {
                 if (propertyName == nameof(ImportInvInputModel.InventoryActionId))
                 {
@@ -325,10 +345,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 return false;
             });
 
-            await AddMissingProductCates();
-            await AddMissingProductTypes();
-            await AddMissingUnit();
-            await AddMissingProducts();
         }
 
         public async Task<IList<InventoryInModel>> GetInputInventoryModel()

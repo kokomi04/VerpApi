@@ -42,5 +42,7 @@ namespace VErp.Commons.Enums.StandardEnum
 
         ItemCodeExisted = 11,
         DuplicateProductionStep = 12,
+
+        LongTaskIsRunning = 13,
     }
 }

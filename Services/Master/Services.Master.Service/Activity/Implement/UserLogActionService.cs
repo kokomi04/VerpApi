@@ -32,7 +32,7 @@ using NotificationEntity = ActivityLogDB.Notification;
 
 namespace VErp.Services.Master.Service.Activity.Implement
 {
-    public class ActivityService : IActivityService
+    public class UserLogActionService : IUserLogActionService
     {
         private readonly ActivityLogDBContext _activityLogContext;
         private readonly IUserService _userService;
@@ -46,10 +46,10 @@ namespace VErp.Services.Master.Service.Activity.Implement
         private readonly IHubContext<BroadcastSignalRHub, IBroadcastHubClient> _hubNotifyContext;
         private readonly PushServiceClient _pushClient;
 
-        public ActivityService(ActivityLogDBContext activityLogContext
+        public UserLogActionService(ActivityLogDBContext activityLogContext
             , IUserService userService
             , IOptions<AppSetting> appSetting
-            , ILogger<ActivityService> logger
+            , ILogger<UserLogActionService> logger
             , IAsyncRunnerService asyncRunnerService
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
@@ -75,7 +75,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
 
         public void CreateActivityAsync(ActivityInput input)
         {
-            _asyncRunnerService.RunAsync<IActivityService>(a => a.CreateActivityTask(input));
+            _asyncRunnerService.RunAsync<IUserLogActionService>(a => a.CreateActivityTask(input));
         }
 
         public async Task<long> CreateActivityTask(ActivityInput input)
@@ -195,18 +195,66 @@ namespace VErp.Services.Master.Service.Activity.Implement
         }
 
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetUserLogByObject(int? billTypeId, long objectId, EnumObjectType objectTypeId, int pageIdex = 1, int pageSize = 20)
         {
-            var query = _activityLogContext.UserActivityLog.AsQueryable();
+            return await GetListUserActivityLog(null, null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
+        }
+
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
+        {
+            var query = _activityLogContext.UserActivityLog.AsNoTracking().AsQueryable();
+            if (userActivityLogIds?.Length > 0)
+            {
+                query = query.Where(q => userActivityLogIds.Contains(q.UserActivityLogId));
+            }
+            if (fromDate.HasValue)
+            {
+                query = query.Where(q => q.CreatedDatetimeUtc >= fromDate.Value.UnixToDateTime());
+            }
+            if (toDate.HasValue)
+            {
+                query = query.Where(q => q.CreatedDatetimeUtc <= toDate.Value.UnixToDateTime());
+            }
+
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(q => q.Message.Contains(keyword));
+            }
+            if (userId.HasValue)
+            {
+                query = query.Where(q => q.UserId == userId.Value);
+            }
+
+            if (actionTypeId.HasValue)
+            {
+                query = query.Where(q => q.ActionId == actionTypeId.Value);
+            }
+
             if (billTypeId.HasValue)
             {
                 query = query.Where(q => q.BillTypeId == billTypeId.Value);
             }
+            if (objectTypeId.HasValue)
+            {
+                query = query.Where(q => q.ObjectTypeId == (int)objectTypeId);
+            }
+            if (objectId.HasValue)
+            {
+                query = query.Where(q => q.ObjectId == objectId);
+            }
 
-            query = query.Where(q => q.ObjectId == objectId && q.ObjectTypeId == (int)objectTypeId).OrderByDescending(q => q.UserActivityLogId);
+            var properies = typeof(UserActivityLog).GetProperties();
+            if (string.IsNullOrWhiteSpace(sortBy) || !properies.Any(p => p.Name == sortBy))
+            {
+                sortBy = nameof(UserActivityLog.UserActivityLogId);
+            }
 
             var total = query.Count();
-            var ualDataList = pageSize > 0 ? query.AsNoTracking().Skip((pageIdex - 1) * pageSize).Take(pageSize).ToList() : query.AsNoTracking().ToList();
+
+            query = query.SortByFieldName(sortBy, asc);
+
+
+            var ualDataList = await (size > 0 ? query.AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : query.ToListAsync());
 
             var userIds = ualDataList.Select(q => q.UserId).ToList();
 
@@ -253,73 +301,17 @@ namespace VErp.Services.Master.Service.Activity.Implement
                     //MessageResourceFormatData = item.MessageResourceFormatData,
                     SubsidiaryId = item.SubsidiaryId,
                     IpAddress = item.IpAddress,
-                    UserActivityLogId = item.UserActivityLogId
+                    UserActivityLogId = item.UserActivityLogId,
+                    BillTypeId = item.BillTypeId,
+                    ObjectId = item.ObjectId,
+                    ObjectTypeId = (EnumObjectType)item.ObjectTypeId
                 };
                 result.Add(actLogOutput);
             }
             return (result, total);
         }
 
-        public async Task<IList<UserActivityLogOuputModel>> GetListUserActivityLogByArrayId(long[] arrActivityLogId)
-        {
-            var query = _activityLogContext.UserActivityLog.Where(x => arrActivityLogId.Contains(x.UserActivityLogId));
-
-            var ualDataList = query.AsNoTracking().ToList();
-
-            var userIds = ualDataList.Select(q => q.UserId).ToList();
-
-            var userInfos = (await _userService.GetBasicInfos(userIds))
-                 .ToDictionary(u => u.UserId, u => u);
-
-            var results = new List<UserActivityLogOuputModel>(ualDataList.Count);
-
-            foreach (var item in ualDataList)
-            {
-                var message = item.Message;
-                if (!string.IsNullOrWhiteSpace(item.MessageResourceName))
-                {
-                    string format = "";
-                    try
-                    {
-                        var data = item.MessageResourceFormatData.JsonDeserialize<object[]>();
-                        data = _activityLogService.ParseActivityLogData(data);
-                        format = ResourcesAssembly.GetResouceString(item.MessageResourceName);
-                        if (!string.IsNullOrWhiteSpace(format))
-                        {
-                            message = string.Format(format, data);
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogError(e, "ResourceFormat {0}", format);
-                    }
-                }
-
-                userInfos.TryGetValue(item.UserId, out var userInfo);
-                var actLogOutput = new UserActivityLogOuputModel
-                {
-                    UserId = item.UserId,
-                    UserName = userInfo?.UserName,
-                    FullName = userInfo?.FullName,
-                    AvatarFileId = userInfo?.AvatarFileId,
-                    ActionId = (EnumActionType?)item.ActionId,
-                    Message = message,
-                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
-                    MessageTypeId = (EnumMessageType)item.MessageTypeId,
-                    //MessageResourceName = item.MessageResourceName,
-                    //MessageResourceFormatData = item.MessageResourceFormatData,
-                    SubsidiaryId = item.SubsidiaryId,
-                    IpAddress = item.IpAddress,
-                    UserActivityLogId = item.UserActivityLogId,
-                    ObjectTypeId = item.ObjectTypeId,
-                    ObjectId = item.ObjectId,
-                    BillTypeId = item.BillTypeId
-                };
-                results.Add(actLogOutput);
-            }
-            return results;
-        }
-
+    
         private async Task AddNotification(NotificationAdditionalModel model, int userId, ActivityInput log)
         {
             var querySub = _activityLogContext.Subscription.Where(x => x.ObjectId == model.ObjectId && x.ObjectTypeId == model.ObjectTypeId && userId != x.UserId);

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using VErp.Commons.GlobalObject;
+using VErp.Infrastructure.EF.PurchaseOrderDB;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -34,7 +36,21 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? IntoMoney { get; set; }
         public int? SortOrder { get; set; }
         public string PoProviderPricingCode { get; set; }
+
+        public bool IsSubCalculation { get; set; }
+
+        public IList<PurchasingSuggestDetailSubCalculationModel> SubCalculations { get; set; }
     }
 
+
+    public class PurchasingSuggestDetailSubCalculationModel : IMapFrom<PurchasingSuggestDetailSubCalculation>
+    {
+        public int PurchasingSuggestDetailSubCalculationId { get; set; }
+        public long PurchasingSuggestDetailId { get; set; }
+        public long ProductBomId { get; set; }
+        public decimal PrimaryUnitPrice { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public int? UnitConversionId { get; set; }
+    }
 
 }

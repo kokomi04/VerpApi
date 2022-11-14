@@ -22,7 +22,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [Route("")]
-        public async Task<long> AddInventoryInput([FromBody] InventoryOutRotationModel req)
+        public async Task<long> Create([FromBody] InventoryOutRotationModel req)
         {
             return await inventoryRotationService.Create(req);
 

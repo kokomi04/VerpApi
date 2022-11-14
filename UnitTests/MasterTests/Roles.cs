@@ -53,9 +53,9 @@ namespace MasterTests
             var asyncRunnerService = new Mock<IAsyncRunnerService>();
             var serviceScopeFactory = new Mock<IServiceScopeFactory>();
 
-            var currentContext = new ScopeCurrentContextService(1, EnumActionType.Add, new RoleInfo(1, null, true, true, null), new List<int>(), 0, null, null, null, null);
+            var currentContext = new ScopeCurrentContextService(null, 1, EnumActionType.Add, new RoleInfo(1, null, true, true, null), new List<int>(), 0, null, null, null, null);
 
-            IUserService user = new UserService(inMemMasterDBContext, inMemUnAuthorizeMasterDBContext, inMemOrganizationDBContext, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object, serviceScopeFactory.Object, null, null);
+            IUserService user = new UserService(inMemMasterDBContext, inMemUnAuthorizeMasterDBContext, inMemOrganizationDBContext, setting.Object, logger.Object, roleService.Object, activityLogService.Object, currentContext, asyncRunnerService.Object, serviceScopeFactory.Object, null, null, null);
 
             var result = user.CreateUser(new UserInfoInput()
             {

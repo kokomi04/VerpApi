@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Master.Unit;
@@ -158,6 +160,21 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             {
                 throw new BadRequestException(UnitErrorCode.UnitNotFound);
             }
+
+            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var checkParams = new[]
+            {
+                        new[]{unitId}.ToSqlParameter("@UnitIds"),
+                        isInUsed
+             };
+
+            await _masterContext.ExecuteStoreProcedure("asp_Unit_CheckUsed", checkParams);
+
+            if (isInUsed.Value as bool? == true)
+            {
+                throw new BadRequestException(UnitErrorCode.UnitIsUnUsed, "Đơn vị tính đang được sử dụng");
+            }
+
             unitInfo.IsDeleted = true;
             await _masterContext.SaveChangesAsync();
 

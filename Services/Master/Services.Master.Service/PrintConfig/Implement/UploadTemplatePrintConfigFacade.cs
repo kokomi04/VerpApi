@@ -20,6 +20,11 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         {
             { ".doc" , EnumFileType.Document },
             { ".docx", EnumFileType.Document },
+
+            { ".jpg", EnumFileType.Image },
+            { ".jpeg", EnumFileType.Image },
+            { ".bmp", EnumFileType.Image },
+            { ".png"  , EnumFileType.Image },
         };
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
@@ -30,7 +35,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         private static readonly Dictionary<EnumFileType, string[]> FileTypeExtensions = FileExtensionTypes.GroupBy(t => t.Value).ToDictionary(k => k.Key, v => v.Select(e => e.Key).ToArray());
 
-        private const string FOLDER_DOCUMENT = "_document_template_";
+        private const string DOCUMENT_TEMPLATE_FOLDER = Utils.DOCUMENT_TEMPLATE_FOLDER;
 
         private AppSetting _appSetting;
 
@@ -116,7 +121,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         private string GenerateTempFilePath(string uploadFileName)
         {
-            var relativeFolder = $"/{FOLDER_DOCUMENT}/{Guid.NewGuid().ToString()}";
+            var relativeFolder = $"/{DOCUMENT_TEMPLATE_FOLDER}/{DateTime.Now.ToString("yyyy/MM")}/{Guid.NewGuid()}";
             var relativeFilePath = relativeFolder + "/" + uploadFileName;
 
             var obsoluteFolder = GetPhysicalFilePath(relativeFolder);

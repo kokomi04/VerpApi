@@ -6,5 +6,7 @@ namespace VErp.Services.Stock.Service.FileResources
     public interface IFileStoreService
     {
         Task<(Stream file, string contentType)> GetFileStream(string fileKey);
+        Task<(Stream file, string contentType)> GetTemplateStream(string fileKey);
+        
     }
 }

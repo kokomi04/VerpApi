@@ -129,6 +129,19 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
             return await _voucherDataService.ImportVoucherBillFromMapping(voucherTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
 
+        [HttpPost]
+        [Route("{voucherTypeId}/parseExcelFromMapping")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int voucherTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _voucherDataService.ParseBillFromMapping(voucherTypeId, parseMapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
         [HttpGet]
         [Route("{voucherTypeId}/{fId}/datafile")]
         public async Task<FileStreamResult> ExportVoucherBill([FromRoute] int voucherTypeId, [FromRoute] long fId)

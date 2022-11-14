@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
+using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Product
 {
     [Display(Name = "Vật tư tiêu hao")]
-    public class ImportProductMaterialsConsumptionExcelMapping
+    public class ImportProductMaterialsConsumptionExcelMapping : MappingDataRowAbstract
     {
 
         [Display(Name = "Mã Nvl tiêu hao", GroupName = "Nvl tiêu hao")]
@@ -69,6 +71,9 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Ghi chú", GroupName = "Thông tin chung")]
         public string Description { get; set; }
+
+
+
 
     }
 

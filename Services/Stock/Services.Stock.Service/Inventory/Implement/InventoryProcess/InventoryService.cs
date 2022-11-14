@@ -54,6 +54,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IInventoryBillInputService _inventoryBillInputService;
         private readonly IUserHelperService _userHelperService;
         private readonly IMailFactoryService _mailFactoryService;
+        private readonly ILongTaskResourceLockService _longTaskResourceLockService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -73,6 +74,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
             , IQueueProcessHelperService _queueProcessHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
             , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, _queueProcessHelperService)
         {
             _masterDBContext = masterDBContext;
@@ -85,6 +87,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _productService = productService;
             _inventoryBillOutputService = inventoryBillOutputService;
             _inventoryBillInputService = inventoryBillInputService;
+            _longTaskResourceLockService = longTaskResourceLockService;
             _userHelperService = userHelperService;
             _mailFactoryService = mailFactoryService;
         }
@@ -740,53 +743,60 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))
             {
-                var baseValueChains = new Dictionary<string, int>();
-
-                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+                using (var longTask = await _longTaskResourceLockService.Accquire($"Nhập dữ liệu vật tư tiêu hao từ excel"))
                 {
-                    using (var batchLog = _activityLogService.BeginBatchLog())
+                    using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                     {
+                        var baseValueChains = new Dictionary<string, int>();
 
-                        var inventoryInImport = new InventoryInputImportFacade();
-                        inventoryInImport.SetProductService(_productService);
-                        inventoryInImport.SetMasterDBContext(_masterDBContext);
-                        inventoryInImport.SetStockDBContext(_stockDbContext);
-                        inventoryInImport.SetOrganizationHelper(_organizationHelperService);
-                        await inventoryInImport.ProcessExcelFile(mapping, stream);
-
-                        var inventoryDatas = await inventoryInImport.GetInputInventoryModel();
-
-                        foreach (var inventoryData in inventoryDatas)
+                        using (var batchLog = _activityLogService.BeginBatchLog())
                         {
-                            if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+
+                            var inventoryInImport = new InventoryInputImportFacade();
+                            inventoryInImport.SetProductService(_productService);
+                            inventoryInImport.SetMasterDBContext(_masterDBContext);
+                            inventoryInImport.SetStockDBContext(_stockDbContext);
+                            inventoryInImport.SetOrganizationHelper(_organizationHelperService);
+                            await inventoryInImport.ProcessExcelFile(longTask, mapping, stream);
+
+                            var inventoryDatas = await inventoryInImport.GetInputInventoryModel();
+
+                            longTask.SetCurrentStep("Thêm dữ liệu thẻ kho vào cơ sở dữ liệu", inventoryDatas.Count);
+
+                            foreach (var inventoryData in inventoryDatas)
                             {
-                                throw new BadRequestException("No products found!");
+                                if (inventoryData?.InProducts == null || inventoryData?.InProducts?.Count == 0)
+                                {
+                                    throw new BadRequestException("No products found!");
+                                }
+
+                                if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
+                                {
+                                    throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
+                                }
+
+                                var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
+
+                                var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
+
+
+                                await ctx.ConfirmCode();
+
+                                await _inventoryBillInputService.ImportedLogBuilder()
+                                   .MessageResourceFormatDatas(entity.InventoryCode)
+                                   .ObjectId(entity.InventoryId)
+                                   .JsonData(inventoryData.JsonSerialize())
+                                   .CreateLog();
+
+                                longTask.IncProcessedRows();
                             }
 
-                            if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
-                            {
-                                throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);
-                            }
+                            await trans.CommitAsync();
 
-                            var ctx = await GenerateInventoryCode(EnumInventoryType.Input, inventoryData, baseValueChains);
-
-                            var entity = await _inventoryBillInputService.AddInventoryInputDB(inventoryData, true);
-
-
-                            await ctx.ConfirmCode();
-
-                            await _inventoryBillInputService.ImportedLogBuilder()
-                               .MessageResourceFormatDatas(entity.InventoryCode)
-                               .ObjectId(entity.InventoryId)
-                               .JsonData(inventoryData.JsonSerialize())
-                               .CreateLog();
+                            await batchLog.CommitAsync();
                         }
-
-                        await trans.CommitAsync();
-
-                        await batchLog.CommitAsync();
+                        return true;
                     }
-                    return true;
                 }
             }
         }
@@ -825,7 +835,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var ctx = await GenerateInventoryCode(EnumInventoryType.Output, inventoryData, baseValueChains);
 
                             var entity = await _inventoryBillOutputService.AddInventoryOutputDb(inventoryData);
-                            
+
 
                             await ctx.ConfirmCode();
 
