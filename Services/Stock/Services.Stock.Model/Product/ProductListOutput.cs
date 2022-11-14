@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Services.Stock.Model.Stock;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
@@ -26,6 +27,7 @@ namespace VErp.Services.Stock.Model.Product
         public bool IsProductSemi { get; set; }
         public bool IsProduct { get; set; }
         public bool IsMaterials { get; set; }
+        public EnumProductionProcessStatus ProductionProcessStatusId { get; set; }
         public decimal Coefficient { get; set; }
         public decimal? Long { get; set; }
         public decimal? Height { get; set; }

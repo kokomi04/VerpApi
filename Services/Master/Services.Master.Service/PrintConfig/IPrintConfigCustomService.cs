@@ -7,18 +7,8 @@ using VErp.Services.Master.Model.PrintConfig;
 
 namespace VErp.Services.Master.Service.PrintConfig
 {
-    public interface IPrintConfigCustomService
+    public interface IPrintConfigCustomService: IPrintConfigService<PrintConfigCustomModel>
     {
-        Task<PageData<PrintConfigCustomModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc);
-
-        Task<PrintConfigCustomModel> GetPrintConfigCustom(int printConfigId);
-        Task<int> AddPrintConfigCustom(PrintConfigCustomModel model, IFormFile file);
-        Task<bool> UpdatePrintConfigCustom(int printConfigId, PrintConfigCustomModel model, IFormFile file);
-        Task<bool> DeletePrintConfigCustom(int printConfigId);
-
-        Task<(Stream file, string contentType, string fileName)> GetPrintConfigTemplateFile(int printConfigId);
-        Task<(Stream file, string contentType, string fileName)> GeneratePrintTemplate(int printConfigId, NonCamelCaseDictionary templateModel, bool isDoc);
-
         Task<bool> RollbackPrintConfigCustom(int printConfigId);
     }
 }

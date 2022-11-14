@@ -325,7 +325,7 @@ namespace VErp.Commons.Library.Excel
 
                     if (row.ContainsKey(field.FieldName))
                     {
-                        var value = dataType.GetSqlValue(row[field.FieldName], currentContextService.TimeZoneOffset);
+                        var value = dataType.GetSqlValueAtTimezone(row[field.FieldName], currentContextService.TimeZoneOffset);
                         tbRow[columnIndx] = new ExcelCell
                         {
                             Value = value,

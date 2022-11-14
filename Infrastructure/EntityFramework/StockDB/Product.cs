@@ -71,6 +71,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public long? ProductionProcessVersion { get; set; }
         public decimal? ProductPurity { get; set; }
         public int? TargetProductivityId { get; set; }
+        public int ProductionProcessStatusId { get; set; }
 
         public virtual ProductCate ProductCate { get; set; }
         public virtual ProductType ProductType { get; set; }

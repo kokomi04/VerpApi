@@ -129,10 +129,13 @@
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>Không có số dư trong kiện</value>
   </data>
+  <data name="RotationInputStockIsRequired" xml:space="preserve">
+    <value>Vui lòng nhập kho nhập</value>
+  </data>
+  <data name="RotationOutputStockIsRequired" xml:space="preserve">
+    <value>Vui lòng nhập kho xuất</value>
+  </data>
   <data name="RotationRequireDiffStock" xml:space="preserve">
     <value>Kho xuất và kho nhập phải khác nhau</value>
-  </data>
-  <data name="RotationStockIsRequired" xml:space="preserve">
-    <value>Vui lòng nhập kho xuất</value>
   </data>
 </root>

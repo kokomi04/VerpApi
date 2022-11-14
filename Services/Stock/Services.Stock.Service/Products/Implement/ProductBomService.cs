@@ -41,6 +41,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IPropertyService _propertyService;
         private readonly ObjectActivityLogFacade _productActivityLog;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
+
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
             , ILogger<ProductBomService> logger
@@ -51,6 +53,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IManufacturingHelperService manufacturingHelperService
             , IPropertyService propertyService
             , ICurrentContextService currentContextService
+            , ILongTaskResourceLockService longTaskResourceLockService
             )
         {
             _stockDbContext = stockContext;
@@ -62,6 +65,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _manufacturingHelperService = manufacturingHelperService;
             _propertyService = propertyService;
             _currentContextService = currentContextService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
@@ -356,13 +360,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public Task<bool> ImportBomFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             return InitImportBomFacade(false)
-                .ProcessData(mapping, stream);
+                .ProcessData(longTaskResourceLockService, mapping, stream);
         }
 
         public async Task<IList<ProductBomByProduct>> PreviewBomFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             var bomProcess = InitImportBomFacade(true);
-            var r = await bomProcess.ProcessData(mapping, stream);
+            var r = await bomProcess.ProcessData(longTaskResourceLockService, mapping, stream);
             if (!r) return null;
             return bomProcess.PreviewData;
         }

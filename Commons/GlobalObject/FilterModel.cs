@@ -62,7 +62,7 @@ namespace VErp.Commons.GlobalObject
                 {
                     return null;
                 }
-                var props = (token as JObject).Properties();
+                var props = (token as JObject).Properties().ToList();
                 bool isSingle = props.Any(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower());
                 bool isArray = props.Any(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower());
                 if (isSingle)
@@ -82,9 +82,12 @@ namespace VErp.Commons.GlobalObject
                 else if (isArray)
                 {
                     var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
-                    var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower()).Value.ToString();
-                    var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower()).Value.ToString();
-
+                    var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower())?.Value?.ToString();
+                    var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower())?.Value?.ToString();
+                    if (not == null)
+                    {
+                        not = "False";
+                    }
                     resultClause = new ArrayClause
                     {
                         Condition = Enums.MasterEnum.EnumValueExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),

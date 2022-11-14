@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Commons.Library.Model
 {
@@ -35,5 +36,12 @@ namespace VErp.Commons.Library.Model
         public ImportExcelMappingField FieldMapping { get; set; }
         public PropertyInfo PropertyInfo { get; set; }
         public string CellValue { get; set; }
+    }
+
+    public class BillParseMapping
+    {
+        public BillInfoModel Bill { get; set; }
+        public int AreaId { get; set; }
+        public ImportExcelMapping Mapping { get; set; }
     }
 }

@@ -26,6 +26,6 @@ namespace VErp.Services.PurchaseOrder.Service.Po
 
         CategoryNameModel GetFieldDataForMapping();
 
-        IAsyncEnumerable<PoProviderPricingOutputDetail> ParseInvoiceDetails(ImportExcelMapping mapping, Stream stream);
+        IAsyncEnumerable<PoProviderPricingOutputDetail> ParseDetails(ImportExcelMapping mapping, Stream stream);
     }
 }

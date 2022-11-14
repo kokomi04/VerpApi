@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         {
             PoAssignmentDetail = new HashSet<PoAssignmentDetail>();
             PurchaseOrderDetail = new HashSet<PurchaseOrderDetail>();
+            PurchasingSuggestDetailSubCalculation = new HashSet<PurchasingSuggestDetailSubCalculation>();
         }
 
         public long PurchasingSuggestDetailId { get; set; }
@@ -36,10 +37,12 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public decimal? IntoMoney { get; set; }
         public int? SortOrder { get; set; }
         public string PoProviderPricingCode { get; set; }
+        public bool IsSubCalculation { get; set; }
 
         public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
         public virtual PurchasingSuggest PurchasingSuggest { get; set; }
         public virtual ICollection<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; }
+        public virtual ICollection<PurchasingSuggestDetailSubCalculation> PurchasingSuggestDetailSubCalculation { get; set; }
     }
 }

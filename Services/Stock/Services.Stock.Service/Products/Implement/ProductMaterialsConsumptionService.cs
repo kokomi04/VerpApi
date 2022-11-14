@@ -37,7 +37,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IProductBomService _productBomService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
-
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly IProductService _productService;
         private readonly IUnitService _unitService;
 
@@ -52,7 +52,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IProductService productService
             , IUnitService unitService
             , IOrganizationHelperService organizationHelperService
-            , IManufacturingHelperService manufacturingHelperService)
+            , IManufacturingHelperService manufacturingHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
+            )
         {
             _stockDbContext = stockContext;
             _appSetting = appSetting.Value;
@@ -62,6 +64,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productBomService = productBomService;
             _organizationHelperService = organizationHelperService;
             _manufacturingHelperService = manufacturingHelperService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _productService = productService;
             _unitService = unitService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
@@ -377,13 +380,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var facade = InitializationFacade(false);
 
-            return await facade.ProcessData(mapping, stream, productId);
+            return await facade.ProcessData(longTaskResourceLockService, mapping, stream, productId);
         }
 
         public async Task<IList<MaterialsConsumptionByProduct>> ImportMaterialsConsumptionFromMappingAsPreviewData(int? productId, ImportExcelMapping mapping, Stream stream)
         {
             var facade = InitializationFacade(true);
-            var r = await facade.ProcessData(mapping, stream, productId);
+            var r = await facade.ProcessData(longTaskResourceLockService, mapping, stream, productId);
             if (!r) return null;
             return facade.PreviewData;
         }

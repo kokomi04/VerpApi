@@ -51,6 +51,8 @@ namespace VErp.Infrastructure.ServiceCore
 
             services.AddSingleton<IPrincipalBroadcasterService, PrincipalBroadcasterService>();
 
+            services.AddTransient<ILongTaskResourceLockService, LongTaskResourceLockService>();
+
             return services;
         }
     }

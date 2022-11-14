@@ -63,9 +63,14 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
             req.InventoryActionId = EnumInventoryAction.Rotation;
 
-            if (req.StockId <= 0 || req.ToStockId <= 0)
+            if (req.ToStockId <= 0)
             {
-                throw GeneralCode.InvalidParams.BadRequest(RotationStockIsRequired);
+                throw GeneralCode.InvalidParams.BadRequest(RotationInputStockIsRequired);
+            }
+
+            if (req.StockId <= 0)
+            {
+                throw GeneralCode.InvalidParams.BadRequest(RotationOutputStockIsRequired);
             }
 
             if (req.StockId == req.ToStockId)

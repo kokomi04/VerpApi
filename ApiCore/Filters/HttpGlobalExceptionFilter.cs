@@ -85,29 +85,40 @@ namespace VErp.Infrastructure.ApiCore.Filters
             ApiErrorResponse<Exception> response;
             HttpStatusCode statusCode;
 
-            if (exception is BadRequestException badRequest)
+            switch (exception)
             {
-                response = new ApiErrorResponse<Exception>
-                {
-                    Code = badRequest.Code.GetErrorCodeString(),
-                    Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
-                };
-                statusCode = HttpStatusCode.BadRequest;
-            }
-            else if (exception is VerpException)
-            {
-                response = new ApiErrorResponse<Exception>
-                {
-                    Code = GeneralCode.InternalError.GetErrorCodeString(),
-                    Message = RemoveAbsolutePathResource(appSetting, exception.Message)
-                };
+                case BadRequestException badRequest:
+                    response = new ApiErrorResponse<Exception>
+                    {
+                        Code = badRequest.Code.GetErrorCodeString(),
+                        Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
+                    };
+                    statusCode = HttpStatusCode.BadRequest;
+                    break;
 
-                statusCode = HttpStatusCode.BadRequest;
-            }
-            else
-            {
-                if (exception is DistributedLockExeption)
-                {
+                case VerpException:
+
+                    response = new ApiErrorResponse<Exception>
+                    {
+                        Code = GeneralCode.InternalError.GetErrorCodeString(),
+                        Message = RemoveAbsolutePathResource(appSetting, exception.Message)
+                    };
+
+                    statusCode = HttpStatusCode.BadRequest;
+                    break;
+
+                case LongTaskResourceLockException:
+
+                    response = new ApiErrorResponse<Exception>
+                    {
+                        Code = GeneralCode.LongTaskIsRunning.GetErrorCodeString(),
+                        Message = GeneralCode.LongTaskIsRunning.GetEnumDescription()
+                    };
+
+                    statusCode = HttpStatusCode.BadGateway;
+                    break;
+
+                case DistributedLockExeption:
                     response = new ApiErrorResponse<Exception>
                     {
                         Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
@@ -115,10 +126,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     };
 
                     statusCode = HttpStatusCode.BadGateway;
+                    break;
 
-                }
-                else
-                {
+                default:
                     response = new ApiErrorResponse<Exception>
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
@@ -126,8 +136,9 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     };
 
                     statusCode = HttpStatusCode.InternalServerError;
-                }
+                    break;
             }
+
             return (response, statusCode);
         }
     }

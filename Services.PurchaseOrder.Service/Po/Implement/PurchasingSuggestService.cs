@@ -1,5 +1,7 @@
 ﻿
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,6 +35,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ObjectActivityLogFacade _purchasingSuggestActivityLog;
         private readonly ObjectActivityLogFacade _assignmentActivityLog;
+        private readonly IMapper _mapper;
 
         public PurchasingSuggestService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -42,7 +45,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             , IProductHelperService productHelperService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
-           )
+            , IMapper mapper)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _currentContext = currentContext;
@@ -52,6 +55,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _currentContextService = currentContextService;
             _purchasingSuggestActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchasingSuggest);
             _assignmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PoAssignment);
+            _mapper = mapper;
         }
 
 
@@ -63,6 +67,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
             var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.AsNoTracking()
+                .Include(d => d.PurchasingSuggestDetailSubCalculation)
                 .Where(d => d.PurchasingSuggestId == purchasingSuggestId)
                 .OrderBy(d => d.SortOrder)
                 .ToListAsync();
@@ -123,7 +128,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                           Description = d.Description,
                           IntoMoney = d.IntoMoney,
-                          SortOrder = d.SortOrder
+                          SortOrder = d.SortOrder,
+                          IsSubCalculation = d.IsSubCalculation,
+                          SubCalculations = _mapper.Map<List<PurchasingSuggestDetailSubCalculationModel>>(d.PurchasingSuggestDetailSubCalculation)
                       };
                   }
                 ).ToList()
@@ -443,7 +450,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     info.TotalMoney = model.TotalMoney;
 
-                    var details = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+                    var details = await _purchaseOrderDBContext.PurchasingSuggestDetail
+                        .Include(d => d.PurchasingSuggestDetailSubCalculation)
+                        .Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     var newDetails = new List<PurchasingSuggestDetail>();
 
@@ -479,6 +488,34 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                                 detail.SortOrder = item.SortOrder;
 
+                                detail.IsSubCalculation = item.IsSubCalculation;
+
+                                var subs = detail.PurchasingSuggestDetailSubCalculation;
+
+                                var newSubCalc = item.SubCalculations;
+
+                                if (newSubCalc != null)
+                                {
+                                    newSubCalc = new List<PurchasingSuggestDetailSubCalculationModel>();
+                                }
+
+                                foreach (var s in subs)
+                                {
+                                    var subCalcInfo = item.SubCalculations.FirstOrDefault(x => x.PurchasingSuggestDetailSubCalculationId == s.PurchasingSuggestDetailSubCalculationId);
+                                    if (subCalcInfo != null)
+                                    {
+                                        _mapper.Map(subCalcInfo, s);
+                                        newSubCalc.Remove(subCalcInfo);
+                                    }
+                                    else
+                                    {
+                                        s.IsDeleted = true;
+                                    }
+                                }
+
+                                var newSubCalcEntity = newSubCalc.Select(x => ConvertSubCalc(item, x)).ToList();
+
+                                await _purchaseOrderDBContext.PurchasingSuggestDetailSubCalculation.AddRangeAsync(newSubCalcEntity);
 
                                 break;
                             }
@@ -502,6 +539,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     foreach (var detail in deleteDetails)
                     {
+                        foreach (var s in detail.PurchasingSuggestDetailSubCalculation)
+                        {
+                            s.IsDeleted = true;
+                        }
+
                         detail.IsDeleted = true;
                         detail.DeletedDatetimeUtc = DateTime.UtcNow;
                     }
@@ -623,7 +665,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
 
-                    var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+                    var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Include(d=>d.PurchasingSuggestDetailSubCalculation).Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     if (!await ValidateInUsePurchasingSuggestDetail(oldDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
                     {
@@ -637,6 +679,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     foreach (var item in oldDetails)
                     {
+                        foreach(var s in item.PurchasingSuggestDetailSubCalculation)
+                        {
+                            s.IsDeleted = true;
+                        }
                         item.IsDeleted = true;
                         item.DeletedDatetimeUtc = DateTime.UtcNow;
                     }
@@ -1672,9 +1718,28 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }).Distinct().ToList());
         }
 
+        private PurchasingSuggestDetailSubCalculation ConvertSubCalc(PurchasingSuggestDetailInputModel detail, PurchasingSuggestDetailSubCalculationModel model)
+        {
+            return new PurchasingSuggestDetailSubCalculation
+            {
+                PurchasingSuggestDetailSubCalculationId = model.PurchasingSuggestDetailSubCalculationId,
+                PrimaryQuantity = model.PrimaryQuantity,
+                ProductBomId = model.ProductBomId,
+                PurchasingSuggestDetailId = detail.PurchasingSuggestDetailId ?? 0,
+                PrimaryUnitPrice = model.PrimaryUnitPrice,
+                UnitConversionId = model.UnitConversionId,
+                PurchasingSuggestDetail = null
+            };
+        }
 
         private PurchasingSuggestDetail PurchasingSuggestDetailObjectToEntity(long purchasingSuggestId, PurchasingSuggestDetailInputModel d)
         {
+            ICollection<PurchasingSuggestDetailSubCalculation> subCalculations = new List<PurchasingSuggestDetailSubCalculation>();
+            if (d.SubCalculations != null)
+            {
+                subCalculations = d.SubCalculations.Select(x => ConvertSubCalc(d, x)).ToList();
+            }
+
             return new PurchasingSuggestDetail
             {
                 PurchasingSuggestId = purchasingSuggestId,
@@ -1701,7 +1766,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 Description = d.Description,
                 IntoMoney = d.IntoMoney,
-                SortOrder = d.SortOrder
+                SortOrder = d.SortOrder,
+                IsSubCalculation = d.IsSubCalculation,
+                PurchasingSuggestDetailSubCalculation = subCalculations
             };
         }
 

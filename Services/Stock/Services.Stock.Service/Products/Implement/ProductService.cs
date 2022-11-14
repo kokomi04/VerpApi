@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Stock.Product;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -47,6 +48,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly IMapper _mapper;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IBarcodeConfigHelperService _barcodeConfigHelperService;
+        private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _productActivityLog;
 
         public ProductService(
@@ -60,7 +62,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IManufacturingHelperService manufacturingHelperService
             , IMapper mapper
             , IOrganizationHelperService organizationHelperService
-            , IBarcodeConfigHelperService barcodeConfigHelperService)
+            , IBarcodeConfigHelperService barcodeConfigHelperService
+            , ILongTaskResourceLockService longTaskResourceLockService
+            )
         {
             _masterDBContext = masterDBContext;
             _stockDbContext = stockContext;
@@ -72,6 +76,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _mapper = mapper;
             _organizationHelperService = organizationHelperService;
             _barcodeConfigHelperService = barcodeConfigHelperService;
+            this.longTaskResourceLockService = longTaskResourceLockService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
 
@@ -247,6 +252,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             var productInfo = _mapper.Map<Product>(req);
             productInfo.ProductInternalName = req.ProductName.NormalizeAsInternalName();
+            productInfo.ProductionProcessStatusId = (int)EnumProductionProcessStatus.NotCreatedYet;
 
             await _stockDbContext.Product.AddAsync(productInfo);
 
@@ -306,6 +312,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 IsFreeStyle = false,
                 DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT
             });
+
+            var duplicateUnit = lstUnitConverions.GroupBy(u => u.ProductUnitConversionName?.NormalizeAsInternalName())
+                .Where(g => g.Count() > 1)
+                .FirstOrDefault();
+            if (duplicateUnit != null)
+            {
+                throw PuConversionDuplicated.BadRequestFormat(duplicateUnit.First()?.ProductUnitConversionName, req.ProductCode);
+            }
 
             await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstUnitConverions);
 
@@ -398,9 +412,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         }
                     }*/
 
+
+
                     var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
-                    var keepPuIds = req.StockInfo?.UnitConversions?.Select(c => c.ProductUnitConversionId);
+                    var keepPuIds = req.StockInfo?.UnitConversions?.Select(c => c.ProductUnitConversionId).Where(productUnitConversionId => productUnitConversionId > 0)?.ToList();
                     var toRemovePus = unitConverions.Where(c => !keepPuIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
                     if (toRemovePus.Count > 0)
                     {
@@ -474,6 +490,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         .Select(u => _mapper.Map<ProductUnitConversion>(u))
                         .ToList();
 
+                    var newUnitConversionList = new List<ProductUnitConversion>();
+
                     if (lstNewUnitConverions != null)
                     {
                         foreach (var u in lstNewUnitConverions)
@@ -481,6 +499,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             u.ProductId = productId;
                             u.ProductUnitConversionId = 0;
                         }
+
+                        newUnitConversionList.AddRange(lstNewUnitConverions);
+
                         await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                     }
 
@@ -492,6 +513,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         {
                             _mapper.Map(u, db);
                         }
+
+                        newUnitConversionList.Add(db);
                     }
                     var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
                     if (defaultUnitConversion != null)
@@ -501,7 +524,22 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         defaultUnitConversion.IsFreeStyle = false;
                         defaultUnitConversion.ProductUnitConversionName = unitInfo.UnitName;
                         defaultUnitConversion.DecimalPlace = req.StockInfo?.UnitConversions?.FirstOrDefault(u => u.ProductUnitConversionId == defaultUnitConversion.ProductUnitConversionId || u.IsDefault)?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
+
+                        if (!newUnitConversionList.Contains(defaultUnitConversion))
+                            newUnitConversionList.Add(defaultUnitConversion);
                     }
+
+                    var duplicateUnit = newUnitConversionList.GroupBy(u => u.ProductUnitConversionName?.NormalizeAsInternalName())
+                   .Where(g => g.Count() > 1)
+                   .FirstOrDefault();
+                    if (duplicateUnit != null)
+                    {
+                        await trans.RollbackAsync();
+                        throw PuConversionDuplicated.BadRequestFormat(duplicateUnit.First()?.ProductUnitConversionName, req.ProductCode);
+                    }
+
+
+
                     if (req.ProductCustomers == null)
                     {
                         req.ProductCustomers = new List<ProductModelCustomer>();
@@ -837,6 +875,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   p.Long,
                   p.Width,
                   p.CreatedDatetimeUtc,
+                  p.ProductionProcessStatusId,
                   //p.CustomerId,
 
                   p.PackingMethod,
@@ -941,6 +980,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Coefficient = item.Coefficient,
                     IsProduct = item.IsProduct ?? false,
                     IsMaterials = item.IsMaterials ?? false,
+                    ProductionProcessStatusId = (EnumProductionProcessStatus)item.ProductionProcessStatusId,
                     Long = item.Long,
                     Width = item.Width,
                     Height = item.Height,
@@ -1089,7 +1129,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productModel.StockInfo.UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(unitConverions);
 
                 productModel.ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers);
-                
+
+                productModel.ProductionProcessStatusId = (EnumProductionProcessStatus)productInfo.ProductionProcessStatusId;
                 result.Add(productModel);
             }
 
@@ -1099,7 +1140,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream)
         {
             return new ProductImportFacade(_stockDbContext, _masterDBContext, _organizationHelperService, _productActivityLog, this)
-                   .ImportProductFromMapping(mapping, stream);
+                   .ImportProductFromMapping(longTaskResourceLockService, mapping, stream);
 
         }
 

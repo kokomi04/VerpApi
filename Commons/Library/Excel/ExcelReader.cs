@@ -1,4 +1,5 @@
-﻿using NPOI.SS.UserModel;
+﻿using DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using System;
@@ -103,7 +104,15 @@ namespace VErp.Commons.Library
         }
 
 
-
+        /// <summary>
+        /// Read exel data (datetime => .DateTime.ToString()  = 5/1/2009 9:00:00 AM)
+        /// </summary>
+        /// <param name="sheetName"></param>
+        /// <param name="fromRow"></param>
+        /// <param name="toRow"></param>
+        /// <param name="maxrows"></param>
+        /// <param name="titleRow"></param>
+        /// <returns></returns>
         public IList<ExcelSheetDataModel> ReadSheets(string sheetName, int fromRow = 1, int? toRow = null, int? maxrows = null, int? titleRow = null)
         {
             var sheetDatas = new List<ExcelSheetDataModel>();
@@ -136,6 +145,8 @@ namespace VErp.Commons.Library
             var toRowIndex = toRow.HasValue && toRow > 0 ? toRow - 1 : null;
 
             var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
+
+           
 
             for (int i = 0; i < _xssfwb.NumberOfSheets; i++)
             {
@@ -208,6 +219,11 @@ namespace VErp.Commons.Library
                 }
 
                 var continuousRowEmpty = 0;
+
+                if (OnBeginReadingExcelRow != null)
+                {
+                    OnBeginReadingExcelRow(maxrowsCount ?? 0);
+                }
                 for (int row = fromRowIndex; row < fromRowIndex + maxrowsCount && (!toRowIndex.HasValue || row <= toRowIndex); row++)
                 {
 
@@ -295,6 +311,11 @@ namespace VErp.Commons.Library
                     }
 
                     sheetData.Add(rowData);
+
+                    if (OnReadingExcelRow != null)
+                    {
+                        OnReadingExcelRow(row + 1);
+                    }
                 }
 
                 //set default value for null column
@@ -323,6 +344,10 @@ namespace VErp.Commons.Library
 
             var rowDatas = new List<List<ImportExcelRowData>>();
 
+            if (OnBeginParseExcelDataToEntity != null)
+            {
+                OnBeginParseExcelDataToEntity(data.Rows.Length);
+            }
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
                 var row = data.Rows[rowIndx];
@@ -357,6 +382,11 @@ namespace VErp.Commons.Library
 
                 if (!isIgnoreRow)
                     rowDatas.Add(rowData);
+
+                if (OnParseExcelDataToEntity != null)
+                {
+                    OnParseExcelDataToEntity(rowIndx + 1);
+                }
             }
 
             return rowDatas;
@@ -384,6 +414,21 @@ namespace VErp.Commons.Library
         /// <returns>true - property is proccessed and not process automatic, false - set automatic</returns>
         public delegate bool AssignPropertyAndRefEvent<T>(T entity, string propertyName, string value, object refObj, string refPropertyName);
 
+
+
+        public delegate void ReadingExcelRowEvent(int readRows);
+        public ReadingExcelRowEvent OnReadingExcelRow;
+
+        public delegate void BeginReadingExcelRowEvent(int totalRows);
+        public BeginReadingExcelRowEvent OnBeginReadingExcelRow;
+
+
+        public delegate void BeginParseExcelDataToEntityEvent(int totalRows);
+        public BeginParseExcelDataToEntityEvent OnBeginParseExcelDataToEntity;
+
+
+        public delegate void ParseExcelDataToEntityEvent(int proccessedRows);
+        public ParseExcelDataToEntityEvent OnParseExcelDataToEntity;
 
         public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping)
         {
@@ -460,6 +505,11 @@ namespace VErp.Commons.Library
 
             var lstData = new List<T>();
 
+
+            if (OnBeginParseExcelDataToEntity != null)
+            {
+                OnBeginParseExcelDataToEntity(data.Rows.Length);
+            }
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
 
@@ -593,11 +643,16 @@ namespace VErp.Commons.Library
                 }
                 lstData.Add(entityInfo);
                 //}
+
+                if (OnParseExcelDataToEntity != null)
+                {
+                    OnParseExcelDataToEntity(rowIndx + 1);
+                }
             }
 
             return lstData;
         }
-
+       
 
         private string GetCellString(ICell cell)
         {
@@ -695,5 +750,7 @@ namespace VErp.Commons.Library
         }
 
         public const string PREFIX_ERROR_CELL = "#ERROR#";
+
+
     }
 }

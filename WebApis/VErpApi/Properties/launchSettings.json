@@ -1,13 +1,4 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:1046",
-      "sslPort": 44371
-    }
-  },
-  "$schema": "http://json.schemastore.org/launchsettings.json",
   "profiles": {
     "Production": {
       "commandName": "Project",
@@ -44,6 +35,22 @@
         "ASPNETCORE_ENVIRONMENT": "Test"
       },
       "applicationUrl": "http://localhost:5000/"
+    },
+    "Sandbox": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Sandbox"
+      },
+      "applicationUrl": "http://localhost:5000/"
+    }
+  },
+  "$schema": "http://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:1046",
+      "sslPort": 44371
     }
   }
 }

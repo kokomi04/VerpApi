@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -57,6 +58,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             if (!context.HttpContext.User.Identity.IsAuthenticated)
+            {
+                await next();
+                return;
+            }
+            var anonymous = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousAttribute);
+            if (anonymous != null)
             {
                 await next();
                 return;

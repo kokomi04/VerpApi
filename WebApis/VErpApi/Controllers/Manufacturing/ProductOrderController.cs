@@ -112,7 +112,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetByCodes")]
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrders([FromBody] IList<string> productionOrderCodes)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrders([FromBody] IList<string> productionOrderCodes)
         {
             return await _productionOrderService.GetProductionOrdersByCodes(productionOrderCodes);
         }
@@ -120,7 +120,7 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetByIds")]
-        public async Task<IList<ProductionOrderListModel>> GetProductionOrdersByIds([FromBody] IList<long> productionOrderIds)
+        public async Task<IList<ProductionOrderOutputModel>> GetProductionOrdersByIds([FromBody] IList<long> productionOrderIds)
         {
             return await _productionOrderService.GetProductionOrdersByIds(productionOrderIds);
         }

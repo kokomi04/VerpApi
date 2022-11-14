@@ -88,7 +88,8 @@ namespace VErp.Infrastructure.ApiCore
               });
 
             services.AddHostedService<SyncApiEndpointService>();
-
+            services.AddHostedService<LongTaskStatusService>();
+            
             services.AddControllers(options =>
             {
                 options.ModelBinderProviders.Insert(0, new CustomModelBinderProvider());

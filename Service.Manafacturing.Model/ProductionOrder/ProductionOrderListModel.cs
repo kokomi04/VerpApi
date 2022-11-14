@@ -33,6 +33,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? ToWeekPlanId { get; set; }
         public int? FactoryDepartmentId { get; set; }
 
+        public EnumProductionOrderAssignmentStatus? ProductionOrderAssignmentStatusId { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionOrderListEntity, ProductionOrderListModel>()
@@ -72,5 +74,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public int? FromWeekPlanId { get; set; }
         public int? ToWeekPlanId { get; set; }
         public int? FactoryDepartmentId { get; set; }
+
+        public EnumProductionOrderAssignmentStatus? ProductionOrderAssignmentStatusId { get; set; }
     }
 }
