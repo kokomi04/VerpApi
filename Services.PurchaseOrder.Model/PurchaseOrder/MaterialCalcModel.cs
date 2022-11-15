@@ -93,6 +93,14 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExchangeRate { get; set; }
+        public IList<MaterialCalcSummarySubCalculationModel> SubCalculations { get; set; }
+
+        public void Mapping(Profile profile)
+        {
+            profile.CreateMapCustom<MaterialCalcSummaryModel, MaterialCalcSummary>()
+                .ForMember(d => d.MaterialCalcSummarySubCalculation, s => s.MapFrom(m => m.SubCalculations))
+                .ReverseMapCustom();
+        }
     }
 
 
@@ -107,5 +115,13 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string OrderCode { get; set; }
         public int ProductId { get; set; }
         public decimal OrderProductQuantity { get; set; }
+    }
+
+    public class MaterialCalcSummarySubCalculationModel : IMapFrom<MaterialCalcSummarySubCalculation>
+    {       
+        public long ProductBomId { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+
+       
     }
 }

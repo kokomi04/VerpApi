@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public virtual DbSet<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; }
         public virtual DbSet<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; }
         public virtual DbSet<MaterialCalcSummary> MaterialCalcSummary { get; set; }
+        public virtual DbSet<MaterialCalcSummarySubCalculation> MaterialCalcSummarySubCalculation { get; set; }
         public virtual DbSet<PoAssignment> PoAssignment { get; set; }
         public virtual DbSet<PoAssignmentDetail> PoAssignmentDetail { get; set; }
         public virtual DbSet<PoProviderPricing> PoProviderPricing { get; set; }
@@ -256,6 +257,17 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
                     .HasForeignKey(d => d.MaterialCalcId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_MaterialCalcSummary_MaterialCalc");
+            });
+
+            modelBuilder.Entity<MaterialCalcSummarySubCalculation>(entity =>
+            {
+                entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.MaterialCalcSummary)
+                    .WithMany(p => p.MaterialCalcSummarySubCalculation)
+                    .HasForeignKey(d => d.MaterialCalcSummaryId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_MaterialCalcSummarySubCalculation_MaterialCalcSummary");
             });
 
             modelBuilder.Entity<PoAssignment>(entity =>

@@ -169,20 +169,59 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             var ctx = await GenerateCode(null, req);
             await Validate(null, req);
 
-            var entity = _mapper.Map<MaterialCalc>(req);
-            await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
-            await _purchaseOrderDBContext.SaveChangesAsync();
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+                var entity = _mapper.Map<MaterialCalc>(req);
+                //entity.MaterialCalcSummary = null;
+                await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
+                await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await ctx.ConfirmCode();
+                //var subSumaryModels = new Dictionary<MaterialCalcSummarySubCalculation, MaterialCalcSummary>();
+
+                //if (req.Summary != null)
+                //{
+                //    foreach (var sModel in req.Summary)
+                //    {
+                //        var sEntity = _mapper.Map<MaterialCalcSummary>(sModel);
+                //        sEntity.MaterialCalcId = entity.MaterialCalcId;
+
+                //        if (sModel.SubCalculations != null)
+                //        {
+                //            foreach (var subModel in sModel.SubCalculations)
+                //            {
+                //                var subEntity = _mapper.Map<MaterialCalcSummarySubCalculation>(subModel);
+                //                subSumaryModels.Add(subEntity, sEntity);
+                //            }
+                //        }
+
+                //    }
+                //}
 
 
-            await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
-                .MessageResourceFormatDatas(entity.MaterialCalcCode)
-                .ObjectId(entity.MaterialCalcId)
-                .JsonData(req.JsonSerialize())
-                .CreateLog();
+                //await _purchaseOrderDBContext.MaterialCalcSummary.AddRangeAsync(subSumaryModels.Values.Distinct());
+                //await _purchaseOrderDBContext.SaveChangesAsync();
+                //foreach(var (subEntity, sEntity) in subSumaryModels)
+                //{
+                //    subEntity.MaterialCalcSummaryId = sEntity.MaterialCalcSummaryId;
+                //}
 
-            return entity.MaterialCalcId;
+                //await _purchaseOrderDBContext.MaterialCalcSummarySubCalculation.AddRangeAsync(subSumaryModels.Keys);
+                //await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await ctx.ConfirmCode();
+
+
+                await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
+                    .MessageResourceFormatDatas(entity.MaterialCalcCode)
+                    .ObjectId(entity.MaterialCalcId)
+                    .JsonData(req.JsonSerialize())
+                    .CreateLog();
+
+                return entity.MaterialCalcId;
+            }
+
         }
 
 
@@ -214,6 +253,8 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             _purchaseOrderDBContext.MaterialCalcProductDetail.RemoveRange(entity.MaterialCalcProduct.SelectMany(p => p.MaterialCalcProductDetail));
 
             _purchaseOrderDBContext.MaterialCalcProduct.RemoveRange(entity.MaterialCalcProduct);
+
+            _purchaseOrderDBContext.MaterialCalcSummarySubCalculation.RemoveRange(entity.MaterialCalcSummary.SelectMany(s=>s.MaterialCalcSummarySubCalculation));
 
             _purchaseOrderDBContext.MaterialCalcSummary.RemoveRange(entity.MaterialCalcSummary);
 
@@ -257,6 +298,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
               .Include(s => s.MaterialCalcProduct)
               .ThenInclude(s => s.MaterialCalcProductOrder)
               .Include(s => s.MaterialCalcSummary)
+              .ThenInclude(s=>s.MaterialCalcSummarySubCalculation)
               .FirstOrDefaultAsync(c => c.MaterialCalcId == materialCalcId);
         }
 
