@@ -779,12 +779,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
                         if (!(eval > 0))
                         {
-                            throw PuConversionExpressionInvalid.BadRequestFormat(exp, row.ProductCode);
+                            throw PuConversionExpressionInvalid.BadRequestFormat(unit + " " + exp, row.ProductCode);
                         }
                     }
                     catch (Exception)
                     {
-                        throw PuConversionExpressionError.BadRequestFormat(exp, row.ProductCode);
+                        throw PuConversionExpressionError.BadRequestFormat(unit + " " + exp, row.ProductCode);
                     }
 
                     lstUnitConverions.Add(new ProductUnitConversionUpdate()
