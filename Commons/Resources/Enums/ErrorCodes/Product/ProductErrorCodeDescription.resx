@@ -130,7 +130,7 @@
     <value>Mã mặt hàng không được để trống</value>
   </data>
   <data name="ProductInUsed" xml:space="preserve">
-    <value>Mặt hàng đang được sử dụng</value>
+    <value>Mặt hàng đang được sử dụng {0}</value>
   </data>
   <data name="ProductNameAlreadyExisted" xml:space="preserve">
     <value>Tên mặt hàng đã tồn tại</value>

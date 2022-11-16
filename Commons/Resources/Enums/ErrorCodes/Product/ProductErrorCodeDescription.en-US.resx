@@ -130,7 +130,7 @@
     <value>The product code must be not empty</value>
   </data>
   <data name="ProductInUsed" xml:space="preserve">
-    <value>The product is in use</value>
+    <value>The product is in use {0}</value>
   </data>
   <data name="ProductNameAlreadyExisted" xml:space="preserve">
     <value>The product name already exists</value>
