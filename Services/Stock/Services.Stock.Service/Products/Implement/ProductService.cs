@@ -1354,7 +1354,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         public async Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> listProduct)
         {
             var outProductId = new SqlParameter("@OutProductId", SqlDbType.Int) { Direction = ParameterDirection.Output };
-            var outMessage = new SqlParameter("@OutMessage", SqlDbType.NVarChar) { Direction = ParameterDirection.Output };
+            var outMessage = new SqlParameter("@OutMessage", SqlDbType.NVarChar, 512) { Direction = ParameterDirection.Output };
             var checkParams = new[]
             {
                 listProduct.ToSqlParameter("@ProductIds"),
