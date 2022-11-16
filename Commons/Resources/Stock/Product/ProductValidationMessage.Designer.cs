@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể xóa mặt hàng do mặt hàng đang được sử dụng.
+        ///   Looks up a localized string similar to Không thể xóa mặt hàng do mặt hàng đang được sử dụng {0}.
         /// </summary>
         public static string CanNotDeleteProductWhichInUsed {
             get {

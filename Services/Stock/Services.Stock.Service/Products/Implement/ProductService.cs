@@ -717,11 +717,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             //await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
-            var usedProductId = await CheckProductIdsIsUsed(new List<int>() { productId });
+            var (usedProductId, msg) = await CheckProductIdsIsUsed(new List<int>() { productId });
             //if (isInUsed.Value as bool? == true)
             if (usedProductId.HasValue)
             {
-                throw CanNotDeleteProductWhichInUsed.BadRequest(ProductErrorCode.ProductInUsed);
+                throw CanNotDeleteProductWhichInUsed.BadRequestFormat(ProductErrorCode.ProductInUsed, msg);
             }
 
             var productExtra = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -1351,16 +1351,19 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<int?> CheckProductIdsIsUsed(List<int> listProduct)
+        public async Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> listProduct)
         {
             var outProductId = new SqlParameter("@OutProductId", SqlDbType.Int) { Direction = ParameterDirection.Output };
+            var outMessage = new SqlParameter("@OutMessage", SqlDbType.NVarChar) { Direction = ParameterDirection.Output };
             var checkParams = new[]
             {
                 listProduct.ToSqlParameter("@ProductIds"),
-                outProductId
+                outProductId,
+                outMessage
             };
             await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed_ByList", checkParams);
-            return outProductId.Value as int?;
+            var msg = outMessage?.Value?.ToString();
+            return (outProductId.Value as int?, msg);
         }
     }
 }
