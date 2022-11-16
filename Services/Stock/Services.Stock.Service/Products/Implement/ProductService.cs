@@ -721,7 +721,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             //if (isInUsed.Value as bool? == true)
             if (usedProductId.HasValue)
             {
-                throw CanNotDeleteProductWhichInUsed.BadRequestFormat(ProductErrorCode.ProductInUsed, msg);
+                throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, msg);
             }
 
             var productExtra = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);

@@ -248,7 +248,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             if (isInUsed.Value as bool? == true)
             {
-                throw CanNotDeleteCustomerWhichIsInUse.BadRequest(ProductErrorCode.ProductInUsed);
+                throw CanNotDeleteCustomerWhichIsInUse.BadRequest();
             }
 
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
