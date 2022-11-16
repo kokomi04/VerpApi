@@ -145,7 +145,7 @@
     <value>Kho không tồn tại "{0}"</value>
   </data>
   <data name="CanNotDeleteProductWhichInUsed" xml:space="preserve">
-    <value>Không thể xóa mặt hàng do mặt hàng đang được sử dụng</value>
+    <value>Không thể xóa mặt hàng do mặt hàng đang được sử dụng {0}</value>
   </data>
   <data name="DepartmentOfMaterialNotFound" xml:space="preserve">
     <value>Không tìm thấy bộ phận "{0}" sử dụng mặt hàng "{1}"</value>

@@ -136,10 +136,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
                     {
-                        var usedProductId = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
+                        var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
                         if (usedProductId.HasValue)
                         {
-                            throw new BadRequestException(ProductErrorCode.ProductInUsed);
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(productInfo.ProductCode + " " + msg);
                         }
                     }
 
