@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -16,6 +19,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public IList<PurchaseOrderExcessModel> Excess { get; set; }
         public IList<PurchaseOrderMaterialsModel> Materials { get; set; }
 
+        [Required]
         public long Date { get; set; }
 
 
@@ -139,11 +143,30 @@ namespace VErp.Services.PurchaseOrder.Model
 
     public class DeliveryDestinationModel
     {
+        [Display(Name = "Người nhận", GroupName = "TT giao hàng", Order = 3)]
+        [MaxLength(512)]
         public string DeliverTo { get; set; }
+        
+        [Display(Name = "Tên công ty", GroupName = "TT giao hàng", Order = 4)]
+        [MaxLength(512)]
         public string Company { get; set; }
+
+        [Display(Name = "Địa chỉ", GroupName = "TT giao hàng", Order = 5)]
+        [MaxLength(512)]
         public string Address { get; set; }
+
+        [Display(Name = "Điện thoại", GroupName = "TT giao hàng", Order = 6)]
+        [MaxLength(512)]
         public string Telephone { get; set; }
+
+        [Display(Name = "Fax", GroupName = "TT giao hàng", Order = 7)]
+        [MaxLength(512)]
         public string Fax { get; set; }
+
+        [Display(Name = "Thông tin thêm", GroupName = "TT giao hàng", Order = 8)]
+        [MaxLength(512)]
         public string AdditionNote { get; set; }
     }
+
+   
 }

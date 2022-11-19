@@ -14,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
@@ -355,6 +356,17 @@ namespace VErp.Services.Master.Service.Users.Implement
             return (lst, total);
         }
 
+        public async Task<IList<EmployeeBasicNameModel>> GetAll()
+        {
+
+            return await _organizationContext.Employee.Select(e => new EmployeeBasicNameModel()
+            {
+                UserId = e.UserId,
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName
+            }).ToListAsync();
+
+        }
 
         public async Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds)
         {

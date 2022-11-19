@@ -8,15 +8,16 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
-    public interface ICategoryHelperService
+    public interface ICategoryHelperService : IDynamicCategoryHelper
     {
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames = null, NonCamelCaseDictionary categoryRow = null);
-        Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
+        
         Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
 
         Task<IList<CategoryListModel>> GetDynamicCates();
         Task<IList<CategoryFullSimpleModel>> GetAllCategoryConfig();
     }
+
     public class CategoryHelperService : ICategoryHelperService
     {
         private readonly IHttpCrossService _httpCrossService;

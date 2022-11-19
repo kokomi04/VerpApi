@@ -15,6 +15,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<IList<BasicCustomerListModel>> AllCustomers();
         Task<BaseCustomerModel> CustomerInfo(int customerId);
 
+        Task<IList<CustomerListModel>> CustomerByIds(IList<int> customerIds);
+
         Task<BusinessInfoModel> BusinessInfo();
         Task<IList<DepartmentSimpleModel>> GetDepartmentSimples(int[] departmentId);
         Task<IList<DepartmentSimpleModel>> GetAllDepartmentSimples();
@@ -47,6 +49,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         public async Task<IList<DepartmentCalendarSimpleModel>> GetListDepartmentCalendar(long startDate, long endDate, int[] departmentIds)
         {
             return await _httpCrossService.Post<IList<DepartmentCalendarSimpleModel>>($"api/internal/InternalDepartmentCalendar/multiple?startDate={startDate}&endDate={endDate}", departmentIds);
+        }
+
+        public async Task<IList<CustomerListModel>> CustomerByIds(IList<int> customerIds)
+        {
+            return await _httpCrossService.Post<IList<CustomerListModel>>($"api/internal/InternalCustomer/GetByIds", customerIds);
         }
 
         public async Task<BaseCustomerModel> CustomerInfo(int customerId)

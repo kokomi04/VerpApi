@@ -2,8 +2,13 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.Library.Model;
 
 
@@ -29,8 +34,26 @@ namespace VErp.Commons.Library
         }
 
 
+        public static string GetFullPropertyPath<T, TKey>(Expression<Func<T, TKey>> action)
+        {
+            var path = action.Body.ToString();
+            var firstPoint = path.IndexOf('.');
+            if (firstPoint < 0) return "";
+            return path.Substring(firstPoint + 1);
+        }
 
-        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "", int parentOrder = 0)
+        public static string GetFullPropertyPath<T>(Expression<Func<T, object>> action)
+        {
+            return GetFullPropertyPath<T, object>(action);
+        }
+
+        public static string GetFullPropertyPath<T>(this T _, Expression<Func<T, object>> action)
+        {
+            return GetFullPropertyPath(action);
+        }
+
+
+        public static IList<CategoryFieldNameModel> GetFieldNameModels<T>(int? byType = null, bool forExport = false, bool ignoreCheckField = false, string preFix = "", int parentOrder = 0, IDynamicCategoryHelper categoryHelper = null)
         {
             var fields = new List<CategoryFieldNameModel>();
 
@@ -45,8 +68,16 @@ namespace VErp.Commons.Library
             }
 
             var sortOrder = parentOrder;
-            foreach (var prop in typeof(T).GetProperties())
+            var props = typeof(T).GetProperties().ToList();
+
+            foreach (var prop in props)
             {
+                var duplicateContainsProp = props.FirstOrDefault(p => p != prop && p.Name.StartsWith(prop.Name));
+                if (duplicateContainsProp != null)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Can not import data with field name contains either. '{duplicateContainsProp.Name}' include '{prop.Name}'");
+                }
+
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
                 var title = string.Empty;
@@ -92,7 +123,7 @@ namespace VErp.Commons.Library
                 {
                     MethodInfo method = typeof(ExcelUtils).GetMethod(nameof(ExcelUtils.GetFieldNameModels));
                     MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name, order });
+                    var nestedFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, prop.Name, order, categoryHelper });
                     foreach (var f in nestedFields)
                     {
                         fields.Add(new CategoryFieldNameModel()
@@ -129,7 +160,7 @@ namespace VErp.Commons.Library
 
                         MethodInfo method = typeof(ExcelUtils).GetMethod(nameof(ExcelUtils.GetFieldNameModels));
                         MethodInfo generic = method.MakeGenericMethod(prop.PropertyType);
-                        var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, "" });
+                        var childFields = (IList<CategoryFieldNameModel>)generic.Invoke(null, new[] { (object)null, false, true, "", order, categoryHelper });
 
                         fileMapping.RefCategory = new CategoryNameModel()
                         {
@@ -137,6 +168,32 @@ namespace VErp.Commons.Library
                             //CategoryId = prop.PropertyType.Name.GetHashCode(),
                             CategoryTitle = title,
                             Fields = childFields
+                        };
+
+                    }
+
+                    var isRefCate = prop.GetCustomAttribute<DynamicCategoryMappingAttribute>();
+                    if (isRefCate != null)
+                    {
+                        var cateFields = categoryHelper.GetReferFields(new[] { isRefCate.CategoryCode }, null).Result;
+
+                        fileMapping.RefCategory = new CategoryNameModel()
+                        {
+                            CategoryCode = isRefCate.CategoryCode,
+                            //CategoryId = prop.PropertyType.Name.GetHashCode(),
+                            CategoryTitle = title,
+                            Fields = cateFields?.Select(f => new CategoryFieldNameModel()
+                            {
+                                GroupName = title,
+                                //CategoryFieldId = prop.Name.GetHashCode(),
+                                FieldName = f.CategoryFieldName,
+                                FieldTitle = f.CategoryFieldTitle,
+                                IsRequired = isRequired != null,
+                                DataTypeId = (EnumDataType)f.DataTypeId,
+                                Type = type,
+                                RefCategory = null,
+                                SortOrder = null
+                            }).ToList()
                         };
 
                     }

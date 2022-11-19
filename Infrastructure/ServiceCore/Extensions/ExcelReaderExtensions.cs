@@ -28,7 +28,7 @@ namespace VErp.Infrastructure.ServiceCore.Extensions
                 longTask.SetTotalRows(totalRows);
             };
 
-            reader.OnParseExcelDataToEntity += (int readRows) =>
+            reader.OnParseExcelDataToEntity += (int readRows, object obj) =>
             {
                 longTask.IncProcessedRows();
             };

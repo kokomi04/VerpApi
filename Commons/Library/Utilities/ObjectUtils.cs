@@ -121,6 +121,16 @@ namespace VErp.Commons.Library
             return false;
         }
 
+        public static TKey GetFirstValueNotNull<T, TKey>(this IList<T> lst, Func<T, TKey> func)
+        {
+            return lst.Where(x =>
+            {
+                var valid = func(x);
+                return !valid.IsNullObject();
+            }).Select(func)
+            .FirstOrDefault();
+        }
+
         public static T DeepClone<T>(this T a)
         {
             return a.JsonSerialize().JsonDeserialize<T>();

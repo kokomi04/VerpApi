@@ -27,7 +27,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
         {
             var rowDatas = SingleInvoiceParseExcel(mapping, extra, stream).ToList();
 
-            var productCodes = rowDatas.Select(r => r.ProductCode).ToList();
+            var productCodes = rowDatas.Select(r => r.ProductInfo?.ProductCode).ToList();
             var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
 
             var productInfos = await _productHelperService.GetListByCodeAndInternalNames(productCodes, productInternalNames);
@@ -41,9 +41,9 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             foreach (var item in rowDatas)
             {
                 IList<ProductModel> itemProducts = null;
-                if (!string.IsNullOrWhiteSpace(item.ProductCode) && productInfoByCode.ContainsKey(item.ProductCode?.ToLower()))
+                if (!string.IsNullOrWhiteSpace(item?.ProductInfo.ProductCode) && productInfoByCode.ContainsKey(item.ProductInfo?.ProductCode?.ToLower()))
                 {
-                    itemProducts = productInfoByCode[item.ProductCode?.ToLower()];
+                    itemProducts = productInfoByCode[item.ProductInfo?.ProductCode?.ToLower()];
                 }
                 else
                 {
@@ -55,15 +55,15 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 if (itemProducts == null || itemProducts.Count == 0)
                 {
-                    throw ProductInfoNotFound.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
+                    throw ProductInfoNotFound.BadRequestFormat($"{item.ProductInfo?.ProductCode} {item.ProductInfo?.ProductName}");
                 }
 
                 if (itemProducts.Count > 1)
                 {
-                    itemProducts = itemProducts.Where(p => p.ProductName == item.ProductName).ToList();
+                    itemProducts = itemProducts.Where(p => p.ProductName == item.ProductInfo?.ProductName).ToList();
 
                     if (itemProducts.Count != 1)
-                        throw FoundNumberOfProduct.BadRequestFormat(itemProducts.Count, $"{item.ProductCode} {item.ProductName}");
+                        throw FoundNumberOfProduct.BadRequestFormat(itemProducts.Count, $"{item.ProductInfo?.ProductCode} {item.ProductInfo?.ProductName}");
                 }
 
                 var productUnitConversionId = 0;
@@ -89,11 +89,11 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                     if (pus.Count == 0)
                     {
-                        throw PuOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
+                        throw PuOfProductNotFound.BadRequestFormat(item.ProductUnitConversionName, $"{item.ProductInfo?.ProductCode} {item.ProductInfo?.ProductName}");
                     }
                     if (pus.Count > 1)
                     {
-                        throw FoundNumberOfPuConversion.BadRequestFormat(pus.Count, item.ProductUnitConversionName, $"{item.ProductCode} {item.ProductName}");
+                        throw FoundNumberOfPuConversion.BadRequestFormat(pus.Count, item.ProductUnitConversionName, $"{item.ProductInfo?.ProductCode} {item.ProductInfo?.ProductName}");
                     }
 
                     productUnitConversionId = pus[0].ProductUnitConversionId;
@@ -104,7 +104,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     var puDefault = itemProducts[0].StockInfo.UnitConversions.FirstOrDefault(u => u.IsDefault);
                     if (puDefault == null)
                     {
-                        throw PrimaryPuOfProductNotFound.BadRequestFormat($"{item.ProductCode} {item.ProductName}");
+                        throw PrimaryPuOfProductNotFound.BadRequestFormat($"{item.ProductInfo?.ProductCode} {item.ProductInfo?.ProductName}");
 
                     }
                     productUnitConversionId = puDefault.ProductUnitConversionId;
@@ -167,7 +167,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     item.ProductUnitConversionName = extra.ProductUnitConversionName;
                 }
 
-                item.ProductInternalName = item.ProductName?.NormalizeAsInternalName();
+                item.ProductInternalName = item.ProductInfo?.ProductName?.NormalizeAsInternalName();
             }
             return data.OrderBy(d => d.SortOrder).ToList();
         }
