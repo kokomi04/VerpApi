@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Model.Product
 
         [Display(Name = "Tên tiếng Anh", GroupName = "Thông tin chung")]
         [MaxLength(128, ErrorMessage = "Tên tiếng Anh mặt hàng quá dài")]
-        public string ProductNameEng { get; set; }
+        public string ProductEngName { get; set; }
 
         [Display(Name = "Màu sắc", GroupName = "Thông tin chung")]
         [MaxLength(128, ErrorMessage = "Màu sắc mặt hàng quá dài")]

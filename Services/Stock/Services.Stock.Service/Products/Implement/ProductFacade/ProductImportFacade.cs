@@ -549,7 +549,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
             }
 
-            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
+            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductEngName);
             product.UpdateIfAvaiable(p => p.Color, row.Color);
 
             //product.IsCanBuy = row.IsCanBuy ?? true;
