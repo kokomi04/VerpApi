@@ -72,11 +72,11 @@ namespace VErp.Commons.Library
 
             foreach (var prop in props)
             {
-                var duplicateContainsProp = props.FirstOrDefault(p => p != prop && p.Name.StartsWith(prop.Name));
-                if (duplicateContainsProp != null)
-                {
-                    throw GeneralCode.InvalidParams.BadRequest($"Can not import data with field name contains either. '{duplicateContainsProp.Name}' include '{prop.Name}'");
-                }
+                //var duplicateContainsProp = props.FirstOrDefault(p => p != prop && p.Name.StartsWith(prop.Name));
+                //if (duplicateContainsProp != null)
+                //{
+                //    throw GeneralCode.InvalidParams.BadRequest($"Can not import data with field name contains either. '{duplicateContainsProp.Name}' include '{prop.Name}'");
+                //}
 
                 var attrs = prop.GetCustomAttributes<DisplayAttribute>();
 
