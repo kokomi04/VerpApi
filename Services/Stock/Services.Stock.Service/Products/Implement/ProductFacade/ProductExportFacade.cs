@@ -149,7 +149,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, product.ProductCode);
                 case nameof(ProductImportModel.ProductName):
                     return (EnumDataType.Text, product.ProductName);
-                case nameof(ProductImportModel.ProductNameEng):
+                case nameof(ProductImportModel.ProductEngName):
                     return (EnumDataType.Text, product.ProductNameEng);
                 case nameof(ProductImportModel.Color):
                     return (EnumDataType.Text, product.Color);
