@@ -19,7 +19,7 @@ namespace Verp.Resources.PurchaseOrder.Po {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class PurchaseOrderParseExcelValidationMessage {
@@ -57,6 +57,78 @@ namespace Verp.Resources.PurchaseOrder.Po {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tìm thấy nhiều hơn 1 tiền tệ có {0} &quot;{1}&quot; .
+        /// </summary>
+        public static string CurrencyFoundMoreThanOne {
+            get {
+                return ResourceManager.GetString("CurrencyFoundMoreThanOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy tiền tệ có {0} &quot;{1}&quot; .
+        /// </summary>
+        public static string CurrencyNotFound {
+            get {
+                return ResourceManager.GetString("CurrencyNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy khách hàng có mã &quot;{0}&quot;.
+        /// </summary>
+        public static string CustomerCodeNotFound {
+            get {
+                return ResourceManager.GetString("CustomerCodeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy khách hàng có tên &quot;{0}&quot;.
+        /// </summary>
+        public static string CustomerNameNotFound {
+            get {
+                return ResourceManager.GetString("CustomerNameNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy công ty có mã &quot;{0}&quot;.
+        /// </summary>
+        public static string DeliveryCustomerCodeNotFound {
+            get {
+                return ResourceManager.GetString("DeliveryCustomerCodeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy công ty có tên &quot;{0}&quot;.
+        /// </summary>
+        public static string DeliveryCustomerNameNotFound {
+            get {
+                return ResourceManager.GetString("DeliveryCustomerNameNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy nhân viên có mã &quot;{0}&quot;.
+        /// </summary>
+        public static string EmployeeCodeNotFound {
+            get {
+                return ResourceManager.GetString("EmployeeCodeNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy nhân viên có họ tên &quot;{0}&quot;.
+        /// </summary>
+        public static string EmployeeFullNameNotFound {
+            get {
+                return ResourceManager.GetString("EmployeeFullNameNotFound", resourceCulture);
             }
         }
         
@@ -102,6 +174,33 @@ namespace Verp.Resources.PurchaseOrder.Po {
         public static string PuOfProductNotFound {
             get {
                 return ResourceManager.GetString("PuOfProductNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã đơn mua không được để trống.
+        /// </summary>
+        public static string PurchaseOrderCodeIsRequired {
+            get {
+                return ResourceManager.GetString("PurchaseOrderCodeIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ngày đặt hàng không được để trống.
+        /// </summary>
+        public static string PurchaseOrderDateIsRequired {
+            get {
+                return ResourceManager.GetString("PurchaseOrderDateIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Ngày giao hàng không được để trống.
+        /// </summary>
+        public static string PurchaseOrderDeliveryDateIsRequired {
+            get {
+                return ResourceManager.GetString("PurchaseOrderDeliveryDateIsRequired", resourceCulture);
             }
         }
     }

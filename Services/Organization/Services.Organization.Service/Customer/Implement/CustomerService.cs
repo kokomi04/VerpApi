@@ -399,7 +399,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, int? customerCateId, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             var lst = await GetListEntity(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
-            var bomExport = new CusomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
+            var bomExport = new CustomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
             return await bomExport.Export(lst.List);
         }
 
@@ -678,7 +678,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CusomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
+            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(longTaskResourceLockService, mapping, stream);
 

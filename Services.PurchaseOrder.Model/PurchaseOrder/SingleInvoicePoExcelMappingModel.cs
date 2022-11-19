@@ -1,5 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
+using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 {
@@ -46,35 +50,42 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     //}
 
     [Display(Name = "Chi tiết đơn mua hàng")]
-    public class PoDetailRowValue
+    public class PoDetailRowValue : MappingDataRowAbstract
     {
-        [Display(Name = "Mã mặt hàng", GroupName = "Mặt hàng")]
-        public string ProductCode { get; set; }
-        [Display(Name = "Tên mặt hàng", GroupName = "Mặt hàng")]
-        public string ProductName { get; set; }
+
+        [Display(Name = "Mặt hàng", GroupName = "Mặt hàng", Order = 2002)]
+        public PoDetailProductParseModel ProductInfo { get; set; }
 
         [FieldDataIgnore]
         public string ProductInternalName { get; set; }
 
-        [Display(Name = "Tên mặt hàng tương ứng NCC", GroupName = "Mặt hàng")]
+        [Display(Name = "Tên mặt hàng tương ứng NCC", GroupName = "Mặt hàng", Order = 2003)]
         public string ProductProviderName { get; set; }
 
-        [Display(Name = "Số lượng Đơn vị chính", GroupName = "TT về lượng")]
+        [Display(Name = "Số lượng Đơn vị chính", GroupName = "TT về lượng", Order = 2004)]
         public decimal? PrimaryQuantity { get; set; }
 
-        [Display(Name = "Giá theo đơn vị chính", GroupName = "TT về lượng")]
+        [Display(Name = "Giá theo đơn vị chính", GroupName = "TT về lượng", Order = 2005)]
         public decimal? PrimaryPrice { get; set; }
 
-        [Display(Name = "Tên Đơn vị chuyển đổi", GroupName = "TT về lượng")]
+        [Display(Name = "Tên Đơn vị chuyển đổi", GroupName = "TT về lượng", Order = 2006)]
         public string ProductUnitConversionName { get; set; }
 
-        [Display(Name = "Số lượng Đơn vị chuyển đổi", GroupName = "TT về lượng")]
+        [FieldDataIgnore]
+        public ProductModelUnitConversion PuInfo { get; set; }
+
+
+        [FieldDataIgnore]
+        public ProductModelUnitConversion PuDefault { get; set; }
+
+
+        [Display(Name = "Số lượng Đơn vị chuyển đổi", GroupName = "TT về lượng", Order = 2007)]
         public decimal? ProductUnitConversionQuantity { get; set; }
-        [Display(Name = "Giá theo Đơn vị chuyển đổi", GroupName = "TT về lượng")]
+        [Display(Name = "Giá theo Đơn vị chuyển đổi", GroupName = "TT về lượng", Order = 2008)]
         public decimal? ProductUnitConversionPrice { get; set; }
-        [Display(Name = "Thành tiền ngoại tệ", GroupName = "TT về lượng")]
+        [Display(Name = "Thành tiền ngoại tệ", GroupName = "TT về lượng", Order = 2009)]
         public decimal? IntoMoney { get; set; }
-        [Display(Name = "Thành tiền VNĐ", GroupName = "TT về lượng")]
+        [Display(Name = "Thành tiền VNĐ", GroupName = "TT về lượng", Order = 2010)]
         public decimal? ExchangedMoney { get; set; }
 
 
@@ -83,20 +94,29 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         //[Display(Name = "Thuế theo tiền", GroupName = "TT về lượng")]
         //public decimal TaxInMoney { get; set; }
 
-        [Display(Name = "Mã báo giá nhà cung cấp", GroupName = "Bổ sung")]
+        [Display(Name = "Mã báo giá nhà cung cấp", GroupName = "Bổ sung", Order = 2011)]
         public string PoProviderPricingCode { get; set; }
 
-        [Display(Name = "Mã đơn hàng", GroupName = "Bổ sung")]
+        [Display(Name = "Mã đơn hàng", GroupName = "Bổ sung", Order = 2012)]
         public string OrderCode { get; set; }
-        [Display(Name = "Mã LSX", GroupName = "Bổ sung")]
+        [Display(Name = "Mã LSX", GroupName = "Bổ sung", Order = 2013)]
         public string ProductionOrderCode { get; set; }
-        [Display(Name = "Mô tả", GroupName = "Bổ sung")]
+        [Display(Name = "Mô tả", GroupName = "Bổ sung", Order = 2014)]
         public string Description { get; set; }
-        [Display(Name = "Thứ tự sắp xếp", GroupName = "Bổ sung")]
+        [Display(Name = "Thứ tự sắp xếp", GroupName = "Bổ sung", Order = 2015)]
         public int? SortOrder { get; set; }
+    }
 
 
+    public class PoDetailProductParseModel
+    {
+        [FieldDataIgnore]
+        public int ProductId { get; set; }
 
+        [Display(Name = "Mã mặt hàng", GroupName = "Mặt hàng", Order = 2001)]
+        public string ProductCode { get; set; }
+        [Display(Name = "Tên mặt hàng", GroupName = "Mặt hàng", Order = 2002)]
+        public string ProductName { get; set; }
 
     }
 }

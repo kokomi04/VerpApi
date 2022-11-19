@@ -1,18 +1,23 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using OpenXmlPowerTools;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
+using static NPOI.HSSF.UserModel.HeaderFooter;
 
 namespace VErp.Commons.Library
 {
@@ -146,7 +151,7 @@ namespace VErp.Commons.Library
 
             var titleRowIndex = titleRow.HasValue && titleRow > 0 ? fromRowIndex > 0 ? titleRow.Value - 1 : fromRowIndex - 1 : 0;
 
-           
+
 
             for (int i = 0; i < _xssfwb.NumberOfSheets; i++)
             {
@@ -385,7 +390,7 @@ namespace VErp.Commons.Library
 
                 if (OnParseExcelDataToEntity != null)
                 {
-                    OnParseExcelDataToEntity(rowIndx + 1);
+                    OnParseExcelDataToEntity(rowIndx + 1, rowData);
                 }
             }
 
@@ -414,6 +419,7 @@ namespace VErp.Commons.Library
         /// <returns>true - property is proccessed and not process automatic, false - set automatic</returns>
         public delegate bool AssignPropertyAndRefEvent<T>(T entity, string propertyName, string value, object refObj, string refPropertyName);
 
+        public delegate Task<bool> AssignPropertyAndRefPathEvent<T>(T entity, string propertyName, string value, object refObj, string refPropertyName, string refPropertyPathSeparateByPoint);
 
 
         public delegate void ReadingExcelRowEvent(int readRows);
@@ -427,7 +433,7 @@ namespace VErp.Commons.Library
         public BeginParseExcelDataToEntityEvent OnBeginParseExcelDataToEntity;
 
 
-        public delegate void ParseExcelDataToEntityEvent(int proccessedRows);
+        public delegate void ParseExcelDataToEntityEvent(int proccessedRows, object entity);
         public ParseExcelDataToEntityEvent OnParseExcelDataToEntity;
 
         public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping)
@@ -436,7 +442,7 @@ namespace VErp.Commons.Library
         }
 
         /// <summary>
-        /// 
+        /// Read exel data (datetime => .DateTime.ToString()  = 5/1/2009 9:00:00 AM)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="mapping"></param>
@@ -458,7 +464,35 @@ namespace VErp.Commons.Library
         }
 
         /// <summary>
-        /// 
+        /// Read exel data (datetime => .DateTime.ToString()  = 5/1/2009 9:00:00 AM)
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="mapping"></param>
+        /// <param name="OnAssignProperty"></param>
+        /// <returns></returns>
+        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyAndRefEvent<T> OnAssignProperty)
+        {
+
+            return ReadSheetEntity<T>(mapping, async (entity, propertyName, value, refObj, refPropertyName, paths) =>
+            {
+                await Task.CompletedTask;
+                return OnAssignProperty(entity, propertyName, value, refObj, refPropertyName);
+            }).Result;
+
+        }
+
+        private ConcurrentDictionary<Type, PropertyInfo[]> RefTypeFields = new ConcurrentDictionary<Type, PropertyInfo[]>();
+        private ConcurrentDictionary<PropertyInfo, string> DisplayNames = new ConcurrentDictionary<PropertyInfo, string>();
+
+        private ConcurrentDictionary<string, PropertyMappingInfo> PropertyPathSeparateByPoints = new ConcurrentDictionary<string, PropertyMappingInfo>();
+        public ConcurrentDictionary<string, PropertyMappingInfo> GetPropertyPathMap()
+        {
+            return PropertyPathSeparateByPoints;
+        }
+
+
+        /// <summary>
+        /// Read exel data (datetime => .DateTime.ToString()  = 5/1/2009 9:00:00 AM)
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="mapping"></param>
@@ -466,40 +500,11 @@ namespace VErp.Commons.Library
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
         /// <exception cref="BadRequestException"></exception>
-        public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyAndRefEvent<T> OnAssignProperty)
+        public async Task<IList<T>> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyAndRefPathEvent<T> OnAssignProperty)
         {
             var fields = typeof(T).GetProperties();
 
-            var refTypeFields = new Dictionary<Type, PropertyInfo[]>();
-
-            var displayNames = new Dictionary<PropertyInfo, string>();
-
-            foreach (var prop in fields)
-            {
-                displayNames.Add(prop, prop.GetCustomAttributes<DisplayAttribute>().FirstOrDefault()?.Name ?? prop.Name);
-                if (string.IsNullOrWhiteSpace(displayNames[prop]))
-                {
-                    displayNames[prop] = prop.Name;
-                }
-
-
-                if (prop.PropertyType.IsClass() && !refTypeFields.ContainsKey(prop.PropertyType))
-                {
-                    var childFields = prop.PropertyType.GetProperties();
-                    refTypeFields.Add(prop.PropertyType, childFields);
-
-                    foreach (var c in childFields)
-                    {
-                        displayNames.Add(c, c.GetCustomAttributes<DisplayAttribute>().FirstOrDefault()?.Name ?? c.Name);
-                        if (string.IsNullOrWhiteSpace(displayNames[c]))
-                        {
-                            displayNames[c] = c.Name;
-                        }
-                    }
-                }
-
-            }
-
+            PropertyPathSeparateByPoints = new ConcurrentDictionary<string, PropertyMappingInfo>();
 
             var data = ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
@@ -510,6 +515,10 @@ namespace VErp.Commons.Library
             {
                 OnBeginParseExcelDataToEntity(data.Rows.Length);
             }
+
+
+            var lstDataMapping = new List<EntityMapppingInfo<T>>();
+
             for (var rowIndx = 0; rowIndx < data.Rows.Length; rowIndx++)
             {
 
@@ -520,18 +529,34 @@ namespace VErp.Commons.Library
 
                 var checkFieldsMapping = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty || f.FieldName == ImportStaticFieldConsants.CheckImportRowEmpty);
 
-                if (checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column])))
+                var isCheckingFieldEmpty = checkFieldsMapping.Any(f => string.IsNullOrWhiteSpace(row[f.Column]));
+
+                if (isCheckingFieldEmpty)
                 {
                     continue;
                 }
 
-
-                var entityInfo = Activator.CreateInstance<T>();
+                var travelMappingFields = mapping.MappingFields.Where(f => f.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty).ToList();
+                var isAllCellIsEmpty = travelMappingFields.All(m => !row.ContainsKey(m.Column) || string.IsNullOrWhiteSpace(row[m.Column]));
+                if (isAllCellIsEmpty)
+                {
+                    continue;
+                }
+                var entityInfo = (T)InitObjectDeep(typeof(T));
                 //for (int fieldIndx = 0; fieldIndx < mapping.MappingFields.Count; fieldIndx++)//&& !isIgnoreRow
                 //{
 
                 //    var mappingField = mapping.MappingFields[fieldIndx];
-                foreach (var mappingField in mapping.MappingFields.Where(f => f.FieldName != ImportStaticFieldConsants.CheckImportRowEmpty).ToList())//&& !isIgnoreRow
+
+                var rowNumber = mapping.FromRow + rowIndx;
+
+                var entityMapping = new EntityMapppingInfo<T>();
+                entityMapping.Entity = entityInfo;
+                entityMapping.RowNumber = rowNumber;
+                entityMapping.PropertyMappings = new List<PropertyMappingValue>();
+
+
+                foreach (var mappingField in travelMappingFields)//&& !isIgnoreRow
                 {
 
                     var fieldDisplay = "";
@@ -540,7 +565,10 @@ namespace VErp.Commons.Library
                         string value = null;
                         if (row.ContainsKey(mappingField.Column))
                             value = row[mappingField.Column]?.ToString();
-
+                        if (!string.IsNullOrWhiteSpace(value))
+                        {
+                            isAllCellIsEmpty = false;
+                        }
                         //if (string.IsNullOrWhiteSpace(value) && mappingField.IsRequire)
                         //{
                         //    isIgnoreRow = true;
@@ -555,77 +583,70 @@ namespace VErp.Commons.Library
 
                         }
 
-                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.FieldName}");
+                        if (field == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {mappingField.FieldName}");
 
-                        fieldDisplay = displayNames[field];
 
                         if (string.IsNullOrWhiteSpace(mappingField.FieldName)) continue;
 
-
-                        object refObj = null;
-
-                        PropertyInfo refField = null;
-
-                        var propertyIsClass = field.PropertyType.IsClass();
-                        if (propertyIsClass)
+                        var fileNameCombine = mappingField.FieldName;
+                        if (!string.IsNullOrWhiteSpace(mappingField.RefFieldName))
                         {
-                            var v = field.GetValue(entityInfo, null);
-                            if (v == null)
-                            {
-                                v = Activator.CreateInstance(field.PropertyType);
-                                field.SetValue(entityInfo, v);
-                            }
-
-                            refObj = v;
-
-                            if (string.IsNullOrWhiteSpace(mappingField.RefFieldName))
-                            {
-                                mappingField.RefFieldName = mappingField.FieldName.Substring(field.Name.Length);
-                                if (!string.IsNullOrWhiteSpace(mappingField.RefFieldName))
-                                {
-                                    mappingField.FieldName = field.Name;
-                                }
-                            }
-
-                            if (!string.IsNullOrWhiteSpace(mappingField.RefFieldName))
-                            {
-                                refField = refTypeFields[field.PropertyType].FirstOrDefault(f => f.Name == mappingField.RefFieldName);
-                                if (refField == null)
-                                {
-                                    refField = refTypeFields[field.PropertyType].FirstOrDefault(f => mappingField.RefFieldName.StartsWith(f.Name));
-                                }
-
-                                if (refField == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy field {mappingField.RefFieldName} thuộc {mappingField.FieldName}");
-                            }
-
-
-                            fieldDisplay += " > " + displayNames[refField];
+                            fileNameCombine += mappingField.RefFieldName;
                         }
+                        var fieldPaths = new List<PropertyInfo>();
+                        var (refField, refObj) = GetRefFieldNames(fieldPaths, fileNameCombine, entityInfo);
+
+                        fieldDisplay = GetDisplayFieldPathString(fieldPaths);
+
+                        var refPropertyPathSeparateByPoint = string.Join(".", fieldPaths.Select(p => p.Name).ToArray());
+
+                        var propertyMappingInfo = PropertyPathSeparateByPoints.GetOrAdd(refPropertyPathSeparateByPoint, (key) =>
+                        {
+                            return new PropertyMappingInfo()
+                            {
+                                Column = mappingField.Column,
+                                DisplayTitle = fieldDisplay,
+                                RefPropertyPathSeparateByPoint = refPropertyPathSeparateByPoint,
+
+                                Property = fieldPaths.Last(),
+
+                                IsCheckDuplicate = field.GetCustomAttribute<ValidateDuplicateByKeyCodeAttribute>() != null,
+                                IsKeyCodeField = field.GetCustomAttribute<KeyCodeFieldAttribute>() != null
+                            };
+                        });
+
+
 
                         var isAutoSet = true;
                         if (OnAssignProperty != null)
                         {
-                            isAutoSet = !OnAssignProperty(entityInfo, mappingField.FieldName, value, refObj, mappingField.RefFieldName);
+
+                            fieldPaths.RemoveAt(0);
+
+                            isAutoSet = !(await OnAssignProperty(entityInfo, field.Name, value, refObj, refField.Name, refPropertyPathSeparateByPoint));
                         }
 
                         if (isAutoSet && !string.IsNullOrWhiteSpace(value))
                         {
-                            if (propertyIsClass)
-                            {
-                                refField.SetValue(refObj, value.ConvertValueByType(refField.PropertyType));
-                            }
-                            else
-                            {
-                                field.SetValue(entityInfo, value.ConvertValueByType(field.PropertyType));
-                            }
+                            refField.SetValue(refObj, value.ConvertValueByType(refField.PropertyType));
                         }
+
+                        entityMapping.PropertyMappings.Add(new PropertyMappingValue()
+                        {
+                            MappingInfo = propertyMappingInfo,
+                            RefObject = refObj,
+                            Value = value
+                        });
+
                     }
                     catch (Exception ex)
                     {
-                        throw new Exception($"Lỗi dòng {mapping.FromRow + rowIndx} cột {mappingField.Column} \"{fieldDisplay}\" {ex.Message}", ex);
+                        throw new Exception($"Lỗi dòng {rowNumber} cột {mappingField.Column} \"{fieldDisplay}\" {ex.Message}", ex);
                     }
 
                 }
+
+
 
                 //if (!isIgnoreRow)
                 //{
@@ -634,26 +655,115 @@ namespace VErp.Commons.Library
                 bool isValid = Validator.TryValidateObject(entityInfo, context, results, true);
                 if (!isValid)
                 {
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {mapping.FromRow + rowIndx}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu dòng {rowNumber}, " + string.Join(", ", results.FirstOrDefault()?.MemberNames) + ": " + results.FirstOrDefault()?.ErrorMessage);
                 }
 
                 if (entityInfo is MappingDataRowAbstract entity)
                 {
-                    entity.RowNumber = mapping.FromRow + rowIndx;
+                    entity.RowNumber = rowNumber;
                 }
                 lstData.Add(entityInfo);
+                lstDataMapping.Add(entityMapping);
                 //}
 
                 if (OnParseExcelDataToEntity != null)
                 {
-                    OnParseExcelDataToEntity(rowIndx + 1);
+                    OnParseExcelDataToEntity(rowIndx + 1, entityInfo);
                 }
+            }
+
+            var keyCodeColumn = PropertyPathSeparateByPoints.Values.FirstOrDefault(p => p.IsKeyCodeField);
+            var checkDuplicateColumns = PropertyPathSeparateByPoints.Values.Where(p => p.IsCheckDuplicate).ToList();
+
+            if (keyCodeColumn != null && checkDuplicateColumns.Count > 0)
+            {
+                var billsGroupByKeyCode = lstDataMapping.GroupBy(e => e.PropertyMappings.FirstOrDefault(p => p.MappingInfo.IsKeyCodeField)?.Value).ToList();
+                foreach (var bill in billsGroupByKeyCode)
+                {
+                    foreach (var mappingInfo in checkDuplicateColumns)
+                    {
+                        var persistentValue = bill.Where(r => !ObjectUtils.IsNullObject(r.PropertyMappings.FirstOrDefault(m => m.MappingInfo == mappingInfo)?.Value))
+                            .GroupBy(r => r.PropertyMappings.FirstOrDefault(m => m.MappingInfo == mappingInfo)?.Value)
+                            .ToList();
+                        if (persistentValue.Count > 1)
+                        {
+                            var nextValue = persistentValue.Skip(1).Take(1).First()?.First();
+                            throw GeneralCode.InvalidParams.BadRequest($"Có nhiều hơn 1 giá trị {mappingInfo?.DisplayTitle}, dòng {nextValue.RowNumber}, cột {mappingInfo?.Column} cùng đơn {bill.Key}");
+                        }
+                    }
+
+                }
+
             }
 
             return lstData;
         }
-       
 
+        private object InitObjectDeep(Type type)
+        {
+            var obj = Activator.CreateInstance(type);
+            foreach (var p in type.GetProperties())
+            {
+                var propertyIsClass = p.PropertyType.IsClass();
+                if (propertyIsClass)
+                {
+                    var propValue = InitObjectDeep(p.PropertyType);
+                    p.SetValue(obj, propValue);
+                }
+            }
+            return obj;
+        }
+
+        private (PropertyInfo refProp, object refObj) GetRefFieldNames(IList<PropertyInfo> result, string fieldName, object parentObj)
+        {
+            var fieldType = parentObj.GetType();
+
+            if (!RefTypeFields.ContainsKey(fieldType))
+            {
+                var fields = fieldType.GetProperties();
+                RefTypeFields.TryAdd(fieldType, fields);
+                foreach (var field in fields)
+                {
+                    DisplayNames.TryAdd(field, (field.GetCustomAttributes<DisplayAttribute>().FirstOrDefault()?.Name) ?? field.Name);
+                }
+            }
+
+            RefTypeFields.TryGetValue(fieldType, out var props);
+            var prop = props.FirstOrDefault(f => fieldName.StartsWith(f.Name));
+
+
+            if (prop == null)
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {fieldName} thuộc {GetDisplayFieldPathString(result)}");
+            }
+
+            result.Add(prop);
+            var refFieldName = fieldName.Substring(prop.Name.Length);
+            var propertyIsClass = prop.PropertyType.IsClass();
+            if (propertyIsClass)
+            {
+                var obj = prop.GetValue(parentObj);
+                return GetRefFieldNames(result, refFieldName, obj);
+            }
+            var displayPath = result.Select(p =>
+            {
+                DisplayNames.TryGetValue(p, out var d);
+                return d ?? p.Name;
+            }).ToArray();
+
+
+            return (prop, parentObj);
+        }
+
+        private string GetDisplayFieldPathString(IList<PropertyInfo> lst)
+        {
+            var displayPath = lst.Select(p =>
+            {
+                DisplayNames.TryGetValue(p, out var d);
+                return d ?? p.Name;
+            }).ToArray();
+            return string.Join(" => ", displayPath);
+        }
         private string GetCellString(ICell cell)
         {
             if (cell == null) return null;
@@ -753,4 +863,32 @@ namespace VErp.Commons.Library
 
 
     }
+
+    public class PropertyMappingInfo
+    {
+        public string RefPropertyPathSeparateByPoint { get; set; }
+        public string DisplayTitle { get; set; }
+        public string Column { get; set; }
+
+        public PropertyInfo Property { get; set; }
+        public bool IsCheckDuplicate { get; set; }
+        public bool IsKeyCodeField { get; set; }
+    }
+
+
+    public class PropertyMappingValue
+    {
+        public PropertyMappingInfo MappingInfo { get; set; }
+
+        public object RefObject { get; set; }
+        public string Value { get; set; }
+    }
+
+    public class EntityMapppingInfo<T>
+    {
+        public T Entity { get; set; }
+        public int RowNumber { get; set; }
+        public IList<PropertyMappingValue> PropertyMappings { get; set; }
+    }
+
 }

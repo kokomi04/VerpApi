@@ -117,6 +117,30 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CurrencyFoundMoreThanOne" xml:space="preserve">
+    <value>Tìm thấy nhiều hơn 1 tiền tệ có {0} "{1}" </value>
+  </data>
+  <data name="CurrencyNotFound" xml:space="preserve">
+    <value>Không tìm thấy tiền tệ có {0} "{1}" </value>
+  </data>
+  <data name="CustomerCodeNotFound" xml:space="preserve">
+    <value>Không tìm thấy khách hàng có mã "{0}"</value>
+  </data>
+  <data name="CustomerNameNotFound" xml:space="preserve">
+    <value>Không tìm thấy khách hàng có tên "{0}"</value>
+  </data>
+  <data name="DeliveryCustomerCodeNotFound" xml:space="preserve">
+    <value>Không tìm thấy công ty có mã "{0}"</value>
+  </data>
+  <data name="DeliveryCustomerNameNotFound" xml:space="preserve">
+    <value>Không tìm thấy công ty có tên "{0}"</value>
+  </data>
+  <data name="EmployeeCodeNotFound" xml:space="preserve">
+    <value>Không tìm thấy nhân viên có mã "{0}"</value>
+  </data>
+  <data name="EmployeeFullNameNotFound" xml:space="preserve">
+    <value>Không tìm thấy nhân viên có họ tên "{0}"</value>
+  </data>
   <data name="FoundNumberOfProduct" xml:space="preserve">
     <value>Tìm thấy {0} mặt hàng {1}</value>
   </data>
@@ -131,5 +155,14 @@
   </data>
   <data name="PuOfProductNotFound" xml:space="preserve">
     <value>Không tìm thấy đơn vị chuyển đổi {0} mặt hàng {1}</value>
+  </data>
+  <data name="PurchaseOrderCodeIsRequired" xml:space="preserve">
+    <value>Mã đơn mua không được để trống</value>
+  </data>
+  <data name="PurchaseOrderDateIsRequired" xml:space="preserve">
+    <value>Ngày đặt hàng không được để trống</value>
+  </data>
+  <data name="PurchaseOrderDeliveryDateIsRequired" xml:space="preserve">
+    <value>Ngày giao hàng không được để trống</value>
   </data>
 </root>

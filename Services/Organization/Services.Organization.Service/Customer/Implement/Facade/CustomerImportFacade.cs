@@ -27,7 +27,7 @@ using static VErp.Commons.Constants.CurrencyCateConstants;
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
-    public class CusomerImportFacade
+    public class CustomerImportFacade
     {
         private readonly IMapper _mapper;
         private readonly ICategoryHelperService _httpCategoryHelperService;
@@ -41,7 +41,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<CustomerContact> _customerContact;
 
 
-        public CusomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
+        public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
             _customerService = customerService;
             _customerActivityLog = customerActivityLog;
