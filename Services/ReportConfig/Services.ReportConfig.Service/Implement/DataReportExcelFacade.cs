@@ -82,7 +82,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             columns = allColumns.Where(col => !col.IsHidden).ToList();
 
-            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
+            var size = 0;
+            if (reportInfo.IsDbPaging == true)
+                size = int.MaxValue;
+            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, size).Result;
 
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
 
