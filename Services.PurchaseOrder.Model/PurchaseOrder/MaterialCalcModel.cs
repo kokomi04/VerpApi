@@ -93,6 +93,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExchangeRate { get; set; }
+
+        public bool IsSubCalculation { get; set; }
+
         public IList<MaterialCalcSummarySubCalculationModel> SubCalculations { get; set; }
 
         public void Mapping(Profile profile)
@@ -118,10 +121,10 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     }
 
     public class MaterialCalcSummarySubCalculationModel : IMapFrom<MaterialCalcSummarySubCalculation>
-    {       
+    {
         public long ProductBomId { get; set; }
         public decimal PrimaryQuantity { get; set; }
 
-       
+
     }
 }
