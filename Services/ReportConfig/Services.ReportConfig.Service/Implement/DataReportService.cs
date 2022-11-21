@@ -684,6 +684,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         totals.Add(column.Alias, Convert.ToDecimal(data[0][sumColum]));
                     }
+                    else
+                    {
+                        throw GeneralCode.NotYetSupported.BadRequest($"Sum columns with paging on database must be including on result data! {sumColum} was not found!");
+                    }
 
                 }
 
