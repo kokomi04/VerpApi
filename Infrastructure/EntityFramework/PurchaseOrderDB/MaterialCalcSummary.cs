@@ -18,6 +18,7 @@ namespace VErp.Infrastructure.EF.PurchaseOrderDB
         public int MaterialProductId { get; set; }
         public decimal MaterialQuantity { get; set; }
         public decimal ExchangeRate { get; set; }
+        public bool IsSubCalculation { get; set; }
 
         public virtual MaterialCalc MaterialCalc { get; set; }
         public virtual ICollection<MaterialCalcSummarySubCalculation> MaterialCalcSummarySubCalculation { get; set; }
