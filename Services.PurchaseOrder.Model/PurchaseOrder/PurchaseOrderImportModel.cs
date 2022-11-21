@@ -149,7 +149,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         [FieldDataIgnore]
         public int? CustomerId { get; set; }
 
-        [Display(Name = "Mã nhà chung cấp", GroupName = "TT nhà cung cấp", Order = 1)]
+        [Display(Name = "Mã nhà cung cấp", GroupName = "TT nhà cung cấp", Order = 1)]
         public string CustomerCode { get; set; }
 
         [Display(Name = "Tên nhà cung cấp", GroupName = "TT nhà cung cấp", Order = 1)]

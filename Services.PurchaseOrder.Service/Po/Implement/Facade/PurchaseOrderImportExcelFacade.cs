@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.VariantTypes;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using NPOI.OpenXmlFormats.Spreadsheet;
 using NPOI.SS.Formula.Functions;
@@ -15,8 +16,10 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Verp.Resources.Enums.ErrorCodes.PO;
 using Verp.Resources.PurchaseOrder.Po;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.ErrorCodes.PO;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
@@ -111,13 +114,25 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             var rowDatas = await ReadExcel(reader, mapping);
 
+            var groupByCode = rowDatas.GroupBy(d => d.PurchaseOrderCode)
+                .ToList();
+
+            var poCodes = groupByCode.Select(g => g.Key.ToUpper()).ToList();
+
+            var existstedCodes = (await _purchaseOrderDBContext.PurchaseOrder
+                .Where(po => poCodes.Contains(po.PurchaseOrderCode))
+                .Select(po => po.PurchaseOrderCode)
+                .ToListAsync()
+                )
+                .Distinct()
+                .Select(code => code.ToUpper())
+                .ToHashSet();
+
             await LoadDefaultCurrency();
 
             var defaultCurrencyDecimalPlace = DefaultCurrency?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
 
 
-            var groupByCode = rowDatas.GroupBy(d => d.PurchaseOrderCode)
-                .ToList();
 
             var models = new List<PurchaseOrderInput>();
 
@@ -141,6 +156,21 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             foreach (var group in groupByCode)
             {
+                var isExisted = existstedCodes.Contains(group.Key.ToUpper());
+
+                if (isExisted)
+                {
+                    switch (mapping.ImportDuplicateOptionId)
+                    {
+                        case EnumImportDuplicateOption.Update:
+                            throw GeneralCode.NotYetSupported.BadRequest();
+                        case EnumImportDuplicateOption.Ignore:
+                            continue;
+                        case EnumImportDuplicateOption.Denied:
+                            throw PurchaseOrderErrorCode.PoCodeAlreadyExisted.BadRequest(PurchaseOrderErrorCodeDescription.PoCodeAlreadyExisted + " " + group.Key);
+                    }
+                }
+
                 var model = new PurchaseOrderInput();
                 models.Add(model);
 
@@ -489,7 +519,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var obj = (ProviderCustomerImportModel)refObj;
             if (refPropertyName == nameof(ProviderCustomerImportModel.CustomerCode))
             {
-                if (customerByCodes.ContainsKey(normalizeValue)) throw CustomerCodeNotFound.BadRequestFormat(value);
+                if (!customerByCodes.ContainsKey(normalizeValue)) throw CustomerCodeNotFound.BadRequestFormat(value);
                 var customerInfos = customerByCodes[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerCode == value).First();
                 obj.CustomerId = customerInfo.CustomerId;
@@ -499,7 +529,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             if (refPropertyName == nameof(ProviderCustomerImportModel.CustomerName))
             {
-                if (customerByNames.ContainsKey(normalizeValue)) throw CustomerNameNotFound.BadRequestFormat(value);
+                if (!customerByNames.ContainsKey(normalizeValue)) throw CustomerNameNotFound.BadRequestFormat(value);
                 var customerInfos = customerByNames[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerName == value).First();
                 obj.CustomerId = customerInfo.CustomerId;
@@ -530,7 +560,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var obj = (DeliveryUserImportModel)refObj;
             if (refPropertyName == nameof(DeliveryUserImportModel.EmployeeCode))
             {
-                if (userByCodes.ContainsKey(normalizeValue)) throw EmployeeCodeNotFound.BadRequestFormat(value);
+                if (!userByCodes.ContainsKey(normalizeValue)) throw EmployeeCodeNotFound.BadRequestFormat(value);
                 var userInfos = userByCodes[normalizeValue];
                 var userInfo = userInfos.OrderByDescending(c => c.EmployeeCode == value).First();
                 obj.DeliveryUserId = userInfo.UserId;
@@ -540,7 +570,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             if (refPropertyName == nameof(DeliveryUserImportModel.FullName))
             {
-                if (userByFullNames.ContainsKey(normalizeValue)) throw EmployeeFullNameNotFound.BadRequestFormat(value);
+                if (!userByFullNames.ContainsKey(normalizeValue)) throw EmployeeFullNameNotFound.BadRequestFormat(value);
                 var userInfos = userByFullNames[normalizeValue];
                 var userInfo = userInfos.OrderByDescending(c => c.FullName == value).First();
                 obj.DeliveryUserId = userInfo.UserId;
@@ -555,7 +585,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var obj = (DeliveryCustomerImportModel)refObj;
             if (refPropertyName == nameof(DeliveryCustomerImportModel.CustomerCode))
             {
-                if (customerByCodes.ContainsKey(normalizeValue)) throw DeliveryCustomerCodeNotFound.BadRequestFormat(value);
+                if (!customerByCodes.ContainsKey(normalizeValue)) throw DeliveryCustomerCodeNotFound.BadRequestFormat(value);
                 var customerInfos = customerByCodes[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerCode == value).First();
                 obj.CustomerId = customerInfo.CustomerId;
@@ -565,7 +595,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             if (refPropertyName == nameof(DeliveryCustomerImportModel.CustomerName))
             {
-                if (customerByNames.ContainsKey(normalizeValue)) throw DeliveryCustomerNameNotFound.BadRequestFormat(value);
+                if (!customerByNames.ContainsKey(normalizeValue)) throw DeliveryCustomerNameNotFound.BadRequestFormat(value);
                 var customerInfos = customerByNames[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerName == value).First();
                 obj.CustomerId = customerInfo.CustomerId;
