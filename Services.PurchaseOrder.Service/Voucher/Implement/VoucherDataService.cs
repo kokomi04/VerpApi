@@ -2400,9 +2400,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var titleValues = new Dictionary<string, object>();
 
                     if (row.Data.ContainsKey(mappingField.Column))
-                        value = row.Data[mappingField.Column]?.ToString();
+                        value = row.Data[mappingField.Column];
 
                     var strValue = value?.ToString()?.Trim();
+                    var originValue = value;
+
                     // Validate require
                     if (string.IsNullOrWhiteSpace(strValue) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
@@ -2411,13 +2413,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     if (strValue.StartsWith(PREFIX_ERROR_CELL))
                     {
-                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
+                        throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {originValue}");
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
                     {
                         if (!DateTime.TryParse(strValue, out DateTime date))
-                            throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
+                            throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(originValue?.JsonSerialize(), row.Index, field.Title);
                         value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
                         strValue = value?.ToString();
                     }
@@ -2433,7 +2435,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(strValue, regex))
                                 || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(strValue, field.RegularExpression)))
                             {
-                                throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
+                                throw new BadRequestException(VoucherErrorCode.VoucherValueInValid, new object[] { originValue?.JsonSerialize(), row.Index, field.Title });
                             }
                         }
                     }
@@ -2531,15 +2533,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + originValue });
                             }
                             else
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue });
                             }
                         }
                         var refRow = referData.Rows[0];
                         value = refRow[field.RefTableField];
+                        strValue = value?.ToString();
+
                         foreach (var titleFieldName in titleValues.Keys.ToArray())
                         {
                             titleValues[titleFieldName] = refRow[titleFieldName];
@@ -2551,7 +2555,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         {
                             if (info[field.FieldName]?.ToString() != strValue)
                             {
-                                throw MultipleDiffValueAtInfoArea.BadRequestFormat(value, row.Index, field.Title, bill.Key);
+                                throw MultipleDiffValueAtInfoArea.BadRequestFormat(originValue, row.Index, field.Title, bill.Key);
                             }
                         }
                         else
