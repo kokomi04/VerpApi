@@ -465,13 +465,16 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     if (refPropertyPathSeparateByPoint.StartsWith(deliveryUserPropertyPath))
                     {
                         await ReadDeliveryInfoUser(refObj, refPropertyName, value, normalizeValue);
+                        return true;
                     }
 
                     if (refPropertyPathSeparateByPoint.StartsWith(deliveryCustomerPropertyPath))
                     {
                         await ReadDeliveryInfoCustomer(refObj, refPropertyName, value, normalizeValue);
+                        return true;
                     }
-                    return true;
+
+                    return false;
                 }
 
                 if (propertyName == nameof(PurchaseOrderImportModel.Currency))
@@ -522,6 +525,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!customerByCodes.ContainsKey(normalizeValue)) throw CustomerCodeNotFound.BadRequestFormat(value);
                 var customerInfos = customerByCodes[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerCode == value).First();
+                obj.CustomerCode = value;
                 obj.CustomerId = customerInfo.CustomerId;
 
                 return;
@@ -532,6 +536,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!customerByNames.ContainsKey(normalizeValue)) throw CustomerNameNotFound.BadRequestFormat(value);
                 var customerInfos = customerByNames[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerName == value).First();
+                obj.CustomerName = value;
                 obj.CustomerId = customerInfo.CustomerId;
                 return;
             }
@@ -548,10 +553,12 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var allUsers = await _userHelperService.GetAll();
 
             userByCodes = allUsers.GroupBy(c => c.EmployeeCode?.NormalizeAsInternalName())
+                .Where(c=>!string.IsNullOrWhiteSpace(c.Key))
                .ToDictionary(c => c.Key, c => c.ToList());
 
             userByFullNames = allUsers.GroupBy(c => c.FullName?.NormalizeAsInternalName())
-            .ToDictionary(c => c.Key, c => c.ToList());
+                .Where(c => !string.IsNullOrWhiteSpace(c.Key))
+                .ToDictionary(c => c.Key, c => c.ToList());
         }
 
         private async Task ReadDeliveryInfoUser(object refObj, string refPropertyName, string value, string normalizeValue)
@@ -563,6 +570,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!userByCodes.ContainsKey(normalizeValue)) throw EmployeeCodeNotFound.BadRequestFormat(value);
                 var userInfos = userByCodes[normalizeValue];
                 var userInfo = userInfos.OrderByDescending(c => c.EmployeeCode == value).First();
+                obj.EmployeeCode = value;
                 obj.DeliveryUserId = userInfo.UserId;
 
                 return;
@@ -573,6 +581,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!userByFullNames.ContainsKey(normalizeValue)) throw EmployeeFullNameNotFound.BadRequestFormat(value);
                 var userInfos = userByFullNames[normalizeValue];
                 var userInfo = userInfos.OrderByDescending(c => c.FullName == value).First();
+                obj.FullName = value;
                 obj.DeliveryUserId = userInfo.UserId;
                 return;
             }
@@ -588,6 +597,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!customerByCodes.ContainsKey(normalizeValue)) throw DeliveryCustomerCodeNotFound.BadRequestFormat(value);
                 var customerInfos = customerByCodes[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerCode == value).First();
+                obj.CustomerCode = value;
                 obj.CustomerId = customerInfo.CustomerId;
 
                 return;
@@ -598,6 +608,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (!customerByNames.ContainsKey(normalizeValue)) throw DeliveryCustomerNameNotFound.BadRequestFormat(value);
                 var customerInfos = customerByNames[normalizeValue];
                 var customerInfo = customerInfos.OrderByDescending(c => c.CustomerName == value).First();
+                obj.CustomerName = value;
                 obj.CustomerId = customerInfo.CustomerId;
                 return;
             }
