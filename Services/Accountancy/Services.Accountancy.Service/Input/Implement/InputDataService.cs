@@ -2691,6 +2691,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (!DateTime.TryParse(strValue, out DateTime date))
                             throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
                         value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
+                        strValue = value?.ToString();
                     }
 
                     // Validate refer
