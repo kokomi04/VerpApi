@@ -214,6 +214,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cập nhật đơn vị chuyển đổi từ excel mặt hàng  &quot;{0}&quot;.
+        /// </summary>
+        public static string UpdateProductUnitConversionFromExcel {
+            get {
+                return ResourceManager.GetString("UpdateProductUnitConversionFromExcel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Cập nhật TT bán mặt hàng &quot;{0}&quot;.
         /// </summary>
         public static string UpdateSellInfo {

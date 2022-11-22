@@ -133,6 +133,15 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng {1}.
+        /// </summary>
+        public static string FoundNumberOfProduct {
+            get {
+                return ResourceManager.GetString("FoundNumberOfProduct", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xuất hiện các chi tiết sử dụng không tồn tại trong BOM mặt hàng. Các chi tiết sử dụng: {0}.
         /// </summary>
         public static string ImportConsumBomNotExistedInProduct {
@@ -246,6 +255,15 @@ namespace Verp.Resources.Stock.Product {
         public static string ProductImportAsCateTitle {
             get {
                 return ResourceManager.GetString("ProductImportAsCateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy mặt hàng {0}.
+        /// </summary>
+        public static string ProductInfoNotFound {
+            get {
+                return ResourceManager.GetString("ProductInfoNotFound", resourceCulture);
             }
         }
         

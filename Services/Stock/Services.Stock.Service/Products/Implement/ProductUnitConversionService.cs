@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Pu;
+using System.IO;
+using VErp.Services.Stock.Service.Products.Implement.PuFacade;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -14,11 +18,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
     {
         private readonly StockDBContext _stockDbContext;
         private readonly MasterDBContext _masterDBContext;
-
-        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext)
+        private readonly IPuImportFacadeService _puImportFacadeService;
+        public ProductUnitConversionService(StockDBContext stockContext, MasterDBContext masterDBContext, IPuImportFacadeService puImportFacadeService)
         {
             _stockDbContext = stockContext;
             _masterDBContext = masterDBContext;
+            _puImportFacadeService = puImportFacadeService;
         }
 
         public async Task<PageData<ProductUnitConversionOutput>> GetList(int productId, int page = 0, int size = 0)
@@ -143,6 +148,30 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return result;
 
         }
+
+
+        public CategoryNameModel GetFieldDataForImportMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "ProductUnitConversion",
+                CategoryTitle = "Đơn vị chuyển đổi",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = ExcelUtils.GetFieldNameModels<PuConversionImportRow>();
+           
+            result.Fields = fields;
+            return result;
+        }
+
+        public async Task<bool> Import(ImportExcelMapping mapping, Stream stream)
+        {
+            return await _puImportFacadeService.Import(mapping, stream);
+        }
+
+
     }
 }
 
