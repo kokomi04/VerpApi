@@ -489,12 +489,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             rowDatas = rowDatas.OrderBy(d => d.SortOrder).ToList();
 
-            var propertyMaps = reader.GetPropertyPathMap();
-            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductInfo.ProductCode), out var productCodeMap);
-            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductInfo.ProductName), out var productNameMap);
-            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductUnitConversionName), out var puNameMap);
-
-            await LoadProducts(rowDatas, productCodeMap, productNameMap, puNameMap);
+            await LoadProducts(rowDatas, reader);
             return rowDatas;
         }
 
@@ -686,8 +681,15 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             };
         }
 
-        private async Task LoadProducts(IList<PurchaseOrderImportModel> rowDatas, PropertyMappingInfo productCodeMap, PropertyMappingInfo productNameMap, PropertyMappingInfo puNameMap)
+        private async Task LoadProducts(IList<PurchaseOrderImportModel> rowDatas, ExcelReader reader)
         {
+
+            var propertyMaps = reader.GetPropertyPathMap();
+            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductInfo.ProductCode), out var productCodeMap);
+            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductInfo.ProductName), out var productNameMap);
+            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductUnitConversionName), out var puNameMap);
+
+
             var productCodes = rowDatas.Select(r => r.ProductInfo.ProductCode).ToList();
             var productInternalNames = rowDatas.Select(r => r.ProductInternalName).ToList();
 

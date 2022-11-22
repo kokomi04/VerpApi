@@ -1,11 +1,17 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Pu;
 using VErp.Services.Stock.Service.Products;
 
 namespace VErpApi.Controllers.Stock.Products
@@ -77,5 +83,24 @@ namespace VErpApi.Controllers.Stock.Products
             return await _productUnitConversionService.GetByInStockProducts(productIds, stockId, unixDate);
         }
 
+        [HttpGet]
+        [Route("fieldDataForImportMapping")]
+        public CategoryNameModel GetFieldDataForImportMapping()
+        {
+            return _productUnitConversionService.GetFieldDataForImportMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (mapping == null || mapping == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            mapping.FileName = file.FileName;
+            return await _productUnitConversionService.Import(mapping, file.OpenReadStream());
+        }
     }
+  
 }

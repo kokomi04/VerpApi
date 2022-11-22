@@ -210,4 +210,10 @@
   <data name="PuConversionDuplicated" xml:space="preserve">
     <value>Đơn vị tính "{0}" trùng nhau, mặt hàng "{1}"</value>
   </data>
+  <data name="FoundNumberOfProduct" xml:space="preserve">
+    <value>Tìm thấy {0} mặt hàng {1}</value>
+  </data>
+  <data name="ProductInfoNotFound" xml:space="preserve">
+    <value>Không tìm thấy mặt hàng {0}</value>
+  </data>
 </root>
