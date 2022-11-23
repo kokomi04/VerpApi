@@ -139,7 +139,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
                         if (usedProductId.HasValue)
                         {
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, productInfo.ProductCode + " " + msg);
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + msg);
                         }
                     }
 
