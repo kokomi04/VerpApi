@@ -183,20 +183,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                             var toRemoveModels = new List<PuConversionImportRow>();
                             foreach (var puModel in puByProduct.Value)
                             {
-
-
-
                                 var nameNormalize = puModel.ProductUnitConversionName.NormalizeAsInternalName();
 
                                 ProductUnitConversion entity = null;
-                                if (puModel.IsDefault)
-                                {
-                                    entity = productInfo.ProductUnitConversion.FirstOrDefault(s => s.IsDefault);
-                                }
-                                else
-                                {
-                                    puEntities.TryGetValue(puModel.ProductUnitConversionInternalName, out entity);
-                                }
+
+                                puEntities.TryGetValue(puModel.ProductUnitConversionInternalName, out entity);
 
                                 if (entity == null || !string.IsNullOrWhiteSpace(puModel.FactorExpression))
                                 {
@@ -234,6 +225,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                                             if (puModel.IsDefault)
                                             {
+                                                foreach (var puEntity in productInfo.ProductUnitConversion)
+                                                {
+                                                    puEntity.IsDefault = false;
+                                                }
+
+                                                entity.IsDefault = true;
+
                                                 entity.UpdateIfAvaiable(v => v.ProductUnitConversionName, puModel.ProductUnitConversionName);
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
 
@@ -252,13 +250,23 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                 }
                                 else
                                 {
+                                    if (puModel.IsDefault)
+                                    {
+                                        foreach (var puEntity in productInfo.ProductUnitConversion)
+                                        {
+                                            puEntity.IsDefault = false;
+                                        }
+
+                                        productInfo.UnitId = units[nameNormalize];
+                                    }
+
                                     productInfo.ProductUnitConversion.Add(new ProductUnitConversionUpdate()
                                     {
                                         ProductId = productInfo.ProductId,
                                         ProductUnitConversionName = puModel.ProductUnitConversionName,
                                         SecondaryUnitId = units.ContainsKey(nameNormalize) ? units[nameNormalize] : 0,
                                         FactorExpression = puModel.FactorExpression,
-                                        IsDefault = false,
+                                        IsDefault = puModel.IsDefault,
                                         IsFreeStyle = false,
                                         DecimalPlace = puModel.DecimalPlace >= 0 ? puModel.DecimalPlace.Value : DECIMAL_PLACE_DEFAULT,
                                         UploadDecimalPlace = puModel.DecimalPlace
