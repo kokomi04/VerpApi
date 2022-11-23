@@ -274,7 +274,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         if (usedProductId.HasValue)
                         {
                             var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, usedProductCode + " " + msg);
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + msg);
                         }
                     }
                 }

@@ -30,28 +30,25 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
         Task<bool> Import(ImportExcelMapping mapping, Stream stream);
     }
 
-    public class PuImportFacadeService
+    public class PuImportFacadeService : IPuImportFacadeService
     {
         const int DECIMAL_PLACE_DEFAULT = 11;
 
         private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
-        private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
         private IProductService _productService;
 
         public PuImportFacadeService(
             StockDBContext stockContext
             , MasterDBContext masterDBContext
-            , IOrganizationHelperService organizationHelperService
-            , ObjectActivityLogFacade productActivityLog
+            , IActivityLogService activityLogService
             , IProductService productService
         )
         {
             _stockContext = stockContext;
             _masterDBContext = masterDBContext;
-            _organizationHelperService = organizationHelperService;
-            _productActivityLog = productActivityLog;
+            _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
             _productService = productService;
         }
 
@@ -161,7 +158,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                     if (usedProductId.HasValue)
                     {
                         productEntities.TryGetValue(usedProductId ?? 0, out var usedUnitProduct);
-                        throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, usedUnitProduct?.ProductCode + " " + msg);
+                        throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + msg);
                     }
                 }
             }
@@ -353,29 +350,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                         throw FoundNumberOfProduct.BadRequestFormat(itemProducts.Count, $"{item.ProductInfo.ProductCode} {item.ProductInfo.ProductName} dòng {item.RowNumber}, cột {productCodeMap?.Column} {productNameMap?.Column}");
                 }
 
-                if (!string.IsNullOrWhiteSpace(item.ProductUnitConversionName))
-                {
-                    var pus = itemProducts[0].StockInfo.UnitConversions
-                            .Where(u => u.ProductUnitConversionName.NormalizeAsInternalName() == item.ProductUnitConversionName.NormalizeAsInternalName())
-                            .ToList();
-
-                    if (pus.Count != 1)
-                    {
-                        pus = itemProducts[0].StockInfo.UnitConversions
-                           .Where(u => u.ProductUnitConversionName.Contains(item.ProductUnitConversionName) || item.ProductUnitConversionName.Contains(u.ProductUnitConversionName))
-                           .ToList();
-
-                        if (pus.Count > 1)
-                        {
-                            pus = itemProducts[0].StockInfo.UnitConversions
-                             .Where(u => u.ProductUnitConversionName.Equals(item.ProductUnitConversionName, StringComparison.OrdinalIgnoreCase))
-                             .ToList();
-                        }
-                    }
-                    var puInfo = pus[0];
-                    item.ProductUnitConversionId = puInfo.ProductUnitConversionId;
-
-                }
 
                 item.ProductInfo.ProductId = itemProducts[0].ProductId.Value;
             }
