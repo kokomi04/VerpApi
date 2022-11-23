@@ -158,7 +158,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                     if (usedProductId.HasValue)
                     {
                         productEntities.TryGetValue(usedProductId ?? 0, out var usedUnitProduct);
-                        throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, usedUnitProduct?.ProductCode + " " + msg);
+                        throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + msg);
                     }
                 }
             }
