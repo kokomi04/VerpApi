@@ -225,7 +225,7 @@ namespace VErp.Commons.Library
             switch (dataType)
             {
                 case EnumDataType.Boolean:
-                    return value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    return StringToBool(value);
                 case EnumDataType.Date:
                 case EnumDataType.Year:
                 case EnumDataType.Month:
@@ -260,7 +260,7 @@ namespace VErp.Commons.Library
                 }
 
                 if (type == typeof(bool))
-                    return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    return StringToBool(value);
                 if (type == typeof(DateTime))
                     return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
                 if (type == typeof(double))
@@ -281,6 +281,14 @@ namespace VErp.Commons.Library
             }
         }
 
+        private static bool StringToBool(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? false : 
+                value.Trim().ToLower() == true.ToString().ToLower() 
+                || value.Trim() == "1"
+                || value.Trim().NormalizeAsInternalName() == "co"
+                || value.Trim().NormalizeAsInternalName() == "yes";
+        }
 
         private static Hashtable dbTypeTable;
 
