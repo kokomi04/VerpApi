@@ -66,7 +66,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {"right", HorizontalAlignment.Right }
         };
 
-        public async Task<(Stream stream, string fileName, string contentType)> AccountancyReportExport(int reportId, ReportFacadeModel model)
+        public async Task<(Stream stream, string fileName, string contentType)> ReportExport(int reportId, ReportFacadeModel model)
         {
             var reportInfo = await _contextData.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
@@ -88,6 +88,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, size).Result;
 
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
+
+            groupRowColumns = columns.Where(c => c.IsGroupRow).ToList();
+
 
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
