@@ -78,6 +78,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
         public async Task<bool> Import(ImportExcelMapping mapping, Stream stream, IPurchaseOrderService purchaseOrderService)
         {
             var models = await GetModels(mapping, stream);
+            if (models.Count == 0)
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Không có dòng nào được cập nhật!");
+            }
 
             using (var logBatch = _poActivityLog.BeginBatchLog())
             {
@@ -381,7 +385,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                             $", dòng {detail.RowNumber} {primaryQuantityMap?.Column} {puQuantityMap?.Column}");
                     }
 
-                    if (detailModel.PrimaryUnitPrice <= 0|| detailModel.IntoMoney <= 0)
+                    if (detailModel.PrimaryUnitPrice <= 0 || detailModel.IntoMoney <= 0)
                     {
                         propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.PrimaryPrice), out var primaryPriceMap);
 
