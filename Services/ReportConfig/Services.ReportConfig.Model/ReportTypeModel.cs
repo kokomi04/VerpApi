@@ -14,6 +14,7 @@ namespace Verp.Services.ReportConfig.Model
         public int ReportTypeGroupId { get; set; }
         public string ReportTypeName { get; set; }
         public int SortOrder { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class ReportTypeModel : ReportTypeListModel
