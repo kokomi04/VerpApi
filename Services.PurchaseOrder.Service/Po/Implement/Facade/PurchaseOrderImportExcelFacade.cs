@@ -153,6 +153,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var customerInfos = await _organizationHelperService.CustomerByIds(customerIds);
 
 
+            var propertyMaps = reader.GetPropertyPathMap();
 
             foreach (var group in groupByCode)
             {
@@ -331,7 +332,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                         }
                         else
                         {
-                            throw GeneralCode.InvalidParams.BadRequest($"Lỗi tính đơn vị chuyển đổi {pucQuantity} {detail.PuInfo?.ProductUnitConversionName} = {primaryQuantity} {detail.PuDefault?.ProductUnitConversionName} mặt hàng {detail.ProductInfo.ProductCode}");
+
+                            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductUnitConversionName), out var puMap);
+
+                            throw GeneralCode.InvalidParams.BadRequest($"Lỗi tính đơn vị chuyển đổi {pucQuantity} {detail.PuInfo?.ProductUnitConversionName} = {primaryQuantity} {detail.PuDefault?.ProductUnitConversionName} mặt hàng {detail.ProductInfo.ProductCode}, dòng {detail.RowNumber}, cột {puMap?.Column}");
                         }
                     }
 
@@ -364,6 +368,30 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     }
 
                     sumMoney += detailModel.ExchangedMoney ?? 0;
+
+                    if (detailModel.PrimaryQuantity <= 0)
+                    {
+                        propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.PrimaryQuantity), out var primaryQuantityMap);
+
+                        propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductUnitConversionQuantity), out var puQuantityMap);
+
+
+                        throw GeneralCode.InvalidParams.BadRequest($"Số lượng {detailModel.PrimaryQuantity} không hợp lệ, vui lòng nhập ít nhất số lượng 1 đơn vị tính {detail.PuInfo?.ProductUnitConversionName}, {detail.PuDefault?.ProductUnitConversionName} " +
+                            $"mặt hàng {detail.ProductInfo.ProductCode} {detail.ProductInfo.ProductName}" +
+                            $", dòng {detail.RowNumber} {primaryQuantityMap?.Column} {puQuantityMap?.Column}");
+                    }
+
+                    if (detailModel.PrimaryUnitPrice <= 0|| detailModel.IntoMoney <= 0)
+                    {
+                        propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.PrimaryPrice), out var primaryPriceMap);
+
+                        propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.ProductUnitConversionPrice), out var puPriceMap);
+
+                        propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.IntoMoney), out var moneyMap);
+
+                        throw GeneralCode.InvalidParams.BadRequest($"Đơn giá hoặc thành tiền không hợp lệ, vui lòng nhập ít nhất 1 đơn giá hoặc thành tiền, mặt hàng {detail.ProductInfo.ProductCode} {detail.ProductInfo.ProductName}, " +
+                            $", dòng {detail.RowNumber} {primaryPriceMap?.Column} {puPriceMap?.Column} {moneyMap?.Column}");
+                    }
 
                     model.Details.Add(detailModel);
                 }
@@ -548,7 +576,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             var allUsers = await _userHelperService.GetAll();
 
             userByCodes = allUsers.GroupBy(c => c.EmployeeCode?.NormalizeAsInternalName())
-                .Where(c=>!string.IsNullOrWhiteSpace(c.Key))
+                .Where(c => !string.IsNullOrWhiteSpace(c.Key))
                .ToDictionary(c => c.Key, c => c.ToList());
 
             userByFullNames = allUsers.GroupBy(c => c.FullName?.NormalizeAsInternalName())
