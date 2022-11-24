@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using DocumentFormat.OpenXml.VariantTypes;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Grpc.Core;
@@ -78,6 +79,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
         public async Task<bool> Import(ImportExcelMapping mapping, Stream stream, IPurchaseOrderService purchaseOrderService)
         {
             var models = await GetModels(mapping, stream);
+            if (models.Count == 0)
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Không có dòng nào được cập nhật!");
+            }
 
             using (var logBatch = _poActivityLog.BeginBatchLog())
             {
@@ -237,6 +242,12 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 model.ExchangeRate = details.GetFirstValueNotNull(x => x.ExchangeRate);
 
+                if (model.CurrencyId > 0 && (!model.ExchangeRate.HasValue || model.ExchangeRate <= 0))
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Tỷ giá không hợp lệ, đơn mua {model.PurchaseOrderCode}, " +
+                    $", dòng {details.First().RowNumber}");
+                }
+
                 model.DeliveryFee = details.GetFirstValueNotNull(x => x.DeliveryFee);
 
                 model.OtherFee = details.GetFirstValueNotNull(x => x.OtherFee);
@@ -381,7 +392,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                             $", dòng {detail.RowNumber} {primaryQuantityMap?.Column} {puQuantityMap?.Column}");
                     }
 
-                    if (detailModel.PrimaryUnitPrice <= 0|| detailModel.IntoMoney <= 0)
+                    if (detailModel.PrimaryUnitPrice <= 0 || detailModel.IntoMoney <= 0)
                     {
                         propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PurchaseOrderImportModel>(x => x.PrimaryPrice), out var primaryPriceMap);
 
