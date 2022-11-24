@@ -1035,7 +1035,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             accountancyReportExport.SetContextData(_reportConfigDBContext);
             accountancyReportExport.SetCurrentContextService(_currentContextService);
             accountancyReportExport.SetDataReportService(this);
-            return await accountancyReportExport.AccountancyReportExport(reportId, model);
+            return await accountancyReportExport.ReportExport(reportId, model);
         }
 
         private class BscValueOrder
