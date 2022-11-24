@@ -117,6 +117,9 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="DataIsOld" xml:space="preserve">
+    <value>Your data is old, some one has changed the data, refresh page to get lastest data, please!</value>
+  </data>
   <data name="DistributedLockExeption" xml:space="preserve">
     <value>There is resource disputes by another process, try again later</value>
   </data>

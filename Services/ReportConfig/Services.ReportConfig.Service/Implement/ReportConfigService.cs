@@ -369,6 +369,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
             }
 
+            if (data.UpdatedDatetimeUtc != report.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
             {
