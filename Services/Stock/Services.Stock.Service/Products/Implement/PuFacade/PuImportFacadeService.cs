@@ -80,9 +80,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 return false;
             });
 
+            if (data.Count == 0)
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Không có dòng nào được cập nhật!");
+            }
+
             var propertyMaps = reader.GetPropertyPathMap();
 
-           
+
             await LoadProducts(data, reader);
 
             foreach (var d in data)
@@ -101,7 +106,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
             if (duplicate != null)
             {
-               
+
                 propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.ProductUnitConversionName), out var puNameMap);
 
                 var duplicateModel = duplicate.Skip(1).Take(1).First();
@@ -154,7 +159,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 var errorProduct = puModelsByProduct.First(p => p.Value.Count(d => d.IsDefault) > 1);
                 var errorModel = errorProduct.Value.Last(p => p.IsDefault);
 
-                
+
                 propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.IsDefault), out var isDefaultMap);
 
                 throw GeneralCode.InvalidParams.BadRequest($"Có nhiều hơn 1 đơn vị tính chính được thiết lập cho mặt hàng {errorModel.ProductInfo.ProductCode} {errorModel.ProductInfo.ProductName}, dòng {errorModel.RowNumber}, cột {isDefaultMap?.Column}");
@@ -379,7 +384,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
         private List<int> GetProductIdsHasUnitChange(Dictionary<int, List<PuConversionImportRow>> puModelsByProduct, Dictionary<int, Product> existsProduct)
         {
             var listProductIds = new List<int>();
-         
+
             foreach (var row in puModelsByProduct)
             {
 
@@ -392,7 +397,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                 var defaultUnitModel = row.Value.FirstOrDefault(v => v.IsDefault);
                 if (defaultUnitModel != null)
-                {                   
+                {
                     var unitIdKey = defaultUnitModel.ProductUnitConversionName.NormalizeAsInternalName();
                     if (!string.IsNullOrEmpty(defaultUnitModel.ProductUnitConversionName) && units.ContainsKey(unitIdKey) && units[unitIdKey] != productInfo.UnitId)
                     {
