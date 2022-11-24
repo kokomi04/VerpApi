@@ -656,7 +656,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 ExchangeRate = info.ExchangeRate,
 
                 DeliveryMethod = info.DeliveryMethod,
-                PaymentMethod = info.DeliveryMethod,
+                PaymentMethod = info.PaymentMethod,
                 AttachmentBill = info.AttachmentBill,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
