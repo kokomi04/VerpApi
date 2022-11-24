@@ -80,7 +80,20 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 return false;
             });
 
+            var propertyMaps = reader.GetPropertyPathMap();
+
+           
             await LoadProducts(data, reader);
+
+            foreach (var d in data)
+            {
+                if (d.DecimalPlace.HasValue && d.DecimalPlace.Value > 12)
+                {
+                    propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.DecimalPlace), out var puDecMap);
+
+                    throw GeneralCode.InvalidParams.BadRequest($"Độ chính xác đơn vị tính {d.ProductUnitConversionName} được thiết lập cho mặt hàng {d.ProductInfo.ProductCode} {d.ProductInfo.ProductName}, dòng {d.RowNumber}, cột {puDecMap?.Column} phải nằm trong khoảng 0-12");
+                }
+            }
 
             var duplicate = data.GroupBy(d => d.ProductUnitConversionInternalName?.NormalizeAsInternalName())
                 .Where(d => d.Count() > 1)
@@ -88,7 +101,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
             if (duplicate != null)
             {
-                var propertyMaps = reader.GetPropertyPathMap();
+               
                 propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.ProductUnitConversionName), out var puNameMap);
 
                 var duplicateModel = duplicate.Skip(1).Take(1).First();
@@ -141,7 +154,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 var errorProduct = puModelsByProduct.First(p => p.Value.Count(d => d.IsDefault) > 1);
                 var errorModel = errorProduct.Value.Last(p => p.IsDefault);
 
-                var propertyMaps = reader.GetPropertyPathMap();
+                
                 propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.IsDefault), out var isDefaultMap);
 
                 throw GeneralCode.InvalidParams.BadRequest($"Có nhiều hơn 1 đơn vị tính chính được thiết lập cho mặt hàng {errorModel.ProductInfo.ProductCode} {errorModel.ProductInfo.ProductName}, dòng {errorModel.RowNumber}, cột {isDefaultMap?.Column}");
@@ -293,7 +306,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                     await trans.CommitAsync();
                     await logBatch.CommitAsync();
-                    return data.Count > 0;
+                    return true;
                 }
             }
             catch (Exception)
@@ -366,25 +379,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
         private List<int> GetProductIdsHasUnitChange(Dictionary<int, List<PuConversionImportRow>> puModelsByProduct, Dictionary<int, Product> existsProduct)
         {
             var listProductIds = new List<int>();
-            var existsProductInLowerCase = existsProduct.GroupBy(g => g.Value.ProductCode.ToLower())
-                                            .ToDictionary(g => g.Key, g => g.ToList());
+         
             foreach (var row in puModelsByProduct)
             {
-                var productCodeKey = row.Value.First().ProductInfo.ProductCode.ToLower();
-                if (!existsProductInLowerCase.ContainsKey(productCodeKey))
+
+                if (!existsProduct.ContainsKey(row.Key))
                 {
                     throw new BadRequestException(GeneralCode.InternalError, "Existed product not found!");
                 }
 
+                var productInfo = existsProduct[row.Key];
+
                 var defaultUnitModel = row.Value.FirstOrDefault(v => v.IsDefault);
                 if (defaultUnitModel != null)
-                {
-                    var existedProduct = existsProductInLowerCase[productCodeKey].First();
-
+                {                   
                     var unitIdKey = defaultUnitModel.ProductUnitConversionName.NormalizeAsInternalName();
-                    if (!string.IsNullOrEmpty(defaultUnitModel.ProductUnitConversionName) && units.ContainsKey(unitIdKey) && units[unitIdKey] != existedProduct.Value.UnitId)
+                    if (!string.IsNullOrEmpty(defaultUnitModel.ProductUnitConversionName) && units.ContainsKey(unitIdKey) && units[unitIdKey] != productInfo.UnitId)
                     {
-                        listProductIds.Add(existedProduct.Value.ProductId);
+                        listProductIds.Add(productInfo.ProductId);
                     }
                 }
             }
