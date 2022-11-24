@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using DocumentFormat.OpenXml.VariantTypes;
 using DocumentFormat.OpenXml.Wordprocessing;
 using Grpc.Core;
@@ -240,6 +241,12 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 model.CurrencyId = details.GetFirstValueNotNull(x => x.Currency.F_Id);
 
                 model.ExchangeRate = details.GetFirstValueNotNull(x => x.ExchangeRate);
+
+                if (model.CurrencyId > 0 && (!model.ExchangeRate.HasValue || model.ExchangeRate <= 0))
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Tỷ giá không hợp lệ, đơn mua {model.PurchaseOrderCode}, " +
+                    $", dòng {details.First().RowNumber}");
+                }
 
                 model.DeliveryFee = details.GetFirstValueNotNull(x => x.DeliveryFee);
 
