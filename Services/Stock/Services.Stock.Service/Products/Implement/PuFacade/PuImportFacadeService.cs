@@ -282,6 +282,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                         ProductId = productInfo.ProductId,
                                         ProductUnitConversionName = puModel.ProductUnitConversionName,
                                         SecondaryUnitId = units.ContainsKey(nameNormalize) ? units[nameNormalize] : 0,
+                                        ConversionDescription = puModel.ConversionDescription,
                                         FactorExpression = puModel.FactorExpression,
                                         IsDefault = puModel.IsDefault,
                                         IsFreeStyle = false,
