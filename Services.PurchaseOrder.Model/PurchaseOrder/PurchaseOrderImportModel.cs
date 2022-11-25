@@ -88,12 +88,12 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string OtherPolicy { get; set; }
 
         [ValidateDuplicateByKeyCode]
-        [Display(Name = "Điều kiện giao hàng", GroupName = "TT Bổ sung", Order = 5004)]
+        [Display(Name = "Phương thức vận chuyển", GroupName = "TT Bổ sung", Order = 5004)]
         [MaxLength(512)]
         public string DeliveryMethod { get; set; }
 
         [ValidateDuplicateByKeyCode]
-        [Display(Name = "Phương thức vận chuyển", GroupName = "TT Bổ sung", Order = 5005)]
+        [Display(Name = "Điều kiện giao hàng", GroupName = "TT Bổ sung", Order = 5005)]
         [MaxLength(512)]
         public string DeliveryPolicy { get; set; }
 
