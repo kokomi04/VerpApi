@@ -182,9 +182,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
             }
 
 
-
-
-
             using var trans = await _stockContext.Database.BeginTransactionAsync();
             try
             {
@@ -253,6 +250,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                                 entity.UpdateIfAvaiable(v => v.ProductUnitConversionName, puModel.ProductUnitConversionName);
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
 
+                                                entity.ConversionDescription = "";
+
                                                 productInfo.UnitId = units[nameNormalize];
                                             }
                                             else
@@ -274,7 +273,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                         {
                                             puEntity.IsDefault = false;
                                         }
-
+                                        puModel.ConversionDescription = "";
                                         productInfo.UnitId = units[nameNormalize];
                                     }
 
