@@ -204,26 +204,32 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                                 puEntities.TryGetValue(puModel.ProductUnitConversionInternalName, out entity);
 
+                                if (entity == null && string.IsNullOrWhiteSpace(puModel.FactorExpression))
+                                {
+                                    throw GeneralCode.InvalidParams.BadRequest($"Vui lòng chọn tỷ lệ/biểu thức chuyển đổi cho đơn vị {puModel.ProductUnitConversionName}, mặt hàng {puModel.ProductInfo.ProductCode} {puModel.ProductInfo.ProductName}, dòng {puModel.RowNumber}");
+                                }
+
                                 if (entity == null || !string.IsNullOrWhiteSpace(puModel.FactorExpression))
                                 {
-                                    var exp = puModel.FactorExpression;
+                                    var exp = puModel.FactorExpression ?? "";
                                     var unit = puModel.ProductUnitConversionName;
 
-                                    if (!string.IsNullOrWhiteSpace(exp))
+                                    propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.FactorExpression), out var expMap);
+
+
+                                    try
                                     {
-                                        try
+                                        var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
+                                        if (!(eval > 0))
                                         {
-                                            var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
-                                            if (!(eval > 0))
-                                            {
-                                                throw PuConversionExpressionInvalid.BadRequestFormat(unit + " " + exp, productInfo?.ProductCode + " " + productInfo?.ProductName);
-                                            }
-                                        }
-                                        catch (Exception)
-                                        {
-                                            throw PuConversionExpressionError.BadRequestFormat(unit + " " + exp, productInfo?.ProductCode + " " + productInfo?.ProductName);
+                                            throw PuConversionExpressionInvalid.BadRequestFormat(unit + " (" + exp + ")", productInfo?.ProductCode + " " + productInfo?.ProductName + " (dòng " + puModel.RowNumber + ", cột " + expMap?.Column + ")");
                                         }
                                     }
+                                    catch (Exception)
+                                    {
+                                        throw PuConversionExpressionError.BadRequestFormat(unit + " (" + exp + ")", productInfo?.ProductCode + " " + productInfo?.ProductName + " (dòng " + puModel.RowNumber + ", cột " + expMap?.Column + ")");
+                                    }
+
                                 }
 
                                 if (entity != null)
@@ -231,7 +237,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                     switch (mapping.ImportDuplicateOptionId)
                                     {
                                         case EnumImportDuplicateOption.Denied:
-                                            throw GeneralCode.InvalidParams.BadRequest($"Đơn vị tính {puModel.ProductUnitConversionName} thuộc mặt hàng {productInfo.ProductCode}  {productInfo.ProductName} đã tồn tại");
+                                            propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.ProductUnitConversionName), out var nameMap);
+
+                                            throw GeneralCode.InvalidParams.BadRequest($"Đơn vị tính {puModel.ProductUnitConversionName} thuộc mặt hàng {productInfo.ProductCode}  {productInfo.ProductName} đã tồn tại, dòng " + puModel.RowNumber + ", cột " + nameMap?.Column);
                                         case EnumImportDuplicateOption.Ignore:
                                             toRemoveModels.Add(puModel);
                                             break;
@@ -242,6 +250,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                             {
                                                 foreach (var puEntity in productInfo.ProductUnitConversion)
                                                 {
+                                                    if (puEntity.IsDefault)
+                                                    {
+                                                        puEntity.ConversionDescription = "";
+                                                    }
                                                     puEntity.IsDefault = false;
                                                 }
 
