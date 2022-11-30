@@ -623,7 +623,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     totalRecord = groupLevel1.Count();
 
-                    var groupLevel2Alias = columns.Where(c => c.isGroupRowLevel2).Select(c => c.Alias).ToHashSet();
+                    var groupLevel2Alias = columns.Where(c => c.IsGroupRowLevel2).Select(c => c.Alias).ToHashSet();
 
                     foreach (var g1 in groupLevel1)
                     {
