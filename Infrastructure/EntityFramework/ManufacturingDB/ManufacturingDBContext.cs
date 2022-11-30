@@ -94,13 +94,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<MaterialAllocation>(entity =>
             {
-                entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.InventoryCode)
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.SourceQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductId).HasComment("Product id in inventory detail");
+
+                entity.Property(e => e.SourceProductId).HasComment("Product id in production process");
+
+                entity.Property(e => e.SourceQuantity)
+                    .HasColumnType("decimal(32, 12)")
+                    .HasComment("Product quantity output in production process");
             });
 
             modelBuilder.Entity<MonthPlan>(entity =>
@@ -976,8 +982,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.ProductId).ValueGeneratedOnAdd();
-
                 entity.Property(e => e.ProductInternalName)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -989,6 +993,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
                 entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UnitName)
+                    .IsRequired()
+                    .HasMaxLength(128);
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });
