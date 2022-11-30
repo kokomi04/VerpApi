@@ -40,6 +40,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public int? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+        public string DetailReportJsCodeCanOpenTarget { get; set; }
         public string OnLoadJsCode { get; set; }
         public string PreLoadDataJsCode { get; set; }
         public string AfterLoadDataJsCode { get; set; }

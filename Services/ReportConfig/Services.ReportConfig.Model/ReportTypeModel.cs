@@ -40,6 +40,7 @@ namespace Verp.Services.ReportConfig.Model
         public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+        public string DetailJsCodeCanOpenTarget { get; set; }
 
         public string OnLoadJsCode { get; set; }
         public string PreLoadDataJsCode { get; set; }
