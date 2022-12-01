@@ -100,9 +100,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 }
             }
 
-            var duplicate = data.GroupBy(d => d.ProductUnitConversionInternalName?.NormalizeAsInternalName())
-                .Where(d => d.Count() > 1)
-                .FirstOrDefault();
+            var duplicate = data.GroupBy(d => new
+            {
+                ProductId = d.ProductInfo.ProductId,
+                NameInternal = d.ProductUnitConversionInternalName?.NormalizeAsInternalName()
+            }).Where(d => d.Count() > 1)
+              .FirstOrDefault();
 
             if (duplicate != null)
             {
