@@ -1107,6 +1107,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     toRemoveLinkDatas.Add(d);
                 }
+                else
+                {
+                    var remaingQuantity = d.QuantityOrigin - d.OutsourceQuantity - (d.OutsourcePartQuantity ?? 0) - d.ExportOutsourceQuantity;
+                    if (d.Quantity.SubProductionDecimal(remaingQuantity) != 0)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải bằng số lượng ban đầu trừ các số lượng đi gia công!");
+                    }
+                }
             }
             foreach (var d in toRemoveLinkDatas)
             {
