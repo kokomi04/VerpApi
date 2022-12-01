@@ -255,7 +255,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                         {
                                             SumTotalMoney = g.Sum(x => x.TotalMoney),
                                         }).FirstOrDefaultAsync();
-            var pagedData = await poQuery.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await poQuery.SortByFieldName(sortBy, asc)
+                .ThenBy(q => q.PurchaseOrderCode)
+                .Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchaseOrderOutputList>();
 
             foreach (var info in pagedData)
@@ -483,7 +485,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            query = query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder);
+            query = query.SortByFieldName(sortBy, asc)
+                .ThenBy(q => q.PurchaseOrderCode)
+                .ThenBy(q => q.SortOrder);
+
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
