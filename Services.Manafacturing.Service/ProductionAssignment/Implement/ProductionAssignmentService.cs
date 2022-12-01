@@ -270,7 +270,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToList();
 
             var mapData = new Dictionary<long,
-                (List<ProductionAssignmentEntity> DeleteProductionStepAssignments,
+                (
                 List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)> UpdateProductionStepAssignments,
                 List<ProductionAssignmentModel> CreateProductionStepAssignments)>();
 
@@ -282,6 +282,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //var scheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
             //    .Where(s => s.ProductionOrderId == productionOrderId)
             //    .ToList();
+
+            // Danh sách phân công của các công đoạn bị xóa
+            var productionStepIds = data.ProductionStepAssignment
+                .Select(a => a.ProductionStepId)
+                .ToList();
+
+            var deletedProductionStepAssignments = oldProductionAssignments
+                    .Where(s => !productionStepIds.Contains(s.ProductionStepId))
+                    .ToList();
 
             foreach (var pStepAssignment in data.ProductionStepAssignment)
             {
@@ -383,17 +392,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
                 //}
 
-                mapData.Add(pStepAssignment.ProductionStepId, (oldProductionStepAssignments, updateAssignments, newAssignments));
+                mapData.Add(pStepAssignment.ProductionStepId, (updateAssignments, newAssignments));
+
+                deletedProductionStepAssignments.AddRange(oldProductionStepAssignments);
             }
 
-            // Danh sách phân công của các công đoạn bị xóa
-            var productionStepIds = data.ProductionStepAssignment
-                .Select(a => a.ProductionStepId)
-                .ToList();
-
-            var deletedProductionStepAssignments = oldProductionAssignments
-                    .Where(s => !productionStepIds.Contains(s.ProductionStepId))
-                    .ToList();
+           
 
             //foreach (var item in deletedProductionStepAssignments)
             //{
@@ -461,23 +465,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         }
 
                         // Xóa phân công
-                        if (mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments.Count > 0)
-                        {
-                            foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
-                            {
-                                // Xóa bàn giao liên quan tới phân công bị xóa
-                                var deleteHandovers = handovers
-                                    .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
-                                    && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
-                                    .ToList();
+                        //if (mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments.Count > 0)
+                        //{
+                        //    foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
+                        //    {
+                        //        // Xóa bàn giao liên quan tới phân công bị xóa
+                        //        var deleteHandovers = handovers
+                        //            .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
+                        //            && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
+                        //            .ToList();
 
-                                _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
+                        //        _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
 
-                                oldProductionAssignment.ProductionAssignmentDetail.Clear();
-                            }
-                            _manufacturingDBContext.SaveChanges();
-                            _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
-                        }
+                        //        oldProductionAssignment.ProductionAssignmentDetail.Clear();
+                        //    }
+                        //    _manufacturingDBContext.SaveChanges();
+                        //    _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
+                        //}
 
                         // Thêm mới phân công
                         if (mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.Count > 0)
