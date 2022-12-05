@@ -1179,7 +1179,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
                 var sortOrder = 1;
-                foreach (var item in allDetails)
+                foreach (var item in allDetails.OrderBy(d => d.SortOrder))
                 {
                     item.SortOrder = sortOrder++;
                 }

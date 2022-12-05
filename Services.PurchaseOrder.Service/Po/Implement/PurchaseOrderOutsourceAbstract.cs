@@ -111,7 +111,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     var sortOrder = 1;
-                    foreach (var detail in model.Details)
+                    foreach (var detail in model.Details.OrderBy(d=>d.SortOrder))
                     {
                         var entityDetail = new PurchaseOrderDetail()
                         {
@@ -476,19 +476,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var allMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
                     var sortOrder = 1;
-                    foreach (var item in allDetails)
+                    foreach (var item in allDetails.OrderBy(d=>d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
 
                     sortOrder = 1;
-                    foreach (var item in allExcesses)
+                    foreach (var item in allExcesses.OrderBy(d => d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
 
                     sortOrder = 1;
-                    foreach (var item in allMaterials)
+                    foreach (var item in allMaterials.OrderBy(d => d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
