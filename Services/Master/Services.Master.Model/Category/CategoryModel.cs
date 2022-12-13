@@ -23,7 +23,10 @@ namespace VErp.Services.Master.Model.Category
         public string BeforeSubmitAction { get; set; }
         public string BeforeSaveAction { get; set; }
         public string AfterSaveAction { get; set; }
-        public OutSideDataConfigModel OutSideDataConfig { get; set; }
+        public string JoinSqlRaw { get; set; }
+        public string SearchSqlRaw { get; set; }        
+        public string Key { get; set; }
+        public string ParentKey { get; set; }
         public bool? IsHide { get; set; }
     }
 

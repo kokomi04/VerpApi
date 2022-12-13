@@ -67,14 +67,14 @@ namespace VErp.Services.Master.Service.Category
         public async Task<IList<CategoryFullModel>> GetAllCategoryConfig()
         {
             var v = await _masterContext.Category
-               .Include(c => c.OutSideDataConfig)
-               .ThenInclude(o => o.OutsideDataFieldConfig)
+               //.Include(c => c.OutSideDataConfig)
+               //.ThenInclude(o => o.OutsideDataFieldConfig)
                .Include(c => c.CategoryField)
                .ToListAsync();
 
             var categories = await _masterContext.Category
-                .Include(c => c.OutSideDataConfig)
-                .ThenInclude(o => o.OutsideDataFieldConfig)
+                //.Include(c => c.OutSideDataConfig)
+                //.ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
@@ -84,8 +84,8 @@ namespace VErp.Services.Master.Service.Category
         public async Task<CategoryFullModel> GetCategory(int categoryId)
         {
             var category = await _masterContext.Category
-                .Include(c => c.OutSideDataConfig)
-                .ThenInclude(o => o.OutsideDataFieldConfig)
+                //.Include(c => c.OutSideDataConfig)
+                //.ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId);
@@ -99,8 +99,8 @@ namespace VErp.Services.Master.Service.Category
         public async Task<CategoryFullModel> GetCategory(string categoryCode)
         {
             var category = await _masterContext.Category
-                .Include(c => c.OutSideDataConfig)
-                .ThenInclude(o => o.OutsideDataFieldConfig)
+                //.Include(c => c.OutSideDataConfig)
+                //.ThenInclude(o => o.OutsideDataFieldConfig)
                 .Include(c => c.CategoryField)
                 .ProjectTo<CategoryFullModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(c => c.CategoryCode == categoryCode);
@@ -168,8 +168,9 @@ namespace VErp.Services.Master.Service.Category
                     IsUnique = false,
                     IsShowSearchTable = false,
                     IsTreeViewKey = false,
-                    IsShowList = false,
-                    IsReadOnly = true
+                    //IsShowList = false,
+                    IsReadOnly = true,
+                    IsJoinField = true
                 };
 
                 await _masterContext.CategoryField.AddAsync(identityField);
@@ -184,18 +185,8 @@ namespace VErp.Services.Master.Service.Category
                     });
                 }
 
-                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
+                await UpdateView(category);
 
-                // Create view
-                await _masterContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
-                    new SqlParameter("@CategoryCode", category.CategoryCode ),
-                    new SqlParameter("@TableName", tableName ),
-                    new SqlParameter("@IsTreeView", category.IsTreeView),
-                    new SqlParameter("@IsOutSideData", category.IsOutSideData),
-                    new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
-                    new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                    new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
-                    });
 
                 trans.Commit();
 
@@ -213,6 +204,7 @@ namespace VErp.Services.Master.Service.Category
                 throw;
             }
         }
+
 
         public async Task<bool> UpdateCategory(int categoryId, CategoryModel data)
         {
@@ -309,6 +301,12 @@ namespace VErp.Services.Master.Service.Category
                 category.ParentTitle = data.ParentTitle;
                 category.DefaultOrder = data.DefaultOrder;
 
+                category.AfterSaveAction = data.AfterSaveAction;
+                category.JoinSqlRaw = data.JoinSqlRaw;
+                category.SearchSqlRaw = data.SearchSqlRaw;
+                category.Key = data.Key;
+                category.ParentKey = data.ParentKey;
+
                 category.PreLoadAction = data.PreLoadAction;
                 category.PostLoadAction = data.PostLoadAction;
                 category.AfterLoadAction = data.AfterLoadAction;
@@ -320,6 +318,7 @@ namespace VErp.Services.Master.Service.Category
                 await _masterContext.SaveChangesAsync();
 
                 //Update config outside nếu là danh mục ngoài phân hệ
+                /*
                 if (category.IsOutSideData)
                 {
                     var config = _masterContext.OutSideDataConfig
@@ -363,21 +362,12 @@ namespace VErp.Services.Master.Service.Category
                         }
 
                     }
-                }
+                }*/
+
                 await _masterContext.SaveChangesAsync();
 
-                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
+                await UpdateView(category);
 
-                // Update view
-                await _masterContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
-                        new SqlParameter("@CategoryCode", category.CategoryCode ),
-                        new SqlParameter("@TableName", tableName ),
-                        new SqlParameter("@IsTreeView", category.IsTreeView),
-                        new SqlParameter("@IsOutSideData", category.IsOutSideData),
-                        new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
-                        new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
-                    });
                 trans.Commit();
 
 
@@ -528,7 +518,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.IsRequired = data.IsRequired;
             categoryField.IsUnique = data.IsUnique;
             categoryField.IsHidden = data.IsHidden;
-            categoryField.IsShowList = data.IsShowList;
+            //categoryField.IsShowList = data.IsShowList;
             categoryField.IsShowSearchTable = data.IsShowSearchTable;
             categoryField.IsTreeViewKey = data.IsTreeViewKey;
             categoryField.RegularExpression = data.RegularExpression;
@@ -540,6 +530,7 @@ namespace VErp.Services.Master.Service.Category
             categoryField.RefTableTitle = data.RefTableTitle;
             categoryField.IsImage = data.IsImage;
             categoryField.IsCalcSum = data.IsCalcSum;
+            categoryField.IsJoinField = data.IsJoinField;
         }
 
         private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
@@ -669,9 +660,9 @@ namespace VErp.Services.Master.Service.Category
                 if (fields.Any(f => f.DataTypeId == (int)EnumDataType.Text && f.DataSize <= 0))
                 {
                     throw new BadRequestException(CategoryErrorCode.DataSizeInValid);
-                }    
+                }
 
-                var category = _masterContext.Category.Include(c => c.OutSideDataConfig).FirstOrDefault(c => c.CategoryId == categoryId);
+                var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
                 for (int indx = 0; indx < fields.Count; indx++)
                 {
@@ -720,17 +711,10 @@ namespace VErp.Services.Master.Service.Category
                 }
 
                 await _masterContext.SaveChangesAsync();
-                // Update view
-                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
-                await _masterContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
-                        new SqlParameter("@CategoryCode", category.CategoryCode ),
-                        new SqlParameter("@TableName", tableName ),
-                        new SqlParameter("@IsTreeView", category.IsTreeView),
-                        new SqlParameter("@IsOutSideData", category.IsOutSideData),
-                        new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
-                        new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
-                    });
+
+                await UpdateView(category);
+
+
 
                 trans.Commit();
 
@@ -760,7 +744,7 @@ namespace VErp.Services.Master.Service.Category
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
             }
 
-            var category = _masterContext.Category.Include(c => c.OutSideDataConfig).First(c => c.CategoryId == categoryField.CategoryId);
+            var category = _masterContext.Category.First(c => c.CategoryId == categoryField.CategoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
@@ -787,17 +771,8 @@ namespace VErp.Services.Master.Service.Category
                     await _masterContext.DeleteColumn(category.CategoryCode, categoryField.CategoryFieldName);
                 }
 
-                // Update view
-                string tableName = category.IsOutSideData ? category.OutSideDataConfig.Url : category.CategoryCode;
-                await _masterContext.ExecuteStoreProcedure("asp_Category_View_Update", new[] {
-                        new SqlParameter("@CategoryCode", category.CategoryCode ),
-                        new SqlParameter("@TableName", tableName ),
-                        new SqlParameter("@IsTreeView", category.IsTreeView),
-                        new SqlParameter("@IsOutSideData", category.IsOutSideData),
-                        new SqlParameter("@Key", category.OutSideDataConfig?.Key??string.Empty),
-                        new SqlParameter("@ParentKey", category.OutSideDataConfig?.ParentKey??string.Empty),
-                        new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
-                    });
+                await UpdateView(category);
+
 
                 trans.Commit();
 
@@ -1232,6 +1207,22 @@ namespace VErp.Services.Master.Service.Category
                 f.CategoryViewId = categoryViewId;
             }
             await _masterContext.CategoryViewField.AddRangeAsync(fields);
+        }
+
+        private async Task UpdateView(CategoryEntity category)
+        {
+            string tableName = category.IsOutSideData ? string.Empty : category.CategoryCode;
+
+            // Create view
+            await _masterContext.ExecuteStoreProcedure("asp_Category_View_Update2", new[] {
+                    new SqlParameter("@CategoryCode", category.CategoryCode ),
+                    new SqlParameter("@TableName", tableName ),
+                    new SqlParameter("@IsTreeView", category.IsTreeView),
+                    new SqlParameter("@IsOutSideData", category.IsOutSideData),
+                    new SqlParameter("@Key", category.Key??string.Empty),
+                    new SqlParameter("@ParentKey", category.ParentKey??string.Empty),
+                    new SqlParameter("@UsePlace", category.UsePlace??string.Empty)
+                    });
         }
     }
 }

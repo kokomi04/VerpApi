@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -48,8 +50,8 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
-        public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
-        public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
+        //public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
+        //public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
@@ -63,8 +65,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<Unit> Unit { get; set; }
         public virtual DbSet<User> User { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -89,6 +90,10 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.IconName).HasMaxLength(25);
+
+                entity.Property(e => e.ObjectIdBak).HasColumnName("ObjectId_bak");
+
+                entity.Property(e => e.ObjectTypeIdBak).HasColumnName("ObjectTypeId_bak");
 
                 entity.Property(e => e.Title).HasMaxLength(128);
             });
@@ -181,7 +186,15 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
+                entity.Property(e => e.Key)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
+
                 entity.Property(e => e.MenuId).HasComment("");
+
+                entity.Property(e => e.ParentKey)
+                    .HasMaxLength(255)
+                    .IsUnicode(false);
 
                 entity.Property(e => e.ParentTitle).HasMaxLength(255);
 
@@ -566,48 +579,48 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
-            modelBuilder.Entity<OutSideDataConfig>(entity =>
-            {
-                entity.HasKey(e => e.CategoryId)
-                    .HasName("PK__OutSideD__19093A0B3AED9766");
+            //modelBuilder.Entity<OutSideDataConfig>(entity =>
+            //{
+            //    entity.HasKey(e => e.CategoryId)
+            //        .HasName("PK__OutSideD__19093A0B3AED9766");
 
-                entity.Property(e => e.CategoryId).ValueGeneratedNever();
+            //    entity.Property(e => e.CategoryId).ValueGeneratedNever();
 
-                entity.Property(e => e.Description).HasMaxLength(255);
+            //    entity.Property(e => e.Description).HasMaxLength(255);
 
-                entity.Property(e => e.Key)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
+            //    entity.Property(e => e.Key)
+            //        .HasMaxLength(255)
+            //        .IsUnicode(false);
 
-                entity.Property(e => e.ParentKey)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
+            //    entity.Property(e => e.ParentKey)
+            //        .HasMaxLength(255)
+            //        .IsUnicode(false);
 
-                entity.Property(e => e.Url)
-                    .HasMaxLength(255)
-                    .IsUnicode(false);
+            //    entity.Property(e => e.Url)
+            //        .HasMaxLength(255)
+            //        .IsUnicode(false);
 
-                entity.HasOne(d => d.Category)
-                    .WithOne(p => p.OutSideDataConfig)
-                    .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutSideDataConfig_Category");
-            });
+            //    entity.HasOne(d => d.Category)
+            //        .WithOne(p => p.OutSideDataConfig)
+            //        .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_OutSideDataConfig_Category");
+            //});
 
-            modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
-            {
-                entity.Property(e => e.Alias).HasMaxLength(512);
+            //modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
+            //{
+            //    entity.Property(e => e.Alias).HasMaxLength(512);
 
-                entity.Property(e => e.Value)
-                    .IsRequired()
-                    .HasMaxLength(512);
+            //    entity.Property(e => e.Value)
+            //        .IsRequired()
+            //        .HasMaxLength(512);
 
-                entity.HasOne(d => d.OutsideDataConfig)
-                    .WithMany(p => p.OutsideDataFieldConfig)
-                    .HasForeignKey(d => d.OutsideDataConfigId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
-            });
+            //    entity.HasOne(d => d.OutsideDataConfig)
+            //        .WithMany(p => p.OutsideDataFieldConfig)
+            //        .HasForeignKey(d => d.OutsideDataConfigId)
+            //        .OnDelete(DeleteBehavior.ClientSetNull)
+            //        .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
+            //});
 
             modelBuilder.Entity<OutsideImportMapping>(entity =>
             {
