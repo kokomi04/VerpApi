@@ -21,7 +21,7 @@ using VErp.Services.Accountancy.Service.Input.Implement.Facade;
 namespace VErpApi.Controllers.Accountancy.Data
 {
    
-    [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
+   
     public abstract class InputControllerBaseAbstract : VErpBaseController
     {
         private readonly IInputDataPrivateService _inputDataService;

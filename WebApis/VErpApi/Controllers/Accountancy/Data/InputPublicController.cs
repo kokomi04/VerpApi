@@ -22,7 +22,7 @@ namespace VErpApi.Controllers.Accountancy.Data
 {
 
     [Route("api/accountancy/public/bills")]
-    // [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
+    [ObjectDataApi(EnumObjectType.InputTypePublic, "inputTypeId")]
     public class InputPublicController : InputControllerBaseAbstract
     {
 
