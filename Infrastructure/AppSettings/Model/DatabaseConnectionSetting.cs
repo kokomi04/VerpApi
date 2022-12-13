@@ -8,7 +8,8 @@
         public string IdentityDatabase { get; set; }
         public string OrganizationDatabase { get; set; }
         //public string AccountingDatabase { get; set; }
-        public string AccountancyDatabase { get; set; }
+        public string AccountancyPrivateDatabase { get; set; }
+        public string AccountancyPublicDatabase { get; set; }
         public string ReportConfigDatabase { get; set; }
         public string ActivityLogDatabase { get; set; }
         public string ManufacturingDatabase { get; set; }

@@ -5,18 +5,32 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
-using static VErp.Services.Accountancy.Service.Input.Implement.InputDataService;
+using static VErp.Services.Accountancy.Service.Input.Implement.InputDataServiceBase;
 
 namespace VErp.Services.Accountancy.Service.Input
 {
-    public interface IInputDataService
+    public interface IInputDataPrivateService : IInputDataServiceBase
+    {
+
+    }
+
+
+    public interface IInputDataPublicService : IInputDataServiceBase
+    {
+
+    }
+
+    public interface IInputDataServiceBase
     {
         Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 
         Task<IDictionary<long, BillInfoModel>> GetBillInfos(int inputTypeId, IList<long> fIds);
+
+        Task<InputType> GetTypeInfo(int inputTypeId);
 
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 

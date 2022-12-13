@@ -29,9 +29,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICalcPeriodService _calcPeriodService;
 
-        public CalcProductPriceService(AccountancyDBContext accountancyDBContext
+        public CalcProductPriceService(AccountancyDBPrivateContext accountancyDBContext
             , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
+            , ILogger<CalcProductPriceService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService

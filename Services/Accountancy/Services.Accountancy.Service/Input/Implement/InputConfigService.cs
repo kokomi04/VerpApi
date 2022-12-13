@@ -26,7 +26,21 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputConfigService : IInputConfigService
+    public class InputPrivateConfigService : InputConfigServiceBase, IInputPrivateConfigService
+    {
+        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IOptions<AppSetting> appSetting, ILogger<InputPrivateConfigService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, IMenuHelperService menuHelperService, ICurrentContextService currentContextService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService, IInputPrivateActionConfigService inputActionConfigService) : base(accountancyDBContext, appSetting, logger, activityLogService, mapper, customGenCodeHelperService, menuHelperService, currentContextService, httpCategoryHelperService, roleHelperService, inputActionConfigService)
+        {
+        }
+    }
+
+    public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
+    {
+        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IOptions<AppSetting> appSetting, ILogger<InputPublicConfigService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, IMenuHelperService menuHelperService, ICurrentContextService currentContextService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService, IInputPublicActionConfigService inputActionConfigService) : base(accountancyDBContext, appSetting, logger, activityLogService, mapper, customGenCodeHelperService, menuHelperService, currentContextService, httpCategoryHelperService, roleHelperService, inputActionConfigService)
+        {
+        }
+    }
+
+    public class InputConfigServiceBase : IInputConfigServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 
@@ -39,11 +53,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
-        private readonly IInputActionConfigService _inputActionConfigService;
+        private readonly IActionButtonConfigHelper _actionButtonConfigHelper;
 
-        public InputConfigService(AccountancyDBContext accountancyDBContext
+        public InputConfigServiceBase(AccountancyDBContext accountancyDBContext
             , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
+            , ILogger<InputConfigServiceBase> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
@@ -51,7 +65,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IRoleHelperService roleHelperService
-            , IInputActionConfigService inputActionConfigService
+            , IActionButtonConfigHelper actionButtonConfigHelper
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -63,7 +77,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
             _roleHelperService = roleHelperService;
-            _inputActionConfigService = inputActionConfigService;
+            _actionButtonConfigHelper = actionButtonConfigHelper;
         }
 
         #region InputType
@@ -439,7 +453,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             try
             {
-                await _inputActionConfigService.RemoveAllByBillType(inputTypeId, inputType.Title);
+                await _actionButtonConfigHelper.RemoveAllByBillType(inputTypeId, inputType.Title);
             }
             catch (Exception ex)
             {

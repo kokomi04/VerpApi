@@ -21,13 +21,15 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     public class CategoryHelperService : ICategoryHelperService
     {
         private readonly IHttpCrossService _httpCrossService;
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
-        public CategoryHelperService(IHttpCrossService httpCrossService, IInputTypeHelperService inputTypeHelperService, IVoucherTypeHelperService voucherTypeHelperService)
+        public CategoryHelperService(IHttpCrossService httpCrossService, IInputPrivateTypeHelperService inputPrivateTypeHelperService, IInputPublicTypeHelperService inputPublicTypeHelperService, IVoucherTypeHelperService voucherTypeHelperService)
         {
             _httpCrossService = httpCrossService;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
         }
 
@@ -39,7 +41,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 FieldNames = fieldNames,
                 CategoryRow = categoryRow
             };
-            return await _inputTypeHelperService.CheckReferFromCategory(data)
+            return await _inputPrivateTypeHelperService.CheckReferFromCategory(data)
+                || await _inputPublicTypeHelperService.CheckReferFromCategory(data)
                 || await _voucherTypeHelperService.CheckReferFromCategory(data);
         }
 

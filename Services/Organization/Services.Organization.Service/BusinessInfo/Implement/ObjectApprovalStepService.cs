@@ -24,18 +24,21 @@ namespace Services.Organization.Service.BusinessInfo.Implement
     {
         private readonly OrganizationDBContext _organizationContext;
         private readonly IMapper _mapper;
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
 
         public ObjectApprovalStepService(OrganizationDBContext organizationContext
             , IMapper mapper
-            , IInputTypeHelperService inputTypeHelperService
+            , IInputPrivateTypeHelperService inputPrivateTypeHelperService
+            , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService)
         {
             _organizationContext = organizationContext;
             _mapper = mapper;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
 
             // _objectProcessActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectProcessStep);
@@ -75,7 +78,10 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             switch (model.ObjectTypeId)
             {
                 case (int)EnumObjectType.InputType:
-                    await ValidateAccountancyBill(model.ObjectId, model.ObjectApprovalStepTypeId);
+                    await ValidateAccountancyPrivateBill(model.ObjectId, model.ObjectApprovalStepTypeId);
+                    break;
+                case (int)EnumObjectType.InputTypePublic:
+                    await ValidateAccountancyPublicBill(model.ObjectId, model.ObjectApprovalStepTypeId);
                     break;
                 case (int)EnumObjectType.VoucherType:
                     await ValidatePurchaseOrderBill(model.ObjectId, model.ObjectApprovalStepTypeId);
@@ -83,17 +89,33 @@ namespace Services.Organization.Service.BusinessInfo.Implement
             }
         }
 
-        private async Task ValidateAccountancyBill(int inputTypeId, EnumObjectApprovalStepType type)
+        private async Task ValidateAccountancyPrivateBill(int inputTypeId, EnumObjectApprovalStepType type)
         {
             if (EnumObjectApprovalStepType.ApprovalStep == type)
             {
-                var data = await _inputTypeHelperService.GetBillNotApprovedYet(inputTypeId);
+                var data = await _inputPrivateTypeHelperService.GetBillNotApprovedYet(inputTypeId);
                 if (data.Count > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước duyệt chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được duyệt");
             }
             else
             {
-                var data = await _inputTypeHelperService.GetBillNotChekedYet(inputTypeId);
+                var data = await _inputPrivateTypeHelperService.GetBillNotChekedYet(inputTypeId);
+                if (data.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước kiểm tra chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được kiểm tra");
+            }
+        }
+
+        private async Task ValidateAccountancyPublicBill(int inputTypeId, EnumObjectApprovalStepType type)
+        {
+            if (EnumObjectApprovalStepType.ApprovalStep == type)
+            {
+                var data = await _inputPublicTypeHelperService.GetBillNotApprovedYet(inputTypeId);
+                if (data.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước duyệt chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được duyệt");
+            }
+            else
+            {
+                var data = await _inputPublicTypeHelperService.GetBillNotChekedYet(inputTypeId);
                 if (data.Count > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể tắt bước kiểm tra chứng từ. Vẫn tồn tại chứng từ trên hệ thống chưa được kiểm tra");
             }
@@ -127,18 +149,20 @@ namespace Services.Organization.Service.BusinessInfo.Implement
         {
             var result = new List<ObjectApprovalStepItemModel>();
 
-            var inputTask = InputMappingTypeModels();
+            var inputPrivateTask = InputPrivateMappingTypeModels();
+            var inputPublicTask = InputPublicMappingTypeModels();
             var voucherTask = VoucherMappingTypeModels();
 
-            result.AddRange(await inputTask);
+            result.AddRange(await inputPrivateTask);
+            result.AddRange(await inputPublicTask);
             result.AddRange(await voucherTask);
 
             return result;
         }
 
-        private async Task<IList<ObjectApprovalStepItemModel>> InputMappingTypeModels()
+        private async Task<IList<ObjectApprovalStepItemModel>> InputPrivateMappingTypeModels()
         {
-            var inputTypes = await _inputTypeHelperService.GetInputTypeSimpleList();
+            var inputTypes = await _inputPrivateTypeHelperService.GetInputTypeSimpleList();
 
             var result = new List<ObjectApprovalStepItemModel>();
             foreach (var inputType in inputTypes)
@@ -149,6 +173,28 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                     ModuleTypeName = EnumModuleType.Accountant.GetEnumDescription(),
                     ObjectTypeId = EnumObjectType.InputType,
                     ObjectTypeName = EnumObjectType.InputType.GetEnumDescription(),
+                    ObjectId = inputType.InputTypeId,
+                    ObjectName = inputType.Title,
+                    ObjectGroupId = inputType.InputTypeGroupId
+                });
+            }
+
+            return await Task.FromResult(result);
+        }
+
+        private async Task<IList<ObjectApprovalStepItemModel>> InputPublicMappingTypeModels()
+        {
+            var inputTypes = await _inputPublicTypeHelperService.GetInputTypeSimpleList();
+
+            var result = new List<ObjectApprovalStepItemModel>();
+            foreach (var inputType in inputTypes)
+            {
+                result.Add(new ObjectApprovalStepItemModel
+                {
+                    ModuleTypeId = EnumModuleType.AccountantPublic,
+                    ModuleTypeName = EnumModuleType.AccountantPublic.GetEnumDescription(),
+                    ObjectTypeId = EnumObjectType.InputTypePublic,
+                    ObjectTypeName = EnumObjectType.InputTypePublic.GetEnumDescription(),
                     ObjectId = inputType.InputTypeId,
                     ObjectName = inputType.Title,
                     ObjectGroupId = inputType.InputTypeGroupId

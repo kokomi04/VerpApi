@@ -25,13 +25,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ILogger _logger;
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly AccountancyDBPrivateContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
 
-        public CalcPeriodService(AccountancyDBContext accountancyDBContext
+        public CalcPeriodService(AccountancyDBPrivateContext accountancyDBContext
             , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
+            , ILogger<CalcPeriodService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService

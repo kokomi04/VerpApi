@@ -11,6 +11,8 @@
 
         Input = 802,
 
+        InputPublic = 802001,
+
         SalesBill = 902,
 
         Hr = 111001,

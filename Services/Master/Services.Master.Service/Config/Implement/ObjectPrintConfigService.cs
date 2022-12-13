@@ -28,7 +28,8 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
 
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
 
@@ -38,7 +39,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public ObjectPrintConfigService(MasterDBContext masterDbContext
             , ILogger<ObjectGenCodeService> logger
-            , IInputTypeHelperService inputTypeHelperService
+            , IInputPrivateTypeHelperService inputPrivateTypeHelperService
+            , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IMapper mapper
             , IActivityLogService activityLogService
@@ -47,7 +49,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext = masterDbContext;
             _mapper = mapper;
             _logger = logger;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _currentContextService = currentContextService;
             _objectPrintConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
@@ -165,12 +168,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             var poTask = PurchaseOrderMappingTypeModels();
             var vourcherTask = VourcherMappingTypeModels();
             var hrTask = HrMappingTypeModels();
-            var inputTask = InputMappingTypeModels();
+            var inputPrivateTask = InputPrivateMappingTypeModels();
+            var inputPublicTask = InputPublicMappingTypeModels();
             var manufactureTask = ManufactureMappingTypeModels();
 
             result.AddRange(poTask);
             result.AddRange(await vourcherTask);
-            result.AddRange(await inputTask);
+            result.AddRange(await inputPrivateTask);
+            result.AddRange(await inputPublicTask);
             result.AddRange(await hrTask);
             result.AddRange(manufactureTask);
 
@@ -307,9 +312,9 @@ namespace VErp.Services.Master.Service.Config.Implement
             return result;
         }
 
-        private async Task<IList<ObjectPrintConfigSearch>> InputMappingTypeModels()
+        private async Task<IList<ObjectPrintConfigSearch>> InputPrivateMappingTypeModels()
         {
-            var inputTypes = _inputTypeHelperService.GetInputTypeSimpleList();
+            var inputTypes = _inputPrivateTypeHelperService.GetInputTypeSimpleList();
 
             var result = new List<ObjectPrintConfigSearch>();
             foreach (var inputType in await inputTypes)
@@ -318,6 +323,27 @@ namespace VErp.Services.Master.Service.Config.Implement
                         GetObjectPrintConfigSearch(
                         moduleTypeId: EnumModuleType.Accountant,
                         objectTypeId: EnumObjectType.InputType,
+                        objectId: inputType.InputTypeId,
+                        objectTitle: inputType.Title
+                        )
+                    );
+            }
+
+            return result;
+        }
+
+
+        private async Task<IList<ObjectPrintConfigSearch>> InputPublicMappingTypeModels()
+        {
+            var inputTypes = _inputPublicTypeHelperService.GetInputTypeSimpleList();
+
+            var result = new List<ObjectPrintConfigSearch>();
+            foreach (var inputType in await inputTypes)
+            {
+                result.Add(
+                        GetObjectPrintConfigSearch(
+                        moduleTypeId: EnumModuleType.AccountantPublic,
+                        objectTypeId: EnumObjectType.InputTypePublic,
                         objectId: inputType.InputTypeId,
                         objectTitle: inputType.Title
                         )
