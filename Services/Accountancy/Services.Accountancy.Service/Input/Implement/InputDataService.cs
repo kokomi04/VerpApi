@@ -39,7 +39,46 @@ using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputDataService : IInputDataService
+    public class InputDataPrivateService : InputDataServiceBase, IInputDataPrivateService
+    {
+        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, 
+            ILogger<InputDataServiceBase> logger, 
+            IActivityLogService activityLogService, 
+            IMapper mapper, 
+            ICustomGenCodeHelperService customGenCodeHelperService, 
+            ICurrentContextService currentContextService, 
+            ICategoryHelperService httpCategoryHelperService, 
+            IOutsideMappingHelperService outsideMappingHelperService,
+            IInputPrivateConfigService inputConfigService, 
+            ICachingService cachingService, 
+            ILongTaskResourceLockService longTaskResourceLockService
+            ) : base(accountancyDBContext, logger, activityLogService, mapper, customGenCodeHelperService, currentContextService, httpCategoryHelperService, outsideMappingHelperService, inputConfigService, cachingService, longTaskResourceLockService, EnumObjectType.InputBill, EnumObjectType.InputTypeRow,  EnumObjectType.InputAreaField)
+        {
+
+        }
+    }
+
+    public class InputDataPublicService : InputDataServiceBase, IInputDataPublicService
+    {
+        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, 
+            ILogger<InputDataServiceBase> logger, 
+            IActivityLogService activityLogService, 
+            IMapper mapper, 
+            ICustomGenCodeHelperService customGenCodeHelperService, 
+            ICurrentContextService currentContextService, 
+            ICategoryHelperService httpCategoryHelperService, 
+            IOutsideMappingHelperService outsideMappingHelperService,
+            IInputPublicConfigService inputConfigService, 
+            ICachingService cachingService, 
+            ILongTaskResourceLockService longTaskResourceLockService
+            ) : base(accountancyDBContext, logger, activityLogService, mapper, customGenCodeHelperService, currentContextService, httpCategoryHelperService, outsideMappingHelperService, inputConfigService, cachingService, longTaskResourceLockService, EnumObjectType.InputBillPublic, EnumObjectType.InputTypeRowPublic, EnumObjectType.InputAreaFieldPublic)
+        {
+
+        }
+    }
+
+
+    public class InputDataServiceBase : IInputDataServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
@@ -52,25 +91,34 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
-        private readonly IInputConfigService _inputConfigService;
+        private readonly IInputConfigServiceBase _inputConfigService;
         private readonly ObjectActivityLogFacade _inputDataActivityLog;
         private readonly ICachingService _cachingService;
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
+        private readonly EnumObjectType _inputTypeObjectType;
+        private readonly EnumObjectType _inputRowObjectType;
+        private readonly EnumObjectType _inputRowAreaObjectType;
 
-        public InputDataService(AccountancyDBContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
+        public InputDataServiceBase(AccountancyDBContext accountancyDBContext
+            , ILogger<InputDataServiceBase> logger
             , IActivityLogService activityLogService
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IOutsideMappingHelperService outsideMappingHelperService
-            , IInputConfigService inputConfigService
+            , IInputConfigServiceBase inputConfigService
             , ICachingService cachingService
             , ILongTaskResourceLockService longTaskResourceLockService
+            , EnumObjectType inputTypeObjectType
+            , EnumObjectType inputRowObjectType
+            , EnumObjectType inputRowAreaObjectType
             )
         {
+            _inputTypeObjectType = inputTypeObjectType;
+            _inputRowObjectType = inputRowObjectType;
+            _inputRowAreaObjectType = inputRowAreaObjectType;
+
             _accountancyDBContext = accountancyDBContext;
             _logger = logger;
             //_activityLogService = activityLogService;
@@ -80,9 +128,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _httpCategoryHelperService = httpCategoryHelperService;
             _outsideMappingHelperService = outsideMappingHelperService;
             _inputConfigService = inputConfigService;
-            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(_inputTypeObjectType);
             _cachingService = cachingService;
             this.longTaskResourceLockService = longTaskResourceLockService;
+
         }
 
         public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
@@ -344,6 +393,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
+        public async Task<InputType> GetTypeInfo(int inputTypeId)
+        {
+            return await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+        }
+
+
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             return (await GetBillInfos(inputTypeId, new[] { fId })).First().Value;
@@ -494,10 +549,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
 
-                if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
-                {
-                    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.InputBill, billInfo.FId);
-                }
+                //if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
+                //{
+                //    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, _inputTypeObjectType, billInfo.FId);
+                //}
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -1621,7 +1676,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
-                await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
+                await _outsideMappingHelperService.MappingObjectDelete(_inputTypeObjectType, billInfo.FId);
 
                 trans.Commit();
 
@@ -1670,7 +1725,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         CustomGenCodeOutputModel currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, field.InputAreaFieldId, fId, code, ngayCtValue);
+                           
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
 
                             if (currentConfig == null)
                             {

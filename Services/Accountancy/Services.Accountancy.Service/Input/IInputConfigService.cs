@@ -1,14 +1,14 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input
 {
-    public interface IInputConfigService
+    public interface IInputConfigServiceBase
     {
-        // Input type
         Task<InputTypeFullModel> GetInputType(int inputTypeId);
 
         Task<IList<InputTypeFullModel>> GetAllInputTypes();
@@ -54,6 +54,17 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId);
         Task<PageData<InputAreaFieldOutputFullModel>> GetInputAreaFields(int inputTypeId, int inputAreaId, string keyword, int page, int size);
         Task<bool> UpdateMultiField(int inputTypeId, List<InputAreaFieldInputModel> fields);
+
+    }
+
+
+    public interface IInputPrivateConfigService : IInputConfigServiceBase
+    {
+
+    }
+
+    public interface IInputPublicConfigService : IInputConfigServiceBase
+    {
 
     }
 }

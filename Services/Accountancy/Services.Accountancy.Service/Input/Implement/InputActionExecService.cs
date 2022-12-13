@@ -17,21 +17,48 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputActionExecService : ActionButtonExecHelperServiceAbstract, IInputActionExecService
+    public class InputPrivateActionExecService : InputActionExecServiceBase, IInputPrivateActionExecService
     {
+        public InputPrivateActionExecService(
+            AccountancyDBPrivateContext accountancyDBContext, 
+            IActivityLogService activityLogService, 
+            IActionButtonExecHelperService actionButtonExecHelperService, 
+            ICurrentContextService currentContextService) : 
+            base(accountancyDBContext, activityLogService, actionButtonExecHelperService, currentContextService, EnumObjectType.InputType, EnumObjectType.InputBill)
+        {
+        }
+    }
+
+    public class InputPublicActionExecService : InputActionExecServiceBase, IInputPublicActionExecService
+    {
+        public InputPublicActionExecService(
+            AccountancyDBPublicContext accountancyDBContext,
+            IActivityLogService activityLogService,
+            IActionButtonExecHelperService actionButtonExecHelperService,
+            ICurrentContextService currentContextService) :
+            base(accountancyDBContext, activityLogService, actionButtonExecHelperService, currentContextService, EnumObjectType.InputTypePublic, EnumObjectType.InputBillPublic)
+        {
+        }
+    }
+
+    public abstract class InputActionExecServiceBase : ActionButtonExecHelperServiceAbstract, IActionButtonExecHelper
+    {
+
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly ObjectActivityLogFacade _inputDataActivityLog;
 
-        public InputActionExecService(AccountancyDBContext accountancyDBContext
+        public InputActionExecServiceBase(AccountancyDBContext accountancyDBContext
             , IActivityLogService activityLogService
             , IActionButtonExecHelperService actionButtonExecHelperService
             , ICurrentContextService currentContextService
-            ) : base(actionButtonExecHelperService, EnumObjectType.InputType)
+            , EnumObjectType inputTypeObjectTypeId
+            , EnumObjectType InputBillObjectTypeId
+            ) : base(actionButtonExecHelperService, inputTypeObjectTypeId)
         {
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;
-            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(InputBillObjectTypeId);
         }
 
         public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)

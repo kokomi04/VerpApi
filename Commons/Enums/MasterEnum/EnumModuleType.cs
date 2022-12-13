@@ -16,6 +16,9 @@ namespace VErp.Commons.Enums.MasterEnum
         Accountant = 5,
         [Description("Sản xuất")]
         Manufacturing = 6,
+
+        [Description("Kế toán thuế")]
+        AccountantPublic = 7,
     }
 
 }

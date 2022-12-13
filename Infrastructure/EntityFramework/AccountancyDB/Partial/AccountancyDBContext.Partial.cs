@@ -7,11 +7,11 @@ using VErp.Infrastructure.EF.EFExtensions;
 
 namespace VErp.Infrastructure.EF.AccountancyDB
 {
-    public partial class AccountancyDBRestrictionContext : AccountancyDBContext, ISubsidiayRequestDbContext
+    public class AccountancyDBPrivateContext : AccountancyDBContext, ISubsidiayRequestDbContext
     {
         public int SubsidiaryId { get; private set; }
         public ICurrentContextService CurrentContextService { get; private set; }
-        public AccountancyDBRestrictionContext(DbContextOptions<AccountancyDBRestrictionContext> options
+        public AccountancyDBPrivateContext(DbContextOptions<AccountancyDBPrivateContext> options
             , ICurrentContextService currentContext
             , ILoggerFactory loggerFactory)
             : base(options.ChangeOptionsType<AccountancyDBContext>(loggerFactory))
@@ -50,6 +50,14 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
             this.SetHistoryBaseValue(CurrentContextService);
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+    }
+
+    public sealed class AccountancyDBPublicContext : AccountancyDBPrivateContext
+    {
+        public AccountancyDBPublicContext(DbContextOptions<AccountancyDBPublicContext> options, ICurrentContextService currentContext, ILoggerFactory loggerFactory) : 
+            base(options.ChangeOptionsType<AccountancyDBPrivateContext>(loggerFactory), currentContext, loggerFactory)
+        {
         }
     }
 }

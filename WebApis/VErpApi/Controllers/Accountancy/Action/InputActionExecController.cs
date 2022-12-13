@@ -6,25 +6,26 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Accountancy.Service.Input;
 
 namespace VErpApi.Controllers.Accountancy.Action
 {
-    [Route("api/accountancy/InputActionExec")]
+  
 
-    public class InputActionExecController : VErpBaseController
+    public abstract class InputActionExecControllerAbstract : VErpBaseController
     {
-        private readonly IInputActionExecService _inputActionExecService;
-        public InputActionExecController(IInputActionExecService inputActionExecService)
+        private readonly IActionButtonExecHelper _actionButtonExecHelper;
+        public InputActionExecControllerAbstract(IActionButtonExecHelper actionButtonExecHelper)
         {
-            _inputActionExecService = inputActionExecService;
+            _actionButtonExecHelper = actionButtonExecHelper;
         }
 
         [HttpGet]
         [Route("{inputBillId}/ActionButtons")]
         public async Task<IList<ActionButtonModel>> ActionButtons([FromRoute] int inputBillId)
         {
-            return await _inputActionExecService.GetActionButtons(inputBillId).ConfigureAwait(true);
+            return await _actionButtonExecHelper.GetActionButtons(inputBillId).ConfigureAwait(true);
         }
 
         [HttpPost]
@@ -33,7 +34,26 @@ namespace VErpApi.Controllers.Accountancy.Action
         [ActionButtonDataApi("actionButtonId")]
         public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId, [FromRoute] long inputBillId, [FromBody] BillInfoModel data)
         {
-            return await _inputActionExecService.ExecActionButton(actionButtonId, inputTypeId, inputBillId, data).ConfigureAwait(true);
+            return await _actionButtonExecHelper.ExecActionButton(actionButtonId, inputTypeId, inputBillId, data).ConfigureAwait(true);
+        }
+    }
+
+    [Route("api/accountancy/InputActionExec")]
+
+    public class InputActionExecController : InputActionExecControllerAbstract
+    {
+        public InputActionExecController(IInputPrivateActionExecService actionButtonExecHelper) : base(actionButtonExecHelper)
+        {
+        }
+    }
+
+
+    [Route("api/accountancy/public/InputActionExec")]
+
+    public class InputPublicActionExecController : InputActionExecControllerAbstract
+    {
+        public InputPublicActionExecController(IInputPublicActionExecService actionButtonExecHelper) : base(actionButtonExecHelper)
+        {
         }
     }
 }

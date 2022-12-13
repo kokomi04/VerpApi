@@ -17,9 +17,9 @@ namespace VErp.Services.Accountancy.Service.InputDashboard
 
     public class InputDashboardService : IInputDashboardService
     {
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly AccountancyDBPrivateContext _accountancyDBContext;
 
-        public InputDashboardService(AccountancyDBContext accountancyDBContext)
+        public InputDashboardService(AccountancyDBPrivateContext accountancyDBContext)
         {
             _accountancyDBContext = accountancyDBContext;
         }

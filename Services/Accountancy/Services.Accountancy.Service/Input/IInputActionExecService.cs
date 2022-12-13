@@ -2,7 +2,12 @@
 
 namespace VErp.Services.Accountancy.Service.Input
 {
-    public interface IInputActionExecService : IActionButtonExecHelper
+    public interface IInputPrivateActionExecService : IActionButtonExecHelper
+    {
+
+    }
+
+    public interface IInputPublicActionExecService : IActionButtonExecHelper
     {
 
     }
