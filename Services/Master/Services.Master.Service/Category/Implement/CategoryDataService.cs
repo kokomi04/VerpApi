@@ -781,7 +781,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var viewAlias = $"v";
             var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
 
-            fields = fields.Where(f => f.IsShowList).ToList();
+            //fields = fields.Where(f => f.IsShowList).ToList();
 
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
@@ -826,7 +826,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                 int suffix = 0;
-                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
+                filters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))
@@ -960,7 +960,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private string GetCategoryView(CategoryEntity category, List<CategoryField> fields, string viewAlias = "")
         {
-            var categoryView = GetCategoryViewName(category.CategoryCode);
+            var categoryView = GetCategoryViewName(category);
 
             if (string.IsNullOrWhiteSpace(viewAlias))
             {
@@ -981,14 +981,19 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
                 else
                 {
-                    return GetCategoryViewName(category.CategoryCode);
+                    return GetCategoryViewName(category);
                 }
             }
         }
 
-        private string GetCategoryViewName(string categoryCode)
+        private string GetCategoryViewName(CategoryEntity category)
         {
-            return $"v{categoryCode}";
+            if (category.IsOutSideData && !string.IsNullOrWhiteSpace(category.SearchSqlRaw))
+            {
+                return $"v{category.CategoryCode}_Search";
+            }
+
+            return $"v{category.CategoryCode}";
         }
 
         public async Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues)
@@ -1061,7 +1066,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         if (filterClause != null)
                         {
                             dataSql.Append(" AND ");
-                            filterClause.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref dataSql, ref sqlParams, ref suffix);
+                            filterClause.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref dataSql, ref sqlParams, ref suffix);
                         }
                     }
 

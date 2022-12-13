@@ -39,6 +39,7 @@ namespace VErp.Services.Master.Model.Category
 
         public bool IsCalcSum { get; set; }
 
+        public bool? IsJoinField { get; set; }
         public bool Compare(CategoryField curField)
         {
             return !curField.IsDeleted &&
@@ -53,7 +54,7 @@ namespace VErp.Services.Master.Model.Category
                 IsRequired == curField.IsRequired &&
                 IsUnique == curField.IsUnique &&
                 IsHidden == curField.IsHidden &&
-                IsShowList == curField.IsShowList &&
+                //IsShowList == curField.IsShowList &&
                 IsShowSearchTable == curField.IsShowSearchTable &&
                 RegularExpression == curField.RegularExpression &&
                 Filters == curField.Filters &&
@@ -65,7 +66,8 @@ namespace VErp.Services.Master.Model.Category
                 DecimalPlace == curField.DecimalPlace &&
                 DefaultValue == curField.DefaultValue &&
                 IsImage == curField.IsImage &&
-                IsCalcSum == curField.IsCalcSum;
+                IsCalcSum == curField.IsCalcSum &&
+                IsJoinField == curField.IsJoinField;
 
         }
     }

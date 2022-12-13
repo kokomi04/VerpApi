@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 #nullable disable
 
@@ -19,7 +20,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsDeleted { get; set; }
-        public bool IsShowList { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
         public int UpdatedByUserId { get; set; }
@@ -37,6 +37,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public string DefaultValue { get; set; }
         public bool? IsImage { get; set; }
         public bool IsCalcSum { get; set; }
+        public bool? IsJoinField { get; set; }
 
         public virtual Category Category { get; set; }
     }
