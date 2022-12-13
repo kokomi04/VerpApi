@@ -29,8 +29,7 @@ namespace VErpApi.Controllers.Accountancy.Action
         }
 
         [HttpPost]
-        [Route("{inputTypeId}/{inputBillId}/Exec/{actionButtonId}")]
-        [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
+        [Route("{inputTypeId}/{inputBillId}/Exec/{actionButtonId}")]       
         [ActionButtonDataApi("actionButtonId")]
         public async Task<List<NonCamelCaseDictionary>> ExecInputAction([FromRoute] int inputTypeId, [FromRoute] int actionButtonId, [FromRoute] long inputBillId, [FromBody] BillInfoModel data)
         {
@@ -39,7 +38,7 @@ namespace VErpApi.Controllers.Accountancy.Action
     }
 
     [Route("api/accountancy/InputActionExec")]
-
+    [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
     public class InputActionExecController : InputActionExecControllerAbstract
     {
         public InputActionExecController(IInputPrivateActionExecService actionButtonExecHelper) : base(actionButtonExecHelper)
@@ -49,7 +48,7 @@ namespace VErpApi.Controllers.Accountancy.Action
 
 
     [Route("api/accountancy/public/InputActionExec")]
-
+    [ObjectDataApi(EnumObjectType.InputTypePublic, "inputTypeId")]
     public class InputPublicActionExecController : InputActionExecControllerAbstract
     {
         public InputPublicActionExecController(IInputPublicActionExecService actionButtonExecHelper) : base(actionButtonExecHelper)
