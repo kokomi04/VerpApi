@@ -23,7 +23,7 @@ namespace VErp.Services.Master.Model.Category
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
-        public bool IsShowList { get; set; }
+        public bool IsShowList { get { return true; } }
         public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
