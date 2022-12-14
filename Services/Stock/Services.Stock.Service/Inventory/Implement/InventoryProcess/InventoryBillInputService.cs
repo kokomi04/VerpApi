@@ -776,6 +776,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var billPackages = new List<PackageEntity>();
 
 
+            var newPackageCodes = inventoryDetails.Where(d => d.PackageOptionId == (int)EnumPackageOption.Create || d.PackageOptionId == (int)EnumPackageOption.CreateMerge)
+                .Select(d => d.ToPackageInfo?.JsonDeserialize<PackageInputModel>()?.PackageCode)
+                .Distinct()
+                .Where(code => !string.IsNullOrWhiteSpace(code))
+                .ToList();
+            if (newPackageCodes.Count > 0)
+            {
+                var existedPackages = await _stockDbContext.Package.Where(p => newPackageCodes.Contains(p.PackageCode)).ToListAsync();
+                if (existedPackages.Count > 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể tạo kiện với mã kiện đã tồn tại: {string.Join(',', newPackageCodes)}");
+                }
+            }
 
 
             foreach (var item in inventoryDetails.OrderBy(d => d.InventoryDetailId))
