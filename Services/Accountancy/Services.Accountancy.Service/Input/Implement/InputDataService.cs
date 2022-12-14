@@ -107,12 +107,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 where f.InputTypeViewId == inputTypeViewId
                 select f
             ).ToListAsync();
-
-            var sqlParams = new List<SqlParameter>();
+            
+            var sqlParams = new List<SqlParameter>() {
+                new SqlParameter("@InputTypeId",inputTypeId)
+            };
 
             var whereCondition = new StringBuilder();
 
-            whereCondition.Append($"r.InputTypeId = {inputTypeId} AND {GlobalFilter()}");
+            whereCondition.Append($"r.InputTypeId = @InputTypeId AND {GlobalFilter()}");
             if (fromDate.HasValue && toDate.HasValue)
             {
                 whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
@@ -185,7 +187,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             else
             {
-                totalSql = @$"SELECT COUNT(DISTINCT r.InputBill_F_Id) as Total {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
+                
+                totalSql = @$"
+                    SELECT COUNT(0) Total {sumSql} FROM (
+                        SELECT r.InputBill_F_Id {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}
+                        GROUP BY r.InputBill_F_Id
+                    ) r
+                ";
             }
 
             var selectColumns = fieldToSelect.SelectMany(f =>
