@@ -101,9 +101,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             ).ToListAsync();
             var whereCondition = new StringBuilder();
 
-            var sqlParams = new List<SqlParameter>();
+            var sqlParams = new List<SqlParameter>() {
+                new SqlParameter("@VoucherTypeId",voucherTypeId)
+            };
 
-            whereCondition.Append($" r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()}");
+            whereCondition.Append($" r.VoucherTypeId = @VoucherTypeId AND {GlobalFilter()}");
 
             if (fromDate.HasValue && toDate.HasValue)
             {
@@ -170,7 +172,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
             else
             {
-                totalSql = @$"SELECT COUNT(DISTINCT r.VoucherBill_F_Id) as Total {sumSql} FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}";
+                totalSql = @$"
+                    SELECT COUNT(0) Total {sumSql} FROM (
+                        SELECT r.VoucherBill_F_Id {sumSql} FROM {VOUCHERVALUEROW_VIEW} r WHERE {whereCondition}
+                        GROUP BY r.VoucherBill_F_Id
+                    ) r
+                ";
             }
 
 
@@ -2409,7 +2416,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (string.IsNullOrWhiteSpace(strValue) && field.IsRequire && string.IsNullOrWhiteSpace(field.RequireFilters)) throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
 
                     if (string.IsNullOrWhiteSpace(strValue)) continue;
-                 
+
 
                     if (strValue.StartsWith(PREFIX_ERROR_CELL))
                     {

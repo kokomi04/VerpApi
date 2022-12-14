@@ -67,6 +67,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                     {
                         lstMenu.Add(EntityToModel(parent));
                     }
+                    else
+                    {
+                        parentId = 0;
+                    }
                 }
             }
             return lstMenu.OrderBy(m => m.SortOrder).ToList();
