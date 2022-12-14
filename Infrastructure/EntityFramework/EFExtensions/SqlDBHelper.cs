@@ -64,6 +64,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
+            dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
+
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
 
@@ -101,6 +103,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             if (timeout.HasValue)
             {
                 dbContext.Database.SetCommandTimeout(timeout.Value);
+            }
+            else
+            {
+                dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
             }
 
             return await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), ps);
@@ -177,6 +183,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
                     }
+                    else
+                    {
+                        command.CommandTimeout = 2 * 60;
+                    }
 
                     var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
                     if (trans != null)
@@ -226,6 +236,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     if (timeout.HasValue)
                     {
                         command.CommandTimeout = Convert.ToInt32(timeout.Value.TotalSeconds);
+                    }
+                    else
+                    {
+                        command.CommandTimeout = 2 * 60;
                     }
 
                     var trans = dbContext.Database.CurrentTransaction?.GetDbTransaction();
