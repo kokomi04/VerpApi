@@ -43,7 +43,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
-            { EnumModuleType.Accountant,typeof(AccountancyDBContext) },
+            { EnumModuleType.Accountant,typeof(AccountancyDBPrivateContext) },
+            { EnumModuleType.AccountantPublic,typeof(AccountancyDBPublicContext) },
             { EnumModuleType.Master,typeof(MasterDBContext) },
             { EnumModuleType.PurchaseOrder,typeof(PurchaseOrderDBContext) },
             { EnumModuleType.Stock,typeof(StockDBContext) },
