@@ -112,6 +112,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             obj.IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu;
             obj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
+            await ValidateParent(obj);
+
             await _masterDbContext.SaveChangesAsync();
 
             await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
@@ -170,6 +172,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                 IsGroup = model.IsGroup,
                 IsAlwaysShowTopMenu = model.IsAlwaysShowTopMenu
             };
+
+            await ValidateParent(entity);
+
             _masterDbContext.Menu.Add(entity);
             await _masterDbContext.SaveChangesAsync();
 
@@ -211,6 +216,34 @@ namespace VErp.Services.Master.Service.Config.Implement
                 IsGroup = obj.IsGroup,
                 IsAlwaysShowTopMenu = obj.IsAlwaysShowTopMenu
             };
+        }
+
+        private async Task ValidateParent(Menu info)
+        {
+            var menus = await _masterDbContext.Menu.ToListAsync();
+            var travledItems = new List<Menu>(){
+                info
+            };
+
+            var parentId = info.ParentId;
+            while (parentId > 0)
+            {
+                var parent = menus.FirstOrDefault(m => m.MenuId == parentId);
+                parentId = parent?.ParentId ?? 0;
+                if (parent != null)
+                {
+                    var existedParent = travledItems.FirstOrDefault(m => m.MenuId == parent.MenuId);
+                    if (existedParent == null)
+                    {
+                        travledItems.Add(parent);
+                    }
+                    else
+                    {
+                        throw GeneralCode.ItemNotFound.BadRequest($"Lỗi lặp lại menu cha {existedParent.MenuName}");
+                    }
+
+                }
+            }
         }
     }
 }
