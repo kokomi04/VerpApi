@@ -484,7 +484,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var value = selectValue[fieldName].value;
                         var type = selectValue[fieldName].type;
-
+                        
                         row[col] = value;
 
                         if (!BscRowsModel.IsSqlSelect(value))
@@ -496,7 +496,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
                                 if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
                                 {
-                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value ?? DBNull.Value });
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value ?? 0 });
                                 }
                             }
                         }
