@@ -317,7 +317,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     if (BscRowsModel.IsSqlSelect(configStr))
                     {
+                        configStr = ReplaceOldBscValuePrefix(configStr);
+
                         var selectData = $"{configStr.TrimStart('=')} AS [{column.Name}_{i}]";
+
                         if (BscRowsModel.IsBscSelect(configStr))
                         {
                             sqlBscCalcQuery.Add(new BscValueOrder()
@@ -406,9 +409,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-
+        private string ReplaceOldBscValuePrefix(string selectData)
+        {
+            selectData = selectData.Replace($"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX_OLD}", "#");
+            selectData = selectData.Replace($"#", "@#");
+            return selectData;
+        }
         private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
         {
+            //   selectData = ReplaceOldBscValuePrefix(selectData);
+
             var result = new StringBuilder(selectData);
             var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
             Regex rx = new Regex(pattern);
