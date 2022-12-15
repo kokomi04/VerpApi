@@ -247,6 +247,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var queryResult = new NonCamelCaseDictionary();
 
+
+            var declareValues = new HashSet<string>();
             for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
                 var rowValue = new NonCamelCaseDictionary();
@@ -338,6 +340,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             BscAppendSelect(sql, selectData);
                         }
                     }
+                    else
+                    {
+                        if (!string.IsNullOrWhiteSpace(keyValue))
+                        {
+
+                            if (!declareValues.Contains(keyValue)) declareValues.Add(keyValue);
+                            var selectData = $"@{keyValue} AS [{column.Name}_{i}]";
+                            BscAppendSelect(sql, selectData);
+                        }
+
+                    }
                 }
             }
 
@@ -345,7 +358,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (sql.Length > 0)
             {
-                var data = await _dbContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var delcareSql = string.Join("\n", declareValues.Select(k => $"DECLARE @{k} DECIMAL(32,12);").ToArray());
+                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
