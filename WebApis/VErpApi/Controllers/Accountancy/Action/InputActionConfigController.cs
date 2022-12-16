@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.Accountancy.Action
         }
     }
 
-    [Route("api/accountancy/InputPublicActionConfig")]
+    [Route("api/accountancy/public/InputActionConfig")]
 
     public class InputPublicActionConfigController : InputActionConfigControllerAbstract
     {

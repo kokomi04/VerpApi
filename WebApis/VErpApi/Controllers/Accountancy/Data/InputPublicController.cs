@@ -26,7 +26,7 @@ namespace VErpApi.Controllers.Accountancy.Data
     public class InputPublicController : InputControllerBaseAbstract
     {
 
-        public InputPublicController(IInputDataPrivateService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+        public InputPublicController(IInputDataPublicService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
             : base(inputDataService, inpuDataExportFacadeService)
         {
 
