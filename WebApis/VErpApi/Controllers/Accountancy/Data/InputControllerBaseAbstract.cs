@@ -24,10 +24,10 @@ namespace VErpApi.Controllers.Accountancy.Data
    
     public abstract class InputControllerBaseAbstract : VErpBaseController
     {
-        private readonly IInputDataPrivateService _inputDataService;
+        private readonly IInputDataServiceBase _inputDataService;
         private readonly IInpuDataExportFacadeService _inpuDataExportFacadeService;
 
-        public InputControllerBaseAbstract(IInputDataPrivateService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+        public InputControllerBaseAbstract(IInputDataServiceBase inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
         {
             _inputDataService = inputDataService;
             _inpuDataExportFacadeService = inpuDataExportFacadeService;
