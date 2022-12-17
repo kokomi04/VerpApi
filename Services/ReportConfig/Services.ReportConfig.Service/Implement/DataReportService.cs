@@ -128,13 +128,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         switch (filterFiled.DataTypeId)
                         {
                             case EnumDataType.Int:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.BigInt:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.Text:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             default:
                                 break;
@@ -145,7 +145,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         if (filters.ContainsKey(paramName))
                         {
                             value = filters[paramName];
-                            if (!value.IsNullObject())
+                            if (!value.IsNullOrEmptyObject())
                             {
                                 if (filterFiled.DataTypeId.IsTimeType())
                                 {
@@ -407,7 +407,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                        if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -497,7 +497,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
                                 if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
                                 {
-                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value.IsNullObject() ? 0 : value });
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value.IsNullOrEmptyObject() ? 0 : value });
                                 }
                             }
                         }
@@ -633,7 +633,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     var colData = row[column.Alias];
 
-                    if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                    if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
                     {
                         var decimalValue = Convert.ToDecimal(colData);
 
@@ -887,7 +887,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var column in columns.Where(c => c.IsCalcSum))
                 {
-                    var v = table.Rows[0][column.Alias].IsNullObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
+                    var v = table.Rows[0][column.Alias].IsNullOrEmptyObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
                     totals.Add(column.Alias, v);
                 }
             }
@@ -1022,7 +1022,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 return calcNumLong != 0;
             }
 
-            return !row[CalcSumConditionCol].IsNullObject();
+            return !row[CalcSumConditionCol].IsNullOrEmptyObject();
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
@@ -1077,11 +1077,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var toDate = "";
             foreach (var key in filters.Filters.Keys)
             {
-                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
-                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Package;
 
@@ -62,6 +63,6 @@ namespace VErp.Services.Stock.Service.Stock
         Task<long> JoinPackage(PackageJoinInput req);
 
 
-        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20);
+        Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, bool isIncludedEmptyPackage, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20, Clause filters = null);
     }
 }

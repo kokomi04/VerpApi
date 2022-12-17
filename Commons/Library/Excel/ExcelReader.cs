@@ -682,7 +682,7 @@ namespace VErp.Commons.Library
                 {
                     foreach (var mappingInfo in checkDuplicateColumns)
                     {
-                        var persistentValue = bill.Where(r => !ObjectUtils.IsNullObject(r.PropertyMappings.FirstOrDefault(m => m.MappingInfo == mappingInfo)?.Value))
+                        var persistentValue = bill.Where(r => !ObjectUtils.IsNullOrEmptyObject(r.PropertyMappings.FirstOrDefault(m => m.MappingInfo == mappingInfo)?.Value))
                             .GroupBy(r => r.PropertyMappings.FirstOrDefault(m => m.MappingInfo == mappingInfo)?.Value)
                             .ToList();
                         if (persistentValue.Count > 1)

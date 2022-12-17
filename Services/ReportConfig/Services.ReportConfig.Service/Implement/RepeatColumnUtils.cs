@@ -123,7 +123,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         firstRow.Add(k, v);
                     }
-                    else if (firstRow[k].IsNullObject())
+                    else if (firstRow[k].IsNullOrEmptyObject())
                     {
                         firstRow[k] = v;
                     }

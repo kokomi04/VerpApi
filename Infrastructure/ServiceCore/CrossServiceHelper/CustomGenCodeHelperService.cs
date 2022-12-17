@@ -322,7 +322,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     /// <returns></returns>
     public async Task<bool> ConfirmCode()
     {
-        if (configBaseValue.IsNullObject()) return true;
+        if (configBaseValue.IsNullOrEmptyObject()) return true;
 
         return await _customGenCodeHelper.ConfirmCode(configBaseValue);
     }

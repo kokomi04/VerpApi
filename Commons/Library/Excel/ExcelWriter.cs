@@ -208,7 +208,7 @@ namespace VErp.Commons.Library
 
         public void WriteCellValue(ICell cell, ExcelCell data)
         {
-            if (data.Value.IsNullObject())
+            if (data.Value.IsNullOrEmptyObject())
             {
                 data.Value = string.Empty;
                 data.Type = EnumExcelType.String;

@@ -31,7 +31,7 @@ namespace VErp.Commons.Library
 
         public static void UpdateIfAvaiable<T, TMember>(this T obj, Expression<Func<T, TMember>> member, TMember value)
         {
-            if (value.IsNullObject())
+            if (value.IsNullOrEmptyObject())
             {
                 return;
             }
@@ -107,7 +107,7 @@ namespace VErp.Commons.Library
             return sourceObject is T result ? result : default;
         }
 
-        public static bool IsNullObject(this object obj)
+        public static bool IsNullOrEmptyObject(this object obj)
         {
             if (obj == null || obj == DBNull.Value) return true;
 
@@ -126,7 +126,7 @@ namespace VErp.Commons.Library
             return lst.Where(x =>
             {
                 var valid = func(x);
-                return !valid.IsNullObject();
+                return !valid.IsNullOrEmptyObject();
             }).Select(func)
             .FirstOrDefault();
         }
@@ -167,12 +167,12 @@ namespace VErp.Commons.Library
                 if (appendList && !isPrimitiveType && (prop.PropertyType.IsArray || typeof(IEnumerable).IsAssignableFrom(prop.PropertyType)))
                 {
 
-                    if (targetValue.IsNullObject())
+                    if (targetValue.IsNullOrEmptyObject())
                     {
                         targetValue = Activator.CreateInstance(prop.PropertyType);
                     }
 
-                    if (!value.IsNullObject())
+                    if (!value.IsNullOrEmptyObject())
                     {
                         var lst = new List<object>();
                         foreach (var v in targetValue as IEnumerable)
@@ -207,7 +207,7 @@ namespace VErp.Commons.Library
                     prop.SetValue(target, targetValue, null);
 
                 }
-                else if (!value.IsNullObject())
+                else if (!value.IsNullOrEmptyObject())
                 {
 
 

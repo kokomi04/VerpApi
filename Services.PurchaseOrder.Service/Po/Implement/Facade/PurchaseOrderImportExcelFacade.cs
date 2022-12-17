@@ -210,20 +210,20 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 var fax = details.GetFirstValueNotNull(x => x.DeliveryInfo.Fax);
                 var additionNote = details.GetFirstValueNotNull(x => x.DeliveryInfo.AdditionNote);
 
-                if (deliverTo.IsNullObject())
+                if (deliverTo.IsNullOrEmptyObject())
                 {
                     deliverTo = deliveryUserInfo?.FullName;
                 }
 
-                if (company.IsNullObject())
+                if (company.IsNullOrEmptyObject())
                 {
                     company = deliveryCustomerInfo?.CustomerName;
                 }
 
-                if (address.IsNullObject())
+                if (address.IsNullOrEmptyObject())
                 {
                     address = deliveryCustomerInfo?.Address;
-                    if (address.IsNullObject())
+                    if (address.IsNullOrEmptyObject())
                     {
                         address = deliveryUserInfo?.Address;
                     }
@@ -716,7 +716,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 F_Id = Convert.ToInt64(data[CategoryFieldConstants.F_Id]),
                 CurrencyCode = data[CurrencyCateConstants.CurrencyCode]?.ToString(),
                 CurrencyName = data[CurrencyCateConstants.CurrencyName]?.ToString(),
-                DecimalPlace = decimalPlace.IsNullObject() ? DECIMAL_PLACE_DEFAULT : Convert.ToInt32(decimalPlace),
+                DecimalPlace = decimalPlace.IsNullOrEmptyObject() ? DECIMAL_PLACE_DEFAULT : Convert.ToInt32(decimalPlace),
             };
         }
 

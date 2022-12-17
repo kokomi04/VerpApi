@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -285,7 +286,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     {
                         var propId = v.Key;
                         var existedValue = customValues.ContainsKey(propId) ? customValues[propId] : null;
-                        if (v.Value != null && !v.Value.IsNullObject())
+                        if (v.Value != null && !v.Value.IsNullOrEmptyObject())
                         {
                             if (!customValues.ContainsKey(propId))
                             {
@@ -513,7 +514,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20)
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport(string keyword, bool? isTwoUnit, bool isIncludedEmptyPackage, IList<int> productCateIds, IList<int> productIds, IList<long> productUnitConversionIds, IList<long> packageIds, IList<int> stockIds, int page = 1, int size = 20, Clause filters = null)
         {
             var packpages = _stockDbContext.Package.AsQueryable();
             if (packageIds?.Count > 0)
@@ -544,14 +545,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 productQuery = productQuery.Where(p => productCateIds.Contains(p.ProductCateId));
 
             }
+            if (!isIncludedEmptyPackage)
+            {
+                packpages = packpages.Where(p => p.PrimaryQuantityRemaining > 0);
+            }
             var query = from pk in packpages
                         join l in _stockDbContext.Location on pk.LocationId equals l.LocationId into ls
                         from l in ls.DefaultIfEmpty()
                         join p in productQuery on pk.ProductId equals p.ProductId
                         join s in _stockDbContext.ProductExtraInfo on p.ProductId equals s.ProductId
                         join pu in _stockDbContext.ProductUnitConversion on pk.ProductUnitConversionId equals pu.ProductUnitConversionId
-                        where //stockIds.Contains(pk.StockId) &&
-                        pk.PrimaryQuantityRemaining > 0
+                        //where //stockIds.Contains(pk.StockId) &&
+                        //pk.PrimaryQuantityRemaining > 0
                         select new
                         {
                             ProductId = p.ProductId,
@@ -606,6 +611,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                  || p.LocationName.Contains(keyword)
                 );
             }
+
+            if (filters != null)
+                query = query.InternalFilter(filters);
+
             var total = await query.CountAsync();
 
             var packageData = size > 0 ? await query.OrderByDescending(p => p.ProductUnitConversionRemaining).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync() : await query.AsNoTracking().ToListAsync();

@@ -1228,11 +1228,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var toDate = "";
             foreach (var key in filters.Filters.Keys)
             {
-                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
-                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }

@@ -402,7 +402,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
-                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
+                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullOrEmptyObject()))
                 {
                     try
                     {
@@ -539,7 +539,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 // ignore auto generate field
                 //if (field.FormTypeId == (int)EnumFormType.Generate) continue;
 
-                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullObject()))
+                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullOrEmptyObject()))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }

@@ -39,7 +39,7 @@ namespace VErp.Commons.Library
         }
         private static object GetSqlValueWithCustomTimezone(this EnumDataType dataType, object value, int? timeZoneOffset)
         {
-            if (value.IsNullObject()) return DBNull.Value;
+            if (value.IsNullOrEmptyObject()) return DBNull.Value;
 
             switch (dataType)
             {
