@@ -996,7 +996,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     selectSql.Append(",");
                 }
-                selectSql.AppendLine($"{value} AS {key}");
+                selectSql.AppendLine($"{value} AS [{key}]");
                 first = false;
             }
 

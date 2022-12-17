@@ -324,6 +324,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
             }
+            if (data.Columns == null || data.Columns.Any(c => string.IsNullOrWhiteSpace(c.Alias)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
+            }
 
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
@@ -358,6 +362,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (report == null)
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
+            if (data.Columns == null || data.Columns.Any(c => string.IsNullOrWhiteSpace(c.Alias)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
             }
 
             var existedReport = await _reportConfigContext.ReportType
