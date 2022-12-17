@@ -164,7 +164,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers)
         {
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             var cates = await _organizationContext.CustomerCate.ToListAsync();
@@ -856,7 +856,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        private async Task<GenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
+        private async Task<IGenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
         {
             model.CustomerCode = (model.CustomerCode ?? "").Trim();
 

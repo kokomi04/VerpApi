@@ -27,7 +27,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         //Task<bool> ConfirmCode(int? customGenCodeId, string baseValue);
         Task<bool> ConfirmCode(CustomGenCodeBaseValueModel lastBaseValue);
 
-        GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null);
+        IGenerateCodeContext CreateGenerateCodeContext(IDictionary<string, int> baseValueChains = null);
     }
 
     public class CustomGenCodeHelperService : ICustomGenCodeHelperService
@@ -156,7 +156,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
 
 
-        public GenerateCodeContext CreateGenerateCodeContext(Dictionary<string, int> baseValueChains = null)
+        public IGenerateCodeContext CreateGenerateCodeContext(IDictionary<string, int> baseValueChains = null)
         {
             return new GenerateCodeContext(this, _currentContextService, baseValueChains);
         }
@@ -166,20 +166,25 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
 
 
-public class GenerateCodeContext
+internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, IGenerateCodeAction
 {
-    internal ICustomGenCodeHelperService CustomGenCodeHelper { get; private set; }
-    internal ICurrentContextService CurrentContextService { get; private set; }
+    private ICustomGenCodeHelperService _customGenCodeHelper;
+    private ICurrentContextService _currentContextService;
 
-    internal EnumObjectType TargetObjectTypeId { get; private set; }
-    internal EnumObjectType ConfigObjectTypeId { get; private set; }
-    internal long ConfigObjectId { get; private set; }
-    public Dictionary<string, int> BaseValueChains { get; private set; }
-    internal GenerateCodeContext(ICustomGenCodeHelperService customGenCodeHelper, ICurrentContextService currentContextService, Dictionary<string, int> baseValueChains = null)
+    private EnumObjectType _targetObjectTypeId;
+    private EnumObjectType _configObjectTypeId;
+    private long _configObjectId;
+    private IDictionary<string, int> _baseValueChains;
+
+    private string _refCode;
+    private long _fId;
+    private long? _date;
+
+    internal GenerateCodeContext(ICustomGenCodeHelperService customGenCodeHelper, ICurrentContextService currentContextService, IDictionary<string, int> baseValueChains = null)
     {
-        CustomGenCodeHelper = customGenCodeHelper;
-        CurrentContextService = currentContextService;
-        BaseValueChains = baseValueChains;
+        _customGenCodeHelper = customGenCodeHelper;
+        _currentContextService = currentContextService;
+        _baseValueChains = baseValueChains;
     }
 
     /// <summary>
@@ -189,43 +194,14 @@ public class GenerateCodeContext
     /// <param name="configObjectTypeId"></param>
     /// <param name="configObjectId"></param>
     /// <returns></returns>
-    public GenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0)
+    public IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0)
     {
-        TargetObjectTypeId = targetObjectTypeId;
-        ConfigObjectTypeId = configObjectTypeId ?? targetObjectTypeId;
-        ConfigObjectId = configObjectId;
-        return new GenerateCodeConfig(this);
+        _targetObjectTypeId = targetObjectTypeId;
+        _configObjectTypeId = configObjectTypeId ?? targetObjectTypeId;
+        _configObjectId = configObjectId;
+        return this;
     }
 
-    private CustomGenCodeBaseValueModel configBaseValue;
-    internal void SetconfigBaseValue(CustomGenCodeBaseValueModel configBaseValue)
-    {
-        this.configBaseValue = configBaseValue;
-    }
-
-    /// <summary>
-    /// Confirm code value has used
-    /// </summary>
-    /// <returns></returns>
-    public async Task<bool> ConfirmCode()
-    {
-        if (configBaseValue.IsNullObject()) return true;
-
-        return await CustomGenCodeHelper.ConfirmCode(configBaseValue);
-    }
-}
-
-public class GenerateCodeConfig
-{
-    internal GenerateCodeContext Ctx { get; private set; }
-    internal string RefCode { get; private set; }
-    internal long FId { get; private set; }
-    internal long? Date { get; private set; }
-    internal GenerateCodeConfig(GenerateCodeContext ctx)
-    {
-        if (ctx == null) throw new ArgumentNullException();
-        Ctx = ctx;
-    }
 
     /// <summary>
     /// Set replace data for generate code structure
@@ -234,22 +210,12 @@ public class GenerateCodeConfig
     /// <param name="date">%DATE(xxx)%</param>
     /// <param name="parentCode">%CODE%</param>
     /// <returns></returns>
-    public GenerateCodeConfigData SetConfigData(long fId, long? date = null, string parentCode = "")
+    public IGenerateCodeAction SetConfigData(long fId, long? date = null, string parentCode = "")
     {
-        RefCode = parentCode;
-        FId = fId;
-        Date = date;
-        return new GenerateCodeConfigData(this);
-    }
-}
-
-public class GenerateCodeConfigData
-{
-    private GenerateCodeConfig configOption { get; set; }
-    internal GenerateCodeConfigData(GenerateCodeConfig configOption)
-    {
-        if (configOption == null) throw new ArgumentNullException();
-        this.configOption = configOption;
+        _refCode = parentCode;
+        _fId = fId;
+        _date = date;
+        return this;
     }
 
     /// <summary>
@@ -274,51 +240,46 @@ public class GenerateCodeConfigData
         }
         else
         {
-            var customGenCodeHelper = configOption.Ctx.CustomGenCodeHelper;
-            var targetObjectTypeId = configOption.Ctx.TargetObjectTypeId;
-            var configObjectTypeId = configOption.Ctx.ConfigObjectTypeId;
-            var configObjectId = configOption.Ctx.ConfigObjectId;
 
-            var refCode = configOption.RefCode;
-            var fId = configOption.FId;
-            var date = configOption.Date ?? configOption.Ctx.CurrentContextService.GetNowUtc().GetUnix();
 
-            var config = await customGenCodeHelper.CurrentConfig(targetObjectTypeId, configObjectTypeId, configObjectId, fId, refCode, date);
+            var date = _date ?? _currentContextService.GetNowUtc().GetUnix();
+
+            var config = await _customGenCodeHelper.CurrentConfig(_targetObjectTypeId, _configObjectTypeId, _configObjectId, _fId, _refCode, date);
 
             if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã");
 
-            configOption.Ctx.SetconfigBaseValue(config.CurrentLastValue);
+            configBaseValue = config.CurrentLastValue;
+
 
             var lastValue = config.CurrentLastValue.LastValue;
             var genChainKey = config.CustomGenCodeId + "|" + config.CurrentLastValue.BaseValue;
 
-            var baseValueChains = configOption.Ctx.BaseValueChains;
-            if (baseValueChains?.ContainsKey(genChainKey) == true)
+            if (_baseValueChains?.ContainsKey(genChainKey) == true)
             {
-                lastValue = baseValueChains[genChainKey];
+                lastValue = _baseValueChains[genChainKey];
             }
 
             int dem = 0;
             string code;
             do
             {
-                code = (await customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, fId, refCode, date))?.CustomCode;
+                code = (await _customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, _fId, _refCode, date))?.CustomCode;
                 existedItem = await GetExistedItem(query, code, checkExisted, checkExistedFormat);
                 if (existedItem != null)
                 {
-                    await configOption.Ctx.ConfirmCode();
+                    await ConfirmCode();
                 }
                 lastValue++;
 
-                if (baseValueChains != null)
+                if (_baseValueChains != null)
                 {
-                    if (baseValueChains.ContainsKey(genChainKey))
+                    if (_baseValueChains.ContainsKey(genChainKey))
                     {
-                        baseValueChains[genChainKey] = lastValue;
+                        _baseValueChains[genChainKey] = lastValue;
                     }
                     else
                     {
-                        baseValueChains.Add(genChainKey, lastValue);
+                        _baseValueChains.Add(genChainKey, lastValue);
                     }
                 }
 
@@ -353,5 +314,32 @@ public class GenerateCodeConfigData
         return await query.Where(conditionExpression).FirstOrDefaultAsync();
     }
 
+    private CustomGenCodeBaseValueModel configBaseValue;
 
+    /// <summary>
+    /// Confirm code value has used
+    /// </summary>
+    /// <returns></returns>
+    public async Task<bool> ConfirmCode()
+    {
+        if (configBaseValue.IsNullOrEmptyObject()) return true;
+
+        return await _customGenCodeHelper.ConfirmCode(configBaseValue);
+    }
+}
+
+public interface IGenerateCodeContext
+{
+    IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0);
+
+    Task<bool> ConfirmCode();
+}
+public interface IGenerateCodeConfig
+{
+    IGenerateCodeAction SetConfigData(long fId, long? date = null, string parentCode = "");
+}
+
+public interface IGenerateCodeAction
+{
+    Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class;
 }

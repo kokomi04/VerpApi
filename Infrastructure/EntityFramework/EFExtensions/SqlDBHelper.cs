@@ -171,7 +171,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                     foreach (var param in parammeters)
                     {
-                        if (param.Value.IsNullObject())
+                        if (param.Value.IsNullOrEmptyObject())
                         {
                             param.Value = DBNull.Value;
                         }
@@ -487,7 +487,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         singleClause.Value = value;
                     }
 
-                    if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullObject())
+                    if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullOrEmptyObject())
                     {
                         singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
                         {
@@ -524,56 +524,66 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-        public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not)
+        public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
         {
             var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
 
             var aliasFId = string.IsNullOrWhiteSpace(viewAlias) ? $"[F_Id]" : $"[{viewAlias}].[F_Id]";
 
+            var condition = new StringBuilder();
             if (clause != null)
             {
                 var paramName = $"@{clause.FieldName}_filter_{suffix}";
-                string ope;
+
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
-                        ope = not ? "!=" : "=";
 
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"{aliasField} {(not ? "IS NOT NULL" : "IS NULL")}");
+                            condition.Append($"{aliasField} IS NULL");
                         }
                         else
                         {
-                            condition.Append($"{aliasField} {ope} {paramName}");
+                            condition.Append($"{aliasField} = {paramName}");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
                     case EnumOperator.NotEqual:
-                        ope = not ? "=" : "!=";
+
                         if (clause.Value == null || clause.Value == DBNull.Value)
                         {
-                            condition.Append($"{aliasField} {(not ? "IS NULL" : "IS NOT NULL")}");
+                            condition.Append($"{aliasField} IS NOT NULL");
                         }
                         else
                         {
-                            condition.Append($"{aliasField} {ope} {paramName}");
+                            condition.Append($"{aliasField} <> {paramName} OR {aliasField} IS NULL");
                             sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         }
                         break;
                     case EnumOperator.Contains:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} LIKE {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
+                        }
+
                         break;
                     case EnumOperator.NotContains:
-                        ope = not ? "LIKE" : "NOT LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} OR {aliasField} IS NULL");
+                        }
+                        else
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} AND {aliasField} IS NOT NULL");
+                        }
+
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}%"));
                         break;
                     case EnumOperator.InList:
-                        ope = not ? "NOT IN" : "IN";
-                        condition.Append($"{aliasField} {ope} (");
+
+                        condition.Append($"{aliasField} IN (");
                         // int inSuffix = 0;
                         // var paramNames = new StringBuilder();
                         IList<object> values = new List<object>();
@@ -619,67 +629,83 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         break;
                     case EnumOperator.IsLeafNode:
-                        ope = not ? "EXISTS" : "NOT EXISTS";
                         var internalAlias = $"{viewAlias}_{suffix}";
-                        condition.Append($"{ope}(SELECT {internalAlias}.F_Id FROM {tableName} {internalAlias} WHERE {internalAlias}.ParentId = {aliasFId})");
+                        condition.Append($"NOT EXISTS (SELECT {internalAlias}.F_Id FROM {tableName} {internalAlias} WHERE {internalAlias}.ParentId = {aliasFId})");
                         break;
                     case EnumOperator.StartsWith:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} LIKE {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+                        }
                         break;
                     case EnumOperator.NotStartsWith:
-                        ope = not ? "LIKE" : "NOT LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} OR {aliasField} IS NULL");
+                        }
+                        else
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} AND {aliasField} IS NOT NULL");
+                        }
                         sqlParams.Add(new SqlParameter(paramName, $"{clause.Value}%"));
+
                         break;
                     case EnumOperator.EndsWith:
-                        ope = not ? "NOT LIKE" : "LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
-                        sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} LIKE {paramName}");
+                            sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+                        }
                         break;
                     case EnumOperator.NotEndsWith:
-                        ope = not ? "LIKE" : "NOT LIKE";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        if (!clause.Value.IsNullOrEmptyObject())
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} OR {aliasField} IS NULL");
+                        }
+                        else
+                        {
+                            condition.Append($"{aliasField} NOT LIKE {paramName} AND {aliasField} IS NOT NULL");
+                        }
                         sqlParams.Add(new SqlParameter(paramName, $"%{clause.Value}"));
+
                         break;
                     case EnumOperator.Greater:
-                        ope = not ? "<=" : ">";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        condition.Append($"ISNULL({aliasField},0) > {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        ope = not ? "<" : ">=";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        condition.Append($"ISNULL({aliasField},0) >= {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThan:
-                        ope = not ? ">=" : "<";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        condition.Append($"ISNULL({aliasField},0) < {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThanOrEqual:
-                        ope = not ? ">" : "<=";
-                        condition.Append($"{aliasField} {ope} {paramName}");
+                        condition.Append($"ISNULL({aliasField},0) <= {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
-                        ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"{aliasField} {ope}");
+                        condition.Append($"{aliasField} IS NULL");
                         break;
                     case EnumOperator.IsEmpty:
-                        ope = not ? "!= ''''" : "=''''";
-                        condition.Append($"{aliasField} {ope}");
+                        condition.Append($"{aliasField} = ''''");
                         break;
                     case EnumOperator.IsNullOrEmpty:
-                        ope = not ? "IS NOT NULL" : "IS NULL";
-                        condition.Append($"( {aliasField} {ope}");
-                        ope = not ? "!= ''''" : "=''''";
-                        condition.Append($" AND {aliasField} {ope})");
+                        condition.Append($"({aliasField} = '''' OR {aliasField} IS NULL");
                         break;
                     default:
                         break;
                 }
+
+                if (isNot)
+                {
+                    condition.Insert(0, " NOT (");
+                    condition.Append(") ");
+                }
+
+                conditionAll.Append(condition);
                 suffix++;
             }
         }

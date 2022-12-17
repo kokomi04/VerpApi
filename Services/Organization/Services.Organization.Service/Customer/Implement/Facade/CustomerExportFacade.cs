@@ -396,7 +396,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -415,7 +415,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {

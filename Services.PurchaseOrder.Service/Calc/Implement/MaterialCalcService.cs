@@ -318,7 +318,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateCode(long? materialCalcId, MaterialCalcModel model)
+        private async Task<IGenerateCodeContext> GenerateCode(long? materialCalcId, MaterialCalcModel model)
         {
             model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
 

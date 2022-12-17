@@ -232,7 +232,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     var value = filter.Value;
 
-                    if (value.IsNullObject()) continue;
+                    if (value.IsNullOrEmptyObject()) continue;
 
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
@@ -1149,9 +1149,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     try
                     {
-                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
 
-                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                         {
                             parameters.Add(key, val);
                         }
@@ -1543,7 +1543,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullOrEmptyObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1573,7 +1573,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var value = row[fieldName];
 
-                    if (value.IsNullObject() && oldSqlValue.IsNullObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
+                    if (value.IsNullOrEmptyObject() && oldSqlValue.IsNullOrEmptyObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
                     {
                         newRow[fieldName] = newSqlValue;
                     }
@@ -1766,7 +1766,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
+                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
 
@@ -2005,7 +2005,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var value = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                     dataRow[item.Key] = value;
 
-                    if (item.Key.IsVndColumn() && !value.IsNullObject())
+                    if (item.Key.IsVndColumn() && !value.IsNullOrEmptyObject())
                     {
                         var deValue = Convert.ToDecimal(value);
                         var colName = item.Key.VndSumName();
@@ -2038,7 +2038,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             //Create addition reciprocal accounting
-            if (data.Info.Any(k => k.Key.IsVndColumn() && !k.Value.IsNullObject()))// decimal.TryParse(k.Value?.ToString(), out var value) && value != 0
+            if (data.Info.Any(k => k.Key.IsVndColumn() && !k.Value.IsNullOrEmptyObject()))// decimal.TryParse(k.Value?.ToString(), out var value) && value != 0
             {
                 var dataRow = NewBillVersionRow(dataTable, inputTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
@@ -2895,8 +2895,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                                 try
                                 {
-                                    var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                    var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                                     {
                                         parameters.Add(key, val);
                                     }

@@ -122,7 +122,7 @@ namespace VErp.Services.Master.Service.Category
 
                         string GetParentId(NonCamelCaseDictionary row)
                         {
-                            if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !row[CategoryFieldConstants.ParentId].IsNullObject())
+                            if (parentField != null && row.ContainsKey(CategoryFieldConstants.ParentId) && !row[CategoryFieldConstants.ParentId].IsNullOrEmptyObject())
                             {
                                 var refValue = row[CategoryFieldConstants.ParentId].ToString();
 

@@ -368,7 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -387,7 +387,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {

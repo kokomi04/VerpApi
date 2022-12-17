@@ -608,7 +608,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             return data;
         }
 
-        private async Task<GenerateCodeContext> GenerateOutsouceRequestCode(long? outsourcePartRequestId, OutsourcePartRequestModel model)
+        private async Task<IGenerateCodeContext> GenerateOutsouceRequestCode(long? outsourcePartRequestId, OutsourcePartRequestModel model)
         {
             model.OutsourcePartRequestCode = (model.OutsourcePartRequestCode ?? "").Trim();
 

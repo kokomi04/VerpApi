@@ -130,7 +130,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             await FillGenerateColumn(genCodeContexts, baseValueChains, categoryId, category.CategoryCode, categoryFields, data);
@@ -390,7 +390,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
+        private async Task FillGenerateColumn(List<IGenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
         {
             var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
@@ -402,7 +402,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
-                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
+                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullOrEmptyObject()))
                 {
                     try
                     {
@@ -539,7 +539,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 // ignore auto generate field
                 //if (field.FormTypeId == (int)EnumFormType.Generate) continue;
 
-                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullObject()))
+                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullOrEmptyObject()))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }

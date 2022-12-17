@@ -599,7 +599,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<GenerateCodeContext> GenerateProductCode(int? productId, ProductGenCodeModel model)
+        private async Task<IGenerateCodeContext> GenerateProductCode(int? productId, ProductGenCodeModel model)
         {
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
@@ -644,7 +644,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
 
 
-        private async Task<GenerateCodeContext> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
+        private async Task<IGenerateCodeContext> ProductGenerateProductSemiCode(int parentProductId, int? productId, ProductGenCodeModel model)
         {
             model.ProductCode = (model.ProductCode ?? "").Trim();
 

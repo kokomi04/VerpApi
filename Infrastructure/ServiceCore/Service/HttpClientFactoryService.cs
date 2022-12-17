@@ -267,7 +267,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                 {
                     var v = prop.GetValue(queries, null);
 
-                    if (!v.IsNullObject())
+                    if (!v.IsNullOrEmptyObject())
                     {
                         if (v.GetType().IsEnum)
                         {

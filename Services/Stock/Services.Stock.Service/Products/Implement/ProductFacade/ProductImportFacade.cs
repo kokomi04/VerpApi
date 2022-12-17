@@ -543,7 +543,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.ProductCode, row.ProductCode);
 
-            if (!row.ProductName.IsNullObject())
+            if (!row.ProductName.IsNullOrEmptyObject())
             {
                 product.ProductName = row.ProductName;
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
@@ -753,7 +753,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             {
                                 ProductId = productId,
                                 ProductUnitConversionName = row.Unit,
-                                SecondaryUnitId =row.Unit.IsNullObject()?0: units[row.Unit.NormalizeAsInternalName()],
+                                SecondaryUnitId =row.Unit.IsNullOrEmptyObject()?0: units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
                                 ConversionDescription = "Default",
                                 IsDefault = true,
