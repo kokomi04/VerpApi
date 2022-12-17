@@ -246,6 +246,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var queryResult = new NonCamelCaseDictionary();
 
+
+            var declareValues = new HashSet<string>();
             for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
                 var rowValue = new NonCamelCaseDictionary();
@@ -317,7 +319,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     if (BscRowsModel.IsSqlSelect(configStr))
                     {
+                        configStr = ReplaceOldBscValuePrefix(configStr);
+
                         var selectData = $"{configStr.TrimStart('=')} AS [{column.Name}_{i}]";
+
                         if (BscRowsModel.IsBscSelect(configStr))
                         {
                             sqlBscCalcQuery.Add(new BscValueOrder()
@@ -334,6 +339,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             BscAppendSelect(sql, selectData);
                         }
                     }
+                    else
+                    {
+                        if (!string.IsNullOrWhiteSpace(keyValue))
+                        {
+
+                            if (!declareValues.Contains(keyValue)) declareValues.Add(keyValue);
+                            var selectData = $"@{keyValue} AS [{column.Name}_{i}]";
+                            BscAppendSelect(sql, selectData);
+                        }
+
+                    }
                 }
             }
 
@@ -341,7 +357,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (sql.Length > 0)
             {
-                var data = await _dbContext.QueryDataTable($"{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var delcareSql = string.Join("\n", declareValues.Select(k => $"DECLARE @{k} DECIMAL(32,12);").ToArray());
+                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -406,9 +423,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         }
 
-
+        private string ReplaceOldBscValuePrefix(string selectData)
+        {
+            selectData = selectData.Replace($"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX_OLD}", "#");
+            selectData = selectData.Replace($"#", "@#");
+            return selectData;
+        }
         private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
         {
+            //   selectData = ReplaceOldBscValuePrefix(selectData);
+
             var result = new StringBuilder(selectData);
             var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
             Regex rx = new Regex(pattern);
@@ -472,7 +496,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
                                 if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
                                 {
-                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value ?? DBNull.Value });
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value.IsNullObject() ? 0 : value });
                                 }
                             }
                         }
@@ -967,7 +991,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     selectSql.Append(",");
                 }
-                selectSql.AppendLine($"{value} AS {key}");
+                selectSql.AppendLine($"{value} AS [{key}]");
                 first = false;
             }
 
