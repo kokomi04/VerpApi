@@ -28,16 +28,48 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class InputPrivateConfigService : InputConfigServiceBase, IInputPrivateConfigService
     {
-        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IOptions<AppSetting> appSetting, ILogger<InputPrivateConfigService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, IMenuHelperService menuHelperService, ICurrentContextService currentContextService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService, IInputPrivateActionConfigService inputActionConfigService) : base(accountancyDBContext, appSetting, logger, activityLogService, mapper, customGenCodeHelperService, menuHelperService, currentContextService, httpCategoryHelperService, roleHelperService, inputActionConfigService)
+        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPrivateActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
         {
         }
     }
 
     public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
     {
-        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IOptions<AppSetting> appSetting, ILogger<InputPublicConfigService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, IMenuHelperService menuHelperService, ICurrentContextService currentContextService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService, IInputPublicActionConfigService inputActionConfigService) : base(accountancyDBContext, appSetting, logger, activityLogService, mapper, customGenCodeHelperService, menuHelperService, currentContextService, httpCategoryHelperService, roleHelperService, inputActionConfigService)
+        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
         {
+
         }
+    }
+
+    public interface IInputConfigDependService
+    {
+        ILogger Logger { get; }
+        IActivityLogService ActivityLogService { get; }
+        IMapper Mapper { get; }
+        ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        ICategoryHelperService HttpCategoryHelperService { get; }
+        IRoleHelperService RoleHelperService { get; }
+    }
+
+    public class InputConfigDependService: IInputConfigDependService
+    {
+        public InputConfigDependService(ILogger<InputConfigDependService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService)
+        {
+            Logger = logger;
+            ActivityLogService = activityLogService;
+            Mapper = mapper;
+            CustomGenCodeHelperService = customGenCodeHelperService;
+            HttpCategoryHelperService = httpCategoryHelperService;
+            RoleHelperService = roleHelperService;
+        }
+
+        public ILogger Logger { get; }
+        public IActivityLogService ActivityLogService { get; }
+        public IMapper Mapper { get; }
+        public ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        public ICategoryHelperService HttpCategoryHelperService { get; }
+        public IRoleHelperService RoleHelperService { get; }
+
     }
 
     public class InputConfigServiceBase : IInputConfigServiceBase
@@ -49,34 +81,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IMenuHelperService _menuHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
         private readonly IActionButtonConfigHelper _actionButtonConfigHelper;
 
         public InputConfigServiceBase(AccountancyDBContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigServiceBase> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , IMenuHelperService menuHelperService
-            , ICurrentContextService currentContextService
-            , ICategoryHelperService httpCategoryHelperService
-            , IRoleHelperService roleHelperService
+            , IInputConfigDependService inputConfigDependService
             , IActionButtonConfigHelper actionButtonConfigHelper
             )
         {
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _menuHelperService = menuHelperService;
-            _currentContextService = currentContextService;
-            _httpCategoryHelperService = httpCategoryHelperService;
-            _roleHelperService = roleHelperService;
+            _logger = inputConfigDependService.Logger;
+            _activityLogService = inputConfigDependService.ActivityLogService;
+            _mapper = inputConfigDependService.Mapper;
+            _customGenCodeHelperService = inputConfigDependService.CustomGenCodeHelperService;
+            _httpCategoryHelperService = inputConfigDependService.HttpCategoryHelperService;
+            _roleHelperService = inputConfigDependService.RoleHelperService;
             _actionButtonConfigHelper = actionButtonConfigHelper;
         }
 
