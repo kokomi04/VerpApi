@@ -49,8 +49,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             InputRowArea = EnumObjectType.InputAreaField
         };
 
-        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, IInputDataDependService inputDataDependService)
-           : base(accountancyDBContext, inputDataDependService, objectTypes)
+        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPrivateConfigService inputConfigService)
+           : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
         {
 
         }
@@ -66,12 +66,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             InputRowArea = EnumObjectType.InputAreaFieldPublic
         };
 
-        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService)
-            : base(accountancyDBContext, inputDataDependService, objectTypes)
+        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPublicConfigService inputConfigService)
+            : base(accountancyDBContext, inputDataDependService, inputConfigService,objectTypes)
         {
 
         }
-        
+
     }
 
 
@@ -85,7 +85,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         ICurrentContextService CurrentContextService { get; }
         ICategoryHelperService HttpCategoryHelperService { get; }
         IOutsideMappingHelperService OutsideMappingHelperService { get; }
-        IInputConfigServiceBase InputConfigService { get; }
         ObjectActivityLogFacade InputDataActivityLog { get; }
         ICachingService CachingService { get; }
         ILongTaskResourceLockService LongTaskResourceLockService { get; }
@@ -99,7 +98,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public ICurrentContextService CurrentContextService { get; }
         public ICategoryHelperService HttpCategoryHelperService { get; }
         public IOutsideMappingHelperService OutsideMappingHelperService { get; }
-        public IInputConfigServiceBase InputConfigService { get; }
         public ObjectActivityLogFacade InputDataActivityLog { get; }
         public ICachingService CachingService { get; }
         public ILongTaskResourceLockService LongTaskResourceLockService { get; }
@@ -112,7 +110,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             , ICurrentContextService currentContextService
             , ICategoryHelperService httpCategoryHelperService
             , IOutsideMappingHelperService outsideMappingHelperService
-            , IInputConfigServiceBase inputConfigService
             , ICachingService cachingService
             , ILongTaskResourceLockService longTaskResourceLockService)
         {
@@ -123,7 +120,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             CurrentContextService = currentContextService;
             HttpCategoryHelperService = httpCategoryHelperService;
             OutsideMappingHelperService = outsideMappingHelperService;
-            InputConfigService = inputConfigService;
             CachingService = cachingService;
             LongTaskResourceLockService = longTaskResourceLockService;
         }
@@ -154,6 +150,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         protected internal InputDataServiceBase(AccountancyDBContext accountancyDBContext,
             IInputDataDependService inputDataDependService,
+            IInputConfigServiceBase inputConfigService,
             InputDataObjectType objectTypes
         )
         {
@@ -170,7 +167,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _currentContextService = inputDataDependService.CurrentContextService;
             _httpCategoryHelperService = inputDataDependService.HttpCategoryHelperService;
             _outsideMappingHelperService = inputDataDependService.OutsideMappingHelperService;
-            _inputConfigService = inputDataDependService.InputConfigService;
+            _inputConfigService = inputConfigService;
             _inputDataActivityLog = inputDataDependService.ActivityLogService.CreateObjectTypeActivityLog(_inputBillObjectType);
             _cachingService = inputDataDependService.CachingService;
             longTaskResourceLockService = inputDataDependService.LongTaskResourceLockService;
