@@ -41,18 +41,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class InputDataPrivateService : InputDataServiceBase, IInputDataPrivateService
     {
-        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, 
-            ILogger<InputDataServiceBase> logger, 
-            IActivityLogService activityLogService, 
-            IMapper mapper, 
-            ICustomGenCodeHelperService customGenCodeHelperService, 
-            ICurrentContextService currentContextService, 
-            ICategoryHelperService httpCategoryHelperService, 
-            IOutsideMappingHelperService outsideMappingHelperService,
-            IInputPrivateConfigService inputConfigService, 
-            ICachingService cachingService, 
-            ILongTaskResourceLockService longTaskResourceLockService
-            ) : base(accountancyDBContext, logger, activityLogService, mapper, customGenCodeHelperService, currentContextService, httpCategoryHelperService, outsideMappingHelperService, inputConfigService, cachingService, longTaskResourceLockService, EnumObjectType.InputBill, EnumObjectType.InputTypeRow,  EnumObjectType.InputAreaField)
+        private static InputDataObjectType objectTypes = new InputDataObjectType
+        {
+            InputType = EnumObjectType.InputType,
+            InputBill = EnumObjectType.InputBill,
+            InputRow = EnumObjectType.InputTypeRow,
+            InputRowArea = EnumObjectType.InputAreaField
+        };
+
+        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, IInputDataDependService inputDataDependService)
+           : base(accountancyDBContext, inputDataDependService, objectTypes)
         {
 
         }
@@ -60,23 +58,76 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
     public class InputDataPublicService : InputDataServiceBase, IInputDataPublicService
     {
-        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, 
-            ILogger<InputDataServiceBase> logger, 
-            IActivityLogService activityLogService, 
-            IMapper mapper, 
-            ICustomGenCodeHelperService customGenCodeHelperService, 
-            ICurrentContextService currentContextService, 
-            ICategoryHelperService httpCategoryHelperService, 
-            IOutsideMappingHelperService outsideMappingHelperService,
-            IInputPublicConfigService inputConfigService, 
-            ICachingService cachingService, 
-            ILongTaskResourceLockService longTaskResourceLockService
-            ) : base(accountancyDBContext, logger, activityLogService, mapper, customGenCodeHelperService, currentContextService, httpCategoryHelperService, outsideMappingHelperService, inputConfigService, cachingService, longTaskResourceLockService, EnumObjectType.InputBillPublic, EnumObjectType.InputTypeRowPublic, EnumObjectType.InputAreaFieldPublic)
+        private static InputDataObjectType objectTypes = new InputDataObjectType
+        {
+            InputType = EnumObjectType.InputTypePublic,
+            InputBill = EnumObjectType.InputBillPublic,
+            InputRow = EnumObjectType.InputTypeRowPublic,
+            InputRowArea = EnumObjectType.InputAreaFieldPublic
+        };
+
+        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService)
+            : base(accountancyDBContext, inputDataDependService, objectTypes)
         {
 
         }
+        
     }
 
+
+
+    public interface IInputDataDependService
+    {
+        ILogger Logger { get; }
+        IActivityLogService ActivityLogService { get; }
+        IMapper Mapper { get; }
+        ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        ICurrentContextService CurrentContextService { get; }
+        ICategoryHelperService HttpCategoryHelperService { get; }
+        IOutsideMappingHelperService OutsideMappingHelperService { get; }
+        IInputConfigServiceBase InputConfigService { get; }
+        ObjectActivityLogFacade InputDataActivityLog { get; }
+        ICachingService CachingService { get; }
+        ILongTaskResourceLockService LongTaskResourceLockService { get; }
+    }
+    public class InputDataDependService : IInputDataDependService
+    {
+        public ILogger Logger { get; }
+        public IActivityLogService ActivityLogService { get; }
+        public IMapper Mapper { get; }
+        public ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        public ICurrentContextService CurrentContextService { get; }
+        public ICategoryHelperService HttpCategoryHelperService { get; }
+        public IOutsideMappingHelperService OutsideMappingHelperService { get; }
+        public IInputConfigServiceBase InputConfigService { get; }
+        public ObjectActivityLogFacade InputDataActivityLog { get; }
+        public ICachingService CachingService { get; }
+        public ILongTaskResourceLockService LongTaskResourceLockService { get; }
+
+        public InputDataDependService(
+            ILogger<InputDataDependService> logger
+            , IActivityLogService activityLogService
+            , IMapper mapper
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
+            , ICategoryHelperService httpCategoryHelperService
+            , IOutsideMappingHelperService outsideMappingHelperService
+            , IInputConfigServiceBase inputConfigService
+            , ICachingService cachingService
+            , ILongTaskResourceLockService longTaskResourceLockService)
+        {
+            Logger = logger;
+            ActivityLogService = activityLogService;
+            Mapper = mapper;
+            CustomGenCodeHelperService = customGenCodeHelperService;
+            CurrentContextService = currentContextService;
+            HttpCategoryHelperService = httpCategoryHelperService;
+            OutsideMappingHelperService = outsideMappingHelperService;
+            InputConfigService = inputConfigService;
+            CachingService = cachingService;
+            LongTaskResourceLockService = longTaskResourceLockService;
+        }
+    }
 
     public class InputDataServiceBase : IInputDataServiceBase
     {
@@ -95,44 +146,45 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ObjectActivityLogFacade _inputDataActivityLog;
         private readonly ICachingService _cachingService;
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
+
         private readonly EnumObjectType _inputTypeObjectType;
+        private readonly EnumObjectType _inputBillObjectType;
         private readonly EnumObjectType _inputRowObjectType;
         private readonly EnumObjectType _inputRowAreaObjectType;
 
-        public InputDataServiceBase(AccountancyDBContext accountancyDBContext
-            , ILogger<InputDataServiceBase> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
-            , ICategoryHelperService httpCategoryHelperService
-            , IOutsideMappingHelperService outsideMappingHelperService
-            , IInputConfigServiceBase inputConfigService
-            , ICachingService cachingService
-            , ILongTaskResourceLockService longTaskResourceLockService
-            , EnumObjectType inputTypeObjectType
-            , EnumObjectType inputRowObjectType
-            , EnumObjectType inputRowAreaObjectType
-            )
+        protected internal InputDataServiceBase(AccountancyDBContext accountancyDBContext,
+            IInputDataDependService inputDataDependService,
+            InputDataObjectType objectTypes
+        )
         {
-            _inputTypeObjectType = inputTypeObjectType;
-            _inputRowObjectType = inputRowObjectType;
-            _inputRowAreaObjectType = inputRowAreaObjectType;
+            _inputTypeObjectType = objectTypes.InputType;
+            _inputBillObjectType = objectTypes.InputBill;
+            _inputRowObjectType = objectTypes.InputRow;
+            _inputRowAreaObjectType = objectTypes.InputRowArea;
 
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
+            _logger = inputDataDependService.Logger;
             //_activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
-            _httpCategoryHelperService = httpCategoryHelperService;
-            _outsideMappingHelperService = outsideMappingHelperService;
-            _inputConfigService = inputConfigService;
-            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(_inputTypeObjectType);
-            _cachingService = cachingService;
-            this.longTaskResourceLockService = longTaskResourceLockService;
+            _mapper = inputDataDependService.Mapper;
+            _customGenCodeHelperService = inputDataDependService.CustomGenCodeHelperService;
+            _currentContextService = inputDataDependService.CurrentContextService;
+            _httpCategoryHelperService = inputDataDependService.HttpCategoryHelperService;
+            _outsideMappingHelperService = inputDataDependService.OutsideMappingHelperService;
+            _inputConfigService = inputDataDependService.InputConfigService;
+            _inputDataActivityLog = inputDataDependService.ActivityLogService.CreateObjectTypeActivityLog(_inputBillObjectType);
+            _cachingService = inputDataDependService.CachingService;
+            longTaskResourceLockService = inputDataDependService.LongTaskResourceLockService;
 
         }
+
+        protected internal class InputDataObjectType
+        {
+            public EnumObjectType InputType { get; set; }
+            public EnumObjectType InputBill { get; set; }
+            public EnumObjectType InputRow { get; set; }
+            public EnumObjectType InputRowArea { get; set; }
+        }
+
 
         public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
@@ -758,7 +810,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     new SqlParameter("@BillF_Id", inputValueBillId),
-                      new SqlParameter("@InputTypeId", inputTypeId),
+                    new SqlParameter("@InputTypeId", inputTypeId),
+                    new SqlParameter("@InputTypeObjectTypeId", _inputTypeObjectType),
                     resultParam,
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
@@ -1676,7 +1729,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
-                await _outsideMappingHelperService.MappingObjectDelete(_inputTypeObjectType, billInfo.FId);
+                await _outsideMappingHelperService.MappingObjectDelete(_inputBillObjectType, billInfo.FId);
 
                 trans.Commit();
 
@@ -1725,7 +1778,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         CustomGenCodeOutputModel currentConfig;
                         try
                         {
-                           
+
                             currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
 
                             if (currentConfig == null)
