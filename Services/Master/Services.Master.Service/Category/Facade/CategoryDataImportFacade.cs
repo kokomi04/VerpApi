@@ -72,11 +72,19 @@ namespace VErp.Services.Master.Service.Category
 
                 var lsUpdateRow = new List<NonCamelCaseDictionary>();
                 var lsAddRow = new List<NonCamelCaseDictionary>();
+
+                var keyFields = _uniqueFields;
+                if (keyFields.Length == 0)
+                {
+                    keyFields = _categoryFields.Where(f => f.CategoryFieldName != "F_Id").ToArray();
+                }
+
                 foreach (var row in _categoryDataRows)
                 {
-                    var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, _uniqueFields));
 
-                    var uniqueFieldMessage = $"{_uniqueFields[0].Title.ToLower()}: {row[_uniqueFields[0].CategoryFieldName]}";
+                    var oldRow = existsCategoryData.FirstOrDefault(x => EqualityBetweenTwoCategory(x, row, keyFields));
+
+                    var uniqueFieldMessage = $"{keyFields[0].Title.ToLower()}: {row[keyFields[0].CategoryFieldName]}";
 
                     if (oldRow != null && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                         throw ImportExistedRowInDatabase.BadRequestFormat(uniqueFieldMessage, _category.Title);
@@ -84,7 +92,7 @@ namespace VErp.Services.Master.Service.Category
 
                     if (oldRow == null)
                     {
-                        if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
+                        if (lsAddRow.Any(x => EqualityBetweenTwoCategory(x, row, keyFields)))
                             if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                                 throw ImportDuplicatedRow.BadRequestFormat(uniqueFieldMessage);
                             else
@@ -94,7 +102,7 @@ namespace VErp.Services.Master.Service.Category
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
-                        if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, _uniqueFields)))
+                        if (lsUpdateRow.Any(x => EqualityBetweenTwoCategory(x, row, keyFields)))
                             continue;
 
                         if (!row.ContainsKey(CategoryFieldConstants.ParentId) && _category.IsTreeView && oldRow.ContainsKey(CategoryFieldConstants.ParentId))
