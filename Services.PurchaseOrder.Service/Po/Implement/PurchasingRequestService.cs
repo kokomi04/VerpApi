@@ -542,7 +542,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
 
-        private async Task<GenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
         {
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
 

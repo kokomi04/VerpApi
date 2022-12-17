@@ -602,7 +602,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task ApproveInventoryInputDb(InventoryEntity inventoryObj, GenerateCodeConfigData genCodeConfig)
+        public async Task ApproveInventoryInputDb(InventoryEntity inventoryObj, IGenerateCodeAction genCodeConfig)
         {
             if (inventoryObj.InventoryStatusId == (int)EnumInventoryStatus.Censored)
             {
@@ -770,7 +770,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         #region Private helper method
 
-        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode, GenerateCodeConfigData genCodeConfig)
+        private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode, IGenerateCodeAction genCodeConfig)
         {
             var inputTransfer = new List<InventoryDetailToPackage>();
             var billPackages = new List<PackageEntity>();
@@ -1137,7 +1137,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return ensureDefaultPackage;
         }
 
-        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail, string inventoryCode, GenerateCodeConfigData genCodeConfig)
+        private async Task<PackageEntity> CreateNewPackage(int stockId, DateTime date, InventoryDetail detail, string inventoryCode, IGenerateCodeAction genCodeConfig)
         {
             PackageInputModel packageInfo = null;
 

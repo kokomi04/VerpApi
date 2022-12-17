@@ -605,7 +605,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
         {
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
 
@@ -1506,7 +1506,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
+        private async Task<IGenerateCodeContext> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
         {
 
             model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();

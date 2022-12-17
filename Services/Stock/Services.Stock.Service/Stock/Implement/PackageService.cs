@@ -103,7 +103,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var newPackages = new List<PackageModel>();
             var baseValueChains = new Dictionary<string, int>();
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             foreach (var package in req.ToPackages)
             {
                 genCodeContexts.Add(await GeneratePackageCode(package, baseValueChains));
@@ -498,7 +498,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePackageCode(INewPackageBase pageAge, Dictionary<string, int> baseValueChains)
+        private async Task<IGenerateCodeContext> GeneratePackageCode(INewPackageBase pageAge, Dictionary<string, int> baseValueChains)
         {
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 

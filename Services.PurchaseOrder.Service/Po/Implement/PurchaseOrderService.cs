@@ -909,7 +909,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
         {
             model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
 

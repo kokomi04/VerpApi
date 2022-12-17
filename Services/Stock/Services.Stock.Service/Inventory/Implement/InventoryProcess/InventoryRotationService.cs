@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             }
 
 
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             long inventoryId;

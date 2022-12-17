@@ -292,7 +292,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateCode(long? propertyCalcId, PropertyCalcModel model)
+        private async Task<IGenerateCodeContext> GenerateCode(long? propertyCalcId, PropertyCalcModel model)
         {
             model.PropertyCalcCode = (model.PropertyCalcCode ?? "").Trim();
 

@@ -114,7 +114,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
         }
 
 
-        private async Task<GenerateCodeContext> GenerateStockTakeCode(int? stockTakeId, StockTakeModel model, StockTakePeriod period)
+        private async Task<IGenerateCodeContext> GenerateStockTakeCode(int? stockTakeId, StockTakeModel model, StockTakePeriod period)
         {
             model.StockTakeCode = (model.StockTakeCode ?? "").Trim();
 

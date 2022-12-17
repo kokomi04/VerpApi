@@ -469,7 +469,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         }
 
 
-        private async Task<GenerateCodeContext> GenerateInventoryRequirementCode(EnumInventoryType inventoryType, EnumObjectType objectTypeId, InventoryRequirementInputModel req)
+        private async Task<IGenerateCodeContext> GenerateInventoryRequirementCode(EnumInventoryType inventoryType, EnumObjectType objectTypeId, InventoryRequirementInputModel req)
         {
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 

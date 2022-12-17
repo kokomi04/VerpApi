@@ -130,7 +130,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             await FillGenerateColumn(genCodeContexts, baseValueChains, categoryId, category.CategoryCode, categoryFields, data);
@@ -390,7 +390,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
+        private async Task FillGenerateColumn(List<IGenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
         {
             var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
