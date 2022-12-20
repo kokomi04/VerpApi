@@ -612,7 +612,8 @@ namespace VErp.Services.Master.Service.Category
                     CategoryCode = c.CategoryCode,
                     CategoryFieldName = f.CategoryFieldName,
                     Title = f.Title,
-                    CategoryTitle = c.Title
+                    CategoryTitle = c.Title,
+                    IsJoinField = f.IsJoinField
                 }).ToListAsync();
 
             return lst;
