@@ -78,5 +78,6 @@ namespace VErp.Services.Master.Model.Category
         public string CategoryTitle { get; set; }
         public string CategoryFieldName { get; set; }
         public string Title { get; set; }
+        public bool? IsJoinField { get; set; }
     }
 }
