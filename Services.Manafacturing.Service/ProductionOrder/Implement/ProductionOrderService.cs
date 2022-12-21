@@ -1551,6 +1551,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
+                if (data.UpdatedDatetimeUtc != productionOrder.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
+
                 data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
 
                 _mapper.Map(data, productionOrder);

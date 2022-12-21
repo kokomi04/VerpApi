@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -455,6 +456,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                     if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
+
+                    if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
 
                     _mapper.Map(model, info);
 

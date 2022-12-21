@@ -58,7 +58,7 @@ namespace VErp.Services.PurchaseOrder.Model
     public class PurchasingRequestOutput : PurchasingRequestOutputList
     {
         public IList<long> FileIds { get; set; }
-        public List<PurchasingRequestOutputDetail> Details { set; get; }
+        public List<PurchasingRequestOutputDetail> Details { set; get; }        
 
         public new void Mapping(Profile profile)
         {

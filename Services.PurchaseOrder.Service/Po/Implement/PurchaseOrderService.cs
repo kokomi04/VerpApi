@@ -934,6 +934,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
 
+                if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
+
                 var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId).ToList();
 
                 var poAssignmentDetails = await GetPoAssignmentDetailInfos(poAssignmentDetailIds.Select(d => d.Value).ToList());

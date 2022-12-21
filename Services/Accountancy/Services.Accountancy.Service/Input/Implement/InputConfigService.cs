@@ -51,7 +51,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         IRoleHelperService RoleHelperService { get; }
     }
 
-    public class InputConfigDependService: IInputConfigDependService
+    public class InputConfigDependService : IInputConfigDependService
     {
         public InputConfigDependService(ILogger<InputConfigDependService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService)
         {
@@ -412,6 +412,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+
+            if (data.UpdatedDatetimeUtc != inputType.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             if (inputType.InputTypeCode != data.InputTypeCode || inputType.Title != data.Title)
             {
                 var existedInput = await _accountancyDBContext.InputType

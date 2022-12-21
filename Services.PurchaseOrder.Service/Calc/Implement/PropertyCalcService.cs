@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.PurchaseOrder.Calc.PropertyCalc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -201,6 +202,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var entity = await GetEntityIncludes(propertyCalcId);
             if (entity == null)
                 throw PropertyCalcNotFound.BadRequest();
+            if (req.UpdatedDatetimeUtc != entity.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
 
             await Validate(propertyCalcId, req);
             _purchaseOrderDBContext.PropertyCalcProperty.RemoveRange(entity.PropertyCalcProperty);

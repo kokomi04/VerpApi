@@ -14,6 +14,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public decimal? TaxInMoney { get; set; }
         public decimal? TaxInPercent { get; set; }
         public decimal? TotalMoney { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class PurchasingSuggestDetailInputModel

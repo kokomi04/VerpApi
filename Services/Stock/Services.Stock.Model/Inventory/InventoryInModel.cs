@@ -35,6 +35,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<long> FileIdList { set; get; }
 
         public IList<InventoryInProductModel> InProducts { set; get; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class InventoryInProductModel

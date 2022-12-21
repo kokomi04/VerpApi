@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -262,6 +263,15 @@ namespace VErp.Services.Accountancy.Service.Category
             var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != CategoryFieldConstants.F_Id).ToList();
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
+
+            data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
 
             bool isParentChange = false;
             // Check parent row
@@ -704,7 +714,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             var tableName = $"v{category.CategoryCode}";
             var dataSql = new StringBuilder();
-            dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
+            dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView, category.IsOutSideData));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var currentData = await _masterContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
@@ -722,10 +732,14 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryRow;
         }
 
-        private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
+        private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView, bool isOutSide)
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
+            if (!isOutSide)
+            {
+                sql.Append($"[{tableName}].UpdatedDatetimeUtc,");
+            }
             foreach (var field in fields.Where(f => f.CategoryFieldName != CategoryFieldConstants.F_Id && f.CategoryFieldName != CategoryFieldConstants.ParentId))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
@@ -786,7 +800,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
             var allDataSql = new StringBuilder();
-            dataSql.Append(GetSelect(viewAlias, fields, category.IsTreeView));
+            dataSql.Append(GetSelect(viewAlias, fields, category.IsTreeView, category.IsOutSideData));
             dataSql.Append($" FROM {categoryView}");
             allDataSql.Append(dataSql.ToString());
             var whereCondition = new StringBuilder();
@@ -967,7 +981,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 viewAlias = categoryView;
             }
 
-            var select = $"{GetSelect(categoryView, fields, category.IsTreeView)}";
+            var select = $"{GetSelect(categoryView, fields, category.IsTreeView, category.IsOutSideData)}";
 
             if (fields.Any(f => f.CategoryFieldName == GlobalFieldConstants.SubsidiaryId))
             {
@@ -1013,7 +1027,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var viewAlias = $"v";
                 var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
 
-                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView)} FROM {categoryView} ";
+                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView, category.IsOutSideData)} FROM {categoryView} ";
                 var groupByFilters = group.GroupBy(v => new { v.Filters });
                 foreach (var groupByFilter in groupByFilters)
                 {

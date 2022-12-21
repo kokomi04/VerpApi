@@ -23,7 +23,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public List<PurchasingRequestInputDetail> Details { set; get; }
 
         public long? NeedDate { get; set; }
-
+        public long UpdatedDatetimeUtc { get; set; }
         public void Mapping(Profile profile) => profile.CreateMapCustom<PurchasingRequest, PurchasingRequestInput>()
            .ForMember(m => m.Details, m => m.Ignore())
            .ForMember(m => m.Date, m => m.MapFrom(v => v.Date.GetUnix()))

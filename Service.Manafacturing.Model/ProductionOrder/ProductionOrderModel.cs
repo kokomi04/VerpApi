@@ -52,7 +52,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
                 .ForMember(dest => dest.IsUpdateProcessForAssignment, opt => opt.Ignore());
         }
     }
-    public class ProductOrderModelExtra: ProductOrderModel
+    public class ProductOrderModelExtra : ProductOrderModel
     {
         public bool HasNewProductionProcessVersion { get; set; }
     }
@@ -61,6 +61,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public long ProductionOrderId { get; set; }
         public string ProductionOrderCode { get; set; }
         public long CreatedDatetimeUtc { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
         public long StartDate { get; set; }
         public long Date { get; set; }
         public long EndDate { get; set; }
