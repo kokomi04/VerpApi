@@ -67,7 +67,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         };
 
         public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPublicConfigService inputConfigService)
-            : base(accountancyDBContext, inputDataDependService, inputConfigService,objectTypes)
+            : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
         {
 
         }
@@ -205,7 +205,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 where f.InputTypeViewId == inputTypeViewId
                 select f
             ).ToListAsync();
-            
+
             var sqlParams = new List<SqlParameter>() {
                 new SqlParameter("@InputTypeId",inputTypeId)
             };
@@ -285,7 +285,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             else
             {
-                
+
                 totalSql = @$"
                     SELECT COUNT(0) Total {sumSql} FROM (
                         SELECT r.InputBill_F_Id {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}
@@ -1280,7 +1280,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputAreaFields = await GetInputFields(inputTypeId);
 
             // Get changed info
-            var infoSQL = new StringBuilder("SELECT TOP 1 ");
+            var infoSQL = new StringBuilder("SELECT TOP 1 UpdatedDatetimeUtc,  ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM vInputValueRow r WHERE InputTypeId={inputTypeId} AND InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
@@ -1289,6 +1289,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (currentInfo == null)
             {
                 throw BillNotFound.BadRequest();
+            }
+
+            data.Info.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
             }
 
             await ValidateAccountantConfig(data?.Info, currentInfo);

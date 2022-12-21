@@ -436,6 +436,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                     if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
+                    if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
 
                     info.PurchasingSuggestCode = model.PurchasingSuggestCode;
                     info.Date = model.Date.UnixToDateTime().Value;

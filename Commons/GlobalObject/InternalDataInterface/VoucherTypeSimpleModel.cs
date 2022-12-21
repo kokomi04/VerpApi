@@ -19,6 +19,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? VoucherTypeGroupId { get; set; }
 
         public IList<VoucherAreaFieldSimpleModel> AreaFields { get; set; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class VoucherAreaFieldSimpleModel

@@ -263,6 +263,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
                         }
 
+
+                        if (req.UpdatedDatetimeUtc != inventoryObj.UpdatedDatetimeUtc.GetUnix())
+                        {
+                            throw GeneralCode.DataIsOld.BadRequest();
+                        }
+
                         if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
                         {
                             throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvInputRotation);

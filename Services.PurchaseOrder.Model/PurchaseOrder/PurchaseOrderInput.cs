@@ -59,6 +59,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public string AttachmentBill { get; set; }
 
 
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public interface IPurchaseOrderInputDetail

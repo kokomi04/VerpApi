@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
+        public virtual DbSet<ProductionContainer> ProductionContainer { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
         public virtual DbSet<ProductionHandoverReceipt> ProductionHandoverReceipt { get; set; }
         public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
@@ -334,6 +335,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionConsumMaterialId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionConsumMaterialDetail_ProductionConsumMaterial");
+            });
+
+            modelBuilder.Entity<ProductionContainer>(entity =>
+            {
+                entity.HasKey(e => new { e.ContainerTypeId, e.ContainerId });
+
+                entity.Property(e => e.ContainerId).HasComment("ID của Product hoặc lệnh SX");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<ProductionHandover>(entity =>

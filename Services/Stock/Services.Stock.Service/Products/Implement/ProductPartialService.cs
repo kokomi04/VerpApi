@@ -105,7 +105,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 IsProduct = productInfo.IsProduct,
 
                 IsMaterials = productInfo.IsMaterials,
-                TargetProductivityId = productInfo.TargetProductivityId
+                TargetProductivityId = productInfo.TargetProductivityId,
+                UpdatedDatetimeUtc = productInfo.UpdatedDatetimeUtc.GetUnix(),
             };
         }
 
@@ -132,6 +133,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     if (productInfo == null)
                     {
                         throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                    }
+
+                    if (model.UpdatedDatetimeUtc != productInfo.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
                     }
 
                     if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
@@ -288,7 +294,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 StockOutputRuleId = (EnumStockOutputRule?)stockInfo.StockOutputRuleId,
 
-                UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus)
+                UnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
+
+                UpdatedDatetimeUtc = productInfo.UpdatedDatetimeUtc.GetUnix()
             };
         }
 
@@ -300,6 +308,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                if (model.UpdatedDatetimeUtc != productInfo.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
                 }
 
                 var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -475,7 +488,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 PackingWidth = productInfo.PackingWidth,
                 PackingLong = productInfo.PackingLong,
                 PackingHeight = productInfo.PackingHeight,
-                ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers)
+                ProductCustomers = _mapper.Map<List<ProductModelCustomer>>(productCustomers),
+                UpdatedDatetimeUtc = productInfo.UpdatedDatetimeUtc.GetUnix()
             };
         }
 
@@ -487,6 +501,11 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                if (model.UpdatedDatetimeUtc != productInfo.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
                 }
 
                 var productCustomers = await _stockContext.ProductCustomer.Where(p => p.ProductId == productId).ToListAsync();

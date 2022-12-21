@@ -23,6 +23,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public IList<InventoryOutProductModel> OutProducts { set; get; }
         //public string AccountancyAccountNumber { get; set; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
 

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -131,7 +132,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
 
                                                   s.InventoryQuantity,
-                                                  PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining
+                                                  PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining,
+
+                                                  ir.UpdatedDatetimeUtc
                                               };
 
 
@@ -187,7 +190,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                             ir.ProductUnitConversionId,
 
                             ir.InventoryQuantity,
-                            ir.PrimaryQuantityRemaining
+                            ir.PrimaryQuantityRemaining,
+                            ir.UpdatedDatetimeUtc
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -237,7 +241,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     InventoryQuantity = x.InventoryQuantity,
                     PrimaryQuantity = x.PrimaryQuantity,
                     ProductUnitConversionId = x.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity
+                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity,
+                    UpdatedDatetimeUtc= x.UpdatedDatetimeUtc.GetUnix(),
 
                 }).ToList();
 
@@ -495,6 +500,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     .FirstOrDefault(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementId == inventoryRequirementId);
 
                 if (inventoryRequirement == null) throw InvRequestNotFound.BadRequest();
+
+                if (req.UpdatedDatetimeUtc != inventoryRequirement.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
 
                 if (string.IsNullOrEmpty(req.InventoryRequirementCode)) req.InventoryRequirementCode = inventoryRequirement.InventoryRequirementCode;
 

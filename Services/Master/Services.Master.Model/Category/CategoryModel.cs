@@ -28,6 +28,8 @@ namespace VErp.Services.Master.Model.Category
         public string Key { get; set; }
         public string ParentKey { get; set; }
         public bool? IsHide { get; set; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class CategoryFullModel : CategoryModel

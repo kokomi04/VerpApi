@@ -420,6 +420,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
+
+            if (data.UpdatedDatetimeUtc != voucherType.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             if (voucherType.VoucherTypeCode != data.VoucherTypeCode || voucherType.Title != data.Title)
             {
                 var existedInput = await _purchaseOrderDBContext.VoucherType

@@ -34,6 +34,8 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
         public EnumInventoryRequirementStatus CensorStatus { get; set; }
         public long InventoryRequirementId { get; set; }
 
+        public long UpdatedDatetimeUtc { get; set; }
+
     }
 
     public class InventoryRequirementListModel : InventoryRequirementBaseModel, IMapFrom<InventoryRequirementDetail>
@@ -114,7 +116,7 @@ namespace VErp.Services.Stock.Model.Inventory.InventoryRequirement
                 .ForMember(dest => dest.BillDate, opt => opt.MapFrom(source => source.BillDate.UnixToDateTime()));
         }
 
-        public OutsideImportMappingData OutsideImportMappingData { get; set; }
+        public OutsideImportMappingData OutsideImportMappingData { get; set; }        
     }
 
     public class OutsideImportMappingData

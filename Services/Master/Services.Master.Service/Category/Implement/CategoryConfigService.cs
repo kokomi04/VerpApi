@@ -214,6 +214,12 @@ namespace VErp.Services.Master.Service.Category
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
+
+            if (data.UpdatedDatetimeUtc != category.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             if (category.CategoryCode != data.CategoryCode || category.Title != data.Title)
             {
                 var existedCategory = await _masterContext.Category

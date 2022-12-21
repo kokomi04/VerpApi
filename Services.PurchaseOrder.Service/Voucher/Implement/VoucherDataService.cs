@@ -1170,6 +1170,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 throw BillNotFound.BadRequest();
             }
 
+            data.Info.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             await ValidateSaleVoucherConfig(data?.Info, currentInfo);
 
             NonCamelCaseDictionary futureInfo = data.Info;

@@ -299,6 +299,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         public async Task<IList<ProductionProcessModel>> GetProductionProcessByContainerIds(EnumContainerType containerTypeId, IList<long> containerIds)
         {
+
+            var infos = await _manufacturingDBContext.ProductionContainer.Where(c => c.ContainerTypeId == (int)containerTypeId
+            && containerIds.Contains(c.ContainerId)
+            ).ToListAsync();
+
             var productionSteps = await _manufacturingDBContext.ProductionStep.AsNoTracking()
                 .Where(s => containerIds.Contains(s.ContainerId) && s.ContainerTypeId == (int)containerTypeId)
                 .Include(s => s.Step)
@@ -373,7 +378,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionStepLinkDataRoles = roleData,
                     ProductionStepLinkDatas = stepLinkDatas.Where(l => linkDataIds.Contains(l.ProductionStepLinkDataId)).ToList(),
                     ProductionStepLinks = stepLinks,
-                    ProductionOutsourcePartMappings = productionOutsourcePartMappings.Where(o => o.ContainerId == id).ToList()
+                    ProductionOutsourcePartMappings = productionOutsourcePartMappings.Where(o => o.ContainerId == id).ToList(),
+                    UpdatedDatetimeUtc = (infos.FirstOrDefault(c => c.ContainerId == id)?.UpdatedDatetimeUtc)?.GetUnix()
                     //ProductionStepGroupLinkDataRoles = productionStepGroupLinkDataRoles,
                 };
 
@@ -744,6 +750,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     });
                 }
 
+                var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)EnumContainerType.ProductionOrder && c.ContainerId == productionOrderId);
+                if (info == null)
+                {
+                    _manufacturingDBContext.ProductionContainer.Add(new ProductionContainer()
+                    {
+                        ContainerId = productionOrderId,
+                        ContainerTypeId = (int)EnumContainerType.ProductionOrder
+                    });
+                }
+                else
+                {
+                    info.UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await UpdateStatusValidForProductionOrder(EnumContainerType.ProductionOrder, productionOrderId, (await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId)));
@@ -1030,6 +1050,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)containerTypeId && c.ContainerId == containerId);
+                if (info == null)
+                {
+                    _manufacturingDBContext.ProductionContainer.Add(new ProductionContainer()
+                    {
+                        ContainerId = containerId,
+                        ContainerTypeId = (int)containerTypeId
+                    });
+                }
+                else
+                {
+
+                    if (req.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
+
+                    info.UpdatedDatetimeUtc = DateTime.UtcNow;
+                }
+
                 if (containerTypeId == EnumContainerType.Product)
                 {
                     var product = await _productHelperService.GetProduct((int)containerId);

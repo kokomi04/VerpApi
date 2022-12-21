@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
@@ -244,6 +245,10 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
                 throw MaterialCalcNotFound.BadRequest();
+            if (req.UpdatedDatetimeUtc != entity.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
 
             await Validate(materialCalcId, req);
             _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);

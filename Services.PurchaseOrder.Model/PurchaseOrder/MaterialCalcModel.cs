@@ -49,6 +49,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
             //.ForMember(d => d.Products, s => s.MapFrom(m => m.MaterialCalcProduct))
             //.ForMember(d => d.Summary, s => s.MapFrom(m => m.MaterialCalcSummary));
         }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class MaterialCalcConsumptionGroupModel : IMapFrom<MaterialCalcConsumptionGroup>
