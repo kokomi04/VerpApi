@@ -1189,6 +1189,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     item.SortOrder = sortOrder++;
                 }
 
+                if (_purchaseOrderDBContext.HasChanges())
+                    info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();

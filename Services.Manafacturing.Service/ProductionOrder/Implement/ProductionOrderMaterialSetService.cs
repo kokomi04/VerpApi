@@ -378,6 +378,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             await UpdateMaterialSetData(info, model);
 
+            if (_manufacturingDBContext.HasChanges())
+                info.UpdatedDatetimeUtc = DateTime.UtcNow;
             return true;
         }
 

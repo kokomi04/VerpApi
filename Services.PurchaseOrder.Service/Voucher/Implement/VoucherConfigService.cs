@@ -457,6 +457,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
                 voucherType.IsHide = data.IsHide;
 
+                if (_purchaseOrderDBContext.HasChanges())
+                    voucherType.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 trans.Commit();

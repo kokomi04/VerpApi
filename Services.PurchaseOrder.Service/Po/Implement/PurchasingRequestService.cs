@@ -20,6 +20,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -525,6 +526,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
 
                     await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(purchasingRequestDetailList);
+
+
+                    if (_purchaseOrderDBContext.HasChanges())
+                        info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();

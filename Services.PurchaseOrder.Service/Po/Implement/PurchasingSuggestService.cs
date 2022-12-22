@@ -15,6 +15,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -590,6 +591,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     {
                         d.SortOrder = sortOrder++;
                     }
+
+                    if (_purchaseOrderDBContext.HasChanges())
+                        info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
 

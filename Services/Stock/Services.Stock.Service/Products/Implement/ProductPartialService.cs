@@ -140,6 +140,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         throw GeneralCode.DataIsOld.BadRequest();
                     }
 
+
+
                     if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
                     {
                         var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
@@ -252,6 +254,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             }
                         }
                     }
+
+                    if (_stockContext.HasChanges())
+                        productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _stockContext.SaveChangesAsync();
 
@@ -426,6 +431,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw PuConversionDuplicated.BadRequestFormat(duplicateUnit.First()?.ProductUnitConversionName, productInfo.ProductCode);
                 }
 
+                if (_stockContext.HasChanges())
+                    productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                 await _stockContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
@@ -551,6 +559,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
                 }
 
+                if (_stockContext.HasChanges())
+                    productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _stockContext.SaveChangesAsync();
 

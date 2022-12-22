@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -1661,6 +1662,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.IsDeleted = true;
                 }
+
+                if (_manufacturingDBContext.HasChanges())
+                    productionOrder.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _manufacturingDBContext.SaveChangesAsync();
 

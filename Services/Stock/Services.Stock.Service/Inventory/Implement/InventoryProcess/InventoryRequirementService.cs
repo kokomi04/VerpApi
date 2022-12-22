@@ -566,6 +566,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     item.IsDeleted = true;
                 }
 
+                if (_stockDbContext.HasChanges())
+                    inventoryRequirement.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();
 
