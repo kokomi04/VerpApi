@@ -320,6 +320,7 @@ namespace VErp.Services.Master.Service.Category
                 category.BeforeSaveAction = data.BeforeSaveAction;
                 category.AfterSaveAction = data.AfterSaveAction;
                 category.IsHide = data.IsHide ?? false;
+                category.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _masterContext.SaveChangesAsync();
 

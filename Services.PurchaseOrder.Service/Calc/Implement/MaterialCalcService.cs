@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -264,6 +265,9 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             _purchaseOrderDBContext.MaterialCalcSummary.RemoveRange(entity.MaterialCalcSummary);
 
             _mapper.Map(req, entity);
+
+            if (_purchaseOrderDBContext.HasChanges())
+                entity.UpdatedDatetimeUtc = DateTime.UtcNow;
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 

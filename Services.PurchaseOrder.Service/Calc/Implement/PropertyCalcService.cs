@@ -219,6 +219,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _purchaseOrderDBContext.CuttingWorkSheet.RemoveRange(entity.CuttingWorkSheet);
             _mapper.Map(req, entity);
 
+            if (_purchaseOrderDBContext.HasChanges())
+                entity.UpdatedDatetimeUtc = DateTime.UtcNow;
+
             await _purchaseOrderDBContext.SaveChangesAsync();
 
             await _propertyCalcActivityLog.LogBuilder(() => PropertyCalcActivityLogMessage.Update)

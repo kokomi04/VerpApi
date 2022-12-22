@@ -367,6 +367,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             }
                         }
 
+                        if (_stockDbContext.HasChanges())
+                            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                         await _stockDbContext.SaveChangesAsync();
                         trans.Commit();
 
