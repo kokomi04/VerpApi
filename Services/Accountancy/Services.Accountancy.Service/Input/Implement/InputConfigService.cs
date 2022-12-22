@@ -992,21 +992,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
-        {
-            var inputAreaField = await _accountancyDBContext.InputAreaField
-                .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
-                .Include(f => f.InputField)
-                .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
-            if (inputAreaField == null)
-            {
-                throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
-            }
+        //public async Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
+        //{
+        //    var inputAreaField = await _accountancyDBContext.InputAreaField
+        //        .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
+        //        .Include(f => f.InputField)
+        //        .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
+        //        .FirstOrDefaultAsync();
+        //    if (inputAreaField == null)
+        //    {
+        //        throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
+        //    }
 
 
-            return inputAreaField;
-        }
+        //    return inputAreaField;
+        //}
 
         private void ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
         {

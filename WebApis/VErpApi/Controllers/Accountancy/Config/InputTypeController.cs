@@ -242,12 +242,12 @@ namespace VErpApi.Controllers.Accountancy.Config
             return await _inputConfigPrivateService.GetInputAreaFields(inputTypeId, inputAreaId, keyword, page, size).ConfigureAwait(true);
         }
 
-        [HttpGet]
-        [Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaField}")]
-        public async Task<InputAreaFieldOutputFullModel> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaField)
-        {
-            return await _inputConfigPrivateService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField).ConfigureAwait(true); ;
-        }
+        //[HttpGet]
+        //[Route("{inputTypeId}/inputareas/{inputAreaId}/inputareafields/{inputAreaField}")]
+        //public async Task<InputAreaFieldOutputFullModel> GetInputAreaField([FromRoute] int inputTypeId, [FromRoute] int inputAreaId, [FromRoute] int inputAreaField)
+        //{
+        //    return await _inputConfigPrivateService.GetInputAreaField(inputTypeId, inputAreaId, inputAreaField).ConfigureAwait(true); ;
+        //}
 
         [HttpPost]
         [Route("{inputTypeId}/multifields")]
