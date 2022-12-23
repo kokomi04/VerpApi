@@ -327,12 +327,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<int> AddReportType(ReportTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(0));
-            var existedReport = await _reportConfigContext.ReportType
-                .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
-            if (existedReport != null)
-            {
-                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
-            }
+            //var existedReport = await _reportConfigContext.ReportType
+            //    .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+            //if (existedReport != null)
+            //{
+            //    throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            //}
 
             ReportType report = _mapper.Map<ReportType>(data);
 
