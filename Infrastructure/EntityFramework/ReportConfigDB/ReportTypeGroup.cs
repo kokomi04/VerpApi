@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public DateTime UpdatedDatetimeUtc { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
+        public int? ReplicatedFromReportTypeGroupId { get; set; }
 
         public virtual ICollection<ReportType> ReportType { get; set; }
     }

@@ -14,6 +14,10 @@
         PurchaseOrder = 9,
         ProductionHandover = 10,
         Customer = 11,
-        ProductionHandoverReceipt = 12
+        ProductionHandoverReceipt = 12,
+        /// <summary>
+        /// Kế toán thuế
+        /// </summary>
+        AccountancyBillPublic = 13,
     }
 }

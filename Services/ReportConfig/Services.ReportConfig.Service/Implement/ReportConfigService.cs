@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -11,6 +12,7 @@ using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Report;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -107,35 +109,42 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (info == null)
             {
-                return await ReportTypeViewCreate(reportTypeId, model);
+                await ReportTypeViewCreate(reportTypeId, model);
             }
-
-            using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
-            try
+            else
             {
+                using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
+                try
+                {
 
-                _mapper.Map(model, info);
+                    _mapper.Map(model, info);
 
-                var oldFields = await _reportConfigContext.ReportTypeViewField.Where(f => f.ReportTypeViewId == info.ReportTypeViewId).ToListAsync();
+                    var oldFields = await _reportConfigContext.ReportTypeViewField.Where(f => f.ReportTypeViewId == info.ReportTypeViewId).ToListAsync();
 
-                _reportConfigContext.ReportTypeViewField.RemoveRange(oldFields);
+                    _reportConfigContext.ReportTypeViewField.RemoveRange(oldFields);
 
-                await ReportTypeViewFieldAddRange(info.ReportTypeViewId, model.Fields);
+                    await ReportTypeViewFieldAddRange(info.ReportTypeViewId, model.Fields);
 
-                await _reportConfigContext.SaveChangesAsync();
+                    await _reportConfigContext.SaveChangesAsync();
 
-                await trans.CommitAsync();
+                    await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ReportTypeView, info.ReportTypeViewId, $"Cập nhật bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}", model.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ReportTypeView, info.ReportTypeViewId, $"Cập nhật bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}", model.JsonSerialize());
 
-                return true;
+                }
+                catch (Exception ex)
+                {
+                    await trans.TryRollbackTransactionAsync();
+                    _logger.LogError(ex, "ReportTypeViewUpdate");
+                    throw;
+                }
+
             }
-            catch (Exception ex)
-            {
-                await trans.TryRollbackTransactionAsync();
-                _logger.LogError(ex, "ReportTypeViewUpdate");
-                throw;
-            }
+
+
+            await CloneAccountancyReportViewToPublic(reportTypeId, model);
+
+            return true;
         }
 
 
@@ -292,7 +301,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        public async Task<ReportTypeModel> ReportType(int reportTypeId)
+        public async Task<ReportTypeModel> Info(int reportTypeId)
         {
             var reportType = await _reportConfigContext.ReportType.Include(x => x.ReportTypeGroup)
                 //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
@@ -329,10 +338,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
             }
 
+            ReportType report = _mapper.Map<ReportType>(data);
+
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
             {
-                ReportType report = _mapper.Map<ReportType>(data);
+
                 await _reportConfigContext.ReportType.AddAsync(report);
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
@@ -342,7 +353,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.ReportView, EnumObjectType.ReportType, report.ReportTypeId);
 
-                return report.ReportTypeId;
             }
             catch (Exception ex)
             {
@@ -350,6 +360,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 _logger.LogError(ex, "Create");
                 throw new BadRequestException(GeneralCode.InternalError);
             }
+
+            data.ReportTypeId = null;
+            await CloneAccountancyReportToPublic(data);
+
+            return report.ReportTypeId;
         }
 
 
@@ -390,7 +405,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
                 await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Cập nhật báo cáo {report.ReportTypeName}", data.JsonSerialize());
-                return report.ReportTypeId;
+
             }
             catch (Exception ex)
             {
@@ -398,6 +413,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 _logger.LogError(ex, "Update");
                 throw new BadRequestException(GeneralCode.InternalError);
             }
+
+            data.ReportTypeId = reportTypeId;
+            await CloneAccountancyReportToPublic(data);
+
+            return report.ReportTypeId;
         }
         public async Task<int> DeleteReportType(int reportTypeId)
         {
@@ -438,6 +458,133 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 _logger.LogError(ex, "Delete");
                 throw new BadRequestException(GeneralCode.InternalError);
             }
+        }
+
+
+        private async Task<ReportTypeGroup> CloneAccountancyReportGroupToPublic(int groupId)
+        {
+            var groupInfo = await _reportConfigContext.ReportTypeGroup.FirstOrDefaultAsync(g => g.ReportTypeGroupId == groupId);
+
+            var cloneGroupInfo = await _reportConfigContext.ReportTypeGroup.FirstOrDefaultAsync(g => g.ReplicatedFromReportTypeGroupId == groupId && g.ModuleTypeId == (int)EnumModuleType.AccountantPublic);
+            if (cloneGroupInfo == null)
+            {
+                cloneGroupInfo = new ReportTypeGroup
+                {
+                    ReportTypeGroupName = groupInfo.ReportTypeGroupName,
+                    ModuleTypeId = (int)EnumModuleType.AccountantPublic,
+                    ReplicatedFromReportTypeGroupId = groupId,
+                    SortOrder = groupInfo.SortOrder,
+                };
+                await _reportConfigContext.ReportTypeGroup.AddAsync(cloneGroupInfo);
+            }
+            cloneGroupInfo.ReportTypeGroupName = groupInfo.ReportTypeGroupName;
+            cloneGroupInfo.SortOrder = groupInfo.SortOrder;
+
+            await _reportConfigContext.SaveChangesAsync();
+            return cloneGroupInfo;
+        }
+
+        private async Task CloneAccountancyReportViewToPublic(int originalReportTypeId, ReportTypeViewModel info)
+        {
+            var cloneReportEntity = await _reportConfigContext.ReportType
+              .Include(r => r.ReportTypeGroup)
+              .FirstOrDefaultAsync(r => r.ReportTypeGroup.ModuleTypeId == (int)EnumModuleType.AccountantPublic
+              && r.ReplicatedFromReportTypeId == originalReportTypeId);
+            if (cloneReportEntity == null)
+            {
+                return;
+            }
+            info.ReportTypeViewId = 0;
+            foreach (var f in info.Fields)
+            {
+                f.ReportTypeViewFieldId = 0;
+            }
+
+            await ReportTypeViewUpdate(cloneReportEntity.ReportTypeId, info);
+        }
+
+        private async Task CloneAccountancyReportToPublic(ReportTypeModel info)
+        {
+            if (info.ReportModuleTypeId != EnumModuleType.Accountant) return;
+
+            var cloneReportEntity = await _reportConfigContext.ReportType
+                .Include(r => r.ReportTypeGroup)
+                .FirstOrDefaultAsync(r => r.ReportTypeGroup.ModuleTypeId == (int)EnumModuleType.AccountantPublic
+                && r.ReplicatedFromReportTypeId == info.ReportTypeId);
+
+            var newReportId = cloneReportEntity?.ReportTypeId;
+
+            info.ReportTypeId = newReportId;
+            info.ReportModuleTypeId = EnumModuleType.AccountantPublic;
+
+            var groupInfo = await CloneAccountancyReportGroupToPublic(info.ReportTypeGroupId);
+
+            info.ReportTypeGroupId = groupInfo.ReportTypeGroupId;
+
+            if (info.DetailTargetId == EnumReportDetailTarget.Report)
+            {
+                info.DetailReportId = await GetRefTargetReportId(info.DetailReportId);
+            }
+
+            if (info.DetailTargetId == EnumReportDetailTarget.AccountancyBill)
+            {
+                info.DetailTargetId = EnumReportDetailTarget.AccountancyBillPublic;
+            }
+
+            if (info.Columns != null)
+            {
+                foreach (var c in info.Columns)
+                {
+                    if (c.DetailTargetId == EnumReportDetailTarget.Report)
+                    {
+                        c.DetailReportId = await GetRefTargetReportId(info.DetailReportId);
+                    }
+
+                    if (c.DetailTargetId == EnumReportDetailTarget.AccountancyBill)
+                    {
+                        c.DetailTargetId = EnumReportDetailTarget.AccountancyBillPublic;
+                    }
+
+                    if (c.HeaderTargetId == EnumReportDetailTarget.Report)
+                    {
+                        c.HeaderReportId = await GetRefTargetReportId(info.DetailReportId);
+                    }
+
+                    if (c.HeaderTargetId == EnumReportDetailTarget.AccountancyBill)
+                    {
+                        c.HeaderTargetId = EnumReportDetailTarget.AccountancyBillPublic;
+                    }
+                }
+            }
+
+            if (newReportId > 0)
+            {
+                await UpdateReportType(newReportId.Value, info);
+            }
+            else
+            {
+                await AddReportType(info);
+            }
+        }
+
+        private async Task<int?> GetRefTargetReportId(int? detailReportId)
+        {
+            var targetReport = await _reportConfigContext.ReportType
+                .Include(r => r.ReportTypeGroup)
+                .FirstOrDefaultAsync(r => r.ReportTypeGroup.ModuleTypeId == (int)EnumModuleType.Accountant && r.ReportTypeId == detailReportId);
+            if (targetReport != null)
+            {
+                var clonedTarget = await _reportConfigContext.ReportType
+                    .Include(r => r.ReportTypeGroup)
+                    .FirstOrDefaultAsync(r => r.ReportTypeGroup.ModuleTypeId == (int)EnumModuleType.AccountantPublic
+                        && r.ReplicatedFromReportTypeId == targetReport.ReportTypeId
+                    );
+                if (clonedTarget != null)
+                {
+                    return clonedTarget.ReportTypeId;
+                }
+            }
+            return detailReportId;
         }
     }
 }
