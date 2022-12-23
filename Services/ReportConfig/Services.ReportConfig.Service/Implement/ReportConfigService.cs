@@ -517,6 +517,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             info.ReplicatedFromReportTypeId = info.ReportTypeId;
             info.ReportTypeId = newReportId;
             info.ReportModuleTypeId = EnumModuleType.AccountantPublic;
+            info.UpdatedDatetimeUtc = cloneReportEntity.UpdatedDatetimeUtc.GetUnix();
 
             var groupInfo = await CloneAccountancyReportGroupToPublic(info.ReportTypeGroupId);
 
