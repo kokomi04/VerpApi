@@ -534,7 +534,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             if (clause != null)
             {
                 var paramName = $"@{clause.FieldName}_filter_{suffix}";
-
+                var defaultValueRawSqlQuote = clause.DataType.GetDefaultValueRawSqlStringWithQuote();
                 switch (clause.Operator)
                 {
                     case EnumOperator.Equal:
@@ -671,19 +671,19 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         break;
                     case EnumOperator.Greater:
-                        condition.Append($"ISNULL({aliasField},0) > {paramName}");
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) > {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.GreaterOrEqual:
-                        condition.Append($"ISNULL({aliasField},0) >= {paramName}");
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) >= {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThan:
-                        condition.Append($"ISNULL({aliasField},0) < {paramName}");
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) < {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.LessThanOrEqual:
-                        condition.Append($"ISNULL({aliasField},0) <= {paramName}");
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) <= {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
