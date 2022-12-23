@@ -375,14 +375,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
 
-            var existedReport = await _reportConfigContext.ReportType
-              .Where(r => r.ReportTypeId != reportTypeId)
-              .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+            //var existedReport = await _reportConfigContext.ReportType
+            //  .Where(r => r.ReportTypeId != reportTypeId)
+            //  .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
 
-            if (existedReport != null)
-            {
-                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
-            }
+            //if (existedReport != null)
+            //{
+            //    throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            //}
 
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
