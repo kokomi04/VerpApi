@@ -37,6 +37,37 @@ namespace VErp.Commons.Library
         {
             return GetSqlValueWithCustomTimezone(dataType, value, null);
         }
+
+        public static string GetDefaultValueRawSqlStringWithQuote(this EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                    return "''";
+                case EnumDataType.Int:
+                    return "0";
+
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    return "'1900-01-01'";
+
+                case EnumDataType.PhoneNumber: return "";
+                case EnumDataType.Email: return "";
+                case EnumDataType.Boolean:
+                    return "'0'";
+                case EnumDataType.Percentage:
+                    return "0";
+                case EnumDataType.BigInt:
+                    return "0";
+                case EnumDataType.Decimal:
+                    return "0";
+                default: return null;
+            }
+        }
+
         private static object GetSqlValueWithCustomTimezone(this EnumDataType dataType, object value, int? timeZoneOffset)
         {
             if (value.IsNullOrEmptyObject()) return DBNull.Value;
@@ -283,8 +314,8 @@ namespace VErp.Commons.Library
 
         private static bool StringToBool(string value)
         {
-            return string.IsNullOrWhiteSpace(value) ? false : 
-                value.Trim().ToLower() == true.ToString().ToLower() 
+            return string.IsNullOrWhiteSpace(value) ? false :
+                value.Trim().ToLower() == true.ToString().ToLower()
                 || value.Trim() == "1"
                 || value.Trim().NormalizeAsInternalName() == "co"
                 || value.Trim().NormalizeAsInternalName() == "yes";
