@@ -327,12 +327,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
         public async Task<int> AddReportType(ReportTypeModel data)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(0));
-            var existedReport = await _reportConfigContext.ReportType
-                .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
-            if (existedReport != null)
-            {
-                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
-            }
+            //var existedReport = await _reportConfigContext.ReportType
+            //    .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+            //if (existedReport != null)
+            //{
+            //    throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            //}
+           
             if (data.Columns == null || data.Columns.Any(c => string.IsNullOrWhiteSpace(c.Alias)))
             {
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
