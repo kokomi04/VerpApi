@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System.Collections.Generic;
 using System.Linq;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Report;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -71,13 +72,13 @@ namespace Verp.Services.ReportConfig.Model
             return bsConfig;
         }
 
-        public int ReportModuleTypeId { get; set; }
+        public EnumModuleType ReportModuleTypeId { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMapCustom<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => ParseBscConfig(v.BscConfig)))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonDeserialize<ReportDisplayConfigModel>()))
-       .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
+       .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => (EnumModuleType)v.ReportTypeGroup.ModuleTypeId))
        .ReverseMapCustom()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))
