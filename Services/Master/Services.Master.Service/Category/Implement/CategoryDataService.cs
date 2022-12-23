@@ -268,7 +268,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
 
-            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
             {
                 throw GeneralCode.DataIsOld.BadRequest();
             }
