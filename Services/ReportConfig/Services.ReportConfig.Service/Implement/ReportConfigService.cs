@@ -500,7 +500,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 && r.ReplicatedFromReportTypeId == info.ReportTypeId);
 
             var newReportId = cloneReportEntity?.ReportTypeId;
-
+            info.ReplicatedFromReportTypeId = info.ReportTypeId;
             info.ReportTypeId = newReportId;
             info.ReportModuleTypeId = EnumModuleType.AccountantPublic;
 
@@ -543,7 +543,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
             }
-
+            
             if (newReportId > 0)
             {
                 await UpdateReportType(newReportId.Value, info);
