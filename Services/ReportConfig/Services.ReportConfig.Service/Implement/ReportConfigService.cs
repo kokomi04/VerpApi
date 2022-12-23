@@ -557,7 +557,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
             }
-            
+
             if (newReportId > 0)
             {
                 await UpdateReportType(newReportId.Value, info);
@@ -565,6 +565,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             else
             {
                 await AddReportType(info);
+                var viewInfo = await ReportTypeViewGetInfo(info.ReplicatedFromReportTypeId.Value, true);
+
+                await CloneAccountancyReportViewToPublic(info.ReplicatedFromReportTypeId.Value, viewInfo);
             }
         }
 
