@@ -76,6 +76,8 @@ namespace Verp.Services.ReportConfig.Model
 
         public EnumModuleType ReportModuleTypeId { get; set; }
 
+        public int? ReplicatedFromReportTypeId { get; set; }
+
         public void Mapping(Profile profile) => profile.CreateMapCustom<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => ParseBscConfig(v.BscConfig)))
