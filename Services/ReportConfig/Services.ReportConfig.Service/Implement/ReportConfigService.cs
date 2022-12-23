@@ -384,14 +384,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
             }
 
-            var existedReport = await _reportConfigContext.ReportType
-              .Where(r => r.ReportTypeId != reportTypeId)
-              .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
+            //var existedReport = await _reportConfigContext.ReportType
+            //  .Where(r => r.ReportTypeId != reportTypeId)
+            //  .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
 
-            if (existedReport != null)
-            {
-                throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
-            }
+            //if (existedReport != null)
+            //{
+            //    throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
+            //}
 
             if (data.UpdatedDatetimeUtc != report.UpdatedDatetimeUtc.GetUnix())
             {
