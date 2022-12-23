@@ -1295,7 +1295,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
 
-            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
             {
                 throw GeneralCode.DataIsOld.BadRequest();
             }

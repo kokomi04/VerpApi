@@ -1174,7 +1174,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
 
-            if (modelUpdatedDatetimeUtc != entityUpdatedDatetimeUtc)
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
             {
                 throw GeneralCode.DataIsOld.BadRequest();
             }
