@@ -11,13 +11,14 @@ using VErp.Services.Accountancy.Service.Input;
 
 namespace VErpApi.Controllers.Accountancy.Config
 {
-    [Route("api/accountancy/config/inputType")]
+    [Route("api/accountancy/config/public/inputType")]
 
-    public class InputTypeConfigController : InputTypeConfigControllerAbstract
+    public class InputTypePublicConfigController : InputTypeConfigControllerAbstract
     {
-        public InputTypeConfigController(IInputPrivateConfigService inputConfigPrivateService) : base(inputConfigPrivateService)
+        public InputTypePublicConfigController(IInputPublicConfigService inputConfigPublicService) : base(inputConfigPublicService)
         {
 
         }
+
     }
 }
