@@ -333,7 +333,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             //{
             //    throw new BadRequestException(ReportErrorCode.ReportNameAlreadyExisted);
             //}
-           
+
             if (data.Columns == null || data.Columns.Any(c => string.IsNullOrWhiteSpace(c.Alias)))
             {
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
@@ -517,7 +517,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             info.ReplicatedFromReportTypeId = info.ReportTypeId;
             info.ReportTypeId = newReportId;
             info.ReportModuleTypeId = EnumModuleType.AccountantPublic;
-            info.UpdatedDatetimeUtc = cloneReportEntity.UpdatedDatetimeUtc.GetUnix();
+            info.UpdatedDatetimeUtc = ((cloneReportEntity?.UpdatedDatetimeUtc) ?? DateTime.UtcNow).GetUnix();
 
             var groupInfo = await CloneAccountancyReportGroupToPublic(info.ReportTypeGroupId);
 
