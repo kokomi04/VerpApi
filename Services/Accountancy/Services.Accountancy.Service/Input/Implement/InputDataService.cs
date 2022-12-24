@@ -910,7 +910,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var data = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray(), cachingService: _cachingService);
                     for (int indx = 0; indx < data.Rows.Count; indx++)
                     {
-                        mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][field.RefTableTitle]);
+                        var titleField = field.RefTableTitle?.Split(',')[0]?.Trim();
+                        if (string.IsNullOrWhiteSpace(titleField))
+                        {
+                            titleField = field.RefTableField;
+                        }
+                        mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][titleField]);
                     }
                     sfValues.Add(field.FieldName, mapTitles);
                 }
