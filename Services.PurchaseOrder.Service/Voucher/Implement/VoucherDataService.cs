@@ -1159,7 +1159,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherAreaFields = await GetVoucherFields(voucherTypeId);
 
             // Get changed info
-            var infoSQL = new StringBuilder("SELECT TOP 1 ");
+            var infoSQL = new StringBuilder("SELECT TOP 1 UpdatedDatetimeUtc, ");
             var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherTypeId = {voucherTypeId} AND VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
