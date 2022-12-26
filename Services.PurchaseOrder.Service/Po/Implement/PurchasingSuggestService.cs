@@ -15,6 +15,7 @@ using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -436,6 +437,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     var info = await _purchaseOrderDBContext.PurchasingSuggest.FirstOrDefaultAsync(d => d.PurchasingSuggestId == purchasingSuggestId);
                     if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
+                    if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
 
                     info.PurchasingSuggestCode = model.PurchasingSuggestCode;
                     info.Date = model.Date.UnixToDateTime().Value;
@@ -587,6 +592,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         d.SortOrder = sortOrder++;
                     }
 
+                    if (_purchaseOrderDBContext.HasChanges())
+                        info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
@@ -605,7 +613,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchasingSuggestCode(long? purchasingSuggestId, PurchasingSuggestInput model)
         {
             model.PurchasingSuggestCode = (model.PurchasingSuggestCode ?? "").Trim();
 
@@ -1506,7 +1514,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
+        private async Task<IGenerateCodeContext> GeneratePoAssignmentCode(long? poAssignmentId, PoAssignment model)
         {
 
             model.PoAssignmentCode = (model.PoAssignmentCode ?? "").Trim();

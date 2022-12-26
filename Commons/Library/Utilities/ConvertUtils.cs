@@ -37,9 +37,40 @@ namespace VErp.Commons.Library
         {
             return GetSqlValueWithCustomTimezone(dataType, value, null);
         }
+
+        public static string GetDefaultValueRawSqlStringWithQuote(this EnumDataType dataType)
+        {
+            switch (dataType)
+            {
+                case EnumDataType.Text:
+                    return "''";
+                case EnumDataType.Int:
+                    return "0";
+
+                case EnumDataType.Date:
+                case EnumDataType.Year:
+                case EnumDataType.Month:
+                case EnumDataType.QuarterOfYear:
+                case EnumDataType.DateRange:
+                    return "'1900-01-01'";
+
+                case EnumDataType.PhoneNumber: return "";
+                case EnumDataType.Email: return "";
+                case EnumDataType.Boolean:
+                    return "'0'";
+                case EnumDataType.Percentage:
+                    return "0";
+                case EnumDataType.BigInt:
+                    return "0";
+                case EnumDataType.Decimal:
+                    return "0";
+                default: return null;
+            }
+        }
+
         private static object GetSqlValueWithCustomTimezone(this EnumDataType dataType, object value, int? timeZoneOffset)
         {
-            if (value.IsNullObject()) return DBNull.Value;
+            if (value.IsNullOrEmptyObject()) return DBNull.Value;
 
             switch (dataType)
             {
@@ -225,7 +256,7 @@ namespace VErp.Commons.Library
             switch (dataType)
             {
                 case EnumDataType.Boolean:
-                    return value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    return StringToBool(value);
                 case EnumDataType.Date:
                 case EnumDataType.Year:
                 case EnumDataType.Month:
@@ -260,7 +291,7 @@ namespace VErp.Commons.Library
                 }
 
                 if (type == typeof(bool))
-                    return string.IsNullOrWhiteSpace(value) ? false : value.Trim().ToLower() == true.ToString().ToLower() || value.Trim() == "1";
+                    return StringToBool(value);
                 if (type == typeof(DateTime))
                     return string.IsNullOrWhiteSpace(value) ? default : DateTime.Parse(value);
                 if (type == typeof(double))
@@ -281,6 +312,14 @@ namespace VErp.Commons.Library
             }
         }
 
+        private static bool StringToBool(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? false :
+                value.Trim().ToLower() == true.ToString().ToLower()
+                || value.Trim() == "1"
+                || value.Trim().NormalizeAsInternalName() == "co"
+                || value.Trim().NormalizeAsInternalName() == "yes";
+        }
 
         private static Hashtable dbTypeTable;
 

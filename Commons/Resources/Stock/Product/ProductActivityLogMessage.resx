@@ -174,4 +174,7 @@
   <data name="UpdateProductProducitity" xml:space="preserve">
     <value>Cập nhật năng suất mục tiêu mặt hàng "{0}" khi cập nhật "{1}"</value>
   </data>
+  <data name="UpdateProductUnitConversionFromExcel" xml:space="preserve">
+    <value>Cập nhật đơn vị chuyển đổi từ excel mặt hàng  "{0}"</value>
+  </data>
 </root>

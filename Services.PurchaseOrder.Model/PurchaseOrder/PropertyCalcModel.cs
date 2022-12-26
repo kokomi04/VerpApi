@@ -48,6 +48,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
                 .ReverseMapCustom()
                 .ForMember(d => d.CreatedDatetimeUtc, s => s.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class PropertyCalcPropertyModel : IMapFrom<PropertyCalcProperty>

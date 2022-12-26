@@ -19,6 +19,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int? InputTypeGroupId { get; set; }
 
         public IList<InputAreaFieldSimpleModel> AreaFields { get; set; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
 

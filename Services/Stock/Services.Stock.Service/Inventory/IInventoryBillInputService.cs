@@ -23,7 +23,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ApproveInventoryInput(long inventoryId);
 
-        Task ApproveInventoryInputDb(InventoryEntity inventoryObj, GenerateCodeConfigData genCodeConfig);
+        Task ApproveInventoryInputDb(InventoryEntity inventoryObj, IGenerateCodeAction genCodeConfig);
 
 
         Task<bool> DeleteInventoryInput(long inventoryId);
@@ -37,7 +37,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
 
-        Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig);
+        Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig);
 
         Task<bool> SentToCensor(long inventoryId);
 

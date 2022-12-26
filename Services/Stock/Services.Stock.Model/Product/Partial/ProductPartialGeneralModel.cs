@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
@@ -51,6 +52,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public bool? IsMaterials { get; set; }
         public int? TargetProductivityId { get; set; }
         public bool? ConfirmFlag { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class ProductPartialGeneralUpdateWithExtraModel : ProductPartialGeneralModel

@@ -21,7 +21,7 @@ namespace Verp.Services.ReportConfig.Service
 
         Task<PageData<ReportTypeListModel>> ReportTypes(string keyword, int page, int size, int? moduleTypeId = null);
 
-        Task<ReportTypeModel> ReportType(int reportTypeId);
+        Task<ReportTypeModel> Info(int reportTypeId);
 
         Task<int> AddReportType(ReportTypeModel data);
 

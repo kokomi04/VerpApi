@@ -27,10 +27,13 @@ using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using VErp.Services.PurchaseOrder.Service.Po.Implement.Facade;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderOutsourceValidationMessage;
-using PurchaseOrderModel = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
+using PurchaseOrderEntity = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 using VErp.Infrastructure.EF.EFExtensions;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using DocumentFormat.OpenXml.InkML;
+using Verp.Resources.Enums.ErrorCodes.PO;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -49,7 +52,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         private readonly IUserHelperService _userHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly INotificationFactoryService _notificationFactoryService;
-
+        private readonly ICategoryHelperService _categoryHelperService;
+        private readonly IPurchaseOrderImportExcelFacadeService _purchaseOrderImportExcelFacadeService;
 
         public PurchaseOrderService(
             PurchaseOrderDBContext purchaseOrderDBContext
@@ -63,7 +67,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
            , IManufacturingHelperService manufacturingHelperService
            , IMapper mapper, IMailFactoryService mailFactoryService
            , IUserHelperService userHelperService, IOrganizationHelperService organizationHelperService
-           , INotificationFactoryService notificationFactoryService)
+           , INotificationFactoryService notificationFactoryService, ICategoryHelperService categoryHelperService
+           , IPurchaseOrderImportExcelFacadeService purchaseOrderImportExcelFacadeService)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _poActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PurchaseOrder);
@@ -77,6 +82,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             _userHelperService = userHelperService;
             _organizationHelperService = organizationHelperService;
             _notificationFactoryService = notificationFactoryService;
+            _categoryHelperService = categoryHelperService;
+            _purchaseOrderImportExcelFacadeService = purchaseOrderImportExcelFacadeService;
         }
 
         public async Task<bool> SendMailNotifyCheckAndCensor(long purchaseOrderId, string mailTemplateCode, string[] mailTo)
@@ -248,7 +255,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                         {
                                             SumTotalMoney = g.Sum(x => x.TotalMoney),
                                         }).FirstOrDefaultAsync();
-            var pagedData = await poQuery.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await poQuery.SortByFieldName(sortBy, asc)
+                .ThenBy(q => q.PurchaseOrderCode)
+                .Skip((page - 1) * size).Take(size).ToListAsync();
             var result = new List<PurchaseOrderOutputList>();
 
             foreach (var info in pagedData)
@@ -476,7 +485,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            query = query.SortByFieldName(sortBy, asc).ThenBy(q => q.SortOrder);
+            query = query.SortByFieldName(sortBy, asc)
+                .ThenBy(q => q.PurchaseOrderCode)
+                .ThenBy(q => q.SortOrder);
+
             if (size > 0)
             {
                 query = query.Skip((page - 1) * size).Take(size);
@@ -723,179 +735,181 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<long> Create(PurchaseOrderInput model)
         {
-            var validate = await ValidatePoModelInput(null, model);
-
-            if (!validate.IsSuccess())
-            {
-                throw new BadRequestException(validate);
-            }
 
             var ctx = await GeneratePurchaseOrderCode(null, model);
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
-                var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
-
-                var poAssignmentDetails = await GetPoAssignmentDetailInfos(poAssignmentDetailIds);
-
-                var po = new PurchaseOrderModel()
-                {
-                    PurchaseOrderCode = model.PurchaseOrderCode,
-                    CustomerId = model.CustomerId,
-                    Date = model.Date.UnixToDateTime(),
-                    OtherPolicy = model.OtherPolicy,
-                    DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
-                    DeliveryUserId = model.DeliveryUserId,
-                    DeliveryCustomerId = model.DeliveryCustomerId,
-                    DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
-                    Requirement = model.Requirement,
-                    DeliveryPolicy = model.DeliveryPolicy,
-                    PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
-                    PoDescription = model.PoDescription,
-                    IsApproved = null,
-                    IsChecked = null,
-                    PoProcessStatusId = null,
-                    DeliveryFee = model.DeliveryFee,
-                    OtherFee = model.OtherFee,
-                    TotalMoney = model.TotalMoney,
-                    CreatedByUserId = _currentContext.UserId,
-                    UpdatedByUserId = _currentContext.UserId,
-                    CensorByUserId = null,
-                    CreatedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedDatetimeUtc = DateTime.UtcNow,
-                    CensorDatetimeUtc = null,
-                    IsDeleted = false,
-                    DeletedDatetimeUtc = null,
-                    PurchaseOrderType = (int)EnumPurchasingOrderType.Default,
-                    TaxInPercent = model.TaxInPercent,
-                    TaxInMoney = model.TaxInMoney,
-
-                    CurrencyId = model.CurrencyId,
-                    ExchangeRate = model.ExchangeRate,
-
-                    DeliveryMethod = model.DeliveryMethod,
-                    PaymentMethod = model.PaymentMethod,
-                    AttachmentBill = model.AttachmentBill,
-                };
-
-                if (po.DeliveryDestination?.Length > 1024)
-                {
-                    throw DeleveryDestinationTooLong.BadRequest();
-                }
-
-                await _purchaseOrderDBContext.AddAsync(po);
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
-                var sortOrder = 1;
-                foreach (var item in model.Details)
-                {
-                    var assignmentDetail = poAssignmentDetails.FirstOrDefault(a => a.PoAssignmentDetailId == item.PoAssignmentDetailId);
-
-                    var eDetail = new PurchaseOrderDetail()
-                    {
-                        PurchaseOrderId = po.PurchaseOrderId,
-
-                        PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
-                                                    item.PurchasingSuggestDetailId :
-                                                    assignmentDetail?.PurchasingSuggestDetailId,
-
-                        PoAssignmentDetailId = item.PoAssignmentDetailId,
-
-                        ProductId = item.ProductId,
-
-                        ProviderProductName = item.ProviderProductName,
-                        PrimaryQuantity = item.PrimaryQuantity,
-                        PrimaryUnitPrice = item.PrimaryUnitPrice,
-
-                        ProductUnitConversionId = item.ProductUnitConversionId,
-                        ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
-                        ProductUnitConversionPrice = item.ProductUnitConversionPrice,
-
-                        PoProviderPricingCode = item.PoProviderPricingCode,
-
-                        OrderCode = item.OrderCode,
-                        ProductionOrderCode = item.ProductionOrderCode,
-                        Description = item.Description,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        UpdatedDatetimeUtc = DateTime.UtcNow,
-                        IsDeleted = false,
-                        DeletedDatetimeUtc = null,
-                        IntoMoney = item.IntoMoney,
-
-                        ExchangedMoney = item.ExchangedMoney,
-                        SortOrder = sortOrder,
-                        IsSubCalculation = item.IsSubCalculation
-                    };
-
-                    await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
-
-                    await _purchaseOrderDBContext.SaveChangesAsync();
-
-                    if (item.SubCalculations != null)
-                    {
-                        var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
-                        {
-                            PrimaryQuantity = x.PrimaryQuantity,
-                            ProductBomId = x.ProductBomId,
-                            PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
-                            PrimaryUnitPrice = x.PrimaryUnitPrice,
-                            UnitConversionId = x.UnitConversionId
-                        });
-
-                        await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
-                    }
-
-                    await _purchaseOrderDBContext.SaveChangesAsync();
-
-                    if (item.OutsourceMappings.Count > 0)
-                    {
-                        var eOutsourceMappings = item.OutsourceMappings.Select(x => new PurchaseOrderOutsourceMapping
-                        {
-                            OrderCode = x.OrderCode,
-                            OutsourcePartRequestId = 0,
-                            ProductId = x.ProductId,
-                            Quantity = x.Quantity,
-                            ProductionOrderCode = x.ProductionOrderCode,
-                            PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
-                        });
-                        await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
-                        await _purchaseOrderDBContext.SaveChangesAsync();
-                    }
-
-                    sortOrder++;
-                }
-
-                if (model.FileIds?.Count > 0)
-                {
-                    await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
-                    {
-                        PurchaseOrderId = po.PurchaseOrderId,
-                        FileId = f,
-                        CreatedDatetimeUtc = DateTime.UtcNow,
-                        DeletedDatetimeUtc = null,
-                        IsDeleted = false
-                    }));
-                }
-
-
-                await _purchaseOrderDBContext.SaveChangesAsync();
-
+                var po = await CreateToDb(model);
                 trans.Commit();
-
 
                 await ctx.ConfirmCode();
 
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
-                  .MessageResourceFormatDatas(po.PurchaseOrderCode)
-                  .ObjectId(po.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
-                  .CreateLog();
+                .MessageResourceFormatDatas(po.PurchaseOrderCode)
+                .ObjectId(po.PurchaseOrderId)
+                .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                .CreateLog();
+
                 return po.PurchaseOrderId;
             }
+        }
+
+        public async Task<PurchaseOrderEntity> CreateToDb(PurchaseOrderInput model)
+        {
+            await ValidatePoModelInput(null, model);
+
+            var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
+
+            var poAssignmentDetails = await GetPoAssignmentDetailInfos(poAssignmentDetailIds);
+
+            var po = new PurchaseOrderEntity()
+            {
+                PurchaseOrderCode = model.PurchaseOrderCode,
+                CustomerId = model.CustomerId,
+                Date = model.Date.UnixToDateTime(),
+                OtherPolicy = model.OtherPolicy,
+                DeliveryDate = model.DeliveryDate?.UnixToDateTime(),
+                DeliveryUserId = model.DeliveryUserId,
+                DeliveryCustomerId = model.DeliveryCustomerId,
+                DeliveryDestination = model.DeliveryDestination.JsonSerialize(),
+                Requirement = model.Requirement,
+                DeliveryPolicy = model.DeliveryPolicy,
+                PurchaseOrderStatusId = (int)EnumPurchaseOrderStatus.Draff,
+                PoDescription = model.PoDescription,
+                IsApproved = null,
+                IsChecked = null,
+                PoProcessStatusId = null,
+                DeliveryFee = model.DeliveryFee,
+                OtherFee = model.OtherFee,
+                TotalMoney = model.TotalMoney,
+                CreatedByUserId = _currentContext.UserId,
+                UpdatedByUserId = _currentContext.UserId,
+                CensorByUserId = null,
+                CreatedDatetimeUtc = DateTime.UtcNow,
+                UpdatedDatetimeUtc = DateTime.UtcNow,
+                CensorDatetimeUtc = null,
+                IsDeleted = false,
+                DeletedDatetimeUtc = null,
+                PurchaseOrderType = (int)EnumPurchasingOrderType.Default,
+                TaxInPercent = model.TaxInPercent,
+                TaxInMoney = model.TaxInMoney,
+
+                CurrencyId = model.CurrencyId,
+                ExchangeRate = model.ExchangeRate,
+
+                DeliveryMethod = model.DeliveryMethod,
+                PaymentMethod = model.PaymentMethod,
+                AttachmentBill = model.AttachmentBill,
+            };
+
+            if (po.DeliveryDestination?.Length > 1024)
+            {
+                throw DeleveryDestinationTooLong.BadRequest();
+            }
+
+            await _purchaseOrderDBContext.AddAsync(po);
+            await _purchaseOrderDBContext.SaveChangesAsync();
+
+            var sortOrder = 1;
+            foreach (var item in model.Details)
+            {
+                var assignmentDetail = poAssignmentDetails.FirstOrDefault(a => a.PoAssignmentDetailId == item.PoAssignmentDetailId);
+
+                var eDetail = new PurchaseOrderDetail()
+                {
+                    PurchaseOrderId = po.PurchaseOrderId,
+
+                    PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
+                                                item.PurchasingSuggestDetailId :
+                                                assignmentDetail?.PurchasingSuggestDetailId,
+
+                    PoAssignmentDetailId = item.PoAssignmentDetailId,
+
+                    ProductId = item.ProductId,
+
+                    ProviderProductName = item.ProviderProductName,
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    PrimaryUnitPrice = item.PrimaryUnitPrice,
+
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                    ProductUnitConversionPrice = item.ProductUnitConversionPrice,
+
+                    PoProviderPricingCode = item.PoProviderPricingCode,
+
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                    Description = item.Description,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedDatetimeUtc = DateTime.UtcNow,
+                    IsDeleted = false,
+                    DeletedDatetimeUtc = null,
+                    IntoMoney = item.IntoMoney,
+
+                    ExchangedMoney = item.ExchangedMoney,
+                    SortOrder = sortOrder,
+                    IsSubCalculation = item.IsSubCalculation
+                };
+
+                await _purchaseOrderDBContext.PurchaseOrderDetail.AddAsync(eDetail);
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                if (item.SubCalculations != null)
+                {
+                    var arrEntitySubCalculation = item.SubCalculations.Select(x => new PurchaseOrderDetailSubCalculation
+                    {
+                        PrimaryQuantity = x.PrimaryQuantity,
+                        ProductBomId = x.ProductBomId,
+                        PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
+                        PrimaryUnitPrice = x.PrimaryUnitPrice,
+                        UnitConversionId = x.UnitConversionId
+                    });
+
+                    await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrEntitySubCalculation);
+                }
+
+                await _purchaseOrderDBContext.SaveChangesAsync();
+
+                if (item.OutsourceMappings.Count > 0)
+                {
+                    var eOutsourceMappings = item.OutsourceMappings.Select(x => new PurchaseOrderOutsourceMapping
+                    {
+                        OrderCode = x.OrderCode,
+                        OutsourcePartRequestId = 0,
+                        ProductId = x.ProductId,
+                        Quantity = x.Quantity,
+                        ProductionOrderCode = x.ProductionOrderCode,
+                        PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
+                    });
+                    await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
+                    await _purchaseOrderDBContext.SaveChangesAsync();
+                }
+
+                sortOrder++;
+            }
+
+            if (model.FileIds?.Count > 0)
+            {
+                await _purchaseOrderDBContext.PurchaseOrderFile.AddRangeAsync(model.FileIds.Select(f => new PurchaseOrderFile()
+                {
+                    PurchaseOrderId = po.PurchaseOrderId,
+                    FileId = f,
+                    CreatedDatetimeUtc = DateTime.UtcNow,
+                    DeletedDatetimeUtc = null,
+                    IsDeleted = false
+                }));
+            }
+
+
+            await _purchaseOrderDBContext.SaveChangesAsync();
+
+            return po;
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
         {
             model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
 
@@ -913,17 +927,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<bool> Update(long purchaseOrderId, PurchaseOrderInput model)
         {
-            var validate = await ValidatePoModelInput(purchaseOrderId, model);
-
-            if (!validate.IsSuccess())
-            {
-                throw new BadRequestException(validate);
-            }
+            await ValidatePoModelInput(purchaseOrderId, model);
 
             using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
             {
                 var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
                 if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+
+                if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
 
                 var poAssignmentDetailIds = model.Details.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId).ToList();
 
@@ -1170,10 +1184,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                 var allDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
                 var sortOrder = 1;
-                foreach (var item in allDetails)
+                foreach (var item in allDetails.OrderBy(d => d.SortOrder))
                 {
                     item.SortOrder = sortOrder++;
                 }
+
+                if (_purchaseOrderDBContext.HasChanges())
+                    info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -1232,7 +1249,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
         }
 
-        public CategoryNameModel GetFieldDataForMapping()
+        public CategoryNameModel GetFieldDataForParseMapping()
         {
             var result = new CategoryNameModel()
             {
@@ -1254,6 +1271,35 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         }
 
 
+        public CategoryNameModel GetFieldDataForImportMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                //CategoryId = 1,
+                CategoryCode = "PurchaseOrder",
+                CategoryTitle = "PurchaseOrder",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+            var fields = ExcelUtils.GetFieldNameModels<PurchaseOrderImportModel>(categoryHelper: _categoryHelperService);
+            var detailProps = typeof(PoDetailRowValue).GetProperties().Select(p => p.Name).ToList();
+            const string detailPrefix = "--- ";
+            foreach (var f in fields)
+            {
+                if (detailProps.Contains(f.FieldName))
+                {
+                    f.GroupName = detailPrefix + f.GroupName;
+                    f.FieldTitle = detailPrefix + f.FieldTitle;
+                }
+            }
+            result.Fields = fields;
+            return result;
+        }
+
+        public async Task<bool> Import(ImportExcelMapping mapping, Stream stream)
+        {
+            return await _purchaseOrderImportExcelFacadeService.Import(mapping, stream, this);
+        }
 
         public async Task<bool> Checked(long purchaseOrderId)
         {
@@ -1734,12 +1780,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return data;
         }
 
-        private async Task<Enum> ValidatePoModelInput(long? poId, PurchaseOrderInput model)
+        private async Task ValidatePoModelInput(long? poId, PurchaseOrderInput model)
         {
             if (!string.IsNullOrEmpty(model.PurchaseOrderCode))
             {
                 var existedItem = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(r => r.PurchaseOrderCode == model.PurchaseOrderCode && r.PurchaseOrderId != poId);
-                if (existedItem != null) return PurchaseOrderErrorCode.PoCodeAlreadyExisted;
+                if (existedItem != null)
+                {
+                    throw PurchaseOrderErrorCode.PoCodeAlreadyExisted.BadRequest(PurchaseOrderErrorCodeDescription.PoCodeAlreadyExisted + " " + model.PurchaseOrderCode);
+                }
             }
             //else
             //{
@@ -1747,36 +1796,35 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             //}
 
 
-            PurchaseOrderModel poInfo = null;
+            PurchaseOrderEntity poInfo = null;
 
             if (poId.HasValue)
             {
                 poInfo = await _purchaseOrderDBContext.PurchaseOrder.AsNoTracking().FirstOrDefaultAsync(r => r.PurchaseOrderId == poId.Value);
                 if (poInfo == null)
                 {
-                    return PurchaseOrderErrorCode.PoNotFound;
+                    throw PurchaseOrderErrorCode.PoNotFound.BadRequest();
                 }
             }
 
             if (model.Details.Where(d => d.PoAssignmentDetailId.HasValue).GroupBy(d => d.PoAssignmentDetailId).Any(d => d.Count() > 1))
             {
-                return GeneralCode.InvalidParams;
+                throw GeneralCode.InvalidParams.BadRequest();
             }
 
             if (model.Details.Where(d => d.PurchasingSuggestDetailId.HasValue).GroupBy(d => d.PurchasingSuggestDetailId).Any(d => d.Count() > 1))
             {
-                return GeneralCode.InvalidParams;
+                throw GeneralCode.InvalidParams.BadRequest();
             }
 
             var validateAssignment = await ValidateAssignmentDetails(poId, model);
 
-            if (!validateAssignment.IsSuccess()) return validateAssignment;
+            if (!validateAssignment.IsSuccess()) throw validateAssignment.BadRequest();
 
             var validateSuggest = await ValidateSuggestDetails(poId, model);
 
-            if (!validateSuggest.IsSuccess()) return validateSuggest;
+            if (!validateSuggest.IsSuccess()) throw validateSuggest.BadRequest();
 
-            return GeneralCode.Success;
         }
 
         private async Task<Enum> ValidateAssignmentDetails(long? poId, PurchaseOrderInput model)

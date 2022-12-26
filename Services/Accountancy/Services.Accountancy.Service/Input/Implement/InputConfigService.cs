@@ -26,7 +26,53 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputConfigService : IInputConfigService
+    public class InputPrivateConfigService : InputConfigServiceBase, IInputPrivateConfigService
+    {
+        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPrivateActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
+        {
+        }
+    }
+
+    public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
+    {
+        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
+        {
+
+        }
+    }
+
+    public interface IInputConfigDependService
+    {
+        ILogger Logger { get; }
+        IActivityLogService ActivityLogService { get; }
+        IMapper Mapper { get; }
+        ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        ICategoryHelperService HttpCategoryHelperService { get; }
+        IRoleHelperService RoleHelperService { get; }
+    }
+
+    public class InputConfigDependService : IInputConfigDependService
+    {
+        public InputConfigDependService(ILogger<InputConfigDependService> logger, IActivityLogService activityLogService, IMapper mapper, ICustomGenCodeHelperService customGenCodeHelperService, ICategoryHelperService httpCategoryHelperService, IRoleHelperService roleHelperService)
+        {
+            Logger = logger;
+            ActivityLogService = activityLogService;
+            Mapper = mapper;
+            CustomGenCodeHelperService = customGenCodeHelperService;
+            HttpCategoryHelperService = httpCategoryHelperService;
+            RoleHelperService = roleHelperService;
+        }
+
+        public ILogger Logger { get; }
+        public IActivityLogService ActivityLogService { get; }
+        public IMapper Mapper { get; }
+        public ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        public ICategoryHelperService HttpCategoryHelperService { get; }
+        public IRoleHelperService RoleHelperService { get; }
+
+    }
+
+    public class InputConfigServiceBase : IInputConfigServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 
@@ -35,35 +81,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IMenuHelperService _menuHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
-        private readonly IInputActionConfigService _inputActionConfigService;
+        private readonly IActionButtonConfigHelper _actionButtonConfigHelper;
 
-        public InputConfigService(AccountancyDBContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , IMenuHelperService menuHelperService
-            , ICurrentContextService currentContextService
-            , ICategoryHelperService httpCategoryHelperService
-            , IRoleHelperService roleHelperService
-            , IInputActionConfigService inputActionConfigService
+        public InputConfigServiceBase(AccountancyDBContext accountancyDBContext
+            , IInputConfigDependService inputConfigDependService
+            , IActionButtonConfigHelper actionButtonConfigHelper
             )
         {
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _menuHelperService = menuHelperService;
-            _currentContextService = currentContextService;
-            _httpCategoryHelperService = httpCategoryHelperService;
-            _roleHelperService = roleHelperService;
-            _inputActionConfigService = inputActionConfigService;
+            _logger = inputConfigDependService.Logger;
+            _activityLogService = inputConfigDependService.ActivityLogService;
+            _mapper = inputConfigDependService.Mapper;
+            _customGenCodeHelperService = inputConfigDependService.CustomGenCodeHelperService;
+            _httpCategoryHelperService = inputConfigDependService.HttpCategoryHelperService;
+            _roleHelperService = inputConfigDependService.RoleHelperService;
+            _actionButtonConfigHelper = actionButtonConfigHelper;
         }
 
         #region InputType
@@ -378,6 +412,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
+
+            if (data.UpdatedDatetimeUtc != inputType.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             if (inputType.InputTypeCode != data.InputTypeCode || inputType.Title != data.Title)
             {
                 var existedInput = await _accountancyDBContext.InputType
@@ -439,7 +479,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             try
             {
-                await _inputActionConfigService.RemoveAllByBillType(inputTypeId, inputType.Title);
+                await _actionButtonConfigHelper.RemoveAllByBillType(inputTypeId, inputType.Title);
             }
             catch (Exception ex)
             {
@@ -952,21 +992,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (lst, total);
         }
 
-        public async Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
-        {
-            var inputAreaField = await _accountancyDBContext.InputAreaField
-                .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
-                .Include(f => f.InputField)
-                .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
-            if (inputAreaField == null)
-            {
-                throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
-            }
+        //public async Task<InputAreaFieldOutputFullModel> GetInputAreaField(int inputTypeId, int inputAreaId, int inputAreaFieldId)
+        //{
+        //    var inputAreaField = await _accountancyDBContext.InputAreaField
+        //        .Where(f => f.InputAreaFieldId == inputAreaFieldId && f.InputTypeId == inputTypeId && f.InputAreaId == inputAreaId)
+        //        .Include(f => f.InputField)
+        //        .ProjectTo<InputAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
+        //        .FirstOrDefaultAsync();
+        //    if (inputAreaField == null)
+        //    {
+        //        throw new BadRequestException(InputErrorCode.InputAreaFieldNotFound);
+        //    }
 
 
-            return inputAreaField;
-        }
+        //    return inputAreaField;
+        //}
 
         private void ValidateInputField(InputFieldInputModel data, InputField inputField = null, int? inputFieldId = null)
         {

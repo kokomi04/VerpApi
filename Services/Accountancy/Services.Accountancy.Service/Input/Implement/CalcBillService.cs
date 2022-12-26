@@ -18,10 +18,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class CalcBillService : ICalcBillService
     {
-        private readonly AccountancyDBContext _accountancyDBContext;
+        private readonly AccountancyDBPrivateContext _accountancyDBContext;
         private readonly ICurrentContextService _currentContextService;
 
-        public CalcBillService(AccountancyDBContext accountancyDBContext, ICurrentContextService currentContextService)
+        public CalcBillService(AccountancyDBPrivateContext accountancyDBContext, ICurrentContextService currentContextService)
         {
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;

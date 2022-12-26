@@ -18,7 +18,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder.Materials
         public int CreatedByUserId { get; set; }
         public int UpdatedByUserId { get; set; }
         public IList<ProductionOrderMaterialAssign> Materials { get; set; }
-
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class ProductionOrderMaterialGroupStandardModel

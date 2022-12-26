@@ -221,6 +221,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
                         }
 
+                        if (req.UpdatedDatetimeUtc != inventoryObj.UpdatedDatetimeUtc.GetUnix())
+                        {
+                            throw GeneralCode.DataIsOld.BadRequest();
+                        }
+
                         if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
                         {
                             throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
@@ -337,6 +342,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                     });
                             }
                         }
+
+                        if (_stockDbContext.HasChanges())
+                            inventoryObj.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                         await _stockDbContext.SaveChangesAsync();
 

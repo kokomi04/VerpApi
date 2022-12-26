@@ -1,4 +1,4 @@
-﻿namespace VErp.Services.Stock.Model.Product
+﻿namespace VErp.Services.Stock.Model.Product.Pu
 {
     public class ProductUnitConversionByProductOutput
     {

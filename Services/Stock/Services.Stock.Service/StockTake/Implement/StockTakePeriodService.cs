@@ -122,7 +122,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateStockTakePeriotCode(int? stockTakePeriodId, StockTakePeriotModel model)
+        private async Task<IGenerateCodeContext> GenerateStockTakePeriotCode(int? stockTakePeriodId, StockTakePeriotModel model)
         {
             model.StockTakePeriodCode = (model.StockTakePeriodCode ?? "").Trim();
 
@@ -482,7 +482,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
                 model.StockTakePeriodId = stockTakePeriodId;
 
-                GenerateCodeContext ctx = null;
+                IGenerateCodeContext ctx = null;
                 if (stockTakeAcceptanceCertificate == null)
                 {
                     ctx = await GenerateAcceptanceCertificateCode(stockTakePeriodId, model);
@@ -525,7 +525,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateAcceptanceCertificateCode(long? stockTakePeriodId, StockTakeAcceptanceCertificateModel model)
+        private async Task<IGenerateCodeContext> GenerateAcceptanceCertificateCode(long? stockTakePeriodId, StockTakeAcceptanceCertificateModel model)
         {
             model.StockTakeAcceptanceCertificateCode = (model.StockTakeAcceptanceCertificateCode ?? "").Trim();
 

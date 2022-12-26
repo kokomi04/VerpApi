@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System.Collections.Generic;
 using System.Linq;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Report;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -14,6 +15,7 @@ namespace Verp.Services.ReportConfig.Model
         public int ReportTypeGroupId { get; set; }
         public string ReportTypeName { get; set; }
         public int SortOrder { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
     }
 
     public class ReportTypeModel : ReportTypeListModel
@@ -39,6 +41,7 @@ namespace Verp.Services.ReportConfig.Model
         public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+        public string DetailJsCodeCanOpenTarget { get; set; }
 
         public string OnLoadJsCode { get; set; }
         public string PreLoadDataJsCode { get; set; }
@@ -71,13 +74,15 @@ namespace Verp.Services.ReportConfig.Model
             return bsConfig;
         }
 
-        public int ReportModuleTypeId { get; set; }
+        public EnumModuleType ReportModuleTypeId { get; set; }
+
+        public int? ReplicatedFromReportTypeId { get; set; }
 
         public void Mapping(Profile profile) => profile.CreateMapCustom<ReportType, ReportTypeModel>()
        .ForMember(m => m.Columns, m => m.MapFrom(v => ParseColumns(v.Columns)))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => ParseBscConfig(v.BscConfig)))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonDeserialize<ReportDisplayConfigModel>()))
-       .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => v.ReportTypeGroup.ModuleTypeId))
+       .ForMember(m => m.ReportModuleTypeId, m => m.MapFrom(v => (EnumModuleType)v.ReportTypeGroup.ModuleTypeId))
        .ReverseMapCustom()
        .ForMember(m => m.Columns, m => m.MapFrom(v => v.Columns.JsonSerialize()))
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))

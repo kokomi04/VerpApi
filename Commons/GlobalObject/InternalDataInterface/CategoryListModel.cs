@@ -17,6 +17,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string CategoryCode { get; set; }
 
         public int? CategoryGroupId { get; set; }
+
     }
 
     public class CategoryFieldSimpleModel

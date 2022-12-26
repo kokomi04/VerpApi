@@ -8,6 +8,7 @@ namespace Verp.Services.ReportConfig.Model
         public string ReportTypeGroupName { get; set; }
         public int SortOrder { get; set; }
         public int ModuleTypeId { get; set; }
+        public int? ReplicatedFromReportTypeGroupId { get; set; }
     }
 
     public class ReportTypeGroupList : ReportTypeGroupModel

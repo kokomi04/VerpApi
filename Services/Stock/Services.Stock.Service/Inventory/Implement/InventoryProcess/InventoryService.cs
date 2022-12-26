@@ -560,7 +560,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     FileList = attachedFiles,
                     InputBills = mappingObjects,
                     InventoryStatusId = inventoryObj.InventoryStatusId,
-                    InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId
+                    InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId,
+                    UpdatedDatetimeUtc = inventoryObj.UpdatedDatetimeUtc.GetUnix(),
                 };
 
                 if (inventoryObj.RefInventoryId.HasValue)

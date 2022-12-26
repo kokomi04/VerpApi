@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Report
         public async Task<ReportTypeModel> GetReportType([FromRoute] int reportTypeId)
         {
             return await _reportConfigService
-                .ReportType(reportTypeId)
+                .Info(reportTypeId)
                 .ConfigureAwait(true);
         }
 

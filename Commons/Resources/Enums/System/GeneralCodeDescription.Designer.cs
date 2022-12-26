@@ -61,6 +61,15 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dữ liệu của bạn đã cũ, đã có ai đó chỉnh sửa dữ liệu, vui lòng tải lại trang để lấy dữ liệu mới nhất trước khi chỉnh sửa.
+        /// </summary>
+        public static string DataIsOld {
+            get {
+                return ResourceManager.GetString("DataIsOld", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Đang có tranh chấp tài nguyên bởi xử lý khác, vui lòng thử lại sau ít phút.
         /// </summary>
         public static string DistributedLockExeption {

@@ -23,7 +23,7 @@ namespace VErp.Services.Master.Model.Category
         public bool IsRequired { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
-        public bool IsShowList { get; set; }
+        public bool IsShowList { get { return true; } }
         public bool IsShowSearchTable { get; set; }
         public string RegularExpression { get; set; }
         public string Filters { get; set; }
@@ -39,6 +39,7 @@ namespace VErp.Services.Master.Model.Category
 
         public bool IsCalcSum { get; set; }
 
+        public bool? IsJoinField { get; set; }
         public bool Compare(CategoryField curField)
         {
             return !curField.IsDeleted &&
@@ -53,7 +54,7 @@ namespace VErp.Services.Master.Model.Category
                 IsRequired == curField.IsRequired &&
                 IsUnique == curField.IsUnique &&
                 IsHidden == curField.IsHidden &&
-                IsShowList == curField.IsShowList &&
+                //IsShowList == curField.IsShowList &&
                 IsShowSearchTable == curField.IsShowSearchTable &&
                 RegularExpression == curField.RegularExpression &&
                 Filters == curField.Filters &&
@@ -65,7 +66,8 @@ namespace VErp.Services.Master.Model.Category
                 DecimalPlace == curField.DecimalPlace &&
                 DefaultValue == curField.DefaultValue &&
                 IsImage == curField.IsImage &&
-                IsCalcSum == curField.IsCalcSum;
+                IsCalcSum == curField.IsCalcSum &&
+                IsJoinField == curField.IsJoinField;
 
         }
     }
@@ -76,5 +78,6 @@ namespace VErp.Services.Master.Model.Category
         public string CategoryTitle { get; set; }
         public string CategoryFieldName { get; set; }
         public string Title { get; set; }
+        public bool? IsJoinField { get; set; }
     }
 }

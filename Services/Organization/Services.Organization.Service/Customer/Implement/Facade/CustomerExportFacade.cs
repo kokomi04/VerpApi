@@ -24,7 +24,7 @@ using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
-    public class CusomerExportFacade
+    public class CustomerExportFacade
     {
         private readonly OrganizationDBContext _organizationContext;
         private ISheet sheet = null;
@@ -39,7 +39,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IDictionary<int, string> users;
         private IDictionary<int, string> currencies;
 
-        public CusomerExportFacade(
+        public CustomerExportFacade(
             OrganizationDBContext organizationContext,
             ICategoryHelperService httpCategoryHelperService,
             IUserHelperService userHelperService,
@@ -396,7 +396,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -415,7 +415,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {

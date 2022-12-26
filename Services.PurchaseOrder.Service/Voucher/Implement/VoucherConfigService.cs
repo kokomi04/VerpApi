@@ -420,6 +420,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherTypeNotFound);
             }
+
+            if (data.UpdatedDatetimeUtc != voucherType.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             if (voucherType.VoucherTypeCode != data.VoucherTypeCode || voucherType.Title != data.Title)
             {
                 var existedInput = await _purchaseOrderDBContext.VoucherType
@@ -450,6 +456,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 voucherType.AfterSaveAction = data.AfterSaveAction;
                 voucherType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
                 voucherType.IsHide = data.IsHide;
+
+                if (_purchaseOrderDBContext.HasChanges())
+                    voucherType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -946,20 +955,20 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             return (lst, total);
         }
 
-        public async Task<VoucherAreaFieldOutputFullModel> GetVoucherAreaField(int voucherTypeId, int voucherAreaId, int voucherAreaFieldId)
-        {
-            var voucherAreaField = await _purchaseOrderDBContext.VoucherAreaField
-                .Where(f => f.VoucherAreaFieldId == voucherAreaFieldId && f.VoucherTypeId == voucherTypeId && f.VoucherAreaId == voucherAreaId)
-                .Include(f => f.VoucherField)
-                .ProjectTo<VoucherAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
-                .FirstOrDefaultAsync();
-            if (voucherAreaField == null)
-            {
-                throw new BadRequestException(VoucherErrorCode.VoucherAreaFieldNotFound);
-            }
+        //public async Task<VoucherAreaFieldOutputFullModel> GetVoucherAreaField(int voucherTypeId, int voucherAreaId, int voucherAreaFieldId)
+        //{
+        //    var voucherAreaField = await _purchaseOrderDBContext.VoucherAreaField
+        //        .Where(f => f.VoucherAreaFieldId == voucherAreaFieldId && f.VoucherTypeId == voucherTypeId && f.VoucherAreaId == voucherAreaId)
+        //        .Include(f => f.VoucherField)
+        //        .ProjectTo<VoucherAreaFieldOutputFullModel>(_mapper.ConfigurationProvider)
+        //        .FirstOrDefaultAsync();
+        //    if (voucherAreaField == null)
+        //    {
+        //        throw new BadRequestException(VoucherErrorCode.VoucherAreaFieldNotFound);
+        //    }
 
-            return voucherAreaField;
-        }
+        //    return voucherAreaField;
+        //}
 
         private void ValidateVoucherField(VoucherFieldInputModel data, VoucherField voucherField = null, int? voucherFieldId = null)
         {
@@ -994,7 +1003,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     throw new BadRequestException(VoucherErrorCode.SourceCategoryFieldNotFound);
                 }
             }
-            if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
+            if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0 && data.FormTypeId != EnumFormType.DynamicControl)
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid);
             }

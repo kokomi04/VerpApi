@@ -149,7 +149,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, product.ProductCode);
                 case nameof(ProductImportModel.ProductName):
                     return (EnumDataType.Text, product.ProductName);
-                case nameof(ProductImportModel.ProductNameEng):
+                case nameof(ProductImportModel.ProductEngName):
                     return (EnumDataType.Text, product.ProductNameEng);
                 case nameof(ProductImportModel.Color):
                     return (EnumDataType.Text, product.Color);
@@ -234,7 +234,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Decimal, product.LoadAbility);
                 case nameof(ProductImportModel.StockOutputRuleId):
                     return (EnumDataType.Text, product.StockOutputRuleId?.GetEnumDescription());
-                    return (EnumDataType.Decimal, product.LoadAbility);
+                    //return (EnumDataType.Decimal, product.LoadAbility);
                 //case nameof(ProductImportModel.ProductionProcessStatusId):
                 //    return (EnumDataType.Text, product.ProductionProcessStatusId?.GetEnumDescription());
                 case nameof(ProductImportModel.DescriptionToStock):
@@ -368,7 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -387,7 +387,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.IsNullObject())
+                                if (!v.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {

@@ -31,6 +31,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
         public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
         public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
+        public virtual DbSet<ProductionContainer> ProductionContainer { get; set; }
         public virtual DbSet<ProductionHandover> ProductionHandover { get; set; }
         public virtual DbSet<ProductionHandoverReceipt> ProductionHandoverReceipt { get; set; }
         public virtual DbSet<ProductionHistory> ProductionHistory { get; set; }
@@ -94,13 +95,19 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<MaterialAllocation>(entity =>
             {
-                entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 12)");
 
                 entity.Property(e => e.InventoryCode)
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.SourceQuantity).HasColumnType("decimal(32, 16)");
+                entity.Property(e => e.ProductId).HasComment("Product id in inventory detail");
+
+                entity.Property(e => e.SourceProductId).HasComment("Product id in production process");
+
+                entity.Property(e => e.SourceQuantity)
+                    .HasColumnType("decimal(32, 12)")
+                    .HasComment("Product quantity output in production process");
             });
 
             modelBuilder.Entity<MonthPlan>(entity =>
@@ -328,6 +335,17 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionConsumMaterialId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionConsumMaterialDetail_ProductionConsumMaterial");
+            });
+
+            modelBuilder.Entity<ProductionContainer>(entity =>
+            {
+                entity.HasKey(e => new { e.ContainerTypeId, e.ContainerId });
+
+                entity.Property(e => e.ContainerId).HasComment("ID của Product hoặc lệnh SX");
+
+                entity.Property(e => e.CreatedDatetimeUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
             modelBuilder.Entity<ProductionHandover>(entity =>
@@ -976,8 +994,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.ProductId).ValueGeneratedOnAdd();
-
                 entity.Property(e => e.ProductInternalName)
                     .IsRequired()
                     .HasMaxLength(128);
@@ -989,6 +1005,10 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.ProductNameEng).HasMaxLength(255);
 
                 entity.Property(e => e.Quantitative).HasColumnType("decimal(18, 5)");
+
+                entity.Property(e => e.UnitName)
+                    .IsRequired()
+                    .HasMaxLength(128);
 
                 entity.Property(e => e.Width).HasColumnType("decimal(18, 5)");
             });

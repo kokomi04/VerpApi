@@ -11,11 +11,11 @@ namespace VErpApi.Controllers.Accountancy.Internal
 {
     [Route("api/internal/[controller]")]
     [ApiController]
-    public class InternalInputController : CrossServiceBaseController
+    public abstract class InternalInputControllerAbstract : CrossServiceBaseController
     {
-        private readonly IInputDataService _inputDataService;
-        private readonly IInputConfigService _inputConfigService;
-        public InternalInputController(IInputDataService inputDataService, IInputConfigService inputConfigService)
+        private readonly IInputDataServiceBase _inputDataService;
+        private readonly IInputConfigServiceBase _inputConfigService;
+        public InternalInputControllerAbstract(IInputDataServiceBase inputDataService, IInputConfigServiceBase inputConfigService)
         {
             _inputDataService = inputDataService;
             _inputConfigService = inputConfigService;

@@ -39,7 +39,93 @@ using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class InputDataService : IInputDataService
+    public class InputDataPrivateService : InputDataServiceBase, IInputDataPrivateService
+    {
+        private static InputDataObjectType objectTypes = new InputDataObjectType
+        {
+            InputType = EnumObjectType.InputType,
+            InputBill = EnumObjectType.InputBill,
+            InputRow = EnumObjectType.InputTypeRow,
+            InputRowArea = EnumObjectType.InputAreaField
+        };
+
+        public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPrivateConfigService inputConfigService)
+           : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
+        {
+
+        }
+    }
+
+    public class InputDataPublicService : InputDataServiceBase, IInputDataPublicService
+    {
+        private static InputDataObjectType objectTypes = new InputDataObjectType
+        {
+            InputType = EnumObjectType.InputTypePublic,
+            InputBill = EnumObjectType.InputBillPublic,
+            InputRow = EnumObjectType.InputTypeRowPublic,
+            InputRowArea = EnumObjectType.InputAreaFieldPublic
+        };
+
+        public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPublicConfigService inputConfigService)
+            : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
+        {
+
+        }
+
+    }
+
+
+
+    public interface IInputDataDependService
+    {
+        ILogger Logger { get; }
+        IActivityLogService ActivityLogService { get; }
+        IMapper Mapper { get; }
+        ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        ICurrentContextService CurrentContextService { get; }
+        ICategoryHelperService HttpCategoryHelperService { get; }
+        IOutsideMappingHelperService OutsideMappingHelperService { get; }
+        ObjectActivityLogFacade InputDataActivityLog { get; }
+        ICachingService CachingService { get; }
+        ILongTaskResourceLockService LongTaskResourceLockService { get; }
+    }
+    public class InputDataDependService : IInputDataDependService
+    {
+        public ILogger Logger { get; }
+        public IActivityLogService ActivityLogService { get; }
+        public IMapper Mapper { get; }
+        public ICustomGenCodeHelperService CustomGenCodeHelperService { get; }
+        public ICurrentContextService CurrentContextService { get; }
+        public ICategoryHelperService HttpCategoryHelperService { get; }
+        public IOutsideMappingHelperService OutsideMappingHelperService { get; }
+        public ObjectActivityLogFacade InputDataActivityLog { get; }
+        public ICachingService CachingService { get; }
+        public ILongTaskResourceLockService LongTaskResourceLockService { get; }
+
+        public InputDataDependService(
+            ILogger<InputDataDependService> logger
+            , IActivityLogService activityLogService
+            , IMapper mapper
+            , ICustomGenCodeHelperService customGenCodeHelperService
+            , ICurrentContextService currentContextService
+            , ICategoryHelperService httpCategoryHelperService
+            , IOutsideMappingHelperService outsideMappingHelperService
+            , ICachingService cachingService
+            , ILongTaskResourceLockService longTaskResourceLockService)
+        {
+            Logger = logger;
+            ActivityLogService = activityLogService;
+            Mapper = mapper;
+            CustomGenCodeHelperService = customGenCodeHelperService;
+            CurrentContextService = currentContextService;
+            HttpCategoryHelperService = httpCategoryHelperService;
+            OutsideMappingHelperService = outsideMappingHelperService;
+            CachingService = cachingService;
+            LongTaskResourceLockService = longTaskResourceLockService;
+        }
+    }
+
+    public class InputDataServiceBase : IInputDataServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
@@ -52,38 +138,50 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
-        private readonly IInputConfigService _inputConfigService;
+        private readonly IInputConfigServiceBase _inputConfigService;
         private readonly ObjectActivityLogFacade _inputDataActivityLog;
         private readonly ICachingService _cachingService;
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
 
-        public InputDataService(AccountancyDBContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<InputConfigService> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
-            , ICategoryHelperService httpCategoryHelperService
-            , IOutsideMappingHelperService outsideMappingHelperService
-            , IInputConfigService inputConfigService
-            , ICachingService cachingService
-            , ILongTaskResourceLockService longTaskResourceLockService
-            )
+        private readonly EnumObjectType _inputTypeObjectType;
+        private readonly EnumObjectType _inputBillObjectType;
+        private readonly EnumObjectType _inputRowObjectType;
+        private readonly EnumObjectType _inputRowAreaObjectType;
+
+        protected internal InputDataServiceBase(AccountancyDBContext accountancyDBContext,
+            IInputDataDependService inputDataDependService,
+            IInputConfigServiceBase inputConfigService,
+            InputDataObjectType objectTypes
+        )
         {
+            _inputTypeObjectType = objectTypes.InputType;
+            _inputBillObjectType = objectTypes.InputBill;
+            _inputRowObjectType = objectTypes.InputRow;
+            _inputRowAreaObjectType = objectTypes.InputRowArea;
+
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
+            _logger = inputDataDependService.Logger;
             //_activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
-            _httpCategoryHelperService = httpCategoryHelperService;
-            _outsideMappingHelperService = outsideMappingHelperService;
+            _mapper = inputDataDependService.Mapper;
+            _customGenCodeHelperService = inputDataDependService.CustomGenCodeHelperService;
+            _currentContextService = inputDataDependService.CurrentContextService;
+            _httpCategoryHelperService = inputDataDependService.HttpCategoryHelperService;
+            _outsideMappingHelperService = inputDataDependService.OutsideMappingHelperService;
             _inputConfigService = inputConfigService;
-            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputBill);
-            _cachingService = cachingService;
-            this.longTaskResourceLockService = longTaskResourceLockService;
+            _inputDataActivityLog = inputDataDependService.ActivityLogService.CreateObjectTypeActivityLog(_inputBillObjectType);
+            _cachingService = inputDataDependService.CachingService;
+            longTaskResourceLockService = inputDataDependService.LongTaskResourceLockService;
+
         }
+
+        protected internal class InputDataObjectType
+        {
+            public EnumObjectType InputType { get; set; }
+            public EnumObjectType InputBill { get; set; }
+            public EnumObjectType InputRow { get; set; }
+            public EnumObjectType InputRowArea { get; set; }
+        }
+
 
         public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
@@ -107,7 +205,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 where f.InputTypeViewId == inputTypeViewId
                 select f
             ).ToListAsync();
-            
+
             var sqlParams = new List<SqlParameter>() {
                 new SqlParameter("@InputTypeId",inputTypeId)
             };
@@ -134,7 +232,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     var value = filter.Value;
 
-                    if (value.IsNullObject()) continue;
+                    if (value.IsNullOrEmptyObject()) continue;
 
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
@@ -187,7 +285,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             else
             {
-                
+
                 totalSql = @$"
                     SELECT COUNT(0) Total {sumSql} FROM (
                         SELECT r.InputBill_F_Id {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}
@@ -352,6 +450,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
+        public async Task<InputType> GetTypeInfo(int inputTypeId)
+        {
+            return await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
+        }
+
+
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             return (await GetBillInfos(inputTypeId, new[] { fId })).First().Value;
@@ -502,10 +606,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
 
-                if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
-                {
-                    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.InputBill, billInfo.FId);
-                }
+                //if (!string.IsNullOrWhiteSpace(data?.OutsideImportMappingData?.MappingFunctionKey))
+                //{
+                //    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, _inputTypeObjectType, billInfo.FId);
+                //}
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
 
@@ -711,7 +815,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var parammeters = new List<SqlParameter>() {
                     new SqlParameter("@Action", (int)action),
                     new SqlParameter("@BillF_Id", inputValueBillId),
-                      new SqlParameter("@InputTypeId", inputTypeId),
+                    new SqlParameter("@InputTypeId", inputTypeId),
+                    new SqlParameter("@InputTypeObjectTypeId", _inputTypeObjectType),
                     resultParam,
                     messageParam,
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" }
@@ -805,7 +910,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var data = await _accountancyDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray(), cachingService: _cachingService);
                     for (int indx = 0; indx < data.Rows.Count; indx++)
                     {
-                        mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][field.RefTableTitle]);
+                        var titleField = field.RefTableTitle?.Split(',')[0]?.Trim();
+                        if (string.IsNullOrWhiteSpace(titleField))
+                        {
+                            titleField = field.RefTableField;
+                        }
+                        mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][titleField]);
                     }
                     sfValues.Add(field.FieldName, mapTitles);
                 }
@@ -1044,9 +1154,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     try
                     {
-                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
 
-                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                         {
                             parameters.Add(key, val);
                         }
@@ -1175,7 +1285,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputAreaFields = await GetInputFields(inputTypeId);
 
             // Get changed info
-            var infoSQL = new StringBuilder("SELECT TOP 1 ");
+            var infoSQL = new StringBuilder("SELECT TOP 1 UpdatedDatetimeUtc,  ");
             var singleFields = inputAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM vInputValueRow r WHERE InputTypeId={inputTypeId} AND InputBill_F_Id = {inputValueBillId} AND {GlobalFilter()}");
@@ -1184,6 +1294,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (currentInfo == null)
             {
                 throw BillNotFound.BadRequest();
+            }
+
+            data.Info.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
             }
 
             await ValidateAccountantConfig(data?.Info, currentInfo);
@@ -1438,7 +1557,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    if (column.ColumnName.Equals(AccountantConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullOrEmptyObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1468,7 +1587,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 {
                     var value = row[fieldName];
 
-                    if (value.IsNullObject() && oldSqlValue.IsNullObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
+                    if (value.IsNullOrEmptyObject() && oldSqlValue.IsNullOrEmptyObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
                     {
                         newRow[fieldName] = newSqlValue;
                     }
@@ -1629,7 +1748,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Delete, inputBill_F_Id);
 
-                await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.InputBill, billInfo.FId);
+                await _outsideMappingHelperService.MappingObjectDelete(_inputBillObjectType, billInfo.FId);
 
                 trans.Commit();
 
@@ -1661,7 +1780,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
+                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
 
@@ -1678,7 +1797,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         CustomGenCodeOutputModel currentConfig;
                         try
                         {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.InputTypeRow, EnumObjectType.InputAreaField, field.InputAreaFieldId, fId, code, ngayCtValue);
+
+                            currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
 
                             if (currentConfig == null)
                             {
@@ -1899,7 +2019,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var value = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                     dataRow[item.Key] = value;
 
-                    if (item.Key.IsVndColumn() && !value.IsNullObject())
+                    if (item.Key.IsVndColumn() && !value.IsNullOrEmptyObject())
                     {
                         var deValue = Convert.ToDecimal(value);
                         var colName = item.Key.VndSumName();
@@ -1932,7 +2052,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             //Create addition reciprocal accounting
-            if (data.Info.Any(k => k.Key.IsVndColumn() && !k.Value.IsNullObject()))// decimal.TryParse(k.Value?.ToString(), out var value) && value != 0
+            if (data.Info.Any(k => k.Key.IsVndColumn() && !k.Value.IsNullOrEmptyObject()))// decimal.TryParse(k.Value?.ToString(), out var value) && value != 0
             {
                 var dataRow = NewBillVersionRow(dataTable, inputTypeId, billInfo.FId, billInfo.LatestBillVersion, true);
 
@@ -2789,8 +2909,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                                 try
                                 {
-                                    var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                    var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                                     {
                                         parameters.Add(key, val);
                                     }

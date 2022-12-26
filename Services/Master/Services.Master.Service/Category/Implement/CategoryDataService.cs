@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -130,7 +131,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
                 .ToList();
 
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             await FillGenerateColumn(genCodeContexts, baseValueChains, categoryId, category.CategoryCode, categoryFields, data);
@@ -263,6 +264,15 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
+            data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             bool isParentChange = false;
             // Check parent row
             if (category.IsTreeView)
@@ -390,7 +400,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private CustomGenCodeBaseValueModel CustomGenCodeBaseValue = null;
 
-        private async Task FillGenerateColumn(List<GenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
+        private async Task FillGenerateColumn(List<IGenerateCodeContext> ctxs, Dictionary<string, int> baseValueChains, int categoryId, string categoryCode, ICollection<CategoryField> fields, NonCamelCaseDictionary data)
         {
             var ngayCt = data.ContainsKey(AccountantConstants.BILL_DATE) ? data[AccountantConstants.BILL_DATE] : null;
 
@@ -402,7 +412,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
-                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullObject()))
+                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullOrEmptyObject()))
                 {
                     try
                     {
@@ -539,7 +549,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 // ignore auto generate field
                 //if (field.FormTypeId == (int)EnumFormType.Generate) continue;
 
-                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullObject()))
+                if (!data.Any(v => v.Key == field.CategoryFieldName && !v.Value.IsNullOrEmptyObject()))
                 {
                     throw new BadRequestException(CategoryErrorCode.RequiredFieldIsEmpty, new string[] { field.Title });
                 }
@@ -704,7 +714,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             var tableName = $"v{category.CategoryCode}";
             var dataSql = new StringBuilder();
-            dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView));
+            dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView, category.IsOutSideData));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
             var currentData = await _masterContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
@@ -722,10 +732,14 @@ namespace VErp.Services.Accountancy.Service.Category
             return categoryRow;
         }
 
-        private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView)
+        private string GetSelect(string tableName, List<CategoryField> fields, bool isTreeView, bool isOutSide)
         {
             StringBuilder sql = new StringBuilder();
             sql.Append($"SELECT [{tableName}].F_Id,");
+            if (!isOutSide)
+            {
+                sql.Append($"[{tableName}].UpdatedDatetimeUtc,");
+            }
             foreach (var field in fields.Where(f => f.CategoryFieldName != CategoryFieldConstants.F_Id && f.CategoryFieldName != CategoryFieldConstants.ParentId))
             {
                 sql.Append($"[{tableName}].{field.CategoryFieldName},");
@@ -781,12 +795,12 @@ namespace VErp.Services.Accountancy.Service.Category
             var viewAlias = $"v";
             var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
 
-            fields = fields.Where(f => f.IsShowList).ToList();
+            //fields = fields.Where(f => f.IsShowList).ToList();
 
             var dataSql = new StringBuilder();
             var sqlParams = new List<SqlParameter>();
             var allDataSql = new StringBuilder();
-            dataSql.Append(GetSelect(viewAlias, fields, category.IsTreeView));
+            dataSql.Append(GetSelect(viewAlias, fields, category.IsTreeView, category.IsOutSideData));
             dataSql.Append($" FROM {categoryView}");
             allDataSql.Append(dataSql.ToString());
             var whereCondition = new StringBuilder();
@@ -826,7 +840,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                 int suffix = 0;
-                filters.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
+                filters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))
@@ -960,14 +974,14 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private string GetCategoryView(CategoryEntity category, List<CategoryField> fields, string viewAlias = "")
         {
-            var categoryView = GetCategoryViewName(category.CategoryCode);
+            var categoryView = GetCategoryViewName(category);
 
             if (string.IsNullOrWhiteSpace(viewAlias))
             {
                 viewAlias = categoryView;
             }
 
-            var select = $"{GetSelect(categoryView, fields, category.IsTreeView)}";
+            var select = $"{GetSelect(categoryView, fields, category.IsTreeView, category.IsOutSideData)}";
 
             if (fields.Any(f => f.CategoryFieldName == GlobalFieldConstants.SubsidiaryId))
             {
@@ -981,14 +995,19 @@ namespace VErp.Services.Accountancy.Service.Category
                 }
                 else
                 {
-                    return GetCategoryViewName(category.CategoryCode);
+                    return GetCategoryViewName(category);
                 }
             }
         }
 
-        private string GetCategoryViewName(string categoryCode)
+        private string GetCategoryViewName(CategoryEntity category)
         {
-            return $"v{categoryCode}";
+            if (category.IsOutSideData && !string.IsNullOrWhiteSpace(category.SearchSqlRaw))
+            {
+                return $"v{category.CategoryCode}_Search";
+            }
+
+            return $"v{category.CategoryCode}";
         }
 
         public async Task<List<MapObjectOutputModel>> MapToObject(MapObjectInputModel[] categoryValues)
@@ -1008,7 +1027,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 var viewAlias = $"v";
                 var categoryView = $"{GetCategoryView(category, fields, viewAlias)}";
 
-                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView)} FROM {categoryView} ";
+                var selectCondition = $"{GetSelect(viewAlias, fields, category.IsTreeView, category.IsOutSideData)} FROM {categoryView} ";
                 var groupByFilters = group.GroupBy(v => new { v.Filters });
                 foreach (var groupByFilter in groupByFilters)
                 {
@@ -1061,7 +1080,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         if (filterClause != null)
                         {
                             dataSql.Append(" AND ");
-                            filterClause.FilterClauseProcess(GetCategoryViewName(category.CategoryCode), viewAlias, ref dataSql, ref sqlParams, ref suffix);
+                            filterClause.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref dataSql, ref sqlParams, ref suffix);
                         }
                     }
 

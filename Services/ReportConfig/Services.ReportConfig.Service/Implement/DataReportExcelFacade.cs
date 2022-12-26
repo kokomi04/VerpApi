@@ -66,7 +66,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {"right", HorizontalAlignment.Right }
         };
 
-        public async Task<(Stream stream, string fileName, string contentType)> AccountancyReportExport(int reportId, ReportFacadeModel model)
+        public async Task<(Stream stream, string fileName, string contentType)> ReportExport(int reportId, ReportFacadeModel model)
         {
             var reportInfo = await _contextData.ReportType.AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
 
@@ -82,9 +82,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             columns = allColumns.Where(col => !col.IsHidden).ToList();
 
-            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, 0).Result;
+            var size = 0;
+            if (reportInfo.IsDbPaging == true)
+                size = int.MaxValue;
+            dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, size).Result;
 
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
+
+            groupRowColumns = columns.Where(c => c.IsGroupRow).ToList();
+
 
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
@@ -1222,11 +1228,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var toDate = "";
             foreach (var key in filters.Filters.Keys)
             {
-                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
-                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -1551,6 +1552,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
 
+                if (data.UpdatedDatetimeUtc != productionOrder.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
+
                 data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
 
                 _mapper.Map(data, productionOrder);
@@ -1656,6 +1662,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     item.IsDeleted = true;
                 }
+
+                if (_manufacturingDBContext.HasChanges())
+                    productionOrder.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _manufacturingDBContext.SaveChangesAsync();
 

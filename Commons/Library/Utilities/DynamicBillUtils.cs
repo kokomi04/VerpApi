@@ -48,9 +48,9 @@ namespace VErp.Commons.Library
 
         public static int CompareValue(this EnumDataType dataType, object value1, object value2)
         {
-            if (value1.IsNullObject() && value2.IsNullObject()) return 0;
-            if (value1.IsNullObject() && !value2.IsNullObject()) return -1;
-            if (!value1.IsNullObject() && value2.IsNullObject()) return 1;
+            if (value1.IsNullOrEmptyObject() && value2.IsNullOrEmptyObject()) return 0;
+            if (value1.IsNullOrEmptyObject() && !value2.IsNullOrEmptyObject()) return -1;
+            if (!value1.IsNullOrEmptyObject() && value2.IsNullOrEmptyObject()) return 1;
             var dataValue1 = dataType.GetSqlValue(value1);
             var dataValue2 = dataType.GetSqlValue(value2);
 

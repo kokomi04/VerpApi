@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -36,6 +37,15 @@ namespace VErpApi.Controllers.System.Internal
         public async Task<CustomerModel> GetCustomerInfo([FromRoute] int customerId)
         {
             return await _customerService.GetCustomerInfo(customerId);
+        }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetByIds")]
+        public async Task<IList<CustomerListModel>> GetListByIds([FromBody] IList<int> customerIds)
+        {
+            return (await _customerService.GetListByIds(customerIds)).Select(c => (CustomerListModel)c).ToList();
         }
     }
 }

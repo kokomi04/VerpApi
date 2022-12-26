@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using AutoMapper;
+using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
@@ -214,5 +215,31 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int CustomerId { get; set; }
         public string CustomerCode { get; set; }
         public string CustomerName { get; set; }
+    }
+
+
+    public class CustomerListModel : BasicCustomerListModel
+    {
+        public int? CustomerCateId { get; set; }
+        public long? LogoFileId { get; set; }
+        public EnumCustomerType CustomerTypeId { get; set; }
+        public string Address { get; set; }
+        public string TaxIdNo { get; set; }
+        public string PhoneNumber { get; set; }
+        public string Website { get; set; }
+        public string Email { get; set; }
+        public string Identify { get; set; }
+        public EnumCustomerStatus CustomerStatusId { get; set; }
+
+        public int? DebtDays { get; set; }
+        public decimal? DebtLimitation { get; set; }
+        public EnumBeginningType DebtBeginningTypeId { get; set; }
+        public int? DebtManagerUserId { get; set; }
+
+        public int? LoanDays { get; set; }
+        public decimal? LoanLimitation { get; set; }
+        public EnumBeginningType LoanBeginningTypeId { get; set; }
+        public int? LoanManagerUserId { get; set; }
+
     }
 }

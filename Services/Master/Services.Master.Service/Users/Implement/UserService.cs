@@ -14,6 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
@@ -355,6 +356,17 @@ namespace VErp.Services.Master.Service.Users.Implement
             return (lst, total);
         }
 
+        public async Task<IList<EmployeeBasicNameModel>> GetAll()
+        {
+
+            return await _organizationContext.Employee.Select(e => new EmployeeBasicNameModel()
+            {
+                UserId = e.UserId,
+                EmployeeCode = e.EmployeeCode,
+                FullName = e.FullName
+            }).ToListAsync();
+
+        }
 
         public async Task<IList<UserInfoOutput>> GetListByUserIds(IList<int> userIds)
         {
@@ -1035,7 +1047,7 @@ namespace VErp.Services.Master.Service.Users.Implement
 
         private async Task<List<(int userId, UserInfoInput userInfo)>> AddBatchEmployees(IList<UserInfoInput> userInfos, EnumEmployeeType employeeTypeId)
         {
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             foreach (var u in userInfos)
@@ -1208,13 +1220,13 @@ namespace VErp.Services.Master.Service.Users.Implement
             return _appSetting.Developer?.IsDeveloper(userName, sb.SubsidiaryCode) == true;
         }
 
-        private async Task<GenerateCodeContext> GenerateEmployeeCode(int? userId, UserInfoInput model, Dictionary<string, int> baseValueChains)
+        private async Task<IGenerateCodeContext> GenerateEmployeeCode(int? userId, UserInfoInput model, Dictionary<string, int> baseValueChains)
         {
             model.EmployeeCode = (model.EmployeeCode ?? "").Trim();
 
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
-            var code = await ctx
+            var code = await ctx                
                 .SetConfig(EnumObjectType.UserAndEmployee)
                 .SetConfigData(userId ?? 0)
                 .TryValidateAndGenerateCode(_organizationContext.Employee, model.EmployeeCode, (s, code) => s.UserId != userId && s.EmployeeCode == code);

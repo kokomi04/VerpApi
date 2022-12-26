@@ -125,7 +125,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var viewField = viewFields.FirstOrDefault(f => f.VoucherTypeViewFieldId == filter.Key);
                     if (viewField == null) continue;
                     var value = filter.Value;
-                    if (value.IsNullObject()) continue;
+                    if (value.IsNullOrEmptyObject()) continue;
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
                         value = Convert.ToInt64(value);
@@ -1039,8 +1039,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                     try
                     {
-                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        foreach (var (key, val) in info.Data.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                         {
                             parameters.Add(key, val);
                         }
@@ -1159,7 +1159,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherAreaFields = await GetVoucherFields(voucherTypeId);
 
             // Get changed info
-            var infoSQL = new StringBuilder("SELECT TOP 1 ");
+            var infoSQL = new StringBuilder("SELECT TOP 1 UpdatedDatetimeUtc, ");
             var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherTypeId = {voucherTypeId} AND VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
@@ -1168,6 +1168,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (currentInfo == null)
             {
                 throw BillNotFound.BadRequest();
+            }
+
+            data.Info.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+            currentInfo.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
             }
 
             await ValidateSaleVoucherConfig(data?.Info, currentInfo);
@@ -1419,7 +1428,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var v = row[column];
 
-                    if (column.ColumnName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullObject())
+                    if (column.ColumnName.Equals(PurchaseOrderConstants.BILL_DATE, StringComparison.OrdinalIgnoreCase) && !v.IsNullOrEmptyObject())
                     {
                         oldBillDates[billId] = v as DateTime?;
                     }
@@ -1448,7 +1457,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     var value = row[fieldName];
 
-                    if (value.IsNullObject() && oldSqlValue.IsNullObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
+                    if (value.IsNullOrEmptyObject() && oldSqlValue.IsNullOrEmptyObject() || Equals(value, oldSqlValue) || value?.ToString() == oldSqlValue?.ToString())
                     {
                         newRow[fieldName] = newSqlValue;
                     }
@@ -1651,7 +1660,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
+                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
                         var code = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_CODE))?[AccountantConstants.BILL_CODE]?.ToString();
@@ -1883,7 +1892,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var value = ((EnumDataType)field.DataTypeId).GetSqlValue(item.Value);
                     dataRow[item.Key] = value;
 
-                    if (item.Key.IsVndColumn() && !value.IsNullObject())
+                    if (item.Key.IsVndColumn() && !value.IsNullOrEmptyObject())
                     {
                         var deValue = Convert.ToDecimal(value);
                         var colName = item.Key.VndSumName();
@@ -2508,8 +2517,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                                 try
                                 {
-                                    var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullObject() && !parameters.ContainsKey(d.Key)))
+                                    var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                    foreach (var (key, val) in info.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                                     {
                                         parameters.Add(key, val);
                                     }

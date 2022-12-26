@@ -192,7 +192,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -211,7 +211,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -231,7 +231,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
                                 break;
                             case EnumDataType.DateRange:
                             case EnumDataType.Date:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     sheet.EnsureCell(currentRow, sColIndex, dateStyle).SetCellValue(((long)v.value).UnixToDateTime(currentContextService.TimeZoneOffset));
                                 }

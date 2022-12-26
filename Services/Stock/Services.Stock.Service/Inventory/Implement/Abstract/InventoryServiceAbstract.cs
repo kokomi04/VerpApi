@@ -50,7 +50,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        protected async Task<GenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req, Dictionary<string, int> baseValueChains = null)
+        protected async Task<IGenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req, Dictionary<string, int> baseValueChains = null)
         {
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 

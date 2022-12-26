@@ -23,142 +23,17 @@ namespace VErpApi.Controllers.Accountancy.Data
 
     [Route("api/accountancy/data/bills")]
     [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
-    public class InputController : VErpBaseController
+    public class InputController : InputControllerBaseAbstract
     {
-        private readonly IInputDataService _inputDataService;
+
         private readonly ICalcBillService _calcBillService;
-        private readonly IInpuDataExportFacadeService _inpuDataExportFacadeService;
 
-        public InputController(IInputDataService inputDataService, ICalcBillService calcBillService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+        public InputController(IInputDataPrivateService inputDataService, ICalcBillService calcBillService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+            : base(inputDataService, inpuDataExportFacadeService)
         {
-            _inputDataService = inputDataService;
             _calcBillService = calcBillService;
-            _inpuDataExportFacadeService = inpuDataExportFacadeService;
         }
 
-
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
-        [Route("{inputTypeId}/Search")]
-        public async Task<PageDataTable> GetBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
-        {
-            if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
-
-            return await _inputDataService.GetBills(inputTypeId, request.IsMultirow, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
-        }
-
-
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
-        [Route("{inputTypeId}/Export")]
-        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExporttFilterModel req)
-        {
-            if (req == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            var (stream, fileName, contentType) = await _inpuDataExportFacadeService.Export(inputTypeId, req);
-
-            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
-        }
-
-
-        [HttpGet]
-        [Route("{inputTypeId}/{fId}")]
-        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
-        {
-            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
-        }
-
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
-        [Route("{inputTypeId}/getByListIds")]
-        public async Task<IDictionary<long, BillInfoModel>> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
-        {
-            return await _inputDataService.GetBillInfos(inputTypeId, fIds).ConfigureAwait(true);
-        }
-
-        [HttpGet]
-        [Route("{inputTypeId}/{fId}/info")]
-        public async Task<BillInfoModel> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId)
-        {
-            return await _inputDataService.GetBillInfo(inputTypeId, fId).ConfigureAwait(true);
-        }
-
-
-        [HttpPost]
-        [Route("{inputTypeId}")]
-        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data)
-        {
-            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-
-            return await _inputDataService.CreateBill(inputTypeId, data).ConfigureAwait(true);
-        }
-
-        [HttpPut]
-        [Route("{inputTypeId}/{fId}")]
-        public async Task<bool> UpdateBill([FromRoute] int inputTypeId, [FromRoute] long fId, [FromBody] BillInfoModel data)
-        {
-            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-
-            return await _inputDataService.UpdateBill(inputTypeId, fId, data).ConfigureAwait(true);
-        }
-
-        [HttpPut]
-        [Route("{inputTypeId}/multiple")]
-        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
-        {
-            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.BillIds, data.DetailIds).ConfigureAwait(true);
-        }
-
-        [HttpDelete]
-        [Route("{inputTypeId}/{fId}")]
-        public async Task<bool> DeleteBill([FromRoute] int inputTypeId, [FromRoute] long fId)
-        {
-            return await _inputDataService.DeleteBill(inputTypeId, fId).ConfigureAwait(true);
-        }
-
-        [HttpGet]
-        [Route("{inputTypeId}/fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId, [FromQuery] bool? isExport)
-        {
-            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId, isExport);
-        }
-
-        [HttpPost]
-        [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
-        {
-            if (file == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
-        }
-
-
-
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
-        [Route("{inputTypeId}/parseExcelFromMapping")]
-        public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int inputTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
-        {
-            if (file == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            return await _inputDataService.ParseBillFromMapping(inputTypeId, parseMapping, file.OpenReadStream()).ConfigureAwait(true);
-        }
-
-
-        [HttpGet]
-        [Route("{inputTypeId}/{fId}/datafile")]
-        public async Task<FileStreamResult> ExportBill([FromRoute] int inputTypeId, [FromRoute] long fId)
-        {
-            var result = await _inputDataService.ExportBill(inputTypeId, fId);
-            return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
-        }
 
         [HttpGet]
         [Route("CalcFixExchangeRate")]
@@ -289,34 +164,6 @@ namespace VErpApi.Controllers.Accountancy.Data
         public async Task<bool> DeletedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
         {
             return await _calcBillService.DeletedPrepaidExpense(fromDate, toDate, accountNumber);
-        }
-
-        [HttpGet]
-        [Route("{inputTypeId}/GetBillNotApprovedYet")]
-        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
-        {
-            return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
-        }
-
-        [HttpGet]
-        [Route("{inputTypeId}/GetBillNotChekedYet")]
-        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
-        {
-            return await _inputDataService.GetBillNotChekedYet(inputTypeId);
-        }
-
-        [HttpPut]
-        [Route("{inputTypeId}/CheckAllBillInList")]
-        public async Task<bool> CheckAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
-        {
-            return await _inputDataService.CheckAllBillInList(models);
-        }
-
-        [HttpPut]
-        [Route("{inputTypeId}/ApproveAllBillInList")]
-        public async Task<bool> ApproveAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
-        {
-            return await _inputDataService.ApproveAllBillInList(models);
         }
 
     }

@@ -8,6 +8,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
+using PurchaseOrderEntity = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 namespace VErp.Services.PurchaseOrder.Service
 {
@@ -21,11 +22,16 @@ namespace VErp.Services.PurchaseOrder.Service
 
         Task<long> Create(PurchaseOrderInput req);
 
+        Task<PurchaseOrderEntity> CreateToDb(PurchaseOrderInput model);
+
         Task<bool> Update(long purchaseOrderId, PurchaseOrderInput req);
 
-        CategoryNameModel GetFieldDataForMapping();
+        CategoryNameModel GetFieldDataForParseMapping();
 
         IAsyncEnumerable<PurchaseOrderInputDetail> ParseDetails(ImportExcelMapping mapping, SingleInvoiceStaticContent extra, Stream stream);
+
+        CategoryNameModel GetFieldDataForImportMapping();
+        Task<bool> Import(ImportExcelMapping mapping, Stream stream);
 
         Task<bool> SentToCensor(long purchaseOrderId);
 

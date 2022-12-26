@@ -15,5 +15,7 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public EnumStockOutputRule? StockOutputRuleId { get; set; }
 
         public IList<ProductModelUnitConversion> UnitConversions { get; set; }
+
+        public long UpdatedDatetimeUtc { get; set; }
     }
 }
