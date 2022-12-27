@@ -16,12 +16,28 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class CalcBillService : ICalcBillService
+    public class CalcBillPrivateService : CalcBillServiceBase, ICalcBillPrivateService
     {
-        private readonly AccountancyDBPrivateContext _accountancyDBContext;
+        public CalcBillPrivateService(AccountancyDBPrivateContext accountancyDBContext, ICurrentContextService currentContextService) : base(accountancyDBContext, currentContextService)
+        {
+
+        }
+    }
+
+    public class CalcBillPublicService : CalcBillServiceBase, ICalcBillPublicService
+    {
+        public CalcBillPublicService(AccountancyDBPublicContext accountancyDBContext, ICurrentContextService currentContextService) : base(accountancyDBContext, currentContextService)
+        {
+
+        }
+    }
+
+    public abstract class CalcBillServiceBase : ICalcBillServiceBase
+    {
+        private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICurrentContextService _currentContextService;
 
-        public CalcBillService(AccountancyDBPrivateContext accountancyDBContext, ICurrentContextService currentContextService)
+        public CalcBillServiceBase(AccountancyDBContext accountancyDBContext, ICurrentContextService currentContextService)
         {
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;

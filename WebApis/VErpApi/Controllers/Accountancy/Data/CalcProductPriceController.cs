@@ -14,13 +14,34 @@ using VErp.Services.Accountancy.Service.Input;
 namespace VErpApi.Controllers.Accountancy.Data
 {
     [Route("api/accountancy/data/CalcProductPrice")]
-    public class CalcProductPriceController : VErpBaseController
+    public class CalcProductPricePrivateController : CalcProductPriceControllerAbstract
     {
-        private readonly ICalcProductPriceService _calcProductPriceService;
-        private readonly ICalcPeriodService _calcPeriodService;
-        private readonly ICalcBillService _calcBillService;
+        public CalcProductPricePrivateController(ICalcProductPricePrivateService calcProductPriceService, ICalcPeriodPrivateService calcPeriodService, ICalcBillPrivateService calcBillService) 
+            : base(calcProductPriceService, calcPeriodService, calcBillService)
+        {
 
-        public CalcProductPriceController(ICalcProductPriceService calcProductPriceService, ICalcPeriodService calcPeriodService, ICalcBillService calcBillService)
+        }
+    }
+
+    [Route("api/accountancy/public/CalcProductPrice")]
+    public class CalcProductPricePublicController : CalcProductPriceControllerAbstract
+    {
+        public CalcProductPricePublicController(ICalcProductPricePublicService calcProductPriceService, ICalcPeriodPublicService calcPeriodService, ICalcBillPublicService calcBillService)
+            : base(calcProductPriceService, calcPeriodService, calcBillService)
+        {
+
+        }
+    }
+
+
+
+    public abstract class CalcProductPriceControllerAbstract : VErpBaseController
+    {
+        private readonly ICalcProductPriceServiceBase _calcProductPriceService;
+        private readonly ICalcPeriodServiceBase _calcPeriodService;
+        private readonly ICalcBillServiceBase _calcBillService;
+
+        public CalcProductPriceControllerAbstract(ICalcProductPriceServiceBase calcProductPriceService, ICalcPeriodServiceBase calcPeriodService, ICalcBillServiceBase calcBillService)
         {
             _calcProductPriceService = calcProductPriceService;
             _calcPeriodService = calcPeriodService;

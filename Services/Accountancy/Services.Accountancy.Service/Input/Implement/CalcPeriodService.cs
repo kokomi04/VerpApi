@@ -1,7 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+﻿using Microsoft.EntityFrameworkCore;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,41 +6,34 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class CalcPeriodService : ICalcPeriodService
+    public class CalcPeriodPrivateService : CalcPeriodServiceBase, ICalcPeriodPrivateService
+    {
+        public CalcPeriodPrivateService(AccountancyDBPrivateContext accountancyDBContext) : base(accountancyDBContext)
+        {
+        }
+    }
+    public class CalcPeriodPublicService : CalcPeriodServiceBase, ICalcPeriodPublicService
+    {
+        public CalcPeriodPublicService(AccountancyDBPublicContext accountancyDBContext) : base(accountancyDBContext)
+        {
+        }
+    }
+
+    public abstract class CalcPeriodServiceBase : ICalcPeriodServiceBase
     {
 
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
-        private readonly AccountancyDBPrivateContext _accountancyDBContext;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly ICurrentContextService _currentContextService;
+        private readonly AccountancyDBContext _accountancyDBContext;
 
-        public CalcPeriodService(AccountancyDBPrivateContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<CalcPeriodService> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
-            )
+        public CalcPeriodServiceBase(AccountancyDBContext accountancyDBContext)
         {
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
         }
 
         public async Task<PageData<CalcPeriodListModel>> GetList(EnumCalcPeriodType calcPeriodTypeId, string keyword, long? fromDate, long? toDate, int page, int? size)

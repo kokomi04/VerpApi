@@ -72,7 +72,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
     }
 
-    public class InputConfigServiceBase : IInputConfigServiceBase
+    public abstract class InputConfigServiceBase : IInputConfigServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 

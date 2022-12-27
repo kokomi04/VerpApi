@@ -25,145 +25,189 @@ namespace VErpApi.Controllers.Accountancy.Data
     [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
     public class InputController : InputControllerBaseAbstract
     {
-
-        private readonly ICalcBillService _calcBillService;
-
-        public InputController(IInputDataPrivateService inputDataService, ICalcBillService calcBillService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+     
+        public InputController(IInputDataPrivateService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
             : base(inputDataService, inpuDataExportFacadeService)
         {
-            _calcBillService = calcBillService;
+            
+        }
+      
+    }
+
+    [Route("api/accountancy/public/bills")]
+    [ObjectDataApi(EnumObjectType.InputTypePublic, "inputTypeId")]
+    public class InputPublicController : InputControllerBaseAbstract
+    {
+        public InputPublicController(IInputDataPublicService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+            : base(inputDataService, inpuDataExportFacadeService)
+        {
+
+        }
+
+    }
+
+
+    public abstract class InputControllerBaseAbstract : VErpBaseController
+    {
+        private readonly IInputDataServiceBase _inputDataService;
+        private readonly IInpuDataExportFacadeService _inpuDataExportFacadeService;
+
+        public InputControllerBaseAbstract(IInputDataServiceBase inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
+        {
+            _inputDataService = inputDataService;
+            _inpuDataExportFacadeService = inpuDataExportFacadeService;
+        }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/Search")]
+        public async Task<PageDataTable> GetBills([FromRoute] int inputTypeId, [FromBody] InputTypeBillsRequestModel request)
+        {
+            if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _inputDataService.GetBills(inputTypeId, request.IsMultirow, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+        }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/Export")]
+        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExporttFilterModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _inpuDataExportFacadeService.Export(_inputDataService, inputTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
 
         [HttpGet]
-        [Route("CalcFixExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate, [FromQuery] string accoutantNumber)
+        [Route("{inputTypeId}/{fId}")]
+        public async Task<PageDataTable> GetBillInfoRows([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromQuery] int? page, [FromQuery] int? size)
         {
-            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate, accoutantNumber);
+            return await _inputDataService.GetBillInfoRows(inputTypeId, fId, orderByFieldName, asc, page ?? 1, size ?? 0).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/getByListIds")]
+        public async Task<IDictionary<long, BillInfoModel>> GetListBillInfoRows([FromRoute] int inputTypeId, [FromBody] IList<long> fIds)
+        {
+            return await _inputDataService.GetBillInfos(inputTypeId, fIds).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("FixExchangeRateDetail")]
-        public async Task<DataResultModel> FixExchangeRateDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accountNumber, [FromQuery] string partnerId)
+        [Route("{inputTypeId}/{fId}/info")]
+        public async Task<BillInfoModel> GetBillInfo([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
-            return await _calcBillService.FixExchangeRateDetail(fromDate, toDate, currency, accountNumber, partnerId);
+            return await _inputDataService.GetBillInfo(inputTypeId, fId).ConfigureAwait(true);
         }
 
-        [HttpGet]
-        [Route("CalcCostTransfer")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer([FromQuery] long toDate, [FromQuery] EnumCostTransfer type, [FromQuery] bool byDepartment,
-            [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock)
+
+        [HttpPost]
+        [Route("{inputTypeId}")]
+        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data)
         {
-            return await _calcBillService.CalcCostTransfer(toDate, type, byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _inputDataService.CreateBill(inputTypeId, data).ConfigureAwait(true);
         }
 
-        [HttpGet]
-        [Route("CalcCostTransferDetail")]
-        public async Task<DataResultModel> CalcCostTransferDetail([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] EnumCostTransfer type,
-            [FromQuery] bool byDepartment, [FromQuery] bool byCustomer, [FromQuery] bool byFixedAsset, [FromQuery] bool byExpenseItem, [FromQuery] bool byFactory, [FromQuery] bool byProduct, [FromQuery] bool byStock,
-            [FromQuery] int? department, [FromQuery] string customer, [FromQuery] int? fixedAsset, [FromQuery] int? expenseItem, [FromQuery] int? factory, [FromQuery] int? product, [FromQuery] int? stock)
+        [HttpPut]
+        [Route("{inputTypeId}/{fId}")]
+        public async Task<bool> UpdateBill([FromRoute] int inputTypeId, [FromRoute] long fId, [FromBody] BillInfoModel data)
         {
-            return await _calcBillService.CalcCostTransferDetail(fromDate, toDate, type,
-                byDepartment, byCustomer, byFixedAsset, byExpenseItem, byFactory, byProduct, byStock,
-                department, customer, fixedAsset, expenseItem, factory, product, stock);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _inputDataService.UpdateBill(inputTypeId, fId, data).ConfigureAwait(true);
         }
 
-        [HttpGet]
-        [Route("CostTransferType")]
-        public ICollection<CostTransferTypeModel> GetCostTransferTypes()
+        [HttpPut]
+        [Route("{inputTypeId}/multiple")]
+        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
         {
-            return _calcBillService.GetCostTransferTypes();
-        }
-
-        [HttpGet]
-        [Route("CheckExistedFixExchangeRate")]
-        public async Task<bool> CheckExistedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
-        {
-            return await _calcBillService.CheckExistedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
+            if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.BillIds, data.DetailIds).ConfigureAwait(true);
         }
 
         [HttpDelete]
-        [Route("DeletedFixExchangeRate")]
-        public async Task<bool> DeletedFixExchangeRate([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] int currency, [FromQuery] string accoutantNumber)
+        [Route("{inputTypeId}/{fId}")]
+        public async Task<bool> DeleteBill([FromRoute] int inputTypeId, [FromRoute] long fId)
         {
-            return await _calcBillService.DeletedFixExchangeRate(fromDate, toDate, currency, accoutantNumber);
+            return await _inputDataService.DeleteBill(inputTypeId, fId).ConfigureAwait(true);
         }
 
         [HttpGet]
-        [Route("CheckExistedCostTransfer")]
-        public async Task<bool> CheckExistedCostTransfer([FromQuery] EnumCostTransfer type, [FromQuery] long fromDate, [FromQuery] long toDate)
+        [Route("{inputTypeId}/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int inputTypeId, [FromQuery] int? areaId, [FromQuery] bool? isExport)
         {
-            return await _calcBillService.CheckExistedCostTransfer(type, fromDate, toDate);
+            return await _inputDataService.GetFieldDataForMapping(inputTypeId, areaId, isExport);
         }
 
-        [HttpDelete]
-        [Route("DeletedCostTransfer")]
-        public async Task<bool> DeletedCostTransfer([FromQuery] EnumCostTransfer type, [FromQuery] long fromDate, [FromQuery] long toDate)
+        [HttpPost]
+        [Route("{inputTypeId}/importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
         {
-            return await _calcBillService.DeletedCostTransfer(type, fromDate, toDate);
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{inputTypeId}/parseExcelFromMapping")]
+        public async Task<BillInfoModel> ParseBillFromMapping([FromRoute] int inputTypeId, [FromFormString] BillParseMapping parseMapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _inputDataService.ParseBillFromMapping(inputTypeId, parseMapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
+        [HttpGet]
+        [Route("{inputTypeId}/{fId}/datafile")]
+        public async Task<FileStreamResult> ExportBill([FromRoute] int inputTypeId, [FromRoute] long fId)
+        {
+            var result = await _inputDataService.ExportBill(inputTypeId, fId);
+            return new FileStreamResult(result.Stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") { FileDownloadName = result.FileName };
         }
 
         [HttpGet]
-        [Route("CalcCostTransferBalanceZero")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcCostTransferBalanceZero([FromQuery] long toDate)
+        [Route("{inputTypeId}/GetBillNotApprovedYet")]
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotApprovedYet([FromRoute] int inputTypeId)
         {
-            return await _calcBillService.CalcCostTransferBalanceZero(toDate);
+            return await _inputDataService.GetBillNotApprovedYet(inputTypeId);
         }
 
         [HttpGet]
-        [Route("CheckExistedCostTransferBalanceZero")]
-        public async Task<bool> CheckExistedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        [Route("{inputTypeId}/GetBillNotChekedYet")]
+        public async Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet([FromRoute] int inputTypeId)
         {
-            return await _calcBillService.CheckExistedCostTransferBalanceZero(fromDate, toDate);
+            return await _inputDataService.GetBillNotChekedYet(inputTypeId);
         }
 
-        [HttpDelete]
-        [Route("DeletedCostTransferBalanceZero")]
-        public async Task<bool> DeletedCostTransferBalanceZero([FromQuery] long fromDate, [FromQuery] long toDate)
+        [HttpPut]
+        [Route("{inputTypeId}/CheckAllBillInList")]
+        public async Task<bool> CheckAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
         {
-            return await _calcBillService.DeletedCostTransferBalanceZero(fromDate, toDate);
+            return await _inputDataService.CheckAllBillInList(models);
         }
 
-        [HttpGet]
-        [Route("CalcDepreciation")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
+        [HttpPut]
+        [Route("{inputTypeId}/ApproveAllBillInList")]
+        public async Task<bool> ApproveAllBillInList([FromRoute] int inputTypeId, [FromBody] IList<ObjectBillSimpleInfoModel> models)
         {
-            return await _calcBillService.CalcDepreciation(fromDate, toDate, accountNumber);
-        }
-
-        [HttpGet]
-        [Route("CheckExistedDepreciation")]
-        public async Task<bool> CheckExistedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
-        {
-            return await _calcBillService.CheckExistedDepreciation(fromDate, toDate, accountNumber);
-        }
-
-        [HttpDelete]
-        [Route("DeletedDepreciation")]
-        public async Task<bool> DeletedDepreciation([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
-        {
-            return await _calcBillService.DeletedDepreciation(fromDate, toDate, accountNumber);
-        }
-
-        [HttpGet]
-        [Route("CalcPrepaidExpense")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
-        {
-            return await _calcBillService.CalcPrepaidExpense(fromDate, toDate, accountNumber);
-        }
-
-        [HttpGet]
-        [Route("CheckExistedPrepaidExpense")]
-        public async Task<bool> CheckExistedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
-        {
-            return await _calcBillService.CheckExistedPrepaidExpense(fromDate, toDate, accountNumber);
-        }
-
-        [HttpDelete]
-        [Route("DeletedPrepaidExpense")]
-        public async Task<bool> DeletedPrepaidExpense([FromQuery] long fromDate, [FromQuery] long toDate, [FromQuery] string accountNumber)
-        {
-            return await _calcBillService.DeletedPrepaidExpense(fromDate, toDate, accountNumber);
+            return await _inputDataService.ApproveAllBillInList(models);
         }
 
     }

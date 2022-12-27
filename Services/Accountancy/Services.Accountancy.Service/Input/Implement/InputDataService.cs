@@ -125,7 +125,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
     }
 
-    public class InputDataServiceBase : IInputDataServiceBase
+    public abstract class InputDataServiceBase : IInputDataServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
         private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;

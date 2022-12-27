@@ -7,7 +7,7 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input
 {
-    public interface ICalcBillService
+    public interface ICalcBillServiceBase
     {
         Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate, string accoutantNumber);
 
@@ -59,5 +59,15 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> CheckExistedPrepaidExpense(long fromDate, long toDate, string accountNumber);
 
         Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber);
+    }
+
+    public interface ICalcBillPrivateService: ICalcBillServiceBase
+    {
+
+    }
+
+    public interface ICalcBillPublicService : ICalcBillServiceBase
+    {
+
     }
 }
