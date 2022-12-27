@@ -27,22 +27,13 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
     public class ProgramingFunctionService : IProgramingFunctionService
     {
         private readonly AccountancyDBContext _accountancyDBContext;
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly AppSetting _appSetting;
         private readonly IMapper _mapper;
 
-        public ProgramingFunctionService(AccountancyDBContext accountingDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<ProgramingFunctionService> logger
-            , IActivityLogService activityLogService
+        public ProgramingFunctionService(AccountancyDBPrivateContext accountingDBContext
             , IMapper mapper
             )
         {
             _accountancyDBContext = accountingDBContext;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _appSetting = appSetting.Value;
             _mapper = mapper;
         }
 

@@ -1,7 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Package;
 using VErp.Services.Stock.Service.Stock;
@@ -115,9 +118,20 @@ namespace VErpApi.Controllers.Stock.package
 
         [HttpGet]
         [Route("GetProductPackageListForExport")]
-        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> productIds, [FromQuery] IList<long> productUnitConversionIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductPackageOutputModel>> GetPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] bool isIncludedEmptyPackage, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> productIds, [FromQuery] IList<long> productUnitConversionIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _packageService.GetProductPackageListForExport(keyword, isTwoUnit, productCateIds, productIds, productUnitConversionIds, packageIds, stockIds, page, size);
+            return await _packageService.GetProductPackageListForExport(keyword, isTwoUnit, isIncludedEmptyPackage, productCateIds, productIds, productUnitConversionIds, packageIds, stockIds, page, size);
+        }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("GetProductPackageListForExport")]
+        public async Task<PageData<ProductPackageOutputModel>> GetProductPackageListForExport([FromQuery] string keyword, [FromQuery] bool? isTwoUnit, [FromQuery] bool isIncludedEmptyPackage, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> productIds, [FromQuery] IList<long> productUnitConversionIds, [FromQuery] IList<long> packageIds, [FromQuery] IList<int> stockIds, [FromQuery] int page, [FromQuery] int size
+            , Clause filters = null
+            )
+        {
+            return await _packageService.GetProductPackageListForExport(keyword, isTwoUnit, isIncludedEmptyPackage, productCateIds, productIds, productUnitConversionIds, packageIds, stockIds, page, size, filters);
         }
     }
 }

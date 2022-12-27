@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.PurchaseOrder.Calc.MaterialCalc;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
@@ -169,20 +171,59 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             var ctx = await GenerateCode(null, req);
             await Validate(null, req);
 
-            var entity = _mapper.Map<MaterialCalc>(req);
-            await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
-            await _purchaseOrderDBContext.SaveChangesAsync();
+            using (var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync())
+            {
+                var entity = _mapper.Map<MaterialCalc>(req);
+                //entity.MaterialCalcSummary = null;
+                await _purchaseOrderDBContext.MaterialCalc.AddAsync(entity);
+                await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await ctx.ConfirmCode();
+                //var subSumaryModels = new Dictionary<MaterialCalcSummarySubCalculation, MaterialCalcSummary>();
+
+                //if (req.Summary != null)
+                //{
+                //    foreach (var sModel in req.Summary)
+                //    {
+                //        var sEntity = _mapper.Map<MaterialCalcSummary>(sModel);
+                //        sEntity.MaterialCalcId = entity.MaterialCalcId;
+
+                //        if (sModel.SubCalculations != null)
+                //        {
+                //            foreach (var subModel in sModel.SubCalculations)
+                //            {
+                //                var subEntity = _mapper.Map<MaterialCalcSummarySubCalculation>(subModel);
+                //                subSumaryModels.Add(subEntity, sEntity);
+                //            }
+                //        }
+
+                //    }
+                //}
 
 
-            await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
-                .MessageResourceFormatDatas(entity.MaterialCalcCode)
-                .ObjectId(entity.MaterialCalcId)
-                .JsonData(req.JsonSerialize())
-                .CreateLog();
+                //await _purchaseOrderDBContext.MaterialCalcSummary.AddRangeAsync(subSumaryModels.Values.Distinct());
+                //await _purchaseOrderDBContext.SaveChangesAsync();
+                //foreach(var (subEntity, sEntity) in subSumaryModels)
+                //{
+                //    subEntity.MaterialCalcSummaryId = sEntity.MaterialCalcSummaryId;
+                //}
 
-            return entity.MaterialCalcId;
+                //await _purchaseOrderDBContext.MaterialCalcSummarySubCalculation.AddRangeAsync(subSumaryModels.Keys);
+                //await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                await ctx.ConfirmCode();
+
+
+                await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
+                    .MessageResourceFormatDatas(entity.MaterialCalcCode)
+                    .ObjectId(entity.MaterialCalcId)
+                    .JsonData(req.JsonSerialize())
+                    .CreateLog();
+
+                return entity.MaterialCalcId;
+            }
+
         }
 
 
@@ -205,6 +246,10 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             var entity = await GetEntityIncludes(materialCalcId);
             if (entity == null)
                 throw MaterialCalcNotFound.BadRequest();
+            if (req.UpdatedDatetimeUtc != entity.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
 
             await Validate(materialCalcId, req);
             _purchaseOrderDBContext.MaterialCalcConsumptionGroup.RemoveRange(entity.MaterialCalcConsumptionGroup);
@@ -215,9 +260,14 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             _purchaseOrderDBContext.MaterialCalcProduct.RemoveRange(entity.MaterialCalcProduct);
 
+            _purchaseOrderDBContext.MaterialCalcSummarySubCalculation.RemoveRange(entity.MaterialCalcSummary.SelectMany(s=>s.MaterialCalcSummarySubCalculation));
+
             _purchaseOrderDBContext.MaterialCalcSummary.RemoveRange(entity.MaterialCalcSummary);
 
             _mapper.Map(req, entity);
+
+            if (_purchaseOrderDBContext.HasChanges())
+                entity.UpdatedDatetimeUtc = DateTime.UtcNow;
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -257,6 +307,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
               .Include(s => s.MaterialCalcProduct)
               .ThenInclude(s => s.MaterialCalcProductOrder)
               .Include(s => s.MaterialCalcSummary)
+              .ThenInclude(s=>s.MaterialCalcSummarySubCalculation)
               .FirstOrDefaultAsync(c => c.MaterialCalcId == materialCalcId);
         }
 
@@ -276,7 +327,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             }
         }
 
-        private async Task<GenerateCodeContext> GenerateCode(long? materialCalcId, MaterialCalcModel model)
+        private async Task<IGenerateCodeContext> GenerateCode(long? materialCalcId, MaterialCalcModel model)
         {
             model.MaterialCalcCode = (model.MaterialCalcCode ?? "").Trim();
 

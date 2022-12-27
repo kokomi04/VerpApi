@@ -61,7 +61,7 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể xóa mặt hàng do mặt hàng đang được sử dụng.
+        ///   Looks up a localized string similar to Không thể xóa mặt hàng do mặt hàng đang được sử dụng {0}.
         /// </summary>
         public static string CanNotDeleteProductWhichInUsed {
             get {
@@ -129,6 +129,15 @@ namespace Verp.Resources.Stock.Product {
         public static string ExistMoreSameCustomerProduct {
             get {
                 return ResourceManager.GetString("ExistMoreSameCustomerProduct", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tìm thấy {0} mặt hàng {1}.
+        /// </summary>
+        public static string FoundNumberOfProduct {
+            get {
+                return ResourceManager.GetString("FoundNumberOfProduct", resourceCulture);
             }
         }
         
@@ -246,6 +255,15 @@ namespace Verp.Resources.Stock.Product {
         public static string ProductImportAsCateTitle {
             get {
                 return ResourceManager.GetString("ProductImportAsCateTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy mặt hàng {0}.
+        /// </summary>
+        public static string ProductInfoNotFound {
+            get {
+                return ResourceManager.GetString("ProductInfoNotFound", resourceCulture);
             }
         }
         

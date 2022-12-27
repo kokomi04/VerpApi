@@ -1,4 +1,6 @@
-﻿using VErp.Commons.Enums.MasterEnum;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
 {
@@ -22,5 +24,10 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
         public string ParamName { get; set; }
         public EnumDataType DataType { get; set; }
         public object Value { get; set; }
+    }
+
+    public interface IDynamicCategoryHelper
+    {
+        Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
     }
 }

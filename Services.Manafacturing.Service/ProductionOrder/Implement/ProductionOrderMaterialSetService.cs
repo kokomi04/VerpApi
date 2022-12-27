@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using NPOI.POIFS.Properties;
 using System;
@@ -167,7 +168,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 //ProductionOrderMaterialSetTypeId = set.ProductionOrderMaterialSetTypeId,
                 CreatedByUserId = set.CreatedByUserId,
                 UpdatedByUserId = set.UpdatedByUserId,
-                Materials = lst.OrderBy(m => m.ProductId).ThenBy(m => m.DepartmentId).ToList()
+                Materials = lst.OrderBy(m => m.ProductId).ThenBy(m => m.DepartmentId).ToList(),
+                UpdatedDatetimeUtc = set.UpdatedDatetimeUtc.GetUnix()
             };
         }
         /*
@@ -366,10 +368,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             var info = await _manufacturingDBContext.ProductionOrderMaterialSet.FirstOrDefaultAsync(s => s.ProductionOrderId == productionOrderId && s.ProductionOrderMaterialSetId == productionOrderMaterialSetId);
             if (info == null)
                 throw new BadRequestException("Không tìm thấy bảng tính");
+
+            if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+            {
+                throw GeneralCode.DataIsOld.BadRequest();
+            }
+
             info.Title = model.Title;
 
             await UpdateMaterialSetData(info, model);
 
+            if (_manufacturingDBContext.HasChanges())
+                info.UpdatedDatetimeUtc = DateTime.UtcNow;
             return true;
         }
 

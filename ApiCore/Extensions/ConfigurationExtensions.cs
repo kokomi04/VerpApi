@@ -97,9 +97,14 @@ namespace VErp.Infrastructure.ApiCore.Extensions
 
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
         {
-            services.AddDbContext<AccountancyDBContext, AccountancyDBRestrictionContext>((option) =>
+            services.AddDbContext<AccountancyDBPrivateContext, AccountancyDBPrivateContext>((option) =>
             {
-                option.UseSqlServer(databaseConnections.AccountancyDatabase);
+                option.UseSqlServer(databaseConnections.AccountancyPrivateDatabase);
+            }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<AccountancyDBPublicContext, AccountancyDBPublicContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.AccountancyPublicDatabase);
             }, ServiceLifetime.Scoped);
         }
 

@@ -141,6 +141,9 @@
   <data name="DeletePoTrack" xml:space="preserve">
     <value>Deleted tracking purchase order"{0}": {1}</value>
   </data>
+  <data name="Import" xml:space="preserve">
+    <value>Import PO "{0}" from excel file</value>
+  </data>
   <data name="SendToCensor" xml:space="preserve">
     <value>Sent to censor purchase order"{0}"</value>
   </data>

@@ -80,7 +80,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
+        public async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
         {
             await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
 
@@ -207,7 +207,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x => x.Detail).ToList() };
         }
 
-        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, GenerateCodeConfigData genCodeConfig)
+        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
         {
 
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);

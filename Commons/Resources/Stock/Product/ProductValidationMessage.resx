@@ -145,7 +145,7 @@
     <value>Kho không tồn tại "{0}"</value>
   </data>
   <data name="CanNotDeleteProductWhichInUsed" xml:space="preserve">
-    <value>Không thể xóa mặt hàng do mặt hàng đang được sử dụng</value>
+    <value>Không thể xóa mặt hàng do mặt hàng đang được sử dụng {0}</value>
   </data>
   <data name="DepartmentOfMaterialNotFound" xml:space="preserve">
     <value>Không tìm thấy bộ phận "{0}" sử dụng mặt hàng "{1}"</value>
@@ -209,5 +209,11 @@
   </data>
   <data name="PuConversionDuplicated" xml:space="preserve">
     <value>Đơn vị tính "{0}" trùng nhau, mặt hàng "{1}"</value>
+  </data>
+  <data name="FoundNumberOfProduct" xml:space="preserve">
+    <value>Tìm thấy {0} mặt hàng {1}</value>
+  </data>
+  <data name="ProductInfoNotFound" xml:space="preserve">
+    <value>Không tìm thấy mặt hàng {0}</value>
   </data>
 </root>

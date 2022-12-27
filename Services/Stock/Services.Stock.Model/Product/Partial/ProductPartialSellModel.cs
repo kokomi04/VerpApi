@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Model.Product.Partial
@@ -19,5 +20,6 @@ namespace VErp.Services.Stock.Model.Product.Partial
         public decimal? PackingHeight { get; set; }
 
         public IList<ProductModelCustomer> ProductCustomers { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
     }
 }

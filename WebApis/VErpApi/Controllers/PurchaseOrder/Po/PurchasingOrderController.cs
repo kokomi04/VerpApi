@@ -222,7 +222,7 @@ namespace VErpApi.Controllers.PurchaseOrder
         [Route("fieldDataForMapping")]
         public CategoryNameModel GetFieldDataForMapping()
         {
-            return _purchaseOrderService.GetFieldDataForMapping();
+            return _purchaseOrderService.GetFieldDataForParseMapping();
         }
 
         [HttpPost]
@@ -236,6 +236,26 @@ namespace VErpApi.Controllers.PurchaseOrder
             data.Mapping.FileName = file.FileName;
             return _purchaseOrderService.ParseDetails(data.Mapping, data.Extra, file.OpenReadStream());
         }
+
+        [HttpGet]
+        [Route("fieldDataForImportMapping")]
+        public CategoryNameModel GetFieldDataForImportMapping()
+        {
+            return _purchaseOrderService.GetFieldDataForImportMapping();
+        }
+
+        [HttpPost]
+        [Route("importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (mapping == null || mapping == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            mapping.FileName = file.FileName;
+            return await _purchaseOrderService.Import(mapping, file.OpenReadStream());
+        }
+
 
         /// <summary>
         /// Cập nhật đặt hàng PO

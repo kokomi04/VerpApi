@@ -24,7 +24,7 @@ namespace MasterTests
         protected MasterDBContext _masterDBContext;
         protected UnAuthorizeMasterDBContext _unAuthorizeMasterDBContext;
         protected StockDBContext _stockDBContext;
-        protected AccountancyDBContext _accountancyDBContext;
+        protected AccountancyDBPrivateContext _accountancyDBContext;
         protected ManufacturingDBContext _manufacturingDBContext;
 
 
@@ -48,7 +48,7 @@ namespace MasterTests
 
             _stockDBContext = (StockDBContext)webHost.Services.GetService(typeof(StockDBContext));
 
-            _accountancyDBContext = (AccountancyDBContext)webHost.Services.GetService(typeof(AccountancyDBContext));
+            _accountancyDBContext = (AccountancyDBPrivateContext)webHost.Services.GetService(typeof(AccountancyDBPrivateContext));
 
             _manufacturingDBContext = (ManufacturingDBContext)webHost.Services.GetService(typeof(ManufacturingDBContext));
 
@@ -73,7 +73,7 @@ namespace MasterTests
 
             _stockDBContext = (StockDBContext)webHost.Services.GetService(typeof(StockDBContext));
 
-            _accountancyDBContext = (AccountancyDBContext)webHost.Services.GetService(typeof(AccountancyDBContext));
+            _accountancyDBContext = (AccountancyDBPrivateContext)webHost.Services.GetService(typeof(AccountancyDBPrivateContext));
 
 
         }

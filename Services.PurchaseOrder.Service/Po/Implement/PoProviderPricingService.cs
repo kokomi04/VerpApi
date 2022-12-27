@@ -522,7 +522,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
 
         }
 
-        private async Task<GenerateCodeContext> GeneratePoProviderPricingCode(long? poProviderPricingId, PoProviderPricingModel model)
+        private async Task<IGenerateCodeContext> GeneratePoProviderPricingCode(long? poProviderPricingId, PoProviderPricingModel model)
         {
             model.PoProviderPricingCode = (model.PoProviderPricingCode ?? "").Trim();
 

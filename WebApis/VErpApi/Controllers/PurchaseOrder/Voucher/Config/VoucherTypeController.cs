@@ -239,12 +239,12 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
             return await _voucherConfigService.GetVoucherAreaFields(voucherTypeId, voucherAreaId, keyword, page, size).ConfigureAwait(true);
         }
 
-        [HttpGet]
-        [Route("{voucherTypeId}/voucherareas/{voucherAreaId}/voucherareafields/{voucherAreaField}")]
-        public async Task<VoucherAreaFieldOutputFullModel> GetVoucherAreaField([FromRoute] int voucherTypeId, [FromRoute] int voucherAreaId, [FromRoute] int voucherAreaField)
-        {
-            return await _voucherConfigService.GetVoucherAreaField(voucherTypeId, voucherAreaId, voucherAreaField).ConfigureAwait(true); ;
-        }
+        //[HttpGet]
+        //[Route("{voucherTypeId}/voucherareas/{voucherAreaId}/voucherareafields/{voucherAreaField}")]
+        //public async Task<VoucherAreaFieldOutputFullModel> GetVoucherAreaField([FromRoute] int voucherTypeId, [FromRoute] int voucherAreaId, [FromRoute] int voucherAreaField)
+        //{
+        //    return await _voucherConfigService.GetVoucherAreaField(voucherTypeId, voucherAreaId, voucherAreaField).ConfigureAwait(true); ;
+        //}
 
         [HttpPost]
         [Route("{voucherTypeId}/multifields")]

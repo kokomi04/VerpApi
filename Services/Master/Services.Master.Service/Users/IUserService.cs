@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.RolePermission;
@@ -20,6 +21,7 @@ namespace VErp.Services.Master.Service.Users
         Task<bool> ChangeUserPassword(int userId, UserChangepasswordInput req);
         Task<bool> DeleteUser(int userId);
         Task<PageData<UserInfoOutput>> GetList(string keyword, IList<int> userIds, int page, int size, Clause filters = null);
+        Task<IList<EmployeeBasicNameModel>> GetAll();
         Task<IList<UserBasicInfoOutput>> GetBasicInfos(IList<int> userIds);
         Task<IList<UserBasicInfoOutput>> GetBasicInfoByDepartment(int departmentId);
         Task<IList<RolePermissionModel>> GetMePermission();

@@ -146,6 +146,9 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Loại CTGS")]
         InputType = 34,
 
+        [Description("Loại CTGS biên thuế")]
+        InputTypePublic = 34001,
+
         [Description("Nhóm CTGS")]
         InputTypeGroup = 35,
 
@@ -155,11 +158,21 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Dòng chứng từ ghi sổ")]
         InputTypeRow = 37,
 
+        [Description("Dòng chứng từ ghi sổ biên thuế")]
+        InputTypeRowPublic = 37001,
+
         [Description("Trường dữ liệu vùng CTGS")]
         InputAreaField = 38,
 
+        [Description("Trường dữ liệu vùng CTGS biên thuế")]
+        InputAreaFieldPublic = 38001,
+
         [Description("Chứng từ ghi sổ")]
         InputBill = 39,
+
+        [Description("Chứng từ ghi sổ biên thuế")]
+        InputBillPublic = 39001,
+
 
         [Description("Công ty")]
         Subsidiary = 41,

@@ -117,6 +117,30 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="CurrencyFoundMoreThanOne" xml:space="preserve">
+    <value>Currency was found more than one with {0} "{1}"</value>
+  </data>
+  <data name="CurrencyNotFound" xml:space="preserve">
+    <value>Currency was not found with {0} "{1}" </value>
+  </data>
+  <data name="CustomerCodeNotFound" xml:space="preserve">
+    <value>Customer was not found with code "{0}"</value>
+  </data>
+  <data name="CustomerNameNotFound" xml:space="preserve">
+    <value>Customer was not found with name "{0}"</value>
+  </data>
+  <data name="DeliveryCustomerCodeNotFound" xml:space="preserve">
+    <value>Company was not found with code "{0}"</value>
+  </data>
+  <data name="DeliveryCustomerNameNotFound" xml:space="preserve">
+    <value>Company was not found with name "{0}"</value>
+  </data>
+  <data name="EmployeeCodeNotFound" xml:space="preserve">
+    <value>Employee was not found with code "{0}"</value>
+  </data>
+  <data name="EmployeeFullNameNotFound" xml:space="preserve">
+    <value>Employee was not found with fullname "{0}"</value>
+  </data>
   <data name="FoundNumberOfProduct" xml:space="preserve">
     <value>Founds {0} product {1}</value>
   </data>
@@ -131,5 +155,14 @@
   </data>
   <data name="PuOfProductNotFound" xml:space="preserve">
     <value>The unit conversion {0} of product {1} was not found</value>
+  </data>
+  <data name="PurchaseOrderCodeIsRequired" xml:space="preserve">
+    <value>Purchase order code is required</value>
+  </data>
+  <data name="PurchaseOrderDateIsRequired" xml:space="preserve">
+    <value>Purchase order date is required</value>
+  </data>
+  <data name="PurchaseOrderDeliveryDateIsRequired" xml:space="preserve">
+    <value>Purchase order delivery date is required</value>
   </data>
 </root>

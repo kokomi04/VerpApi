@@ -164,7 +164,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers)
         {
-            var genCodeContexts = new List<GenerateCodeContext>();
+            var genCodeContexts = new List<IGenerateCodeContext>();
             var baseValueChains = new Dictionary<string, int>();
 
             var cates = await _organizationContext.CustomerCate.ToListAsync();
@@ -248,7 +248,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             if (isInUsed.Value as bool? == true)
             {
-                throw CanNotDeleteCustomerWhichIsInUse.BadRequest(ProductErrorCode.ProductInUsed);
+                throw CanNotDeleteCustomerWhichIsInUse.BadRequest();
             }
 
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
@@ -399,7 +399,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
         public async Task<(Stream stream, string fileName, string contentType)> ExportList(IList<string> fieldNames, string keyword, int? customerCateId, IList<int> customerIds, EnumCustomerStatus? customerStatusId, int page, int size, Clause filters = null)
         {
             var lst = await GetListEntity(keyword, customerCateId, customerIds, customerStatusId, page, size, filters);
-            var bomExport = new CusomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
+            var bomExport = new CustomerExportFacade(_organizationContext, _httpCategoryHelperService, _userHelperService, fieldNames);
             return await bomExport.Export(lst.List);
         }
 
@@ -678,7 +678,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CusomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
+            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(longTaskResourceLockService, mapping, stream);
 
@@ -856,7 +856,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             };
         }
 
-        private async Task<GenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
+        private async Task<IGenerateCodeContext> GenerateCustomerCode(IList<CustomerCate> cates, int? customerId, CustomerModel model, Dictionary<string, int> baseValueChains)
         {
             model.CustomerCode = (model.CustomerCode ?? "").Trim();
 

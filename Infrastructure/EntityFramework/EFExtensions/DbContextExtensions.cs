@@ -79,6 +79,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
+        public static bool HasChanges(this DbContext context)
+        {
+            return context.ChangeTracker.HasChanges();
+        }
+
         public static void AddFilterBase(this ModelBuilder modelBuilder)
         {
 

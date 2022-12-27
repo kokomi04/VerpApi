@@ -7,7 +7,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class MaterialAllocation
     {
-        public int MaterialAllocationId { get; set; }
+        public long MaterialAllocationId { get; set; }
         public long ProductionOrderId { get; set; }
         public string InventoryCode { get; set; }
         public int ProductId { get; set; }

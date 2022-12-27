@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +20,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -456,6 +458,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var info = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(d => d.PurchasingRequestId == purchasingRequestId);
                     if (info == null) throw PurchasingRequestErrorCode.RequestNotFound.BadRequest();
 
+                    if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
+
                     _mapper.Map(model, info);
 
                     if (info.PurchasingRequestTypeId != (int)purchasingRequestTypeId
@@ -519,6 +526,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     }
 
                     await _purchaseOrderDBContext.PurchasingRequestDetail.AddRangeAsync(purchasingRequestDetailList);
+
+
+                    if (_purchaseOrderDBContext.HasChanges())
+                        info.UpdatedDatetimeUtc = DateTime.UtcNow;
+
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     trans.Commit();
@@ -542,7 +554,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
 
 
-        private async Task<GenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchasingRequestCode(long? purchasingRequestId, PurchasingRequestInput model)
         {
             model.PurchasingRequestCode = (model.PurchasingRequestCode ?? "").Trim();
 

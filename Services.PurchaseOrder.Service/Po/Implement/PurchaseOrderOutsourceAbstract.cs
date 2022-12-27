@@ -15,6 +15,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
@@ -111,7 +112,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
                     var sortOrder = 1;
-                    foreach (var detail in model.Details)
+                    foreach (var detail in model.Details.OrderBy(d=>d.SortOrder))
                     {
                         var entityDetail = new PurchaseOrderDetail()
                         {
@@ -246,6 +247,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 {
                     var info = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(d => d.PurchaseOrderId == purchaseOrderId);
                     if (info == null) throw new BadRequestException(PurchaseOrderErrorCode.PoNotFound);
+                    if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    {
+                        throw GeneralCode.DataIsOld.BadRequest();
+                    }
 
                     info.PurchaseOrderCode = model.PurchaseOrderCode;
 
@@ -476,22 +481,25 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     var allMaterials = await _purchaseOrderDBContext.PurchaseOrderMaterials.Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
 
                     var sortOrder = 1;
-                    foreach (var item in allDetails)
+                    foreach (var item in allDetails.OrderBy(d=>d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
 
                     sortOrder = 1;
-                    foreach (var item in allExcesses)
+                    foreach (var item in allExcesses.OrderBy(d => d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
 
                     sortOrder = 1;
-                    foreach (var item in allMaterials)
+                    foreach (var item in allMaterials.OrderBy(d => d.SortOrder))
                     {
                         item.SortOrder = sortOrder++;
                     }
+
+                    if (_purchaseOrderDBContext.HasChanges())
+                        info.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
@@ -695,7 +703,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return true;
         }
 
-        private async Task<GenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
+        private async Task<IGenerateCodeContext> GeneratePurchaseOrderCode(long? purchaseOrderId, PurchaseOrderInput model)
         {
             model.PurchaseOrderCode = (model.PurchaseOrderCode ?? "").Trim();
 

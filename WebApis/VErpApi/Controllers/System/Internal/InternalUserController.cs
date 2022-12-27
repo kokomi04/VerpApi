@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -29,6 +30,13 @@ namespace VErpApi.Controllers.System.Internal
             return await _userService.GetList(keyword, userIds, page, size, filters).ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("GetAll")]
+        public async Task<IList<EmployeeBasicNameModel>> GetAll()
+        {
+            return await _userService.GetAll().ConfigureAwait(true);
+        }
+        
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetByIds")]

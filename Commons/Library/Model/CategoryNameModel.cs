@@ -40,6 +40,20 @@ namespace VErp.Commons.Library.Model
     //    }
     //}
 
+    public class KeyCodeFieldAttribute : Attribute
+    {
+        public KeyCodeFieldAttribute()
+        {
+        }
+    }
+
+    public class ValidateDuplicateByKeyCodeAttribute : Attribute
+    {
+        public ValidateDuplicateByKeyCodeAttribute()
+        {
+        }
+    }
+
     public class FieldDataIgnoreAttribute : Attribute
     {
         public FieldDataIgnoreAttribute()
@@ -62,9 +76,16 @@ namespace VErp.Commons.Library.Model
 
     }
 
+    public class DynamicCategoryMappingAttribute : Attribute
+    {
+        public string CategoryCode { get; set; }
+    }
+
     public abstract class MappingDataRowAbstract
     {
         [FieldDataIgnore]
         public int RowNumber { get; set; }
     }
+
+
 }

@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -24,8 +26,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public virtual DbSet<ReportTypeView> ReportTypeView { get; set; }
         public virtual DbSet<ReportTypeViewField> ReportTypeViewField { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

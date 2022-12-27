@@ -168,6 +168,9 @@
   <data name="UpdateProductProducitity" xml:space="preserve">
     <value>Update product productivity of "{0}" cause by "{1}"</value>
   </data>
+  <data name="UpdateProductUnitConversionFromExcel" xml:space="preserve">
+    <value>Update product unit conversions from excel of product  "{0}"</value>
+  </data>
   <data name="UpdateSellInfo" xml:space="preserve">
     <value>Updated sell product info "{0}"</value>
   </data>

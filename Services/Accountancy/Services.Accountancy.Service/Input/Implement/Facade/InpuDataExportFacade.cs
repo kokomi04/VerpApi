@@ -12,19 +12,18 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Services.Accountancy.Model.Input;
-using static VErp.Services.Accountancy.Service.Input.Implement.InputDataService;
+using static VErp.Services.Accountancy.Service.Input.Implement.InputDataServiceBase;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
 {
     public interface IInpuDataExportFacadeService
     {
-        Task<(Stream stream, string fileName, string contentType)> Export(int inputTypeId, InputTypeBillsExporttFilterModel req);
+        Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req);
     }
 
     public class InpuDataExportFacadeService : IInpuDataExportFacadeService
     {
-        private AccountancyDBContext accountancyDBContext;
-        private readonly IInputDataService inputDataService;
+
         private readonly ICurrentContextService currentContextService;
         private ISheet sheet = null;
         private int currentRow = 0;
@@ -32,17 +31,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
 
         private IList<ValidateField> fields;
         private IList<string> groups;
-        private InputType typeInfo;
+       
         private bool isMultirow;
 
-        public InpuDataExportFacadeService(AccountancyDBContext accountancyDBContext, IInputDataService inputDataService, ICurrentContextService currentContextService)
+        public InpuDataExportFacadeService(ICurrentContextService currentContextService)
         {
-            this.accountancyDBContext = accountancyDBContext;
-            this.inputDataService = inputDataService;
             this.currentContextService = currentContextService;
         }
 
-        private async Task LoadFields(int inputTypeId, InputTypeBillsExporttFilterModel req)
+        private async Task LoadFields(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req)
         {
             //fields = (await inputDataService.GetFieldDataForMapping(inputTypeId, null))
             //    .Fields
@@ -59,11 +56,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             groups = fields.Select(g => g.AreaTitle).Distinct().ToList();
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(int inputTypeId, InputTypeBillsExporttFilterModel req)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req)
         {
-            typeInfo = await accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
-
-            await LoadFields(inputTypeId, req);
+            var typeInfo = await inputDataService.GetTypeInfo(inputTypeId);
+            await LoadFields(inputDataService, inputTypeId, req);
 
             var lst = await inputDataService.GetBills(inputTypeId, isMultirow, req.FromDate, req.ToDate, req.Keyword, req.Filters, req.ColumnsFilters, req.OrderBy, req.Asc, 1, -1);
 
@@ -199,7 +195,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -218,7 +214,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
@@ -238,7 +234,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
                                 break;
                             case EnumDataType.DateRange:
                             case EnumDataType.Date:
-                                if (!v.value.IsNullObject())
+                                if (!v.value.IsNullOrEmptyObject())
                                 {
                                     sheet.EnsureCell(currentRow, sColIndex, dateStyle).SetCellValue(((long)v.value).UnixToDateTime(currentContextService.TimeZoneOffset));
                                 }

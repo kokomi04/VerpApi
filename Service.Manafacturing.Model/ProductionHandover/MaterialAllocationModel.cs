@@ -6,7 +6,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class MaterialAllocationModel : IMapFrom<MaterialAllocation>
     {
-        public int MaterialAllocationId { get; set; }
+        public long MaterialAllocationId { get; set; }
         public long ProductionOrderId { get; set; }
         public string InventoryCode { get; set; }
         public int ProductId { get; set; }

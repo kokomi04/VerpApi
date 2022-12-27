@@ -30,7 +30,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
         private readonly ILogger _logger;
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _categoryHelperService;
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
@@ -43,7 +44,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
             , ICategoryHelperService categoryHelperService
-            , IInputTypeHelperService inputTypeHelperService
+            , IInputPrivateTypeHelperService inputPrivateTypeHelperService
+            , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IStockHelperService stockHelperService
             , ICachingService cachingService
@@ -54,7 +56,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             _logger = logger;
             _currentContextService = currentContextService;
             _categoryHelperService = categoryHelperService;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _stockHelperService = stockHelperService;
             _cachingService = cachingService;
@@ -103,7 +106,8 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
             var categories = roleTypeId == EnumRoleType.Administrator ? await _categoryHelperService.GetDynamicCates() : null;
 
-            var inputTypes = roleTypeId == EnumRoleType.Administrator ? await _inputTypeHelperService.GetInputTypeSimpleList() : null;
+            var inputPrivateTypes = roleTypeId == EnumRoleType.Administrator ? await _inputPrivateTypeHelperService.GetInputTypeSimpleList() : null;
+            var inputPublicTypes = roleTypeId == EnumRoleType.Administrator ? await _inputPublicTypeHelperService.GetInputTypeSimpleList() : null;
 
             var voucherTypes = roleTypeId == EnumRoleType.Administrator ? await _voucherTypeHelperService.GetVoucherTypeSimpleList() : null;
             var hrTypes = roleTypeId == EnumRoleType.Administrator ? await _organizationHelperService.GetHrTypeSimpleList() : null;
@@ -148,7 +152,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
 
                             case (int)EnumModule.Input:
 
-                                foreach (var c in inputTypes)
+                                foreach (var c in inputPrivateTypes)
                                 {
                                     var permission = new RolePermissionEntity
                                     {
@@ -157,6 +161,23 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                         RoleId = roleInfo.RoleId,
                                         Permission = int.MaxValue,
                                         ObjectTypeId = (int)EnumObjectType.InputType,
+                                        ObjectId = c.InputTypeId,
+                                    };
+                                    lstPermissions.Add(permission);
+                                }
+                                break;
+
+                            case (int)EnumModule.InputPublic:
+
+                                foreach (var c in inputPublicTypes)
+                                {
+                                    var permission = new RolePermissionEntity
+                                    {
+                                        CreatedDatetimeUtc = DateTime.UtcNow,
+                                        ModuleId = m.ModuleId,
+                                        RoleId = roleInfo.RoleId,
+                                        Permission = int.MaxValue,
+                                        ObjectTypeId = (int)EnumObjectType.InputTypePublic,
                                         ObjectId = c.InputTypeId,
                                     };
                                     lstPermissions.Add(permission);

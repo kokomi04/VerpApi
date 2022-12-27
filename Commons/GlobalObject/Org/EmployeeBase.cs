@@ -13,4 +13,11 @@ namespace VErp.Commons.GlobalObject.Org
         public long? AvatarFileId { get; set; }
         public bool? IsDeveloper { get; set; }
     }
+
+    public class EmployeeBasicNameModel
+    {
+        public int UserId { get; set; }
+        public string EmployeeCode { get; set; }
+        public string FullName { get; set; }
+    }
 }

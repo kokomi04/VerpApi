@@ -8,25 +8,28 @@ using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 {
-    public interface ICategoryHelperService
+    public interface ICategoryHelperService : IDynamicCategoryHelper
     {
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames = null, NonCamelCaseDictionary categoryRow = null);
-        Task<List<ReferFieldModel>> GetReferFields(IList<string> categoryCodes, IList<string> fieldNames);
+        
         Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
 
         Task<IList<CategoryListModel>> GetDynamicCates();
         Task<IList<CategoryFullSimpleModel>> GetAllCategoryConfig();
     }
+
     public class CategoryHelperService : ICategoryHelperService
     {
         private readonly IHttpCrossService _httpCrossService;
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
 
-        public CategoryHelperService(IHttpCrossService httpCrossService, IInputTypeHelperService inputTypeHelperService, IVoucherTypeHelperService voucherTypeHelperService)
+        public CategoryHelperService(IHttpCrossService httpCrossService, IInputPrivateTypeHelperService inputPrivateTypeHelperService, IInputPublicTypeHelperService inputPublicTypeHelperService, IVoucherTypeHelperService voucherTypeHelperService)
         {
             _httpCrossService = httpCrossService;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
         }
 
@@ -38,7 +41,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
                 FieldNames = fieldNames,
                 CategoryRow = categoryRow
             };
-            return await _inputTypeHelperService.CheckReferFromCategory(data)
+            return await _inputPrivateTypeHelperService.CheckReferFromCategory(data)
+                || await _inputPublicTypeHelperService.CheckReferFromCategory(data)
                 || await _voucherTypeHelperService.CheckReferFromCategory(data);
         }
 

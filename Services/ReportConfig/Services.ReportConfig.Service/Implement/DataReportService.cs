@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using Microsoft.Diagnostics.Tracing.Parsers.IIS_Trace;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
@@ -43,7 +44,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
-            { EnumModuleType.Accountant,typeof(AccountancyDBContext) },
+            { EnumModuleType.Accountant,typeof(AccountancyDBPrivateContext) },
+            { EnumModuleType.AccountantPublic,typeof(AccountancyDBPublicContext) },
             { EnumModuleType.Master,typeof(MasterDBContext) },
             { EnumModuleType.PurchaseOrder,typeof(PurchaseOrderDBContext) },
             { EnumModuleType.Stock,typeof(StockDBContext) },
@@ -127,13 +129,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         switch (filterFiled.DataTypeId)
                         {
                             case EnumDataType.Int:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.BigInt:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.Text:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             default:
                                 break;
@@ -144,7 +146,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         if (filters.ContainsKey(paramName))
                         {
                             value = filters[paramName];
-                            if (!value.IsNullObject())
+                            if (!value.IsNullOrEmptyObject())
                             {
                                 if (filterFiled.DataTypeId.IsTimeType())
                                 {
@@ -406,7 +408,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     foreach (var column in calSumColumns)
                     {
                         var colData = row[column.Alias];
-                        if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                        if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
                         {
                             totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
                         }
@@ -496,7 +498,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                                 var paramName = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}{keyValue}";
                                 if (!string.IsNullOrWhiteSpace(keyValue) && !sqlParams.Any(p => p.ParameterName == paramName))
                                 {
-                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value.IsNullObject() ? 0 : value });
+                                    sqlParams.Add(new SqlParameter(paramName, type.ConvertToDbType()) { Value = value.IsNullOrEmptyObject() ? 0 : value });
                                 }
                             }
                         }
@@ -632,7 +634,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     var colData = row[column.Alias];
 
-                    if (!colData.IsNullObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                    if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
                     {
                         var decimalValue = Convert.ToDecimal(colData);
 
@@ -647,7 +649,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     totalRecord = groupLevel1.Count();
 
-                    var groupLevel2Alias = columns.Where(c => c.isGroupRowLevel2).Select(c => c.Alias).ToHashSet();
+                    var groupLevel2Alias = columns.Where(c => c.IsGroupRowLevel2).Select(c => c.Alias).ToHashSet();
 
                     foreach (var g1 in groupLevel1)
                     {
@@ -707,6 +709,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     if (data[0].ContainsKey(sumColum))
                     {
                         totals.Add(column.Alias, Convert.ToDecimal(data[0][sumColum]));
+                    }
+                    else
+                    {
+                        throw GeneralCode.NotYetSupported.BadRequest($"Sum columns with paging on database must be including on result data! {sumColum} was not found!");
                     }
 
                 }
@@ -882,7 +888,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var column in columns.Where(c => c.IsCalcSum))
                 {
-                    var v = table.Rows[0][column.Alias].IsNullObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
+                    var v = table.Rows[0][column.Alias].IsNullOrEmptyObject() ? 0 : Convert.ToDecimal(table.Rows[0][column.Alias]);
                     totals.Add(column.Alias, v);
                 }
             }
@@ -1017,7 +1023,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 return calcNumLong != 0;
             }
 
-            return !row[CalcSumConditionCol].IsNullObject();
+            return !row[CalcSumConditionCol].IsNullOrEmptyObject();
         }
 
         public async Task<(Stream file, string contentType, string fileName)> GenerateReportAsPdf(int reportId, ReportDataModel reportDataModel)
@@ -1055,7 +1061,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             accountancyReportExport.SetContextData(_reportConfigDBContext);
             accountancyReportExport.SetCurrentContextService(_currentContextService);
             accountancyReportExport.SetDataReportService(this);
-            return await accountancyReportExport.AccountancyReportExport(reportId, model);
+            return await accountancyReportExport.ReportExport(reportId, model);
         }
 
         private class BscValueOrder
@@ -1072,11 +1078,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var toDate = "";
             foreach (var key in filters.Filters.Keys)
             {
-                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("fromdate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     fromDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
-                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullObject())
+                if (key.ToLower().Contains("todate") && !filters.Filters[key].IsNullOrEmptyObject())
                 {
                     toDate = Convert.ToInt64(filters.Filters[key]).UnixToDateTime(_currentContextService.TimeZoneOffset).ToString("dd_MM_yyyy");
                 }
@@ -1085,6 +1091,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!"".Equals(toDate)) fileName = $"{fileName} {toDate}";
             return fileName;
         }
+
+        
     }
 
 

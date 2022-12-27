@@ -202,7 +202,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     var value = filter.Value;
 
-                    if (value.IsNullObject()) continue;
+                    if (value.IsNullOrEmptyObject()) continue;
 
                     if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
                     {
@@ -776,7 +776,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                                             try
                                             {
-                                                var parameters = mapRow?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                                                var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
 
 
                                                 filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
@@ -1085,7 +1085,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullObject())
+                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
 
@@ -1571,7 +1571,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     try
                     {
-                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
+                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
                         filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
 
                     }

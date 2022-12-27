@@ -132,7 +132,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 query = query.InternalOrderBy(orderByFieldName, asc);
             }
 
-            var arrOutsourceStepRequestId = (await query.Select(x => x.OutsourceStepRequestId).ToListAsync()).Distinct().ToArray();
+            var arrOutsourceStepRequestId = (await query.Select(x => (long?)x.OutsourceStepRequestId).ToListAsync()).Distinct().ToArray();
             var arrProductionOrdertId = (await query.Select(x => x.ProductionOrderId).ToListAsync()).Distinct().ToArray();
 
             var mapProductionOrder = (await productionOrderAsQueryable.Where(x => arrProductionOrdertId.Contains(x.ProductionOrderId)).ToListAsync())

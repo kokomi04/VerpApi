@@ -31,7 +31,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         private readonly IProductHelperService _productHelperService;
         private readonly IStockHelperService _stockHelperService;
-        private readonly IInputTypeHelperService _inputTypeHelperService;
+        private readonly IInputPrivateTypeHelperService _inputPrivateTypeHelperService;
+        private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
         private readonly IOrganizationHelperService _organizationHelperService;
@@ -45,7 +46,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             , ICurrentContextService currentContextService
             , IProductHelperService productHelperService
             , IStockHelperService stockHelperService
-            , IInputTypeHelperService inputTypeHelperService
+            , IInputPrivateTypeHelperService inputPrivateTypeHelperService
+            , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IOrganizationHelperService organizationHelperService
             , ICategoryHelperService categoryHelperService)
@@ -57,7 +59,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             _currentContextService = currentContextService;
             _productHelperService = productHelperService;
             _stockHelperService = stockHelperService;
-            _inputTypeHelperService = inputTypeHelperService;
+            _inputPrivateTypeHelperService = inputPrivateTypeHelperService;
+            _inputPublicTypeHelperService = inputPublicTypeHelperService;
             _voucherTypeHelperService = voucherTypeHelperService;
             _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
             _organizationHelperService = organizationHelperService;
@@ -255,7 +258,9 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var vourcherTask = VourcherMappingTypeModels();
 
-            var inputTask = InputMappingTypeModels();
+            var inputPrivateTask = InputPrivateMappingTypeModels();
+
+            var inputPublicTask = InputPublicMappingTypeModels();
 
             var manufactureTask = ManufactureMappingTypeModels();
 
@@ -265,7 +270,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.AddRange(await stockTask);
             result.AddRange(await purchasingOrderTask);
             result.AddRange(await vourcherTask);
-            result.AddRange(await inputTask);
+            result.AddRange(await inputPrivateTask);
+            result.AddRange(await inputPublicTask);
             result.AddRange(await manufactureTask);
             result.AddRange(await masterTask);
 
@@ -548,9 +554,9 @@ namespace VErp.Services.Master.Service.Config.Implement
             return result;
         }
 
-        private async Task<IList<ObjectGenCodeMappingTypeModel>> InputMappingTypeModels()
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> InputPrivateMappingTypeModels()
         {
-            var inputTypes = _inputTypeHelperService.GetInputTypeSimpleList();
+            var inputTypes = _inputPrivateTypeHelperService.GetInputTypeSimpleList();
 
             var result = new List<ObjectGenCodeMappingTypeModel>();
             foreach (var inputType in await inputTypes)
@@ -562,6 +568,30 @@ namespace VErp.Services.Master.Service.Config.Implement
                         moduleTypeId: EnumModuleType.Accountant,
                         targeObjectTypeId: EnumObjectType.InputTypeRow,
                         configObjectTypeId: EnumObjectType.InputAreaField,
+                        configObjectId: areaField.InputAreaFieldId,
+                        targetObjectName: inputType.Title,
+                        fieldName: areaField.InputAreaFieldTitle)
+                    );
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<IList<ObjectGenCodeMappingTypeModel>> InputPublicMappingTypeModels()
+        {
+            var inputTypes = _inputPublicTypeHelperService.GetInputTypeSimpleList();
+
+            var result = new List<ObjectGenCodeMappingTypeModel>();
+            foreach (var inputType in await inputTypes)
+            {
+                foreach (var areaField in inputType.AreaFields.Where(f => f.FormTypeId == EnumFormType.Generate))
+                {
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.AccountantPublic,
+                        targeObjectTypeId: EnumObjectType.InputTypeRowPublic,
+                        configObjectTypeId: EnumObjectType.InputAreaFieldPublic,
                         configObjectId: areaField.InputAreaFieldId,
                         targetObjectName: inputType.Title,
                         fieldName: areaField.InputAreaFieldTitle)

@@ -43,7 +43,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
-            { EnumModuleType.Accountant,typeof(AccountancyDBContext) },
+            { EnumModuleType.Accountant,typeof(AccountancyDBPrivateContext) },
+            { EnumModuleType.AccountantPublic,typeof(AccountancyDBPublicContext) },
             { EnumModuleType.Master,typeof(MasterDBContext) },
             { EnumModuleType.PurchaseOrder,typeof(PurchaseOrderDBContext) },
             { EnumModuleType.Stock,typeof(StockDBContext) },
@@ -118,13 +119,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         switch (filterFiled.DataTypeId)
                         {
                             case EnumDataType.Int:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.BigInt:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             case EnumDataType.Text:
-                                sqlParams.Add((!value.IsNullObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
                                 break;
                             default:
                                 break;
@@ -135,7 +136,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         if (filters.ContainsKey(paramName))
                         {
                             value = filters[paramName];
-                            if (!value.IsNullObject())
+                            if (!value.IsNullOrEmptyObject())
                             {
                                 if (filterFiled.DataTypeId.IsTimeType())
                                 {

@@ -270,11 +270,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
                     if (listProductIds.Count() > 0)
                     {
-                        var usedProductId = await _productService.CheckProductIdsIsUsed(listProductIds);
+                        var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(listProductIds);
                         if (usedProductId.HasValue)
                         {
                             var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                            throw new BadRequestException(ProductErrorCode.ProductInUsed, $"Product Code {usedProductCode} in used");
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + msg);
                         }
                     }
                 }
@@ -543,13 +543,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
             product.UpdateIfAvaiable(p => p.ProductCode, row.ProductCode);
 
-            if (!row.ProductName.IsNullObject())
+            if (!row.ProductName.IsNullOrEmptyObject())
             {
                 product.ProductName = row.ProductName;
                 product.ProductInternalName = row.ProductName.NormalizeAsInternalName();
             }
 
-            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductNameEng);
+            product.UpdateIfAvaiable(p => p.ProductNameEng, row.ProductEngName);
             product.UpdateIfAvaiable(p => p.Color, row.Color);
 
             //product.IsCanBuy = row.IsCanBuy ?? true;
@@ -753,7 +753,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             {
                                 ProductId = productId,
                                 ProductUnitConversionName = row.Unit,
-                                SecondaryUnitId =row.Unit.IsNullObject()?0: units[row.Unit.NormalizeAsInternalName()],
+                                SecondaryUnitId =row.Unit.IsNullOrEmptyObject()?0: units[row.Unit.NormalizeAsInternalName()],
                                 FactorExpression = "1",
                                 ConversionDescription = "Default",
                                 IsDefault = true,
@@ -779,12 +779,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, exp);
                         if (!(eval > 0))
                         {
-                            throw PuConversionExpressionInvalid.BadRequestFormat(exp, row.ProductCode);
+                            throw PuConversionExpressionInvalid.BadRequestFormat(unit + " " + exp, row.ProductCode);
                         }
                     }
                     catch (Exception)
                     {
-                        throw PuConversionExpressionError.BadRequestFormat(exp, row.ProductCode);
+                        throw PuConversionExpressionError.BadRequestFormat(unit + " " + exp, row.ProductCode);
                     }
 
                     lstUnitConverions.Add(new ProductUnitConversionUpdate()

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -131,7 +132,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
 
                                                   s.InventoryQuantity,
-                                                  PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining
+                                                  PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining,
+
+                                                  ir.UpdatedDatetimeUtc
                                               };
 
 
@@ -187,7 +190,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                             ir.ProductUnitConversionId,
 
                             ir.InventoryQuantity,
-                            ir.PrimaryQuantityRemaining
+                            ir.PrimaryQuantityRemaining,
+                            ir.UpdatedDatetimeUtc
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -237,7 +241,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     InventoryQuantity = x.InventoryQuantity,
                     PrimaryQuantity = x.PrimaryQuantity,
                     ProductUnitConversionId = x.ProductUnitConversionId,
-                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity
+                    ProductUnitConversionQuantity = x.ProductUnitConversionQuantity,
+                    UpdatedDatetimeUtc= x.UpdatedDatetimeUtc.GetUnix(),
 
                 }).ToList();
 
@@ -404,8 +409,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //}
 
                 // validate product duplicate
-                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
-                    throw DuplicateProduct.BadRequest();
+                //if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                //    throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), null);
                 var inventoryRequirement = _mapper.Map<InventoryRequirementEntity>(req);
@@ -469,7 +474,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         }
 
 
-        private async Task<GenerateCodeContext> GenerateInventoryRequirementCode(EnumInventoryType inventoryType, EnumObjectType objectTypeId, InventoryRequirementInputModel req)
+        private async Task<IGenerateCodeContext> GenerateInventoryRequirementCode(EnumInventoryType inventoryType, EnumObjectType objectTypeId, InventoryRequirementInputModel req)
         {
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
@@ -496,6 +501,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
                 if (inventoryRequirement == null) throw InvRequestNotFound.BadRequest();
 
+                if (req.UpdatedDatetimeUtc != inventoryRequirement.UpdatedDatetimeUtc.GetUnix())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
+
                 if (string.IsNullOrEmpty(req.InventoryRequirementCode)) req.InventoryRequirementCode = inventoryRequirement.InventoryRequirementCode;
 
                 //if (inventoryRequirement.InventoryRequirementCode != req.InventoryRequirementCode)
@@ -505,8 +515,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 //    throw new BadRequestException(GeneralCode.InvalidParams, $"Không được thay đổi phiếu yêu cầu từ sản xuất");
 
                 // validate product duplicate
-                if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
-                    throw DuplicateProduct.BadRequest();
+                //if (inventoryType == EnumInventoryType.Output && req.InventoryRequirementDetail.GroupBy(d => new { d.ProductId, d.DepartmentId, d.ProductionStepId }).Any(g => g.Count() > 1))
+                //    throw DuplicateProduct.BadRequest();
 
                 await ValidateInventoryRequirementConfig(req.Date.UnixToDateTime(), inventoryRequirement.Date);
 
@@ -555,6 +565,9 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 {
                     item.IsDeleted = true;
                 }
+
+                if (_stockDbContext.HasChanges())
+                    inventoryRequirement.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _stockDbContext.SaveChangesAsync();
                 trans.Commit();

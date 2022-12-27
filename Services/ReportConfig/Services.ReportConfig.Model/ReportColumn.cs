@@ -24,7 +24,7 @@ namespace Verp.Services.ReportConfig.Model
         public bool IsDockLeft { get; set; }
         public bool IsGroup { get; set; }
         public bool IsGroupRow { get; set; }
-        public bool isGroupRowLevel2 { get; set; }
+        public bool IsGroupRowLevel2 { get; set; }
         public string VAlign { get; set; }
         public string HAlign { get; set; }
         public bool IsColGroup { get; set; }
@@ -38,11 +38,13 @@ namespace Verp.Services.ReportConfig.Model
         public EnumReportDetailTarget? DetailTargetId { get; set; }
         public int? DetailReportId { get; set; }
         public string DetailReportParams { get; set; }
+        public string DetailJsCodeCanOpenTarget { get; set; }
 
         public EnumReportDetailOpenType? HeaderOpenTypeId { get; set; }
         public EnumReportDetailTarget? HeaderTargetId { get; set; }
         public int? HeaderReportId { get; set; }
         public string HeaderReportParams { get; set; }
+        public string HeaderJsCodeCanOpenTarget { get; set; }
 
     }
 
