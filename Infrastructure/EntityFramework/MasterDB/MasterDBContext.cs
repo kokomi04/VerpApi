@@ -91,9 +91,9 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.IconName).HasMaxLength(25);
 
-                entity.Property(e => e.ObjectIdBak).HasColumnName("ObjectId_bak");
+                //entity.Property(e => e.ObjectIdBak).HasColumnName("ObjectId_bak");
 
-                entity.Property(e => e.ObjectTypeIdBak).HasColumnName("ObjectTypeId_bak");
+                //entity.Property(e => e.ObjectTypeIdBak).HasColumnName("ObjectTypeId_bak");
 
                 entity.Property(e => e.Title).HasMaxLength(128);
             });
