@@ -6,7 +6,7 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input
 {
-    public interface ICalcPeriodService
+    public interface ICalcPeriodServiceBase
     {
         Task<PageData<CalcPeriodListModel>> GetList(EnumCalcPeriodType calcPeriodTypeId, string keyword, long? fromDate, long? toDate, int page, int? size);
 
@@ -18,5 +18,15 @@ namespace VErp.Services.Accountancy.Service.Input
 
 
         Task<long> Create(EnumCalcPeriodType calcPeriodTypeId, string title, string description, long? fromDate, long? toDate, IFilterHashData filterData, object data);
+    }
+
+    public interface ICalcPeriodPrivateService: ICalcPeriodServiceBase
+    {
+
+    }
+
+    public interface ICalcPeriodPublicService : ICalcPeriodServiceBase
+    {
+
     }
 }
