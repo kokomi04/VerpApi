@@ -484,9 +484,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var propExpression = Expression.Call(prop, toStringMethod);
 
 
-                var dbValue = clause.DataType.GetSqlValue(clause.Value);
+                object dbValue = null;
                 if (clause.Operator != EnumOperator.InList)
                 {
+                    dbValue = clause.DataType.GetSqlValue(clause.Value);
+
                     //value = Expression.Constant(dbValue, prop.Type);
                     //if (nullable)
                     //{
@@ -542,7 +544,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
                         }
                         method = constructedListType.GetMethod("Contains");
-                        expression = Expression.Call(Expression.Constant(instance, prop.Type), method, prop);
+                        expression = Expression.Call(Expression.Constant(instance, constructedListType), method, prop);
                         break;
                     case EnumOperator.StartsWith:
 

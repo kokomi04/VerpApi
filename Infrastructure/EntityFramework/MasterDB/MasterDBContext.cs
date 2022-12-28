@@ -50,13 +50,13 @@ namespace VErp.Infrastructure.EF.MasterDB
         public virtual DbSet<ObjectCustomGenCodeMapping> ObjectCustomGenCodeMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigMapping> ObjectPrintConfigMapping { get; set; }
         public virtual DbSet<ObjectPrintConfigStandardMapping> ObjectPrintConfigStandardMapping { get; set; }
-        //public virtual DbSet<OutSideDataConfig> OutSideDataConfig { get; set; }
-        //public virtual DbSet<OutsideDataFieldConfig> OutsideDataFieldConfig { get; set; }
         public virtual DbSet<OutsideImportMapping> OutsideImportMapping { get; set; }
         public virtual DbSet<OutsideImportMappingFunction> OutsideImportMappingFunction { get; set; }
         public virtual DbSet<OutsideImportMappingObject> OutsideImportMappingObject { get; set; }
         public virtual DbSet<PrintConfigCustom> PrintConfigCustom { get; set; }
+        public virtual DbSet<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; }
         public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
+        public virtual DbSet<PrintConfigStandardModuleType> PrintConfigStandardModuleType { get; set; }
         public virtual DbSet<ReuseContent> ReuseContent { get; set; }
         public virtual DbSet<Role> Role { get; set; }
         public virtual DbSet<RoleDataPermission> RoleDataPermission { get; set; }
@@ -90,10 +90,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.IconName).HasMaxLength(25);
-
-                //entity.Property(e => e.ObjectIdBak).HasColumnName("ObjectId_bak");
-
-                //entity.Property(e => e.ObjectTypeIdBak).HasColumnName("ObjectTypeId_bak");
 
                 entity.Property(e => e.Title).HasMaxLength(128);
             });
@@ -579,49 +575,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.UpdatedDatetimeUtc).HasColumnType("datetime");
             });
 
-            //modelBuilder.Entity<OutSideDataConfig>(entity =>
-            //{
-            //    entity.HasKey(e => e.CategoryId)
-            //        .HasName("PK__OutSideD__19093A0B3AED9766");
-
-            //    entity.Property(e => e.CategoryId).ValueGeneratedNever();
-
-            //    entity.Property(e => e.Description).HasMaxLength(255);
-
-            //    entity.Property(e => e.Key)
-            //        .HasMaxLength(255)
-            //        .IsUnicode(false);
-
-            //    entity.Property(e => e.ParentKey)
-            //        .HasMaxLength(255)
-            //        .IsUnicode(false);
-
-            //    entity.Property(e => e.Url)
-            //        .HasMaxLength(255)
-            //        .IsUnicode(false);
-
-            //    entity.HasOne(d => d.Category)
-            //        .WithOne(p => p.OutSideDataConfig)
-            //        .HasForeignKey<OutSideDataConfig>(d => d.CategoryId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_OutSideDataConfig_Category");
-            //});
-
-            //modelBuilder.Entity<OutsideDataFieldConfig>(entity =>
-            //{
-            //    entity.Property(e => e.Alias).HasMaxLength(512);
-
-            //    entity.Property(e => e.Value)
-            //        .IsRequired()
-            //        .HasMaxLength(512);
-
-            //    entity.HasOne(d => d.OutsideDataConfig)
-            //        .WithMany(p => p.OutsideDataFieldConfig)
-            //        .HasForeignKey(d => d.OutsideDataConfigId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_OutsideDataFieldConfig_OutSideDataConfig");
-            //});
-
             modelBuilder.Entity<OutsideImportMapping>(entity =>
             {
                 entity.Property(e => e.DestinationFieldName).HasMaxLength(128);
@@ -685,6 +638,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.Title).HasMaxLength(255);
             });
 
+            modelBuilder.Entity<PrintConfigCustomModuleType>(entity =>
+            {
+                entity.HasKey(e => new { e.PrintConfigCustomId, e.ModuleTypeId });
+
+                entity.HasOne(d => d.PrintConfigCustom)
+                    .WithMany(p => p.PrintConfigCustomModuleType)
+                    .HasForeignKey(d => d.PrintConfigCustomId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PrintConfigCustomModuleType_PrintConfigCustom");
+            });
+
             modelBuilder.Entity<PrintConfigStandard>(entity =>
             {
                 entity.Property(e => e.ContentType).HasMaxLength(128);
@@ -694,6 +658,17 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.TemplateFileName).HasMaxLength(128);
 
                 entity.Property(e => e.Title).HasMaxLength(255);
+            });
+
+            modelBuilder.Entity<PrintConfigStandardModuleType>(entity =>
+            {
+                entity.HasKey(e => new { e.PrintConfigStandardId, e.ModuleTypeId });
+
+                entity.HasOne(d => d.PrintConfigStandard)
+                    .WithMany(p => p.PrintConfigStandardModuleType)
+                    .HasForeignKey(d => d.PrintConfigStandardId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PrintConfigStandardModuleType_PrintConfigStandard");
             });
 
             modelBuilder.Entity<ReuseContent>(entity =>

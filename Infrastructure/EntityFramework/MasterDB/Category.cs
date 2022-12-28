@@ -39,12 +39,10 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsHide { get; set; }
         public string JoinSqlRaw { get; set; }
         public string SearchSqlRaw { get; set; }
-        
         public string Key { get; set; }
         public string ParentKey { get; set; }
 
         public virtual CategoryGroup CategoryGroup { get; set; }
-        //public virtual OutSideDataConfig OutSideDataConfig { get; set; }
         public virtual ICollection<CategoryField> CategoryField { get; set; }
         public virtual ICollection<CategoryView> CategoryView { get; set; }
     }
