@@ -12,6 +12,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public int MaterialsConsumptionId { get; set; }
         public decimal Quantity { get; set; }
+        public decimal Wastage { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
         public string Description { get; set; }

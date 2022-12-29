@@ -184,7 +184,7 @@
     <value>Mặt hàng</value>
   </data>
   <data name="ProductMaterialConsumptionQuantityError" xml:space="preserve">
-    <value>Số lượng sử dụng của NVL có mã "{0}" trong nhóm "{1}" phải lơn hơn 0</value>
+    <value>Số lượng sử dụng của NVL có mã "{0}" trong nhóm "{1}" phải lớn hơn 0</value>
   </data>
   <data name="ProductNameOfCodeEmpty" xml:space="preserve">
     <value>Tên mặt hàng có mã "{0}" không được để trống</value>
@@ -215,5 +215,8 @@
   </data>
   <data name="ProductInfoNotFound" xml:space="preserve">
     <value>Không tìm thấy mặt hàng {0}</value>
+  </data>
+  <data name="ProductMaterialConsumptionWastageError" xml:space="preserve">
+    <value>Tỷ lệ hao hụt của NVL có mã "{0}" trong nhóm "{1}" phải lớn hơn hoặc bằng 1</value>
   </data>
 </root>
