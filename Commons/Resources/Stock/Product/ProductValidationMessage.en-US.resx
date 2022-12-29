@@ -210,4 +210,7 @@
   <data name="PuConversionDuplicated" xml:space="preserve">
     <value>Duplicate product unit "{0}" in product "{1}"</value>
   </data>
+  <data name="ProductMaterialConsumptionWastageError" xml:space="preserve">
+    <value>The wastage of consumption material "{0}" in group "{1}" must be greater than or equal 1</value>
+  </data>
 </root>

@@ -268,6 +268,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                                                           MaterialsConsumptionId = materialsConsumptionId,
                                                           ProductId = rootProduct.ProductId,
                                                           Quantity = r.Quantity,
+                                                          Wastage = r.Wastage ?? 1,
                                                           DepartmentId = departmentId,
                                                           StepId = stepId,
                                                           ProductMaterialsConsumptionGroupId = groupMaterialConsumptionId,
@@ -331,6 +332,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         .Select(x => new ProductMaterialsConsumptionPreview
                         {
                             Quantity = x.Quantity,
+                            Wastage = x.Wastage,
                             GroupTitle = x.ProductMaterialsConsumptionGroup.Title,
                             ProductExtraInfo = _existedProducts[x.Product.ProductCode.NormalizeAsInternalName()],
                             ProductMaterialsComsumptionExtraInfo = _existedProducts[x.MaterialsConsumption.ProductCode.NormalizeAsInternalName()],
@@ -347,6 +349,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         DepartmentName = x.DepartmentName ?? x.DepartmentCode,
                         GroupTitle = x.GroupTitle,
                         Quantity = x.Quantity,
+                        Wastage = x.Wastage ?? 1,
                         StepName = x.StepName,
                         ProductExtraInfo = _existedProducts[x.UsageProductCode.NormalizeAsInternalName()],
                         ProductMaterialsComsumptionExtraInfo = _existedProducts[x.ProductCode.NormalizeAsInternalName()],
@@ -373,7 +376,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         m.MaterialsConsumptionInherit = materialsInherit.Where(x => x.GroupTitle == m.GroupTitle
                                         && x.ProductMaterialsComsumptionExtraInfo.ProductCode == m.ProductMaterialsComsumptionExtraInfo.ProductCode).ToList();
                         m.BomQuantity = 1;
-                        m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+                        m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.Wastage * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
                     }
 
                     PreviewData.Add(new MaterialsConsumptionByProduct
@@ -496,7 +499,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                                     && x.ProductMaterialsComsumptionExtraInfo.ProductCode == m.ProductMaterialsComsumptionExtraInfo.ProductCode).ToList();
 
                     m.BomQuantity = productMap.ContainsKey(m.ProductExtraInfo.ProductCode) ? productMap[m.ProductExtraInfo.ProductCode] : 1;
-                    m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
+                    m.TotalQuantityInheritance = m.MaterialsConsumptionInherit.Select(x => (x.Quantity * x.Wastage * x.BomQuantity) + x.TotalQuantityInheritance).Sum();
                 }
 
                 result.AddRange(materials);
@@ -524,6 +527,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 {
                     BomQuantity = m.BomQuantity,
                     Quantity = m.Quantity,
+                    Wastage = m.Wastage,
                     StepName = step?.StepName,
                     DepartmentName = department?.DepartmentName,
                     GroupTitle = group?.Title,
@@ -539,6 +543,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     {
                         BomQuantity = m.BomQuantity,
                         Quantity = row.Quantity,
+                        Wastage = row.Wastage ?? 1,
                         StepName = row.StepName,
                         DepartmentName = row.DepartmentName ?? row.DepartmentCode,
                         GroupTitle = row.GroupTitle,

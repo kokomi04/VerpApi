@@ -731,6 +731,10 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
 
+                entity.Property(e => e.Wastage)
+                    .HasColumnType("decimal(32, 12)")
+                    .HasDefaultValueSql("((1))");
+
                 entity.HasOne(d => d.MaterialsConsumption)
                     .WithMany(p => p.ProductMaterialsConsumptionMaterialsConsumption)
                     .HasForeignKey(d => d.MaterialsConsumptionId)
