@@ -473,12 +473,18 @@ namespace VErp.Commons.Library
         public IList<T> ReadSheetEntity<T>(ImportExcelMapping mapping, AssignPropertyAndRefEvent<T> OnAssignProperty)
         {
 
-            return ReadSheetEntity<T>(mapping, async (entity, propertyName, value, refObj, refPropertyName, paths) =>
+            if (OnAssignProperty == null)
             {
-                await Task.CompletedTask;
-                return OnAssignProperty(entity, propertyName, value, refObj, refPropertyName);
-            }).Result;
-
+                return ReadSheetEntity<T>(mapping, (AssignPropertyAndRefPathEvent<T>)null).Result;
+            }
+            else
+            {
+                return ReadSheetEntity<T>(mapping, async (entity, propertyName, value, refObj, refPropertyName, paths) =>
+                {
+                    await Task.CompletedTask;
+                    return OnAssignProperty(entity, propertyName, value, refObj, refPropertyName);
+                }).Result;
+            }
         }
 
         private ConcurrentDictionary<Type, PropertyInfo[]> RefTypeFields = new ConcurrentDictionary<Type, PropertyInfo[]>();
