@@ -13,8 +13,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         }
 
         public int ActionButtonId { get; set; }
-        //public int? ObjectTypeIdBak { get; set; }
-        //public long? ObjectIdBak { get; set; }
         public int? BillTypeObjectTypeId { get; set; }
         public string ActionButtonCode { get; set; }
         public string Title { get; set; }

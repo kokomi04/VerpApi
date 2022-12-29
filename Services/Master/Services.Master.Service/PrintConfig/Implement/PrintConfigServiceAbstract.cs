@@ -1,13 +1,17 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NPOI.SS.Formula.Functions;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -21,12 +25,16 @@ using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.PrintConfig;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 using static Verp.Resources.Master.Print.PrintConfigStandardValidationMessage;
 
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
-    public abstract class PrintConfigServiceAbstract<TEntity, TModel> where TEntity : class, IPrintConfigEntity where TModel : PrintConfigBaseModel
+    public abstract class PrintConfigServiceAbstract<TEntity, TModel, TMappingModuleTypeEntity>
+        where TEntity : class, IPrintConfigEntity
+        where TModel : PrintConfigBaseModel
+        where TMappingModuleTypeEntity : class
     {
         protected readonly MasterDBContext _masterDBContext;
         private readonly IOptions<AppSetting> appSetting;
@@ -37,6 +45,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         private readonly IDocOpenXmlService _docOpenXmlService;
         private readonly EnumObjectType objectTypeId;
         private readonly UploadTemplatePrintConfigFacade _uploadTemplate;
+        private readonly string _configIdFieldName;
+
 
         private static readonly Dictionary<string, string> ContentTypes = new Dictionary<string, string>()
         {
@@ -55,6 +65,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             , IMapper mapper
             , IDocOpenXmlService docOpenXmlService
             , EnumObjectType objectTypeId
+            , string configIdFieldName
            )
         {
             _masterDBContext = masterDBContext;
@@ -64,7 +75,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             _appSetting = appSetting.Value;
             _logger = logger;
             _mapper = mapper;
-
+            _configIdFieldName = configIdFieldName;
             _uploadTemplate = new UploadTemplatePrintConfigFacade().SetAppSetting(_appSetting);
 
             // this.objectTypeId = objectTypeId;
@@ -76,8 +87,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         protected abstract Task LogUpdatePrintConfig(TModel model, TEntity entity);
         protected abstract Task LogDeletePrintConfig(TEntity entity);
 
-        protected abstract int GetId(TEntity entity);
-
+        
         public async Task<int> AddPrintConfig(TModel model, IFormFile template, IFormFile background)
         {
             if (long.TryParse(model.Background, out var v))
@@ -94,12 +104,17 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 await _masterDBContext.Set<TEntity>().AddAsync(config);
                 await _masterDBContext.SaveChangesAsync();
 
+                var configId = ConfigId().Compile().Invoke(config);
+
+                await AddMappingModuleTypes(model, configId);
+
+                await _masterDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
 
                 await LogAddPrintConfig(model, config);
 
-                return GetId(config);
+                return configId;
             }
             catch (Exception ex)
             {
@@ -145,9 +160,27 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             if (config == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
-            return _mapper.Map<TModel>(config);
+            var configId = new SingleClause()
+            {
+                DataType = EnumDataType.Int,
+                FieldName = _configIdFieldName,
+                Operator = EnumOperator.Equal,
+                Value = printConfigId
+            };
+
+            var lstMappings = await MappingSet.InternalFilter(configId).ToListAsync();
+            var model = _mapper.Map<TModel>(config);
+            model.ModuleTypeIds = lstMappings.Select(SelectField<TMappingModuleTypeEntity>(nameof(PrintConfigStandard.ModuleTypeId)).Compile()).ToList();
+            return model;
         }
 
+        private IQueryable<TMappingModuleTypeEntity> MappingSet
+        {
+            get
+            {
+                return _masterDBContext.Set<TMappingModuleTypeEntity>();
+            }
+        }
         public async Task<PageData<TModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
         {
             keyword = (keyword ?? "").Trim();
@@ -158,15 +191,39 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 query = query.Where(x => x.PrintConfigName.Contains(keyword));
 
             if (moduleTypeId > 0)
-                query = query.Where(x => x.ModuleTypeId.Equals(moduleTypeId));
+            {
+                query = query.Join(MappingSet, ConfigId(), ConfigIdFromMapping(), (q, m) => q);
+            }
 
             var total = await query.CountAsync();
             var lst = await (size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
                 .InternalOrderBy(orderByField, asc)
-                .ProjectTo<TModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            return (lst, total);
+            var configIds = lst.Select(ConfigId().Compile());
+
+            var containConfigIds = new SingleClause()
+            {
+                DataType = EnumDataType.Int,
+                FieldName = _configIdFieldName,
+                Operator = EnumOperator.InList,
+                Value = string.Join(",", configIds)
+            };
+
+            var lstMappings = await MappingSet.InternalFilter(containConfigIds).ToListAsync();
+
+            var result = new List<TModel>();
+            var getConfigIdFromMapping = ConfigIdFromMapping().Compile();
+            var getConfigId = ConfigId().Compile();
+            foreach (var item in lst)
+            {
+                var itemMappings = lstMappings.Where(m => getConfigIdFromMapping.Invoke(m) == getConfigId.Invoke(item));
+                var model = _mapper.Map<TModel>(item);
+                model.ModuleTypeIds = itemMappings.Select(SelectField<TMappingModuleTypeEntity>(nameof(PrintConfigStandard.ModuleTypeId)).Compile()).ToList();
+                result.Add(model);
+            }
+
+            return (result, total);
         }
 
         private async Task UploadFile(TModel model, IFormFile template, IFormFile background)
@@ -202,8 +259,9 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await UploadFile(model, template, background);
 
-
                 _mapper.Map(model, config);
+
+                await AddMappingModuleTypes(model, printConfigId);
 
                 await _masterDBContext.SaveChangesAsync();
 
@@ -297,6 +355,45 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 throw new BadRequestException(GeneralCode.InternalError, ex.Message);
             }
         }
+
+        private Expression<Func<T, int>> SelectField<T>(string fieldName)
+        {
+            var entity = Expression.Parameter(typeof(T));
+            var key = Expression.PropertyOrField(entity, fieldName);
+            return Expression.Lambda<Func<T, int>>(key, entity);
+        }
+
+        private Expression<Func<TEntity, int>> ConfigId()
+        {
+            return SelectField<TEntity>(_configIdFieldName);
+        }
+
+        private Expression<Func<TMappingModuleTypeEntity, int>> ConfigIdFromMapping()
+        {
+            return SelectField<TMappingModuleTypeEntity>(_configIdFieldName);
+        }
+
+        private async Task AddMappingModuleTypes(TModel model, int id)
+        {
+            var configId = new SingleClause()
+            {
+                DataType = EnumDataType.Int,
+                FieldName = _configIdFieldName,
+                Operator = EnumOperator.Equal,
+                Value = id
+            };
+
+            var lstMappings = await MappingSet.InternalFilter(configId).ToListAsync();
+            _masterDBContext.RemoveRange(lstMappings);
+            var newModels = model.ModuleTypeIds.Select(t => new PrintConfigModuleMapping()
+            {
+                ConfigId = id,
+                ModuleTypeId = t
+            }).ToList();
+            var newEntities = _mapper.Map<List<TMappingModuleTypeEntity>>(newModels);
+            await _masterDBContext.AddRangeAsync(newEntities);
+        }
+
     }
 
 }
