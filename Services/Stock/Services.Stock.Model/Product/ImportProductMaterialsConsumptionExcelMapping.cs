@@ -61,7 +61,7 @@ namespace VErp.Services.Stock.Model.Product
         public decimal Quantity { get; set; }
 
         [Display(Name = "Tỷ lệ hao hụt", GroupName = "Thông tin chung")]
-        [GreaterThan(1, ErrorMessage = "Tỷ lệ hao hụt phải lớn hơn 1")]
+        [Min(1, ErrorMessage = "Tỷ lệ hao hụt phải lớn hơn hoặc bằng 1")]
         public decimal? Wastage { get; set; }
 
         [Display(Name = "Mã bộ phận (Nếu có)", GroupName = "Thông tin bộ phận")]
