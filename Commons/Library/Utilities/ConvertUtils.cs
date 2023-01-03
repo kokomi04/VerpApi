@@ -57,7 +57,7 @@ namespace VErp.Commons.Library
                 case EnumDataType.PhoneNumber: return "";
                 case EnumDataType.Email: return "";
                 case EnumDataType.Boolean:
-                    return "'0'";
+                    return "0";
                 case EnumDataType.Percentage:
                     return "0";
                 case EnumDataType.BigInt:
