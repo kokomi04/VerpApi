@@ -18,7 +18,7 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public int MaterialsConsumptionId { get; set; }
         public decimal Quantity { get; set; }
-        [GreaterThan(1)]
+        [Min(1)]
         public decimal Wastage { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
