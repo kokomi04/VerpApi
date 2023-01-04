@@ -540,9 +540,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         var instance = Activator.CreateInstance(constructedListType);
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
-                            MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
+                            //var v = clause.DataType.GetSqlValue(item);
+                            if (!string.IsNullOrWhiteSpace(item))
+                            {
+                                MethodInfo addMethod = constructedListType.GetMethod("Add");
+                                addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
+                            }
                         }
+
                         method = constructedListType.GetMethod("Contains");
                         expression = Expression.Call(Expression.Constant(instance, constructedListType), method, prop);
                         break;
