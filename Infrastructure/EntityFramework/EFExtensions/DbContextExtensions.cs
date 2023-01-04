@@ -345,30 +345,30 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return query.Select(lambda);
         }
 
-        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
-        {
-            if (filters != null && filters.Count > 0)
-            {
-                foreach (var filter in filters)
-                {
-                    var sParam = Expression.Parameter(typeof(T), "s");
-                    var prop = Expression.Property(sParam, filter.Key);
-                    TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
-                    Type listType = typeof(List<>);
-                    Type constructedListType = listType.MakeGenericType(prop.Type);
-                    var instance = Activator.CreateInstance(constructedListType);
-                    foreach (var value in filter.Value)
-                    {
-                        MethodInfo method = constructedListType.GetMethod("Add");
-                        method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
-                    }
-                    var methodInfo = constructedListType.GetMethod("Contains");
-                    var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
-                    query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
-                }
-            }
-            return query;
-        }
+        //public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
+        //{
+        //    if (filters != null && filters.Count > 0)
+        //    {
+        //        foreach (var filter in filters)
+        //        {
+        //            var sParam = Expression.Parameter(typeof(T), "s");
+        //            var prop = Expression.Property(sParam, filter.Key);
+        //            TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+        //            Type listType = typeof(List<>);
+        //            Type constructedListType = listType.MakeGenericType(prop.Type);
+        //            var instance = Activator.CreateInstance(constructedListType);
+        //            foreach (var value in filter.Value)
+        //            {
+        //                MethodInfo method = constructedListType.GetMethod("Add");
+        //                method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
+        //            }
+        //            var methodInfo = constructedListType.GetMethod("Contains");
+        //            var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
+        //            query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
+        //        }
+        //    }
+        //    return query;
+        //}
 
         public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null, int? timeZoneOffset = null)
         {

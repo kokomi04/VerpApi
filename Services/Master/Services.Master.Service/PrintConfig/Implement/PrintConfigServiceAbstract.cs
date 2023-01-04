@@ -192,7 +192,15 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             if (moduleTypeId > 0)
             {
-                query = query.Join(MappingSet, ConfigId(), ConfigIdFromMapping(), (q, m) => q);
+                var moduleTypeIdFilter = new SingleClause()
+                {
+                    DataType = EnumDataType.Int,
+                    FieldName = nameof(PrintConfigStandard.ModuleTypeId),
+                    Operator = EnumOperator.Equal,
+                    Value = moduleTypeId
+                };
+
+                query = query.Join(MappingSet.InternalFilter(moduleTypeIdFilter), ConfigId(), ConfigIdFromMapping(), (q, m) => q);
             }
 
             var total = await query.CountAsync();
