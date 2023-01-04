@@ -742,13 +742,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         /// Lấy danh sách sản phẩm để nhập kho
         /// </summary>
         /// <param name="keyword"></param>
+        /// <param name="productCateIds"></param>
         /// <param name="stockIdList"></param>
+        /// <param name="isMaterials"></param>
+        /// <param name="isProductSemi"></param>
+        /// <param name="isProduct"></param>
         /// <param name="page"></param>
         /// <param name="size"></param>
         /// <returns></returns>
-        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, int page = 1, int size = 20)
+        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, bool? isMaterials, bool? isProductSemi, bool? isProduct, int page = 1, int size = 20)
         {
-            var req = new ProductFilterRequestModel(keyword, new int[0], "", new int[0], productCateIds.ToArray(), null, null, null, null);
+            var req = new ProductFilterRequestModel(keyword, new int[0], "", new int[0], productCateIds.ToArray(), isProductSemi, isProduct, isMaterials, null);
             //var productList = await _productService.GetList(keyword, new int[0], "", new int[0], productCateIds, page, size, null, null, null);
             var productList = await _productService.GetList(req, page, size);
 

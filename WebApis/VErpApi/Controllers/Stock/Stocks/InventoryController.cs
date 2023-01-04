@@ -228,9 +228,13 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpGet]
         [Route("GetProductListForImport")]
-        public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> stockIdList, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword,
+            [FromQuery] IList<int> productCateIds,
+            [FromQuery] IList<int> stockIdList,
+            [FromQuery] bool? isMaterials, [FromQuery] bool? isProductSemi, [FromQuery] bool? isProduct,
+            [FromQuery] int page, [FromQuery] int size)
         {
-            return await _inventoryBillInputService.GetProductListForImport(keyword: keyword, productCateIds, stockIdList: stockIdList, page: page, size: size);
+            return await _inventoryBillInputService.GetProductListForImport(keyword, productCateIds, stockIdList, isMaterials, isProductSemi, isProduct, page, size);
         }
 
 
