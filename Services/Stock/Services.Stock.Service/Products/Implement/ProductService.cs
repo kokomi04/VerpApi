@@ -816,17 +816,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 products = products.Where(x => req.ProductIds.Contains(x.ProductId));
             }
 
-            if (req.IsProductSemi == true)
+            if (req.IsProductSemi.HasValue)
             {
                 products = products.Where(x => x.IsProductSemi == req.IsProductSemi.Value);
             }
 
-            if (req.IsProduct == true)
+            if (req.IsProduct.HasValue)
             {
                 products = products.Where(x => x.IsProduct == req.IsProduct.Value);
             }
 
-            if (req.IsMaterials == true)
+            if (req.IsMaterials.HasValue)
             {
                 products = products.Where(x => x.IsMaterials == req.IsMaterials.Value);
             }
