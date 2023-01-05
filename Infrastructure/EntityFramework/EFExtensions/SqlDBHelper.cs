@@ -64,7 +64,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 sql.Append(",");
             }
 
-            dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
+            dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
 
             await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
         }
@@ -106,7 +106,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             else
             {
-                dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
+                dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
             }
 
             return await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), ps);
@@ -141,10 +141,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 builder.AppendLine(cmdType.ToString());
                 var key = "QueryDataTable_" + builder.ToString().ToGuid().ToString();
-                return await cachingService.TryGetSet("QueryDataTable", key, TimeSpan.FromMinutes(1), async () =>
+                return await cachingService.TryGetSet("QueryDataTable", key, TimeSpan.FromMinutes(3), async () =>
                 {
                     return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
-                }, TimeSpan.FromMinutes(1));
+                }, TimeSpan.FromMinutes(3));
             }
             return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
         }
