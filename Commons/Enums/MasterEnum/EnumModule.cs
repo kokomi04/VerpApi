@@ -11,7 +11,7 @@
 
         Input = 802,
 
-        InputPublic = 802001,
+        InputPublic = 8002,
 
         SalesBill = 902,
 
