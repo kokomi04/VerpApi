@@ -738,49 +738,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        /// <summary>
-        /// Lấy danh sách sản phẩm để nhập kho
-        /// </summary>
-        /// <param name="keyword"></param>
-        /// <param name="productCateIds"></param>
-        /// <param name="stockIdList"></param>
-        /// <param name="isMaterials"></param>
-        /// <param name="isProductSemi"></param>
-        /// <param name="isProduct"></param>
-        /// <param name="page"></param>
-        /// <param name="size"></param>
-        /// <returns></returns>
-        public async Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, bool? isMaterials, bool? isProductSemi, bool? isProduct, int page = 1, int size = 20)
-        {
-            var req = new ProductFilterRequestModel(keyword, new int[0], "", new int[0], productCateIds.ToArray(), isProductSemi, isProduct, isMaterials, null);
-            //var productList = await _productService.GetList(keyword, new int[0], "", new int[0], productCateIds, page, size, null, null, null);
-            var productList = await _productService.GetList(req, page, size);
-
-            var pagedData = productList.List;
-
-            var productIdList = pagedData.Select(p => p.ProductId).ToList();
-
-            var stockProductData = await _stockDbContext.StockProduct.AsNoTracking().Where(q => stockIdList.Contains(q.StockId)).Where(q => productIdList.Contains(q.ProductId)).ToListAsync();
-
-            foreach (var item in pagedData)
-            {
-                item.StockProductModelList =
-                    stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
-                    {
-                        StockId = q.StockId,
-                        ProductId = q.ProductId,
-                        PrimaryUnitId = item.UnitId,
-                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
-                        ProductUnitConversionId = q.ProductUnitConversionId,
-                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
-                    }).ToList();
-            }
-
-            return productList;
-
-        }
-
-
         #region Private helper method
 
         private async Task<Enum> ProcessInventoryInputApprove(int stockId, DateTime date, IList<InventoryDetail> inventoryDetails, string inventoryCode, IGenerateCodeAction genCodeConfig)

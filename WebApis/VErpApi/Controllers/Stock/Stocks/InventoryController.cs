@@ -25,18 +25,16 @@ namespace VErpApi.Controllers.Stock.Inventory
         private readonly IInventoryBillInputService _inventoryBillInputService;
         private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly IFileService _fileService;
-        private readonly IFileProcessDataService _fileProcessDataService;
 
         public InventoryController(
             IInventoryService iventoryService,
             IInventoryBillInputService inventoryBillInputService,
             IInventoryBillOutputService inventoryBillOutputService,
-            IFileService fileService,
-            IFileProcessDataService fileProcessDataService)
+            IFileService fileService
+            )
         {
             _inventoryService = iventoryService;
             _fileService = fileService;
-            _fileProcessDataService = fileProcessDataService;
             _inventoryBillInputService = inventoryBillInputService;
             _inventoryBillOutputService = inventoryBillOutputService;
         }
@@ -223,18 +221,6 @@ namespace VErpApi.Controllers.Stock.Inventory
         public async Task<long> UploadImage([FromRoute] EnumFileType fileTypeId, [FromForm] IFormFile file)
         {
             return await _fileService.Upload(EnumObjectType.InventoryInput, fileTypeId, string.Empty, file);
-        }
-
-
-        [HttpGet]
-        [Route("GetProductListForImport")]
-        public async Task<PageData<ProductListOutput>> GetProductListForImport([FromQuery] string keyword,
-            [FromQuery] IList<int> productCateIds,
-            [FromQuery] IList<int> stockIdList,
-            [FromQuery] bool? isMaterials, [FromQuery] bool? isProductSemi, [FromQuery] bool? isProduct,
-            [FromQuery] int page, [FromQuery] int size)
-        {
-            return await _inventoryBillInputService.GetProductListForImport(keyword, productCateIds, stockIdList, isMaterials, isProductSemi, isProduct, page, size);
         }
 
 

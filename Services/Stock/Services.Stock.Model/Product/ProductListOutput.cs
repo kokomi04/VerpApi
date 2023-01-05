@@ -70,7 +70,7 @@ namespace VErp.Services.Stock.Model.Product
         public EnumTimeType? ExpireTimeTypeId { get; set; }
 
 
-        public List<StockProductOutput> StockProductModelList { set; get; }
+        public List<StockProductOutput> StockRemainings { set; get; }
         public string DescriptionToStock { get; set; }
 
         public IList<ProductModelUnitConversion> ProductUnitConversions { get; set; }
