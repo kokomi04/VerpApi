@@ -29,10 +29,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<bool> DeleteInventoryInput(long inventoryId);
 
         Task DeleteInventoryInputDb(InventoryEntity inventoryObj);
-
-
-        Task<PageData<ProductListOutput>> GetProductListForImport(string keyword, IList<int> productCateIds, IList<int> stockIdList, bool? isMaterials, bool? isProductSemi, bool? isProduct, int page = 1, int size = 20);
-
+      
         Task<IList<CensoredInventoryInputProducts>> InputUpdateGetAffectedPackages(long inventoryId, long fromDate, long toDate, InventoryInModel req);
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);

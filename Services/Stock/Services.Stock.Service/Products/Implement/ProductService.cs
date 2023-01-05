@@ -939,8 +939,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             query = query.InternalFilter(req.Filters);
 
+
+
             var total = await query.CountAsync();
-            var lstData = await query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedQuery = query.OrderByDescending(p => p.CreatedDatetimeUtc).Skip((page - 1) * size).Take(size);
+            var lstData = await pagedQuery.ToListAsync();
+
 
             var unitIds = lstData.Select(p => p.UnitId).ToList();
             var unitInfos = await _unitService.GetListByIds(unitIds);
@@ -952,6 +956,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .ToDictionary(p => p.Key, p => p.ToList()); ;
 
             var pageData = new List<ProductListOutput>();
+
+            IList<StockProduct> stockProductData = new List<StockProduct>();
+            if (req.QuantityStockIds?.Count > 0)
+            {
+                var productIdsQuery = pagedQuery.Select(p => p.ProductId);
+
+                stockProductData = await _stockDbContext.StockProduct.AsNoTracking()
+                    .Where(q => req.QuantityStockIds.Contains(q.StockId) && productIdsQuery.Contains(q.ProductId))
+                    .ToListAsync();
+            }
+
             foreach (var item in lstData)
             {
                 productUnitConverions.TryGetValue(item.ProductId, out var pus);
@@ -1010,7 +1025,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     ProductUnitConversions = _mapper.Map<List<ProductModelUnitConversion>>(pus),
                     Description = item.Description,
                     Color = item.Color,
-                    TargetProductivityId = item.TargetProductivityId
+                    TargetProductivityId = item.TargetProductivityId,
+
+                    StockRemainings = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
+                    {
+                        StockId = q.StockId,
+                        ProductId = q.ProductId,
+                        PrimaryUnitId = item.UnitId,
+                        PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
+                        ProductUnitConversionId = q.ProductUnitConversionId,
+                        ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
+                    }).ToList()
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -1046,7 +1071,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             foreach (var item in pagedData)
             {
-                item.StockProductModelList =
+                item.StockRemainings =
                     stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {
                         StockId = q.StockId,
