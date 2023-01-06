@@ -411,6 +411,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 _mapper.Map(data, report);
+                report.ReportTypeId = reportTypeId;
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
