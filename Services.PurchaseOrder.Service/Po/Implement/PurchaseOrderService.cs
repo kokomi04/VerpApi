@@ -492,15 +492,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
-            query = query.SortByFieldName(sortBy, asc)
-                .ThenBy(q => q.PurchaseOrderCode)
-                .ThenBy(q => q.SortOrder);
 
-            if (size > 0)
-            {
-                query = query.Skip((page - 1) * size).Take(size);
-            }
-            var pagedData = await query.ToListAsync();
             var additionResult = await (from q in query
                                         group q by 1 into g
                                         select new
@@ -517,6 +509,17 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                            SumTaxInMoney = g.Sum(x => x.TaxInMoney) / g.Count()
                                        }).ToListAsync();
 
+
+            query = query.SortByFieldName(sortBy, asc)
+                .ThenBy(q => q.PurchaseOrderCode)
+                .ThenBy(q => q.SortOrder);
+
+            if (size > 0)
+            {
+                query = query.Skip((page - 1) * size).Take(size);
+            }
+            var pagedData = await query.ToListAsync();
+            
             var poAssignmentDetailIds = pagedData.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = pagedData.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
