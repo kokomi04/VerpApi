@@ -230,7 +230,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productMap = new Dictionary<int?, decimal>();
             foreach (var bom in level1)
             {
-                var totalQuantity = bom.Quantity; // không có tiêu hao
+                var totalQuantity = bom.TotalQuantity; // không có tiêu hao, update: có hao hụt
                 if (productMap.ContainsKey(bom.ChildProductId))
                     productMap[bom.ChildProductId] += totalQuantity;
                 else

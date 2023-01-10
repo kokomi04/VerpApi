@@ -418,7 +418,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var productMap = new Dictionary<string, decimal>();
             foreach (var bom in level1)
             {
-                var totalQuantity = bom.Quantity; // không có tiêu hao
+                var totalQuantity = bom.TotalQuantity; // không có tiêu hao, edit: Có hao hụt
                 var productInfo = _existedProducts.Values.FirstOrDefault(x => x.ProductId == bom.ChildProductId);
                 if (productMap.ContainsKey(productInfo.ProductCode))
                     productMap[productInfo.ProductCode] += totalQuantity;
@@ -469,6 +469,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         DepartmentName = x.DepartmentName ?? x.DepartmentCode,
                         GroupTitle = x.GroupTitle,
                         Quantity = x.Quantity,
+                        Wastage = x.Wastage ?? 1,
                         StepName = x.StepName,
                         ProductExtraInfo = _existedProducts[x.UsageProductCode.NormalizeAsInternalName()],
                         ProductMaterialsComsumptionExtraInfo = _existedProducts[x.ProductCode.NormalizeAsInternalName()],
