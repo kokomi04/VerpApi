@@ -106,7 +106,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 var configId = ConfigId().Compile().Invoke(config);
 
-                await AddMappingModuleTypes(model, configId);
+                await UpdateMappingModuleTypes(model, configId);
 
                 await _masterDBContext.SaveChangesAsync();
 
@@ -269,7 +269,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 _mapper.Map(model, config);
 
-                await AddMappingModuleTypes(model, printConfigId);
+                await UpdateMappingModuleTypes(model, printConfigId);
 
                 await _masterDBContext.SaveChangesAsync();
 
@@ -381,7 +381,12 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             return SelectField<TMappingModuleTypeEntity>(_configIdFieldName);
         }
 
-        private async Task AddMappingModuleTypes(TModel model, int id)
+        private async Task UpdateMappingModuleTypes(TModel model, int id)
+        {
+            await UpdateMappingModuleTypes(model.ModuleTypeIds, id);
+        }
+
+        protected async Task UpdateMappingModuleTypes(IList<int> moduleTypeIds, int id)
         {
             var configId = new SingleClause()
             {
@@ -393,7 +398,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             var lstMappings = await MappingSet.InternalFilter(configId).ToListAsync();
             _masterDBContext.RemoveRange(lstMappings);
-            var newModels = model.ModuleTypeIds.Select(t => new PrintConfigModuleMapping()
+            var newModels = moduleTypeIds.Select(t => new PrintConfigModuleMapping()
             {
                 ConfigId = id,
                 ModuleTypeId = t

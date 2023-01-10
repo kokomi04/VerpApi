@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             , ILogger<PrintConfigCustomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IDocOpenXmlService docOpenXmlService) : 
+            , IDocOpenXmlService docOpenXmlService) :
             base(masterDBContext, appSetting, logger, mapper, docOpenXmlService, EnumObjectType.PrintConfigCustom, nameof(PrintConfigCustom.PrintConfigCustomId))
         {
 
@@ -70,7 +70,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                  .CreateLog();
         }
 
-       
+
         public async Task<bool> RollbackPrintConfigCustom(int printConfigId)
         {
             var printConfig = await _masterDBContext.PrintConfigCustom
@@ -99,6 +99,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 }
             }
 
+            var moduleTypeIds = await _masterDBContext.PrintConfigStandardModuleType
+                .Where(m => m.PrintConfigStandardId == printConfig.PrintConfigStandardId)
+                .Select(m => m.ModuleTypeId)
+                .ToListAsync();
+
+            await UpdateMappingModuleTypes(moduleTypeIds, printConfigId);
+
             await _masterDBContext.SaveChangesAsync();
 
             await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
@@ -109,7 +116,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             return true;
         }
-      
+
     }
 
 
