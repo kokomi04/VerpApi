@@ -114,6 +114,21 @@ BEGIN TRY
 	 JOIN dbo.PrintConfigStandard s ON c.PrintConfigStandardId = s.PrintConfigStandardId
 	 JOIN dbo.PrintConfigStandardModuleType m ON m.PrintConfigStandardId = s.PrintConfigStandardId;
 	 
+	 
+	 INSERT INTO dbo.PrintConfigCustomModuleType
+		(
+			PrintConfigCustomId,
+			ModuleTypeId
+		)
+
+		SELECT
+		c.PrintConfigCustomId,
+		st.ModuleTypeId
+		FROM dbo.PrintConfigCustom c
+		JOIN dbo.PrintConfigStandardModuleType st ON st.PrintConfigStandardId = c.PrintConfigStandardId
+		LEFT JOIN dbo.PrintConfigCustomModuleType ct ON c.PrintConfigCustomId = ct.PrintConfigCustomId
+		WHERE ct.PrintConfigCustomId IS NULL
+
   COMMIT TRAN -- Transaction Success!
 END TRY
 BEGIN CATCH
