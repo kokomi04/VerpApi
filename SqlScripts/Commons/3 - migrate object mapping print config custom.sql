@@ -3,20 +3,30 @@ GO
 BEGIN TRY
   BEGIN TRAN
 
-    INSERT INTO MasterDB.dbo.ObjectPrintConfigMapping
-      SELECT
-        c.PrintConfigCustomId,
-        sm.ObjectTypeId,
-        sm.ObjectId,
-        sm.UpdateByUserId,
-        sm.UpdatedDatetimeUtc
-      FROM MasterDB.dbo.PrintConfigCustom c
-      INNER JOIN MasterDB.dbo.ObjectPrintConfigStandardMapping sm
-        ON c.PrintConfigStandardId = sm.PrintConfigStandardId
-      WHERE c.PrintConfigCustomId NOT IN (SELECT DISTINCT
-        PrintConfigCustomId
-      FROM MasterDB.dbo.ObjectPrintConfigMapping)
-	  AND c.IsDeleted = 0
+    INSERT INTO dbo.ObjectPrintConfigMapping
+	(
+		PrintConfigCustomId,
+		ObjectTypeId,
+		ObjectId,
+		UpdateByUserId,
+		UpdatedDatetimeUtc
+	)
+
+	SELECT
+		DISTINCT
+		c.PrintConfigCustomId,	
+		sm.ObjectTypeId,
+		sm.ObjectId,
+		0,
+		GETUTCDATE()
+	FROM dbo.PrintConfigCustom c
+	JOIN dbo.ObjectPrintConfigStandardMapping sm ON c.PrintConfigStandardId = sm.PrintConfigStandardId
+	LEFT JOIN dbo.ObjectPrintConfigMapping cm ON c.PrintConfigCustomId = cm.PrintConfigCustomId 
+		AND sm.ObjectTypeId = cm.ObjectTypeId 
+		AND sm.ObjectId = cm.ObjectId
+	WHERE cm.PrintConfigCustomId IS NULL
+	AND c.IsDeleted = 0
+
 
   COMMIT TRAN -- Transaction Success!
 END TRY
