@@ -314,8 +314,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 poQuery = poQuery.Where(po => poCodes.Contains(po.PurchaseOrderCode));
 
             }
+
+            var poDetails = _purchaseOrderDBContext.PurchaseOrderDetail.AsQueryable();
+            if (req.IgnoreDetailIds?.Count > 0)
+            {
+                poDetails = poDetails.Where(d => !req.IgnoreDetailIds.Contains(d.PurchaseOrderDetailId));
+            }
+
             var query = from po in poQuery
-                        join pod in _purchaseOrderDBContext.PurchaseOrderDetail on po.PurchaseOrderId equals pod.PurchaseOrderId
+                        join pod in poDetails on po.PurchaseOrderId equals pod.PurchaseOrderId
                         join p in _purchaseOrderDBContext.RefProduct on pod.ProductId equals p.ProductId into ps
                         from p in ps.DefaultIfEmpty()
                         join c in _purchaseOrderDBContext.RefCustomer on po.CustomerId equals c.CustomerId into cs
@@ -485,6 +492,24 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             query = query.InternalFilter(filters);
 
             var total = await query.CountAsync();
+
+            var additionResult = await (from q in query
+                                        group q by 1 into g
+                                        select new
+                                        {
+                                            SumPrimaryQuantity = g.Sum(x => x.PrimaryQuantity),
+
+                                        }).FirstOrDefaultAsync();
+
+            var sumTotalMoney = await (from q in query
+                                       group q by q.PurchaseOrderId into g
+                                       select new
+                                       {
+                                           TotalMoney = g.Sum(x => x.TotalMoney) / g.Count(),
+                                           SumTaxInMoney = g.Sum(x => x.TaxInMoney) / g.Count()
+                                       }).ToListAsync();
+
+
             query = query.SortByFieldName(sortBy, asc)
                 .ThenBy(q => q.PurchaseOrderCode)
                 .ThenBy(q => q.SortOrder);
@@ -494,21 +519,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             var pagedData = await query.ToListAsync();
-            var additionResult = await (from q in query
-                                        group q by 1 into g
-                                        select new
-                                        {
-                                            SumPrimaryQuantity = g.Sum(x => x.PrimaryQuantity),
-                                            SumTaxInMoney = g.Sum(x => x.TaxInMoney)
-                                        }).FirstOrDefaultAsync();
-
-            var sumTotalMoney = (await (from q in query
-                                        group q by q.PurchaseOrderCode into g
-                                        select new
-                                        {
-                                            TotalMoney = g.Sum(x => x.TotalMoney) / g.Count()
-                                        }).ToListAsync()).Sum(x => x.TotalMoney);
-
+            
             var poAssignmentDetailIds = pagedData.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = pagedData.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
@@ -595,7 +606,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     AttachmentBill = item.AttachmentBill,
                 });
             }
-            return (result, total, new { SumTotalMoney = sumTotalMoney, additionResult.SumPrimaryQuantity, additionResult.SumTaxInMoney });
+            return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
         }
 
 

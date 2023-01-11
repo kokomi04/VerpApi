@@ -16,7 +16,8 @@ namespace ObjectDefineAlter
 
         static Dictionary<string, string> databaseConfigKeys = new Dictionary<string, string>()
         {
-            {"AccountancyDB","AccountancyDatabase" },
+            {"AccountancyDB","AccountancyPrivateDatabase" },
+            {"AccountancyPublicDB","AccountancyPublicDatabase" },
             {"ManufacturingDB","ManufacturingDatabase" },
             {"MasterDB","MasterDatabase" },
             {"OrganizationDB","OrganizationDatabase" },

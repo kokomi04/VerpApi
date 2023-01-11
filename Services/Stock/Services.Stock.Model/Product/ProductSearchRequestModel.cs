@@ -19,7 +19,9 @@ namespace VErp.Services.Stock.Model.Product
         public bool? IsMaterials { get; set; }
         public Clause Filters { get; set; }
         public IList<int> StockIds { get; set; }
-        public ProductFilterRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null)
+        public IList<int> QuantityStockIds { get; set; }
+
+        public ProductFilterRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null, IList<int> quantityStockIds = null)
         {
             this.Keyword = keyword;
             this.ProductIds = productIds;
@@ -32,12 +34,14 @@ namespace VErp.Services.Stock.Model.Product
             this.ProductionProcessStatusId = productionProcessStatusId;
             this.Filters = filters;
             this.StockIds = stockIds;
+            this.QuantityStockIds = quantityStockIds;
         }
     }
 
     public class ProductSearchRequestModel : ProductFilterRequestModel
     {
-        public ProductSearchRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null) : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, productionProcessStatusId, filters, stockIds)
+        public ProductSearchRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null, IList<int> quantityStockIds = null)
+            : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, productionProcessStatusId, filters, stockIds, quantityStockIds)
         {
         }
 
@@ -48,7 +52,8 @@ namespace VErp.Services.Stock.Model.Product
 
     public class ProductExportRequestModel : ProductFilterRequestModel
     {
-        public ProductExportRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null) : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, productionProcessStatusId, filters, stockIds)
+        public ProductExportRequestModel(string keyword, IList<int> productIds, string productName, int[] productTypeIds, int[] productCateIds, bool? isProductSemi, bool? isProduct, bool? isMaterials, EnumProductionProcessStatus? productionProcessStatusId, Clause filters = null, IList<int> stockIds = null, IList<int> quantityStockIds = null)
+            : base(keyword, productIds, productName, productTypeIds, productCateIds, isProductSemi, isProduct, isMaterials, productionProcessStatusId, filters, stockIds, quantityStockIds)
         {
         }
 

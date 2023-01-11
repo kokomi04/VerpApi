@@ -60,6 +60,9 @@ namespace VErp.Services.Stock.Model.Product
         [GreaterThan(0, ErrorMessage = "Số lượng phải lớn hơn 0")]
         public decimal Quantity { get; set; }
 
+        [Display(Name = "Tỷ lệ hao hụt", GroupName = "Thông tin chung")]
+        [Min(1, ErrorMessage = "Tỷ lệ hao hụt phải lớn hơn hoặc bằng 1")]
+        public decimal? Wastage { get; set; }
 
         [Display(Name = "Mã bộ phận (Nếu có)", GroupName = "Thông tin bộ phận")]
         public string DepartmentCode { get; set; }
@@ -97,6 +100,7 @@ namespace VErp.Services.Stock.Model.Product
     {
         public string GroupTitle { get; set; }
         public decimal Quantity { get; set; }
+        public decimal Wastage { get; set; }
         public string StepName { get; set; }
         public string DepartmentName { get; set; }
         public decimal TotalQuantityInheritance { get; set; } = 0;

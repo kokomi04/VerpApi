@@ -12,6 +12,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public IList<string> PoCodes { get; set; }
         public IList<int> PurchaseOrderTypes { get; set; }
         public IList<int> ProductIds { get; set; }
+        public IList<long> IgnoreDetailIds { get; set; }
         public EnumPurchaseOrderStatus? PurchaseOrderStatusId { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
         public bool? IsChecked { get; set; }

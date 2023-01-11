@@ -712,6 +712,11 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task<NonCamelCaseDictionary> GetCategoryRowInfo(CategoryEntity category, List<CategoryField> categoryFields, long fId)
         {
+            if (category.IsOutSideData)
+            {
+                categoryFields = categoryFields.Where(f => !f.IsJoinField.HasValue || f.IsJoinField.Value).ToList();
+            }
+
             var tableName = $"v{category.CategoryCode}";
             var dataSql = new StringBuilder();
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView, category.IsOutSideData));

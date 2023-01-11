@@ -345,30 +345,30 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return query.Select(lambda);
         }
 
-        public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
-        {
-            if (filters != null && filters.Count > 0)
-            {
-                foreach (var filter in filters)
-                {
-                    var sParam = Expression.Parameter(typeof(T), "s");
-                    var prop = Expression.Property(sParam, filter.Key);
-                    TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
-                    Type listType = typeof(List<>);
-                    Type constructedListType = listType.MakeGenericType(prop.Type);
-                    var instance = Activator.CreateInstance(constructedListType);
-                    foreach (var value in filter.Value)
-                    {
-                        MethodInfo method = constructedListType.GetMethod("Add");
-                        method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
-                    }
-                    var methodInfo = constructedListType.GetMethod("Contains");
-                    var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
-                    query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
-                }
-            }
-            return query;
-        }
+        //public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Dictionary<string, List<string>> filters = null)
+        //{
+        //    if (filters != null && filters.Count > 0)
+        //    {
+        //        foreach (var filter in filters)
+        //        {
+        //            var sParam = Expression.Parameter(typeof(T), "s");
+        //            var prop = Expression.Property(sParam, filter.Key);
+        //            TypeConverter typeConverter = TypeDescriptor.GetConverter(prop.Type);
+        //            Type listType = typeof(List<>);
+        //            Type constructedListType = listType.MakeGenericType(prop.Type);
+        //            var instance = Activator.CreateInstance(constructedListType);
+        //            foreach (var value in filter.Value)
+        //            {
+        //                MethodInfo method = constructedListType.GetMethod("Add");
+        //                method.Invoke(instance, new object[] { typeConverter.ConvertFromString(value) });
+        //            }
+        //            var methodInfo = constructedListType.GetMethod("Contains");
+        //            var expression = Expression.Call(Expression.Constant(instance), methodInfo, prop);
+        //            query = query.Where(Expression.Lambda<Func<T, bool>>(expression, sParam));
+        //        }
+        //    }
+        //    return query;
+        //}
 
         public static IQueryable<T> InternalFilter<T>(this IQueryable<T> query, Clause filters = null, int? timeZoneOffset = null)
         {
@@ -484,9 +484,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var propExpression = Expression.Call(prop, toStringMethod);
 
 
-                var dbValue = clause.DataType.GetSqlValue(clause.Value);
+                object dbValue = null;
                 if (clause.Operator != EnumOperator.InList)
                 {
+                    dbValue = clause.DataType.GetSqlValue(clause.Value);
+
                     //value = Expression.Constant(dbValue, prop.Type);
                     //if (nullable)
                     //{
@@ -538,11 +540,16 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         var instance = Activator.CreateInstance(constructedListType);
                         foreach (var item in ((string)clause.Value).Split(','))
                         {
-                            MethodInfo addMethod = constructedListType.GetMethod("Add");
-                            addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
+                            //var v = clause.DataType.GetSqlValue(item);
+                            if (!string.IsNullOrWhiteSpace(item))
+                            {
+                                MethodInfo addMethod = constructedListType.GetMethod("Add");
+                                addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });
+                            }
                         }
+
                         method = constructedListType.GetMethod("Contains");
-                        expression = Expression.Call(Expression.Constant(instance, prop.Type), method, prop);
+                        expression = Expression.Call(Expression.Constant(instance, constructedListType), method, prop);
                         break;
                     case EnumOperator.StartsWith:
 

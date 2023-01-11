@@ -2,11 +2,16 @@ USE MasterDB
 GO
 DECLARE @CategoryDataModuleId INT = 702;
 DECLARE @InputTypeModuleId INT = 802;
+DECLARE @InputPublicTypeModuleId INT = 8002;
+
 DECLARE @SalesBillModuleId INT = 902;
 DECLARE @ReportViewModuleId INT = 605
 
 DECLARE @CategoryDataObjectTypeId INT = 32;
 DECLARE @InputTypeObjectTypeId INT = 34;
+
+DECLARE @InputPublicTypeObjectTypeId INT = 34001;
+
 DECLARE @SalesBillObjectTypeId INT = 53;
 
 DECLARE @ReportTypeObjectTypeId INT = 45;
@@ -111,6 +116,45 @@ INSERT INTO dbo.RolePermission
 )
 SELECT  r.RoleId,
 		@InputTypeModuleId,
+		@InputPublicTypeObjectTypeId,
+		m.InputTypeId,
+		2147483647,
+		GETDATE()
+	FROM
+	tmp AS m,
+	dbo.[Role] AS r
+	WHERE 
+	(r.RoleTypeId = 1 OR r.IsEditable = 0)
+	AND NOT EXISTS
+	(
+		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputTypeModuleId AND p.ObjectTypeId = @InputPublicTypeObjectTypeId AND p.ObjectId = m.InputTypeId
+	)
+	
+--INPUT PUBLIC type
+
+;WITH tmp AS (
+	SELECT 
+	t.InputTypeId	
+
+	FROM
+	(
+		SELECT t.InputTypeId
+		FROM AccountancyPublicDB.dbo.InputType t 
+		WHERE t.IsDeleted = 0		
+	) t
+)
+
+INSERT INTO dbo.RolePermission
+(
+    RoleId,
+    ModuleId,
+	ObjectTypeId,
+	ObjectId,
+    Permission,
+    CreatedDatetimeUtc
+)
+SELECT  r.RoleId,
+		@InputPublicTypeModuleId,
 		@InputTypeObjectTypeId,
 		m.InputTypeId,
 		2147483647,
@@ -122,7 +166,7 @@ SELECT  r.RoleId,
 	(r.RoleTypeId = 1 OR r.IsEditable = 0)
 	AND NOT EXISTS
 	(
-		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputTypeModuleId AND p.ObjectTypeId = @InputTypeObjectTypeId AND p.ObjectId = m.InputTypeId
+		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputPublicTypeModuleId AND p.ObjectTypeId = @InputTypeObjectTypeId AND p.ObjectId = m.InputTypeId
 	)
 	
 	
