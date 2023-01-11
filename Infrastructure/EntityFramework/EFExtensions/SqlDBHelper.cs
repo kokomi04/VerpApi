@@ -690,10 +690,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{aliasField} IS NULL");
                         break;
                     case EnumOperator.IsEmpty:
-                        condition.Append($"{aliasField} = ''''");
+                        condition.Append($"{aliasField} = {defaultValueRawSqlQuote}");
                         break;
                     case EnumOperator.IsNullOrEmpty:
-                        condition.Append($"({aliasField} = '''' OR {aliasField} IS NULL");
+                        condition.Append($"({aliasField} = {defaultValueRawSqlQuote} OR {aliasField} IS NULL)");
                         break;
                     default:
                         break;

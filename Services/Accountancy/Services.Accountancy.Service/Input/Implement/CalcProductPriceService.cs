@@ -18,33 +18,27 @@ using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
-    public class CalcProductPriceService : ICalcProductPriceService
+    public class CalcProductPricePrivateService : CalcProductPriceServiceBase, ICalcProductPricePrivateService
+    {
+        public CalcProductPricePrivateService(AccountancyDBPrivateContext accountancyDBContext, ICalcPeriodPrivateService calcPeriodService) : base(accountancyDBContext, calcPeriodService) { }
+
+    }
+
+    public class CalcProductPricePublicService : CalcProductPriceServiceBase, ICalcProductPricePublicService
+    {
+        public CalcProductPricePublicService(AccountancyDBPublicContext accountancyDBContext, ICalcPeriodPublicService calcPeriodService) : base(accountancyDBContext, calcPeriodService)
+        {
+        }
+    }
+
+    public abstract class CalcProductPriceServiceBase : ICalcProductPriceServiceBase
     {
 
-        private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
-        private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly ICurrentContextService _currentContextService;
-        private readonly ICalcPeriodService _calcPeriodService;
-
-        public CalcProductPriceService(AccountancyDBPrivateContext accountancyDBContext
-            , IOptions<AppSetting> appSetting
-            , ILogger<CalcProductPriceService> logger
-            , IActivityLogService activityLogService
-            , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
-            , ICalcPeriodService calcPeriodService
-            )
+        private readonly ICalcPeriodServiceBase _calcPeriodService;
+        public CalcProductPriceServiceBase(AccountancyDBContext accountancyDBContext, ICalcPeriodServiceBase calcPeriodService)
         {
             _accountancyDBContext = accountancyDBContext;
-            _logger = logger;
-            _activityLogService = activityLogService;
-            _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
             _calcPeriodService = calcPeriodService;
         }
 

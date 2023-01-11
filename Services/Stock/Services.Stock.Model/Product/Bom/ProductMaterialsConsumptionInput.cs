@@ -1,4 +1,5 @@
 ﻿using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Product
@@ -17,6 +18,8 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public int MaterialsConsumptionId { get; set; }
         public decimal Quantity { get; set; }
+        [Min(1)]
+        public decimal Wastage { get; set; }
         public int? StepId { get; set; }
         public int? DepartmentId { get; set; }
         public string Description { get; set; }

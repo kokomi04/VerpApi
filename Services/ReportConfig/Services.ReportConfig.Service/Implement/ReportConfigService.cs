@@ -338,6 +338,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
             }
+            if (data.DetailTargetId != EnumReportDetailTarget.Report)
+            {
+                data.ReportTypeId = null;
+            }
 
             ReportType report = _mapper.Map<ReportType>(data);
 
@@ -384,6 +388,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw GeneralCode.InvalidParams.BadRequest("Phải có ít nhất một cột và các cột phải có alias");
             }
 
+            if (data.DetailTargetId != EnumReportDetailTarget.Report)
+            {
+                data.ReportTypeId = null;
+            }
+
             //var existedReport = await _reportConfigContext.ReportType
             //  .Where(r => r.ReportTypeId != reportTypeId)
             //  .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
@@ -402,6 +411,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             try
             {
                 _mapper.Map(data, report);
+                report.ReportTypeId = reportTypeId;
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
@@ -589,7 +599,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     return clonedTarget.ReportTypeId;
                 }
             }
-            return detailReportId;
+            return null;
         }
     }
 }

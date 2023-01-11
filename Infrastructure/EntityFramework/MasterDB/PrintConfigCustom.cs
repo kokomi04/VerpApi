@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.MasterDB
 {
     public partial class PrintConfigCustom
     {
+        public PrintConfigCustom()
+        {
+            PrintConfigCustomModuleType = new HashSet<PrintConfigCustomModuleType>();
+        }
+
         public int PrintConfigCustomId { get; set; }
         public int? PrintConfigStandardId { get; set; }
         public string PrintConfigName { get; set; }
@@ -33,5 +38,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int? ModuleTypeId { get; set; }
+
+        public virtual ICollection<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; }
     }
 }

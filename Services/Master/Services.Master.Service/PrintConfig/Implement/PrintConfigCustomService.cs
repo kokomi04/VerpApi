@@ -29,7 +29,7 @@ using static Verp.Resources.Master.Print.PrintConfigCustomValidationMessage;
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
-    public class PrintConfigCustomService : PrintConfigServiceAbstract<PrintConfigCustom, PrintConfigCustomModel>, IPrintConfigCustomService
+    public class PrintConfigCustomService : PrintConfigServiceAbstract<PrintConfigCustom, PrintConfigCustomModel, PrintConfigCustomModuleType>, IPrintConfigCustomService
     {
         private readonly ObjectActivityLogFacade _printConfigCustomActivityLog;
 
@@ -38,7 +38,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             , ILogger<PrintConfigCustomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IDocOpenXmlService docOpenXmlService) : base(masterDBContext, appSetting, logger, mapper, docOpenXmlService, EnumObjectType.PrintConfigCustom)
+            , IDocOpenXmlService docOpenXmlService) :
+            base(masterDBContext, appSetting, logger, mapper, docOpenXmlService, EnumObjectType.PrintConfigCustom, nameof(PrintConfigCustom.PrintConfigCustomId))
         {
 
             _printConfigCustomActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PrintConfigCustom);
@@ -69,10 +70,6 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                  .CreateLog();
         }
 
-        protected override int GetId(PrintConfigCustom entity)
-        {
-            return entity.PrintConfigCustomId;
-        }
 
         public async Task<bool> RollbackPrintConfigCustom(int printConfigId)
         {
@@ -102,6 +99,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 }
             }
 
+            var moduleTypeIds = await _masterDBContext.PrintConfigStandardModuleType
+                .Where(m => m.PrintConfigStandardId == printConfig.PrintConfigStandardId)
+                .Select(m => m.ModuleTypeId)
+                .ToListAsync();
+
+            await UpdateMappingModuleTypes(moduleTypeIds, printConfigId);
+
             await _masterDBContext.SaveChangesAsync();
 
             await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
@@ -112,6 +116,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             return true;
         }
+
     }
 
 

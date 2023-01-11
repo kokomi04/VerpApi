@@ -268,11 +268,20 @@ namespace Verp.Resources.Stock.Product {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số lượng sử dụng của NVL có mã &quot;{0}&quot; trong nhóm &quot;{1}&quot; phải lơn hơn 0.
+        ///   Looks up a localized string similar to Số lượng sử dụng của NVL có mã &quot;{0}&quot; trong nhóm &quot;{1}&quot; phải lớn hơn 0.
         /// </summary>
         public static string ProductMaterialConsumptionQuantityError {
             get {
                 return ResourceManager.GetString("ProductMaterialConsumptionQuantityError", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tỷ lệ hao hụt của NVL có mã &quot;{0}&quot; trong nhóm &quot;{1}&quot; phải lớn hơn hoặc bằng 1.
+        /// </summary>
+        public static string ProductMaterialConsumptionWastageError {
+            get {
+                return ResourceManager.GetString("ProductMaterialConsumptionWastageError", resourceCulture);
             }
         }
         
