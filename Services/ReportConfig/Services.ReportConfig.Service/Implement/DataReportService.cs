@@ -250,6 +250,78 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
 
             var declareValues = new HashSet<string>();
+
+            if (bscConfig.Variables?.Count > 0)
+            {
+                var variableQuery = new StringBuilder();
+                var tks = new List<string[]>();
+                foreach (var v in bscConfig.Variables)
+                {
+                    if (variableQuery.Length > 0)
+                    {
+                        variableQuery.Append(",");
+                    }
+
+                    string condition = v.OtherConditional?.Trim();
+                    if (!string.IsNullOrWhiteSpace(v.Tk))
+                    {
+                        var lstTk = v.Tk.Split(',').Select(t => t.Trim()).ToArray();
+                        tks.Add(lstTk);
+                        if (string.IsNullOrWhiteSpace(condition))
+                        {
+                            var tkCondition = lstTk.Select(tk => $" Tk LIKE '{tk}%' ").ToArray();
+                            condition = $"({condition}) AND ({string.Join(" OR ", tkCondition)})";
+                        }
+                    }
+
+
+                    if (condition?.Length > 0)
+                    {
+                        variableQuery.AppendLine(@$"SUM(CASE WHEN {condition} THEN {v.Expression} ELSE NULL END) AS {v.Name}");
+                    }
+                    else
+                    {
+                        variableQuery.AppendLine(@$"SUM({v.Expression}) AS {v.Name}");
+                    }
+
+                   
+                }
+
+                var whereClause = reportInfo.Wheres?.Trim();
+                if (tks.Count > 0 || !string.IsNullOrWhiteSpace(whereClause))
+                {
+                    whereClause = "\nWHERE " + whereClause;
+                }
+
+                if (tks.Count > 0)
+                {
+                    sqlParams.Add(tks.SelectMany(t=>t).Distinct().Select(t => t + "%").ToList().ToSqlParameter("@Tks"));
+
+                    var tkConn = "EXISTS (SELECT 0 FROM @Tks __tk WHERE Tk LIKE __tk.NValue)";
+                    if (!string.IsNullOrWhiteSpace(whereClause))
+                    {
+                        whereClause += " AND (" + tkConn + ")";
+                    }
+                    else
+                    {
+                        whereClause = "\nWHERE " + tkConn;
+                    }
+                }
+
+                var data = await _dbContext.QueryDataTable($"SELECT {variableQuery}\n " +
+                    $"FROM {reportInfo.MainView}\n{reportInfo.Joins}\n" +
+                    $"{whereClause}",
+                    sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+
+                var variableData = data.ConvertFirstRowData();
+
+                foreach (var v in bscConfig.Variables)
+                {
+                    var (value, type) = variableData[v.Name];
+                    sqlParams.Add(new SqlParameter($"@{v.Name}", type.ConvertToDbType()) { Value = value.IsNullOrEmptyObject() ? 0 : value });
+                }
+            }
+
             for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
                 var rowValue = new NonCamelCaseDictionary();
@@ -1092,7 +1164,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return fileName;
         }
 
-        
+
     }
 
 

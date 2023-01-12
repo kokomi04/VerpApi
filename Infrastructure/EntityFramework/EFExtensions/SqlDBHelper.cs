@@ -710,6 +710,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
+        /// <summary>
+        /// NValue
+        /// </summary>
+        /// <param name="values"></param>
+        /// <param name="parameterName"></param>
+        /// <returns></returns>
         public static SqlParameter ToSqlParameter(this IList<string> values, string parameterName)
         {
             return values.ToSqlParameter(parameterName, "_NVALUES", "NValue");
