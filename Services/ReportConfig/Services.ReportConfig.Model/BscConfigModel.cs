@@ -41,6 +41,7 @@ namespace Verp.Services.ReportConfig.Model
     public class BscVariableDefined
     {
         public int SortOrder { get; set; }
+        public string Description { get; set; }
         public string Name { get; set; }
         public string Tk { get; set; }
         public string Expression { get; set; }
