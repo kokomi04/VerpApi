@@ -257,6 +257,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var tks = new List<string[]>();
                 foreach (var v in bscConfig.Variables)
                 {
+                    if (string.IsNullOrWhiteSpace(v.Name)) continue;
+
                     if (variableQuery.Length > 0)
                     {
                         variableQuery.Append(",");
@@ -267,10 +269,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var lstTk = v.Tk.Split(',').Select(t => t.Trim()).ToArray();
                         tks.Add(lstTk);
-                        if (string.IsNullOrWhiteSpace(condition))
+
+                        var tkCondition = lstTk.Select(tk => $" Tk LIKE '{tk}%' ").ToArray();
+                        if (!string.IsNullOrWhiteSpace(condition))
                         {
-                            var tkCondition = lstTk.Select(tk => $" Tk LIKE '{tk}%' ").ToArray();
                             condition = $"({condition}) AND ({string.Join(" OR ", tkCondition)})";
+                        }
+                        else
+                        {
+                            condition = $"({string.Join(" OR ", tkCondition)})";
                         }
                     }
 
@@ -284,7 +291,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         variableQuery.AppendLine(@$"SUM({v.Expression}) AS {v.Name}");
                     }
 
-                   
+
                 }
 
                 var whereClause = reportInfo.Wheres?.Trim();
@@ -295,7 +302,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (tks.Count > 0)
                 {
-                    sqlParams.Add(tks.SelectMany(t=>t).Distinct().Select(t => t + "%").ToList().ToSqlParameter("@Tks"));
+                    sqlParams.Add(tks.SelectMany(t => t).Distinct().Select(t => t + "%").ToList().ToSqlParameter("@Tks"));
 
                     var tkConn = "EXISTS (SELECT 0 FROM @Tks __tk WHERE Tk LIKE __tk.NValue)";
                     if (!string.IsNullOrWhiteSpace(whereClause))
@@ -317,6 +324,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 foreach (var v in bscConfig.Variables)
                 {
+                    if (string.IsNullOrWhiteSpace(v.Name)) continue;
+
                     var (value, type) = variableData[v.Name];
                     sqlParams.Add(new SqlParameter($"@{v.Name}", type.ConvertToDbType()) { Value = value.IsNullOrEmptyObject() ? 0 : value });
                 }
