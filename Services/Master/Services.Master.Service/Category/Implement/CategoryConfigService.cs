@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -804,7 +805,7 @@ namespace VErp.Services.Master.Service.Category
         {
             var query = from f in _masterContext.CategoryField
                         join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                        where categoryCodes.Contains(c.CategoryCode)
+                        where categoryCodes.Contains(c.CategoryCode) && (f.IsJoinField == true || !c.IsOutSideData)
                         select new ReferFieldModel
                         {
                             IsHidden = f.IsHidden,
