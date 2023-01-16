@@ -2179,6 +2179,17 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var fields = await GetVoucherFields(voucherTypeId);
 
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+
+            var firstRow = data.Rows.FirstOrDefault();
+            if (firstRow != null)
+            {
+                var notContainColumn = mapping.MappingFields.FirstOrDefault(m => !firstRow.ContainsKey(m.Column));
+                if (notContainColumn != null)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Không tồn tại cột {notContainColumn.Column} trong Sheet {mapping.SheetName}");
+                }
+            }
+
             using (var longTask = await longTaskResourceLockService.Accquire($"Nhập chứng từ bán hàng \"{voucherType.Title}\" từ excel"))
             {
                 longTask.SetTotalRows(data.Rows.Count());
@@ -2323,6 +2334,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var reader = new ExcelReader(stream);
             var data = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
 
+            var firstRow = data.Rows.FirstOrDefault();
+            if (firstRow != null)
+            {
+                var notContainColumn = mapping.MappingFields.FirstOrDefault(m => !firstRow.ContainsKey(m.Column));
+                if (notContainColumn != null)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Không tồn tại cột {notContainColumn.Column} trong Sheet {mapping.SheetName}");
+                }
+            }
 
             // Lấy thông tin field
             var fields = await GetVoucherFields(voucherTypeId);
