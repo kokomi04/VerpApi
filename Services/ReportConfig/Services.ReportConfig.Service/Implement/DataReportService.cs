@@ -452,6 +452,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task BscCaclVariables(DbContext dbContext, ReportType reportInfo, IList<BscVariableDefined> variables, IList<SqlParameter> sqlParams, BscVariableViewDefined view, string prefixSqlStatement)
         {
+            if (variables.All(v => string.IsNullOrWhiteSpace(v.Name))) return;
+
             var variableQuery = new StringBuilder();
             var tks = new List<string[]>();
             var localParams = new List<SqlParameter>();
