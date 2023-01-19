@@ -28,14 +28,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class InputPrivateConfigService : InputConfigServiceBase, IInputPrivateConfigService
     {
-        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPrivateActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
+        public InputPrivateConfigService(AccountancyDBPrivateContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPrivateActionConfigService inputActionConfigService)
+            : base(accountancyDBContext, inputConfigDependService, inputActionConfigService, null)
         {
         }
     }
 
     public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
     {
-        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService) : base(accountancyDBContext, inputConfigDependService, inputActionConfigService)
+        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService)
+            : base(accountancyDBContext, inputConfigDependService, inputActionConfigService, AccountantConstants.IsPublicDataExtraColumns)
         {
 
         }
@@ -84,10 +86,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
         private readonly IActionButtonConfigHelper _actionButtonConfigHelper;
+        private readonly IList<string> _excludeFields;
 
         public InputConfigServiceBase(AccountancyDBContext accountancyDBContext
             , IInputConfigDependService inputConfigDependService
             , IActionButtonConfigHelper actionButtonConfigHelper
+            , IList<string> excludeFields
             )
         {
             _accountancyDBContext = accountancyDBContext;
@@ -98,6 +102,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _httpCategoryHelperService = inputConfigDependService.HttpCategoryHelperService;
             _roleHelperService = inputConfigDependService.RoleHelperService;
             _actionButtonConfigHelper = actionButtonConfigHelper;
+            _excludeFields = excludeFields;
         }
 
         #region InputType
@@ -111,9 +116,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
            .Include(t => t.InputArea)
            .ThenInclude(a => a.InputAreaField)
            .ThenInclude(af => af.InputField)
-           .Include(t => t.InputArea)
-           .ThenInclude(a => a.InputAreaField)
-           .ThenInclude(af => af.InputField)
+           //.Include(t => t.InputArea)
+           //.ThenInclude(a => a.InputAreaField)
+           //.ThenInclude(af => af.InputField)
            .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
            .FirstOrDefaultAsync();
             if (inputType == null)
@@ -123,6 +128,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             inputType.InputAreas = inputType.InputAreas.OrderBy(f => f.SortOrder).ToList();
             foreach (var item in inputType.InputAreas)
             {
+                if (_excludeFields?.Count > 0)
+                {
+                    item.InputAreaFields = item.InputAreaFields.Where(af => !_excludeFields.Contains(af.InputField.FieldName)).ToList();
+                }
                 item.InputAreaFields = item.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
             }
 
@@ -139,13 +148,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
            .Include(t => t.InputArea)
            .ThenInclude(a => a.InputAreaField)
            .ThenInclude(af => af.InputField)
-           .Include(t => t.InputArea)
-           .ThenInclude(a => a.InputAreaField)
-           .ThenInclude(af => af.InputField)
+           //.Include(t => t.InputArea)
+           //.ThenInclude(a => a.InputAreaField)
+           //.ThenInclude(af => af.InputField)
            .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
            .ToListAsync();
             foreach (var item in lst)
             {
+                foreach (var a in item.InputAreas)
+                {
+                    if (_excludeFields?.Count > 0)
+                    {
+                        a.InputAreaFields = a.InputAreaFields.Where(af => !_excludeFields.Contains(af.InputField.FieldName)).ToList();
+                    }
+                    a.InputAreaFields = a.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
+                }
+
                 item.GlobalSetting = globalSetting;
             }
             return lst;
@@ -153,25 +171,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<InputTypeFullModel> GetInputType(string inputTypeCode)
         {
-            var globalSetting = await GetInputGlobalSetting();
-
-            var inputType = await _accountancyDBContext.InputType
-           .Where(i => i.InputTypeCode == inputTypeCode)
-           .Include(t => t.InputArea)
-           .ThenInclude(a => a.InputAreaField)
-           .ThenInclude(af => af.InputField)
-           .Include(t => t.InputArea)
-           .ThenInclude(a => a.InputAreaField)
-           .ThenInclude(af => af.InputField)
-           .ProjectTo<InputTypeFullModel>(_mapper.ConfigurationProvider)
-           .FirstOrDefaultAsync();
-            if (inputType == null)
+            var info = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeCode == inputTypeCode);
+            if (info == null)
             {
                 throw new BadRequestException(InputErrorCode.InputTypeNotFound);
             }
 
-            inputType.GlobalSetting = globalSetting;
-            return inputType;
+            return await GetInputType(info.InputTypeId);
         }
 
         public async Task<PageData<InputTypeModel>> GetInputTypes(string keyword, int page, int size)
