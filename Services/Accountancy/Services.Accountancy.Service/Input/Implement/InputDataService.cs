@@ -593,6 +593,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     InputTypeId = inputTypeId,
                     LatestBillVersion = 1,
                     SubsidiaryId = _currentContextService.SubsidiaryId,
+                    BillCode = Guid.NewGuid().ToString(),
                     IsDeleted = false
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
@@ -2582,11 +2583,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     }
                                 }
 
+                                bill.Info.TryGetValue(AccountantConstants.BILL_CODE, out var billCode);
+                                if (string.IsNullOrWhiteSpace(billCode))
+                                {
+                                    bill.GetExcelRowNumbers().TryGetValue(bill.Rows[0], out var rNumber);
+                                    throw new BadRequestException($@"Mã chứng từ dòng {rNumber} không được để trống!");
+                                }
+
                                 var billInfo = new InputBill()
                                 {
                                     InputTypeId = inputTypeId,
                                     LatestBillVersion = 1,
                                     SubsidiaryId = _currentContextService.SubsidiaryId,
+                                    BillCode = billCode?.ToUpper(),
                                     IsDeleted = false
                                 };
 
