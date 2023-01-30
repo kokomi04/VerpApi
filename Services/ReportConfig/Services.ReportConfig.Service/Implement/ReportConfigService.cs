@@ -326,7 +326,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<int> AddReportType(ReportTypeModel data)
         {
-            using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(0));
+            //using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockReportKey(0));
             //var existedReport = await _reportConfigContext.ReportType
             //    .FirstOrDefaultAsync(r => r.ReportTypeName == data.ReportTypeName);
             //if (existedReport != null)
@@ -366,7 +366,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 throw new BadRequestException(GeneralCode.InternalError);
             }
 
-            data.ReportTypeId = null;
+            data.ReportTypeId = report.ReportTypeId;
             await CloneAccountancyReportToPublic(data);
 
             return report.ReportTypeId;

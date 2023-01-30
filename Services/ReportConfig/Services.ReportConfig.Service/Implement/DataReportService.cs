@@ -196,7 +196,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 if (bscConfig != null)
                 {
-                    var (data, totals) = await GetRowsByBsc(reportInfo, orderByFieldName, filterCondition.ToString(), asc, sqlParams.Select(p => p.CloneSqlParam()).ToList());
+                    var (data, totals) = await GetRowsByBsc(reportInfo, model.ColumnsFilters, orderByFieldName, asc, sqlParams.Select(p => p.CloneSqlParam()).ToList());
                     result.Totals = totals;
                     result.Rows = data;
                 }
@@ -227,14 +227,62 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return result;
         }
 
+        private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByBsc(ReportType reportInfo, Clause columnsFilters, string orderByFieldName, bool asc, IList<SqlParameter> sqlParams)
+        {
+            var bscRows = await GetRowsByBscPeriod(reportInfo, sqlParams.Select(p => p.CloneSqlParam()).ToList(), "");
+            //orderByFieldName, filterCondition, asc,
+            var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
+
+            var bscRows2 = await GetRowsByBscPeriod(reportInfo, sqlParams.Select(p => p.CloneSqlParam()).ToList(), bscConfig.PeriodCalcPrefixSqlStatement);
+
+            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+
+            bscRows = (await CastBscAlias(reportInfo, columns, bscRows, bscRows2, sqlParams)).AsQueryable()
+                //.InternalFilter(columnsFilters)
+                //.InternalOrderBy(orderByFieldName, asc)
+                .ToList();
 
 
-        private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByBsc(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, IList<SqlParameter> sqlParams)
+            //Totals
+            var totals = new NonCamelCaseDictionary<decimal>();
+
+            var calSumColumns = columns.Where(c => c.IsCalcSum);
+            foreach (var column in calSumColumns)
+            {
+                totals.Add(column.Alias, 0M);
+            }
+
+            for (var i = 0; i < bscRows.Count; i++)
+            {
+                var row = bscRows[i];
+
+                if (row != null)
+                {
+                    foreach (var column in calSumColumns)
+                    {
+                        var colData = row[column.Alias];
+                        if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
+                        {
+                            totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
+                        }
+                    }
+                }
+
+            }
+
+            return (new PageDataTable()
+            {
+                List = bscRows,
+                Total = bscRows.Count
+            }, totals);
+        }
+
+        private async Task<IList<NonCamelCaseDictionary>> GetRowsByBscPeriod(ReportType reportInfo, IList<SqlParameter> sqlParams, string prefixSqlStatement)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
             var bscConfig = reportInfo.BscConfig.JsonDeserialize<BscConfigModel>();
-            if (bscConfig == null) return (null, null);
+            if (bscConfig == null) return new List<NonCamelCaseDictionary>();
 
             bscConfig.Rows = bscConfig.Rows.OrderBy(r => r.SortOrder).ToList();
 
@@ -248,8 +296,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var queryResult = new NonCamelCaseDictionary();
 
-
             var declareValues = new HashSet<string>();
+
+            if (bscConfig.Variables?.Count > 0)
+            {
+                var views = bscConfig.VariableViews;
+                var groups = bscConfig.Variables.GroupBy(v => v.VariableViewName).ToList();
+                foreach (var g in groups)
+                {
+                    var view = views?.FirstOrDefault(v => v.Name == g.Key);
+                    await BscCaclVariables(_dbContext, reportInfo, g.ToList(), sqlParams, view, prefixSqlStatement);
+                }
+            }
+
             for (var i = 0; i < bscConfig.Rows.Count; i++)
             {
                 var rowValue = new NonCamelCaseDictionary();
@@ -284,7 +343,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             configStr = configStr.TrimStart('\\');
                         }
                     }
-
 
                     int sortValue = 0;
                     if (configStr.StartsWith("|"))
@@ -360,7 +418,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (sql.Length > 0)
             {
                 var delcareSql = string.Join("\n", declareValues.Select(k => $"DECLARE @{k} DECIMAL(32,12);").ToArray());
-                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{prefixSqlStatement}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -380,49 +438,121 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 foreach (var item in cacls)
                 {
-                    var data = await _dbContext.QueryDataTable($"SELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                    var data = await _dbContext.QueryDataTable($"\n{prefixSqlStatement}\nSELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                     selectValue = data.ConvertFirstRowData();
                     BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
                 }
             }
 
-            var columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+            return bscRows;
 
-            bscRows = await CastBscAlias(reportInfo, filterCondition, columns, bscRows, sqlParams, orderByFieldName, asc);
 
-            //Totals
-            var totals = new NonCamelCaseDictionary<decimal>();
+        }
 
-            var calSumColumns = columns.Where(c => c.IsCalcSum);
-            foreach (var column in calSumColumns)
+
+        private async Task BscCaclVariables(DbContext dbContext, ReportType reportInfo, IList<BscVariableDefined> variables, IList<SqlParameter> sqlParams, BscVariableViewDefined view, string prefixSqlStatement)
+        {
+            if (variables.All(v => string.IsNullOrWhiteSpace(v.Name))) return;
+
+            var variableQuery = new StringBuilder();
+            var tks = new List<string[]>();
+            var localParams = new List<SqlParameter>();
+            foreach (var v in variables)
             {
-                totals.Add(column.Alias, 0M);
-            }
+                if (string.IsNullOrWhiteSpace(v.Name)) continue;
 
-            for (var i = 0; i < bscRows.Count; i++)
-            {
-                var row = bscRows[i];
-
-                if (row != null)
+                if (variableQuery.Length > 0)
                 {
-                    foreach (var column in calSumColumns)
+                    variableQuery.Append(",");
+                }
+
+                string condition = v.OtherConditional?.Trim();
+                if (!string.IsNullOrWhiteSpace(v.Tk))
+                {
+                    var lstTk = v.Tk.Split(',').Select(t => t.Trim()).ToArray();
+                    tks.Add(lstTk);
+
+                    var tkCondition = lstTk.Select(tk => $" Tk LIKE '{tk}%' ").ToArray();
+                    if (!string.IsNullOrWhiteSpace(condition))
                     {
-                        var colData = row[column.Alias];
-                        if (!colData.IsNullOrEmptyObject() && IsCalcSum(row, column.CalcSumConditionCol))
-                        {
-                            totals[column.Alias] = (decimal)totals[column.Alias] + Convert.ToDecimal(colData);
-                        }
+                        condition = $"({condition}) AND ({string.Join(" OR ", tkCondition)})";
+                    }
+                    else
+                    {
+                        condition = $"({string.Join(" OR ", tkCondition)})";
                     }
                 }
 
+
+                if (condition?.Length > 0)
+                {
+                    variableQuery.AppendLine(@$"SUM(CASE WHEN {condition} THEN {v.Expression} ELSE NULL END) AS {v.Name}");
+                }
+                else
+                {
+                    variableQuery.AppendLine(@$"SUM({v.Expression}) AS {v.Name}");
+                }
+
+
             }
 
-            return (new PageDataTable()
-            {
-                List = bscRows,
-                Total = bscRows.Count
-            }, totals);
 
+            string tkConn = "";
+
+            if (tks.Count > 0)
+            {
+                localParams.Add(tks.SelectMany(t => t).Distinct().Select(t => t + "%").ToList().ToSqlParameter("@Tks"));
+
+                tkConn = "EXISTS (SELECT 0 FROM @Tks __tk WHERE Tk LIKE __tk.NValue)";
+            }
+
+
+            string sql = "";
+            if (view == null)
+            {
+                var whereClause = "";
+                if (!string.IsNullOrWhiteSpace(tkConn) || !string.IsNullOrWhiteSpace(reportInfo.Wheres))
+                {
+                    whereClause = "\nWHERE ";
+
+                    if (!string.IsNullOrWhiteSpace(whereClause))
+                    {
+                        whereClause += $" ({reportInfo.Wheres}) AND ({tkConn})";
+                    }
+                    else
+                    {
+                        whereClause += tkConn;
+                    }
+                }
+
+                sql = $"{prefixSqlStatement}\nSELECT {variableQuery}\n " +
+                    $"FROM {reportInfo.MainView}\n{reportInfo.Joins}\n" +
+                    $"{whereClause}";
+            }
+            else
+            {
+                var whereClause = "";
+                if (!string.IsNullOrWhiteSpace(tkConn))
+                {
+                    whereClause = $"\nWHERE {tkConn}";
+                }
+
+                sql = $"{prefixSqlStatement}\nSELECT {variableQuery}\n " +
+                    $"FROM \n(\n\t{view.RawSql}\n\t) AS {view.Name}\n" +
+                    $"{whereClause}";
+            }
+
+            var data = await dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).Union(localParams).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+
+            var variableData = data.ConvertFirstRowData();
+
+            foreach (var v in variables)
+            {
+                if (string.IsNullOrWhiteSpace(v.Name)) continue;
+
+                var (value, type) = variableData[v.Name];
+                sqlParams.Add(new SqlParameter($"@{v.Name}", type.ConvertToDbType()) { Value = value.IsNullOrEmptyObject() ? 0 : value });
+            }
         }
 
         private string ReplaceOldBscValuePrefix(string selectData)
@@ -511,7 +641,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private string ReplaceCustom(string sql, string token, string value, string defaultValue = "")
         {
             token = token.Replace("$", "\\$");
-
 
             MatchEvaluator replace = (Match match) =>
             {
@@ -823,7 +952,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var totals = new NonCamelCaseDictionary<decimal>();
             if (string.IsNullOrWhiteSpace(reportInfo.MainView))
             {
-                reportInfo.MainView = "_tk";
+                reportInfo.MainView = "_rc_detail";
             }
 
             var viewSql = new StringBuilder();
@@ -931,7 +1060,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, string filterCondition, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<SqlParameter> sqlParams, string orderByFieldName, bool asc)
+        private async Task<IList<NonCamelCaseDictionary>> CastBscAlias(ReportType reportInfo, ReportColumnModel[] columns, IList<NonCamelCaseDictionary> orignalData, IList<NonCamelCaseDictionary> orignalData2, IList<SqlParameter> sqlParams)
         {
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
@@ -939,34 +1068,45 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             const string staticRowParamPrefix = "@_bsc_row_data";
 
-            foreach (var row in orignalData)
+            for (var i = 0; i < orignalData.Count; i++)
             {
+                var rowParams = sqlParams.Select(p => p.CloneSqlParam()).ToList();
+                var row = orignalData[i];
+
+                rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value ?? DBNull.Value)));
+
                 var rowSql = SelectAsAlias(row.ToDictionary(k => k.Key, k => $"{staticRowParamPrefix}{k.Key}"));
 
-                var rowParams = sqlParams.Select(p => p.CloneSqlParam()).ToList();
-                rowParams.AddRange(row.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}", c.Value ?? DBNull.Value)));
+                if (orignalData2 != null && orignalData2.Count > 0 && orignalData2.Count > i)
+                {
+                    var row2 = orignalData2[i];
+                    rowParams.AddRange(row2.Select(c => new SqlParameter($"{staticRowParamPrefix}{c.Key}2", c.Value ?? DBNull.Value)));
+
+                    rowSql += "," + SelectAsAlias(row2.ToDictionary(k => k.Key + "2", k => $"{staticRowParamPrefix}{k.Key}2"));
+                }
+
 
                 var selectAliasSql = SelectAsAlias(columns.ToDictionary(c => c.Alias, c => string.IsNullOrWhiteSpace(c.Where) ? c.Value : $"CASE WHEN {c.Value} {c.Where} THEN {c.Value} ELSE NULL END"));
 
                 selectAliasSql = $"SELECT * FROM (SELECT {selectAliasSql} FROM (SELECT {rowSql}) AS v1) AS v";
-                if (!string.IsNullOrEmpty(filterCondition)) selectAliasSql += $" WHERE {filterCondition}";
-                string orderBy = reportInfo?.OrderBy;
+                //if (!string.IsNullOrEmpty(filterCondition)) selectAliasSql += $" WHERE {filterCondition}";
+                //string orderBy = reportInfo?.OrderBy;
 
-                if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
-                {
-                    orderBy = reportInfo.OrderBy;
-                }
+                //if (string.IsNullOrWhiteSpace(orderBy) && !string.IsNullOrWhiteSpace(reportInfo.OrderBy))
+                //{
+                //    orderBy = reportInfo.OrderBy;
+                //}
 
-                if (!string.IsNullOrWhiteSpace(orderByFieldName))
-                {
-                    if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
-                    orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
-                }
+                //if (!string.IsNullOrWhiteSpace(orderByFieldName))
+                //{
+                //    if (!string.IsNullOrWhiteSpace(orderBy)) orderBy += ",";
+                //    orderBy = $"{orderByFieldName}" + (asc ? "" : " DESC");
+                //}
 
-                if (!string.IsNullOrWhiteSpace(orderBy))
-                {
-                    selectAliasSql += " ORDER BY " + orderBy;
-                }
+                //if (!string.IsNullOrWhiteSpace(orderBy))
+                //{
+                //    selectAliasSql += " ORDER BY " + orderBy;
+                //}
 
                 //var whereColumn = new List<string>();
                 //foreach (var column in columns.Where(c => !string.IsNullOrWhiteSpace(c.Where)))
@@ -1092,7 +1232,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return fileName;
         }
 
-        
+
     }
 
 

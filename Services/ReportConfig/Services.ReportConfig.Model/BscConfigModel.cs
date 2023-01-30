@@ -8,6 +8,10 @@ namespace Verp.Services.ReportConfig.Model
     {
         public IList<BscColumnModel> BscColumns { get; set; }
         public IList<BscRowsModel> Rows { get; set; }
+        public IList<BscVariableViewDefined> VariableViews { get; set; }
+        public IList<BscVariableDefined> Variables { get; set; }
+        public bool IsPeriodCalc { get; set; }
+        public string PeriodCalcPrefixSqlStatement { get; set; }
     }
 
     public class BscColumnModel
@@ -15,6 +19,7 @@ namespace Verp.Services.ReportConfig.Model
         public bool IsRowKey { get; set; }
         public string Name { get; set; }
     }
+
     public class BscRowsModel
     {
         public int SortOrder { get; set; }
@@ -35,6 +40,26 @@ namespace Verp.Services.ReportConfig.Model
             return IsSqlSelect(valueConfig) && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
         }
     }
+
+    public class BscVariableViewDefined
+    {
+        public int SortOrder { get; set; }
+        public string Name { get; set; }
+        public string Description { get; set; }
+        public string RawSql { get; set; }
+    }
+
+    public class BscVariableDefined
+    {
+        public int SortOrder { get; set; }
+        public string Description { get; set; }
+        public string Name { get; set; }
+        public string Tk { get; set; }
+        public string Expression { get; set; }
+        public string OtherConditional { get; set; }
+        public string VariableViewName { get; set; }
+    }
+
 
     public class BscCellModel
     {
