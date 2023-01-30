@@ -517,11 +517,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     }
                 }
 
+
                 var billInfo = new VoucherBill()
                 {
                     VoucherTypeId = voucherTypeId,
                     LatestBillVersion = 1,
                     SubsidiaryId = _currentContextService.SubsidiaryId,
+                    BillCode = Guid.NewGuid().ToString(),
                     IsDeleted = false
                 };
                 await _purchaseOrderDBContext.VoucherBill.AddAsync(billInfo);
@@ -1309,7 +1311,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 AND r.F_Id  IN (SELECT [Value] FROM @DetailIds) 
                             GROUP BY r.VoucherBill_F_Id 
                     )
-                    SELECT r.{AccountantConstants.BILL_CODE} 
+                    SELECT r.{PurchaseOrderConstants.BILL_CODE} 
                         FROM db 
                             LEFT JOIN req ON db.VoucherBill_F_Id = req.VoucherBill_F_Id
                             LEFT JOIN {VOUCHERVALUEROW_TABLE} r ON db.VoucherBill_F_Id = r.VoucherBill_F_Id
@@ -1318,7 +1320,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var invalids = await _purchaseOrderDBContext.QueryDataTable(checkUpdateMultipleFielsSql, new[] { billIds.ToSqlParameter("@BillIds"), detailIds.ToSqlParameter("@DetailIds") });
                 if (invalids.Rows.Count > 0)
                 {
-                    var billCode = invalids.Rows[0][AccountantConstants.BILL_CODE];
+                    var billCode = invalids.Rows[0][PurchaseOrderConstants.BILL_CODE];
                     throw new BadRequestException($@"Trường dữ liệu ở vùng chung. Bạn cần lựa chọn tất cả các dòng chi tiết của chứng từ có mã {billCode}");
                 }
             }
@@ -1663,9 +1665,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
-                        var code = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_CODE))?[AccountantConstants.BILL_CODE]?.ToString();
+                        var code = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_CODE))?[PurchaseOrderConstants.BILL_CODE]?.ToString();
 
-                        var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(AccountantConstants.BILL_DATE))?[AccountantConstants.BILL_DATE]?.ToString();
+                        var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_DATE))?[PurchaseOrderConstants.BILL_DATE]?.ToString();
 
                         long? ngayCtValue = null;
                         if (long.TryParse(ngayCt, out var v))
@@ -1755,11 +1757,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
 
-            if (data.Info.TryGetValue(AccountantConstants.BILL_CODE, out var sct))
+            if (data.Info.TryGetValue(PurchaseOrderConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
                 sct = sct?.ToUpper();
-                data.Info[AccountantConstants.BILL_CODE] = sct;
+                data.Info[PurchaseOrderConstants.BILL_CODE] = sct;
                 billInfo.BillCode = sct;
             }
 
@@ -2205,7 +2207,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
 
 
-                var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
+                var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == PurchaseOrderConstants.BILL_CODE);
                 if (columnKey == null)
                 {
                     throw BillCodeError.BadRequest();
@@ -2288,11 +2290,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             // Before saving action (SQL)
                             await ProcessActionAsync(voucherTypeId, voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
 
+                            bill.Info.TryGetValue(PurchaseOrderConstants.BILL_CODE, out var billCode);
+                            if (string.IsNullOrWhiteSpace(billCode))
+                            {
+                                bill.GetExcelRowNumbers().TryGetValue(bill.Rows[0], out var rNumber);
+                                throw new BadRequestException($@"Mã chứng từ dòng {rNumber} không được để trống!");
+                            }
+
                             var billInfo = new VoucherBill()
                             {
                                 VoucherTypeId = voucherTypeId,
                                 LatestBillVersion = 1,
                                 SubsidiaryId = _currentContextService.SubsidiaryId,
+                                BillCode = billCode?.ToUpper(),
                                 IsDeleted = false
                             };
 
