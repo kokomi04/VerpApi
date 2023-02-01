@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace VErp.Commons.Constants
 {
@@ -23,6 +24,12 @@ namespace VErp.Commons.Constants
 
         public const string INPUTVALUEROW_TABLE = "InputValueRow";
         public const string INPUTVALUEROW_VIEW = "vInputValueRow";
+        public const string INPUTVALUEROWPRIVATE_VIEW = "vInputValueRowPrivate";
+        public static IList<string> IsPublicDataExtraColumns = new[]
+        {
+            "IsPublicCreated",
+            "IsPublicCreatedTitle"
+        };
 
 
         public const string REPORT_HEAD_PARAM_PREFIX = "HEAD_";
