@@ -2,7 +2,6 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -25,7 +24,6 @@ using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -50,7 +48,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         };
 
         public InputDataPrivateService(AccountancyDBPrivateContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPrivateConfigService inputConfigService)
-           : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
+           : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes, InputValueRowViewName.Private)
         {
 
         }
@@ -67,7 +65,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         };
 
         public InputDataPublicService(AccountancyDBPublicContext accountancyDBContext, IInputDataDependService inputDataDependService, IInputPublicConfigService inputConfigService)
-            : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes)
+            : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes, InputValueRowViewName.Public)
         {
 
         }
@@ -128,7 +126,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
     public abstract class InputDataServiceBase : IInputDataServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
-        private const string INPUTVALUEROW_VIEW = AccountantConstants.INPUTVALUEROW_VIEW;
+        private readonly InputValueRowViewName _inputValueRowView;
 
         private readonly ILogger _logger;
         //private readonly IActivityLogService _activityLogService;
@@ -148,11 +146,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly EnumObjectType _inputRowObjectType;
         private readonly EnumObjectType _inputRowAreaObjectType;
 
+      
+        private readonly List<string> _specialViewOnlyColumns = new List<string>();
+
+        private readonly IQueryable<InputField> _inputFieldsSet;
+        
         protected internal InputDataServiceBase(AccountancyDBContext accountancyDBContext,
-            IInputDataDependService inputDataDependService,
-            IInputConfigServiceBase inputConfigService,
-            InputDataObjectType objectTypes
-        )
+                IInputDataDependService inputDataDependService,
+                IInputConfigServiceBase inputConfigService,
+                InputDataObjectType objectTypes,
+                InputValueRowViewName valueRowView
+            )
         {
             _inputTypeObjectType = objectTypes.InputType;
             _inputBillObjectType = objectTypes.InputBill;
@@ -171,6 +175,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _inputDataActivityLog = inputDataDependService.ActivityLogService.CreateObjectTypeActivityLog(_inputBillObjectType);
             _cachingService = inputDataDependService.CachingService;
             longTaskResourceLockService = inputDataDependService.LongTaskResourceLockService;
+            _inputValueRowView = valueRowView;
+
+
+            _inputFieldsSet = _accountancyDBContext.InputField.AsQueryable();
+            if (_inputValueRowView == InputValueRowViewName.Public)
+            {
+                _inputFieldsSet = _inputFieldsSet.Where(f => !AccountantConstants.IsPublicDataExtraColumns.Contains(f.FieldName));
+            }
+            else
+            {
+                _specialViewOnlyColumns.AddRange(AccountantConstants.IsPublicDataExtraColumns);
+            }
 
         }
 
@@ -182,6 +198,27 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public EnumObjectType InputRowArea { get; set; }
         }
 
+        protected internal sealed class InputValueRowViewName
+        {
+            private string _value;
+            private InputValueRowViewName(string value)
+            {
+                _value = value;
+            }
+            public override string ToString()
+            {
+                return _value.ToString();
+            }
+
+            public static implicit operator string(InputValueRowViewName view)
+            {
+                return view.ToString();
+            }
+
+            public static InputValueRowViewName Private = new InputValueRowViewName(AccountantConstants.INPUTVALUEROWPRIVATE_VIEW);
+            public static InputValueRowViewName Public = new InputValueRowViewName(AccountantConstants.INPUTVALUEROW_VIEW);
+        }
+
 
         public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
         {
@@ -191,11 +228,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var inputTypeViewId = viewInfo?.InputTypeViewId;
 
+
             var fields = (await (
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
+                where af.InputTypeId == inputTypeId && (f.FormTypeId != (int)EnumFormType.ViewOnly || _specialViewOnlyColumns.Contains(f.FieldName))
                 select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
@@ -249,7 +287,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 whereCondition.Append(" AND ");
                             }
 
-                            filterClause.FilterClauseProcess(INPUTVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            filterClause.FilterClauseProcess(_inputValueRowView, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
                         }
                     }
                 }
@@ -262,7 +300,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     whereCondition.Append(" AND ");
                 }
 
-                columnsFilters.FilterClauseProcess(INPUTVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
+                columnsFilters.FilterClauseProcess(_inputValueRowView, "r", ref whereCondition, ref sqlParams, ref suffix);
             }
 
 
@@ -281,14 +319,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             string totalSql;
             if (isMultirow)
             {
-                totalSql = @$"SELECT COUNT(0) as Total {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}";
+                totalSql = @$"SELECT COUNT(0) as Total {sumSql} FROM {_inputValueRowView} r WHERE {whereCondition}";
             }
             else
             {
 
                 totalSql = @$"
                     SELECT COUNT(0) Total {sumSql} FROM (
-                        SELECT r.InputBill_F_Id {sumSql} FROM {INPUTVALUEROW_VIEW} r WHERE {whereCondition}
+                        SELECT r.InputBill_F_Id {sumSql} FROM {_inputValueRowView} r WHERE {whereCondition}
                         GROUP BY r.InputBill_F_Id
                     ) r
                 ";
@@ -340,7 +378,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataSql = @$"
                  
                     SELECT r.InputBill_F_Id, r.F_Id BillDetailId {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
-                    FROM {INPUTVALUEROW_VIEW} r
+                    FROM {_inputValueRowView} r
                     WHERE {whereCondition}
                
                     ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
@@ -351,7 +389,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 dataSql = @$"
                  ;WITH tmp AS (
                     SELECT r.InputBill_F_Id, MAX(F_Id) as F_Id
-                    FROM {INPUTVALUEROW_VIEW} r
+                    FROM {_inputValueRowView} r
                     WHERE {whereCondition}
                     GROUP BY r.InputBill_F_Id    
                 )
@@ -359,7 +397,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     t.InputBill_F_Id AS F_Id,
                     t.InputBill_F_Id
                     {(string.IsNullOrWhiteSpace(selectColumn) ? "" : $",{selectColumn}")}
-                FROM tmp t JOIN {INPUTVALUEROW_VIEW} r ON t.F_Id = r.F_Id
+                FROM tmp t JOIN {_inputValueRowView} r ON t.F_Id = r.F_Id
                 ORDER BY r.[{orderByFieldName}] {(asc ? "" : "DESC")}
                 ";
             }
@@ -381,7 +419,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var singleFields = (await (
                from af in _accountancyDBContext.InputAreaField
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-               join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+               join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                select f
             ).ToListAsync()
@@ -392,7 +430,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             )
             .ToHashSet();
 
-            var totalSql = @$"SELECT COUNT(0) as Total FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
+            var totalSql = @$"SELECT COUNT(0) as Total FROM {_inputValueRowView} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0";
 
             var table = await _accountancyDBContext.QueryDataTable(totalSql, new SqlParameter[0]);
 
@@ -410,7 +448,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var dataSql = @$"
 
                 SELECT     r.*
-                FROM {INPUTVALUEROW_VIEW} r 
+                FROM {_inputValueRowView} r 
 
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
 
@@ -426,7 +464,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
 
-            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {_inputValueRowView} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
@@ -468,8 +506,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 return (await (
                                from af in _accountancyDBContext.InputAreaField
                                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                               join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
-                               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+                               join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
+                               where af.InputTypeId == inputTypeId && !a.IsMultiRow && (f.FormTypeId != (int)EnumFormType.ViewOnly || _specialViewOnlyColumns.Contains(f.FieldName))
                                select f
                             ).ToListAsync()
                 )
@@ -484,7 +522,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var dataSql = @$"
 
                 SELECT     r.*
-                FROM {INPUTVALUEROW_VIEW} r 
+                FROM {_inputValueRowView} r 
                     JOIN @FIds v ON r.InputBill_F_Id = v.[Value]
                 WHERE  r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
@@ -493,7 +531,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var billEntryInfoSql = @$"
 
                 SELECT     r.*
-                FROM {INPUTVALUEROW_VIEW} r 
+                FROM {_inputValueRowView} r 
                     JOIN @FIds v ON r.InputBill_F_Id = v.[Value]
                 WHERE  r.InputTypeId = {inputTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
             ";
@@ -570,7 +608,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Get all fields
-                var inputFields = _accountancyDBContext.InputField
+                var inputFields = _inputFieldsSet
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
@@ -1351,7 +1389,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             try
             {
                 // Get all fields
-                var inputFields = _accountancyDBContext.InputField
+                var inputFields = _inputFieldsSet
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
@@ -1494,7 +1532,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var singleFields = (await (
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
-                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
                 where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
                 select f.FieldName).ToListAsync()).ToHashSet();
 
@@ -1731,7 +1769,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await ValidateAccountantConfig(null, data?.Info);
 
                 // Get all fields
-                var inputFields = _accountancyDBContext.InputField
+                var inputFields = _inputFieldsSet
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
@@ -2179,7 +2217,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             var fields = await (from af in _accountancyDBContext.InputAreaField
-                                join f in _accountancyDBContext.InputField on af.InputFieldId equals f.InputFieldId
+                                join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
                                 join a in area on af.InputAreaId equals a.InputAreaId
                                 where af.InputTypeId == inputTypeId
                                 orderby a.SortOrder, af.SortOrder
@@ -2345,7 +2383,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == AccountantConstants.BILL_CODE);
                 if (columnKey == null)
-                    throw FieldRequired.BadRequestFormat("Số chứng từ");               
+                    throw FieldRequired.BadRequestFormat("Số chứng từ");
 
                 var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
 
@@ -2512,7 +2550,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 // Get all fields
-                var inputFields = _accountancyDBContext.InputField
+                var inputFields = _inputFieldsSet
                  .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
@@ -3138,11 +3176,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var dataSql = @$"
                 SELECT     r.*
-                FROM {INPUTVALUEROW_VIEW} r 
+                FROM {_inputValueRowView} r 
                 WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 0
             ";
             var data = await _accountancyDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
-            var billEntryInfoSql = $"SELECT r.* FROM {INPUTVALUEROW_VIEW} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
+            var billEntryInfoSql = $"SELECT r.* FROM {_inputValueRowView} r WHERE r.InputBill_F_Id = {fId} AND r.InputTypeId = {inputTypeId} AND r.IsBillEntry = 1";
             var billEntryInfo = await _accountancyDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
@@ -3171,7 +3209,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             //                    .ToDictionary(f => new { f.CategoryFieldName, f.CategoryCode }, f => (EnumDataType)f.DataTypeId);
 
             var selectFormFields = (from iaf in _accountancyDBContext.InputAreaField
-                                    join itf in _accountancyDBContext.InputField on iaf.InputFieldId equals itf.InputFieldId
+                                    join itf in _inputFieldsSet on iaf.InputFieldId equals itf.InputFieldId
                                     where iaf.InputTypeId == inputTypeId && DataTypeConstants.SELECT_FORM_TYPES.Contains((EnumFormType)itf.FormTypeId)
                                     select new
                                     {
@@ -3286,13 +3324,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow)
         {
-            var inputReferToFields = _accountancyDBContext.InputField
+            var inputReferToFields = _inputFieldsSet
                 .Where(f => f.RefTableCode == categoryCode && fieldNames.Contains(f.RefTableField)).ToList();
 
             if (categoryRow == null)
             {
                 // Check khi xóa cả danh mục
-                return _accountancyDBContext.InputField.Any(f => f.RefTableCode == categoryCode);
+                return _inputFieldsSet.Any(f => f.RefTableCode == categoryCode);
             }
             else
             {
@@ -3305,7 +3343,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     foreach (var referToField in inputReferToFields.Where(f => f.RefTableField == field))
                     {
                         var referToValue = new SqlParameter("@RefValue", value?.ToString());
-                        var existSql = $"SELECT tk.F_Id FROM {INPUTVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @RefValue;";
+                        var existSql = $"SELECT tk.F_Id FROM {_inputValueRowView} tk WHERE tk.{referToField.FieldName} = @RefValue;";
                         var result = await _accountancyDBContext.QueryDataTable(existSql, new[] { referToValue });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
