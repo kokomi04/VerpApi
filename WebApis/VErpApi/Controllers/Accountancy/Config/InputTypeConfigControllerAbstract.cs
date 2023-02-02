@@ -5,6 +5,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
@@ -135,6 +136,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("getByCode")]
+        [GlobalApi]
         public async Task<InputTypeFullModel> GetInputTypeByCode([FromQuery] string inputTypeCode)
         {
             return await _inputConfigServiceBase.GetInputType(inputTypeCode).ConfigureAwait(true);
