@@ -135,6 +135,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var dynamicColumns = new List<ReportColumnModel>();
             foreach (var (key, _) in firstRow)
             {
+                if (key[0] == '$') continue;
+
                 foreach (var column in columns)
                 {
                     if (column.IsRepeat != true) continue;
