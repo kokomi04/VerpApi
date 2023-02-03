@@ -116,7 +116,7 @@ INSERT INTO dbo.RolePermission
 )
 SELECT  r.RoleId,
 		@InputTypeModuleId,
-		@InputPublicTypeObjectTypeId,
+		@InputTypeObjectTypeId,
 		m.InputTypeId,
 		2147483647,
 		GETDATE()
@@ -127,7 +127,7 @@ SELECT  r.RoleId,
 	(r.RoleTypeId = 1 OR r.IsEditable = 0)
 	AND NOT EXISTS
 	(
-		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputTypeModuleId AND p.ObjectTypeId = @InputPublicTypeObjectTypeId AND p.ObjectId = m.InputTypeId
+		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputTypeModuleId AND p.ObjectTypeId = @InputTypeObjectTypeId AND p.ObjectId = m.InputTypeId
 	)
 	
 --INPUT PUBLIC type
@@ -155,7 +155,7 @@ INSERT INTO dbo.RolePermission
 )
 SELECT  r.RoleId,
 		@InputPublicTypeModuleId,
-		@InputTypeObjectTypeId,
+		@InputPublicTypeObjectTypeId,
 		m.InputTypeId,
 		2147483647,
 		GETDATE()
@@ -166,7 +166,7 @@ SELECT  r.RoleId,
 	(r.RoleTypeId = 1 OR r.IsEditable = 0)
 	AND NOT EXISTS
 	(
-		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputPublicTypeModuleId AND p.ObjectTypeId = @InputTypeObjectTypeId AND p.ObjectId = m.InputTypeId
+		SELECT 0 FROM dbo.RolePermission p WHERE p.RoleId = r.RoleId AND p.ModuleId = @InputPublicTypeModuleId AND p.ObjectTypeId = @InputPublicTypeObjectTypeId AND p.ObjectId = m.InputTypeId
 	)
 	
 	

@@ -1062,10 +1062,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 else
                 {
 
-                    if (req.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
-                    {
-                        throw GeneralCode.DataIsOld.BadRequest();
-                    }
+                    //if (req.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
+                    //{
+                    //    throw GeneralCode.DataIsOld.BadRequest();
+                    //}
 
                     info.UpdatedDatetimeUtc = DateTime.UtcNow;
                 }
