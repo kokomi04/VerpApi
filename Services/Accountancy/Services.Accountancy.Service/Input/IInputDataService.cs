@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Threading.Tasks;
@@ -58,5 +59,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
         Task<bool> CheckAllBillInList(IList<ObjectBillSimpleInfoModel> models);
         Task<bool> ApproveAllBillInList(IList<ObjectBillSimpleInfoModel> models);
+
+        Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate);
     }
 }
