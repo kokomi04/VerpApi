@@ -51,6 +51,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
             var sql = new StringBuilder($"EXEC {procedureName}");
             foreach (var p in parameters)
             {
+                if (p.Value.IsNullOrEmptyObject())
+                {
+                    p.Value = DBNull.Value;
+                }
+
                 sql.Append($" {p.ParameterName} = {p.ParameterName}");
                 if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
                 sql.Append(",");
@@ -243,6 +248,26 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.Parameters.Clear();
                     foreach (var param in parameters)
                     {
+                        if (param.Value.IsNullOrEmptyObject())
+                        {
+                            param.Value = DBNull.Value;
+                        }
+
+                        if (param.SqlDbType == SqlDbType.VarChar)
+                        {
+                            param.SqlDbType = SqlDbType.NVarChar;
+                        }
+
+                        if (param.SqlDbType == SqlDbType.NVarChar)
+                        {
+                            param.Size += 4;//for instance add prefix % to compare LIKE operator
+
+                            if (param.Size < 128)
+                            {
+                                param.Size = 128;
+                            }
+                        }
+
                         command.Parameters.Add(param);
                     }
 
