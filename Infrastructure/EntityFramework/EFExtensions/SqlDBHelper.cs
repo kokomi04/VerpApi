@@ -46,10 +46,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.SubsidiaryId };
         }
 
-        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, bool includeSubId = false)
+        public static async Task ExecuteStoreProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, bool includeSubId = false)
         {
             var sql = new StringBuilder($"EXEC {procedureName}");
-            foreach (var p in parammeters)
+            foreach (var p in parameters)
             {
                 sql.Append($" {p.ParameterName} = {p.ParameterName}");
                 if (p.Direction == ParameterDirection.Output) sql.Append(" OUTPUT");
@@ -58,7 +58,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
             if (includeSubId && dbContext is ISubsidiayRequestDbContext requestDbContext)
             {
-                parammeters = parammeters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
+                parameters = parameters.Append(requestDbContext.CreateSubSqlParam()).ToArray();
 
                 sql.Append($" {SubIdParam} = {SubIdParam}");
                 sql.Append(",");
@@ -66,23 +66,23 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
             dbContext.Database.SetCommandTimeout(TimeSpan.FromMinutes(3));
 
-            await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parammeters);
+            await dbContext.Database.ExecuteSqlRawAsync(sql.ToString().TrimEnd(','), parameters);
         }
 
-        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            return await QueryDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
+            return await QueryDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout);
         }
 
-        public static async Task<DataSet> ExecuteMultipleDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        public static async Task<DataSet> ExecuteMultipleDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            return await QueryMultiDataTable(dbContext, procedureName, parammeters, CommandType.StoredProcedure, timeout);
+            return await QueryMultiDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout);
         }
 
-        public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parammeters, TimeSpan? timeout = null)
+        public static async Task<int> ExecuteNoneQueryProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
             var ps = new List<SqlParameter>();
-            foreach (var param in parammeters)
+            foreach (var param in parameters)
             {
                 ps.Add(param);
             }
@@ -119,21 +119,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbConnection.ChangeDatabaseAsync(dbName);
         }
 
-        public static async Task<IList<T>> QueryList<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<IList<T>> QueryList<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
-            var dataTable = await QueryDataTable(dbContext, rawSql, parammeters, cmdType, timeout);
+            var dataTable = await QueryDataTable(dbContext, rawSql, parameters, cmdType, timeout);
             return dataTable.ConvertData<T>();
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
+        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
         {
             if (cachingService != null)
             {
                 var builder = new StringBuilder();
                 builder.AppendLine(rawSql);
-                if (parammeters != null)
+                if (parameters != null)
                 {
-                    foreach (var p in parammeters)
+                    foreach (var p in parameters)
                     {
                         builder.AppendLine(p.ParameterName);
                         builder.AppendLine(JsonUtils.JsonSerialize(p.Value));
@@ -143,13 +143,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var key = "QueryDataTable_" + builder.ToString().ToGuid().ToString();
                 return await cachingService.TryGetSet("QueryDataTable", key, TimeSpan.FromMinutes(3), async () =>
                 {
-                    return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+                    return await QueryDataTableDb(dbContext, rawSql, parameters, cmdType, timeout);
                 }, TimeSpan.FromMinutes(3));
             }
-            return await QueryDataTableDb(dbContext, rawSql, parammeters, cmdType, timeout);
+            return await QueryDataTableDb(dbContext, rawSql, parameters, cmdType, timeout);
         }
 
-        private static async Task<DataTable> QueryDataTableDb(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        private static async Task<DataTable> QueryDataTableDb(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
 
             try
@@ -169,12 +169,30 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
 
-                    foreach (var param in parammeters)
+                    foreach (var param in parameters)
                     {
                         if (param.Value.IsNullOrEmptyObject())
                         {
                             param.Value = DBNull.Value;
                         }
+
+                        if (param.SqlDbType == SqlDbType.VarChar)
+                        {
+                            param.SqlDbType = SqlDbType.NVarChar;
+                        }
+
+                        if (param.SqlDbType == SqlDbType.NVarChar)
+                        {
+                            param.Size += 4;//for instance add prefix % to compare LIKE operator
+
+                            if (param.Size < 128)
+                            {
+                                param.Size = 128;
+                            }
+                        }
+
+
+
                         command.Parameters.Add(param);
                     }
 
@@ -200,7 +218,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         DataTable dt = new DataTable();
                         dt.Load(result);
                         st.Stop();
-                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", parammeters.Select(p => p.ToDeclareString() + " = N'" + p.Value + "'").ToArray())}], CommandText={command.CommandText}");
+                        _logger.LogInformation($"Executed DbCommand QueryDataTable ({st.ElapsedMilliseconds}ms) CommandTimeout={command.CommandTimeout}, CommandType = {command.CommandType} [Parametters={string.Join(", ", parameters.Select(p => p.ToDeclareString() + " = N'" + p.Value + "'").ToArray())}], CommandText={command.CommandText}");
                         return dt;
                     }
                 }
@@ -209,12 +227,12 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ToDeclareString() + " = '" + p.Value + "'"))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parameters?.Select(p => p.ToDeclareString() + " = '" + p.Value + "'"))}] {rawSql}", ex);
             }
         }
 
 
-        public static async Task<DataSet> QueryMultiDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parammeters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+        public static async Task<DataSet> QueryMultiDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
         {
             try
             {
@@ -223,7 +241,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     command.CommandType = cmdType;
                     command.CommandText = rawSql;
                     command.Parameters.Clear();
-                    foreach (var param in parammeters)
+                    foreach (var param in parameters)
                     {
                         command.Parameters.Add(param);
                     }
@@ -264,7 +282,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
             catch (Exception ex)
             {
-                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parammeters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
+                throw new Exception($"Error QueryDataTable {ex.Message} \r\nParametters: [{string.Join(",", parameters?.Select(p => p.ParameterName + "=" + p.Value))}] {rawSql}", ex);
             }
         }
 
@@ -403,14 +421,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
             var resultParam = new SqlParameter("@ResStatus", 0) { Direction = ParameterDirection.Output };
 
-            var parammeters = new[]
+            var parameters = new[]
             {
                 new SqlParameter("@TableName", table),
                 new SqlParameter("@FieldName", column),
                 resultParam
             };
 
-            await dbContext.ExecuteStoreProcedure("asp_Table_DropField", parammeters);
+            await dbContext.ExecuteStoreProcedure("asp_Table_DropField", parameters);
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
@@ -419,7 +437,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { Direction = ParameterDirection.Output };
 
-            var parammeters = new[]
+            var parameters = new[]
             {
                 new SqlParameter("@TableName", table),
                 new SqlParameter("@OldFieldName", oldColumn),
@@ -427,7 +445,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 resultParam
             };
 
-            await dbContext.ExecuteStoreProcedure("asp_Table_RenameField", parammeters);
+            await dbContext.ExecuteStoreProcedure("asp_Table_RenameField", parameters);
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
@@ -435,14 +453,14 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             var resultParam = new SqlParameter("@ResStatus", 0) { Direction = ParameterDirection.Output };
 
-            var parammeters = new[]
+            var parameters = new[]
             {
                 new SqlParameter("@TableName", table),
                 new SqlParameter("@FieldName", column),
                 resultParam
             };
 
-            await dbContext.ExecuteStoreProcedure("asp_Table_DeleteField", parammeters);
+            await dbContext.ExecuteStoreProcedure("asp_Table_DeleteField", parameters);
             return (resultParam.Value as int?).GetValueOrDefault();
         }
 
