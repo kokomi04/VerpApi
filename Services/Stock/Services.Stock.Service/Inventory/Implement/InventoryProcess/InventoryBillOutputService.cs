@@ -33,8 +33,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         const decimal MINIMUM_JS_NUMBER = Numbers.MINIMUM_ACCEPT_DECIMAL_NUMBER;
 
         private readonly IAsyncRunnerService _asyncRunner;
-        private readonly ICurrentContextService _currentContextService;
-        private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invOutputActivityLog;
         private readonly INotificationFactoryService _notificationFactoryService;
 
@@ -44,7 +42,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityLogService activityLogService
             , IAsyncRunnerService asyncRunner
             , ICurrentContextService currentContextService
-            , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
@@ -52,8 +49,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
         {
             _asyncRunner = asyncRunner;
-            _currentContextService = currentContextService;
-            _productService = productService;
             _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
             _notificationFactoryService = notificationFactoryService;
         }
