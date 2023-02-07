@@ -32,15 +32,11 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
     public class InventoryRequirementService : InventoryBillDateAbstract, IInventoryRequirementService
     {
-        private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IProductHelperService _productHelperService;
         private readonly IFileService _fileService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
-        private readonly IProductionOrderHelperService _productionOrderHelperService;
         private readonly ObjectActivityLogFacade _invRequestActivityLog;
 
         public InventoryRequirementService(StockDBContext stockDBContext
@@ -48,22 +44,16 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , ILogger<InventoryRequirementService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductHelperService productHelperService
             , IFileService fileService
             , ICurrentContextService currentContextService
             , IOutsideMappingHelperService outsideMappingHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            ) : base(stockDBContext)
+            ) : base(stockDBContext, currentContextService)
         {
-            _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _productHelperService = productHelperService;
             _fileService = fileService;
-            _currentContextService = currentContextService;
             _outsideMappingHelperService = outsideMappingHelperService;
-            _productionOrderHelperService = productionOrderHelperService;
 
             _invRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
         }

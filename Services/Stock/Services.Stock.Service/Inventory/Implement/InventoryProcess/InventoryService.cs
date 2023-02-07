@@ -48,7 +48,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IStockHelperService _stockHelperService;
         private readonly IProductHelperService _productHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly IInventoryBillInputService _inventoryBillInputService;
@@ -57,12 +56,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         private readonly ILongTaskResourceLockService _longTaskResourceLockService;
 
         public InventoryService(MasterDBContext masterDBContext, StockDBContext stockContext
-            , IOptions<AppSetting> appSetting
             , ILogger<InventoryService> logger
             , IActivityLogService activityLogService
-            , IUnitService unitService
             , IFileService fileService
-            , IAsyncRunnerService asyncRunner
             , IOrganizationHelperService organizationHelperService
             , IStockHelperService stockHelperService
             , IProductHelperService productHelperService
@@ -83,7 +79,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             _organizationHelperService = organizationHelperService;
             _stockHelperService = stockHelperService;
             _productHelperService = productHelperService;
-            _currentContextService = currentContextService;
             _productService = productService;
             _inventoryBillOutputService = inventoryBillOutputService;
             _inventoryBillInputService = inventoryBillInputService;
