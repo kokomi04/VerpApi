@@ -3443,7 +3443,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     result,
                     new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate },
                     new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate },
-                    new SqlParameter("@TimeZoneOffset", SqlDbType.DateTime2) { Value = _currentContextService.TimeZoneOffset.Value }
+                    new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value }
                 };
 
                 await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
