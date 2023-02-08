@@ -2863,7 +2863,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 };
                 sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
                 sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
-                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.DateTime2) { Value = _currentContextService.TimeZoneOffset.Value });
+                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value });
                 await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
                 if (!(result.Value as bool?).GetValueOrDefault())

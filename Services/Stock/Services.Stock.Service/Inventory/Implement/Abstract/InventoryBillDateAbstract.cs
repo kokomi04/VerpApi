@@ -46,7 +46,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
 
-                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.DateTime2) { Value = _currentContextService.TimeZoneOffset.Value });
+                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value });
 
                 await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
