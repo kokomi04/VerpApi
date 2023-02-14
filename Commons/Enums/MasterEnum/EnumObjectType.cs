@@ -91,7 +91,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [GenCodeObject]
         PurchaseOrder = 25,
 
-        [Description("Đơn đặt hàng")]
+        [Description("Báo giá nhà cung cấp")]
         [GenCodeObject]
         PoProviderPricing = 25001,
 
