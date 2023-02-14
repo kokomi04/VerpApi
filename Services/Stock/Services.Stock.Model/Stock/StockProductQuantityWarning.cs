@@ -21,7 +21,7 @@
 
         public long AmountWarningMax { set; get; }
 
-        public decimal TotalPrimaryQuantityRemaining { set; get; }
+        public decimal? TotalPrimaryQuantityRemaining { set; get; }
 
         // public List<StockProductQuantity> StockProductQuantityList { set; get; }
         public long? MainImageFileId { get; set; }
