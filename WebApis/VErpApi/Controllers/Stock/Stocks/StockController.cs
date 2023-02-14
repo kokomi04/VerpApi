@@ -243,9 +243,9 @@ namespace VErpApi.Controllers.Stock.Stocks
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("GetStockProductQuantityWarning")]
-        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> rangeQuantityRemaining, [FromQuery] bool? isMinOrMax, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
+        public async Task<PageData<StockProductQuantityWarning>> GetStockProductQuantityWarning([FromQuery] string keyword, [FromQuery] IList<int> stockIds, [FromQuery] IList<int> productTypeIds, [FromQuery] IList<int> productCateIds, [FromQuery] IList<int> rangeQuantityRemaining, [FromQuery] bool? isMinOrMax, string sortBy, bool asc, [FromQuery] int page, [FromQuery] int size, [FromBody] Clause filters)
         {
-            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, rangeQuantityRemaining, isMinOrMax, page, size, filters);
+            return await _stockProductService.GetStockProductQuantityWarning(keyword, stockIds, productTypeIds, productCateIds, rangeQuantityRemaining, isMinOrMax, sortBy, asc, page, size, filters);
         }
 
         /// <summary>
