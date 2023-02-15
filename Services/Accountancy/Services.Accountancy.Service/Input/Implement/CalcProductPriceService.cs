@@ -20,13 +20,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class CalcProductPricePrivateService : CalcProductPriceServiceBase, ICalcProductPricePrivateService
     {
-        public CalcProductPricePrivateService(AccountancyDBPrivateContext accountancyDBContext, ICalcPeriodPrivateService calcPeriodService) : base(accountancyDBContext, calcPeriodService) { }
+        public CalcProductPricePrivateService(AccountancyDBPrivateContext accountancyDBContext, ICalcPeriodPrivateService calcPeriodService, IInputDataPrivateService inputDataPrivateService) : base(accountancyDBContext, calcPeriodService, inputDataPrivateService) { }
 
     }
 
     public class CalcProductPricePublicService : CalcProductPriceServiceBase, ICalcProductPricePublicService
     {
-        public CalcProductPricePublicService(AccountancyDBPublicContext accountancyDBContext, ICalcPeriodPublicService calcPeriodService) : base(accountancyDBContext, calcPeriodService)
+        public CalcProductPricePublicService(AccountancyDBPublicContext accountancyDBContext, ICalcPeriodPublicService calcPeriodService, IInputDataPublicService inputDataPublicService) : base(accountancyDBContext, calcPeriodService, inputDataPublicService)
         {
         }
     }
@@ -36,16 +36,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICalcPeriodServiceBase _calcPeriodService;
-        public CalcProductPriceServiceBase(AccountancyDBContext accountancyDBContext, ICalcPeriodServiceBase calcPeriodService)
+        private readonly IInputDataServiceBase _inputDataService;
+
+        public CalcProductPriceServiceBase(AccountancyDBContext accountancyDBContext, ICalcPeriodServiceBase calcPeriodService, IInputDataServiceBase inputDataService)
         {
             _accountancyDBContext = accountancyDBContext;
             _calcPeriodService = calcPeriodService;
+            _inputDataService = inputDataService;
         }
 
         public async Task<CalcProductPriceGetTableOutput> CalcProductPriceTable(CalcProductPriceGetTableInput req)
         {
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
 
             var indirectMaterialFeeSum = new SqlParameter("@IndirectMaterialFeeSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var indirectLaborFeeSum = new SqlParameter("@IndirectLaborFeeSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
@@ -139,6 +144,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
+
             var isInvalid = new SqlParameter("@IsInvalid", SqlDbType.Bit) { Direction = ParameterDirection.Output };
             var isError = new SqlParameter("@IsError", SqlDbType.Bit) { Direction = ParameterDirection.Output };
 
@@ -200,6 +209,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
 
+            
             var priceSellInDirectlySum = new SqlParameter("@PriceSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costAccountingSum = new SqlParameter("@CostAccountingSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costSellInDirectlySum = new SqlParameter("@CostSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };

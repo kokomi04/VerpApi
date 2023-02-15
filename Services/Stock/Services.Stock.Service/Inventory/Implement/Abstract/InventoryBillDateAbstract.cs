@@ -14,9 +14,11 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
     public abstract class InventoryBillDateAbstract
     {
         protected readonly StockDBContext _stockDbContext;
-        internal InventoryBillDateAbstract(StockDBContext stockDbContext)
+        protected readonly ICurrentContextService _currentContextService;
+        internal InventoryBillDateAbstract(StockDBContext stockDbContext, ICurrentContextService currentContextService)
         {
             _stockDbContext = stockDbContext;
+            _currentContextService = currentContextService;
         }
 
         private readonly HashSet<ValidateBillDate> _validateCaches = new HashSet<ValidateBillDate>();
@@ -43,6 +45,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
                 {
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
+
+                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value });
 
                 await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 

@@ -136,7 +136,7 @@ namespace VErpApi.Controllers.Accountancy.Config
 
         [HttpGet]
         [Route("getByCode")]
-        [GlobalApi]
+        //[GlobalApi]
         public async Task<InputTypeFullModel> GetInputTypeByCode([FromQuery] string inputTypeCode)
         {
             return await _inputConfigServiceBase.GetInputType(inputTypeCode).ConfigureAwait(true);

@@ -18,7 +18,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 {
     public class CalcBillPrivateService : CalcBillServiceBase, ICalcBillPrivateService
     {
-        public CalcBillPrivateService(AccountancyDBPrivateContext accountancyDBContext, ICurrentContextService currentContextService) : base(accountancyDBContext, currentContextService)
+        public CalcBillPrivateService(AccountancyDBPrivateContext accountancyDBContext, ICurrentContextService currentContextService, IInputDataPrivateService inputDataPrivateService) : base(accountancyDBContext, currentContextService, inputDataPrivateService)
         {
 
         }
@@ -26,7 +26,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
     public class CalcBillPublicService : CalcBillServiceBase, ICalcBillPublicService
     {
-        public CalcBillPublicService(AccountancyDBPublicContext accountancyDBContext, ICurrentContextService currentContextService) : base(accountancyDBContext, currentContextService)
+        public CalcBillPublicService(AccountancyDBPublicContext accountancyDBContext, ICurrentContextService currentContextService, IInputDataPublicService inputDataPublicService) : base(accountancyDBContext, currentContextService, inputDataPublicService)
         {
 
         }
@@ -36,11 +36,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
     {
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IInputDataServiceBase _inputDataService;
 
-        public CalcBillServiceBase(AccountancyDBContext accountancyDBContext, ICurrentContextService currentContextService)
+        public CalcBillServiceBase(AccountancyDBContext accountancyDBContext, ICurrentContextService currentContextService, IInputDataServiceBase inputDataService)
         {
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;
+            _inputDataService = inputDataService;
         }
 
 
@@ -114,11 +116,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<bool> DeletedFixExchangeRate(long fromDate, long toDate, int currency, string accoutantNumber)
         {
             if (accoutantNumber == null) accoutantNumber = string.Empty;
+
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             SqlParameter[] sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 new SqlParameter("@Currency", currency),
                 new SqlParameter("@AccoutantNumber", accoutantNumber),
                 result
@@ -208,6 +216,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
+
         public async Task<bool> CheckExistedFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk)
         {
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
@@ -228,12 +237,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletedFixExchangeRateByOrder(long fromDate, long toDate, int currency, string tk)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             if (tk == null) tk = string.Empty;
             var sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 new SqlParameter("@Currency", currency),
                 new SqlParameter("@Tk", tk),
                 result
@@ -279,12 +293,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeleteFixExchangeRateByLoanCovenant(long fromDate, long toDate, int currency, string tk)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             if (tk == null) tk = string.Empty;
             var sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate",fDate),
+                new SqlParameter("@ToDate", tDate),
                 new SqlParameter("@Currency", currency),
                 new SqlParameter("@Tk", tk),
                 result
@@ -321,11 +340,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletedCostTransfer(EnumCostTransfer type, long fromDate, long toDate)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             SqlParameter[] sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 new SqlParameter("@Type", (int)type),
                 result
             };
@@ -361,11 +386,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletedCostTransferBalanceZero(long fromDate, long toDate)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             SqlParameter[] sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteCostTransferBalanceZero", sqlParams, true);
@@ -404,12 +434,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletedDepreciation(long fromDate, long toDate, string accountNumber)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             var sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@SoTK", accountNumber),
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeleteDepreciation", sqlParams, true);
@@ -450,12 +485,18 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber)
         {
+            var fDate = fromDate.UnixToDateTime();
+            var tDate = toDate.UnixToDateTime();
+
+            await _inputDataService.ValidateAccountantConfig(fDate, null);
+
+
             var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
             var sqlParams = new SqlParameter[]
             {
                 new SqlParameter("@SoTK", accountNumber),
-                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@FromDate", fDate),
+                new SqlParameter("@ToDate", tDate),
                 result
             };
             await _accountancyDBContext.ExecuteStoreProcedure("usp_TK_DeletePrepaidExpense", sqlParams, true);
