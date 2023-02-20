@@ -374,7 +374,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.MultiSelect)
             {
                 data.DataTypeId = EnumDataType.Text;
-                data.DataSize = -1;
+                //data.DataSize = -1;
             }
             if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
