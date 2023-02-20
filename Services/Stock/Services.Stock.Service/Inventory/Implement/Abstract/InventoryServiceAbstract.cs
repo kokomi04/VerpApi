@@ -101,7 +101,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryId = inventoryId ?? 0;
             if (await _stockDbContext.Inventory.AnyAsync(q => q.InventoryId != inventoryId && q.InventoryCode == inventoryCode))
             {
-                throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequestFormat(inventoryCode);
+                throw InventoryErrorCode.InventoryCodeAlreadyExisted.BadRequestDescriptionFormat(inventoryCode);
             }
         }
 
