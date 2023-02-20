@@ -135,9 +135,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var dynamicColumns = new List<ReportColumnModel>();
             foreach (var (key, _) in firstRow)
             {
+                if (key[0] == '$') continue;
+
                 foreach (var column in columns)
                 {
-                    if (column.IsRepeat != true) continue;
+                    if (column.IsRepeat != true)
+                    {
+                        if (firstRow.ContainsKey(column.ColGroupName) && !firstRow[column.ColGroupName].IsNullOrEmptyObject())
+                        {
+                            column.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                        }
+
+                        if (firstRow.ContainsKey(column.Name) && !firstRow[column.Name].IsNullOrEmptyObject())
+                        {
+                            column.Name = firstRow[column.Name]?.ToString();
+                        }
+
+                        continue;
+                    }
+
                     var pattern = $"{column.Alias}(?<suffix>\\w+)";
                     Regex rx = new Regex(pattern);
                     MatchCollection match = rx.Matches(key);
@@ -147,17 +163,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         var newColumn = ObjectUtils.DeepClone(column);
 
-                        var nameColumn = $"{column.ColGroupName}{suffixKey}";
+                        var nameGroupColumn = $"{column.ColGroupName}{suffixKey}";
 
-                        if (firstRow.ContainsKey(nameColumn))
+                        if (firstRow.ContainsKey(nameGroupColumn))
                         {
-                            newColumn.ColGroupName = firstRow[nameColumn]?.ToString();
+                            newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                            {
+                                newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                            }
+
                         }
 
-                        if (string.IsNullOrWhiteSpace(newColumn.ColGroupName) && !string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+
+                        var nameColumn = $"{column.Name}{suffixKey}";
+
+                        if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
                         {
-                            newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                            newColumn.Name = firstRow[nameColumn]?.ToString();
                         }
+
 
                         newColumn.Alias = $"{column.Alias}{suffixKey}";
                         newColumn.Value = $"{column.Value}{suffixKey}";

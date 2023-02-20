@@ -285,12 +285,15 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         cell.CellStyle = headStyle;
 
                         var mergeRegion = new CellRangeAddress(fRow, fRow + 1, columnIndex, columnIndex);
-                        sheet.AddMergedRegion(mergeRegion);
+                        if (mergeRegion.FirstRow != mergeRegion.LastRow || mergeRegion.FirstColumn != mergeRegion.LastColumn)
+                        {
+                            sheet.AddMergedRegion(mergeRegion);
 
-                        RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderRight(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderRight(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+                        }
 
                         columnIndex++;
                     }
@@ -303,11 +306,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         cell0.CellStyle = headStyle;
 
                         var mergeRegion = new CellRangeAddress(fRow, fRow, columnIndex, columnIndex + cols.Count() - 1);
-                        sheet.AddMergedRegion(mergeRegion);
-                        RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderRight(1, mergeRegion, sheet);
-                        RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+                        if (mergeRegion.FirstRow != mergeRegion.LastRow || mergeRegion.FirstColumn != mergeRegion.LastColumn)
+                        {
+                            sheet.AddMergedRegion(mergeRegion);
+                            RegionUtil.SetBorderBottom(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderLeft(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderRight(1, mergeRegion, sheet);
+                            RegionUtil.SetBorderTop(1, mergeRegion, sheet);
+                        }
 
                         foreach (var child in cols)
                         {

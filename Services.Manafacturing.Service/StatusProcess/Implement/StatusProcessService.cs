@@ -870,7 +870,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 
             foreach (var productionOrderId in productionOrderIds)
             {
-                var productionOrderAssignmentStatus = assigns.Count > 0 ? EnumProductionOrderAssignmentStatus.AssignProcessing : EnumProductionOrderAssignmentStatus.NoAssignment;
+                var productionOrderAssignmentStatus = assigns.Where(a => a.ProductionOrderId == productionOrderId).Count() > 0 ? EnumProductionOrderAssignmentStatus.AssignProcessing : EnumProductionOrderAssignmentStatus.NoAssignment;
 
                 var allCompleted = true;
 

@@ -27,9 +27,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
     {
         protected readonly ILogger _logger;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IProductionOrderHelperService _productionOrderHelperService;
-        private readonly IProductionHandoverHelperService _productionHandoverHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
 
         internal InventoryServiceAbstract(StockDBContext stockContext
@@ -39,13 +36,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionHandoverHelperService productionHandoveHelperService
             , ICurrentContextService currentContextService
             , IQueueProcessHelperService queueProcessHelperService
-            ) : base(stockContext)
+            ) : base(stockContext, currentContextService)
         {
             _logger = logger;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _productionOrderHelperService = productionOrderHelperService;
-            _productionHandoverHelperService = productionHandoveHelperService;
-            _currentContextService = currentContextService;
             _queueProcessHelperService = queueProcessHelperService;
         }
 

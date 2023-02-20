@@ -3427,23 +3427,25 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         private async Task ValidateAccountantConfig(NonCamelCaseDictionary info, NonCamelCaseDictionary oldInfo)
         {
-            var billDate = ExtractBillDate(info);
-            var oldDate = ExtractBillDate(oldInfo);
+            var billDate = ExtractBillDate(info) as DateTime?;
+            var oldDate = ExtractBillDate(oldInfo) as DateTime?;
 
             await ValidateAccountantConfig(billDate, oldDate);
         }
 
-        private async Task ValidateAccountantConfig(object billDate, object oldDate)
+        public async Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate)
         {
             if (billDate != null || oldDate != null)
             {
                 var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
                 var sqlParams = new List<SqlParameter>
                 {
-                    result
+                    result,
+                    new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate },
+                    new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate },
+                    new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value }
                 };
-                sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
-                sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
+
                 await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
                 if (!(result.Value as bool?).GetValueOrDefault())

@@ -38,7 +38,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
         private readonly IAsyncRunnerService _asyncRunner;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invInputActivityLog;
         private readonly ObjectActivityLogFacade _invOutActivityLog;
@@ -61,7 +60,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
 
             _asyncRunner = asyncRunner;
-            _currentContextService = currentContextService;
             _productService = productService;
             _invInputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
             _invOutActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
