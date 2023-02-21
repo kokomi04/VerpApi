@@ -850,6 +850,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var productUnitConversions = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
 
+            foreach(var pu in productUnitConversions)
+            {
+                if (pu.IsDefault)
+                {
+                    pu.FactorExpression = "1";
+                }
+            }
+
             var toPackageIds = req.InProducts.Select(p => p.ToPackageId).ToList();
             var toPackages = await _stockDbContext.Package.Where(p => toPackageIds.Contains(p.PackageId) && p.PackageTypeId == (int)EnumPackageType.Custom).ToListAsync();
 
