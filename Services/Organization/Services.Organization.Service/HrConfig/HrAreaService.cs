@@ -605,13 +605,15 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var inputField = await _organizationDBContext.HrField.FirstOrDefaultAsync(f => f.HrFieldId == hrFieldId);
 
+            var dbFormTypeId = inputField.FormTypeId;
+
             FieldDataProcess(ref data);
             await ValidateHrField(hrArea.HrTypeId, data, inputField, hrFieldId);
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (dbFormTypeId != (int)EnumFormType.ViewOnly)
                 {
                     if (data.FormTypeId == EnumFormType.ViewOnly)
                     {

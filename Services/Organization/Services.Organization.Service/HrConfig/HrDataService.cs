@@ -1024,7 +1024,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             // Check refer
             await CheckReferAsync(checkData, selectFields, hrAreaFields);
             // Check unique
-            await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields);
+            await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields, hrBill_F_Id);
+
             // Check value
             CheckValue(checkData, hrAreaFields);
 
