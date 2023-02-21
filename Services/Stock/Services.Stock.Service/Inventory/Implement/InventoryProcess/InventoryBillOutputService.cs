@@ -869,6 +869,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var productInfos = await _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
             var productUnitConversions = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
+            foreach (var pu in productUnitConversions)
+            {
+                if (pu.IsDefault)
+                {
+                    pu.FactorExpression = "1";
+                }
+            }
 
             var fromPackageIds = req.OutProducts.Select(p => p.FromPackageId).ToList();
             var fromPackages = await _stockDbContext.Package.Where(p => fromPackageIds.Contains(p.PackageId)).ToListAsync();
