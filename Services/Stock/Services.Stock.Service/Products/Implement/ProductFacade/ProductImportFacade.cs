@@ -704,8 +704,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     if (existedPus.TryGetValue(puKey, out var existedItem))
                     {
                         existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
-                        existedItem.UpdateIfAvaiable(v => v.FactorExpression, pu.FactorExpression);
-                        existedItem.UpdateIfAvaiable(v => v.ConversionDescription, pu.ConversionDescription);
+                        if (!existedItem.IsDefault)
+                        {
+                            existedItem.UpdateIfAvaiable(v => v.FactorExpression, pu.FactorExpression);
+                            existedItem.UpdateIfAvaiable(v => v.ConversionDescription, pu.ConversionDescription);
+                        }
+                        
                     }
                     else
                     {
