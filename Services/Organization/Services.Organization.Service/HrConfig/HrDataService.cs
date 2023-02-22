@@ -1450,7 +1450,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         private async Task ValidUniqueAsync(int hrTypeId, string tableName, List<object> values, ValidateField field, long? HrValueBillId = null)
         {
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE 1 = 1 ";
+            var existSql = $"SELECT F_Id FROM {tableName} WHERE IsDeleted = 0 ";
             if (HrValueBillId.HasValue)
             {
                 existSql += $"AND HrBill_F_Id != {HrValueBillId}";
