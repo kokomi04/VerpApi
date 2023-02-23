@@ -483,7 +483,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 for (int i = 0; i < hrAreaReferences.Count; i++)
                 {
-                    var hrArea = hrAreas[i];
+                    var hrArea = hrAreaReferences[i];
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
                     await CreateFistRowReferenceData(billInfo.FId, null, tableName);
                 }
