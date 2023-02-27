@@ -1073,6 +1073,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                     throw new InvalidProgramException();
 
             }
+
+            await ConfirmCustomGenCode(generateTypeLastValues);
+
         }
 
         private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateField> fields, IEnumerable<NonCamelCaseDictionary> rows)
@@ -1163,6 +1166,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                         }
                     }
                 }
+            }
+        }
+
+        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        {
+            foreach (var (_, value) in generateTypeLastValues)
+            {
+                await _customGenCodeHelperService.ConfirmCode(value);
             }
         }
 
@@ -1699,8 +1710,12 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     if (dataRef.Count > 0)
                     {
-                        var refFId = (int)dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
-                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
+                        var refFId = dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
+                        if (!refFId.IsNullOrEmptyObject() && (long)refFId > 0)
+                        {
+                            await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
+                        }
+
                     }
 
                 }
