@@ -141,12 +141,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (column.IsRepeat != true)
                     {
-                        if (firstRow.ContainsKey(column.ColGroupName) && !firstRow[column.ColGroupName].IsNullOrEmptyObject())
+                        if (!string.IsNullOrWhiteSpace(column.ColGroupName) && firstRow.ContainsKey(column.ColGroupName) && !firstRow[column.ColGroupName].IsNullOrEmptyObject())
                         {
                             column.ColGroupName = firstRow[column.ColGroupName]?.ToString();
                         }
 
-                        if (firstRow.ContainsKey(column.Name) && !firstRow[column.Name].IsNullOrEmptyObject())
+                        if (!string.IsNullOrWhiteSpace(column.Name) && firstRow.ContainsKey(column.Name) && !firstRow[column.Name].IsNullOrEmptyObject())
                         {
                             column.Name = firstRow[column.Name]?.ToString();
                         }
