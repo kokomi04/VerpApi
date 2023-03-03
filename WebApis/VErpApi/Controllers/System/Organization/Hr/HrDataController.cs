@@ -17,11 +17,11 @@ namespace VErpApi.Controllers.System
 {
     [Route("api/organization/data/bills")]
     [ObjectDataApi(EnumObjectType.HrType, "hrTypeId")]
-    public class HrDataController : VErpBaseController
+    public class SalaryTableRefController : VErpBaseController
     {
         private readonly IHrDataService _hrDataService;
 
-        public HrDataController(IHrDataService hrDataService)
+        public SalaryTableRefController(IHrDataService hrDataService)
         {
             _hrDataService = hrDataService;
         }

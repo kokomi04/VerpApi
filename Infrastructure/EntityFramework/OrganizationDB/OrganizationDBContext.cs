@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -56,6 +58,14 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<ObjectProcessStepUser> ObjectProcessStepUser { get; set; }
         public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
         public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
+        public virtual DbSet<SalaryEmployee> SalaryEmployee { get; set; }
+        public virtual DbSet<SalaryEmployeeValue> SalaryEmployeeValue { get; set; }
+        public virtual DbSet<SalaryField> SalaryField { get; set; }
+        public virtual DbSet<SalaryGroup> SalaryGroup { get; set; }
+        public virtual DbSet<SalaryGroupField> SalaryGroupField { get; set; }
+        public virtual DbSet<SalaryPeriod> SalaryPeriod { get; set; }
+        public virtual DbSet<SalaryPeriodGroup> SalaryPeriodGroup { get; set; }
+        public virtual DbSet<SalaryRefTable> SalaryRefTable { get; set; }
         public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
         public virtual DbSet<SplitHour> SplitHour { get; set; }
         public virtual DbSet<Subsidiary> Subsidiary { get; set; }
@@ -73,8 +83,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
         public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -186,6 +195,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasIndex(e => new { e.SubsidiaryId, e.CustomerCode }, "IX_Customer_CustomerCode")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
+
+                entity.HasIndex(e => new { e.IsDeleted, e.CustomerStatusId, e.PartnerId }, "Idx_Customer_PartnerId");
 
                 entity.Property(e => e.Address).HasMaxLength(128);
 
@@ -671,6 +682,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<ObjectApprovalStep>(entity =>
             {
+                entity.HasIndex(e => new { e.ObjectTypeId, e.ObjectId, e.ObjectApprovalStepTypeId, e.SubsidiaryId }, "Idx_ApproveStep")
+                    .IsUnique();
+
                 entity.Property(e => e.ObjectFieldEnable).HasMaxLength(1024);
             });
 
@@ -721,6 +735,112 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.Title).HasMaxLength(1024);
+            });
+
+            modelBuilder.Entity<SalaryEmployee>(entity =>
+            {
+                entity.HasIndex(e => new { e.SalaryPeriodId, e.EmployeeId }, "IX_SalaryEmployee")
+                    .IsUnique();
+
+                entity.HasOne(d => d.Employee)
+                    .WithMany(p => p.SalaryEmployee)
+                    .HasForeignKey(d => d.EmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryEmployee_HrBill");
+
+                entity.HasOne(d => d.SalaryGroup)
+                    .WithMany(p => p.SalaryEmployee)
+                    .HasForeignKey(d => d.SalaryGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryEmployee_SalaryGroup");
+
+                entity.HasOne(d => d.SalaryPeriod)
+                    .WithMany(p => p.SalaryEmployee)
+                    .HasForeignKey(d => d.SalaryPeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryEmployee_SalaryPeriod");
+            });
+
+            modelBuilder.Entity<SalaryEmployeeValue>(entity =>
+            {
+                entity.HasKey(e => new { e.SalaryEmployeeId, e.SalaryFieldId });
+
+                entity.Property(e => e.Value).HasColumnType("sql_variant");
+
+                entity.HasOne(d => d.SalaryField)
+                    .WithMany(p => p.SalaryEmployeeValue)
+                    .HasForeignKey(d => d.SalaryFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryEmployeeValue_SalaryField");
+            });
+
+            modelBuilder.Entity<SalaryField>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<SalaryGroup>(entity =>
+            {
+                entity.Property(e => e.SalaryGroupId).ValueGeneratedNever();
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<SalaryGroupField>(entity =>
+            {
+                entity.HasKey(e => new { e.SalaryGroupId, e.SalaryFieldId });
+
+                entity.HasOne(d => d.SalaryField)
+                    .WithMany(p => p.SalaryGroupField)
+                    .HasForeignKey(d => d.SalaryFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryGroupField_SalaryField");
+
+                entity.HasOne(d => d.SalaryGroup)
+                    .WithMany(p => p.SalaryGroupField)
+                    .HasForeignKey(d => d.SalaryGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryGroupField_SalaryGroup");
+            });
+
+            modelBuilder.Entity<SalaryPeriodGroup>(entity =>
+            {
+                entity.HasKey(e => new { e.SalaryPeriodId, e.SalaryGroupId });
+
+                entity.HasOne(d => d.SalaryGroup)
+                    .WithMany(p => p.SalaryPeriodGroup)
+                    .HasForeignKey(d => d.SalaryGroupId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodGroup_SalaryGroup");
+
+                entity.HasOne(d => d.SalaryPeriod)
+                    .WithMany(p => p.SalaryPeriodGroup)
+                    .HasForeignKey(d => d.SalaryPeriodId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodGroup_SalaryPeriod");
+            });
+
+            modelBuilder.Entity<SalaryRefTable>(entity =>
+            {
+                entity.Property(e => e.FromField)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.RefTableCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.RefTableField)
+                    .IsRequired()
+                    .HasMaxLength(128);
             });
 
             modelBuilder.Entity<ShiftConfiguration>(entity =>
