@@ -81,18 +81,29 @@ namespace VErp.Commons.GlobalObject
                 }
                 else if (isArray)
                 {
-                    var clauses = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Rules).ToLower()).Value;
+                    var clauses = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Rules).ToLower()).Value;
                     var logicOperator = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Condition).ToLower())?.Value?.ToString();
-                    var not = props.FirstOrDefault(c => c.Name == nameof(ArrayClause.Not).ToLower())?.Value?.ToString();
+                    var not = props.FirstOrDefault(c => c.Name.ToLower() == nameof(ArrayClause.Not).ToLower())?.Value?.ToString();
                     if (not == null)
                     {
                         not = "False";
                     }
+                    EnumLogicOperator logicOperatorValue;
+                    if (int.TryParse(logicOperator, out var logicValue))
+                    {
+                        logicOperatorValue = (EnumLogicOperator)logicValue;
+                    }
+                    else
+                    {
+                        logicOperatorValue = EnumValueExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator);
+                    }
+
                     resultClause = new ArrayClause
                     {
-                        Condition = Enums.MasterEnum.EnumValueExtensions.GetValueFromDescription<EnumLogicOperator>(logicOperator),
+                        Condition = logicOperatorValue,
                         Not = bool.Parse(not)
                     };
+
                     var arrClause = clauses.ToArray();
                     foreach (var item in arrClause)
                     {
@@ -102,7 +113,7 @@ namespace VErp.Commons.GlobalObject
                 }
                 return resultClause;
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Định dạng bộ lọc truyền lên không hợp lệ");
             }
