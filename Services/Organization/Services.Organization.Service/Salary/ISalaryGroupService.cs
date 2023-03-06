@@ -10,9 +10,12 @@ namespace VErp.Services.Organization.Service.Salary
     {
         Task<IList<SalaryGroupModel>> GetList();
 
+        Task<SalaryGroupModel> GetInfo(int salaryGroupId);
+
         Task<int> Create(SalaryGroupModel model);
 
         Task<bool> Update(int salaryGroupId, SalaryGroupModel model); 
+
         Task<bool> Delete(int salaryGroupId);
     }
 }

@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -22,21 +23,21 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryRefTableActivityLog;
+        private readonly ObjectActivityLogFacade _salaryFieldActivityLog;
 
         public SalaryFieldService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryRefTableActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryField);
+            _salaryFieldActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryField);
         }
         public async Task<int> Create(SalaryFieldModel model)
         {
             var info = _mapper.Map<SalaryField>(model);
             await _organizationDBContext.SalaryField.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryFieldId, $"Thêm mới trường dữ liệu {info.FieldName} vào bảng lương", model.JsonSerialize());
+            await _salaryFieldActivityLog.CreateLog(info.SalaryFieldId, $"Thêm mới trường dữ liệu {info.SalaryFieldName} vào bảng lương", model.JsonSerialize());
             return info.SalaryFieldId;
         }
 
@@ -50,13 +51,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             _organizationDBContext.SalaryField.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryFieldId, $"Xóa trường dữ liệu {info.FieldName} khỏi bảng lương", info.JsonSerialize());
+            await _salaryFieldActivityLog.CreateLog(info.SalaryFieldId, $"Xóa trường dữ liệu {info.SalaryFieldName} khỏi bảng lương", info.JsonSerialize());
             return true;
         }
 
         public async Task<IList<SalaryFieldModel>> GetList()
         {
-            return await _organizationDBContext.SalaryField.ProjectTo<SalaryFieldModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return await _organizationDBContext.SalaryField.ProjectTo<SalaryFieldModel>(_mapper.ConfigurationProvider)
+                .OrderBy(s => s.SortOrder)
+                .ToListAsync();
         }
 
         public async Task<bool> Update(int salaryFieldId, SalaryFieldModel model)
@@ -69,7 +72,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _mapper.Map(model, info);
             info.SalaryFieldId = salaryFieldId;
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryFieldId, $"Cập nhật trường dữ liệu {model.SalaryFieldName} bảng lương", model.JsonSerialize());
+            await _salaryFieldActivityLog.CreateLog(info.SalaryFieldId, $"Cập nhật trường dữ liệu {model.SalaryFieldName} bảng lương", model.JsonSerialize());
             return true;
         }
     }

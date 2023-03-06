@@ -767,6 +767,12 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Value).HasColumnType("sql_variant");
 
+                entity.HasOne(d => d.SalaryEmployee)
+                    .WithMany(p => p.SalaryEmployeeValue)
+                    .HasForeignKey(d => d.SalaryEmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryEmployeeValue_SalaryEmployee");
+
                 entity.HasOne(d => d.SalaryField)
                     .WithMany(p => p.SalaryEmployeeValue)
                     .HasForeignKey(d => d.SalaryFieldId)
@@ -778,7 +784,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.Property(e => e.Description).HasMaxLength(512);
 
-                entity.Property(e => e.FieldName)
+                entity.Property(e => e.SalaryFieldName)
                     .IsRequired()
                     .HasMaxLength(128);
 
@@ -811,9 +817,16 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .HasConstraintName("FK_SalaryGroupField_SalaryGroup");
             });
 
+            modelBuilder.Entity<SalaryPeriod>(entity =>
+            {
+                entity.HasIndex(e => new { e.Year, e.Month, e.SubsidiaryId }, "IX_SalaryPeriod")
+                    .IsUnique();
+            });
+
             modelBuilder.Entity<SalaryPeriodGroup>(entity =>
             {
-                entity.HasKey(e => new { e.SalaryPeriodId, e.SalaryGroupId });
+                entity.HasIndex(e => new { e.SalaryPeriodId, e.SalaryGroupId }, "IX_SalaryPeriodGroup")
+                    .IsUnique();
 
                 entity.HasOne(d => d.SalaryGroup)
                     .WithMany(p => p.SalaryPeriodGroup)
@@ -830,6 +843,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryRefTable>(entity =>
             {
+                entity.Property(e => e.Filter).HasMaxLength(1024);
+
                 entity.Property(e => e.FromField)
                     .IsRequired()
                     .HasMaxLength(128);

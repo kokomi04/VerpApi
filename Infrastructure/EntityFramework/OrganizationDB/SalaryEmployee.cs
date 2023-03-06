@@ -7,6 +7,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class SalaryEmployee
     {
+        public SalaryEmployee()
+        {
+            SalaryEmployeeValue = new HashSet<SalaryEmployeeValue>();
+        }
+
         public long SalaryEmployeeId { get; set; }
         public long EmployeeId { get; set; }
         public int SalaryPeriodId { get; set; }
@@ -21,5 +26,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual HrBill Employee { get; set; }
         public virtual SalaryGroup SalaryGroup { get; set; }
         public virtual SalaryPeriod SalaryPeriod { get; set; }
+        public virtual ICollection<SalaryEmployeeValue> SalaryEmployeeValue { get; set; }
     }
 }

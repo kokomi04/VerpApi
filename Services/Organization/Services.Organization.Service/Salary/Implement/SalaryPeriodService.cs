@@ -25,14 +25,14 @@ namespace VErp.Services.Organization.Service.Salary
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryRefTableActivityLog;
+        private readonly ObjectActivityLogFacade _salaryPeriodActivityLog;
 
         public SalaryPeriodService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryRefTableActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriod);
+            _salaryPeriodActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriod);
         }
 
         public async Task<bool> Censor(int salaryPeriodId, bool isSuccess)
@@ -51,9 +51,9 @@ namespace VErp.Services.Organization.Service.Salary
 
             ObjectActivityLogModelBuilder<string> logBuilder;
             if (isSuccess)
-                logBuilder = _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorApproved);
+                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorApproved);
             else
-                logBuilder = _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorRejected);
+                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorRejected);
 
             await logBuilder
                 .MessageResourceFormatDatas(info.Month, info.Year)
@@ -80,9 +80,9 @@ namespace VErp.Services.Organization.Service.Salary
 
             ObjectActivityLogModelBuilder<string> logBuilder;
             if (isSuccess)
-                logBuilder = _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CheckAccepted);
+                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CheckAccepted);
             else
-                logBuilder = _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorRejected);
+                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.CensorRejected);
 
             await logBuilder
                 .MessageResourceFormatDatas(info.Month, info.Year)
@@ -99,7 +99,7 @@ namespace VErp.Services.Organization.Service.Salary
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             await _organizationDBContext.SalaryPeriod.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Create)
+            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Create)
                 .MessageResourceFormatDatas(model.Month, model.Year)
                 .ObjectId(info.SalaryPeriodId)
                 .JsonData(model.JsonSerialize())
@@ -118,13 +118,28 @@ namespace VErp.Services.Organization.Service.Salary
             info.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
+            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
                 .MessageResourceFormatDatas(info.Month, info.Year)
                 .ObjectId(info.SalaryPeriodId)
                 .JsonData(info.JsonSerialize())
                 .CreateLog();
 
             return true;
+        }
+
+
+        public async Task<SalaryPeriodModel> GetInfo(int year, int month)
+        {
+            return await _organizationDBContext.SalaryPeriod.Where(s=>s.Year==year && s.Month==month)
+                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<SalaryPeriodModel> GetInfo(int salaryPeriodId)
+        {
+            return await _organizationDBContext.SalaryPeriod.Where(s => s.SalaryPeriodId == salaryPeriodId)
+                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<PageData<SalaryPeriodModel>> GetList(int page, int size)
@@ -147,7 +162,7 @@ namespace VErp.Services.Organization.Service.Salary
             info.SalaryPeriodId = salaryPeriodId;
             await _organizationDBContext.SaveChangesAsync();
 
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Update)
+            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Update)
                 .MessageResourceFormatDatas(info.Month, info.Year)
                 .ObjectId(info.SalaryPeriodId)
                 .JsonData(info.JsonSerialize())

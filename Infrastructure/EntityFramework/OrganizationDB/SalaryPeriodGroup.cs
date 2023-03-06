@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class SalaryPeriodGroup
     {
+        public long SalaryPeriodGroupId { get; set; }
         public int SalaryPeriodId { get; set; }
         public int SalaryGroupId { get; set; }
         public DateTime FromDate { get; set; }

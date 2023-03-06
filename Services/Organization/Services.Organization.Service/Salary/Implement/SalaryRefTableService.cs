@@ -58,7 +58,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<IList<SalaryRefTableModel>> GetList()
         {
-            return await _organizationDBContext.SalaryRefTable.ProjectTo<SalaryRefTableModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return await _organizationDBContext.SalaryRefTable.ProjectTo<SalaryRefTableModel>(_mapper.ConfigurationProvider)
+                .OrderBy(s => s.SortOrder)
+                .ToListAsync();
         }
 
         public async Task<bool> Update(int salaryRefTableId, SalaryRefTableModel model)
