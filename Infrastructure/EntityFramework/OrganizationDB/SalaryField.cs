@@ -15,7 +15,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
         public int SalaryFieldId { get; set; }
         public int SubsidiaryId { get; set; }
-        public string FieldName { get; set; }
+        public string SalaryFieldName { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public int DataTypeId { get; set; }

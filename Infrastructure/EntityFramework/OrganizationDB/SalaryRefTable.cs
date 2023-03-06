@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int SortOrder { get; set; }
         public string FromField { get; set; }
         public string RefTableCode { get; set; }
+        public string Filter { get; set; }
         public string RefTableField { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

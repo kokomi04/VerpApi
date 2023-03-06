@@ -11,6 +11,10 @@ namespace VErp.Services.Organization.Service.Salary
     {
         Task<PageData<SalaryPeriodModel>> GetList(int page, int size);
 
+        Task<SalaryPeriodModel> GetInfo(int year, int month);
+
+        Task<SalaryPeriodModel> GetInfo(int salaryPeriodId);
+
         Task<int> Create(SalaryPeriodModel model);
 
         Task<bool> Update(int salaryPeriodId, SalaryPeriodModel model);

@@ -17,6 +17,9 @@ namespace VErp.Services.Organization.Model.Salary
         [MinLength(1)]
         [MaxLength(128)]
         public string SalaryFieldName { get; set; }
+        [Required]
+        [MinLength(1)]
+        [MaxLength(128)]
         public string Title { get; set; }
         public string Description { get; set; }
         public EnumDataType DataTypeId { get; set; }

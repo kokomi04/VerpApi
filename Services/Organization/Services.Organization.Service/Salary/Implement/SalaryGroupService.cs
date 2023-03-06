@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
@@ -22,14 +24,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryRefTableActivityLog;
+        private readonly ObjectActivityLogFacade _salaryGroupActivityLog;
 
         public SalaryGroupService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryRefTableActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryGroup);
+            _salaryGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryGroup);
         }
 
         public async Task<int> Create(SalaryGroupModel model)
@@ -54,7 +56,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 await trans.CommitAsync();
             }
 
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Create)
+            await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Create)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryGroupId)
                 .JsonData(model.JsonSerialize())
@@ -73,7 +75,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             info.IsDeleted = true;
 
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Delete)
+            await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Delete)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.SalaryGroupId)
                 .JsonData(info.JsonSerialize())
@@ -89,11 +91,25 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             foreach (var item in lst)
             {
                 var model = _mapper.Map<SalaryGroupModel>(item);
-                model.TableFields = _mapper.Map<List<SalaryGroupFieldModel>>(item.SalaryGroupField);
+                model.TableFields = _mapper.Map<List<SalaryGroupFieldModel>>(item.SalaryGroupField).OrderBy(f => f.SortOrder).ToList();
                 result.Add(model);
             }
 
             return result;
+        }
+
+
+        public async Task<SalaryGroupModel> GetInfo(int salaryGroupId)
+        {
+            var info = await _organizationDBContext.SalaryGroup.Include(t => t.SalaryGroupField).FirstOrDefaultAsync(s => s.SalaryGroupId == salaryGroupId);
+            if (info == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var model = _mapper.Map<SalaryGroupModel>(info);
+            model.TableFields = _mapper.Map<List<SalaryGroupFieldModel>>(info.SalaryGroupField).OrderBy(f => f.SortOrder).ToList();
+            return model;
         }
 
         public async Task<bool> Update(int salaryGroupId, SalaryGroupModel model)
@@ -126,7 +142,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 await trans.CommitAsync();
             }
 
-            await _salaryRefTableActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Update)
+            await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Update)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryGroupId)
                 .JsonData(model.JsonSerialize())
