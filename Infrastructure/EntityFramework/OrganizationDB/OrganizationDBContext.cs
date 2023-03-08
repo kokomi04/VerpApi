@@ -795,8 +795,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryGroup>(entity =>
             {
-                entity.Property(e => e.SalaryGroupId).ValueGeneratedNever();
-
                 entity.Property(e => e.Title).HasMaxLength(128);
             });
 
