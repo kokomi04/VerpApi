@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Parsers\**" />
+    <EmbeddedResource Remove="Parsers\**" />
+    <None Remove="Parsers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\.editorconfig" Link=".editorconfig" />
   </ItemGroup>
 
@@ -28,10 +34,6 @@
     <ProjectReference Include="..\Constants\Constants.csproj" />
     <ProjectReference Include="..\Enums\Enums.csproj" />
     <ProjectReference Include="..\GlobalObject\GlobalObject.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Parsers\" />
   </ItemGroup>
 
 </Project>

@@ -274,7 +274,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Phân công sản xuất")]
         ProductionAssignment = 73,
         ProductionProcess = 74,
-        
+
         [Description("Bàn giao công đoạn / Yêu cầu xuất kho")]
         ProductionHandover = 75,
 
@@ -392,6 +392,22 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Chứng từ hành chính nhân sự")]
         HrBill = 1042,
+
+
+        [Description("Cấu hình liên kết bảng lương")]
+        SalaryRefTable = 10004200,
+
+        [Description("Trường dữ liệu bảng lương")]
+        SalaryField = 10004201,
+        [Description("Loại bảng lương")]
+        SalaryGroup = 10004202,
+        [Description("Kỳ tính lương")]
+        SalaryPeriod = 10004203,
+        [Description("Bảng lương theo kỳ")]
+        SalaryPeriodTable = 10004204,
+        [Description("Dữ liệu bảng lương")]
+        SalaryEmployee = 10004205,
+
 
         [Description("Dữ liệu nháp")]
         DraftData = 1043,

@@ -156,12 +156,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return rows;
         }
 
-        public async Task<DataResultModel> CalcCostTransferDetail(long fromDate, long toDate, EnumCostTransfer type,
+        public async Task<DataResultModel> CalcCostTransferDetail(string tk, long fromDate, long toDate, EnumCostTransfer type,
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock,
             int? department, string customer, int? fixedAsset, int? expenseItem, int? factory, int? product, int? stock)
         {
             var sqlParams = new SqlParameter[]
             {
+                new SqlParameter("@Tk", tk),
                 new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                 new SqlParameter("@ToDate", toDate.UnixToDateTime()),
                 new SqlParameter("@Type", (int)type),

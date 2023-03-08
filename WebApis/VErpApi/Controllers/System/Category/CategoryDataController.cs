@@ -75,8 +75,7 @@ namespace VErpApi.Controllers.System.Category
         }
 
 
-        [HttpPost]
-        [VErpAction(EnumActionType.View)]
+        [HttpPost]        
         [Route("{categoryId}/categoryrows")]
         public async Task<int> AddCategoryRow([FromRoute] int categoryId, [FromBody] NonCamelCaseDictionary data)
         {

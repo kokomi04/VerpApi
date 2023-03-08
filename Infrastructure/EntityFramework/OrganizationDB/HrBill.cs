@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 #nullable disable
 
@@ -6,6 +7,11 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 {
     public partial class HrBill
     {
+        public HrBill()
+        {
+            SalaryEmployee = new HashSet<SalaryEmployee>();
+        }
+
         public long FId { get; set; }
         public int HrTypeId { get; set; }
         public int CreatedByUserId { get; set; }
@@ -19,5 +25,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string BillCode { get; set; }
 
         public virtual HrType HrType { get; set; }
+        public virtual ICollection<SalaryEmployee> SalaryEmployee { get; set; }
     }
 }

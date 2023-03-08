@@ -374,7 +374,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (data.FormTypeId == EnumFormType.Generate || data.FormTypeId == EnumFormType.MultiSelect)
             {
                 data.DataTypeId = EnumDataType.Text;
-                data.DataSize = -1;
+                //data.DataSize = -1;
             }
             if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {
@@ -605,13 +605,15 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var inputField = await _organizationDBContext.HrField.FirstOrDefaultAsync(f => f.HrFieldId == hrFieldId);
 
+            var dbFormTypeId = inputField.FormTypeId;
+
             FieldDataProcess(ref data);
             await ValidateHrField(hrArea.HrTypeId, data, inputField, hrFieldId);
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (dbFormTypeId != (int)EnumFormType.ViewOnly)
                 {
                     if (data.FormTypeId == EnumFormType.ViewOnly)
                     {
