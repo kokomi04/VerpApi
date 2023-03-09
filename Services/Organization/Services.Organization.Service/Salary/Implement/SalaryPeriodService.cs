@@ -12,6 +12,7 @@ using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -45,7 +46,7 @@ namespace VErp.Services.Organization.Service.Salary
 
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CensorApproved : EnumSalaryPeriodCensorStatus.CensorRejected);
             info.CensorByUserId = _currentContextService.UserId;
-            info.CensorDatetimeUtc= DateTime.UtcNow;
+            info.CensorDatetimeUtc = DateTime.UtcNow;
 
             await _organizationDBContext.SaveChangesAsync();
 
@@ -109,28 +110,61 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Delete(int salaryPeriodId)
         {
-            var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
-            if (info == null)
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                throw GeneralCode.ItemNotFound.BadRequest();
+                var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
+                if (info == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+                info.IsDeleted = true;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await DeletePeriodGroupEmployee(salaryPeriodId);
+
+                await DeletePeriodGroup(salaryPeriodId);
+
+                await trans.CommitAsync();
+
+                await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
+                    .MessageResourceFormatDatas(info.Month, info.Year)
+                    .ObjectId(info.SalaryPeriodId)
+                    .JsonData(info.JsonSerialize())
+                    .CreateLog();
+
+                return true;
             }
+        }
 
-            info.IsDeleted = true;
 
-            await _organizationDBContext.SaveChangesAsync();
-            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
-                .MessageResourceFormatDatas(info.Month, info.Year)
-                .ObjectId(info.SalaryPeriodId)
-                .JsonData(info.JsonSerialize())
-                .CreateLog();
+        private async Task DeletePeriodGroupEmployee(int salaryPeriodId)
+        {
+            await _organizationDBContext.SalaryEmployee.Where(e => e.SalaryPeriodId == salaryPeriodId)
+                .UpdateByBatch(e => new SalaryEmployee
+                {
+                    IsDeleted = true,
+                    DeletedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedByUserId = _currentContextService.UserId
+                });
+        }
 
-            return true;
+        private async Task DeletePeriodGroup(int salaryPeriodId)
+        {
+            await _organizationDBContext.SalaryPeriodGroup.Where(e => e.SalaryPeriodId == salaryPeriodId)
+               .UpdateByBatch(e => new SalaryPeriodGroup
+               {
+                   IsDeleted = true,
+                   DeletedDatetimeUtc = DateTime.UtcNow,
+                   UpdatedByUserId = _currentContextService.UserId
+               });
         }
 
 
         public async Task<SalaryPeriodModel> GetInfo(int year, int month)
         {
-            return await _organizationDBContext.SalaryPeriod.Where(s=>s.Year==year && s.Month==month)
+            return await _organizationDBContext.SalaryPeriod.Where(s => s.Year == year && s.Month == month)
                 .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
