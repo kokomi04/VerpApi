@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -48,6 +49,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            if (await _organizationDBContext.SalaryEmployeeValue.AnyAsync(v => v.SalaryFieldId == salaryFieldId))
+            {
+                throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.Title);
+            }
 
             _organizationDBContext.SalaryField.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
@@ -69,6 +74,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            if ((int)model.DataTypeId != info.DataTypeId)
+            {
+                throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.Title);
+            }
+
             _mapper.Map(model, info);
             info.SalaryFieldId = salaryFieldId;
             await _organizationDBContext.SaveChangesAsync();

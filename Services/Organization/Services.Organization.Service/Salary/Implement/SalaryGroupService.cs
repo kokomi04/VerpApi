@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
@@ -70,6 +71,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (info == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            if (await _organizationDBContext.SalaryPeriodGroup.AnyAsync(g => g.SalaryGroupId == salaryGroupId))
+            {
+                throw SalaryGroupValidationMessage.SalaryGroupInUsed.BadRequestFormat(info.Title);
             }
 
             info.IsDeleted = true;

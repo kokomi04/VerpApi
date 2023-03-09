@@ -18,7 +18,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<IList<NonCamelCaseDictionary>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);
 
-        Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);
+        Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);    
 
     }
 }

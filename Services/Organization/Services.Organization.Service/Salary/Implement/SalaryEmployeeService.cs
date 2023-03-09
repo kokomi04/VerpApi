@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Wordprocessing;
 using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
@@ -9,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Salary;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -21,15 +24,16 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
+using VErp.Services.Organization.Service.Salary.Implement.Abstract;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
-    public class SalaryEmployeeService : ISalaryEmployeeService
+    public class SalaryEmployeeService : SalaryPeriodGroupEmployeeAbstract, ISalaryEmployeeService
     {
-        private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryRefTableActivityLog;
+        private readonly ObjectActivityLogFacade _salaryEmployeeActivityLog;
+        private readonly ObjectActivityLogFacade _salaryPeriodGroupActivityLog;
+
         private readonly ISalaryGroupService _salaryGroupService;
         private readonly ISalaryRefTableService _salaryRefTableService;
         private readonly IHrDataService _hrDataService;
@@ -39,11 +43,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ISalaryPeriodGroupService _salaryPeriodGroupService;
 
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ISalaryGroupService salaryGroupService, ISalaryRefTableService salaryRefTableService, IHrDataService hrDataService, ICategoryHelperService httpCategoryHelperService, ISalaryFieldService salaryFieldService, ISalaryPeriodService salaryPeriodService, ISalaryPeriodGroupService salaryPeriodGroupService)
+            : base(organizationDBContext, currentContextService)
         {
-            _organizationDBContext = organizationDBContext;
-            _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryRefTableActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
+            _salaryEmployeeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
+            _salaryPeriodGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriodGroup);
+
             _salaryGroupService = salaryGroupService;
             _salaryRefTableService = salaryRefTableService;
             _hrDataService = hrDataService;
@@ -148,16 +153,25 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            var groupInfo = await _salaryGroupService.GetInfo(salaryGroupId);
+            if (groupInfo == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
             var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
+            long salaryPeriodGroupId;
             if (group == null)
             {
-                await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
+                salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
                 {
                     SalaryPeriodId = salaryPeriodId,
                     SalaryGroupId = salaryGroupId,
                     FromDate = model.FromDate,
                     ToDate = model.ToDate
                 });
+
+
             }
             else
             {
@@ -168,12 +182,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     FromDate = model.FromDate,
                     ToDate = model.ToDate
                 });
+                salaryPeriodGroupId = group.SalaryPeriodGroupId;
             }
 
             var salaryFields = await _salaryFieldService.GetList();
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
+                await base.DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
+
                 var salaries = new Dictionary<SalaryEmployee, NonCamelCaseDictionary>();
 
                 var lst = new List<SalaryEmployee>();
@@ -224,9 +241,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 await trans.CommitAsync();
 
+                await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.UpdateSalaryEmployee)
+                   .MessageResourceFormatDatas(groupInfo.Title, period.Month, period.Year)
+                   .ObjectId(salaryPeriodGroupId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
+
                 return true;
             }
         }
+
+
 
         private async Task<IList<NonCamelCaseDictionary>> FilterEmployee(Clause filter, int year, int month, long fromDate, long toDate)
         {

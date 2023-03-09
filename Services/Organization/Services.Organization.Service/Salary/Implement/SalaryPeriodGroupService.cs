@@ -16,24 +16,24 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
+using VErp.Services.Organization.Service.Salary.Implement.Abstract;
 
 namespace VErp.Services.Organization.Service.Salary
 {
-    public class SalaryPeriodGroupService : ISalaryPeriodGroupService
+    public class SalaryPeriodGroupService : SalaryPeriodGroupEmployeeAbstract, ISalaryPeriodGroupService
     {
-        private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryPeriodActivityLog;
+        private readonly ObjectActivityLogFacade _salaryPeriodGroupActivityLog;
         private readonly ISalaryPeriodService _salaryPeriodService;
         private readonly ISalaryGroupService _salaryGroupService;
 
         public SalaryPeriodGroupService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ISalaryPeriodService salaryPeriodService, ISalaryGroupService salaryGroupService)
+            : base(organizationDBContext, currentContextService)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryPeriodActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriod);
+            _salaryPeriodGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriodGroup);
             _salaryPeriodService = salaryPeriodService;
             _salaryGroupService = salaryGroupService;
         }
@@ -58,9 +58,9 @@ namespace VErp.Services.Organization.Service.Salary
 
             ObjectActivityLogModelBuilder<string> logBuilder;
             if (isSuccess)
-                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorApproved);
+                logBuilder = _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorApproved);
             else
-                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorRejected);
+                logBuilder = _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorRejected);
 
             await logBuilder
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
@@ -91,9 +91,9 @@ namespace VErp.Services.Organization.Service.Salary
 
             ObjectActivityLogModelBuilder<string> logBuilder;
             if (isSuccess)
-                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CheckAccepted);
+                logBuilder = _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CheckAccepted);
             else
-                logBuilder = _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorRejected);
+                logBuilder = _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.CensorRejected);
 
             await logBuilder
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
@@ -122,7 +122,7 @@ namespace VErp.Services.Organization.Service.Salary
             return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
         }
-        
+
 
         public async Task<int> Create(SalaryPeriodGroupModel model)
         {
@@ -145,7 +145,7 @@ namespace VErp.Services.Organization.Service.Salary
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             await _organizationDBContext.SalaryPeriodGroup.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Create)
+            await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Create)
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                 .ObjectId(info.SalaryPeriodGroupId)
                 .JsonData(model.JsonSerialize())
@@ -155,25 +155,33 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Delete(long salaryPeriodGroupId)
         {
-            var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
-            if (info == null)
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                throw GeneralCode.ItemNotFound.BadRequest();
+                var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
+                if (info == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+                var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
+
+                var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
+
+                info.IsDeleted = true;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await base.DeleteSalaryEmployeeByPeriodGroup(info.SalaryPeriodId, info.SalaryGroupId);
+
+                await trans.CommitAsync();
+
+                await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Delete)
+                    .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
+                    .ObjectId(info.SalaryPeriodGroupId)
+                    .JsonData(info.JsonSerialize())
+                    .CreateLog();
+
+                return true;
             }
-            var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
-
-            var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
-
-            info.IsDeleted = true;
-
-            await _organizationDBContext.SaveChangesAsync();
-            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Delete)
-                .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
-                .ObjectId(info.SalaryPeriodGroupId)
-                .JsonData(info.JsonSerialize())
-                .CreateLog();
-
-            return true;
         }
 
         public async Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
@@ -193,7 +201,7 @@ namespace VErp.Services.Organization.Service.Salary
             await _organizationDBContext.SaveChangesAsync();
 
 
-            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Update)
+            await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Update)
                .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                .ObjectId(info.SalaryPeriodGroupId)
                .JsonData(info.JsonSerialize())

@@ -404,7 +404,7 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Kỳ tính lương")]
         SalaryPeriod = 10004203,
         [Description("Bảng lương theo kỳ")]
-        SalaryPeriodTable = 10004204,
+        SalaryPeriodGroup = 10004204,
         [Description("Dữ liệu bảng lương")]
         SalaryEmployee = 10004205,
 
