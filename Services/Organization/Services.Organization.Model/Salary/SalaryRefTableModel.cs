@@ -16,6 +16,7 @@ namespace VErp.Services.Organization.Model.Salary
         public string FromField { get; set; }
         [Required]
         [MinLength(1)]
+        [MaxLength(128)]
         public string RefTableCode { get; set; }
         public Clause Filter { get; set; }
         [Required]
