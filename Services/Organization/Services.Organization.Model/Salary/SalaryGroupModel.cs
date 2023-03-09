@@ -2,6 +2,7 @@
 using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -12,6 +13,9 @@ namespace VErp.Services.Organization.Model.Salary
     public class SalaryGroupModel : IMapFrom<SalaryGroup>
     {
         public int SalaryGroupId { get; set; }
+        [Required]
+        [MinLength(1)]
+        [MaxLength(128)]
         public string Title { get; set; }
         public Clause EmployeeFilter { get; set; }
 

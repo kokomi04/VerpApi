@@ -21,6 +21,7 @@ namespace VErp.Services.Organization.Model.Salary
         [MinLength(1)]
         [MaxLength(128)]
         public string Title { get; set; }
+        [MaxLength(512)]
         public string Description { get; set; }
         public EnumDataType DataTypeId { get; set; }
         public int SortOrder { get; set; }
