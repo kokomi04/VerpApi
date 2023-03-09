@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Salary
@@ -10,9 +12,15 @@ namespace VErp.Services.Organization.Model.Salary
     public class SalaryPeriodModel : IMapFrom<SalaryPeriod>
     {
         public int SalaryPeriodId { get; set; }
+        [Required]
+        [Range(1, 12)]
         public int Month { get; set; }
+        [Required]
+        [Range(2010, 2100)]
         public int Year { get; set; }
+        [Required]
         public long FromDate { get; set; }
+        [Required]
         public long ToDate { get; set; }
 
         public int? CheckedByUserId { get; set; }
