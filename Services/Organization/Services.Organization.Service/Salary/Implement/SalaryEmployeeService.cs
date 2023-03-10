@@ -5,6 +5,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -73,7 +74,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var lst = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
+            var (lst, columns) = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
 
             var salaryFields = await _salaryFieldService.GetList();
 
@@ -97,6 +98,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     foreach (var condition in f.Expression)
                     {
                         var filter = condition?.Filter;
+                        NormalizeFieldNameInClause(filter);
                         var conditionResult = EvalClause(filter, model);
                         if (conditionResult)
                         {
@@ -253,8 +255,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
 
-        private async Task<IList<NonCamelCaseDictionary>> FilterEmployee(Clause filter, int year, int month, long fromDate, long toDate)
+        private async Task<(IList<NonCamelCaseDictionary> data, IList<string> columns)> FilterEmployee(Clause filter, int year, int month, long fromDate, long toDate)
         {
+            var columns = new List<string>();
+
             var refTables = await _salaryRefTableService.GetList();
             var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So");
 
@@ -263,7 +267,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             foreach (var f in fieldNames)
             {
-                select.Append($"v.{f},");
+                columns.Add(f);
+                select.Append($"v.{f}");
+                select.Append(",");
             }
 
             var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
@@ -282,22 +288,25 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 var fromField = refTable.FromField;
                 var lastPoint = fromField.LastIndexOf('.');
 
-                var refAlias = $"[v{fromField}]";
+                var refAlias = $"[{fromField}$]";
 
                 if (lastPoint < 0)
                 {
                     fromField = $"v.[{fromField}]";
                 }
-                else
-                {
-                    fromField = $"v{fromField}";
-                }
+
 
                 var cateFields = refFields.Where(f => f.CategoryCode == refTable.RefTableCode).ToList();
 
                 foreach (var f in cateFields)
                 {
-                    select.Append($"[{refAlias}].{f.CategoryFieldName} AS [{refTable.FromField}_{f.CategoryFieldName}],");
+                    var colName = $"{refTable.FromField}$.{f.CategoryFieldName}";
+                    colName = EscaseFieldName(colName);
+                    columns.Add(colName);
+                    select.Append($"[{refAlias}].{f.CategoryFieldName} AS [{colName}]");
+
+
+                    select.Append(",");
                 }
 
                 var refWhereCondition = new StringBuilder();
@@ -319,14 +328,44 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             if (filter != null)
             {
+                NormalizeFieldNameInClause(filter);
 
-                filter.FilterClauseProcess("({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix);
+                filter.FilterClauseProcess($"({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix);
             }
-            var queryData = $"SELECT {select.ToString().TrimEnd(',')} FROM {join}" + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
+            var queryData = $"SELECT * FROM ({select.ToString().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
             var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
 
-            return lstData.ConvertData();
+            return (lstData.ConvertData(), columns);
 
+        }
+
+        private void NormalizeFieldNameInClause(Clause clause)
+        {
+            if (clause is SingleClause single)
+            {
+                single.FieldName = EscaseFieldName(single.FieldName);
+                single.Value = EscaseFieldName(single.Value);
+
+            }
+            else if (clause is ArrayClause arrClause && arrClause?.Rules?.Count > 0)
+            {
+                foreach (var c in arrClause.Rules)
+                {
+                    NormalizeFieldNameInClause(c);
+                }
+            }
+        }
+
+        private T EscaseFieldName<T>(T expression)
+        {
+            if (expression == null) return expression;
+            if (expression.GetType() == typeof(string))
+            {
+                var expressionStr = expression.ToString().Replace("$.", "$");
+
+                return (T)(expressionStr as object);
+            }
+            return expression;
         }
 
         private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)
