@@ -566,7 +566,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             foreach (var departmentId in departmentIds)
             {
-                
+
                 // Danh sách công đoạn tổ đảm nhiệm
                 var departmentStepIds = stepDetails.Where(sd => sd.DepartmentId == departmentId)
                     .Select(sd => sd.StepId)
@@ -612,7 +612,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     departmentHourTotal.Add(departmentId, totalHour);
                 }
-              
+
 
                 var totalWorkHour = productionCapacityDetail.SelectMany(pc => pc.Value).Where(pc => departmentStepIds.Contains(pc.Key)).Sum(pc => pc.Value.Sum(w => w.WorkHour));
                 // Duyệt danh sách công đoạn tổ đảm nhiệm => tính ra số giờ làm việc của tổ cho từng công đoạn theo tỷ lệ KLCV
@@ -652,7 +652,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 StepInfo = stepInfo,
                 StepHourTotal = stepHourTotal,
-                AssignedStepHours = assignedHours,                
+                AssignedStepHours = assignedHours,
                 StepHoursDetail = stepHoursDetail,
                 DepartmentHourTotal = departmentHourTotal,
             };
@@ -864,7 +864,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         if (!stepHourTotal.ContainsKey(departmentStepId)) stepHourTotal[departmentStepId] = 0;
                         var stepWorkHour = departmentAssigns[departmentId].Where(d => d.StepId == departmentStepId).Sum(s => s.Hours);
-                        
+
                         var h = totalAssignHours > 0 ? totalHour * stepWorkHour / totalAssignHours : 0;
 
                         stepHourTotal[departmentStepId] += h;
@@ -957,8 +957,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                            ProductionOrderId = s.ContainerId,
                                            StepId = p.StepId.Value,
                                            ProductionStepLinkDataId = ld.ProductionStepLinkDataId,
-                                           Quantity = ld.Quantity,
-                                           OutsourceQuantity = (ld.OutsourcePartQuantity ?? 0) + (ld.OutsourceQuantity ?? 0) + (ld.ExportOutsourceQuantity ?? 0),
+                                           Quantity = ld.Quantity + (ld.ExportOutsourceQuantity ?? 0),
+                                           OutsourceQuantity = (ld.OutsourcePartQuantity ?? 0) + (ld.OutsourceQuantity ?? 0),
                                            ObjectId = ld.LinkDataObjectId,
                                            ObjectTypeId = (EnumProductionStepLinkDataObjectType)ld.LinkDataObjectTypeId,
                                            WorkloadConvertRate = ld.WorkloadConvertRate
