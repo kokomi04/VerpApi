@@ -360,11 +360,16 @@ namespace VErp.Services.Organization.Service.HrConfig
                 {
                     var hrArea = hrAreas[i];
 
-                    if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
+                    //if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
 
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
-                    var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
+                    IList<NonCamelCaseDictionary> hrAreaData = new List<NonCamelCaseDictionary>();
+                    if (data.ContainsKey(hrArea.HrAreaCode))
+                    {
+                        hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
+                    }
+
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
 
                     var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}], [HrBill_F_Id]
@@ -417,9 +422,12 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     }
 
-                    var newHrAreaData = hrAreaData.Where(x => !x.ContainsKey(HR_TABLE_F_IDENTITY) || string.IsNullOrWhiteSpace(x[HR_TABLE_F_IDENTITY].ToString()))
-                        .ToList();
-                    await AddHrBillBase(hrTypeId, hrBill_F_Id, billInfo: null, tableName, hrAreaData, hrAreaFields, newHrAreaData);
+                    if (hrAreaData.Count > 0)
+                    {
+                        var newHrAreaData = hrAreaData.Where(x => !x.ContainsKey(HR_TABLE_F_IDENTITY) || string.IsNullOrWhiteSpace(x[HR_TABLE_F_IDENTITY].ToString()))
+                            .ToList();
+                        await AddHrBillBase(hrTypeId, hrBill_F_Id, billInfo: null, tableName, hrAreaData, hrAreaFields, newHrAreaData);
+                    }
                 }
 
                 await @trans.CommitAsync();
