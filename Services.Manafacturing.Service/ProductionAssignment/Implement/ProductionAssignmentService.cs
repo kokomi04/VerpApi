@@ -304,7 +304,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 .ToDictionary(r => r.ProductionStepLinkDataId,
                 r =>
                 {
-                    return Math.Round(r.ProductionStepLinkData.QuantityOrigin - r.ProductionStepLinkData.OutsourcePartQuantity.GetValueOrDefault(), 5);
+                    return Math.Round(
+                        r.ProductionStepLinkData.Quantity
+                        + r.ProductionStepLinkData.ExportOutsourceQuantity.GetValueOrDefault()
+                        , 5);
                 });
 
                 foreach (var d in pStepAssignment.ProductionAssignments)
