@@ -35,7 +35,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<int> Create(SalaryRefTableModel model)
         {
+            await Validate(0, model);
+
             var info = _mapper.Map<SalaryRefTable>(model);
+
             await _organizationDBContext.SalaryRefTable.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
             await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Thêm mới bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
@@ -70,11 +73,23 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            await Validate(salaryRefTableId, model);
+
             _mapper.Map(model, info);
             info.SalaryRefTableId = salaryRefTableId;
             await _organizationDBContext.SaveChangesAsync();
             await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Cập nhật bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
             return true;
+        }
+
+        private async Task Validate(int salaryRefTableId, SalaryRefTableModel model)
+        {
+            if (await _organizationDBContext.SalaryRefTable.AnyAsync(s => s.Alias == model.Alias && s.SalaryRefTableId != salaryRefTableId))
+            {
+                throw GeneralCode.InvalidParams.BadRequest($"Định danh {model.Alias} đã tồn tại, vui lòng chọn định danh khác!");
+            }
+
         }
     }
 }

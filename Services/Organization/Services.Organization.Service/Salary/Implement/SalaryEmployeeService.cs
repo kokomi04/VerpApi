@@ -288,7 +288,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 var fromField = refTable.FromField;
                 var lastPoint = fromField.LastIndexOf('.');
 
-                var refAlias = $"[{fromField}$]";
+                var refAlias = $"[{refTable.Alias}]";
 
                 if (lastPoint < 0)
                 {
@@ -300,7 +300,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 foreach (var f in cateFields)
                 {
-                    var colName = $"{refTable.FromField}$.{f.CategoryFieldName}";
+                    var colName = $"{refTable.Alias}.{f.CategoryFieldName}";
                     colName = EscaseFieldName(colName);
                     columns.Add(colName);
                     select.Append($"[{refAlias}].{f.CategoryFieldName} AS [{colName}]");

@@ -41,6 +41,7 @@ namespace VErp.Services.Organization.Model.Salary
 
     public class SalaryFieldExpressionModel
     {
+        public string Name { get; set; }
         public Clause Filter { get; set; }
         public string ValueExpression { get; set; }
     }

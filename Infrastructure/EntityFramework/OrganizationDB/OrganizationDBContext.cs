@@ -841,6 +841,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryRefTable>(entity =>
             {
+                entity.Property(e => e.Alias).HasMaxLength(128);
+
                 entity.Property(e => e.Filter).HasMaxLength(1024);
 
                 entity.Property(e => e.FromField)
