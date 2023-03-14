@@ -935,7 +935,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                     //return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
-                    throw NotEnoughBalancePackageQuantityZero.BadRequest();
+                    //throw NotEnoughBalancePackageQuantityZero.BadRequest();
+
+                    throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, 0, detail.ProductUnitConversionQuantity.Format());
                 }
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
