@@ -127,14 +127,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             _mapper.Map(model, info);
+            info.SalaryGroupId = salaryGroupId;
 
             var lstFields = _mapper.Map<List<SalaryGroupField>>(model.TableFields);
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                await _organizationDBContext.SalaryGroup.AddAsync(info);
-                await _organizationDBContext.SaveChangesAsync();
-
                 foreach (var f in lstFields)
                 {
                     f.SalaryGroupId = info.SalaryGroupId;
