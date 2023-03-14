@@ -54,6 +54,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.Title);
             }
 
+            var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();
+             _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
+            await _organizationDBContext.SaveChangesAsync();
+
             _organizationDBContext.SalaryField.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
             await _salaryFieldActivityLog.CreateLog(info.SalaryFieldId, $"Xóa trường dữ liệu {info.SalaryFieldName} khỏi bảng lương", info.JsonSerialize());
