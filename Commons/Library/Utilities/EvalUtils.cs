@@ -38,7 +38,7 @@ namespace VErp.Commons.Library
                 {
                     foreach (var (name, value) in parameters)
                     {
-                        ex.Parameters.Add(name, value); ;
+                        ex.Parameters.Add(name, value);
                     }
                 }
 

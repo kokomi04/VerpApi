@@ -100,9 +100,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         var filter = condition?.Filter;
                         NormalizeFieldNameInClause(filter);
                         var conditionResult = EvalClause(filter, model);
-                        if (conditionResult)
+                        if (conditionResult && !string.IsNullOrWhiteSpace(condition.ValueExpression))
                         {
-                            var value = EvalUtils.EvalObject(condition.ValueExpression, model);
+                            var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), model);
                             if (!model.ContainsKey(f.SalaryFieldName))
                             {
                                 model.Add(f.SalaryFieldName, value);
@@ -260,7 +260,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var columns = new List<string>();
 
             var refTables = await _salaryRefTableService.GetList();
-            var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So");
+            var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So", false);
 
             var select = new StringBuilder();
             var join = new StringBuilder($"({query}) v");
@@ -273,6 +273,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
+
+            var data = new NonCamelCaseDictionary()
+            {
+                {"FromDate",fromDate.UnixToDateTime() },
+                {"ToDate",toDate.UnixToDateTime() },
+                {"Year",year },
+                {"Month",month },
+            };
 
             var sqlParams = new List<SqlParameter>()
             {
@@ -288,11 +296,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 var fromField = refTable.FromField;
                 var lastPoint = fromField.LastIndexOf('.');
 
-                var refAlias = $"[{refTable.Alias}]";
+                var refAlias = $"{refTable.Alias}";
 
                 if (lastPoint < 0)
                 {
-                    fromField = $"v.[{fromField}]";
+                    fromField = $"v.{fromField}";
                 }
 
 
@@ -303,7 +311,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     var colName = $"{refTable.Alias}.{f.CategoryFieldName}";
                     colName = EscaseFieldName(colName);
                     columns.Add(colName);
-                    select.Append($"[{refAlias}].{f.CategoryFieldName} AS [{colName}]");
+                    select.Append($"{refAlias}.{f.CategoryFieldName} AS [{colName}]");
 
 
                     select.Append(",");
@@ -313,10 +321,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 if (refTable.Filter != null)
                 {
 
-                    filter.FilterClauseProcess(refTable.RefTableCode, refAlias, ref refWhereCondition, ref sqlParams, ref suffix);
+                    refTable.Filter.FilterClauseProcess(refTable.RefTableCode, refAlias, ref refWhereCondition, ref sqlParams, ref suffix, false, null, data);
                 }
 
-                join.AppendLine($"LEFT JOIN {refTable.RefTableCode} AS {refAlias} ON ({fromField} = [{refAlias}].{refTable.RefTableField})");
+                join.AppendLine($" LEFT JOIN v{refTable.RefTableCode} AS {refAlias} ON ({fromField} = [{refAlias}].{refTable.RefTableField})");
                 if (refWhereCondition.Length > 0)
                 {
                     join.Append($" AND {refWhereCondition}");
@@ -330,9 +338,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 NormalizeFieldNameInClause(filter);
 
-                filter.FilterClauseProcess($"({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix);
+                filter.FilterClauseProcess($"({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix, false, null, data);
             }
-            var queryData = $"SELECT * FROM ({select.ToString().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
+            var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
             var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
 
             return (lstData.ConvertData(), columns);
@@ -356,17 +364,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
         }
 
+
+
         private T EscaseFieldName<T>(T expression)
         {
             if (expression == null) return expression;
             if (expression.GetType() == typeof(string))
             {
-                var expressionStr = expression.ToString().Replace("$.", "$");
+                var expressionStr = expression.ToString().Replace("$.", "__");
 
                 return (T)(expressionStr as object);
             }
             return expression;
         }
+
 
         private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)
         {
@@ -395,7 +406,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                     if (arrClause.Rules.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống.Vui lòng kiểm tra lại cấu hình điều kiện lọc!");
+                        return true;
                     }
 
                     var res = new List<bool>();

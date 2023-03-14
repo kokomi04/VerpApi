@@ -46,7 +46,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
         Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
-        Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode);
+        Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode, bool includedMultiRowArea);
     }
 
     public class HrDataService : IHrDataService
@@ -319,7 +319,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return results;
         }
 
-        public async Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode)
+        public async Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode, bool includedMultiRowArea)
         {
             var fieldNames = new List<string>();
 
@@ -332,7 +332,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var join = new StringBuilder("FROM dbo.HrBill bill");
             var select = new StringBuilder();
-            select.Append("bill.F_Id");
+            select.Append("bill.F_Id, ");
 
             fieldNames.Add(HR_TABLE_F_IDENTITY);
 
@@ -340,20 +340,22 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 var hrArea = hrAreas[i];
 
+                if (!includedMultiRowArea && hrArea.IsMultiRow) continue;
+
                 var tableName = GetHrAreaTableName(hrTypeCode, hrArea.HrAreaCode);
                 if (hrArea.IsMultiRow)
                 {
-                    join.AppendLine($"LEFT JOIN (SELECT ROW_NUMBER() OVER(PARTITION BY HrBill_F_Id ORDER BY F_Id DESC) __RowNumber, * FROM {tableName}) AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0 AND [{hrArea.HrAreaCode}].__RowNumber = 1");
+                    join.AppendLine($" LEFT JOIN (SELECT ROW_NUMBER() OVER(PARTITION BY HrBill_F_Id ORDER BY F_Id DESC) __RowNumber, * FROM {tableName}) AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0 AND [{hrArea.HrAreaCode}].__RowNumber = 1");
                 }
                 else
                 {
-                    join.AppendLine($"LEFT JOIN {tableName} AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0");
+                    join.AppendLine($" LEFT JOIN {tableName} AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0");
                 }
 
 
                 foreach (var field in fields.Where(x => x.HrAreaId == hrArea.HrAreaId).ToList())
                 {
-                    select.Append($", [{hrArea.HrAreaCode}].[{field.FieldName}]");
+                    select.Append($"[{hrArea.HrAreaCode}].[{field.FieldName}], ");
 
                     fieldNames.Add(field.FieldName);
 
@@ -365,7 +367,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                         if (field.FormTypeId == (int)EnumFormType.MultiSelect)
                         {
-                            var refFields = field.RefTableTitle.Split(",").Select(refTitle => @$", 
+                            var refFields = field.RefTableTitle.Split(",")
+                                .Select(refTitle => @$"
                                 (
                                     SELECT STRING_AGG({refTitle}, ', ') AS [{refTitle}]
                                     FROM  (
@@ -375,16 +378,16 @@ namespace VErp.Services.Organization.Service.HrConfig
                                             SELECT [value] FROM OPENJSON(ISNULL([row].[{field.FieldName}],'[]')) WITH (  [value] INT '$' )
                                         )
                                     ) c GROUP BY c.F_Id
-                                ) AS [{field.FieldName}_{refTitle}]
+                                ) AS [{field.FieldName}_{refTitle}],
                             ");
 
 
-                            select.Append($", {string.Join("", refFields)}");
+                            select.Append($"{string.Join("", refFields)}");
                         }
                         else
                         {
-                            var refFields = field.RefTableTitle.Split(",").Select(refTitle => $", [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}]");
-                            select.Append($", {string.Join("", refFields)}");
+                            var refFields = field.RefTableTitle.Split(",").Select(refTitle => $" [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}], ");
+                            select.Append($"{string.Join("", refFields)}");
 
                             join.AppendLine($" LEFT JOIN [v{field.RefTableCode}] as [v{field.FieldName}] WITH(NOLOCK) ON [{hrArea.HrAreaCode}].[{field.FieldName}] = [v{field.FieldName}].[{field.RefTableField}]");
                         }
@@ -392,7 +395,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {select} {join}", fieldNames);
+            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join}", fieldNames);
         }
 
 
