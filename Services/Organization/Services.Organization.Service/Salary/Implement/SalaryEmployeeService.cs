@@ -310,6 +310,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     var colName = $"{refTable.Alias}.{f.CategoryFieldName}";
                     colName = EscaseFieldName(colName);
+                    var idx = 1;
+                    var originalColName = colName;
+                    while (columns.Contains(colName))
+                    {
+                        colName = originalColName + idx;
+                    }
                     columns.Add(colName);
                     select.Append($"{refAlias}.{f.CategoryFieldName} AS [{colName}]");
 
@@ -371,7 +377,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (expression == null) return expression;
             if (expression.GetType() == typeof(string))
             {
-                var expressionStr = expression.ToString().Replace("$.", "__");
+                var expressionStr = expression.ToString().Replace("$.", "_");
 
                 return (T)(expressionStr as object);
             }

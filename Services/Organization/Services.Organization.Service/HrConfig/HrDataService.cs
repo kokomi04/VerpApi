@@ -93,6 +93,14 @@ namespace VErp.Services.Organization.Service.HrConfig
         }
 
         #region public
+        /// <summary>
+        /// When update ref bill => Update main bill set to ref Id
+        /// </summary>
+        /// <param name="hrTypeId"></param>
+        /// <param name="hrAreaId"></param>
+        /// <param name="hrBill_F_Id"></param>
+        /// <param name="hrBillReference_F_Id"></param>
+        /// <returns></returns>
         public async Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id)
         {
             var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
