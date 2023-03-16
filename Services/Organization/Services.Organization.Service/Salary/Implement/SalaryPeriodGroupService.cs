@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -186,20 +187,10 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
         {
-            var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
-            if (info == null)
-            {
-                throw GeneralCode.ItemNotFound.BadRequest();
-            }
-            var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
+            var info = await DbUpdate(salaryPeriodGroupId, model);
 
             var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
-
-            _mapper.Map(model, info);
-            info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
-            info.SalaryPeriodGroupId = salaryPeriodGroupId;
-            await _organizationDBContext.SaveChangesAsync();
-
+            var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
 
             await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Update)
                .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
@@ -208,6 +199,22 @@ namespace VErp.Services.Organization.Service.Salary
                .CreateLog();
 
             return true;
+        }
+
+        public async Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
+        {
+            var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
+            if (info == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            _mapper.Map(model, info);
+            info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
+            info.SalaryPeriodGroupId = salaryPeriodGroupId;
+            await _organizationDBContext.SaveChangesAsync();
+
+            return info;
         }
     }
 

@@ -89,7 +89,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 };
                 foreach (var field in fields)
                 {
-                    data.TryGetValue(field.Key, out var celValue);
+                    data.TryGetStringValue(field.Key, out var celValue);
                     parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
                 resultData = (await _masterContext.QueryDataTable(script, parammeters)).ConvertData();
@@ -189,7 +189,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var dataRow = dataTable.NewRow();
             if (category.IsTreeView)
             {
-                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
+                data.TryGetStringValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
                     dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
@@ -209,7 +209,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in categoryFields)
             {
                 if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
-                data.TryGetValue(field.CategoryFieldName, out string value);
+                data.TryGetStringValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
                 if (field.CategoryFieldName == GlobalFieldConstants.SubsidiaryId)
@@ -279,7 +279,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 categoryRow.TryGetValue(CategoryFieldConstants.ParentId, out object oParent);
                 string cParent = oParent?.ToString() ?? string.Empty;
-                data.TryGetValue(CategoryFieldConstants.ParentId, out string uParent);
+                data.TryGetStringValue(CategoryFieldConstants.ParentId, out string uParent);
                 uParent ??= string.Empty;
 
                 isParentChange = cParent != uParent;
@@ -296,8 +296,8 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (!data.ContainsKey(categoryField.CategoryFieldName)) continue;
 
-                categoryRow.TryGetValue(categoryField.CategoryFieldName, out var currentValue);
-                data.TryGetValue(categoryField.CategoryFieldName, out var updateValue);
+                categoryRow.TryGetStringValue(categoryField.CategoryFieldName, out var currentValue);
+                data.TryGetStringValue(categoryField.CategoryFieldName, out var updateValue);
                 if (currentValue != updateValue)
                 {
                     updateFields.Add(categoryField);
@@ -354,7 +354,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             if (isParentChange)
             {
-                data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
+                data.TryGetStringValue(CategoryFieldConstants.ParentId, out string value);
                 if (!string.IsNullOrEmpty(value))
                 {
                     dataRow[CategoryFieldConstants.ParentId] = int.Parse(value);
@@ -371,7 +371,7 @@ namespace VErp.Services.Accountancy.Service.Category
             foreach (var field in updateFields)
             {
                 if (field.CategoryFieldName == CategoryFieldConstants.F_Id) continue;
-                data.TryGetValue(field.CategoryFieldName, out string value);
+                data.TryGetStringValue(field.CategoryFieldName, out string value);
                 dataRow[field.CategoryFieldName] = ((EnumDataType)field.DataTypeId).GetSqlValue(value);
 
                 if (field.CategoryFieldName == GlobalFieldConstants.SubsidiaryId)
@@ -412,7 +412,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             foreach (var field in fields.Where(f => f.FormTypeId == (int)EnumFormType.Generate))
             {
-                if ((!data.TryGetValue(field.CategoryFieldName, out var value) || value.IsNullOrEmptyObject()))
+                if ((!data.TryGetStringValue(field.CategoryFieldName, out var value) || value.IsNullOrEmptyObject()))
                 {
                     try
                     {
@@ -608,7 +608,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             foreach (var field in uniqueFields)
             {
-                data.TryGetValue(field.CategoryFieldName, out string valueItem);
+                data.TryGetStringValue(field.CategoryFieldName, out string valueItem);
                 if (!string.IsNullOrEmpty(valueItem))
                 {
                     var sqlParams = new List<SqlParameter>();
@@ -633,7 +633,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             foreach (var field in categoryFields)
             {
-                data.TryGetValue(field.CategoryFieldName, out string valueItem);
+                data.TryGetStringValue(field.CategoryFieldName, out string valueItem);
                 if ((field.FormTypeId == (int)EnumFormType.SearchTable
                     || field.FormTypeId == (int)EnumFormType.Select)
                     || field.AutoIncrement
@@ -657,7 +657,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
         private async Task CheckParentRowAsync(NonCamelCaseDictionary data, CategoryEntity category, int? categoryRowId = null)
         {
-            data.TryGetValue(CategoryFieldConstants.ParentId, out string value);
+            data.TryGetStringValue(CategoryFieldConstants.ParentId, out string value);
             int parentId = 0;
             if (!string.IsNullOrEmpty(value))
             {

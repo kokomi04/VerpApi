@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
@@ -44,6 +45,25 @@ namespace VErp.Services.Organization.Service.Salary
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            await ValidateCensor(salaryPeriodId);
+
+            if (isSuccess)
+            {
+
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CensorRejected && info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedAccepted)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+
+            }
+            else
+            {
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedAccepted)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+            }
+
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CensorApproved : EnumSalaryPeriodCensorStatus.CensorRejected);
             info.CensorByUserId = _currentContextService.UserId;
             info.CensorDatetimeUtc = DateTime.UtcNow;
@@ -73,6 +93,25 @@ namespace VErp.Services.Organization.Service.Salary
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            await ValidateCensor(salaryPeriodId);
+
+            if (isSuccess)
+            {
+
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedRejected && info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.New)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+
+            }
+            else
+            {
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.New)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+            }
+
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CheckedAccepted : EnumSalaryPeriodCensorStatus.CheckedRejected);
             info.CheckedByUserId = _currentContextService.UserId;
             info.CheckedDatetimeUtc = DateTime.UtcNow;
@@ -92,6 +131,23 @@ namespace VErp.Services.Organization.Service.Salary
                 .CreateLog();
 
             return true;
+        }
+
+        private async Task ValidateCensor(int salaryPeriodId)
+        {
+            var childNotApproved = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(g => g.SalaryPeriodId == salaryPeriodId && g.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CensorApproved);
+            if (childNotApproved != null)
+            {
+                throw SalaryPeriodValidationMessage.PeriodGroupHasNotApprovedYet.BadRequest();
+            }
+
+
+            var groupIds = await _organizationDBContext.SalaryGroup.Select(g => g.SalaryGroupId).ToListAsync();
+            var periodGroupIds = await _organizationDBContext.SalaryPeriodGroup.Where(p => p.SalaryPeriodId == salaryPeriodId).Select(p => p.SalaryGroupId).ToListAsync();
+            if (groupIds.Count != periodGroupIds.Count)
+            {
+                throw SalaryPeriodValidationMessage.PeriodGroupHasNotCreatedYet.BadRequest();
+            }
         }
 
         public async Task<int> Create(SalaryPeriodModel model)

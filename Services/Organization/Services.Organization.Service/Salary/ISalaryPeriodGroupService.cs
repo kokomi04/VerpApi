@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Services.Organization.Model.Salary;
 
 namespace VErp.Services.Organization.Service.Salary
@@ -21,6 +22,8 @@ namespace VErp.Services.Organization.Service.Salary
         Task<int> Create(SalaryPeriodGroupModel model);
 
         Task<bool> Delete(long salaryPeriodGroupId);
+
+        Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model);
 
         Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model);
     }
