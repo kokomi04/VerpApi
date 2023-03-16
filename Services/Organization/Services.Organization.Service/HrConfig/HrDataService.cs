@@ -843,7 +843,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                             var fieldName = match[i].Groups["word"].Value;
                                             var startText = match[i].Groups["start"].Value;
                                             var lengthText = match[i].Groups["length"].Value;
-                                            mapRow.TryGetValue(fieldName, out string filterValue);
+                                            mapRow.TryGetStringValue(fieldName, out string filterValue);
 
                                             if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                                             {
@@ -1124,7 +1124,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await FillGenerateColumn(hrBill_F_Id, generateTypeLastValues, infoFields, hrAreaData);
 
-            if (billInfo != null && hrAreaData.FirstOrDefault().TryGetValue(OrganizationConstants.BILL_CODE, out var sct))
+            if (billInfo != null && hrAreaData.FirstOrDefault().TryGetStringValue(OrganizationConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
                 sct = sct?.ToUpper();
@@ -1176,7 +1176,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
+                        (!row.TryGetStringValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
 
@@ -1298,7 +1298,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 return;
             }
 
-            checkData.Data.TryGetValue(field.FieldName, out string value);
+            checkData.Data.TryGetStringValue(field.FieldName, out string value);
 
             if (string.IsNullOrEmpty(value))
                 return;
@@ -1397,7 +1397,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         }
                     }
 
-                    row.Data.TryGetValue(field.FieldName, out string value);
+                    row.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
                         throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { index, field.Title });
@@ -1590,7 +1590,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 return;
             }
 
-            checkData.Data.TryGetValue(field.FieldName, out string textValue);
+            checkData.Data.TryGetStringValue(field.FieldName, out string textValue);
 
             if (string.IsNullOrEmpty(textValue))
             {
@@ -1640,7 +1640,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var fieldName = match[i].Groups["word"].Value;
                     var startText = match[i].Groups["start"].Value;
                     var lengthText = match[i].Groups["length"].Value;
-                    checkData.Data.TryGetValue(fieldName, out string filterValue);
+                    checkData.Data.TryGetStringValue(fieldName, out string filterValue);
 
                     if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                     {

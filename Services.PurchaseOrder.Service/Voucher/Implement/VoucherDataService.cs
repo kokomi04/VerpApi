@@ -845,7 +845,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         }
                     }
 
-                    info.Data.TryGetValue(field.FieldName, out string value);
+                    info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
                         throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
@@ -871,7 +871,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             }
                         }
 
-                        row.Data.TryGetValue(field.FieldName, out string value);
+                        row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
                             throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
@@ -992,7 +992,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 return;
             }
-            checkData.Data.TryGetValue(field.FieldName, out string textValue);
+            checkData.Data.TryGetStringValue(field.FieldName, out string textValue);
             if (string.IsNullOrEmpty(textValue))
             {
                 return;
@@ -1016,10 +1016,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var fieldName = match[i].Groups["word"].Value;
                     var startText = match[i].Groups["start"].Value;
                     var lengthText = match[i].Groups["length"].Value;
-                    checkData.Data.TryGetValue(fieldName, out string filterValue);
+                    checkData.Data.TryGetStringValue(fieldName, out string filterValue);
                     if (string.IsNullOrEmpty(filterValue))
                     {
-                        info.Data.TryGetValue(fieldName, out filterValue);
+                        info.Data.TryGetStringValue(fieldName, out filterValue);
                     }
                     if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                     {
@@ -1114,7 +1114,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 return;
             }
 
-            checkData.Data.TryGetValue(field.FieldName, out string value);
+            checkData.Data.TryGetStringValue(field.FieldName, out string value);
             if (string.IsNullOrEmpty(value))
             {
                 return;
@@ -1196,7 +1196,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
-                futureRow.TryGetValue("F_Id", out string futureValue);
+                futureRow.TryGetStringValue("F_Id", out string futureValue);
                 NonCamelCaseDictionary curRow = currentRows.FirstOrDefault(r => futureValue != null && r["F_Id"].ToString() == futureValue);
                 if (curRow == null)
                 {
@@ -1662,7 +1662,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var field = infoField.Value;
 
                     if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
+                        (!row.TryGetStringValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
                         var code = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_CODE))?[PurchaseOrderConstants.BILL_CODE]?.ToString();
@@ -1757,7 +1757,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
 
-            if (data.Info.TryGetValue(PurchaseOrderConstants.BILL_CODE, out var sct))
+            if (data.Info.TryGetStringValue(PurchaseOrderConstants.BILL_CODE, out var sct))
             {
                 Utils.ValidateCodeSpecialCharactors(sct);
                 sct = sct?.ToUpper();
@@ -2290,7 +2290,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             // Before saving action (SQL)
                             await ProcessActionAsync(voucherTypeId, voucherType.BeforeSaveActionExec, bill, voucherFields, EnumActionType.Add);
 
-                            bill.Info.TryGetValue(PurchaseOrderConstants.BILL_CODE, out var billCode);
+                            bill.Info.TryGetStringValue(PurchaseOrderConstants.BILL_CODE, out var billCode);
                             if (string.IsNullOrWhiteSpace(billCode))
                             {
                                 bill.GetExcelRowNumbers().TryGetValue(bill.Rows[0], out var rNumber);
@@ -2522,10 +2522,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 var fieldName = match[i].Groups["word"].Value;
                                 var startText = match[i].Groups["start"].Value;
                                 var lengthText = match[i].Groups["length"].Value;
-                                mapRow.TryGetValue(fieldName, out string filterValue);
+                                mapRow.TryGetStringValue(fieldName, out string filterValue);
                                 if (string.IsNullOrEmpty(filterValue))
                                 {
-                                    info.TryGetValue(fieldName, out filterValue);
+                                    info.TryGetStringValue(fieldName, out filterValue);
                                 }
                                 if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
                                 {
@@ -2719,7 +2719,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     }
 
                     var uniqField = area.VoucherAreaField.FirstOrDefault(f => f.IsUnique)?.VoucherField.FieldName ?? PurchaseOrderConstants.BILL_CODE;
-                    info.TryGetValue(uniqField, out billCode);
+                    info.TryGetStringValue(uniqField, out billCode);
                 }
                 else
                 {

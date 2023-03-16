@@ -6,9 +6,9 @@ namespace VErp.Commons.GlobalObject
 {
     public class NonCamelCaseDictionary : Dictionary<string, object>
     {
-        public bool TryGetValue(string key, out string value)
+        public bool TryGetStringValue(string key, out string value)
         {
-            var isSuccess = base.TryGetValue(key, out var objValue);
+            var isSuccess = TryGetValue(key, out var objValue);
             value = objValue?.ToString()?.Trim();
             return isSuccess;
         }

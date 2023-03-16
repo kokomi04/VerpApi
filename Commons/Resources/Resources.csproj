@@ -442,6 +442,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>SalaryGroupActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryPeriodValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -1046,6 +1051,10 @@
     <EmbeddedResource Update="Organization\Salary\SalaryGroupActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SalaryGroupActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryPeriodValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

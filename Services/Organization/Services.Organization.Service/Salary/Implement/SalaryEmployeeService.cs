@@ -13,8 +13,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -79,8 +81,26 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var salaryFields = await _salaryFieldService.GetList();
 
             var result = new List<NonCamelCaseDictionary>();
+
+            var employeeIds = new HashSet<long>();
             foreach (var item in lst)
             {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                if (employeeId == 0)
+                {
+                    throw SalaryPeriodValidationMessage.EmployeeIDZero.BadRequest();
+                }
+                if (employeeIds.Contains(employeeId))
+                {
+                    throw SalaryPeriodValidationMessage.EmployeeIDDuplicated.BadRequestFormat(employeeId);
+                }
+
+                employeeIds.Add(employeeId);
+
                 var model = new NonCamelCaseDictionary();
                 result.Add(model);
                 foreach (var column in item)
@@ -162,36 +182,49 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
-            long salaryPeriodGroupId;
-            if (group == null)
-            {
-                salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
-                {
-                    SalaryPeriodId = salaryPeriodId,
-                    SalaryGroupId = salaryGroupId,
-                    FromDate = model.FromDate,
-                    ToDate = model.ToDate
-                });
 
-
-            }
-            else
-            {
-                await _salaryPeriodGroupService.Update(group.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
-                {
-                    SalaryPeriodId = salaryPeriodId,
-                    SalaryGroupId = salaryGroupId,
-                    FromDate = model.FromDate,
-                    ToDate = model.ToDate
-                });
-                salaryPeriodGroupId = group.SalaryPeriodGroupId;
-            }
 
             var salaryFields = await _salaryFieldService.GetList();
 
+            var evalData = await EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, model);
+
+            var evalDataByEmployee = evalData.ToDictionary(item =>
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                return employeeId;
+            }, item => item);
+
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                await base.DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
+                long salaryPeriodGroupId;
+                if (group == null)
+                {
+                    salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
+                    {
+                        SalaryPeriodId = salaryPeriodId,
+                        SalaryGroupId = salaryGroupId,
+                        FromDate = model.FromDate,
+                        ToDate = model.ToDate
+                    });
+
+                }
+                else
+                {
+                    await _salaryPeriodGroupService.DbUpdate(group.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
+                    {
+                        SalaryPeriodId = salaryPeriodId,
+                        SalaryGroupId = salaryGroupId,
+                        FromDate = model.FromDate,
+                        ToDate = model.ToDate
+                    });
+                    salaryPeriodGroupId = group.SalaryPeriodGroupId;
+                }
+
+                await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
 
                 var salaries = new Dictionary<SalaryEmployee, NonCamelCaseDictionary>();
 
@@ -203,6 +236,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     {
                         employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
                     }
+
+
                     var entity = new SalaryEmployee()
                     {
                         EmployeeId = employeeId,
@@ -217,21 +252,45 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
                 var salaryData = new List<SalaryEmployeeValue>();
+
+                var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
+
                 foreach (var item in lst)
                 {
+
+                    if (!evalDataByEmployee.TryGetValue(item.SalaryEmployeeId, out var evalItem))
+                    {
+                        throw SalaryPeriodValidationMessage.EmployeeNotFoundInEval.BadRequestFormat(item.EmployeeId);
+                    }
+
                     var data = salaries[item];
                     foreach (var field in salaryFields)
                     {
-                        if (data.ContainsKey(field.SalaryFieldName))
+                        var hasDataValue = data.TryGetValue(field.SalaryFieldName, out var dataValue);
+
+                        if (!field.IsEditable || groupFields.TryGetValue(field.SalaryFieldId, out var groupField) && !groupField.IsEditable)
                         {
-                            var value = data[field.SalaryFieldName];
-                            if (!value.IsNullOrEmptyObject())
+                            object evalValue = null;
+                            if (evalItem != null)
+                            {
+                                evalItem.TryGetValue(field.SalaryFieldName, out evalValue);
+                            }
+
+                            if (dataValue?.ToString() != evalValue?.ToString())
+                            {
+                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.Title, dataValue, evalValue);
+                            }
+                        }
+
+                        if (hasDataValue)
+                        {
+                            if (!dataValue.IsNullOrEmptyObject())
                             {
                                 salaryData.Add(new SalaryEmployeeValue()
                                 {
                                     SalaryEmployeeId = item.SalaryEmployeeId,
                                     SalaryFieldId = field.SalaryFieldId,
-                                    Value = value
+                                    Value = dataValue
                                 });
                             }
                         }
@@ -240,6 +299,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
 
                 await _organizationDBContext.InsertByBatch(salaryData, false, false);
+
+
+                var periodInfo = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
+                if (periodInfo == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+                periodInfo.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
+
+                await _organizationDBContext.SaveChangesAsync();
+
 
                 await trans.CommitAsync();
 
