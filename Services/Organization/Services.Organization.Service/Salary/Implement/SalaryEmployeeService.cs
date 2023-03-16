@@ -121,7 +121,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
             if (group == null)
             {
-                throw GeneralCode.ItemNotFound.BadRequest();
+                return new List<NonCamelCaseDictionary>();
             }
 
             var salaryData = await _organizationDBContext.SalaryEmployee

@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.System.Organization.Salary
         }
 
         [HttpGet("GetInfoByGroup")]
-        public async Task<SalaryPeriodGroupModel> GetInfoByMonth([FromQuery] int salaryPeriodId, [FromQuery] int salaryGroupId)
+        public async Task<SalaryPeriodGroupModel> GetInfoByGroup([FromQuery] int salaryPeriodId, [FromQuery] int salaryGroupId)
         {
             return await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
         }
