@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,12 +12,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Abstract
 {
     public abstract class SalaryPeriodGroupEmployeeAbstract
     {
-        protected OrganizationDBContext _organizationDBContext;
-        protected ICurrentContextService _currentContextService;
-        protected SalaryPeriodGroupEmployeeAbstract(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService)
+        protected readonly OrganizationDBContext _organizationDBContext;
+        protected readonly ICurrentContextService _currentContextService;
+        protected readonly ILogger _logger;
+        protected SalaryPeriodGroupEmployeeAbstract(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, ILogger logger)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
+            _logger = logger;
         }
 
         protected async Task<bool> DeleteSalaryEmployeeByPeriodGroup(int salaryPeriodId, int salaryGroupId)

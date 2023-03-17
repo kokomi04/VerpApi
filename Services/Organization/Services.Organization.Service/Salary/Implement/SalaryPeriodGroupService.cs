@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +18,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
+using VErp.Services.Organization.Service.Salary.Implement;
 using VErp.Services.Organization.Service.Salary.Implement.Abstract;
 
 namespace VErp.Services.Organization.Service.Salary
@@ -28,11 +30,15 @@ namespace VErp.Services.Organization.Service.Salary
         private readonly ISalaryPeriodService _salaryPeriodService;
         private readonly ISalaryGroupService _salaryGroupService;
 
-        public SalaryPeriodGroupService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ISalaryPeriodService salaryPeriodService, ISalaryGroupService salaryGroupService)
-            : base(organizationDBContext, currentContextService)
+        public SalaryPeriodGroupService(OrganizationDBContext organizationDBContext, 
+            ICurrentContextService currentContextService, 
+            IMapper mapper, 
+            IActivityLogService activityLogService, 
+            ISalaryPeriodService salaryPeriodService, 
+            ISalaryGroupService salaryGroupService,
+            ILogger<SalaryPeriodGroupService> logger)
+            : base(organizationDBContext, currentContextService, logger)
         {
-            _organizationDBContext = organizationDBContext;
-            _currentContextService = currentContextService;
             _mapper = mapper;
             _salaryPeriodGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriodGroup);
             _salaryPeriodService = salaryPeriodService;
