@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,13 +141,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                                 var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), model);
                                 if (!model.ContainsKey(f.SalaryFieldName))
                                 {
-                                    model.Add("#" + f.SalaryFieldName, value);
+                                    model.Add("__" + f.SalaryFieldName, value);
                                 }
                             }
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Eval {0}, field {1}, condition {2}", condition.ValueExpression, f.SalaryFieldName, condition.Name);
-                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.SalaryFieldName}, điều kiện {condition.Name}");
+                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.SalaryFieldName}, điều kiện {condition.Name}. Lỗi {ex.Message}");
                             }
 
                         }
@@ -470,7 +471,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (expression == null) return expression;
             if (expression.GetType() == typeof(string))
             {
-                var expressionStr = expression.ToString().Replace("$.", "_");
+                var expressionStr = expression.ToString().Replace("#", "__").Replace("$.", "_");
 
                 return (T)(expressionStr as object);
             }
@@ -488,23 +489,25 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 stack.Push(field);
                 while (stack.Count > 0)
                 {
-                    var children = fields.Where(f => ContainRefField(field, "#" + f.SalaryFieldName)).ToList();
-                    if (children.Count == 0)
-                    {
-                        var c = stack.Pop();
-                        if (!sortedFields.Contains(c))
+                    SalaryFieldModel currentField = stack.Pop();
+                    var children = fields.Where(f => ContainRefField(currentField, "#" + f.SalaryFieldName)).ToList();
+                    if (children.Count == 0 || children.All(c=> sortedFields.Contains(c)))
+                    {                      
+                        if (!sortedFields.Contains(currentField))
                         {
-                            sortedFields.Add(c);
+                            sortedFields.Add(currentField);
                         }
                     }
                     else
                     {
+                        stack.Push(currentField);
                         foreach (var c in children)
                         {
                             stack.Push(c);
                         }
                     }
                 }
+                
             }
 
             return sortedFields;
