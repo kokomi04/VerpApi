@@ -454,6 +454,12 @@ namespace VErp.Commons.Library
                 foreach (DataColumn c in data.Columns)
                 {
                     var v = row[c];
+                    if (v == DBNull.Value)
+                    {
+                        dic.Add(c.ColumnName, null);
+                        continue;
+                    }
+
                     if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                     {
                         var vInDateTime = (v as DateTime?).GetUnix();

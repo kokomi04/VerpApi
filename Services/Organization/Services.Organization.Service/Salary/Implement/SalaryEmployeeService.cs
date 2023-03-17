@@ -6,6 +6,7 @@ using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,8 +46,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ISalaryPeriodService _salaryPeriodService;
         private readonly ISalaryPeriodGroupService _salaryPeriodGroupService;
 
-        public SalaryEmployeeService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ISalaryGroupService salaryGroupService, ISalaryRefTableService salaryRefTableService, IHrDataService hrDataService, ICategoryHelperService httpCategoryHelperService, ISalaryFieldService salaryFieldService, ISalaryPeriodService salaryPeriodService, ISalaryPeriodGroupService salaryPeriodGroupService)
-            : base(organizationDBContext, currentContextService)
+
+        public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
+            ICurrentContextService currentContextService,
+            IMapper mapper,
+            IActivityLogService activityLogService,
+            ISalaryGroupService salaryGroupService,
+            ISalaryRefTableService salaryRefTableService,
+            IHrDataService hrDataService,
+            ICategoryHelperService httpCategoryHelperService,
+            ISalaryFieldService salaryFieldService,
+            ISalaryPeriodService salaryPeriodService,
+            ISalaryPeriodGroupService salaryPeriodGroupService,
+            ILogger<SalaryEmployeeService> logger)
+            : base(organizationDBContext, currentContextService, logger)
         {
             _mapper = mapper;
             _salaryEmployeeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
@@ -79,7 +92,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var (lst, columns) = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
 
             var salaryFields = await _salaryFieldService.GetList();
-
+            salaryFields = SortFieldNameByReference(salaryFields);
             var result = new List<NonCamelCaseDictionary>();
 
             var employeeIds = new HashSet<long>();
@@ -122,11 +135,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         var conditionResult = EvalClause(filter, model);
                         if (conditionResult && !string.IsNullOrWhiteSpace(condition.ValueExpression))
                         {
-                            var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), model);
-                            if (!model.ContainsKey(f.SalaryFieldName))
+                            try
                             {
-                                model.Add(f.SalaryFieldName, value);
+                                var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), model);
+                                if (!model.ContainsKey(f.SalaryFieldName))
+                                {
+                                    model.Add("#" + f.SalaryFieldName, value);
+                                }
                             }
+                            catch (Exception ex)
+                            {
+                                _logger.LogError(ex, "Eval {0}, field {1}, condition {2}", condition.ValueExpression, f.SalaryFieldName, condition.Name);
+                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.SalaryFieldName}, điều kiện {condition.Name}");
+                            }
+
                         }
                     }
                 }
@@ -456,6 +478,67 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
 
 
+        private IList<SalaryFieldModel> SortFieldNameByReference(IList<SalaryFieldModel> fields)
+        {
+            var sortedFields = new List<SalaryFieldModel>();
+
+            foreach (var field in fields)
+            {
+                var stack = new Stack<SalaryFieldModel>();
+                stack.Push(field);
+                while (stack.Count > 0)
+                {
+                    var children = fields.Where(f => ContainRefField(field, "#" + f.SalaryFieldName)).ToList();
+                    if (children.Count == 0)
+                    {
+                        var c = stack.Pop();
+                        if (!sortedFields.Contains(c))
+                        {
+                            sortedFields.Add(c);
+                        }
+                    }
+                    else
+                    {
+                        foreach (var c in children)
+                        {
+                            stack.Push(c);
+                        }
+                    }
+                }
+            }
+
+            return sortedFields;
+
+        }
+
+        private bool ContainRefField(SalaryFieldModel expression, string fieldName)
+        {
+            if (expression.Expression == null || expression.Expression.Count == 0) return false;
+            return expression.Expression.Any(e => ContainRefField(e, fieldName));
+        }
+
+        private bool ContainRefField(SalaryFieldExpressionModel expression, string fieldName)
+        {
+            return ContainRefField(expression.Filter, fieldName) || expression.ValueExpression?.Contains(fieldName) == true;
+        }
+
+        private bool ContainRefField(Clause clause, string fieldName)
+        {
+            if (clause == null) return false;
+            if (clause is SingleClause single)
+            {
+                if (single.FieldName.Contains(fieldName)) return true;
+                if (single.Value?.ToString()?.Contains(fieldName) == true) return true;
+                return false;
+            }
+            else
+            {
+                var arrClause = clause as ArrayClause;
+                if (arrClause == null || arrClause.Rules == null || arrClause.Rules.Count == 0) return false;
+                return arrClause.Rules.Any(r => ContainRefField(r, fieldName));
+            }
+        }
+
         private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)
         {
             if (clause != null)
@@ -564,47 +647,47 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 case EnumOperator.Greater:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x > (decimal)y;
+                        return (decimal?)x > (decimal?)y;
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x > (DateTime)y;
+                        return (long?)x > (long?)y;
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.GreaterOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x >= (decimal)y;
+                        return (decimal?)x >= (decimal?)y;
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x >= (DateTime)y;
+                        return (long?)x >= (long?)y;
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.LessThan:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x < (decimal)y;
+                        return (decimal?)x < (decimal?)y;
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x < (DateTime)y;
+                        return (long?)x < (long?)y;
                     }
                     throw new NotSupportedException();
                 case EnumOperator.LessThanOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x <= (decimal)y;
+                        return (decimal?)x <= (decimal?)y;
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x <= (DateTime)y;
+                        return (long?)x <= (long?)y;
                     }
                     throw new NotSupportedException();
                 case EnumOperator.IsNull:
