@@ -55,7 +55,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();
-             _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
+            _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
             await _organizationDBContext.SaveChangesAsync();
 
             _organizationDBContext.SalaryField.Remove(info);
@@ -79,7 +79,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            if ((int)model.DataTypeId != info.DataTypeId)
+            //Can not use any here because EF 5 not generate global filter IsDeleted for SalaryEmployee
+            var existedValue = await _organizationDBContext.SalaryEmployeeValue.Include(v => v.SalaryEmployee).FirstOrDefaultAsync(f => f.SalaryFieldId == salaryFieldId);
+
+            if (existedValue != null && (int)model.DataTypeId != info.DataTypeId)
             {
                 throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.Title);
             }
