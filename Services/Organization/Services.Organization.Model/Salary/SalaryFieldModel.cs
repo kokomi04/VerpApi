@@ -12,6 +12,8 @@ namespace VErp.Services.Organization.Model.Salary
 {
     public class SalaryFieldModel : IMapFrom<SalaryField>
     {
+        [MaxLength(128)]
+        public string GroupName { get; set; }
         public int SalaryFieldId { get; set; }
         [Required]
         [MinLength(1)]

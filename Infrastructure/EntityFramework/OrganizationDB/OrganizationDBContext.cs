@@ -740,7 +740,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             modelBuilder.Entity<SalaryEmployee>(entity =>
             {
                 entity.HasIndex(e => new { e.SalaryPeriodId, e.EmployeeId }, "IX_SalaryEmployee")
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
 
                 entity.HasOne(d => d.Employee)
                     .WithMany(p => p.SalaryEmployee)
@@ -783,6 +784,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             modelBuilder.Entity<SalaryField>(entity =>
             {
                 entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.GroupName).HasMaxLength(128);
 
                 entity.Property(e => e.SalaryFieldName)
                     .IsRequired()
@@ -841,7 +844,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryRefTable>(entity =>
             {
-                entity.Property(e => e.Alias).HasMaxLength(128);
+                entity.Property(e => e.Alias)
+                    .IsRequired()
+                    .HasMaxLength(128);
 
                 entity.Property(e => e.Filter).HasMaxLength(1024);
 

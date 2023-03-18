@@ -147,7 +147,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Eval {0}, field {1}, condition {2}", condition.ValueExpression, f.SalaryFieldName, condition.Name);
-                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.SalaryFieldName}, điều kiện {condition.Name}. Lỗi {ex.Message}");
+                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.GroupName} {f.SalaryFieldName}, điều kiện {condition.Name}. Lỗi {ex.Message}");
                             }
 
                         }
