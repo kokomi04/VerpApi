@@ -1063,6 +1063,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsSubCalculation = detail.IsSubCalculation
                 };
 
+                if (eDetail.PrimaryQuantity == 0 || eDetail.ProductUnitConversionQuantity == 0)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest("Invalid data");
+                }
+
                 var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
                 {
                     PrimaryQuantity = x.PrimaryQuantity,
