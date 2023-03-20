@@ -408,7 +408,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         RefObjectTypeId = null,
                         RefObjectId = null,
                         RefObjectCode = item.CatePrefixCode,
-                        FromPackageId = fromPackageId
+                        FromPackageId = fromPackageId,
+                        POCode = item.PoCode,
+                        ProductionOrderCode = item.ProductionOrderCode,
+                        OrderCode = item.OrderCode,
                         //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                     });
                 }
