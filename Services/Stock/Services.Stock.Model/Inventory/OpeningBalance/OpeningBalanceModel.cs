@@ -100,13 +100,13 @@ namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
         public decimal? Unit2Price { set; get; }
 
 
-        [Display(Name = "Mã đơn mua", GroupName = "Thông tin chứng từ nguồn", Order = 28)]
+        [Display(Name = "Mã đơn mua", GroupName = "Mục đích", Order = 28)]
         public string PoCode { set; get; }
 
-        [Display(Name = "Mã đơn hàng", GroupName = "Thông tin chứng từ nguồn", Order = 28)]
+        [Display(Name = "Mã đơn hàng", GroupName = "Mục đích", Order = 28)]
         public string OrderCode { set; get; }
 
-        [Display(Name = "Mã lệnh sản xuất", GroupName = "Thông tin chứng từ nguồn", Order = 28)]
+        [Display(Name = "Mã lệnh sản xuất", GroupName = "Mục đích", Order = 28)]
         public string ProductionOrderCode { set; get; }
     }
 
