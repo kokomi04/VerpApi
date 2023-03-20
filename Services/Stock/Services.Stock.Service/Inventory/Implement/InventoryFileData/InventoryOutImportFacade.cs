@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -355,6 +356,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         fromPackageId = packageInfo.PackageId;
                     }
 
+                    if (packageInfo.PrimaryQuantityRemaining == 0)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest($"Lỗi dòng {item.RowNumber} Số dư trong kiện {packageInfo.PackageCode} của mặt hàng {productObj.ProductCode} không còn để xuất");
+                    }
 
                     var puDefault = _productUnitsByProduct[productObj.ProductId].FirstOrDefault(u => u.IsDefault);
 
