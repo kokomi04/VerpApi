@@ -935,7 +935,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
                     //return (InventoryErrorCode.NotEnoughQuantity, errorMessage);
-                    throw NotEnoughBalancePackageQuantityZero.BadRequest();
+                    //throw NotEnoughBalancePackageQuantityZero.BadRequest();
+
+                    throw NotEnoughBalanceInPackage.BadRequestFormat(fromPackageInfo.PackageCode, productInfo.ProductCode, 0, detail.ProductUnitConversionQuantity.Format());
                 }
 
                 //if (details.ProductUnitConversionQuantity <= 0 && primaryQualtity > 0)
@@ -1060,6 +1062,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
                     IsSubCalculation = detail.IsSubCalculation
                 };
+
+                if (eDetail.PrimaryQuantity == 0 || eDetail.ProductUnitConversionQuantity == 0)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest("Invalid data");
+                }
 
                 var eSubs = detail.InProductSubs.Select(x => new InventoryDetailSubCalculation
                 {

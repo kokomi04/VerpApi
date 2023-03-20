@@ -850,7 +850,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var productUnitConversions = await _stockDbContext.ProductUnitConversion.Where(p => productIds.Contains(p.ProductId)).AsNoTracking().ToListAsync();
 
-            foreach(var pu in productUnitConversions)
+            foreach (var pu in productUnitConversions)
             {
                 if (pu.IsDefault)
                 {
@@ -1003,6 +1003,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     //InventoryRequirementCode = detail.InventoryRequirementCode
                     IsSubCalculation = detail.IsSubCalculation
                 };
+
+
+                if (eDetail.PrimaryQuantity == 0 || eDetail.ProductUnitConversionQuantity == 0)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest("Invalid data");
+                }
+
                 if (detail.InProductSubs == null)
                 {
                     detail.InProductSubs = new List<InventoryDetailSubCalculationModel>();

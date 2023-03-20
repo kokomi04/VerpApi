@@ -630,7 +630,13 @@ namespace VErp.Commons.Library
                             fieldPaths.RemoveAt(0);
 
                             //mappingField.FieldName => Properties1
-                            isAutoSet = !(await OnAssignProperty(entityInfo, mappingField.FieldName, value, refObj, refField.Name, refPropertyPathSeparateByPoint));
+                            var fieldName = mappingField.FieldName;
+                            if (field.GetCustomAttribute<FieldDataNestedObjectAttribute>() != null)
+                            {
+                                fieldName = field.Name;
+                            }
+
+                            isAutoSet = !(await OnAssignProperty(entityInfo, fieldName, value, refObj, refField.Name, refPropertyPathSeparateByPoint));
                         }
 
                         if (isAutoSet && !string.IsNullOrWhiteSpace(value))

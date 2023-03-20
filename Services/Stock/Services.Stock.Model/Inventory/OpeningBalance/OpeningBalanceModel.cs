@@ -7,7 +7,7 @@ using System;
 
 namespace VErp.Services.Stock.Model.Inventory.OpeningBalance
 {
-    public class OpeningBalanceModel
+    public class OpeningBalanceModel: MappingDataRowAbstract
     {
         [Display(Name = "Loại", GroupName = "TT chung", Order = 1)]
         public EnumInventoryAction? InventoryActionId { get; set; }
