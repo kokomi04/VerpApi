@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.InkML;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -23,15 +24,15 @@ using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 {
-    public class ProductImportFacade
+    public class ProductImportFacade : PuConversionValidateAbstract
     {
         const int DECIMAL_PLACE_DEFAULT = 11;
 
-        private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
         private IOrganizationHelperService _organizationHelperService;
         private ObjectActivityLogFacade _productActivityLog;
@@ -43,9 +44,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             , IOrganizationHelperService organizationHelperService
             , ObjectActivityLogFacade productActivityLog
             , IProductService productService
-        )
+        ) : base(stockContext)
         {
-            _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _organizationHelperService = organizationHelperService;
             _productActivityLog = productActivityLog;
@@ -79,10 +79,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             // Lấy thông tin field
             var fields = typeof(Product).GetProperties(BindingFlags.Public);
 
-            targetProductivities = await _stockContext.RefTargetProductivity.ToListAsync();
+            targetProductivities = await _stockDbContext.RefTargetProductivity.ToListAsync();
 
-            productTypes = _stockContext.ProductType.ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), ProductType = t }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductType);
-            productCates = _stockContext.ProductCate.ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), ProductCate = c }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCate);
+            productTypes = _stockDbContext.ProductType.ToList().Select(t => new { IdentityCode = t.IdentityCode.NormalizeAsInternalName(), ProductType = t }).GroupBy(t => t.IdentityCode).ToDictionary(t => t.Key, t => t.First().ProductType);
+            productCates = _stockDbContext.ProductCate.ToList().Select(c => new { ProductCateName = c.ProductCateName.NormalizeAsInternalName(), ProductCate = c }).GroupBy(c => c.ProductCateName).ToDictionary(c => c.Key, c => c.First().ProductCate);
 
             unitInfos = _masterDBContext.Unit.ToList().ToDictionary(u => u.UnitId, u => u);
 
@@ -171,11 +171,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 longTask.SetCurrentStep("Lưu dữ liệu còn thiếu");
 
                 _masterDBContext.Unit.AddRange(includeUnits);
-                _stockContext.ProductType.AddRange(includeProductTypes);
-                _stockContext.ProductCate.AddRange(includeProductCates);
+                _stockDbContext.ProductType.AddRange(includeProductTypes);
+                _stockDbContext.ProductCate.AddRange(includeProductCates);
 
                 _masterDBContext.SaveChanges();
-                _stockContext.SaveChanges();
+                _stockDbContext.SaveChanges();
 
                 foreach (var unit in includeUnits)
                 {
@@ -194,7 +194,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 // Validate unique product code
                 var productCodes = data.Select(p => p.ProductCode).ToList();
 
-                var existsProduct = await _stockContext.Product.Where(p => productCodes.Contains(p.ProductCode))
+                var existsProduct = await _stockDbContext.Product.Where(p => productCodes.Contains(p.ProductCode))
                     .Include(p => p.ProductExtraInfo)
                     .Include(p => p.ProductStockInfo)
                     .Include(p => p.ProductCustomer)
@@ -281,7 +281,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 longTask.SetCurrentStep("Lưu mặt hàng vào cơ sở dữ liệu", data.Count);
 
-                using var trans = await _stockContext.Database.BeginTransactionAsync();
+                using var trans = await _stockDbContext.Database.BeginTransactionAsync();
                 try
                 {
                     using (var logBatch = _productActivityLog.BeginBatchLog())
@@ -290,9 +290,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         foreach (var row in newProducts)
                         {
                             var newProduct = new Product();
-                            await ParseProductInfoEntity(newProduct, row);
+                            var changeRatePuIds = new List<long>();
 
-                            _stockContext.Product.Add(newProduct);
+                            await ParseProductInfoEntity(newProduct, row, changeRatePuIds);
+
+                            _stockDbContext.Product.Add(newProduct);
                             productsMap.Add(row, newProduct);
 
                             longTask.IncProcessedRows();
@@ -306,7 +308,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             }
                         }
 
-                        _stockContext.SaveChanges();
+                        _stockDbContext.SaveChanges();
 
                         foreach (var row in newProducts)
                         {
@@ -354,7 +356,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             var timeTypes = EnumExtensions.GetEnumMembers<EnumTimeType>();
             var quantitativeUnitTypes = EnumExtensions.GetEnumMembers<EnumQuantitativeUnitType>();
 
-            var stocks = _stockContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
+            var stocks = _stockDbContext.Stock.ToDictionary(s => s.StockName, s => s.StockId);
 
 
             return reader.ReadSheetEntity<ProductImportModel>(mapping, (entity, propertyName, value) =>
@@ -491,6 +493,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             var existedProductIds = existsProduct.Select(p => p.ProductId).ToList();
 
 
+            var changeRatePuIds = new List<long>();
+
             foreach (var row in updateProducts)
             {
                 var productCodeKey = row.ProductCode.ToLower();
@@ -500,16 +504,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
                 var existedProduct = existsProductInLowerCase[productCodeKey].First();
 
-                await ParseProductInfoEntity(existedProduct, row);
+                await ParseProductInfoEntity(existedProduct, row, changeRatePuIds);
 
                 productsMap.Add(row, existedProduct);
 
                 longTask.IncProcessedRows();
             }
 
+            await PuRateChangeValidateExistingInventoryData(changeRatePuIds);
+
         }
 
-        private async Task ParseProductInfoEntity(Product product, ProductImportModel row)
+        private async Task ParseProductInfoEntity(Product product, ProductImportModel row, IList<long> changeRatePuIds)
         {
 
             var typeCode = row.ProductTypeCode.NormalizeAsInternalName();
@@ -532,7 +538,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             isInUsed
                         };
 
-                await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+                await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
                 if (isInUsed.Value as bool? == true)
                 {
@@ -704,12 +710,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     if (existedPus.TryGetValue(puKey, out var existedItem))
                     {
                         existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
-                        if (!existedItem.IsDefault)
+                        if (!string.IsNullOrWhiteSpace(pu.FactorExpression))
                         {
                             existedItem.UpdateIfAvaiable(v => v.FactorExpression, pu.FactorExpression);
+
+                            if (existedItem?.FactorExpression?.Trim() != pu.FactorExpression?.Trim())
+                            {
+                                changeRatePuIds.Add(pu.ProductUnitConversionId);
+                            }
+
+                        }
+
+                        if (!existedItem.IsDefault)
+                        {
+
+
                             existedItem.UpdateIfAvaiable(v => v.ConversionDescription, pu.ConversionDescription);
                         }
-                        
+
                     }
                     else
                     {
