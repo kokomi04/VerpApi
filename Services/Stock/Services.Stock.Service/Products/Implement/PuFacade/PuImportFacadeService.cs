@@ -22,6 +22,7 @@ using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using Microsoft.EntityFrameworkCore;
 using Verp.Resources.Stock.Product;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 
 namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 {
@@ -30,11 +31,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
         Task<bool> Import(ImportExcelMapping mapping, Stream stream);
     }
 
-    public class PuImportFacadeService : IPuImportFacadeService
+    public class PuImportFacadeService : PuConversionValidateAbstract, IPuImportFacadeService
     {
         const int DECIMAL_PLACE_DEFAULT = 11;
 
-        private StockDBContext _stockContext;
         private MasterDBContext _masterDBContext;
         private ObjectActivityLogFacade _productActivityLog;
         private IProductService _productService;
@@ -44,9 +44,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
             , MasterDBContext masterDBContext
             , IActivityLogService activityLogService
             , IProductService productService
-        )
+        ) : base(stockContext)
         {
-            _stockContext = stockContext;
             _masterDBContext = masterDBContext;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
             _productService = productService;
@@ -139,7 +138,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
             _masterDBContext.Unit.AddRange(includeUnits);
 
             _masterDBContext.SaveChanges();
-            _stockContext.SaveChanges();
+            _stockDbContext.SaveChanges();
 
             foreach (var unit in includeUnits)
             {
@@ -150,7 +149,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
             // Validate unique product code
             var productIds = data.Select(p => p.ProductInfo.ProductId).ToList();
 
-            var productEntities = (await _stockContext.Product.Where(p => productIds.Contains(p.ProductId))
+            var productEntities = (await _stockDbContext.Product.Where(p => productIds.Contains(p.ProductId))
                 .Include(p => p.ProductUnitConversion)
                 .ToListAsync()
                 ).ToDictionary(p => p.ProductId, p => p);
@@ -185,11 +184,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
             }
 
 
-            using var trans = await _stockContext.Database.BeginTransactionAsync();
+            using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
             {
                 using (var logBatch = _productActivityLog.BeginBatchLog())
                 {
+                    var changeRatePuIds = new List<long>();
+
                     foreach (var puByProduct in puModelsByProduct)
                     {
                         productEntities.TryGetValue(puByProduct.Key, out var productInfo);
@@ -251,6 +252,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                                             if (puModel.IsDefault)
                                             {
+                                                if (!entity.IsDefault)
+                                                {
+                                                    entity.IsDefault = true;
+                                                    entity.FactorExpression = "1";
+                                                    changeRatePuIds.Add(entity.ProductUnitConversionId);
+                                                }
+
                                                 foreach (var puEntity in productInfo.ProductUnitConversion)
                                                 {
                                                     if (puEntity.IsDefault)
@@ -260,19 +268,32 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                                     puEntity.IsDefault = false;
                                                 }
 
-                                                entity.IsDefault = true;
-
                                                 entity.UpdateIfAvaiable(v => v.ProductUnitConversionName, puModel.ProductUnitConversionName);
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
 
                                                 entity.ConversionDescription = "";
 
+
+
                                                 productInfo.UnitId = units[nameNormalize];
                                             }
                                             else
                                             {
+                                                if (entity.IsDefault && !string.IsNullOrWhiteSpace(puModel.FactorExpression) && puModel.FactorExpression?.Trim() != "1")
+                                                {
+                                                    throw GeneralCode.InvalidParams.BadRequest($"Không thể thiết lập tỷ lệ cho đơn vị chính, mặt hàng {productInfo.ProductCode}, Đơn vị {puModel.ProductUnitConversionName}");
+                                                }
+
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
-                                                entity.UpdateIfAvaiable(v => v.FactorExpression, puModel.FactorExpression);
+                                                if (!string.IsNullOrWhiteSpace(puModel.FactorExpression))
+                                                {
+                                                    if (entity.FactorExpression?.Trim() != puModel.FactorExpression?.Trim())
+                                                    {
+                                                        changeRatePuIds.Add(entity.ProductUnitConversionId);
+                                                        entity.UpdateIfAvaiable(v => v.FactorExpression, puModel.FactorExpression);
+                                                    }
+
+                                                }
                                                 entity.UpdateIfAvaiable(v => v.ConversionDescription, puModel.ConversionDescription);
                                             }
 
@@ -284,10 +305,17 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                 {
                                     if (puModel.IsDefault)
                                     {
+                                        if (puModel.IsDefault && !string.IsNullOrWhiteSpace(puModel.FactorExpression) && puModel.FactorExpression?.Trim() != "1")
+                                        {
+                                            throw GeneralCode.InvalidParams.BadRequest($"Không thể thiết lập tỷ lệ cho đơn vị chính, mặt hàng {productInfo.ProductCode}, Đơn vị {puModel.ProductUnitConversionName}");
+                                        }
+
                                         foreach (var puEntity in productInfo.ProductUnitConversion)
                                         {
                                             puEntity.IsDefault = false;
                                         }
+
+                                        puModel.FactorExpression = "1";
                                         puModel.ConversionDescription = "";
                                         productInfo.UnitId = units[nameNormalize];
                                     }
@@ -322,7 +350,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                         }
                     }
 
-                    _stockContext.SaveChanges();
+                    await PuRateChangeValidateExistingInventoryData(changeRatePuIds);
+
+                    _stockDbContext.SaveChanges();
 
                     await trans.CommitAsync();
                     await logBatch.CommitAsync();
