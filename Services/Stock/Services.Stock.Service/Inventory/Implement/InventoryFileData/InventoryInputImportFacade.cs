@@ -509,7 +509,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         ToPackageId = packageInfo?.PackageId,
                         ToPackageInfo = item.ToPackgeInfo,
                         PackageOptionId = option,
-
+                        POCode = item.PoCode,
+                        ProductionOrderCode = item.ProductionOrderCode,
+                        OrderCode = item.OrderCode,
                         //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                     });
                 }

@@ -19,16 +19,16 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product.Partial;
+using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
-    public class ProductPartialService : IProductPartialService
+    public class ProductPartialService : PuConversionValidateAbstract, IProductPartialService
     {
         public const int DECIMAL_PLACE_DEFAULT = 11;
 
-        private readonly StockDBContext _stockContext;
         private readonly IUnitService _unitService;
         private readonly IProductService _productService;
         private readonly IMapper _mapper;
@@ -40,9 +40,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IProductService productService
             , IActivityLogService activityLogService
             , IMapper mapper
-            )
+            ) : base(stockContext)
         {
-            _stockContext = stockContext;
             _unitService = unitService;
             _productService = productService;
             _mapper = mapper;
@@ -53,14 +52,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ProductPartialGeneralModel> GeneralInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var stockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
-            var extraInfo = await _stockContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var stockInfo = await _stockDbContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var extraInfo = await _stockDbContext.ProductExtraInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             return new ProductPartialGeneralModel()
             {
                 ProductTypeId = productInfo.ProductTypeId,
@@ -114,7 +113,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             model.ProductCode = (model.ProductCode ?? "").Trim();
 
-            if (await _stockContext.Product.AnyAsync(p => p.ProductId != productId && p.ProductCode == model.ProductCode))
+            if (await _stockDbContext.Product.AnyAsync(p => p.ProductId != productId && p.ProductCode == model.ProductCode))
             {
                 throw ProductCodeAlreadyExisted.BadRequestFormat(model.ProductCode);
             }
@@ -126,10 +125,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
             using (var batchLog = _productActivityLog.BeginBatchLog())
             {
-                using (var trans = await _stockContext.Database.BeginTransactionAsync())
+                using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
 
-                    var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                    var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                     if (productInfo == null)
                     {
                         throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -161,7 +160,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 isInUsed
                             };
 
-                        await _stockContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
+                        await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
                         if (isInUsed.Value as bool? == true)
                         {
@@ -175,15 +174,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         model.IsProduct = true;
                     }
 
-                    var defaultPuConversion = await _stockContext.ProductUnitConversion.FirstOrDefaultAsync(pu => pu.IsDefault && pu.ProductId == productId);
+                    var defaultPuConversion = await _stockDbContext.ProductUnitConversion.FirstOrDefaultAsync(pu => pu.IsDefault && pu.ProductId == productId);
 
                     if (defaultPuConversion == null)
                     {
                         throw DefaultProductUnitNotFound.BadRequest();
                     }
 
-                    var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-                    var extraInfo = await _stockContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+                    var stockInfo = await _stockDbContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+                    var extraInfo = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
 
                     productInfo.ProductTypeId = model.ProductTypeId;
 
@@ -237,7 +236,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     if (model.ProductTargetProductivities != null)
                     {
-                        var productInfos = await _stockContext.Product.Where(p => model.ProductTargetProductivities.Select(t => t.ProductId).Distinct().Contains(p.ProductId)).ToListAsync();
+                        var productInfos = await _stockDbContext.Product.Where(p => model.ProductTargetProductivities.Select(t => t.ProductId).Distinct().Contains(p.ProductId)).ToListAsync();
                         foreach (var p in model.ProductTargetProductivities)
                         {
                             var pInfo = productInfos.FirstOrDefault(inf => inf.ProductId == p.ProductId);
@@ -255,10 +254,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         }
                     }
 
-                    if (_stockContext.HasChanges())
+                    if (_stockDbContext.HasChanges())
                         productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                    await _stockContext.SaveChangesAsync();
+                    await _stockDbContext.SaveChangesAsync();
 
                     await trans.CommitAsync();
 
@@ -280,15 +279,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ProductPartialStockModel> StockInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var stockInfo = await _stockContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
-            var stockValidation = await _stockContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
-            var pus = await _stockContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var stockInfo = await _stockDbContext.ProductStockInfo.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var stockValidation = await _stockDbContext.ProductStockValidation.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var pus = await _stockDbContext.ProductUnitConversion.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
             return new ProductPartialStockModel()
             {
                 StockIds = stockValidation.Select(s => s.StockId).ToList(),
@@ -307,9 +306,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateStockInfo(int productId, ProductPartialStockModel model)
         {
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -320,9 +319,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw GeneralCode.DataIsOld.BadRequest();
                 }
 
-                var stockInfo = await _stockContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
-                var stockValidation = await _stockContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-                var pus = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+                var stockInfo = await _stockDbContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
+                var stockValidation = await _stockDbContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
+                var pus = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
                 var lstStockValidations = model?.StockIds?
                         .Select(s => new ProductStockValidation()
@@ -331,10 +330,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                             StockId = s
                         });
 
-                _stockContext.RemoveRange(stockValidation);
+                _stockDbContext.RemoveRange(stockValidation);
                 if (lstStockValidations != null)
                 {
-                    await _stockContext.ProductStockValidation.AddRangeAsync(lstStockValidations);
+                    await _stockDbContext.ProductStockValidation.AddRangeAsync(lstStockValidations);
                 }
 
 
@@ -344,7 +343,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 stockInfo.StockOutputRuleId = (int?)model.StockOutputRuleId;
 
-                var unitConverions = await _stockContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+                var unitConverions = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
 
                 var keepPuIds = model.UnitConversions?.Select(c => c.ProductUnitConversionId)?.Where(productUnitConversionId => productUnitConversionId > 0)?.ToList();
                 var toRemovePus = unitConverions.Where(c => !keepPuIds.Contains(c.ProductUnitConversionId) && !c.IsDefault).ToList();
@@ -359,7 +358,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         isInUsed
                     };
 
-                    await _stockContext.ExecuteStoreProcedure("asp_ProductUnitConversion_CheckUsed", checkParams);
+                    await _stockDbContext.ExecuteStoreProcedure("asp_ProductUnitConversion_CheckUsed", checkParams);
 
                     if (isInUsed.Value as bool? == true)
                     {
@@ -367,7 +366,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         throw new BadRequestException(ProductErrorCode.SomeProductUnitConversionInUsed);
                     }
 
-                    _stockContext.ProductUnitConversion.RemoveRange(toRemovePus);
+                    _stockDbContext.ProductUnitConversion.RemoveRange(toRemovePus);
 
                 }
 
@@ -394,8 +393,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         ValidatePu(c);
                     }
                     newUnitConversionList.AddRange(lstNewUnitConverions);
-                    await _stockContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
+                    await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                 }
+
+                var changingPuRateIds = new List<long>();
 
                 foreach (var productUnitConversionId in keepPuIds)
                 {
@@ -403,11 +404,18 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     var u = model?.UnitConversions?.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
                     if (db != null && u != null)
                     {
+                        if (u.FactorExpression?.Trim() != db.FactorExpression?.Trim())
+                        {
+                            changingPuRateIds.Add(db.ProductUnitConversionId);
+                        }
+
                         _mapper.Map(u, db);
                         ValidatePu(db);
                     }
                     newUnitConversionList.Add(db);
                 }
+
+                await PuRateChangeValidateExistingInventoryData(changingPuRateIds);
 
                 var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
                 if (defaultUnitConversion != null)
@@ -431,10 +439,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw PuConversionDuplicated.BadRequestFormat(duplicateUnit.First()?.ProductUnitConversionName, productInfo.ProductCode);
                 }
 
-                if (_stockContext.HasChanges())
+                if (_stockDbContext.HasChanges())
                     productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                await _stockContext.SaveChangesAsync();
+                await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
 
@@ -475,13 +483,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ProductPartialSellModel> SellInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var productCustomers = await _stockContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var productCustomers = await _stockDbContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
 
             return new ProductPartialSellModel()
             {
@@ -503,9 +511,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateSellInfo(int productId, ProductPartialSellModel model)
         {
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -516,7 +524,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     throw GeneralCode.DataIsOld.BadRequest();
                 }
 
-                var productCustomers = await _stockContext.ProductCustomer.Where(p => p.ProductId == productId).ToListAsync();
+                var productCustomers = await _stockDbContext.ProductCustomer.Where(p => p.ProductId == productId).ToListAsync();
 
                 //productInfo.CustomerId = model.CustomerId;
                 productInfo.Measurement = model.Measurement;
@@ -542,7 +550,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 }
 
                 var removeProductCustomers = productCustomers.Where(c => !model.ProductCustomers.Select(c1 => c1.CustomerId).Contains(c.CustomerId));
-                _stockContext.ProductCustomer.RemoveRange(removeProductCustomers);
+                _stockDbContext.ProductCustomer.RemoveRange(removeProductCustomers);
 
                 foreach (var c in model.ProductCustomers)
                 {
@@ -555,14 +563,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     {
                         var entity = _mapper.Map<ProductCustomer>(c);
                         entity.ProductId = productId;
-                        await _stockContext.ProductCustomer.AddAsync(entity);
+                        await _stockDbContext.ProductCustomer.AddAsync(entity);
                     }
                 }
 
-                if (_stockContext.HasChanges())
+                if (_stockDbContext.HasChanges())
                     productInfo.UpdatedDatetimeUtc = DateTime.UtcNow;
 
-                await _stockContext.SaveChangesAsync();
+                await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
 
@@ -579,13 +587,13 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<ProductProcessModel> ProcessInfo(int productId)
         {
-            var productInfo = await _stockContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
+            var productInfo = await _stockDbContext.Product.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productId);
             if (productInfo == null)
             {
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var productCustomers = await _stockContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            var productCustomers = await _stockDbContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
 
             return new ProductProcessModel()
             {
@@ -596,9 +604,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         public async Task<bool> UpdateProcessInfo(int productId, ProductProcessModel model)
         {
-            using (var trans = await _stockContext.Database.BeginTransactionAsync())
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                var productInfo = await _stockContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -607,7 +615,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productInfo.Coefficient = model.Coefficient;
                 productInfo.ProductionProcessStatusId = (int)EnumProductionProcessStatus.Created;
 
-                await _stockContext.SaveChangesAsync();
+                await _stockDbContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
 

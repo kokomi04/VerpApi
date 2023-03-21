@@ -297,6 +297,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                 var productInfoByIds = new Dictionary<int, Product>();
 
+                var firstRow = g.First();
+
+                if (!firstRow.StockId.HasValue)
+                {
+                    throw InventoryImportFacadeMessage.StockInfoNotFound.BadRequest();
+                }
+
                 var sortOrder = 1;
                 foreach (var item in g)
                 {
@@ -338,7 +345,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     Package packageInfo;
                     if (!string.IsNullOrWhiteSpace(item.FromPackageCode))
                     {
-                        packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
+                        packageInfo = await _stockDbContext.Package.AsNoTracking().FirstOrDefaultAsync(p => p.StockId == firstRow.StockId.Value && p.ProductId == productObj.ProductId && p.PackageCode == item.FromPackageCode && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId);
 
                         if (packageInfo == null) throw ProductPackageWithCodeNotFound.BadRequestFormat(item.FromPackageCode, productObj.ProductCode);
 
@@ -347,7 +354,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     else
                     {
                         packageInfo = await _stockDbContext.Package.AsNoTracking()
-                          .Where(p => p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
+                          .Where(p => p.StockId == firstRow.StockId.Value && p.ProductId == productObj.ProductId && p.ProductUnitConversionId == productUnitConversionObj.ProductUnitConversionId)
                           .OrderByDescending(p => p.PackageTypeId == (int)EnumPackageType.Default)
                           .FirstOrDefaultAsync();
 
@@ -408,17 +415,15 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                         RefObjectTypeId = null,
                         RefObjectId = null,
                         RefObjectCode = item.CatePrefixCode,
-                        FromPackageId = fromPackageId
+                        FromPackageId = fromPackageId,
+                        POCode = item.PoCode,
+                        ProductionOrderCode = item.ProductionOrderCode,
+                        OrderCode = item.OrderCode,
                         //AccountancyAccountNumberDu = item.AccountancyAccountNumberDu
                     });
                 }
 
-                var firstRow = g.First();
 
-                if (!firstRow.StockId.HasValue)
-                {
-                    throw InventoryImportFacadeMessage.StockInfoNotFound.BadRequest();
-                }
 
                 var newInventory = new InventoryOutModel
                 {

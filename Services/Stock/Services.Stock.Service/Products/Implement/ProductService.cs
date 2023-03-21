@@ -27,6 +27,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
+using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -34,11 +35,10 @@ using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
-    public class ProductService : IProductService
+    public class ProductService : PuConversionValidateAbstract, IProductService
     {
         public const int DECIMAL_PLACE_DEFAULT = 11;
 
-        private readonly StockDBContext _stockDbContext;
         private readonly MasterDBContext _masterDBContext;
         private readonly ILogger _logger;
         private readonly IUnitService _unitService;
@@ -64,10 +64,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IOrganizationHelperService organizationHelperService
             , IBarcodeConfigHelperService barcodeConfigHelperService
             , ILongTaskResourceLockService longTaskResourceLockService
-            )
+            ) : base(stockContext)
         {
             _masterDBContext = masterDBContext;
-            _stockDbContext = stockContext;
             _logger = logger;
             _unitService = unitService;
             _asyncRunner = asyncRunner;
@@ -505,17 +504,25 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         await _stockDbContext.ProductUnitConversion.AddRangeAsync(lstNewUnitConverions);
                     }
 
+                    var changingPuRateIds = new List<long>();
                     foreach (var productUnitConversionId in keepPuIds)
                     {
                         var db = unitConverions.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
                         var u = req.StockInfo?.UnitConversions?.FirstOrDefault(c => c.ProductUnitConversionId == productUnitConversionId);
                         if (db != null && u != null)
                         {
+                            if (u.FactorExpression?.Trim() != db.FactorExpression?.Trim())
+                            {
+                                changingPuRateIds.Add(db.ProductUnitConversionId);
+                            }
                             _mapper.Map(u, db);
                         }
 
                         newUnitConversionList.Add(db);
                     }
+
+                    await PuRateChangeValidateExistingInventoryData(changingPuRateIds);
+
                     var defaultUnitConversion = unitConverions.FirstOrDefault(c => c.IsDefault);
                     if (defaultUnitConversion != null)
                     {
