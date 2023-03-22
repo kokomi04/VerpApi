@@ -90,7 +90,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 from af in _purchaseOrderDBContext.VoucherAreaField
                 join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                 join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-                where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                where af.VoucherTypeId == voucherTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                 select new { a.VoucherAreaId, af.VoucherAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
@@ -263,7 +263,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                select f
             ).ToListAsync()
             )
@@ -341,7 +341,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                select f
             ).ToListAsync()
             )
@@ -411,7 +411,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                select f
             ).ToListAsync()
             )
@@ -501,7 +501,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 // Get all fields
                 var voucherFields = _purchaseOrderDBContext.VoucherField
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -1232,7 +1232,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 // Get all fields
                 var voucherFields = _purchaseOrderDBContext.VoucherField
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -1368,7 +1368,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 from af in _purchaseOrderDBContext.VoucherAreaField
                 join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                 join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-                where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+                where af.VoucherTypeId == voucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                 select f.FieldName).ToListAsync()).ToHashSet();
 
             // Get bills by old value
@@ -1600,7 +1600,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 // Get all fields
                 var voucherFields = _purchaseOrderDBContext.VoucherField
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -2081,12 +2081,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 var refFieldNames = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
                      .SelectMany(f => f.RefTableTitle.Split(',').Select(r => $"{f.FieldName}_{r.Trim()}"));
-                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly || refFieldNames.Contains(f.FieldName))
+                fields = fields.Where(f => (f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || refFieldNames.Contains(f.FieldName))
                     .ToList();
             }
             else
             {
-                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                     .ToList();
 
             }
@@ -2270,7 +2270,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         // Get all fields
                         var voucherFields = _purchaseOrderDBContext.VoucherField
-                         .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                         .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                          .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                         foreach (var bill in bills)
@@ -2882,7 +2882,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                from af in _purchaseOrderDBContext.VoucherAreaField
                join a in _purchaseOrderDBContext.VoucherArea on af.VoucherAreaId equals a.VoucherAreaId
                join f in _purchaseOrderDBContext.VoucherField on af.VoucherFieldId equals f.VoucherFieldId
-               where af.VoucherTypeId == packingListVoucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.VoucherTypeId == packingListVoucherTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                select f
             ).ToListAsync()
             )

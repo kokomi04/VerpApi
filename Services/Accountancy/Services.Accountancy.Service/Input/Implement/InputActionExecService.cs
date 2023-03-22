@@ -74,7 +74,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
 
             var fields = _accountancyDBContext.InputField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 

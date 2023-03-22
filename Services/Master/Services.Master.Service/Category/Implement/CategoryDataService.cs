@@ -128,7 +128,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             // Lấy thông tin field
             var categoryFields = _masterContext.CategoryField
-                .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => category.CategoryId == f.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToList();
 
             var genCodeContexts = new List<IGenerateCodeContext>();
@@ -260,7 +260,7 @@ namespace VErp.Services.Accountancy.Service.Category
             }
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockCategoryKey(categoryId));
 
-            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.CategoryFieldName != CategoryFieldConstants.F_Id).ToList();
+            var categoryFields = _masterContext.CategoryField.Where(f => f.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect && f.CategoryFieldName != CategoryFieldConstants.F_Id).ToList();
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
@@ -690,7 +690,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var fields = (from f in _masterContext.CategoryField
                           join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                           select f).ToList();
             return await GetCategoryRowInfo(category, fields, fId);
         }
@@ -705,7 +705,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var fields = (from f in _masterContext.CategoryField
                           join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                           select f).ToList();
             return await GetCategoryRowInfo(category, fields, fId);
         }
@@ -794,7 +794,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var fields = (from f in _masterContext.CategoryField
                           join c in _masterContext.Category on f.CategoryId equals c.CategoryId
-                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          where c.CategoryId == category.CategoryId && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                           select f).ToList();
 
             var viewAlias = $"v";

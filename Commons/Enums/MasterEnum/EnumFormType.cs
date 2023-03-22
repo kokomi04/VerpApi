@@ -18,7 +18,11 @@ namespace VErp.Commons.Enums.MasterEnum
         ViewOnly = 6,
         [Description("Chọn từ danh sách (chọn nhiều giá trị)")]
         MultiSelect = 7,
-        [Description("Dynamic control - Custom area")]
-        DynamicControl = 8
+
+        [Description("Tổ hợp nhiều dữ liệu tùy chọn - Custom area")]
+        DynamicControl = 8,
+
+        [Description("Sql Select")]
+        SqlSelect = 9
     }
 }

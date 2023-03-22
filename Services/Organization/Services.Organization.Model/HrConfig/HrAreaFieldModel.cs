@@ -24,6 +24,7 @@ namespace Services.Organization.Model.HrConfig
         public int DataSize { get; set; }
         public int DecimalPlace { get; set; }
         public EnumFormType FormTypeId { get; set; }
+        public string SqlValue { get; set; }
         public string DefaultValue { get; set; }
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }
