@@ -152,7 +152,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<int> Create(SalaryPeriodModel model)
         {
-            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year || p.Month == model.Month))
+            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year && p.Month == model.Month))
             {
                 throw SalaryPeriodValidationMessage.PeriodHasBeenCreated.BadRequestFormat(model.Month, model.Year);
             }
