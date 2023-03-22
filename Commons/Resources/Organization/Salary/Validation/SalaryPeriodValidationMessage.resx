@@ -138,4 +138,7 @@
   <data name="PeriodGroupHasNotCreatedYet" xml:space="preserve">
     <value>Cần phải tạo bảng lương cho các Nhóm bảng lương trong kỳ!</value>
   </data>
+  <data name="PeriodHasBeenCreated" xml:space="preserve">
+    <value>Kỳ tính lương tháng {0} năm {1} đã được tạo</value>
+  </data>
 </root>
