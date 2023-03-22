@@ -122,5 +122,14 @@ namespace Verp.Resources.Organization.Salary.Validation {
                 return ResourceManager.GetString("PeriodGroupHasNotCreatedYet", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Kỳ tính lương tháng {0} năm {1} đã được tạo.
+        /// </summary>
+        public static string PeriodHasBeenCreated {
+            get {
+                return ResourceManager.GetString("PeriodHasBeenCreated", resourceCulture);
+            }
+        }
     }
 }

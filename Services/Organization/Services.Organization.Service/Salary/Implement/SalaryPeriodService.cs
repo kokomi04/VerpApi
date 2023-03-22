@@ -152,6 +152,11 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<int> Create(SalaryPeriodModel model)
         {
+            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year || p.Month == model.Month))
+            {
+                throw SalaryPeriodValidationMessage.PeriodHasBeenCreated.BadRequestFormat(model.Month, model.Year);
+            }
+
             var info = _mapper.Map<SalaryPeriod>(model);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             await _organizationDBContext.SalaryPeriod.AddAsync(info);
