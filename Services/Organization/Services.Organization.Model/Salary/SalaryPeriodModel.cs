@@ -51,6 +51,7 @@ namespace VErp.Services.Organization.Model.Salary
         public int? CensorByUserId { get; set; }
         public long? CensorDatetimeUtc { get; set; }
         public EnumSalaryPeriodCensorStatus SalaryPeriodCensorStatusId { get; set; }
+        public bool IsSalaryDataCreated { get; set; }
     }
 
     public class GroupSalaryEmployeeRequestModel

@@ -204,7 +204,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
+            var periodGroup = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
 
 
             var salaryFields = await _salaryFieldService.GetList();
@@ -224,7 +224,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
                 long salaryPeriodGroupId;
-                if (group == null)
+                if (periodGroup == null)
                 {
                     salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
                     {
@@ -237,14 +237,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
                 else
                 {
-                    await _salaryPeriodGroupService.DbUpdate(group.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
+                    await _salaryPeriodGroupService.DbUpdate(periodGroup.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
                     {
                         SalaryPeriodId = salaryPeriodId,
                         SalaryGroupId = salaryGroupId,
                         FromDate = model.FromDate,
                         ToDate = model.ToDate
-                    });
-                    salaryPeriodGroupId = group.SalaryPeriodGroupId;
+                    }, true);
+                    salaryPeriodGroupId = periodGroup.SalaryPeriodGroupId;
                 }
 
                 await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);

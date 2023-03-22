@@ -23,7 +23,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<bool> Delete(long salaryPeriodGroupId);
 
-        Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model);
+        Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model, bool? isSalaryDataCreated);
 
         Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model);
     }
