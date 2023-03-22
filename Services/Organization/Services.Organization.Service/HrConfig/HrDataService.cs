@@ -1,7 +1,9 @@
 using AutoMapper;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using NetTopologySuite.Algorithm;
 using Newtonsoft.Json;
 using Services.Organization.Model.HrConfig;
 using System;
@@ -157,7 +159,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                      a.IsMultiRow
                                  }).ToListAsync();
 
-            var fields = (await GetHrFields(hrTypeId)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != (int)EnumFormType.MultiSelect).ToList();
+            var fields = (await GetHrFields(hrTypeId, null, true)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != EnumFormType.MultiSelect).ToList();
 
             /* 
              * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
@@ -254,6 +256,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             sqlParams.Add(new SqlParameter("@HrTypeId", hrTypeId));
 
+
             /* 
                 * Tính toán tổng số dòng dữ liệu trả về cho clients
              */
@@ -310,7 +313,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId).AsNoTracking().ToListAsync();
 
-            var fields = await GetHrFields(hrTypeId);
+            var fields = await GetHrFields(hrTypeId, null, true);
 
             var results = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
             for (int i = 0; i < hrAreas.Count; i++)
@@ -335,7 +338,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeInfo.HrTypeId).AsNoTracking().ToListAsync();
 
-            var fields = await GetHrFields(hrTypeInfo.HrTypeId);
+            var fields = await GetHrFields(hrTypeInfo.HrTypeId, null, true);
 
 
             var join = new StringBuilder("FROM dbo.HrBill bill");
@@ -363,17 +366,24 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 foreach (var field in fields.Where(x => x.HrAreaId == hrArea.HrAreaId).ToList())
                 {
-                    select.Append($"[{hrArea.HrAreaCode}].[{field.FieldName}], ");
+                    if (field.FormTypeId == EnumFormType.SqlSelect)
+                    {
+                        select.Append($"{field.SqlValue} AS [{field.FieldName}], ");
+                    }
+                    else
+                    {
+                        select.Append($"[{hrArea.HrAreaCode}].[{field.FieldName}], ");
+                    }
 
                     fieldNames.Add(field.FieldName);
 
                     if (!string.IsNullOrWhiteSpace(field.RefTableCode)
-                        && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == (int)EnumFormType.MultiSelect)
+                        && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == EnumFormType.MultiSelect)
                         && !string.IsNullOrWhiteSpace(field.RefTableTitle))
                     {
                         fieldNames.AddRange(field.RefTableTitle.Split(",").Select(f => $"{field.FieldName}_{f}"));
 
-                        if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+                        if (field.FormTypeId == EnumFormType.MultiSelect)
                         {
                             var refFields = field.RefTableTitle.Split(",")
                                 .Select(refTitle => @$"
@@ -461,7 +471,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     }
 
-                    var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
+                    var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId, false);
 
                     var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}], [HrBill_F_Id]
                                     FROM [{tableName}] WHERE [HrBill_F_Id] = @HrBill_F_Id AND [IsDeleted] = @IsDeleted";
@@ -574,7 +584,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
                     var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
-                    var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
+                    var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId, false);
 
                     await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
 
@@ -611,7 +621,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var inputTypeInfo = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             // Lấy thông tin field
-            var fields = await GetHrFields(hrTypeId, areaId);
+            var fields = await GetHrFields(hrTypeId, areaId, false);
 
             var result = new CategoryNameModel()
             {
@@ -722,7 +732,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {
                         var rows = new List<NonCamelCaseDictionary>();
 
-                        var fields = await GetHrFields(hrTypeId, area.HrAreaId);
+                        var fields = await GetHrFields(hrTypeId, area.HrAreaId, false);
                         var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, area.HrAreaCode);
 
                         var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
@@ -959,7 +969,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                             var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
 
                             var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
-                            var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId);
+                            var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId, false);
 
                             await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
 
@@ -1011,7 +1021,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             return field.CategoryFieldTitle;
         }
-        private async Task<List<ValidateField>> GetHrFields(int hrTypeId, int? areaId = null)
+        private async Task<List<ValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
         {
             var area = _organizationDBContext.HrArea.AsQueryable();
             if (areaId > 0)
@@ -1021,7 +1031,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             return await (from af in _organizationDBContext.HrAreaField
                           join f in _organizationDBContext.HrField on af.HrFieldId equals f.HrFieldId
                           join a in area on af.HrAreaId equals a.HrAreaId
-                          where af.HrTypeId == hrTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly && a.HrTypeReferenceId.HasValue == false //&& f.FieldName != OrganizationConstants.F_IDENTITY
+                          where af.HrTypeId == hrTypeId && f.FormTypeId != (int)EnumFormType.ViewOnly
+                          && (includeSelectSqlField || f.FormTypeId != (int)EnumFormType.SqlSelect)
+                          && a.HrTypeReferenceId.HasValue == false //&& f.FieldName != OrganizationConstants.F_IDENTITY
                           orderby a.SortOrder, af.SortOrder
                           select new ValidateField
                           {
@@ -1033,8 +1045,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                               IsUnique = af.IsUnique,
                               Filters = af.Filters,
                               FieldName = f.FieldName,
-                              DataTypeId = f.DataTypeId,
-                              FormTypeId = f.FormTypeId,
+                              DataTypeId = (EnumDataType)f.DataTypeId,
+                              FormTypeId = (EnumFormType)f.FormTypeId,
+                              SqlValue = f.SqlValue,
                               RefTableCode = f.RefTableCode,
                               RefTableField = f.RefTableField,
                               RefTableTitle = f.RefTableTitle,
@@ -1065,15 +1078,23 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             foreach (var field in fields)
             {
-                @selectColumn += $", [row].[{field.FieldName}]";
+                if (field.FormTypeId == EnumFormType.SqlSelect)
+                {
+                    @selectColumn += $", {field.SqlValue} AS [{field.FieldName}]";
+                }
+                else
+                {
+                    @selectColumn += $", [row].[{field.FieldName}]";
+                }
+
                 @columns.Add(field.FieldName);
 
                 if (!string.IsNullOrWhiteSpace(field.RefTableCode)
-                    && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == (int)EnumFormType.MultiSelect)
+                    && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == EnumFormType.MultiSelect)
                     && !string.IsNullOrWhiteSpace(field.RefTableTitle))
                 {
                     @columns.AddRange(field.RefTableTitle.Split(",").Select(refTitle => $"{field.FieldName}_{refTitle}"));
-                    if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+                    if (field.FormTypeId == EnumFormType.MultiSelect)
                     {
                         var refFields = field.RefTableTitle.Split(",").Select(refTitle => @$", 
                             (
@@ -1398,7 +1419,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             foreach (var field in requiredFields)
             {
                 // ignore auto generate field
-                if (field.FormTypeId == (int)EnumFormType.Generate) continue;
+                if (field.FormTypeId == EnumFormType.Generate) continue;
 
 
                 foreach (var (row, index) in rows.Select((value, i) => (value, i + 1)))
@@ -1626,7 +1647,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var referField = (await _httpCategoryHelperService.GetReferFields(new[] { field.RefTableCode }, new[] { field.RefTableField })).FirstOrDefault();
 
-            if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+            if (field.FormTypeId == EnumFormType.MultiSelect)
             {
                 var sValue = ((string)value).TrimEnd(']').TrimStart('[').Trim();
                 existSql += " IN (";
@@ -1907,8 +1928,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             public bool IsUnique { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
-            public int DataTypeId { get; set; }
-            public int FormTypeId { get; set; }
+            public EnumDataType DataTypeId { get; set; }
+            public EnumFormType FormTypeId { get; set; }
+            public string SqlValue { get; set; }
             public int DataSize { get; set; }
             public string RefTableCode { get; set; }
             public string RefTableField { get; set; }

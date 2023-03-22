@@ -359,7 +359,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         await _organizationDBContext.HrField.AddAsync(cloneField);
                         await _organizationDBContext.SaveChangesAsync();
 
-                        if (cloneField.FormTypeId != (int)EnumFormType.ViewOnly)
+                        if (cloneField.FormTypeId != (int)EnumFormType.ViewOnly && cloneField.FormTypeId != (int)EnumFormType.SqlSelect)
                         {
                             await _organizationDBContext.AddColumn(GetHrAreaTableName(cloneType.HrTypeCode, cloneArea.HrAreaCode), cloneField.FieldName, (EnumDataType)cloneField.DataTypeId, cloneField.DataSize, cloneField.DecimalPlace, cloneField.DefaultValue, true);
                         }

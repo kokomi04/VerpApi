@@ -300,6 +300,15 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         private async Task ValidateHrField(int hrTypeId, HrFieldInputModel data, HrField hrField = null, int? hrFieldId = null)
         {
+            if (hrField != null && hrField.FormTypeId == (int)EnumFormType.SqlSelect)
+            {
+                if (string.IsNullOrWhiteSpace(hrField.SqlValue))
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Yêu cầu nhập biểu thức giá trị cho loại Select Sql");
+                }
+
+            }
+
             var query = from f in _organizationDBContext.HrField
                         join a in _organizationDBContext.HrArea on f.HrAreaId equals a.HrAreaId
                         where a.HrTypeId == hrTypeId
@@ -567,7 +576,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.HrField.AddAsync(hrField);
                 await _organizationDBContext.SaveChangesAsync();
 
-                if (hrField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (hrField.FormTypeId != (int)EnumFormType.ViewOnly && hrField.FormTypeId != (int)EnumFormType.SqlSelect)
                 {
                     await _organizationDBContext.AddColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
@@ -613,9 +622,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (dbFormTypeId != (int)EnumFormType.ViewOnly)
+                if (dbFormTypeId != (int)EnumFormType.ViewOnly && dbFormTypeId != (int)EnumFormType.SqlSelect)
                 {
-                    if (data.FormTypeId == EnumFormType.ViewOnly)
+                    if (data.FormTypeId == EnumFormType.ViewOnly || data.FormTypeId == EnumFormType.SqlSelect)
                     {
                         await _organizationDBContext.DeleteColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), inputField.FieldName);
                     }
@@ -625,7 +634,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     }
                     await _organizationDBContext.UpdateColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
-                else if (data.FormTypeId != EnumFormType.ViewOnly)
+                else if (data.FormTypeId != EnumFormType.ViewOnly && data.FormTypeId != EnumFormType.SqlSelect)
                 {
                     await _organizationDBContext.AddColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
@@ -683,7 +692,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // Delete field
                 inputField.IsDeleted = true;
                 await _organizationDBContext.SaveChangesAsync();
-                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (inputField.FormTypeId != (int)EnumFormType.ViewOnly && inputField.FormTypeId != (int)EnumFormType.SqlSelect)
                 {
                     await _organizationDBContext.DeleteColumn(GetHrAreaTableName(hrArea.HrTypeCode, hrArea.HrAreaCode), inputField.FieldName);
                 }

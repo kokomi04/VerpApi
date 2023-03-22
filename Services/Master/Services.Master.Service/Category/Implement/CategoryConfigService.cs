@@ -698,7 +698,7 @@ namespace VErp.Services.Master.Service.Category
                         UpdateField(ref categoryAreaField, data);
                         int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
                         // update field 
-                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly && data.FormTypeId != (int)EnumFormType.SqlSelect)
                         {
                             await _masterContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryAreaField.IsRequired);
                         }
@@ -712,7 +712,7 @@ namespace VErp.Services.Master.Service.Category
                         await _masterContext.SaveChangesAsync();
                         int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
                         // Add field into table
-                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly && data.FormTypeId != (int)EnumFormType.SqlSelect)
                         {
                             await _masterContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryField.IsRequired);
                         }

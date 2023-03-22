@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Category.Implement
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
 
             var fields = _masterDBContext.CategoryField
-                .Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.CategoryId == categoryId && (f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect))
                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 

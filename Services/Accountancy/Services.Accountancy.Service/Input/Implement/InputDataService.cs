@@ -146,11 +146,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly EnumObjectType _inputRowObjectType;
         private readonly EnumObjectType _inputRowAreaObjectType;
 
-      
+
         private readonly List<string> _specialViewOnlyColumns = new List<string>();
 
         private readonly IQueryable<InputField> _inputFieldsSet;
-        
+
         protected internal InputDataServiceBase(AccountancyDBContext accountancyDBContext,
                 IInputDataDependService inputDataDependService,
                 IInputConfigServiceBase inputConfigService,
@@ -233,7 +233,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && (f.FormTypeId != (int)EnumFormType.ViewOnly || _specialViewOnlyColumns.Contains(f.FieldName))
+                where af.InputTypeId == inputTypeId && ((f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || _specialViewOnlyColumns.Contains(f.FieldName))
                 select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
@@ -420,7 +420,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                from af in _accountancyDBContext.InputAreaField
                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+               where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                select f
             ).ToListAsync()
             )
@@ -507,7 +507,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                from af in _accountancyDBContext.InputAreaField
                                join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                                join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-                               where af.InputTypeId == inputTypeId && !a.IsMultiRow && (f.FormTypeId != (int)EnumFormType.ViewOnly || _specialViewOnlyColumns.Contains(f.FieldName))
+                               where af.InputTypeId == inputTypeId && !a.IsMultiRow && ((f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || _specialViewOnlyColumns.Contains(f.FieldName))
                                select f
                             ).ToListAsync()
                 )
@@ -609,7 +609,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 // Get all fields
                 var inputFields = _inputFieldsSet
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -1390,7 +1390,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 // Get all fields
                 var inputFields = _inputFieldsSet
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -1533,7 +1533,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly
+                where af.InputTypeId == inputTypeId && !a.IsMultiRow && f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect
                 select f.FieldName).ToListAsync()).ToHashSet();
 
             // Get bills by old value
@@ -1770,7 +1770,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 // Get all fields
                 var inputFields = _inputFieldsSet
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 // Before saving action (SQL)
@@ -2249,12 +2249,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 var refFieldNames = fields.Where(f => !string.IsNullOrWhiteSpace(f.RefTableCode))
                      .SelectMany(f => f.RefTableTitle.Split(',').Select(r => $"{f.FieldName}_{r.Trim()}"));
-                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly || refFieldNames.Contains(f.FieldName))
+                fields = fields.Where(f => (f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || refFieldNames.Contains(f.FieldName))
                     .ToList();
             }
             else
             {
-                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                fields = fields.Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                     .ToList();
 
             }
@@ -2551,7 +2551,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 // Get all fields
                 var inputFields = _inputFieldsSet
-                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                 .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                  .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
 
                 var fieldIdentityDetails = mapping.MappingFields.Where(x => fields.Where(f => f.IsMultiRow).Any(f => f.FieldName == x.FieldName) && x.IsIdentityDetail)

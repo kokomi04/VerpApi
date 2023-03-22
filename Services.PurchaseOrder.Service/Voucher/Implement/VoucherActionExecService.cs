@@ -51,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
             var fields = _purchaseOrderDBContext.VoucherField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 

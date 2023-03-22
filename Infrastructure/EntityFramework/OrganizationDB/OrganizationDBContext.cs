@@ -533,6 +533,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
 
+                entity.Property(e => e.SqlValue).HasMaxLength(1024);
+
                 entity.Property(e => e.Title).HasMaxLength(128);
 
                 entity.HasOne(d => d.HrArea)
@@ -821,13 +823,15 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             modelBuilder.Entity<SalaryPeriod>(entity =>
             {
                 entity.HasIndex(e => new { e.Year, e.Month, e.SubsidiaryId }, "IX_SalaryPeriod")
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
             });
 
             modelBuilder.Entity<SalaryPeriodGroup>(entity =>
             {
                 entity.HasIndex(e => new { e.SalaryPeriodId, e.SalaryGroupId }, "IX_SalaryPeriodGroup")
-                    .IsUnique();
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
 
                 entity.HasOne(d => d.SalaryGroup)
                     .WithMany(p => p.SalaryPeriodGroup)

@@ -1221,7 +1221,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.VoucherField.AddAsync(voucherField);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly && voucherField.FormTypeId != (int)EnumFormType.SqlSelect)
                 {
                     await _purchaseOrderDBContext.AddColumn(VOUCHERVALUEROW_TABLE, data.FieldName, data.DataTypeId, data.DataSize, data.DecimalPlace, data.DefaultValue, true);
                 }
@@ -1249,7 +1249,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly && voucherField.FormTypeId!=(int)EnumFormType.SqlSelect)
                 {
                     if (data.FieldName != voucherField.FieldName)
                     {
@@ -1296,7 +1296,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 // Delete field
                 voucherField.IsDeleted = true;
                 await _purchaseOrderDBContext.SaveChangesAsync();
-                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly)
+                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly && voucherField.FormTypeId != (int)EnumFormType.SqlSelect)
                 {
                     await _purchaseOrderDBContext.DropColumn(VOUCHERVALUEROW_TABLE, voucherField.FieldName);
                 }
