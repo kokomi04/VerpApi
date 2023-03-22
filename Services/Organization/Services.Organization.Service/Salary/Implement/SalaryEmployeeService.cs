@@ -204,7 +204,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
+            var periodGroup = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
 
 
             var salaryFields = await _salaryFieldService.GetList();
@@ -224,7 +224,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
                 long salaryPeriodGroupId;
-                if (group == null)
+                if (periodGroup == null)
                 {
                     salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
                     {
@@ -237,14 +237,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
                 else
                 {
-                    await _salaryPeriodGroupService.DbUpdate(group.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
+                    await _salaryPeriodGroupService.DbUpdate(periodGroup.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
                     {
                         SalaryPeriodId = salaryPeriodId,
                         SalaryGroupId = salaryGroupId,
                         FromDate = model.FromDate,
                         ToDate = model.ToDate
-                    });
-                    salaryPeriodGroupId = group.SalaryPeriodGroupId;
+                    }, true);
+                    salaryPeriodGroupId = periodGroup.SalaryPeriodGroupId;
                 }
 
                 await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
@@ -490,9 +490,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 while (stack.Count > 0)
                 {
                     SalaryFieldModel currentField = stack.Pop();
-                    var children = fields.Where(f => ContainRefField(currentField, "#" + f.SalaryFieldName)).ToList();
-                    if (children.Count == 0 || children.All(c=> sortedFields.Contains(c)))
-                    {                      
+                    var children = fields.Where(f => f != currentField && ContainRefField(currentField, "#" + f.SalaryFieldName)).ToList();
+                    if (children.Count == 0 || children.All(c => sortedFields.Contains(c)))
+                    {
                         if (!sortedFields.Contains(currentField))
                         {
                             sortedFields.Add(currentField);
@@ -503,11 +503,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         stack.Push(currentField);
                         foreach (var c in children)
                         {
-                            stack.Push(c);
+                            if (!stack.Contains(c))
+                                stack.Push(c);
                         }
                     }
                 }
-                
+
             }
 
             return sortedFields;
@@ -522,7 +523,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private bool ContainRefField(SalaryFieldExpressionModel expression, string fieldName)
         {
-            return ContainRefField(expression.Filter, fieldName) || expression.ValueExpression?.Contains(fieldName) == true;
+            return ContainRefField(expression.Filter, fieldName) || ContainVarible(expression.ValueExpression, fieldName);
         }
 
         private bool ContainRefField(Clause clause, string fieldName)
@@ -530,8 +531,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (clause == null) return false;
             if (clause is SingleClause single)
             {
-                if (single.FieldName.Contains(fieldName)) return true;
-                if (single.Value?.ToString()?.Contains(fieldName) == true) return true;
+                if (ContainVarible(single.FieldName, fieldName)) return true;
+                if (ContainVarible(single.Value?.ToString(), fieldName)) return true;
                 return false;
             }
             else
@@ -540,6 +541,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 if (arrClause == null || arrClause.Rules == null || arrClause.Rules.Count == 0) return false;
                 return arrClause.Rules.Any(r => ContainRefField(r, fieldName));
             }
+        }
+
+
+        private bool ContainVarible(string str, string childString)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return false;
+            var _regContainVariable = new Regex($".*(^|[^a-zA-Z0-9_]){childString}([^a-zA-Z0-9_]|$).*");
+            return _regContainVariable.IsMatch(str);
         }
 
         private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)

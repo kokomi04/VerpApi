@@ -30,11 +30,11 @@ namespace VErp.Services.Organization.Service.Salary
         private readonly ISalaryPeriodService _salaryPeriodService;
         private readonly ISalaryGroupService _salaryGroupService;
 
-        public SalaryPeriodGroupService(OrganizationDBContext organizationDBContext, 
-            ICurrentContextService currentContextService, 
-            IMapper mapper, 
-            IActivityLogService activityLogService, 
-            ISalaryPeriodService salaryPeriodService, 
+        public SalaryPeriodGroupService(OrganizationDBContext organizationDBContext,
+            ICurrentContextService currentContextService,
+            IMapper mapper,
+            IActivityLogService activityLogService,
+            ISalaryPeriodService salaryPeriodService,
             ISalaryGroupService salaryGroupService,
             ILogger<SalaryPeriodGroupService> logger)
             : base(organizationDBContext, currentContextService, logger)
@@ -150,6 +150,7 @@ namespace VErp.Services.Organization.Service.Salary
             }
             var info = _mapper.Map<SalaryPeriodGroup>(model);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
+            info.IsSalaryDataCreated = false;
             await _organizationDBContext.SalaryPeriodGroup.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
             await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Create)
@@ -193,7 +194,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
         {
-            var info = await DbUpdate(salaryPeriodGroupId, model);
+            var info = await DbUpdate(salaryPeriodGroupId, model, null);
 
             var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
             var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
@@ -207,16 +208,19 @@ namespace VErp.Services.Organization.Service.Salary
             return true;
         }
 
-        public async Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
+        public async Task<SalaryPeriodGroup> DbUpdate(long salaryPeriodGroupId, SalaryPeriodGroupModel model, bool? isSalaryDataCreated)
         {
             var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
             if (info == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            if (isSalaryDataCreated == null)
+                isSalaryDataCreated = info.IsSalaryDataCreated;
 
             _mapper.Map(model, info);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
+            info.IsSalaryDataCreated = isSalaryDataCreated.Value;
             info.SalaryPeriodGroupId = salaryPeriodGroupId;
             await _organizationDBContext.SaveChangesAsync();
 
