@@ -1726,20 +1726,20 @@ namespace VErp.Services.Organization.Service.HrConfig
                 existSql += $" AND {whereCondition}";
             }
 
-            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.CloneSqlParams());
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
 
                 // Check tồn tại
-                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.ToArray());
+                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.CloneSqlParams());
                 if (result == null || result.Rows.Count == 0)
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaCode, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaTitle, field.Title + ": " + value });
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaCode, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value });
                 }
             }
         }
