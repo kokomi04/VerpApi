@@ -8,9 +8,9 @@ namespace VErp.Services.Organization.Service.Salary
 {
     public interface ISalaryGroupService
     {
-        Task<IList<SalaryGroupModel>> GetList();
+        Task<IList<SalaryGroupInfo>> GetList();
 
-        Task<SalaryGroupModel> GetInfo(int salaryGroupId);
+        Task<SalaryGroupInfo> GetInfo(int salaryGroupId);
 
         Task<int> Create(SalaryGroupModel model);
 

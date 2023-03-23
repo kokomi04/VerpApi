@@ -23,19 +23,19 @@ namespace VErpApi.Controllers.System.Organization.Salary
 
 
         [HttpGet("")]
-        public async Task<IList<SalaryPeriodGroupModel>> GetList([FromQuery] int salaryPeriodId)
+        public async Task<IList<SalaryPeriodGroupInfo>> GetList([FromQuery] int salaryPeriodId)
         {
             return await _salaryPeriodGroupService.GetList(salaryPeriodId);
         }
 
         [HttpGet("{salaryPeriodGroupId}")]
-        public async Task<SalaryPeriodGroupModel> GetInfo([FromRoute] long salaryPeriodGroupId)
+        public async Task<SalaryPeriodGroupInfo> GetInfo([FromRoute] long salaryPeriodGroupId)
         {
             return await _salaryPeriodGroupService.GetInfo(salaryPeriodGroupId);
         }
 
         [HttpGet("GetInfoByGroup")]
-        public async Task<SalaryPeriodGroupModel> GetInfoByGroup([FromQuery] int salaryPeriodId, [FromQuery] int salaryGroupId)
+        public async Task<SalaryPeriodGroupInfo> GetInfoByGroup([FromQuery] int salaryPeriodId, [FromQuery] int salaryGroupId)
         {
             return await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
         }

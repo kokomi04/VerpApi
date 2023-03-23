@@ -223,23 +223,23 @@ namespace VErp.Services.Organization.Service.Salary
         }
 
 
-        public async Task<SalaryPeriodModel> GetInfo(int year, int month)
+        public async Task<SalaryPeriodInfo> GetInfo(int year, int month)
         {
             return await _organizationDBContext.SalaryPeriod.Where(s => s.Year == year && s.Month == month)
-                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<SalaryPeriodModel> GetInfo(int salaryPeriodId)
+        public async Task<SalaryPeriodInfo> GetInfo(int salaryPeriodId)
         {
             return await _organizationDBContext.SalaryPeriod.Where(s => s.SalaryPeriodId == salaryPeriodId)
-                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<PageData<SalaryPeriodModel>> GetList(int page, int size)
+        public async Task<PageData<SalaryPeriodInfo>> GetList(int page, int size)
         {
-            var lst = _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider);
+            var lst = _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider);
             var total = await lst.CountAsync();
             var lstPaged = await lst.Skip((page - 1) * size).Take(size).ToListAsync();
             return (lstPaged, total);

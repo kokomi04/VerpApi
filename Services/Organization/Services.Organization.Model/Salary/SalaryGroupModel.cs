@@ -10,6 +10,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Salary
 {
+
     public class SalaryGroupModel : IMapFrom<SalaryGroup>
     {
         public int SalaryGroupId { get; set; }
@@ -21,7 +22,7 @@ namespace VErp.Services.Organization.Model.Salary
 
         public IList<SalaryGroupFieldModel> TableFields { get; set; }
 
-        public void Mapping(Profile profile)
+        public virtual void Mapping(Profile profile)
         {
             profile.CreateMapCustom<SalaryGroupModel, SalaryGroup>()
                     .ForMember(d => d.EmployeeFilter, s => s.MapFrom(f => f.EmployeeFilter.JsonSerialize()))
@@ -29,6 +30,22 @@ namespace VErp.Services.Organization.Model.Salary
                     .ReverseMapCustom()
                     .ForMember(d => d.EmployeeFilter, s => s.MapFrom(f => f.EmployeeFilter.JsonDeserialize<Clause>()))
                     .ForMember(d => d.TableFields, s => s.Ignore());
+        }
+    }
+
+    public class SalaryGroupInfo : SalaryGroupModel
+    {
+        public int CreatedByUserId { get; set; }
+        public long CreatedDatetimeUtc { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public long UpdatedDatetimeUtc { get; set; }
+
+        public override void Mapping(Profile profile)
+        {
+            profile.CreateMapCustom<SalaryGroupInfo, SalaryGroup>()
+                    .IncludeBase<SalaryGroupModel, SalaryGroup>()
+                    .ReverseMap()
+                    .IncludeBase<SalaryGroup, SalaryGroupModel>();
         }
     }
 

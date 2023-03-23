@@ -13,11 +13,11 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<bool> Check(long salaryPeriodGroupId, bool isSuccess);
 
-        Task<IList<SalaryPeriodGroupModel>> GetList(int salaryPeriodId);
+        Task<IList<SalaryPeriodGroupInfo>> GetList(int salaryPeriodId);
 
-        Task<SalaryPeriodGroupModel> GetInfo(long salaryPeriodGroupId);
+        Task<SalaryPeriodGroupInfo> GetInfo(long salaryPeriodGroupId);
 
-        Task<SalaryPeriodGroupModel> GetInfo(int salaryPeriodId, int salaryGroupId);
+        Task<SalaryPeriodGroupInfo> GetInfo(int salaryPeriodId, int salaryGroupId);
 
         Task<int> Create(SalaryPeriodGroupModel model);
 
