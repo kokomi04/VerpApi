@@ -23,21 +23,21 @@ namespace VErpApi.Controllers.System.Organization.Salary
 
 
         [HttpGet("")]
-        public async Task<PageData<SalaryPeriodModel>> GetList([FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<SalaryPeriodInfo>> GetList([FromQuery] int page, [FromQuery] int size)
         {
             return await _salaryPeriodService.GetList(page, size);
         }
 
         [HttpGet("{salaryPeriodId}")]
-        public async Task<SalaryPeriodModel> GetInfo([FromRoute] int salaryPeriodId)
+        public async Task<SalaryPeriodInfo> GetInfo([FromRoute] int salaryPeriodId)
         {
             return await _salaryPeriodService.GetInfo(salaryPeriodId);
         }
 
         [HttpGet("GetInfoByMonth")]
-        public async Task<SalaryPeriodModel> GetInfoByMonth([FromQuery] int year, [FromQuery] int month)
+        public async Task<SalaryPeriodInfo> GetInfoByMonth([FromQuery] int year, [FromQuery] int month)
         {
-            return await _salaryPeriodService.GetInfo(year,month);
+            return await _salaryPeriodService.GetInfo(year, month);
         }
 
 
@@ -50,7 +50,7 @@ namespace VErpApi.Controllers.System.Organization.Salary
         [HttpPut("{salaryPeriodId}")]
         public async Task<bool> Update([FromRoute] int salaryPeriodId, [FromBody] SalaryPeriodModel model)
         {
-            return await _salaryPeriodService.Update(salaryPeriodId,model);
+            return await _salaryPeriodService.Update(salaryPeriodId, model);
         }
 
         [HttpDelete("{salaryPeriodId}")]

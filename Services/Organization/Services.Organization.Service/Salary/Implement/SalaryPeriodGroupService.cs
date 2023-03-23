@@ -111,22 +111,22 @@ namespace VErp.Services.Organization.Service.Salary
             return true;
         }
 
-        public async Task<IList<SalaryPeriodGroupModel>> GetList(int salaryPeriodId)
+        public async Task<IList<SalaryPeriodGroupInfo>> GetList(int salaryPeriodId)
         {
-            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupModel>(_mapper.ConfigurationProvider)
+            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupInfo>(_mapper.ConfigurationProvider)
                 .Where(s => s.SalaryPeriodId == salaryPeriodId)
                 .ToListAsync();
         }
 
-        public async Task<SalaryPeriodGroupModel> GetInfo(int salaryPeriodId, int salaryGroupId)
+        public async Task<SalaryPeriodGroupInfo> GetInfo(int salaryPeriodId, int salaryGroupId)
         {
-            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupModel>(_mapper.ConfigurationProvider)
+            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId && s.SalaryGroupId == salaryGroupId);
         }
 
-        public async Task<SalaryPeriodGroupModel> GetInfo(long salaryPeriodGroupId)
+        public async Task<SalaryPeriodGroupInfo> GetInfo(long salaryPeriodGroupId)
         {
-            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupModel>(_mapper.ConfigurationProvider)
+            return await _organizationDBContext.SalaryPeriodGroup.ProjectTo<SalaryPeriodGroupInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
         }
 

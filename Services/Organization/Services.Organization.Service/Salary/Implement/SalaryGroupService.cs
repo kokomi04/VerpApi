@@ -89,14 +89,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
-        public async Task<IList<SalaryGroupModel>> GetList()
+        public async Task<IList<SalaryGroupInfo>> GetList()
         {
             var lst = await _organizationDBContext.SalaryGroup.Include(t => t.SalaryGroupField).ToListAsync();
 
-            var result = new List<SalaryGroupModel>();
+            var result = new List<SalaryGroupInfo>();
             foreach (var item in lst)
             {
-                var model = _mapper.Map<SalaryGroupModel>(item);
+                var model = _mapper.Map<SalaryGroupInfo>(item);
                 model.TableFields = _mapper.Map<List<SalaryGroupFieldModel>>(item.SalaryGroupField).OrderBy(f => f.SortOrder).ToList();
                 result.Add(model);
             }
@@ -105,7 +105,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
 
 
-        public async Task<SalaryGroupModel> GetInfo(int salaryGroupId)
+        public async Task<SalaryGroupInfo> GetInfo(int salaryGroupId)
         {
             var info = await _organizationDBContext.SalaryGroup.Include(t => t.SalaryGroupField).FirstOrDefaultAsync(s => s.SalaryGroupId == salaryGroupId);
             if (info == null)
@@ -113,7 +113,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var model = _mapper.Map<SalaryGroupModel>(info);
+            var model = _mapper.Map<SalaryGroupInfo>(info);
             model.TableFields = _mapper.Map<List<SalaryGroupFieldModel>>(info.SalaryGroupField).OrderBy(f => f.SortOrder).ToList();
             return model;
         }

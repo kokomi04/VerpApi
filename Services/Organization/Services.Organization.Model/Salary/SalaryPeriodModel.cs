@@ -22,7 +22,11 @@ namespace VErp.Services.Organization.Model.Salary
         public long FromDate { get; set; }
         [Required]
         public long ToDate { get; set; }
+  
+    }
 
+    public class SalaryPeriodInfo : SalaryPeriodModel
+    {       
         public int? CheckedByUserId { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
@@ -40,8 +44,12 @@ namespace VErp.Services.Organization.Model.Salary
         public int SalaryPeriodId { get; set; }
         public int SalaryGroupId { get; set; }
         public long FromDate { get; set; }
-        public long ToDate { get; set; }
+        public long ToDate { get; set; }      
+    }
 
+
+    public class SalaryPeriodGroupInfo : SalaryPeriodGroupModel
+    {       
         public int? CheckedByUserId { get; set; }
         public long? CheckedDatetimeUtc { get; set; }
         public int CreatedByUserId { get; set; }
@@ -53,7 +61,6 @@ namespace VErp.Services.Organization.Model.Salary
         public EnumSalaryPeriodCensorStatus SalaryPeriodCensorStatusId { get; set; }
         public bool IsSalaryDataCreated { get; set; }
     }
-
     public class GroupSalaryEmployeeRequestModel
     {
         public long FromDate { get; set; }

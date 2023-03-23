@@ -30,7 +30,7 @@ namespace VErpApi.Controllers.System.Organization.Salary
 
 
         [HttpGet("")]
-        public async Task<IList<SalaryGroupModel>> GetList()
+        public async Task<IList<SalaryGroupInfo>> GetList()
         {
             return await _salaryGroupService.GetList();
         }
