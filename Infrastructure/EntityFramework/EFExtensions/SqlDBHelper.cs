@@ -173,8 +173,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
-                    command.Parameters.Add(new SqlParameter("@ToDayUtc", DateTime.UtcNow));
-                    command.Parameters.Add(new SqlParameter("@ToDay", DateTime.Now));
+
+                    if (cmdType == CommandType.Text)
+                    {
+                        command.Parameters.Add(new SqlParameter("@ToDayUtc", DateTime.UtcNow));
+                        command.Parameters.Add(new SqlParameter("@ToDay", DateTime.Now));
+                    }
+
 
                     foreach (var param in parameters)
                     {
