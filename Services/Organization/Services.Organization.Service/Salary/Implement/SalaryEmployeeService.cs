@@ -133,7 +133,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     {
                         var filter = condition?.Filter;
                         NormalizeFieldNameInClause(filter);
-                        var conditionResult = EvalClause(filter, model);
+                        bool conditionResult;
+                        try
+                        {
+                            conditionResult = EvalClause(filter, model);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError(e, "EvalClause {0}, field {1}, condition {2}", condition.Filter, f.SalaryFieldName, condition.Name);
+                            throw GeneralCode.NotYetSupported.BadRequest($"Lỗi kiểm tra điều kiện {condition.Name} trường {f.GroupName} {f.SalaryFieldName} ({f.Title}). Lỗi {e.Message}");
+                        }
+                        
                         if (conditionResult && !string.IsNullOrWhiteSpace(condition.ValueExpression))
                         {
                             try
@@ -147,7 +157,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             catch (Exception ex)
                             {
                                 _logger.LogError(ex, "Eval {0}, field {1}, condition {2}", condition.ValueExpression, f.SalaryFieldName, condition.Name);
-                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.GroupName} {f.SalaryFieldName}, điều kiện {condition.Name}. Lỗi {ex.Message}");
+                                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {f.GroupName} {f.SalaryFieldName} ({f.Title}), điều kiện {condition.Name}. Lỗi {ex.Message}");
                             }
 
                         }
@@ -658,48 +668,48 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 case EnumOperator.Greater:
                     if (clause.DataType.IsNumber())
-                    {
-                        return (decimal?)x > (decimal?)y;
+                    {                       
+                        return x.ToDecimal() > y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (long?)x > (long?)y;
+                        return x.ToDecimal() > y.ToDecimal();
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.GreaterOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal?)x >= (decimal?)y;
+                        return x.ToDecimal() >= y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (long?)x >= (long?)y;
+                        return x.ToDecimal() >= y.ToDecimal();
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.LessThan:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal?)x < (decimal?)y;
+                        return x.ToDecimal() < y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (long?)x < (long?)y;
+                        return x.ToDecimal() < y.ToDecimal();
                     }
                     throw new NotSupportedException();
                 case EnumOperator.LessThanOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal?)x <= (decimal?)y;
+                        return x.ToDecimal() <= y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (long?)x <= (long?)y;
+                        return x.ToDecimal() <= y.ToDecimal();
                     }
                     throw new NotSupportedException();
                 case EnumOperator.IsNull:
