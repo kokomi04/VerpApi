@@ -111,7 +111,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 long employeeId = 0;
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
-                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
                 }
                 return employeeId;
             }, item => item);
@@ -291,7 +291,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 long employeeId = 0;
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
-                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
                 }
                 return employeeId;
             }, item => item);
@@ -332,7 +332,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     long employeeId = 0;
                     if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                     {
-                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
                     }
 
 
