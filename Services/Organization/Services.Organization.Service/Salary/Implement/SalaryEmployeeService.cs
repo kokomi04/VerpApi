@@ -291,7 +291,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 foreach (var item in lst)
                 {
 
-                    if (!evalDataByEmployee.TryGetValue(item.SalaryEmployeeId, out var evalItem))
+                    if (!evalDataByEmployee.TryGetValue(item.EmployeeId, out var evalItem))
                     {
                         throw SalaryPeriodValidationMessage.EmployeeNotFoundInEval.BadRequestFormat(item.EmployeeId);
                     }
