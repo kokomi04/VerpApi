@@ -139,7 +139,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 foreach (var valuePaire in item)
                 {
-                    paramsData.Add(valuePaire.Key, new SalaryEmployeeValueModel(valuePaire.Value));
+                    paramsData.Add(valuePaire.Key, valuePaire.Value);
                 }
 
                 paramsData.Add("@FromDate", req.FromDate);
@@ -172,21 +172,27 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     else
                     {
+                        object fieldValue = null;
                         foreach (var condition in f.Expression)
                         {
-                            var value = EvalValueExpression(f, condition, paramsData);
-
-                            if (value == null)
+                            var (isSucess, value) = EvalValueExpression(f, condition, paramsData);
+                            if (isSucess)
                             {
-                                paramsData.Add(fieldVariableName, GetDefaultValue(f.DataTypeId, req));
-                            }
-                            else
-                            {
-                                paramsData.Add(fieldVariableName, value);
+                                fieldValue = value;
                             }
 
-                            model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(value));
                         }
+
+                        if (fieldValue == null)
+                        {
+                            paramsData.Add(fieldVariableName, GetDefaultValue(f.DataTypeId, req));
+                        }
+                        else
+                        {
+                            paramsData.Add(fieldVariableName, fieldValue);
+                        }
+
+                        model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(fieldValue));
                     }
 
                 }
@@ -196,7 +202,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
 
 
-        private object EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData)
+        private (bool isSucess, object value) EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData)
         {
             var filter = condition?.Filter;
             NormalizeFieldNameInClause(filter);
@@ -216,7 +222,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 try
                 {
                     var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), paramsData);
-                    return value;
+                    return (true, value);
                 }
                 catch (Exception ex)
                 {
@@ -225,7 +231,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
 
             }
-            return null;
+            return (false, null);
         }
 
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
@@ -637,7 +643,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             var expression = match.Groups["ex"].Value;
                             return EvalUtils.EvalObject(expression, refValues)?.ToString();
                         });
+
+                        singleClause.Value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues);
+
                     }
+
+
 
 
                     return EvalOperatorCompare(singleClause, refValues[singleClause.FieldName], singleClause.Value);
