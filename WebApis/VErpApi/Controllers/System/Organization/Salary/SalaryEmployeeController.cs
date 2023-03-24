@@ -23,13 +23,13 @@ namespace VErpApi.Controllers.System.Organization.Salary
 
         [HttpPost("periods/{salaryPeriodId}/groups/{salaryGroupId}/Eval")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<NonCamelCaseDictionary>> EvalSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeRequestModel req)
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
         {
-            return await _salaryEmployeeService.EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId,req);
+            return await _salaryEmployeeService.EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, req);
         }
 
         [HttpGet("periods/{salaryPeriodId}/groups/{salaryGroupId}/GetData")]
-        public async Task<IList<NonCamelCaseDictionary>> GetSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId)
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId)
         {
             return await _salaryEmployeeService.GetSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId);
         }
@@ -39,6 +39,6 @@ namespace VErpApi.Controllers.System.Organization.Salary
         public async Task<bool> Update([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
         {
             return await _salaryEmployeeService.Update(salaryPeriodId, salaryGroupId, req);
-        }       
+        }
     }
 }

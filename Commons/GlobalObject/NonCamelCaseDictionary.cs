@@ -38,7 +38,7 @@ namespace VErp.Commons.GlobalObject
 
     public class NonCamelCaseDictionary<T> : Dictionary<string, T>
     {
-        public bool TryGetValue(string key, out string value)
+        public bool TryGetStringValue(string key, out string value)
         {
             var isSuccess = base.TryGetValue(key, out var objValue);
             value = objValue?.ToString()?.Trim();
