@@ -224,7 +224,7 @@ namespace VErp.Services.Master.Service.Category
                 var categoryDataRow = new NonCamelCaseDictionary();
                 foreach (var mf in mapField)
                 {
-                    row.TryGetValue(mf.Column, out var value);
+                    row.TryGetStringValue(mf.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value) && mf.IsIgnoredIfEmpty)
                     {
@@ -327,7 +327,7 @@ namespace VErp.Services.Master.Service.Category
                 var refValues = new HashSet<string>();
                 foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
                 {
-                    row.TryGetValue(mapField.Column, out var value);
+                    row.TryGetStringValue(mapField.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value)) continue;
 
@@ -381,7 +381,7 @@ namespace VErp.Services.Master.Service.Category
                         var refValues = new HashSet<string>();
                         foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
                         {
-                            row.TryGetValue(mf.Column, out var value);
+                            row.TryGetStringValue(mf.Column, out var value);
 
                             if (string.IsNullOrWhiteSpace(value)) continue;
 

@@ -14,9 +14,9 @@ namespace VErp.Services.Organization.Service.Salary
 {
     public interface ISalaryEmployeeService
     {
-        Task<IList<NonCamelCaseDictionary>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeRequestModel req);
+        Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req);
 
-        Task<IList<NonCamelCaseDictionary>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);
+        Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);
 
         Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);    
 
