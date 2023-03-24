@@ -247,6 +247,11 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Update(int salaryPeriodId, SalaryPeriodModel model)
         {
+            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year && p.Month == model.Month && p.SalaryPeriodId != salaryPeriodId))
+            {
+                throw SalaryPeriodValidationMessage.PeriodHasBeenCreated.BadRequestFormat(model.Month, model.Year);
+            }
+
             var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
             if (info == null)
             {
