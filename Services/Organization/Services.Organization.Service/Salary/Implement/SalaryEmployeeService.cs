@@ -417,7 +417,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                                     SalaryEmployeeId = item.SalaryEmployeeId,
                                     SalaryFieldId = field.SalaryFieldId,
                                     IsEdited = dataValue.IsEdited,
-                                    Value = dataValue
+                                    Value = dataValue.Value
                                 });
                             }
                         }
