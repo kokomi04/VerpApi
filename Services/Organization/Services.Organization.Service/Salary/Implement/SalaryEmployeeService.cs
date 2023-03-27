@@ -116,6 +116,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return employeeId;
             }, item => item);
 
+            var employeeInOtherGroups = (await
+                    _organizationDBContext.SalaryEmployee
+                    .Where(e => e.SalaryPeriodId == salaryPeriodId && e.SalaryGroupId != salaryGroupId)
+                    .Select(e => e.EmployeeId)
+                    .ToListAsync()
+                ).Distinct()
+                .ToHashSet();
+
             var employeeIds = new HashSet<long>();
             foreach (var item in lst)
             {
@@ -132,6 +140,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     throw SalaryPeriodValidationMessage.EmployeeIDDuplicated.BadRequestFormat(employeeId);
                 }
+                if (employeeInOtherGroups.Contains(employeeId)) continue;
 
                 employeeIds.Add(employeeId);
 
