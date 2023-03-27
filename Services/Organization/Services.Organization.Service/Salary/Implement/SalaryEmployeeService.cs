@@ -406,7 +406,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                             if (dataValue.IsEdited || evalValue.IsEdited || dataValue?.Value?.ToString() != evalValue?.Value?.ToString())
                             {
-                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue, evalValue);
+                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue?.Value, evalValue?.Value);
                             }
                         }
 
