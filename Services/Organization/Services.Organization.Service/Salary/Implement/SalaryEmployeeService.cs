@@ -7,6 +7,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
+using NPOI.Util;
 using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
@@ -50,6 +51,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ISalaryPeriodGroupService _salaryPeriodGroupService;
 
         private const string SALARY_FIELD_PREFIX = "__";
+
+        private const int DEFAULT_DECIMAL_PLACE = 2;
 
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
             ICurrentContextService currentContextService,
@@ -192,12 +195,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                         }
 
+                        
+
                         if (fieldValue == null)
                         {
                             paramsData.Add(fieldVariableName, GetDefaultValue(f.DataTypeId, req));
                         }
                         else
                         {
+                            if (f.DataTypeId.IsNumber())
+                            {
+                                fieldValue = Convert.ToDecimal(fieldValue).RoundBy(DEFAULT_DECIMAL_PLACE);
+                            }
+
                             paramsData.Add(fieldVariableName, fieldValue);
                         }
 
@@ -382,10 +392,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             {
                                 evalItem.TryGetValue(field.SalaryFieldName, out evalValue);
                             }
+                           
 
                             if (dataValue.IsEdited || evalValue.IsEdited || dataValue?.Value?.ToString() != evalValue?.Value?.ToString())
                             {
-                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.Title, dataValue, evalValue);
+                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue, evalValue);
                             }
                         }
 
