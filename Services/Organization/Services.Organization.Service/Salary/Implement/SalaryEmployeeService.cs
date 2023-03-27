@@ -195,7 +195,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                         }
 
-                        
+
 
                         if (fieldValue == null)
                         {
@@ -203,9 +203,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         }
                         else
                         {
-                            if (f.DataTypeId.IsNumber())
+                            try
                             {
-                                fieldValue = Convert.ToDecimal(fieldValue).RoundBy(DEFAULT_DECIMAL_PLACE);
+                                if (f.DataTypeId.IsNumber())
+                                {
+                                    fieldValue = Convert.ToDecimal(fieldValue).RoundBy(DEFAULT_DECIMAL_PLACE);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+
+                                _logger.LogError(e, "Can not convert {0} to decimal", fieldValue);
                             }
 
                             paramsData.Add(fieldVariableName, fieldValue);
@@ -392,7 +400,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             {
                                 evalItem.TryGetValue(field.SalaryFieldName, out evalValue);
                             }
-                           
+
 
                             if (dataValue.IsEdited || evalValue.IsEdited || dataValue?.Value?.ToString() != evalValue?.Value?.ToString())
                             {
