@@ -283,6 +283,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>();
                 result.Add(model);
 
+                model.Add(OrganizationConstants.HR_TABLE_F_IDENTITY, new SalaryEmployeeValueModel(item.EmployeeId));
+
                 foreach (var v in item.SalaryEmployeeValue)
                 {
                     model.Add(v.SalaryField.SalaryFieldName, new SalaryEmployeeValueModel(v.Value, v.IsEdited));
