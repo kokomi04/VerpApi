@@ -15,6 +15,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
     {
         protected readonly StockDBContext _stockDbContext;
         protected readonly ICurrentContextService _currentContextService;
+        private static readonly DateTime MINIMUM_OF_DATE = new DateTime(2010, 1, 1);
         internal InventoryBillDateAbstract(StockDBContext stockDbContext, ICurrentContextService currentContextService)
         {
             _stockDbContext = stockDbContext;
@@ -22,7 +23,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
         }
 
         private readonly HashSet<ValidateBillDate> _validateCaches = new HashSet<ValidateBillDate>();
-        protected async Task ValidateBill(DateTime? billDate, DateTime? oldDate)
+        protected async Task ValidateDateOfBill(DateTime? billDate, DateTime? oldDate)
         {
             var validated = new ValidateBillDate() { BillDate = billDate, OldDate = oldDate };
             if (_validateCaches.Contains(validated)) return;
@@ -38,11 +39,19 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
 
                 if (oldDate.HasValue)
                 {
+                    if (oldDate.Value < MINIMUM_OF_DATE)
+                    {
+                        throw BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
+                    }
                     sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
                 }
 
                 if (billDate.HasValue)
                 {
+                    if (billDate.Value < MINIMUM_OF_DATE)
+                    {
+                        throw BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
+                    }
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
 

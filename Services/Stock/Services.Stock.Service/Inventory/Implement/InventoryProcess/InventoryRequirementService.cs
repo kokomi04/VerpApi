@@ -676,7 +676,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
 
         private async Task ValidateInventoryRequirementConfig(DateTime? billDate, DateTime? oldDate)
         {
-            await ValidateBill(billDate, oldDate);
+            await ValidateDateOfBill(billDate, oldDate);
         }
 
         public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int? productMaterialsConsumptionGroupId, long? productionOrderMaterialSetId)
