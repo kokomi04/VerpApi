@@ -25,7 +25,7 @@ namespace VErpApi.Controllers.System.Organization.Salary
         [VErpAction(EnumActionType.View)]
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
         {
-            return await _salaryEmployeeService.EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, req, false);
+            return await _salaryEmployeeService.EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, req);
         }
 
         [HttpGet("periods/{salaryPeriodId}/groups/{salaryGroupId}/GetData")]

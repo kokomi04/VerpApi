@@ -69,6 +69,12 @@ namespace VErp.Services.Organization.Model.Salary
         public IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> Salaries { get; set; }
     }
 
+    public class GroupSalaryEmployeeEvalData : GroupSalaryEmployeeModel
+    {
+        public int SalaryPeriodId { get; set; }
+        public int SalaryGroupId { get; set; }
+    }
+
     public class SalaryEmployeeValueModel
     {
         public SalaryEmployeeValueModel()
