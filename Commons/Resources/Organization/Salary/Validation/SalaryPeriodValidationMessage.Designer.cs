@@ -61,6 +61,15 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dữ liệu cập nhật không đủ số lượng nhân viên của nhóm bảng lương.
+        /// </summary>
+        public static string DiffNumberOfUpdatedEmployeeSalary {
+            get {
+                return ResourceManager.GetString("DiffNumberOfUpdatedEmployeeSalary", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Dữ liệu nhân viên không hợp lệ! ID trùng nhau ({0}).
         /// </summary>
         public static string EmployeeIDDuplicated {
