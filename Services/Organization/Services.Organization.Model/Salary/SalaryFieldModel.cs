@@ -26,10 +26,12 @@ namespace VErp.Services.Organization.Model.Salary
         [MaxLength(512)]
         public string Description { get; set; }
         public EnumDataType DataTypeId { get; set; }
+        public int DecimalPlace { get; set; }        
         public int SortOrder { get; set; }
         public IList<SalaryFieldExpressionModel> Expression { get; set; }
         public bool IsEditable { get; set; }
         public bool IsHidden { get; set; }
+        public bool IsDisplayRefData { get; set; }
 
         public void Mapping(Profile profile)
         {

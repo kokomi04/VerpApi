@@ -139,7 +139,7 @@
     <value>Kỳ lương chỉ được phép Duyệt/kiểm tra khi tất cả các bảng lương đã được duyệt!</value>
   </data>
   <data name="PeriodGroupHasNotCreatedYet" xml:space="preserve">
-    <value>Cần phải tạo bảng lương cho các Nhóm bảng lương trong kỳ!</value>
+    <value>Cần phải tạo bảng lương cho các Nhóm bảng lương "{0}" trong kỳ!</value>
   </data>
   <data name="PeriodHasBeenCreated" xml:space="preserve">
     <value>Kỳ tính lương tháng {0} năm {1} đã được tạo</value>

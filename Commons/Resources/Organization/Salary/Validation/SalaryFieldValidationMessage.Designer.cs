@@ -70,6 +70,15 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Trường dữ liệu {0} dữ liệu tham chiếu không được phép có thuộc tính có thể chỉnh sửa.
+        /// </summary>
+        public static string RefDataFieldCanNotEditable {
+            get {
+                return ResourceManager.GetString("RefDataFieldCanNotEditable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Trường dữ liệu {0} đang được sử dụng trong bảng lương.
         /// </summary>
         public static string SalaryFieldInUsed {
