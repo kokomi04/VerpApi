@@ -195,25 +195,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                         }
 
-
-
                         if (fieldValue == null)
                         {
                             paramsData.Add(fieldVariableName, GetDefaultValue(f.DataTypeId, req));
                         }
                         else
                         {
-                            try
+                            if (GetDecimal(fieldValue, out var decimalValue))
                             {
-                                if (f.DataTypeId.IsNumber())
-                                {
-                                    fieldValue = Convert.ToDecimal(fieldValue).RoundBy(DEFAULT_DECIMAL_PLACE);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-
-                                _logger.LogError(e, "Can not convert {0} to decimal", fieldValue);
+                                fieldValue = decimalValue;
                             }
 
                             paramsData.Add(fieldVariableName, fieldValue);
@@ -404,7 +394,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             }
 
 
-                            if (dataValue.IsEdited || evalValue.IsEdited || dataValue?.Value?.ToString() != evalValue?.Value?.ToString())
+                            if (dataValue.IsEdited || evalValue.IsEdited || !IsEqualFieldsValue(field.DataTypeId, dataValue?.Value, evalValue?.Value))
                             {
                                 throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue?.Value, evalValue?.Value);
                             }
@@ -452,6 +442,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return true;
             }
         }
+
 
 
 
@@ -710,9 +701,38 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
             return true;
         }
+
+        private bool IsEqualFieldsValue(EnumDataType dataTypeId, object value1, object value2)
+        {
+            if (dataTypeId.IsNumber())
+            {
+                if (GetDecimal(value1, out var decimalValue1) && GetDecimal(value2, out var decimalValue2))
+                {
+                    return decimalValue1 == decimalValue2;
+                }
+            }
+
+            return value1?.ToString() == value2?.ToString();
+        }
+        private bool GetDecimal(object value, out decimal decimalValue)
+        {
+            try
+            {
+                decimalValue = Convert.ToDecimal(value).RoundBy(DEFAULT_DECIMAL_PLACE);
+                return true;
+            }
+            catch (Exception e)
+            {
+
+                _logger.LogWarning(e, "Can not convert {0} to decimal", value);
+                decimalValue = 0;
+                return false;
+            }
+        }
+
         public object GetDefaultValue(EnumDataType dataTypeId, GroupSalaryEmployeeModel req)
         {
-            object defaultValue = null;
+            object defaultValue;
             switch (dataTypeId)
             {
                 case EnumDataType.Int:
