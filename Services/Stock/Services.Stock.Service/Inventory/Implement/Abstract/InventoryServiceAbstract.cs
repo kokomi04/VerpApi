@@ -108,7 +108,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         protected async Task ValidateInventoryConfig(DateTime? billDate, DateTime? oldDate)
         {
-            await ValidateBill(billDate, oldDate);
+            await ValidateDateOfBill(billDate, oldDate);
         }
 
         /// <summary>
