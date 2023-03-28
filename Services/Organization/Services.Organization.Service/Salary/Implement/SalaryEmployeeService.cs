@@ -315,6 +315,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return employeeId;
             }, item => item);
 
+            if (model.Salaries.Count != evalDataByEmployee.Count)
+            {
+                throw SalaryPeriodValidationMessage.DiffNumberOfUpdatedEmployeeSalary.BadRequest();
+            }
+
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
                 long salaryPeriodGroupId;
@@ -372,6 +377,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
 
+               
                 foreach (var item in lst)
                 {
 
