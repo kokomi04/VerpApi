@@ -141,12 +141,17 @@ namespace VErp.Services.Organization.Service.Salary
                 throw SalaryPeriodValidationMessage.PeriodGroupHasNotApprovedYet.BadRequest();
             }
 
-
-            var groupIds = await _organizationDBContext.SalaryGroup.Select(g => g.SalaryGroupId).ToListAsync();
             var periodGroupIds = await _organizationDBContext.SalaryPeriodGroup.Where(p => p.SalaryPeriodId == salaryPeriodId).Select(p => p.SalaryGroupId).ToListAsync();
-            if (groupIds.Count != periodGroupIds.Count)
+
+            var groupIds = await _organizationDBContext.SalaryGroup
+                .Where(g => g.IsActived || periodGroupIds.Contains(g.SalaryGroupId))
+                .Select(g => g.SalaryGroupId).ToListAsync();
+
+            var notCreatedYet = groupIds.Except(periodGroupIds).ToList();
+            if (notCreatedYet.Count() > 0)
             {
-                throw SalaryPeriodValidationMessage.PeriodGroupHasNotCreatedYet.BadRequest();
+                var groupInfo = await _organizationDBContext.SalaryGroup.FirstOrDefaultAsync(s => s.SalaryGroupId == notCreatedYet[0]);
+                throw SalaryPeriodValidationMessage.PeriodGroupHasNotCreatedYet.BadRequestFormat(groupInfo?.Title);
             }
         }
 

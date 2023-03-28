@@ -19,7 +19,7 @@ namespace VErp.Services.Organization.Model.Salary
         [MaxLength(128)]
         public string Title { get; set; }
         public Clause EmployeeFilter { get; set; }
-
+        public bool IsActived { get; set; }
         public IList<SalaryGroupFieldModel> TableFields { get; set; }
 
         public virtual void Mapping(Profile profile)

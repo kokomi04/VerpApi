@@ -120,6 +120,9 @@
   <data name="CannotChangeDataTypeOfSalaryField" xml:space="preserve">
     <value>Không thể thay đổi kiểu dữ liệu trường {0}</value>
   </data>
+  <data name="RefDataFieldCanNotEditable" xml:space="preserve">
+    <value>Trường dữ liệu {0} dữ liệu tham chiếu không được phép có thuộc tính có thể chỉnh sửa</value>
+  </data>
   <data name="SalaryFieldInUsed" xml:space="preserve">
     <value>Trường dữ liệu {0} đang được sử dụng trong bảng lương</value>
   </data>

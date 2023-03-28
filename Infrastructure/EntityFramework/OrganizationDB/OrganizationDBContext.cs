@@ -785,6 +785,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryField>(entity =>
             {
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((2))");
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.GroupName).HasMaxLength(128);

@@ -35,6 +35,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
         public async Task<int> Create(SalaryFieldModel model)
         {
+            ValidateSalaryField(model);
             var info = _mapper.Map<SalaryField>(model);
             await _organizationDBContext.SalaryField.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
@@ -73,6 +74,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<bool> Update(int salaryFieldId, SalaryFieldModel model)
         {
+            ValidateSalaryField(model);
+
             var info = await _organizationDBContext.SalaryField.FirstOrDefaultAsync(s => s.SalaryFieldId == salaryFieldId);
             if (info == null)
             {
@@ -92,6 +95,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _organizationDBContext.SaveChangesAsync();
             await _salaryFieldActivityLog.CreateLog(info.SalaryFieldId, $"Cập nhật trường dữ liệu {model.SalaryFieldName} bảng lương", model.JsonSerialize());
             return true;
+        }
+
+        private void ValidateSalaryField(SalaryFieldModel model)
+        {
+            if (model.IsDisplayRefData && model.IsEditable)
+            {
+                throw SalaryFieldValidationMessage.RefDataFieldCanNotEditable.BadRequestFormat(model.SalaryFieldName);
+            }
         }
     }
 }

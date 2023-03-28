@@ -124,7 +124,7 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cần phải tạo bảng lương cho các Nhóm bảng lương trong kỳ!.
+        ///   Looks up a localized string similar to Cần phải tạo bảng lương cho các Nhóm bảng lương &quot;{0}&quot; trong kỳ!.
         /// </summary>
         public static string PeriodGroupHasNotCreatedYet {
             get {
