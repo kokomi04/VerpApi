@@ -50,7 +50,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
                 {
                     if (billDate.Value < MINIMUM_OF_DATE)
                     {
-                        throw BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
+                        throw BillDateLessThanMinimum.BadRequestFormat(billDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
                     }
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
