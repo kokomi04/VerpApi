@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Organization.Salary.Validation {
+namespace Verp.Resources.Organization.Salary {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Organization.Salary.Validation {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class SalaryFieldValidationMessage {
+    public class SalaryPeriodAdditionBillActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal SalaryFieldValidationMessage() {
+        internal SalaryPeriodAdditionBillActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Organization.Salary.Validation {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Salary.Validation.SalaryFieldValidationMessage", typeof(SalaryFieldValidationMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Salary.SalaryPeriodAdditionBillActivityLogMessage", typeof(SalaryPeriodAdditionBillActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,38 +61,29 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể thay đổi kiểu dữ liệu trường {0}.
+        ///   Looks up a localized string similar to Tạo chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ.
         /// </summary>
-        public static string CannotChangeDataTypeOfSalaryField {
+        public static string Create {
             get {
-                return ResourceManager.GetString("CannotChangeDataTypeOfSalaryField", resourceCulture);
+                return ResourceManager.GetString("Create", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} dữ liệu tham chiếu không được phép có thuộc tính có thể chỉnh sửa.
+        ///   Looks up a localized string similar to Xóa chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ.
         /// </summary>
-        public static string RefDataFieldCanNotEditable {
+        public static string Delete {
             get {
-                return ResourceManager.GetString("RefDataFieldCanNotEditable", resourceCulture);
+                return ResourceManager.GetString("Delete", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} đã tồn tại.
+        ///   Looks up a localized string similar to Cập nhật chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ.
         /// </summary>
-        public static string SalaryFieldAlreadyExisted {
+        public static string Update {
             get {
-                return ResourceManager.GetString("SalaryFieldAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} đang được sử dụng trong bảng lương.
-        /// </summary>
-        public static string SalaryFieldInUsed {
-            get {
-                return ResourceManager.GetString("SalaryFieldInUsed", resourceCulture);
+                return ResourceManager.GetString("Update", resourceCulture);
             }
         }
     }

@@ -524,7 +524,21 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clause"></param>
+        /// <param name="tableName">Table or view, query for check if condition is leaf</param>
+        /// <param name="viewAlias"></param>
+        /// <param name="condition"></param>
+        /// <param name="sqlParams"></param>
+        /// <param name="suffix"></param>
+        /// <param name="not"></param>
+        /// <param name="value"></param>
+        /// <param name="refValues"></param>
+        /// <returns></returns>
+        /// <exception cref="BadRequestException"></exception>
+        public static int FilterClauseProcess(this Clause clause, string tableName, string viewAlias, StringBuilder condition, List<SqlParameter> sqlParams, int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
         {
             if (clause != null)
             {
@@ -546,7 +560,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         });
                     }
 
-                    BuildExpressionRef(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
+                    suffix = BuildExpressionRef(singleClause, tableName, viewAlias, condition, sqlParams, suffix, not);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -563,7 +577,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value, refValues);
+                        suffix = FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, condition, sqlParams, suffix, isNot, value, refValues);
                     }
                 }
                 else
@@ -572,9 +586,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 condition.Append(" )");
             }
+            return suffix;
         }
 
-        public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
+        public static int BuildExpression(SingleClause clause, string tableName, string viewAlias, StringBuilder conditionAll, List<SqlParameter> sqlParams, int suffix, bool isNot)
         {
             var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
 
@@ -758,9 +773,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 conditionAll.Append(condition);
                 suffix++;
             }
+            return suffix;
         }
 
-        public static void BuildExpressionRef(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
+        public static int BuildExpressionRef(SingleClause clause, string tableName, string viewAlias, StringBuilder conditionAll, List<SqlParameter> sqlParams, int suffix, bool isNot)
         {
             var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
 
@@ -946,6 +962,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 conditionAll.Append(condition);
                 suffix++;
             }
+            return suffix;
         }
 
         /// <summary>

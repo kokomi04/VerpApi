@@ -60,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var parammeters = new List<SqlParameter>();
 
             var whereCondition = new StringBuilder();
-           
+
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -75,7 +75,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
-                whereCondition.Append("OR v.HandoverNote LIKE @Keyword ");                
+                whereCondition.Append("OR v.HandoverNote LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductionNote LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -94,7 +94,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionHandoverHistoryReceipt", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionHandoverHistoryReceipt", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
@@ -121,11 +121,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
-       
-           
+
+
             var totalData = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
-            
+
             if (totalData != null && totalData.Rows.Count > 0)
             {
                 total = (totalData.Rows[0]["Total"] as int?).GetValueOrDefault();
@@ -326,12 +326,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == h.ProductionStepId))
                             throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
-                      
+
                     }
                     else
                     {
                         if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.ProductionStepId && a.DepartmentId == h.DepartmentId && a.ProductionOrderId == h.ProductionOrderId))
-                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");                       
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");
                     }
                 }
 

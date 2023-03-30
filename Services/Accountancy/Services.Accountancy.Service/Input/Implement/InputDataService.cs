@@ -287,7 +287,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 whereCondition.Append(" AND ");
                             }
 
-                            filterClause.FilterClauseProcess(_inputValueRowView, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            suffix = filterClause.FilterClauseProcess(_inputValueRowView, "r", whereCondition, sqlParams, suffix, false, value);
                         }
                     }
                 }
@@ -300,7 +300,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     whereCondition.Append(" AND ");
                 }
 
-                columnsFilters.FilterClauseProcess(_inputValueRowView, "r", ref whereCondition, ref sqlParams, ref suffix);
+                suffix = columnsFilters.FilterClauseProcess(_inputValueRowView, "r", whereCondition, sqlParams, suffix);
             }
 
 
@@ -1200,7 +1200,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             parameters.Add(key, val);
                         }
 
-                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+                        suffix = filterClause.FilterClauseProcess(tableName, tableName, whereCondition, sqlParams, suffix, refValues: parameters);
                     }
                     catch (Exception ex)
                     {
@@ -2974,7 +2974,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     }
 
 
-                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+                                    suffix = filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", whereCondition, referParams, suffix, refValues: parameters);
                                 }
                                 catch (EvalObjectArgException agrEx)
                                 {

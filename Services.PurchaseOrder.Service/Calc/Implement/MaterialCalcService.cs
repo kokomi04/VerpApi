@@ -104,7 +104,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var whereCondition = new StringBuilder();
 
             if (filter != null && filter.Rules.Count > 0)
-                filter.FilterClauseProcess("v", "v", ref whereCondition, ref sqlParams, ref suffix);
+                suffix = filter.FilterClauseProcess("v", "v", whereCondition, sqlParams, suffix);
             if (whereCondition.Length > 0)
             {
                 rawSql.AppendLine("WHERE");

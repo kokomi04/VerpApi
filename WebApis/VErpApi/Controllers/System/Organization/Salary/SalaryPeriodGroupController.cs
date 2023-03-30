@@ -1,11 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.Salary;
 

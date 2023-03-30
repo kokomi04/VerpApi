@@ -212,7 +212,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionOrderDetail", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
@@ -329,7 +329,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionOrderDetail", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");

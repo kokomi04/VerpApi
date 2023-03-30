@@ -186,7 +186,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     //viewAlias = "v";
                 }
-                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
+                suffix = model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, filterCondition, sqlParams, suffix);
             }
 
             if (reportInfo.IsBsc)

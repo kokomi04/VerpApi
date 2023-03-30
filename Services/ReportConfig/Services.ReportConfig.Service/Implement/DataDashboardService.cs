@@ -154,7 +154,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (model.ColumnsFilters != null)
             {
                 var viewAlias = string.Empty;
-                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
+                suffix = model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, filterCondition, sqlParams, suffix);
             }
 
             return await GetRowsByQuery(dashboardTypeInfo, filterCondition.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToList());
