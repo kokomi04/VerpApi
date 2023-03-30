@@ -1005,9 +1005,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 };
 
 
-                if (eDetail.PrimaryQuantity == 0 || eDetail.ProductUnitConversionQuantity == 0)
+               
+                if (eDetail.ProductUnitConversionQuantity == 0)
                 {
-                    throw GeneralCode.InvalidParams.BadRequest("Invalid data");
+                    throw ProductUnitConversionErrorCode.SecondaryUnitConversionError.BadRequest($"Không thể tính giá trị đơn vị chuyển đổi {puInfo.ProductUnitConversionName}, mặt hàng {productInfo.ProductCode}, vui lòng kiểm ta lại độ sai số của đơn vị");
+                }
+                if (eDetail.PrimaryQuantity == 0)
+                {
+                    throw ProductUnitConversionErrorCode.SecondaryUnitConversionError.BadRequest($"Không thể tính giá trị đơn vị chính mặt hàng {productInfo.ProductCode}, vui lòng kiểm ta lại độ sai số của đơn vị");
                 }
 
                 if (detail.InProductSubs == null)

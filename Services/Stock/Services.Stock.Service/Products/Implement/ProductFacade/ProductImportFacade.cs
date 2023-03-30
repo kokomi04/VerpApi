@@ -709,22 +709,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     var puKey = pu.ProductUnitConversionName.NormalizeAsInternalName();
                     if (existedPus.TryGetValue(puKey, out var existedItem))
                     {
-                        existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.UploadDecimalPlace);
                         if (!string.IsNullOrWhiteSpace(pu.FactorExpression))
                         {
-                            existedItem.UpdateIfAvaiable(v => v.FactorExpression, pu.FactorExpression);
-
                             if (existedItem?.FactorExpression?.Trim() != pu.FactorExpression?.Trim())
                             {
-                                changeRatePuIds.Add(pu.ProductUnitConversionId);
+                                changeRatePuIds.Add(existedItem.ProductUnitConversionId);
                             }
+
+                            existedItem.UpdateIfAvaiable(v => v.FactorExpression, pu.FactorExpression);
 
                         }
 
                         if (!existedItem.IsDefault)
                         {
-
-
                             existedItem.UpdateIfAvaiable(v => v.ConversionDescription, pu.ConversionDescription);
                         }
 
