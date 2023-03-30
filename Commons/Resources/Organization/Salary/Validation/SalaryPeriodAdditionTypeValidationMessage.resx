@@ -117,16 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="CannotChangeDataTypeOfSalaryField" xml:space="preserve">
-    <value>Không thể thay đổi kiểu dữ liệu trường {0}</value>
+  <data name="FieldInTypeInUsed" xml:space="preserve">
+    <value>Không thể loại bỏ trường {0} {1} ra khỏi loại Thưởng/Phụ cấp và khấu trừ {2} do đã phát sinh dữ liệu</value>
   </data>
-  <data name="RefDataFieldCanNotEditable" xml:space="preserve">
-    <value>Trường dữ liệu {0} dữ liệu tham chiếu không được phép có thuộc tính có thể chỉnh sửa</value>
-  </data>
-  <data name="SalaryFieldAlreadyExisted" xml:space="preserve">
-    <value>Trường dữ liệu {0} đã tồn tại</value>
-  </data>
-  <data name="SalaryFieldInUsed" xml:space="preserve">
-    <value>Trường dữ liệu {0} đang được sử dụng trong bảng lương</value>
+  <data name="TypeInUsed" xml:space="preserve">
+    <value>Loại chứng từ Thưởng/Phụ cấp và khấu trừ {0} đang được sử dụng</value>
   </data>
 </root>

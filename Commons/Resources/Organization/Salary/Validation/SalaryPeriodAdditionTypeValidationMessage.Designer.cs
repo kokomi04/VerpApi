@@ -22,14 +22,14 @@ namespace Verp.Resources.Organization.Salary.Validation {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class SalaryFieldValidationMessage {
+    public class SalaryPeriodAdditionTypeValidationMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal SalaryFieldValidationMessage() {
+        internal SalaryPeriodAdditionTypeValidationMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,8 @@ namespace Verp.Resources.Organization.Salary.Validation {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Salary.Validation.SalaryFieldValidationMessage", typeof(SalaryFieldValidationMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Salary.Validation.SalaryPeriodAdditionTypeValidationM" +
+                            "essage", typeof(SalaryPeriodAdditionTypeValidationMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,38 +62,20 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể thay đổi kiểu dữ liệu trường {0}.
+        ///   Looks up a localized string similar to Không thể loại bỏ trường {0} {1} ra khỏi loại Thưởng/Phụ cấp và khấu trừ {2} do đã phát sinh dữ liệu.
         /// </summary>
-        public static string CannotChangeDataTypeOfSalaryField {
+        public static string FieldInTypeInUsed {
             get {
-                return ResourceManager.GetString("CannotChangeDataTypeOfSalaryField", resourceCulture);
+                return ResourceManager.GetString("FieldInTypeInUsed", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} dữ liệu tham chiếu không được phép có thuộc tính có thể chỉnh sửa.
+        ///   Looks up a localized string similar to Loại chứng từ Thưởng/Phụ cấp và khấu trừ {0} đang được sử dụng.
         /// </summary>
-        public static string RefDataFieldCanNotEditable {
+        public static string TypeInUsed {
             get {
-                return ResourceManager.GetString("RefDataFieldCanNotEditable", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} đã tồn tại.
-        /// </summary>
-        public static string SalaryFieldAlreadyExisted {
-            get {
-                return ResourceManager.GetString("SalaryFieldAlreadyExisted", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} đang được sử dụng trong bảng lương.
-        /// </summary>
-        public static string SalaryFieldInUsed {
-            get {
-                return ResourceManager.GetString("SalaryFieldInUsed", resourceCulture);
+                return ResourceManager.GetString("TypeInUsed", resourceCulture);
             }
         }
     }

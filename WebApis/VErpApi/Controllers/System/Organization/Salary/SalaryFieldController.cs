@@ -1,18 +1,8 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject;
-using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ApiCore.ModelBinders;
-using VErp.Infrastructure.ServiceCore.Model;
-using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Organization.Model.Salary;
-using VErp.Services.Organization.Service.HrConfig;
 using VErp.Services.Organization.Service.Salary;
 
 namespace VErpApi.Controllers.System.Organization.Salary

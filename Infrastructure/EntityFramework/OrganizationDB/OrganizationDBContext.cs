@@ -64,6 +64,12 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public virtual DbSet<SalaryGroup> SalaryGroup { get; set; }
         public virtual DbSet<SalaryGroupField> SalaryGroupField { get; set; }
         public virtual DbSet<SalaryPeriod> SalaryPeriod { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionBill> SalaryPeriodAdditionBill { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionBillEmployee> SalaryPeriodAdditionBillEmployee { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionBillEmployeeValue> SalaryPeriodAdditionBillEmployeeValue { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionField> SalaryPeriodAdditionField { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionType> SalaryPeriodAdditionType { get; set; }
+        public virtual DbSet<SalaryPeriodAdditionTypeField> SalaryPeriodAdditionTypeField { get; set; }
         public virtual DbSet<SalaryPeriodGroup> SalaryPeriodGroup { get; set; }
         public virtual DbSet<SalaryRefTable> SalaryRefTable { get; set; }
         public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
@@ -827,6 +833,94 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                 entity.HasIndex(e => new { e.Year, e.Month, e.SubsidiaryId }, "IX_SalaryPeriod")
                     .IsUnique()
                     .HasFilter("([IsDeleted]=(0))");
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionBill>(entity =>
+            {
+                entity.Property(e => e.BillCode)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.HasOne(d => d.SalaryPeriodAdditionType)
+                    .WithMany(p => p.SalaryPeriodAdditionBill)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionBill_SalaryPeriodAdditionType");
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionBillEmployee>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.HasOne(d => d.SalaryPeriodAdditionBill)
+                    .WithMany(p => p.SalaryPeriodAdditionBillEmployee)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionBillId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionBillEmployee_SalaryPeriodAdditionBill");
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionBillEmployeeValue>(entity =>
+            {
+                entity.HasKey(e => new { e.SalaryPeriodAdditionBillEmployeeId, e.SalaryPeriodAdditionFieldId });
+
+                entity.Property(e => e.Value).HasColumnType("decimal(32, 12)");
+
+                entity.HasOne(d => d.SalaryPeriodAdditionBillEmployee)
+                    .WithMany(p => p.SalaryPeriodAdditionBillEmployeeValue)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionBillEmployeeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionBillEmployeeValue_SalaryPeriodAdditionBillEmployee");
+
+                entity.HasOne(d => d.SalaryPeriodAdditionField)
+                    .WithMany(p => p.SalaryPeriodAdditionBillEmployeeValue)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionBillEmployeeValue_SalaryPeriodAdditionField");
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionField>(entity =>
+            {
+                entity.HasIndex(e => e.FieldName, "IX_SalaryPeriodAdditionField")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
+                entity.Property(e => e.DecimalPlace).HasDefaultValueSql("((2))");
+
+                entity.Property(e => e.FieldName)
+                    .IsRequired()
+                    .HasMaxLength(128);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionType>(entity =>
+            {
+                entity.Property(e => e.Description).HasMaxLength(512);
+
+                entity.Property(e => e.Title)
+                    .IsRequired()
+                    .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<SalaryPeriodAdditionTypeField>(entity =>
+            {
+                entity.HasKey(e => new { e.SalaryPeriodAdditionTypeId, e.SalaryPeriodAdditionFieldId });
+
+                entity.HasOne(d => d.SalaryPeriodAdditionField)
+                    .WithMany(p => p.SalaryPeriodAdditionTypeField)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionFieldId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionTypeField_SalaryPeriodAdditionField");
+
+                entity.HasOne(d => d.SalaryPeriodAdditionType)
+                    .WithMany(p => p.SalaryPeriodAdditionTypeField)
+                    .HasForeignKey(d => d.SalaryPeriodAdditionTypeId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_SalaryPeriodAdditionTypeField_SalaryPeriodAdditionType");
             });
 
             modelBuilder.Entity<SalaryPeriodGroup>(entity =>
