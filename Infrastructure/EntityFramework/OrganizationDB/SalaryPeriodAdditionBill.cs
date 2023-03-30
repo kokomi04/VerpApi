@@ -17,7 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string BillCode { get; set; }
         public int Year { get; set; }
         public int Month { get; set; }
-        public string Description { get; set; }
+        public string Content { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

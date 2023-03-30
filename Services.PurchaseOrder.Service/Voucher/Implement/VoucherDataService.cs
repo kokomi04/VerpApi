@@ -139,7 +139,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             {
                                 whereCondition.Append(" AND ");
                             }
-                            filterClause.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            suffix = filterClause.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", whereCondition, sqlParams, suffix, false, value);
                         }
                     }
                 }
@@ -150,7 +150,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     whereCondition.Append(" AND ");
                 }
-                columnsFilters.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", ref whereCondition, ref sqlParams, ref suffix);
+                suffix = columnsFilters.FilterClauseProcess(VOUCHERVALUEROW_VIEW, "r", whereCondition, sqlParams, suffix);
             }
 
 
@@ -1047,7 +1047,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             parameters.Add(key, val);
                         }
 
-                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+                        suffix = filterClause.FilterClauseProcess(tableName, tableName, whereCondition, sqlParams, suffix, refValues: parameters);
 
                     }
                     catch (EvalObjectArgException agrEx)
@@ -2553,7 +2553,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                         parameters.Add(key, val);
                                     }
 
-                                    filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+                                    suffix = filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", whereCondition, referParams, suffix, refValues: parameters);
 
                                 }
                                 catch (EvalObjectArgException agrEx)

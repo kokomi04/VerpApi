@@ -841,7 +841,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
                     .IsRequired()
                     .HasMaxLength(128);
 
-                entity.Property(e => e.Description).HasMaxLength(512);
+                entity.Property(e => e.Content).HasMaxLength(512);
 
                 entity.HasOne(d => d.SalaryPeriodAdditionType)
                     .WithMany(p => p.SalaryPeriodAdditionBill)

@@ -1,15 +1,7 @@
 ﻿using AutoMapper;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.Wordprocessing;
-using EFCore.BulkExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
-using NPOI.Util;
-using OpenXmlPowerTools;
-using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,7 +24,6 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
 using VErp.Services.Organization.Service.Salary.Implement.Abstract;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
@@ -113,7 +104,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
                     employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
-                }                
+                }
                 if (employeeInOtherGroups.Contains(employeeId)) continue;
                 employeeData.Add(item);
             }
@@ -129,7 +120,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             };
 
             return await EvalSalaryEmployeeByGroup(data, employeeData, false);
-          
+
         }
 
         private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(GroupSalaryEmployeeEvalData data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
@@ -324,7 +315,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var fromDate = salaryPeriodGroup.FromDate.GetUnix();
             var toDate = salaryPeriodGroup.ToDate.GetUnix();
 
-            var employeeIds= new List<long>();
+            var employeeIds = new List<long>();
             foreach (var item in salaryData)
             {
                 var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>();
@@ -349,7 +340,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var (employees, columns) = await FilterEmployee(clause, period.Year, period.Month, fromDate, toDate);
 
-            
+
 
             var data = new GroupSalaryEmployeeEvalData()
             {
@@ -479,7 +470,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             }
 
 
-                            if (dataValue.IsEdited || evalValue.IsEdited || !IsEqualFieldsValue(field.DataTypeId, dataValue?.Value, evalValue?.Value))
+                            if (dataValue?.IsEdited == true || evalValue?.IsEdited == true || !IsEqualFieldsValue(field.DataTypeId, dataValue?.Value, evalValue?.Value))
                             {
                                 throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue?.Value, evalValue?.Value);
                             }
@@ -535,7 +526,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         {
             var columns = new List<string>();
 
-            var refTables = await _salaryRefTableService.GetList();
             var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So", false);
 
             var select = new StringBuilder();
@@ -548,7 +538,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 select.Append(",");
             }
 
-            var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
 
             var data = new NonCamelCaseDictionary()
             {
@@ -566,6 +555,28 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 new SqlParameter("@Month", month)
             };
             var suffix = 0;
+
+            suffix = await JoinRefTables(columns, select, join, suffix, sqlParams, data);
+
+            var whereCondition = new StringBuilder();
+
+
+            if (filter != null)
+            {
+                NormalizeFieldNameInClause(filter);
+
+                suffix = filter.FilterClauseProcess($"({query}) vm", "v", whereCondition, sqlParams, suffix, false, null, data);
+            }
+            var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
+            var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
+
+            return (lstData.ConvertData(), columns);
+        }
+
+        private async Task<int> JoinRefTables(List<string> columns, StringBuilder select, StringBuilder join, int suffix, List<SqlParameter> sqlParams, NonCamelCaseDictionary data)
+        {
+            var refTables = (_salaryRefTableService.GetList()).Result;
+            var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
 
             foreach (var refTable in refTables)
             {
@@ -603,7 +614,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 if (refTable.Filter != null)
                 {
 
-                    refTable.Filter.FilterClauseProcess(refTable.RefTableCode, refAlias, ref refWhereCondition, ref sqlParams, ref suffix, false, null, data);
+                    suffix = refTable.Filter.FilterClauseProcess(refTable.RefTableCode, refAlias, refWhereCondition, sqlParams, suffix, false, null, data);
                 }
 
                 join.AppendLine($" LEFT JOIN v{refTable.RefTableCode} AS {refAlias} ON ({fromField} = [{refAlias}].{refTable.RefTableField})");
@@ -612,20 +623,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     join.Append($" AND {refWhereCondition}");
                 }
             }
-
-            var whereCondition = new StringBuilder();
-
-
-            if (filter != null)
-            {
-                NormalizeFieldNameInClause(filter);
-
-                filter.FilterClauseProcess($"({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix, false, null, data);
-            }
-            var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
-            var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
-
-            return (lstData.ConvertData(), columns);
+            return suffix;
 
         }
 

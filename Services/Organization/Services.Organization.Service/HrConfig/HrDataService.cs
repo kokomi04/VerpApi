@@ -232,7 +232,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 whereCondition.Append(" AND ");
                             }
 
-                            filterClause.FilterClauseProcess("tmp", "r", ref whereCondition, ref sqlParams, ref suffix, false, value);
+                            suffix = filterClause.FilterClauseProcess("tmp", "r", whereCondition, sqlParams, suffix, false, value);
                         }
                     }
                 }
@@ -245,7 +245,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     whereCondition.Append(" AND ");
                 }
 
-                columnsFilters.FilterClauseProcess("tmp", "r", ref whereCondition, ref sqlParams, ref suffix);
+                suffix = columnsFilters.FilterClauseProcess("tmp", "r", whereCondition, sqlParams, suffix);
             }
 
             if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.Contains(orderByFieldName))
@@ -888,7 +888,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                                                 var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
 
 
-                                                filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", ref whereCondition, ref referParams, ref suffix, refValues: parameters);
+                                                suffix = filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", whereCondition, referParams, suffix, refValues: parameters);
 
                                             }
                                             catch (EvalObjectArgException agrEx)
@@ -1704,7 +1704,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     try
                     {
                         var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                        filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: parameters);
+                        suffix = filterClause.FilterClauseProcess(tableName, tableName, whereCondition, sqlParams, suffix, refValues: parameters);
 
                     }
                     catch (EvalObjectArgException agrEx)

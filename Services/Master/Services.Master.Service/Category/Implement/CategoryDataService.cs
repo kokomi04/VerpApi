@@ -584,7 +584,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
                         if (filterClause != null)
                         {
-                            filterClause.FilterClauseProcess(tableName, tableName, ref whereCondition, ref sqlParams, ref suffix, refValues: data);
+                            suffix = filterClause.FilterClauseProcess(tableName, tableName, whereCondition, sqlParams, suffix, refValues: data);
                         }
                     }
                     var paramName = $"@{field.RefTableField}_{suffix}";
@@ -845,7 +845,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
                 int suffix = 0;
-                filters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref whereCondition, ref sqlParams, ref suffix, refValues: filterData);
+                suffix = filters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, whereCondition, sqlParams, suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))
@@ -1085,7 +1085,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         if (filterClause != null)
                         {
                             dataSql.Append(" AND ");
-                            filterClause.FilterClauseProcess(GetCategoryViewName(category), viewAlias, ref dataSql, ref sqlParams, ref suffix);
+                            suffix = filterClause.FilterClauseProcess(GetCategoryViewName(category), viewAlias, dataSql, sqlParams, suffix);
                         }
                     }
 
