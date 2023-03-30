@@ -45,6 +45,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private const int DEFAULT_DECIMAL_PLACE = 2;
 
+        private const string ADDITION_ALIAS = "pc_va_khau_tru$";
+
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
             ICurrentContextService currentContextService,
             IMapper mapper,
@@ -568,9 +570,32 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 suffix = filter.FilterClauseProcess($"({query}) vm", "v", whereCondition, sqlParams, suffix, false, null, data);
             }
             var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
-            var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
+            var dataTable = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
 
-            return (lstData.ConvertData(), columns);
+            var lstData = dataTable.ConvertData();
+
+            var additionValues = await PeriodAdditionValues(year, month);
+
+            foreach (var item in lstData)
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+
+                if (additionValues.TryGetValue(employeeId, out var fieldValues))
+                {
+                    foreach (var (fieldName, value) in fieldValues)
+                    {
+                        var colName = EscaseFieldName($"{ADDITION_ALIAS}.{fieldName}");
+                        item.Add(colName, value);
+                    }
+                }
+
+            }
+
+            return (lstData, columns);
         }
 
         private async Task<int> JoinRefTables(List<string> columns, StringBuilder select, StringBuilder join, int suffix, List<SqlParameter> sqlParams, NonCamelCaseDictionary data)
@@ -627,6 +652,29 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
+
+        private async Task<Dictionary<long, Dictionary<string, decimal>>> PeriodAdditionValues(int year, int month)
+        {
+            var employeeValues = await (
+                from b in _organizationDBContext.SalaryPeriodAdditionBill
+                join e in _organizationDBContext.SalaryPeriodAdditionBillEmployee on b.SalaryPeriodAdditionBillId equals e.SalaryPeriodAdditionBillId
+                join v in _organizationDBContext.SalaryPeriodAdditionBillEmployeeValue on e.SalaryPeriodAdditionBillEmployeeId equals v.SalaryPeriodAdditionBillEmployeeId
+                join f in _organizationDBContext.SalaryPeriodAdditionField on v.SalaryPeriodAdditionFieldId equals f.SalaryPeriodAdditionFieldId
+                where b.Year == year && b.Month == month
+                select new
+                {
+                    e.EmployeeId,
+                    f.FieldName,
+                    v.Value,
+                }).ToListAsync();
+
+            return employeeValues.Where(v => v.Value.HasValue)
+                .GroupBy(e => e.EmployeeId)
+                .ToDictionary(
+                e => e.Key,
+                e => e.GroupBy(f => f.FieldName).ToDictionary(f => f.Key, f => f.Sum(v => v.Value.Value))
+                );
+        }
         private void NormalizeFieldNameInClause(Clause clause)
         {
             if (clause is SingleClause single)
