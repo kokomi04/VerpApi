@@ -232,6 +232,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ActionTypeValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Master\Config\DataConfig\BillDateValidateionMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>BillDateValidateionMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\Config\DataConfig\DataConfigActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -864,6 +869,10 @@
     <EmbeddedResource Update="Master\Config\ActionType\ActionTypeValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ActionTypeValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\DataConfig\BillDateValidateionMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>BillDateValidateionMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Master\Config\DataConfig\DataConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

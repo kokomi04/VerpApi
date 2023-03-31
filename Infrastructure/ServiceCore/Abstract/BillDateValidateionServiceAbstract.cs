@@ -2,31 +2,48 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
+using Verp.Resources.Master.Config.DataConfig;
+using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.EF.StockDB;
-using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
+using DocumentFormat.OpenXml.Spreadsheet;
+using OpenXmlPowerTools;
 
-
-namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
+namespace VErp.Infrastructure.ServiceCore.Abstract
 {
-    public abstract class InventoryBillDateAbstract
+    public class BillDateValidateionServiceAbstract
     {
-        protected readonly StockDBContext _stockDbContext;
-        protected readonly ICurrentContextService _currentContextService;
         private static readonly DateTime MINIMUM_OF_DATE = new DateTime(2010, 1, 1);
-        internal InventoryBillDateAbstract(StockDBContext stockDbContext, ICurrentContextService currentContextService)
-        {
-            _stockDbContext = stockDbContext;
-            _currentContextService = currentContextService;
-        }
-
+        private const int DEFAULT_TIMEZONE_OFFSET = -420;
         private readonly HashSet<ValidateBillDate> _validateCaches = new HashSet<ValidateBillDate>();
+
+        private readonly DbContext _dbContext;
+        protected BillDateValidateionServiceAbstract(DbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
         protected async Task ValidateDateOfBill(DateTime? billDate, DateTime? oldDate)
         {
             var validated = new ValidateBillDate() { BillDate = billDate, OldDate = oldDate };
             if (_validateCaches.Contains(validated)) return;
+
+            await ValidateDateOfBillQuery(billDate, oldDate);
+
+            _validateCaches.Add(validated);
+        }
+
+
+
+        private async Task ValidateDateOfBillQuery(DateTime? billDate, DateTime? oldDate)
+        {
+            var timezoneOffset = DEFAULT_TIMEZONE_OFFSET;
+            if (_dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                timezoneOffset = requestDbContext.CurrentContextService.TimeZoneOffset ?? DEFAULT_TIMEZONE_OFFSET;
+
+            }
 
             if (billDate != null || oldDate != null)
             {
@@ -41,7 +58,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
                 {
                     if (oldDate.Value < MINIMUM_OF_DATE)
                     {
-                        throw BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
+                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(timezoneOffset));
                     }
                     sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
                 }
@@ -50,20 +67,18 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.Abstract
                 {
                     if (billDate.Value < MINIMUM_OF_DATE)
                     {
-                        throw BillDateLessThanMinimum.BadRequestFormat(billDate.Value.AddMinutes(-_currentContextService.TimeZoneOffset ?? -420));
+                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(billDate.Value.AddMinutes(timezoneOffset));
                     }
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
 
-                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value });
+                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = timezoneOffset });
 
-                await _stockDbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
+                await _dbContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
 
                 if (!(result.Value as bool?).GetValueOrDefault())
-                    throw BillDateLocked.BadRequest();
+                    throw BillDateValidateionMessage.BillDateLocked.BadRequest();
             }
-
-            _validateCaches.Add(validated);
         }
 
         private struct ValidateBillDate

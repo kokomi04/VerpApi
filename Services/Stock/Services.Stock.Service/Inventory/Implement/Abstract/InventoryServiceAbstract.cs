@@ -15,6 +15,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Formaters;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
@@ -23,21 +24,22 @@ using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public abstract class InventoryServiceAbstract : InventoryBillDateAbstract
+    public abstract class InventoryServiceAbstract : BillDateValidateionServiceAbstract
     {
         protected readonly ILogger _logger;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
-
+        protected readonly StockDBContext _stockDbContext;
+        protected readonly ICurrentContextService _currentContextService;
         internal InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoveHelperService
             , ICurrentContextService currentContextService
             , IQueueProcessHelperService queueProcessHelperService
-            ) : base(stockContext, currentContextService)
+            ) : base(stockContext)
         {
+            _stockDbContext = stockContext;
+            _currentContextService = currentContextService;
             _logger = logger;
             _customGenCodeHelperService = customGenCodeHelperService;
             _queueProcessHelperService = queueProcessHelperService;

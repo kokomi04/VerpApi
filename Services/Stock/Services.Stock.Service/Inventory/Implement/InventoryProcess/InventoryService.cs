@@ -65,13 +65,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICurrentContextService currentContextService
             , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
             , IQueueProcessHelperService _queueProcessHelperService
             , ILongTaskResourceLockService longTaskResourceLockService
-            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, _queueProcessHelperService)
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, currentContextService, _queueProcessHelperService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;

@@ -120,9 +120,6 @@
   <data name="BillCodeError" xml:space="preserve">
     <value>Định danh mã chứng từ không đúng, vui lòng chọn lại</value>
   </data>
-  <data name="BillDateMustBeGreaterThanClosingDate" xml:space="preserve">
-    <value>Ngày chứng từ không được phép trước ngày chốt sổ</value>
-  </data>
   <data name="BillNotFound" xml:space="preserve">
     <value>Không tìm thấy chứng từ</value>
   </data>

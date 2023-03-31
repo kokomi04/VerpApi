@@ -16,6 +16,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -30,7 +31,7 @@ using InventoryRequirementEntity = VErp.Infrastructure.EF.StockDB.InventoryRequi
 
 namespace VErp.Services.Manafacturing.Service.Stock.Implement
 {
-    public class InventoryRequirementService : InventoryBillDateAbstract, IInventoryRequirementService
+    public class InventoryRequirementService : BillDateValidateionServiceAbstract, IInventoryRequirementService
     {
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
@@ -38,7 +39,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
         private readonly IFileService _fileService;
         private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly ObjectActivityLogFacade _invRequestActivityLog;
-
+        private readonly StockDBContext _stockDbContext;
+        private readonly ICurrentContextService _currentContextService;
         public InventoryRequirementService(StockDBContext stockDBContext
             , IActivityLogService activityLogService
             , ILogger<InventoryRequirementService> logger
@@ -47,14 +49,15 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             , IFileService fileService
             , ICurrentContextService currentContextService
             , IOutsideMappingHelperService outsideMappingHelperService
-            ) : base(stockDBContext, currentContextService)
+            ) : base(stockDBContext)
         {
+            _stockDbContext = stockDBContext;
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
             _fileService = fileService;
             _outsideMappingHelperService = outsideMappingHelperService;
-
+            _currentContextService = currentContextService;
             _invRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
         }
 

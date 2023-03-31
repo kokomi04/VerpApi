@@ -9,7 +9,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
 {
     public class ReportConfigDBRestrictionContext : ReportConfigDBContext, ISubsidiayRequestDbContext
     {
-        private readonly ICurrentContextService CurrentContextService;
+        public ICurrentContextService CurrentContextService { get; private set; }
 
         public int SubsidiaryId { get; private set; }
 

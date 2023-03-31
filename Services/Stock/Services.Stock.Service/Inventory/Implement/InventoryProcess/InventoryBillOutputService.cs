@@ -43,10 +43,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IAsyncRunnerService asyncRunner
             , ICurrentContextService currentContextService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService
             , IQueueProcessHelperService queueProcessHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, queueProcessHelperService)
         {
             _asyncRunner = asyncRunner;
             _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
