@@ -14,6 +14,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -22,7 +23,7 @@ using VErp.Services.Organization.Model.Salary;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
-    public class SalaryPeriodAdditionBillService : ISalaryPeriodAdditionBillService
+    public class SalaryPeriodAdditionBillService : BillDateValidateionServiceAbstract, ISalaryPeriodAdditionBillService
     {
 
         private readonly OrganizationDBContext _organizationDBContext;
@@ -32,6 +33,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public SalaryPeriodAdditionBillService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ICustomGenCodeHelperService customGenCodeHelperService)
+            : base(organizationDBContext)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
@@ -57,6 +59,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var date = new DateTime(model.Year, model.Month, 1);
+
+            await ValidateDateOfBill(date, model.Date.UnixToDateTime());
+
             var code = await ctx
                 .SetConfig(EnumObjectType.SalaryPeriodAdditionBill, EnumObjectType.SalaryPeriodAdditionType, salaryPeriodAdditionTypeId)
                 .SetConfigData(0, date.GetUnixUtc(_currentContextService.TimeZoneOffset))
@@ -133,6 +138,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            var date = new DateTime(info.Year, info.Month, 1);
+
+            await ValidateDateOfBill(date, info.Date);
 
             info.IsDeleted = true;
 
@@ -217,6 +226,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            var date = new DateTime(info.Year, info.Month, 1);
+
+            await ValidateDateOfBill(date, info.Date);
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
 

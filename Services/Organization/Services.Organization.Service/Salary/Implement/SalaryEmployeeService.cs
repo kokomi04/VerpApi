@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -363,6 +364,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
 
             var groupInfo = await _salaryGroupService.GetInfo(salaryGroupId);
             if (groupInfo == null)

@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         }
 
         public int SalaryPeriodAdditionFieldId { get; set; }
+        public int SubsidiaryId { get; set; }
         public string FieldName { get; set; }
         public string Title { get; set; }
         public int DecimalPlace { get; set; }

@@ -34,6 +34,8 @@ namespace VErp.Services.Organization.Model.Salary
         public int Month { get; set; }
         [MaxLength(512)]
         public string Content { get; set; }
+
+        public long Date { get; set; }
     }
 
     public class SalaryPeriodAdditionBillModel : SalaryPeriodAdditionBillBase, ISalaryPeriodAdditionBillModel
