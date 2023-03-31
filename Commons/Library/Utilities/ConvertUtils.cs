@@ -104,7 +104,6 @@ namespace VErp.Commons.Library
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu ngày tháng");
                     }
 
-                    if (dateValue <= 0) return DBNull.Value;
                     return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString()?.Trim();
