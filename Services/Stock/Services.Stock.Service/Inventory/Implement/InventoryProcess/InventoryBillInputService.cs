@@ -56,7 +56,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IProductionOrderHelperService productionOrderHelperService
             , IProductionHandoverHelperService productionHandoverHelperService
             , IQueueProcessHelperService queueProcessHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, queueProcessHelperService)
         {
 
             _asyncRunner = asyncRunner;

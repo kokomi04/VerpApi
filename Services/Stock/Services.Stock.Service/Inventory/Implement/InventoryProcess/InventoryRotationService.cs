@@ -37,8 +37,6 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             StockDBContext stockContext,
             ILogger<InventoryRotationService> logger,
             ICustomGenCodeHelperService customGenCodeHelperService,
-            IProductionOrderHelperService productionOrderHelperService,
-            IProductionHandoverHelperService productionHandoveHelperService,
             ICurrentContextService currentContextService,
             IInventoryBillInputService inventoryBillInputService,
             IInventoryBillOutputService inventoryBillOutputService,
@@ -46,7 +44,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             ICurrentContextService contextService,
             IQueueProcessHelperService queueProcessHelperService
             )
-            : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoveHelperService, currentContextService, queueProcessHelperService)
+            : base(stockContext, logger, customGenCodeHelperService, currentContextService, queueProcessHelperService)
         {
             _inventoryBillInputService = inventoryBillInputService;
             _inventoryBillOutputService = inventoryBillOutputService;

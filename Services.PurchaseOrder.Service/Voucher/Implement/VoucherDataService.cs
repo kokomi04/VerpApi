@@ -28,6 +28,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -39,7 +40,7 @@ using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 {
-    public class VoucherDataService : IVoucherDataService
+    public class VoucherDataService : BillDateValidateionServiceAbstract, IVoucherDataService
     {
         private const string VOUCHERVALUEROW_TABLE = PurchaseOrderConstants.VOUCHERVALUEROW_TABLE;
         private const string VOUCHERVALUEROW_VIEW = PurchaseOrderConstants.VOUCHERVALUEROW_VIEW;
@@ -66,7 +67,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             , IOutsideMappingHelperService outsideMappingHelperService
             , IVoucherConfigService voucherConfigService
             , ILongTaskResourceLockService longTaskResourceLockService
-            )
+            ) : base(purchaseOrderDBContext)
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
@@ -2848,27 +2849,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var billDate = ExtractBillDate(info);
             var oldDate = ExtractBillDate(oldInfo);
-
-            await ValidateSaleVoucherConfig(billDate, oldDate);
+            
+            await ValidateSaleVoucherConfig(billDate as DateTime?, oldDate as DateTime?);
         }
 
-        private async Task ValidateSaleVoucherConfig(object billDate, object oldDate)
+        public async Task ValidateSaleVoucherConfig(DateTime? billDate, DateTime? oldDate)
         {
-            if (billDate != null || oldDate != null)
-            {
-                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-                var sqlParams = new List<SqlParameter>
-                {
-                    result
-                };
-                sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
-                sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
-                sqlParams.Add(new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value });
-                await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
-
-                if (!(result.Value as bool?).GetValueOrDefault())
-                    throw BillDateMustBeGreaterThanClosingDate.BadRequest();
-            }
+            await ValidateDateOfBill(billDate, oldDate);
         }
 
         private string GlobalFilter()

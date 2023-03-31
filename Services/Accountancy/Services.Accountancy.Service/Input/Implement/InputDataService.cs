@@ -26,6 +26,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -123,7 +124,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
     }
 
-    public abstract class InputDataServiceBase : IInputDataServiceBase
+    public abstract class InputDataServiceBase : BillDateValidateionServiceAbstract, IInputDataServiceBase
     {
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
         private readonly InputValueRowViewName _inputValueRowView;
@@ -156,7 +157,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 IInputConfigServiceBase inputConfigService,
                 InputDataObjectType objectTypes,
                 InputValueRowViewName valueRowView
-            )
+            ) : base(accountancyDBContext)
         {
             _inputTypeObjectType = objectTypes.InputType;
             _inputBillObjectType = objectTypes.InputBill;
@@ -3447,22 +3448,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task ValidateAccountantConfig(DateTime? billDate, DateTime? oldDate)
         {
-            if (billDate != null || oldDate != null)
-            {
-                var result = new SqlParameter("@ResStatus", false) { Direction = ParameterDirection.Output };
-                var sqlParams = new List<SqlParameter>
-                {
-                    result,
-                    new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate },
-                    new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate },
-                    new SqlParameter("@TimeZoneOffset", SqlDbType.Int) { Value = _currentContextService.TimeZoneOffset.Value }
-                };
-
-                await _accountancyDBContext.ExecuteStoreProcedure("asp_ValidateBillDate", sqlParams, true);
-
-                if (!(result.Value as bool?).GetValueOrDefault())
-                    throw BillDateMustBeGreaterThanClosingDate.BadRequest();
-            }
+            await ValidateDateOfBill(billDate, oldDate);
         }
 
         private string GlobalFilter()

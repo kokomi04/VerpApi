@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Stock.Inventory.Abstract {
+namespace Verp.Resources.Master.Config.DataConfig {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Stock.Inventory.Abstract {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class InventoryAbstractMessage {
+    public class BillDateValidateionMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal InventoryAbstractMessage() {
+        internal BillDateValidateionMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Stock.Inventory.Abstract {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage", typeof(InventoryAbstractMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Master.Config.DataConfig.BillDateValidateionMessage", typeof(BillDateValidateionMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,47 +61,20 @@ namespace Verp.Resources.Stock.Inventory.Abstract {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số lượng {0} trong kho tại thời điểm {1} phiếu  {2} không đủ. Số tồn là {3} không hợp lệ.
+        ///   Looks up a localized string similar to Ngày chứng từ {0:dd/MM/yyyy} quá cũ, vui lòng kiểm tra lại.
         /// </summary>
-        public static string BillDetailError {
+        public static string BillDateLessThanMinimum {
             get {
-                return ResourceManager.GetString("BillDetailError", resourceCulture);
+                return ResourceManager.GetString("BillDateLessThanMinimum", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Có phiếu bị lỗi. Không thể lấy thông tin chi tiết lỗi.
+        ///   Looks up a localized string similar to Ngày chứng từ không được phép trước ngày chốt sổ.
         /// </summary>
-        public static string BillDetailErrorUnknown {
+        public static string BillDateLocked {
             get {
-                return ResourceManager.GetString("BillDetailErrorUnknown", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Nhập kho.
-        /// </summary>
-        public static string InventoryInput {
-            get {
-                return ResourceManager.GetString("InventoryInput", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Xuất kho.
-        /// </summary>
-        public static string InventoryOuput {
-            get {
-                return ResourceManager.GetString("InventoryOuput", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Lỗi cập nhật trạng thái lệnh sản xuất {0}.
-        /// </summary>
-        public static string UpdateProductionOrderStatusError {
-            get {
-                return ResourceManager.GetString("UpdateProductionOrderStatusError", resourceCulture);
+                return ResourceManager.GetString("BillDateLocked", resourceCulture);
             }
         }
     }
