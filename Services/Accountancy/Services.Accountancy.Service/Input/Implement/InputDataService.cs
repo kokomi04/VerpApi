@@ -2517,14 +2517,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                     foreach (var bill in createGroups)
                     {
-                        var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false);
+                        var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false, null);
                         createBills.Add(billInfo);
                     }
                 }
 
                 foreach (var bill in updateGroups)
                 {
-                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false);
+                    var billInfo = await GetBillFromRows(bill, mapping, fields, referFields, false, null);
                     if (updateBills.ContainsKey(existKeys[bill.Key]))
                     {
                         updateBills[existKeys[bill.Key]] = billInfo;
@@ -2834,8 +2834,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         /// <param name="referFields"></param>
         /// <returns></returns>
         /// <exception cref="BadRequestException"></exception>
-        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateField> fields, List<ReferFieldModel> referFields, bool isGetRefObj)
+        private async Task<BillInfoModel> GetBillFromRows(KeyValuePair<string, List<ImportExcelRowModel>> bill, ImportExcelMapping mapping, List<ValidateField> fields, List<ReferFieldModel> referFields, bool isGetRefObj, NonCamelCaseDictionary refValues)
         {
+            if (refValues == null)
+            {
+                refValues = new NonCamelCaseDictionary();
+            }
+
             var info = new NonCamelCaseDictionary();
             var rows = new List<NonCamelCaseDictionary>();
             int count = bill.Value.Count();
@@ -2969,6 +2974,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 {
                                     var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
                                     foreach (var (key, val) in info.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
+                                    {
+                                        parameters.Add(key, val);
+                                    }
+
+                                    foreach (var (key, val) in refValues.Where(d => !d.Value.IsNullOrEmptyObject() && !parameters.ContainsKey(d.Key)))
                                     {
                                         parameters.Add(key, val);
                                     }
@@ -3153,7 +3163,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
 
-            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true);
+            var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true, bill.Info);
+            
+            billInfo.Info = bill.Info;
 
             foreach (var row in billInfo.Rows)
             {
