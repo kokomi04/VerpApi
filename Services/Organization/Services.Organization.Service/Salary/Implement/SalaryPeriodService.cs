@@ -15,6 +15,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -22,7 +23,7 @@ using VErp.Services.Organization.Model.Salary;
 
 namespace VErp.Services.Organization.Service.Salary
 {
-    public class SalaryPeriodService : ISalaryPeriodService
+    public class SalaryPeriodService : BillDateValidateionServiceAbstract, ISalaryPeriodService
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
@@ -30,6 +31,7 @@ namespace VErp.Services.Organization.Service.Salary
         private readonly ObjectActivityLogFacade _salaryPeriodActivityLog;
 
         public SalaryPeriodService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
+            : base(organizationDBContext)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
@@ -44,6 +46,8 @@ namespace VErp.Services.Organization.Service.Salary
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
 
             await ValidateCensor(salaryPeriodId);
 
@@ -92,6 +96,8 @@ namespace VErp.Services.Organization.Service.Salary
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
 
             await ValidateCensor(salaryPeriodId);
 
@@ -163,6 +169,9 @@ namespace VErp.Services.Organization.Service.Salary
             }
 
             var info = _mapper.Map<SalaryPeriod>(model);
+
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
+
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             await _organizationDBContext.SalaryPeriod.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
@@ -183,6 +192,7 @@ namespace VErp.Services.Organization.Service.Salary
                 {
                     throw GeneralCode.ItemNotFound.BadRequest();
                 }
+                await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
 
                 info.IsDeleted = true;
 
@@ -262,6 +272,9 @@ namespace VErp.Services.Organization.Service.Salary
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), new DateTime(model.Year, model.Month, 1).ToUniversalTime());
+
             _mapper.Map(model, info);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             info.SalaryPeriodId = salaryPeriodId;

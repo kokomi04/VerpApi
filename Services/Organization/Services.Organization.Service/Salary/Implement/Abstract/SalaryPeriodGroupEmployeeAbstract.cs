@@ -7,15 +7,17 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Abstract
 {
-    public abstract class SalaryPeriodGroupEmployeeAbstract
+    public abstract class SalaryPeriodGroupEmployeeAbstract : BillDateValidateionServiceAbstract
     {
         protected readonly OrganizationDBContext _organizationDBContext;
         protected readonly ICurrentContextService _currentContextService;
         protected readonly ILogger _logger;
         protected SalaryPeriodGroupEmployeeAbstract(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, ILogger logger)
+            : base(organizationDBContext)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;

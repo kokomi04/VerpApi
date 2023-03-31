@@ -57,6 +57,8 @@ namespace VErp.Services.Organization.Service.Salary
 
             var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
 
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
+
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CensorApproved : EnumSalaryPeriodCensorStatus.CensorRejected);
             info.CensorByUserId = _currentContextService.UserId;
             info.CensorDatetimeUtc = DateTime.UtcNow;
@@ -89,6 +91,8 @@ namespace VErp.Services.Organization.Service.Salary
             var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
 
             var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
+
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
 
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CheckedAccepted : EnumSalaryPeriodCensorStatus.CheckedRejected);
             info.CheckedByUserId = _currentContextService.UserId;
@@ -148,6 +152,9 @@ namespace VErp.Services.Organization.Service.Salary
             {
                 throw GeneralCode.ItemNotFound.BadRequest("Kỳ tính lương không tồn tại");
             }
+            
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
+
             var info = _mapper.Map<SalaryPeriodGroup>(model);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             info.IsSalaryDataCreated = false;
@@ -174,6 +181,8 @@ namespace VErp.Services.Organization.Service.Salary
 
                 var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
 
+                await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
+
                 info.IsDeleted = true;
 
                 await _organizationDBContext.SaveChangesAsync();
@@ -194,9 +203,18 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Update(long salaryPeriodGroupId, SalaryPeriodGroupModel model)
         {
-            var info = await DbUpdate(salaryPeriodGroupId, model, null);
+            var info = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(s => s.SalaryPeriodGroupId == salaryPeriodGroupId);
+            if (info == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
 
             var period = await _salaryPeriodService.GetInfo(info.SalaryPeriodId);
+
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
+
+            info = await DbUpdate(salaryPeriodGroupId, model, null);
+
             var groupInfo = await _salaryGroupService.GetInfo(info.SalaryGroupId);
 
             await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Update)
