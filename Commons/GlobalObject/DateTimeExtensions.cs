@@ -23,7 +23,6 @@ namespace VErp.Commons.GlobalObject
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            //if (unixTime == 0) return DateTime.MinValue;
             return UnixToDateTime((long?)unixTime, null);
         }
 
