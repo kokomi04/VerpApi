@@ -12,11 +12,6 @@ namespace VErp.Infrastructure.EF.MasterDB
         public int? ParentId { get; set; }
         public string CustomGenCodeName { get; set; }
         public int CodeLength { get; set; }
-        public string Prefix { get; set; }
-        public string Suffix { get; set; }
-        public string Seperator { get; set; }
-        public string DateFormat { get; set; }
-        public int LastValue { get; set; }
         public string LastCode { get; set; }
         public bool IsActived { get; set; }
         public bool IsDeleted { get; set; }
@@ -25,11 +20,14 @@ namespace VErp.Infrastructure.EF.MasterDB
         public DateTime? CreatedTime { get; set; }
         public DateTime? UpdatedTime { get; set; }
         public string Description { get; set; }
-        public int? TempValue { get; set; }
-        public string TempCode { get; set; }
         public int SortOrder { get; set; }
         public bool IsDefault { get; set; }
         public string BaseFormat { get; set; }
         public string CodeFormat { get; set; }
+        public int UpdatedByUserId { get; set; }
+        public DateTime CreatedDatetimeUtc { get; set; }
+        public DateTime UpdatedDatetimeUtc { get; set; }
+        public int CreatedByUserId { get; set; }
+        public DateTime? DeletedDatetimeUtc { get; set; }
     }
 }
