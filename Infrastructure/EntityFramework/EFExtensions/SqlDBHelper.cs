@@ -1061,8 +1061,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var dataRow = dataTable.NewRow();
                 foreach (var field in fields)
                 {
-                    row.TryGetValue(field.Key, out var celValue);
-                    if (celValue == null) info.TryGetValue(field.Key, out celValue);
+                    row.TryGetValue(field.Key, out var celValue); 
+                    if (celValue == null) info.TryGetValue(field.Key, out celValue); 
                     var value = (field.Value).GetSqlValue(celValue);
                     dataRow[field.Key] = value;
                 }
