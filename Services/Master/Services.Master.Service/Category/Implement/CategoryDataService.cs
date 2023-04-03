@@ -929,7 +929,7 @@ namespace VErp.Services.Accountancy.Service.Category
         {
 
             var ids = categoryRows.Select(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
-            var parentIds = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
+            var parentIds = categoryRows.Where(r => !r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject()).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             while (parentIds.Count > 0)
             {
                 var parents = lstAll.Where(r => parentIds.Contains((int)r[CategoryFieldConstants.F_Id])).ToList();
@@ -939,7 +939,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     categoryRows.Add(parent);
                     ids.Add((int)parent[CategoryFieldConstants.F_Id]);
                 }
-                parentIds = parents.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
+                parentIds = parents.Where(r => !r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject()).Select(r => (int)r[CategoryFieldConstants.ParentId]).Where(id => !ids.Contains(id)).ToList();
             }
         }
 
@@ -949,8 +949,8 @@ namespace VErp.Services.Accountancy.Service.Category
             categoryRows = categoryRows.OrderBy(r => (int)r[CategoryFieldConstants.F_Id]).ToList();
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
 
-            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] == DBNull.Value || !categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
-            categoryRows = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
+            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject() || !categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
+            categoryRows = categoryRows.Where(r => !r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject() && categoryRows.Any(p => (int)p[CategoryFieldConstants.F_Id] == (int)r[CategoryFieldConstants.ParentId])).ToList();
 
             foreach (var item in items)
             {
@@ -966,8 +966,8 @@ namespace VErp.Services.Accountancy.Service.Category
         {
             level++;
             List<NonCamelCaseDictionary> nodes = new List<NonCamelCaseDictionary>();
-            var items = categoryRows.Where(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId).ToList();
-            categoryRows.RemoveAll(r => r[CategoryFieldConstants.ParentId] != DBNull.Value && (int)r[CategoryFieldConstants.ParentId] == categoryRowId);
+            var items = categoryRows.Where(r => !r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject() && (int)r[CategoryFieldConstants.ParentId] == categoryRowId).ToList();
+            categoryRows.RemoveAll(r => !r[CategoryFieldConstants.ParentId].IsNullOrEmptyObject() && (int)r[CategoryFieldConstants.ParentId] == categoryRowId);
             foreach (var item in items)
             {
                 item["CategoryRowLevel"] = level;
