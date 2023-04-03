@@ -58,7 +58,7 @@ namespace VErp.Infrastructure.ServiceCore.Abstract
                 {
                     if (oldDate.Value < MINIMUM_OF_DATE)
                     {
-                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(timezoneOffset));
+                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(oldDate.Value.AddMinutes(-timezoneOffset));
                     }
                     sqlParams.Add(new SqlParameter("@OldDate", SqlDbType.DateTime2) { Value = oldDate });
                 }
@@ -67,7 +67,7 @@ namespace VErp.Infrastructure.ServiceCore.Abstract
                 {
                     if (billDate.Value < MINIMUM_OF_DATE)
                     {
-                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(billDate.Value.AddMinutes(timezoneOffset));
+                        throw BillDateValidateionMessage.BillDateLessThanMinimum.BadRequestFormat(billDate.Value.AddMinutes(-timezoneOffset));
                     }
                     sqlParams.Add(new SqlParameter("@BillDate", SqlDbType.DateTime2) { Value = billDate });
                 }
