@@ -220,7 +220,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<bool> Confirm(long receiptId, EnumHandoverStatus status)
         {
-            var info = _manufacturingDBContext.ProductionHandoverReceipt.FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
+            var info = _manufacturingDBContext.ProductionHandoverReceipt.Include(r=>r.ProductionHandover).FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
             if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
             if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
 
