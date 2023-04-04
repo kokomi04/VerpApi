@@ -673,7 +673,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         {
                             //CategoryFieldId = f.id,
                             FieldName = f.CategoryFieldName,
-                            FieldTitle = GetTitleCategoryField(f),
+                            FieldTitle = f.GetTitleCategoryField(),
                             RefCategory = null,
                             IsRequired = false
                         }).ToList()
@@ -1011,16 +1011,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return field.Title;
         }
 
-        private string GetTitleCategoryField(ReferFieldModel field)
-        {
-            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
-            if (rangeValue.Length > 0)
-            {
-                return $"{field.CategoryFieldTitle} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
-            }
 
-            return field.CategoryFieldTitle;
-        }
         private async Task<List<ValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
         {
             var area = _organizationDBContext.HrArea.AsQueryable();

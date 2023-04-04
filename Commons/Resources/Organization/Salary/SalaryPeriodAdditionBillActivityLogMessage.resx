@@ -120,10 +120,16 @@
   <data name="Create" xml:space="preserve">
     <value>Tạo chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ</value>
   </data>
+  <data name="CreateFromExcel" xml:space="preserve">
+    <value>Tạo chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ từ excel</value>
+  </data>
   <data name="Delete" xml:space="preserve">
     <value>Xóa chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ</value>
+  </data>
+  <data name="UpdateFromExcel" xml:space="preserve">
+    <value>Cập nhật chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ từ excel</value>
   </data>
 </root>

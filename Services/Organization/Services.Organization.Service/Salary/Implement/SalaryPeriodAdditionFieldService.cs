@@ -100,15 +100,21 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                                          e.SalaryPeriodAdditionBillId,
                                          e.EmployeeId
                                      }
-                                      ).ToListAsync();
+                                      ).FirstOrDefaultAsync();
 
             if (existedData != null)
             {
                 throw SalaryPeriodAdditionFieldValiationMessage.FieldInUsed.BadRequestFormat(info.FieldName);
             }
 
-            var groupFields = await _organizationDBContext.SalaryPeriodAdditionTypeField.Where(g => g.SalaryPeriodAdditionFieldId == salaryPeriodAdditionFieldId).ToListAsync();
-            _organizationDBContext.SalaryPeriodAdditionTypeField.RemoveRange(groupFields);
+            var groupField = await _organizationDBContext.SalaryPeriodAdditionTypeField.Where(g => g.SalaryPeriodAdditionFieldId == salaryPeriodAdditionFieldId).FirstOrDefaultAsync();
+
+            if (groupField != null)
+            {
+                throw SalaryPeriodAdditionFieldValiationMessage.FieldInUsed.BadRequestFormat(info.FieldName);
+            }
+
+            //_organizationDBContext.SalaryPeriodAdditionTypeField.RemoveRange(groupFields);
             await _organizationDBContext.SaveChangesAsync();
 
             _organizationDBContext.SalaryPeriodAdditionField.Remove(info);
@@ -129,6 +135,24 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (await _organizationDBContext.SalaryPeriodAdditionField.AnyAsync(f => f.SalaryPeriodAdditionFieldId != salaryPeriodAdditionFieldId && f.FieldName == model.FieldName))
             {
                 throw SalaryPeriodAdditionFieldValiationMessage.FieldNameAlreadyExisted.BadRequestFormat(model.FieldName);
+            }
+
+
+            var invalidFieldNames = new HashSet<string>()
+            {
+                nameof(SalaryPeriodAdditionBillEmployeeModel.EmployeeId),
+                nameof(SalaryPeriodAdditionBillEmployeeModel.Description),
+            };
+            var fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();
+            foreach (var field in fields)
+            {
+                invalidFieldNames.Add(field.FieldName);
+            }
+            invalidFieldNames = invalidFieldNames.Select(f => f.ToLower()).ToHashSet();
+
+            if (invalidFieldNames.Contains(model.FieldName.ToLower()))
+            {
+                throw SalaryPeriodAdditionFieldValiationMessage.FieldInUsed.BadRequestFormat(model.FieldName);
             }
         }
     }

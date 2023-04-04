@@ -91,7 +91,29 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
+        public async Task<SalaryPeriodAdditionTypeInfo> GetInfo(int salaryPeriodAdditionTypeId)
+        {
+            var info = await _organizationDBContext.SalaryPeriodAdditionType.Include(t => t.SalaryPeriodAdditionTypeField).FirstOrDefaultAsync(t => t.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId);
+            if (info == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
 
+            var model = _mapper.Map<SalaryPeriodAdditionTypeInfo>(info);
+            model.Fields = _mapper.Map<List<SalaryPeriodAdditionTypeFieldModel>>(info.SalaryPeriodAdditionTypeField).OrderBy(f => f.SortOrder).ToList();
+
+
+            return model;
+        }
+
+        public async Task<SalaryPeriodAdditionType> GetFullEntityInfo(int salaryPeriodAdditionTypeId)
+        {
+            return await _organizationDBContext.SalaryPeriodAdditionType.Include(t => t.SalaryPeriodAdditionTypeField)
+              .ThenInclude(tf => tf.SalaryPeriodAdditionField)
+              .Where(t => t.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId)
+              .FirstOrDefaultAsync();
+
+        }
         public async Task<IList<SalaryPeriodAdditionTypeInfo>> List()
         {
             var lst = await _organizationDBContext.SalaryPeriodAdditionType.Include(t => t.SalaryPeriodAdditionTypeField).ToListAsync();

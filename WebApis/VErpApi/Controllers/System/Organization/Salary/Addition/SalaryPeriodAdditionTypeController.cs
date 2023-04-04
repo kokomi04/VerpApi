@@ -25,10 +25,18 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
             return await _salaryPeriodAdditionTypeService.List();
         }
 
+
         [HttpPost("")]
         public async Task<int> Create([FromBody] SalaryPeriodAdditionTypeModel model)
         {
             return await _salaryPeriodAdditionTypeService.Create(model);
+        }
+
+
+        [HttpGet("{salaryPeriodAdditionTypeId}")]
+        public async Task<SalaryPeriodAdditionTypeInfo> GetInfo([FromRoute] int salaryPeriodAdditionTypeId)
+        {
+            return await _salaryPeriodAdditionTypeService.GetInfo(salaryPeriodAdditionTypeId);
         }
 
         [HttpPut("{salaryPeriodAdditionTypeId}")]
