@@ -1,7 +1,12 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.Salary;
@@ -12,10 +17,11 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
     public class SalaryPeriodAdditionBillController : VErpBaseController
     {
         private readonly ISalaryPeriodAdditionBillService _salaryPeriodAdditionBillService;
-
-        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService)
+        private readonly ISalaryPeriodAdditionBillImportService _salaryPeriodAdditionBillImportService;
+        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionBillImportService salaryPeriodAdditionBillImportService)
         {
             _salaryPeriodAdditionBillService = salaryPeriodAdditionBillService;
+            _salaryPeriodAdditionBillImportService = salaryPeriodAdditionBillImportService;
         }
 
 
@@ -25,6 +31,14 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
             return await _salaryPeriodAdditionBillService.GetList(salaryPeriodAdditionTypeId, year, month, page, size);
         }
 
+
+        [HttpGet("{salaryPeriodAdditionTypeId}/bills/{salaryPeriodAdditionBillId}")]
+        public async Task<SalaryPeriodAdditionBillInfo> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] long salaryPeriodAdditionBillId)
+        {
+            return await _salaryPeriodAdditionBillService.GetInfo(salaryPeriodAdditionTypeId, salaryPeriodAdditionBillId);
+        }
+
+
         [HttpPost("{salaryPeriodAdditionTypeId}/bills")]
         public async Task<long> Create([FromRoute] int salaryPeriodAdditionTypeId, [FromBody] SalaryPeriodAdditionBillModel model)
         {
@@ -32,15 +46,34 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
         }
 
         [HttpPut("{salaryPeriodAdditionTypeId}/bills/{salaryPeriodAdditionBillId}")]
-        public async Task<bool> Update([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] int salaryPeriodAdditionBillId, [FromBody] SalaryPeriodAdditionBillModel model)
+        public async Task<bool> Update([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] long salaryPeriodAdditionBillId, [FromBody] SalaryPeriodAdditionBillModel model)
         {
             return await _salaryPeriodAdditionBillService.Update(salaryPeriodAdditionTypeId, salaryPeriodAdditionBillId, model);
         }
 
         [HttpDelete("{salaryPeriodAdditionTypeId}/bills/{salaryPeriodAdditionBillId}")]
-        public async Task<bool> Delete([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] int salaryPeriodAdditionBillId)
+        public async Task<bool> Delete([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] long salaryPeriodAdditionBillId)
         {
             return await _salaryPeriodAdditionBillService.Delete(salaryPeriodAdditionTypeId, salaryPeriodAdditionBillId);
+        }
+
+
+        [HttpGet]
+        [Route("{salaryPeriodAdditionTypeId}/bills/fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping([FromRoute] int salaryPeriodAdditionTypeId)
+        {
+            return await _salaryPeriodAdditionBillImportService.GetFieldDataForMapping(salaryPeriodAdditionTypeId);
+        }
+
+        [HttpPost]
+        [Route("{salaryPeriodAdditionTypeId}/bills/importFromMapping")]
+        public async Task<bool> ImportFromMapping([FromRoute] int salaryPeriodAdditionTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _salaryPeriodAdditionBillImportService.Import(salaryPeriodAdditionTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

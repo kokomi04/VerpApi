@@ -70,6 +70,15 @@ namespace Verp.Resources.Organization.Salary {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tạo chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ từ excel.
+        /// </summary>
+        public static string CreateFromExcel {
+            get {
+                return ResourceManager.GetString("CreateFromExcel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xóa chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ.
         /// </summary>
         public static string Delete {
@@ -84,6 +93,15 @@ namespace Verp.Resources.Organization.Salary {
         public static string Update {
             get {
                 return ResourceManager.GetString("Update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật chứng từ {0} loại {1} mục Thưởng/Phụ cấp và Khấu trừ từ excel.
+        /// </summary>
+        public static string UpdateFromExcel {
+            get {
+                return ResourceManager.GetString("UpdateFromExcel", resourceCulture);
             }
         }
     }

@@ -531,7 +531,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         {
             var columns = new List<string>();
 
-            var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So", false);
+            var (query, fieldNames) = await _hrDataService.BuildHrQuery(OrganizationConstants.HR_EMPLOYEE_TYPE_CODE, false);
 
             var select = new StringBuilder();
             var join = new StringBuilder($"({query}) v");
