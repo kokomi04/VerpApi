@@ -114,7 +114,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sheet.SetHeaderCellStyle(fRow, currentColumnIndex);
             }
 
-            sheet.EnsureCell(1, currentColumnIndex).SetCellValue("Danh sách " + typeInfo.Title);
+            var title = "Danh sách " + typeInfo.Title;
+            sheet.EnsureCell(1, 0, sheet.GetCellStyle(fontSize: 12, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, isBold: true))
+                .SetCellValue(title.ToUpper());
+            var region = new CellRangeAddress(1, 1, 0, currentColumnIndex);
+            sheet.AddMergedRegion(region);
 
 
             var stt = 0;
@@ -200,7 +204,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName =  $"{typeInfo.Title}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName = $"{typeInfo.Title}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
             return (stream, fileName, contentType);
         }
 
