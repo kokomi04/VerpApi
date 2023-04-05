@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Org.BouncyCastle.Ocsp;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -62,9 +63,11 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
 
 
         [HttpGet("{salaryPeriodAdditionTypeId}/bills/export")]
-        public async Task<(Stream stream, string fileName, string contentType)> Export([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        public async Task<IActionResult> Export([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string keyword)
         {
-            return await _salaryPeriodAdditionBillExportService.Export(salaryPeriodAdditionTypeId, year, month, keyword);
+            var (stream, fileName, contentType) = await _salaryPeriodAdditionBillExportService.Export(salaryPeriodAdditionTypeId, year, month, keyword);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
 
         [HttpGet]

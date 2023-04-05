@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Salary
@@ -66,6 +67,7 @@ namespace VErp.Services.Organization.Model.Salary
 
     public class SalaryPeriodAdditionBillEmployeeModel : IMapFrom<SalaryPeriodAdditionBillEmployee>
     {
+        [FieldDataIgnore]
         public long? SalaryPeriodAdditionBillEmployeeId { get; set; }
 
         [Required]
@@ -73,6 +75,8 @@ namespace VErp.Services.Organization.Model.Salary
         public long EmployeeId { get; set; }
         [Display(Name = "Ghi chú", GroupName = "Chi tiết")]
         public string Description { get; set; }
+
+        [FieldDataIgnore]
         public NonCamelCaseDictionary<decimal?> Values { get; set; }
     }
 
