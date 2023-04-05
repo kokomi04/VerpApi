@@ -7,9 +7,8 @@ using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Organization.Service.Salary
 {
-    public interface ISalaryPeriodAdditionBillImportService
+    public interface ISalaryPeriodAdditionBillExportService
     {
-        Task<CategoryNameModel> GetFieldDataForMapping(int salaryPeriodAdditionTypeId);
-        Task<bool> Import(int salaryPeriodAdditionTypeId, ImportExcelMapping mapping, Stream stream);
+        Task<(Stream stream, string fileName, string contentType)> Export(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword);
     }
 }

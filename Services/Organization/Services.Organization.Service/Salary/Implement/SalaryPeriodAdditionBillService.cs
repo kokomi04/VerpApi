@@ -97,7 +97,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return info;
         }
 
-        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, int page, int size)
+        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size)
+        {
+            var query = GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword);
+
+            var total = await query.CountAsync();
+            var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider).Skip(page - 1).Take(size).ToListAsync();
+            return (lst, total);
+        }
+
+        public IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
         {
             var query = _organizationDBContext.SalaryPeriodAdditionBill.Where(b => b.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId);
             if (year > 0)
@@ -109,9 +118,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 query = query.Where(b => b.Month == month.Value);
             }
-            var total = await query.CountAsync();
-            var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider).Skip(page - 1).Take(size).ToListAsync();
-            return (lst, total);
+            if (!string.IsNullOrEmpty(keyword))
+            {
+                query = query.Where(b => b.Content.Contains(keyword));
+            }
+
+            return query;
         }
 
         public async Task<long> Create(int salaryPeriodAdditionTypeId, SalaryPeriodAdditionBillModel model)
@@ -161,6 +173,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
             var info = _mapper.Map<SalaryPeriodAdditionBill>(model);
+            info.SalaryPeriodAdditionTypeId = typFullInfo.SalaryPeriodAdditionTypeId;
             await _organizationDBContext.SalaryPeriodAdditionBill.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
 
@@ -320,7 +333,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
-      
+
 
     }
 }

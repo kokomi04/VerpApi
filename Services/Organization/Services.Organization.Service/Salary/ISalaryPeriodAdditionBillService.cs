@@ -12,7 +12,8 @@ namespace VErp.Services.Organization.Service.Salary
 {
     public interface ISalaryPeriodAdditionBillService
     {
-        Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, int page, int size);
+        IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword);
+        Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size);
         Task<SalaryPeriodAdditionBillInfo> GetInfo(int salaryPeriodAdditionTypeId, long salaryPeriodAdditionBillId);
         IQueryable<SalaryPeriodAdditionBill> QueryFullInfo();
         SalaryPeriodAdditionBillInfo MapInfo(SalaryPeriodAdditionBill fullInfo);
