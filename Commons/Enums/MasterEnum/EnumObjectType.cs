@@ -416,7 +416,7 @@ namespace VErp.Commons.Enums.MasterEnum
         SalaryPeriodAdditionType = 10004207,
 
         [Description("Chứng từ Thưởng/phụ cấp và khấu trừ")]
-        SalaryPeriodAdditionBill = 10004207,
+        SalaryPeriodAdditionBill = 10004208,
 
         [Description("Dữ liệu nháp")]
         DraftData = 1043,

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -18,17 +19,19 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
     {
         private readonly ISalaryPeriodAdditionBillService _salaryPeriodAdditionBillService;
         private readonly ISalaryPeriodAdditionBillImportService _salaryPeriodAdditionBillImportService;
-        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionBillImportService salaryPeriodAdditionBillImportService)
+        private readonly ISalaryPeriodAdditionBillExportService _salaryPeriodAdditionBillExportService;
+        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionBillImportService salaryPeriodAdditionBillImportService, ISalaryPeriodAdditionBillExportService salaryPeriodAdditionBillExportService)
         {
             _salaryPeriodAdditionBillService = salaryPeriodAdditionBillService;
             _salaryPeriodAdditionBillImportService = salaryPeriodAdditionBillImportService;
+            _salaryPeriodAdditionBillExportService = salaryPeriodAdditionBillExportService;
         }
 
 
         [HttpGet("{salaryPeriodAdditionTypeId}/bills")]
-        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return await _salaryPeriodAdditionBillService.GetList(salaryPeriodAdditionTypeId, year, month, page, size);
+            return await _salaryPeriodAdditionBillService.GetList(salaryPeriodAdditionTypeId, year, month, keyword, page, size);
         }
 
 
@@ -57,6 +60,12 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
             return await _salaryPeriodAdditionBillService.Delete(salaryPeriodAdditionTypeId, salaryPeriodAdditionBillId);
         }
 
+
+        [HttpGet("{salaryPeriodAdditionTypeId}/bills/export")]
+        public async Task<(Stream stream, string fileName, string contentType)> Export([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
+        {
+            return await _salaryPeriodAdditionBillExportService.Export(salaryPeriodAdditionTypeId, year, month, keyword);
+        }
 
         [HttpGet]
         [Route("{salaryPeriodAdditionTypeId}/bills/fieldDataForMapping")]
