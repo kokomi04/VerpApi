@@ -70,7 +70,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         {
             return _organizationDBContext.SalaryPeriodAdditionBill
                  .Include(b => b.SalaryPeriodAdditionBillEmployee)
-                 .ThenInclude(e => e.SalaryPeriodAdditionBillEmployeeValue);
+                 .ThenInclude(e => e.SalaryPeriodAdditionBillEmployeeValue)
+                 .ThenInclude(v => v.SalaryPeriodAdditionField);
         }
 
 
