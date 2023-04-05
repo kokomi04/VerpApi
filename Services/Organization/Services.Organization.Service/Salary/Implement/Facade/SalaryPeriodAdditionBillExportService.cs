@@ -39,15 +39,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _categoryHelperService;
         private readonly ISalaryPeriodAdditionBillService _salaryPeriodAdditionBillService;
+        private readonly ISalaryPeriodAdditionTypeService _salaryPeriodAdditionTypeService;
 
 
 
-        public SalaryPeriodAdditionBillExportService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, ICategoryHelperService categoryHelperService, ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService)
+        public SalaryPeriodAdditionBillExportService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, ICategoryHelperService categoryHelperService, ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionTypeService salaryPeriodAdditionTypeService)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _categoryHelperService = categoryHelperService;
             _salaryPeriodAdditionBillService = salaryPeriodAdditionBillService;
+            _salaryPeriodAdditionTypeService = salaryPeriodAdditionTypeService;
         }
 
         public async Task<(Stream stream, string fileName, string contentType)> Export(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
@@ -58,10 +60,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 .AsNoTracking()
                 .ToListAsync();
 
-            var typeInfo = await _organizationDBContext.SalaryPeriodAdditionType.Include(t => t.SalaryPeriodAdditionTypeField)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(t => t.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId);
-
+            var typeInfo = await _salaryPeriodAdditionTypeService.GetFullEntityInfo(salaryPeriodAdditionTypeId);
             var xssfwb = new XSSFWorkbook();
             var sheet = xssfwb.CreateSheet();
 
@@ -102,7 +101,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             {
                 currentColumnIndex++;
                 var field = employeeFields.ElementAt(i);
-                sheet.EnsureCell(fRow, currentColumnIndex).SetCellValue(field.CategoryFieldName);
+                sheet.EnsureCell(fRow, currentColumnIndex).SetCellValue(field.CategoryFieldTitle);
                 sheet.SetHeaderCellStyle(fRow, currentColumnIndex);
             }
 
@@ -170,7 +169,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                         var cell = sheet.EnsureCell(fRow, currentColumnIndex, decimalStyle);
                         if (value != null && value.Value.HasValue)
                         {
-                            var doubleValue = Convert.ToDouble(value);
+                            var doubleValue = Convert.ToDouble(value.Value);
                             cell.SetCellValue(doubleValue);
                         }
 
@@ -201,7 +200,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = $"customer-list-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
+            var fileName =  $"{typeInfo.Title}-{DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx";
             return (stream, fileName, contentType);
         }
 

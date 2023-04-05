@@ -88,7 +88,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 throw HrDataValidationMessage.RefTableNotFound.BadRequestFormat(OrganizationConstants.EMPLOYEE_CATEGORY_CODE);
             }
 
-            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();
+            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillBase>();
 
             var detailFields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();
             var employeeField = detailFields.First(f => f.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.EmployeeId));
@@ -234,7 +234,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             modelBill.Date = date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                         }
 
+
                         var rowData = new SalaryPeriodAdditionBillEmployeeModel();
+
+                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillEmployeeModel.Description), out var des))
+                        {
+                            rowData.Description = des;
+                        }
+
                         rowData.Values = new NonCamelCaseDictionary<decimal?>();
 
                         modelBill.Details.Add(rowData);
@@ -244,6 +251,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                         {
                             throw GeneralCode.InvalidParams.BadRequest($"Tồn tại nhiều nhân sự cùng 1 chứng từ {modelBill.BillCode}, dòng {row.Index}, cột {employeeMappingField.Column}");
                         }
+                        rowData.EmployeeId = employeeId;
+
 
                         foreach (var field in typeInfo.SalaryPeriodAdditionTypeField)
                         {
