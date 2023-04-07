@@ -1068,7 +1068,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (data.FormTypeId == EnumFormType.Generate)
             {
                 data.DataTypeId = EnumDataType.Text;
-                data.DataSize = -1;
+                //data.DataSize = 128;
             }
             if (!DataTypeConstants.SELECT_FORM_TYPES.Contains(data.FormTypeId))
             {

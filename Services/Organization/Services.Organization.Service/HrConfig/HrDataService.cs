@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Services.Organization.Model.HrConfig;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -29,6 +30,7 @@ using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using static NPOI.HSSF.UserModel.HeaderFooter;
 using static VErp.Commons.Library.EvalUtils;
 using static VErp.Commons.Library.ExcelReader;
 
@@ -44,6 +46,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
         Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
+        Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode);
     }
 
     public class HrDataService : IHrDataService
@@ -316,6 +319,83 @@ namespace VErp.Services.Organization.Service.HrConfig
             return results;
         }
 
+        public async Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode)
+        {
+            var fieldNames = new List<string>();
+
+            var hrTypeInfo = await GetHrTypExecInfo(hrTypeCode);
+
+            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeInfo.HrTypeId).AsNoTracking().ToListAsync();
+
+            var fields = await GetHrFields(hrTypeInfo.HrTypeId);
+
+
+            var join = new StringBuilder("FROM dbo.HrBill bill");
+            var select = new StringBuilder();
+            select.Append("bill.F_Id");
+
+            fieldNames.Add(HR_TABLE_F_IDENTITY);
+
+            for (int i = 0; i < hrAreas.Count; i++)
+            {
+                var hrArea = hrAreas[i];
+
+                var tableName = GetHrAreaTableName(hrTypeCode, hrArea.HrAreaCode);
+                if (hrArea.IsMultiRow)
+                {
+                    join.AppendLine($"LEFT JOIN (SELECT ROW_NUMBER() OVER(PARTITION BY HrBill_F_Id ORDER BY F_Id DESC) __RowNumber, * FROM {tableName}) AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0 AND [{hrArea.HrAreaCode}].__RowNumber = 1");
+                }
+                else
+                {
+                    join.AppendLine($"LEFT JOIN {tableName} AS {hrArea.HrAreaCode} ON [{hrArea.HrAreaCode}].HrBill_F_Id = bill.F_Id AND [{hrArea.HrAreaCode}].IsDeleted = 0");
+                }
+
+
+                foreach (var field in fields.Where(x => x.HrAreaId == hrArea.HrAreaId).ToList())
+                {
+                    select.Append($", [{hrArea.HrAreaCode}].[{field.FieldName}]");
+
+                    fieldNames.Add(field.FieldName);
+
+                    if (!string.IsNullOrWhiteSpace(field.RefTableCode)
+                        && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == (int)EnumFormType.MultiSelect)
+                        && !string.IsNullOrWhiteSpace(field.RefTableTitle))
+                    {
+                        fieldNames.AddRange(field.RefTableTitle.Split(",").Select(f => $"{field.FieldName}_{f}"));
+
+                        if (field.FormTypeId == (int)EnumFormType.MultiSelect)
+                        {
+                            var refFields = field.RefTableTitle.Split(",").Select(refTitle => @$", 
+                                (
+                                    SELECT STRING_AGG({refTitle}, ', ') AS [{refTitle}]
+                                    FROM  (
+                                        SELECT [row].F_Id, [{refTitle}] 
+                                        FROM v{field.RefTableCode} 
+                                        WHERE [v{field.RefTableCode}].[F_Id] IN (
+                                            SELECT [value] FROM OPENJSON(ISNULL([row].[{field.FieldName}],'[]')) WITH (  [value] INT '$' )
+                                        )
+                                    ) c GROUP BY c.F_Id
+                                ) AS [{field.FieldName}_{refTitle}]
+                            ");
+
+
+                            select.Append($", {string.Join("", refFields)}");
+                        }
+                        else
+                        {
+                            var refFields = field.RefTableTitle.Split(",").Select(refTitle => $", [v{field.FieldName}].[{refTitle}] AS [{field.FieldName}_{refTitle}]");
+                            select.Append($", {string.Join("", refFields)}");
+
+                            join.AppendLine($" LEFT JOIN [v{field.RefTableCode}] as [v{field.FieldName}] WITH(NOLOCK) ON [{hrArea.HrAreaCode}].[{field.FieldName}] = [v{field.FieldName}].[{field.RefTableField}]");
+                        }
+                    }
+                }
+            }
+
+            return ($"SELECT {select} {join}", fieldNames);
+        }
+
+
         public async Task<bool> DeleteHr(int hrTypeId, long hrBill_F_Id)
         {
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
@@ -483,7 +563,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 for (int i = 0; i < hrAreaReferences.Count; i++)
                 {
-                    var hrArea = hrAreas[i];
+                    var hrArea = hrAreaReferences[i];
                     var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
                     await CreateFistRowReferenceData(billInfo.FId, null, tableName);
                 }
@@ -948,7 +1028,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                           }).ToListAsync();
         }
 
-        private (string, IList<string>) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields, bool isMultiRow = false)
+        private (string query, IList<string> columns) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields, bool isMultiRow = false)
         {
             var tableName = GetHrAreaTableName(hrTypeCode, hrAreaCode);
             var @selectColumn = @$"
@@ -1024,7 +1104,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             // Check refer
             await CheckReferAsync(checkData, selectFields, hrAreaFields);
             // Check unique
-            await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields);
+            await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields, hrBill_F_Id);
+
             // Check value
             CheckValue(checkData, hrAreaFields);
 
@@ -1072,6 +1153,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                     throw new InvalidProgramException();
 
             }
+
+            await ConfirmCustomGenCode(generateTypeLastValues);
+
         }
 
         private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateField> fields, IEnumerable<NonCamelCaseDictionary> rows)
@@ -1162,6 +1246,14 @@ namespace VErp.Services.Organization.Service.HrConfig
                         }
                     }
                 }
+            }
+        }
+
+        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        {
+            foreach (var (_, value) in generateTypeLastValues)
+            {
+                await _customGenCodeHelperService.ConfirmCode(value);
             }
         }
 
@@ -1449,7 +1541,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         private async Task ValidUniqueAsync(int hrTypeId, string tableName, List<object> values, ValidateField field, long? HrValueBillId = null)
         {
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE 1 = 1 ";
+            var existSql = $"SELECT F_Id FROM {tableName} WHERE IsDeleted = 0 ";
             if (HrValueBillId.HasValue)
             {
                 existSql += $"AND HrBill_F_Id != {HrValueBillId}";
@@ -1624,12 +1716,26 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
+        public async Task<HrTypeExecData> GetHrTypExecInfo(string hrTypeCode)
+        {
+            var hrTypeInfo = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeCode == hrTypeCode);
+            return await GetHrTypExecInfo(hrTypeInfo);
+        }
+
+
+
         private async Task<HrTypeExecData> GetHrTypExecInfo(int hrTypeId)
         {
-            var global = await _hrTypeService.GetHrGlobalSetting();
             var hrTypeInfo = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
+            return await GetHrTypExecInfo(hrTypeInfo);
+        }
 
+
+        private async Task<HrTypeExecData> GetHrTypExecInfo(HrType hrTypeInfo)
+        {
             if (hrTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại chứng từ hành chính nhân sự");
+
+            var global = await _hrTypeService.GetHrGlobalSetting();
 
             var info = _mapper.Map<HrTypeExecData>(hrTypeInfo);
             info.GlobalSetting = global;
@@ -1698,8 +1804,12 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     if (dataRef.Count > 0)
                     {
-                        var refFId = (int)dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
-                        await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
+                        var refFId = dataRef[0].GetValueOrDefault(OrganizationConstants.HR_TABLE_F_IDENTITY, 0);
+                        if (!refFId.IsNullOrEmptyObject() && (long)refFId > 0)
+                        {
+                            await SubDeleteHr(hrArea.HrTypeReferenceId.Value, (long)refFId, false);
+                        }
+
                     }
 
                 }

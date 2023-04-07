@@ -20,7 +20,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<ICollection<NonCamelCaseDictionary>> CalcCostTransfer(long toDate, EnumCostTransfer type,
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock);
 
-        Task<DataResultModel> CalcCostTransferDetail(long fromDate, long toDate, EnumCostTransfer type,
+        Task<DataResultModel> CalcCostTransferDetail(string tk, long fromDate, long toDate, EnumCostTransfer type,
             bool byDepartment, bool byCustomer, bool byFixedAsset, bool byExpenseItem, bool byFactory, bool byProduct, bool byStock,
             int? department, string customer, int? fixedAsset, int? expenseItem, int? factory, int? product, int? stock);
 
@@ -61,7 +61,7 @@ namespace VErp.Services.Accountancy.Service.Input
         Task<bool> DeletedPrepaidExpense(long fromDate, long toDate, string accountNumber);
     }
 
-    public interface ICalcBillPrivateService: ICalcBillServiceBase
+    public interface ICalcBillPrivateService : ICalcBillServiceBase
     {
 
     }

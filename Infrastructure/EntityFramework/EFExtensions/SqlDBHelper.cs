@@ -539,7 +539,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         });
                     }
 
-                    BuildExpression(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
+                    BuildExpressionRef(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -728,6 +728,194 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     case EnumOperator.LessThanOrEqual:
                         condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) <= {paramName}");
                         sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.IsNull:
+                        condition.Append($"{aliasField} IS NULL");
+                        break;
+                    case EnumOperator.IsEmpty:
+                        condition.Append($"{aliasField} = {defaultValueRawSqlQuote}");
+                        break;
+                    case EnumOperator.IsNullOrEmpty:
+                        condition.Append($"({aliasField} = {defaultValueRawSqlQuote} OR {aliasField} IS NULL)");
+                        break;
+                    default:
+                        break;
+                }
+
+                if (isNot)
+                {
+                    condition.Insert(0, " NOT (");
+                    condition.Append(") ");
+                }
+
+                conditionAll.Append(condition);
+                suffix++;
+            }
+        }
+
+        public static void BuildExpressionRef(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
+        {
+            var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
+
+            var aliasFId = string.IsNullOrWhiteSpace(viewAlias) ? $"[F_Id]" : $"[{viewAlias}].[F_Id]";
+
+            var condition = new StringBuilder();
+            if (clause != null)
+            {
+                var paramName = $"@{clause.FieldName}_filter_{suffix}";
+                var isRaw = false;
+                if (clause.Value.StringStartsWith('\\'))
+                {
+                    isRaw = true;
+                    paramName = clause.Value.ToString()?.TrimStart('\\');
+                }
+                var defaultValueRawSqlQuote = clause.DataType.GetDefaultValueRawSqlStringWithQuote();
+                switch (clause.Operator)
+                {
+                    case EnumOperator.Equal:
+
+                        condition.Append($"({aliasField} IS NULL AND {paramName} IS NULL)");
+
+                        condition.Append($" OR {aliasField} = {paramName}");
+
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+
+                        break;
+                    case EnumOperator.NotEqual:
+
+                        condition.Append($"{paramName} IS NULL AND {aliasField} IS NOT NULL");
+                        condition.Append($" OR {paramName} IS NOT NULL AND ({aliasField} IS NULL OR {aliasField} <> {paramName})");
+
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+
+                        break;
+                    case EnumOperator.Contains:
+                        condition.Append($"{paramName} IS NULL");
+                        condition.Append($" OR {aliasField} LIKE CONCAT('%',{paramName},'%')");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+
+                        break;
+                    case EnumOperator.NotContains:
+                        condition.Append($"{aliasField} IS NULL AND {paramName} IS NOT NULL");
+
+                        condition.Append($" OR {aliasField} NOT LIKE CONCAT('%',{paramName},'%')");
+
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.InList:
+
+                        condition.Append($"{aliasField} IN (");
+
+                        if (!isRaw)
+                        {
+                            // int inSuffix = 0;
+                            // var paramNames = new StringBuilder();
+                            IList<object> values = new List<object>();
+                            //if (clause.Value is IList<string> lst)
+                            //{
+                            //    values = lst;
+                            //}
+                            var type = clause.Value.GetType();
+                            if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                            {
+                                foreach (object v in (dynamic)clause.Value)
+                                {
+                                    if (!values.Contains(v))
+                                        values.Add(v);
+                                }
+                            }
+
+                            if (clause.Value is string str)
+                            {
+                                values = (str ?? "").Split(",").Distinct().Select(v => (object)v.Trim()).ToList();
+                            }
+
+
+                            SqlParameter sqlParam;
+
+                            switch (clause.DataType)
+                            {
+                                case EnumDataType.BigInt:
+                                    condition.Append($"SELECT [Value] FROM {paramName}");
+                                    sqlParam = values.Select(v => (long)v).ToList().ToSqlParameter(paramName);
+                                    break;
+                                default:
+                                    condition.Append($"SELECT [NValue] FROM {paramName}");
+                                    sqlParam = values.Select(v => v?.ToString()).ToList().ToSqlParameter(paramName);
+                                    break;
+
+                            }
+                            sqlParams.Add(sqlParam);
+                        }
+                        else
+                        {
+                            condition.Append(paramName);
+                        }
+
+                        condition.Append(")");
+
+
+                        break;
+                    case EnumOperator.IsLeafNode:
+                        var internalAlias = $"{viewAlias}_{suffix}";
+                        condition.Append($"NOT EXISTS (SELECT {internalAlias}.F_Id FROM {tableName} {internalAlias} WHERE {internalAlias}.ParentId = {aliasFId})");
+                        break;
+                    case EnumOperator.StartsWith:
+
+                        condition.Append($"{paramName} IS NULL");
+                        condition.Append($" OR {aliasField} LIKE CONCAT({paramName},'%')");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+
+                        break;
+                    case EnumOperator.NotStartsWith:
+
+                        condition.Append($"{aliasField} IS NULL AND {paramName} IS NOT NULL");
+
+                        condition.Append($" OR {aliasField} NOT LIKE CONCAT({paramName},'%')");
+
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+
+                        break;
+                    case EnumOperator.EndsWith:
+                        condition.Append($"{paramName} IS NULL");
+                        condition.Append($" OR {aliasField} LIKE CONCAT('%',{paramName})");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                        break;
+                    case EnumOperator.NotEndsWith:
+                        condition.Append($"{aliasField} IS NULL AND {paramName} IS NOT NULL");
+
+                        condition.Append($" OR {aliasField} NOT LIKE CONCAT('%',{paramName})");
+
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+
+                        break;
+                    case EnumOperator.Greater:
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) > ISNULL({paramName},{defaultValueRawSqlQuote})");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.GreaterOrEqual:
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) >= ISNULL({paramName},{defaultValueRawSqlQuote})");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThan:
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) < ISNULL({paramName},{defaultValueRawSqlQuote})");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
+                        break;
+                    case EnumOperator.LessThanOrEqual:
+                        condition.Append($"ISNULL({aliasField},{defaultValueRawSqlQuote}) <= ISNULL({paramName},{defaultValueRawSqlQuote})");
+                        if (!isRaw)
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.IsNull:
                         condition.Append($"{aliasField} IS NULL");

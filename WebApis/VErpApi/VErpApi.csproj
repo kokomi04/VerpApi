@@ -53,10 +53,18 @@
   </PropertyGroup>
   
   <ItemGroup>
+    <Compile Remove="BackgroundQueue\**" />
     <Compile Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <Compile Remove="Handlers\**" />
+    <Content Remove="BackgroundQueue\**" />
     <Content Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <Content Remove="Handlers\**" />
+    <EmbeddedResource Remove="BackgroundQueue\**" />
     <EmbeddedResource Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <EmbeddedResource Remove="Handlers\**" />
+    <None Remove="BackgroundQueue\**" />
     <None Remove="Controllers\PurchaseOrder\PurchasingRequest\**" />
+    <None Remove="Handlers\**" />
   </ItemGroup>
   
   <ItemGroup>    
@@ -97,11 +105,6 @@
     <Content Update="web.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="BackgroundQueue\Manufacturing\" />
-    <Folder Include="Handlers\Stock\" />
   </ItemGroup>
 
 </Project>
