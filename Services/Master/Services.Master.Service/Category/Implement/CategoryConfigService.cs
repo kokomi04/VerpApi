@@ -806,6 +806,7 @@ namespace VErp.Services.Master.Service.Category
             var query = from f in _masterContext.CategoryField
                         join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                         where categoryCodes.Contains(c.CategoryCode) && (f.IsJoinField == true || !c.IsOutSideData)
+                        orderby f.SortOrder
                         select new ReferFieldModel
                         {
                             IsHidden = f.IsHidden,
@@ -814,7 +815,8 @@ namespace VErp.Services.Master.Service.Category
                             CategoryFieldName = f.CategoryFieldName,
                             CategoryFieldTitle = f.Title,
                             DataTypeId = f.DataTypeId,
-                            DataSize = f.DataSize
+                            DataSize = f.DataSize,
+                            SortOrder = f.SortOrder
                         };
             if (fieldNames?.Count > 0)
             {
