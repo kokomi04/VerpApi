@@ -32,22 +32,23 @@ namespace VErp.Services.Organization.Model.Salary
         [Required]
         [Range(2010, 2100)]
         [Display(Name = "Năm", GroupName = "TT chung")]
-        public int Year { get; set; }
+        public int? Year { get; set; }
         [Required]
         [Range(1, 12)]
         [Display(Name = "Tháng", GroupName = "TT chung")]
-        public int Month { get; set; }
+        public int? Month { get; set; }
         [MaxLength(512)]
         [Display(Name = "Nội dung", GroupName = "TT chung")]
         public string Content { get; set; }
 
         [Display(Name = "Ngày chứng từ", GroupName = "TT chung")]
         [Required]
-        public long Date { get; set; }
+        public long? Date { get; set; }
     }
 
     public class SalaryPeriodAdditionBillModel : SalaryPeriodAdditionBillBase, ISalaryPeriodAdditionBillModel
     {
+        [Required]
         public IList<SalaryPeriodAdditionBillEmployeeModel> Details { get; set; }
     }
 
