@@ -105,7 +105,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
 
 
-            if (sheet.LastRowNum < 1000)
+            if (sheet.LastRowNum < 100)
             {
                 for (var i = 0; i < numberOfColumns; i++)
                 {

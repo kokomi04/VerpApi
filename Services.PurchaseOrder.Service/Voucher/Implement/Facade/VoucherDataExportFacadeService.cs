@@ -70,7 +70,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement.Facade
 
             var currentRowTmp = currentRow;
 
-            if (sheet.LastRowNum < 1000)
+            if (sheet.LastRowNum < 100)
             {
                 for (var i = 0; i < fields.Count + 1; i++)
                 {
