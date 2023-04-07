@@ -23,6 +23,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using Verp.Resources.Organization.Salary;
 using DocumentFormat.OpenXml.InkML;
+using Verp.Resources.Organization.Salary.Validation;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -164,7 +165,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-
+            if (!typeInfo.IsActived)
+            {
+                throw SalaryPeriodAdditionTypeValidationMessage.TypeInActived.BadRequestFormat(typeInfo.Title);
+            }
 
 
             using (var longTask = await _longTaskResourceLockService.Accquire($"Nhập dữ liệu thưởng/phụ cấp và khấu trừ \"{typeInfo.Title}\" từ excel"))

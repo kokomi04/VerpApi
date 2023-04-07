@@ -71,6 +71,15 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Loại chứng từ Thưởng/Phụ cấp và khấu trừ {0} đã ngưng hoạt động.
+        /// </summary>
+        public static string TypeInActived {
+            get {
+                return ResourceManager.GetString("TypeInActived", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Loại chứng từ Thưởng/Phụ cấp và khấu trừ {0} đang được sử dụng.
         /// </summary>
         public static string TypeInUsed {
