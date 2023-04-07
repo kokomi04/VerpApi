@@ -318,7 +318,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                         foreach (var model in createBills)
                         {
-                            var date = new DateTime(model.Key.Year, model.Key.Month, 1);
+                            var date = new DateTime(model.Key.Year ?? 0, model.Key.Month ?? 0, 1);
 
                             var code = await ctx
                                 .SetConfig(EnumObjectType.SalaryPeriodAdditionBill, EnumObjectType.SalaryPeriodAdditionType, salaryPeriodAdditionTypeId)
@@ -327,7 +327,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                             model.Key.BillCode = code;
 
-                            var info = await _salaryPeriodAdditionBillService.CreateToDb(typeInfo, model.Key);
+                            var info = await _salaryPeriodAdditionBillService.CreateToDb(typeInfo, model.Key, employees);
 
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.CreateFromExcel)
                                  .MessageResourceFormatDatas(info.BillCode, typeInfo.Title)
@@ -375,7 +375,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             }
 
 
-                            var info = await _salaryPeriodAdditionBillService.UpdateToDb(typeInfo, updateModel.SalaryPeriodAdditionBillId, model.Key);
+                            var info = await _salaryPeriodAdditionBillService.UpdateToDb(typeInfo, updateModel.SalaryPeriodAdditionBillId, model.Key, employees);
 
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.UpdateFromExcel)
                                .MessageResourceFormatDatas(model.Key.BillCode, typeInfo.Title)

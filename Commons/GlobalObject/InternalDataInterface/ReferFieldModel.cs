@@ -11,7 +11,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public int DataTypeId { get; set; }
         public int DataSize { get; set; }
         public bool IsHidden { get; set; }
-
+        public int SortOrder { get; set; }
         public string GetTitleCategoryField()
         {
             var rangeValue = ((EnumDataType)DataTypeId).GetRangeValue();

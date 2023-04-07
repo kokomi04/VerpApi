@@ -80,6 +80,24 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Nhân viên tại dòng {0} không tồn tại.
+        /// </summary>
+        public static string EmployeeDoseNotExisted {
+            get {
+                return ResourceManager.GetString("EmployeeDoseNotExisted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nhân viên {0} trùng lặp nhiều lần, dòng {1}.
+        /// </summary>
+        public static string EmployeeExistingMultitime {
+            get {
+                return ResourceManager.GetString("EmployeeExistingMultitime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không thể loại bỏ trường {0} {1} ra khỏi loại Thưởng/Phụ cấp và khấu trừ {2} do đã phát sinh dữ liệu.
         /// </summary>
         public static string FieldInTypeInUsed {

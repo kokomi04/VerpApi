@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.EMMA;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Ocsp;
 using System;
@@ -154,9 +155,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             model.BillCode = code;
 
+            var emplyees = await GetEmployees(model);
+
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
 
-            var info = await CreateToDb(typeInfo, model);
+            var info = await CreateToDb(typeInfo, model, emplyees);
 
             await trans.CommitAsync();
 
@@ -172,9 +175,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
 
 
-        public async Task<SalaryPeriodAdditionBill> CreateToDb(SalaryPeriodAdditionType typFullInfo, SalaryPeriodAdditionBillModel model)
+        public async Task<SalaryPeriodAdditionBill> CreateToDb(SalaryPeriodAdditionType typFullInfo, SalaryPeriodAdditionBillModel model, List<NonCamelCaseDictionary> emplyees)
         {
-            await ValidateModel(model, null);
+            await ValidateModel(model, null, emplyees);
 
 
             var info = _mapper.Map<SalaryPeriodAdditionBill>(model);
@@ -234,9 +237,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw SalaryPeriodAdditionTypeValidationMessage.TypeInActived.BadRequestFormat(typeInfo.Title);
             }
 
+            var emplyees = await GetEmployees(model);
+
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
 
-            var r = await UpdateToDb(typeInfo, salaryPeriodAdditionBillId, model);
+            var r = await UpdateToDb(typeInfo, salaryPeriodAdditionBillId, model, emplyees);
 
             await trans.CommitAsync();
 
@@ -250,7 +255,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return r;
         }
 
-        public async Task<bool> UpdateToDb(SalaryPeriodAdditionType typFullInfo, long salaryPeriodAdditionBillId, SalaryPeriodAdditionBillModel model)
+        public async Task<bool> UpdateToDb(SalaryPeriodAdditionType typFullInfo, long salaryPeriodAdditionBillId, SalaryPeriodAdditionBillModel model, List<NonCamelCaseDictionary> emplyees)
         {
 
             var info = await QueryFullInfo().FirstOrDefaultAsync(b => b.SalaryPeriodAdditionTypeId == typFullInfo.SalaryPeriodAdditionTypeId && b.SalaryPeriodAdditionBillId == salaryPeriodAdditionBillId);
@@ -259,7 +264,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            await ValidateModel(model, info);
+            await ValidateModel(model, info, emplyees);
 
 
             _mapper.Map(model, info);
@@ -330,7 +335,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            await ValidateModel(null, info);
+            await ValidateModel(null, info, null);
 
             info.IsDeleted = true;
 
@@ -347,8 +352,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
-        private async Task ValidateModel(SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info)
+        private async Task ValidateModel(SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info, List<NonCamelCaseDictionary> emplyees)
         {
+            var emplyeesById = emplyees
+                .GroupBy(e =>
+                {
+                    if (e.TryGetValue(CategoryFieldConstants.F_Id, out var id))
+                    {
+                        return Convert.ToInt64(id);
+                    }
+                    return 0;
+                })
+                .ToDictionary(e => e.Key, e => e.First());
+
             DateTime? modelPeriodDate = null;
             DateTime? infoPeriodDate = null;
             if (model != null)
@@ -370,6 +386,27 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
 
                 modelPeriodDate = new DateTime(model.Year ?? 0, model.Month ?? 0, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
+
+                var doesNotExistEmployee = model.Details.FirstOrDefault(d => !emplyeesById.ContainsKey(d.EmployeeId));
+                if (doesNotExistEmployee != null)
+                {
+                    throw SalaryPeriodAdditionTypeValidationMessage.EmployeeDoseNotExisted.BadRequestFormat(model.Details.IndexOf(doesNotExistEmployee) + 1);
+                }
+
+                var duplicateEmployee = model.Details.GroupBy(d => d.EmployeeId).FirstOrDefault(g => g.Count() > 1);
+                if (duplicateEmployee != null)
+                {
+                    var rowNumbers = duplicateEmployee.Select(e => model.Details.IndexOf(e) + 1).ToArray();
+                    var employeeInfo = emplyeesById[duplicateEmployee.First().EmployeeId];
+                    var strEmployee = "";
+                    foreach (var (key, value) in employeeInfo)
+                    {
+                        strEmployee += " " + value;
+                    }
+
+                    throw SalaryPeriodAdditionTypeValidationMessage.EmployeeExistingMultitime.BadRequestFormat(strEmployee, string.Join(",", rowNumbers));
+
+                }
             }
             if (info != null)
             {
@@ -381,6 +418,48 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await ValidateDateOfBill(modelPeriodDate, infoPeriodDate);
 
             await ValidateDateOfBill(model.Date.UnixToDateTime(), info?.Date);
+        }
+
+        private async Task<List<NonCamelCaseDictionary>> GetEmployees(SalaryPeriodAdditionBillModel model)
+        {
+            var employeeIds = model.Details.Select(d => d.EmployeeId).Distinct().ToList();
+
+            var referTableNames = new List<string>() { OrganizationConstants.EMPLOYEE_CATEGORY_CODE };
+
+            var referFields = await _categoryHelperService.GetReferFields(referTableNames, null);
+            var refCategoryFields = referFields.GroupBy(f => f.CategoryCode).ToDictionary(f => f.Key, f => f.ToList());
+
+            if (!refCategoryFields.TryGetValue(OrganizationConstants.EMPLOYEE_CATEGORY_CODE, out var refCategory))
+            {
+                throw HrDataValidationMessage.RefTableNotFound.BadRequestFormat(OrganizationConstants.EMPLOYEE_CATEGORY_CODE);
+            }
+
+            var selecFields = refCategory.Where(f => f.CategoryFieldName != CategoryFieldConstants.F_Id && !f.IsHidden)
+                .OrderBy(f => f.SortOrder)
+                .Take(2)
+                .ToList();
+
+            var selecFieldsString = string.Join(",", selecFields.Select(f => f.CategoryFieldName).ToArray());
+            if (!string.IsNullOrWhiteSpace(selecFieldsString))
+            {
+                selecFieldsString = "," + selecFieldsString;
+            }
+            var clause = new SingleClause()
+            {
+                DataType = EnumDataType.BigInt,
+                FieldName = CategoryFieldConstants.F_Id,
+                Operator = EnumOperator.InList,
+                Value = employeeIds
+            };
+            var employeeView = $"v{OrganizationConstants.EMPLOYEE_CATEGORY_CODE}";
+            var condition = new StringBuilder();
+            var sqlParams = new List<SqlParameter>();
+            int prefix = 0;
+            prefix = clause.FilterClauseProcess(employeeView, employeeView, condition, sqlParams, prefix, false, null, null);
+            var employeeData = await _organizationDBContext.QueryDataTable($"SELECT {CategoryFieldConstants.F_Id} {selecFieldsString} FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
+            return employeeData.ConvertData();
+
+
         }
 
     }
