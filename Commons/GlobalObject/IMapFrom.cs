@@ -30,9 +30,13 @@ namespace VErp.Commons.GlobalObject
         public MappingProfile()
         {
             this.CreateMapCustom<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapCustom<long, DateTime?>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapCustom<long?, DateTime>().ConvertUsing(v => v.HasValue ? v.UnixToDateTime().Value : DateTime.MinValue);
             this.CreateMapCustom<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
             this.CreateMapCustom<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime, long?>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime?, long>().ConvertUsing(v => v.HasValue ? v.GetUnix().Value : long.MinValue);
             this.CreateMapCustom<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
         }
     }
