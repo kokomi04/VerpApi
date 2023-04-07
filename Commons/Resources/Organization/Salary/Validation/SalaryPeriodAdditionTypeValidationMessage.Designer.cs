@@ -62,6 +62,15 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mã chứng từ {0} đã tồn tại, vui lòng chọn mã khác.
+        /// </summary>
+        public static string BillCodeAlreadyExisted {
+            get {
+                return ResourceManager.GetString("BillCodeAlreadyExisted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Yêu cầu nhập mã chứng từ.
         /// </summary>
         public static string BillCodeIsRequired {
