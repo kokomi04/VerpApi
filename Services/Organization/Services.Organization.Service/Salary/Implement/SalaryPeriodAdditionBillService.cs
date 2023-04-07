@@ -358,18 +358,25 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     throw SalaryPeriodAdditionTypeValidationMessage.RequireAtLeastOneDetail.BadRequestFormat(model.BillCode);
                 }
 
+                var currentSalaryPeriodAdditionBillId = (info?.SalaryPeriodAdditionBillId) ?? 0;
+                if (await _organizationDBContext.SalaryPeriodAdditionBill.AnyAsync(b => b.BillCode == model.BillCode && b.SalaryPeriodAdditionBillId != currentSalaryPeriodAdditionBillId))
+                {
+                    throw SalaryPeriodAdditionTypeValidationMessage.BillCodeAlreadyExisted.BadRequestFormat(model.BillCode);
+                }
+
                 if (string.IsNullOrWhiteSpace(model.BillCode))
                 {
                     throw SalaryPeriodAdditionTypeValidationMessage.BillCodeIsRequired.BadRequest();
                 }
 
-                modelPeriodDate= new DateTime(model.Year ?? 0, model.Month ?? 0, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
+                modelPeriodDate = new DateTime(model.Year ?? 0, model.Month ?? 0, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
             }
             if (info != null)
             {
                 infoPeriodDate = new DateTime(info.Year, info.Month, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
             }
-           
+
+
 
             await ValidateDateOfBill(modelPeriodDate, infoPeriodDate);
 

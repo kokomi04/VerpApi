@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="BillCodeAlreadyExisted" xml:space="preserve">
+    <value>Mã chứng từ {0} đã tồn tại, vui lòng chọn mã khác</value>
+  </data>
+  <data name="BillCodeIsRequired" xml:space="preserve">
+    <value>Yêu cầu nhập mã chứng từ</value>
+  </data>
   <data name="FieldInTypeInUsed" xml:space="preserve">
     <value>Không thể loại bỏ trường {0} {1} ra khỏi loại Thưởng/Phụ cấp và khấu trừ {2} do đã phát sinh dữ liệu</value>
   </data>
