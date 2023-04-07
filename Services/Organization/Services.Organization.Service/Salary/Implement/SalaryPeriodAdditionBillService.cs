@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Ocsp;
 using System;
@@ -144,7 +145,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
-            var date = new DateTime(model.Year, model.Month, 1);
+            var date = new DateTime(model.Year.Value, model.Month.Value, 1);
 
             var code = await ctx
                 .SetConfig(EnumObjectType.SalaryPeriodAdditionBill, EnumObjectType.SalaryPeriodAdditionType, salaryPeriodAdditionTypeId)
@@ -173,10 +174,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<SalaryPeriodAdditionBill> CreateToDb(SalaryPeriodAdditionType typFullInfo, SalaryPeriodAdditionBillModel model)
         {
-
-            var date = new DateTime(model.Year, model.Month, 1);
-
-            await ValidateDateOfBill(date, model.Date.UnixToDateTime());
+            await ValidateModel(model, null);
 
 
             var info = _mapper.Map<SalaryPeriodAdditionBill>(model);
@@ -261,9 +259,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var date = new DateTime(info.Year, info.Month, 1);
-
-            await ValidateDateOfBill(date, info.Date);
+            await ValidateModel(model, info);
 
 
             _mapper.Map(model, info);
@@ -334,9 +330,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var date = new DateTime(info.Year, info.Month, 1);
-
-            await ValidateDateOfBill(date, info.Date);
+            await ValidateModel(null, info);
 
             info.IsDeleted = true;
 
@@ -353,7 +347,34 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
+        private async Task ValidateModel(SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info)
+        {
+            DateTime? modelPeriodDate = null;
+            DateTime? infoPeriodDate = null;
+            if (model != null)
+            {
+                if (model.Details?.Count <= 0)
+                {
+                    throw SalaryPeriodAdditionTypeValidationMessage.RequireAtLeastOneDetail.BadRequestFormat(model.BillCode);
+                }
 
+                if (string.IsNullOrWhiteSpace(model.BillCode))
+                {
+                    throw SalaryPeriodAdditionTypeValidationMessage.BillCodeIsRequired.BadRequest();
+                }
+
+                modelPeriodDate= new DateTime(model.Year ?? 0, model.Month ?? 0, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
+            }
+            if (info != null)
+            {
+                infoPeriodDate = new DateTime(info.Year, info.Month, 1).AddMinutes(_currentContextService.TimeZoneOffset ?? -420);
+            }
+           
+
+            await ValidateDateOfBill(modelPeriodDate, infoPeriodDate);
+
+            await ValidateDateOfBill(model.Date.UnixToDateTime(), info?.Date);
+        }
 
     }
 }

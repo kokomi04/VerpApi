@@ -62,11 +62,29 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Yêu cầu nhập mã chứng từ.
+        /// </summary>
+        public static string BillCodeIsRequired {
+            get {
+                return ResourceManager.GetString("BillCodeIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không thể loại bỏ trường {0} {1} ra khỏi loại Thưởng/Phụ cấp và khấu trừ {2} do đã phát sinh dữ liệu.
         /// </summary>
         public static string FieldInTypeInUsed {
             get {
                 return ResourceManager.GetString("FieldInTypeInUsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Yêu cầu có ít nhất một dòng chi tiết chứng từ {0}.
+        /// </summary>
+        public static string RequireAtLeastOneDetail {
+            get {
+                return ResourceManager.GetString("RequireAtLeastOneDetail", resourceCulture);
             }
         }
         
