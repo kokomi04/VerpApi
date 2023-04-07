@@ -275,23 +275,23 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _organizationDBContext.SalaryPeriodAdditionBillEmployee.RemoveRange(info.SalaryPeriodAdditionBillEmployee);
             await _organizationDBContext.SaveChangesAsync();
 
-            var dicDetails = new Dictionary<SalaryPeriodAdditionBillEmployee, SalaryPeriodAdditionBillEmployeeModel>();
-            var lstDetails = new List<SalaryPeriodAdditionBillEmployee>();
-            foreach (var detail in model.Details)
+            var dicDetailEntityModel = new Dictionary<SalaryPeriodAdditionBillEmployee, SalaryPeriodAdditionBillEmployeeModel>();
+            var lstDetailEntity = new List<SalaryPeriodAdditionBillEmployee>();
+            foreach (var detailModel in model.Details)
             {
-                var entity = _mapper.Map<SalaryPeriodAdditionBillEmployee>(detail);
-                entity.SalaryPeriodAdditionBillId = info.SalaryPeriodAdditionBillId;
-                lstDetails.Add(entity);
-                dicDetails.Add(entity, detail);
+                var detailEntity = _mapper.Map<SalaryPeriodAdditionBillEmployee>(detailModel);
+                detailEntity.SalaryPeriodAdditionBillId = info.SalaryPeriodAdditionBillId;
+                lstDetailEntity.Add(detailEntity);
+                dicDetailEntityModel.Add(detailEntity, detailModel);
             }
-            await _organizationDBContext.InsertByBatch(lstDetails, true, true);
+            await _organizationDBContext.InsertByBatch(lstDetailEntity, true, true);
             await _organizationDBContext.SaveChangesAsync();
 
 
             var fields = typFullInfo.SalaryPeriodAdditionTypeField.ToDictionary(f => f.SalaryPeriodAdditionField.FieldName, f => f.SalaryPeriodAdditionField);
 
             var fieldValues = new List<SalaryPeriodAdditionBillEmployeeValue>();
-            foreach (var (detailEntity, detailModel) in dicDetails)
+            foreach (var (detailEntity, detailModel) in dicDetailEntityModel)
             {
                 foreach (var (fileName, fieldValue) in detailModel.Values)
                 {
