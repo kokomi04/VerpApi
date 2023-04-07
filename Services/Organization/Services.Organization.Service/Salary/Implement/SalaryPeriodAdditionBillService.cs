@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization;
 using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -136,6 +137,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            if (!typeInfo.IsActived)
+            {
+                throw SalaryPeriodAdditionTypeValidationMessage.TypeInActived.BadRequestFormat(typeInfo.Title);
+            }
+
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var date = new DateTime(model.Year, model.Month, 1);
@@ -211,7 +217,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
             await _organizationDBContext.InsertByBatch(fieldValues, false, false);
 
-
+            await _organizationDBContext.SaveChangesAsync();
             return info;
         }
 
@@ -223,6 +229,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (typeInfo == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            if (!typeInfo.IsActived)
+            {
+                throw SalaryPeriodAdditionTypeValidationMessage.TypeInActived.BadRequestFormat(typeInfo.Title);
             }
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
@@ -296,6 +307,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
             await _organizationDBContext.InsertByBatch(fieldValues, false, false);
 
+            await _organizationDBContext.SaveChangesAsync();
 
             return true;
         }
@@ -307,6 +319,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             if (typeInfo == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            if (!typeInfo.IsActived)
+            {
+                throw SalaryPeriodAdditionTypeValidationMessage.TypeInActived.BadRequestFormat(typeInfo.Title);
             }
 
             using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
@@ -322,6 +339,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await ValidateDateOfBill(date, info.Date);
 
             info.IsDeleted = true;
+
+            await _organizationDBContext.SaveChangesAsync();
 
             await trans.CommitAsync();
 
