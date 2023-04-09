@@ -48,7 +48,6 @@ namespace VErp.Services.Organization.Model.Salary
 
     public class SalaryPeriodAdditionBillModel : SalaryPeriodAdditionBillBase, ISalaryPeriodAdditionBillModel
     {
-        [Required]
         public IList<SalaryPeriodAdditionBillEmployeeModel> Details { get; set; }
     }
 
@@ -74,6 +73,7 @@ namespace VErp.Services.Organization.Model.Salary
         [Required]
         [Display(Name = "Nhân viên", GroupName = "Chi tiết")]
         public long EmployeeId { get; set; }
+
         [Display(Name = "Ghi chú", GroupName = "Chi tiết")]
         public string Description { get; set; }
 
