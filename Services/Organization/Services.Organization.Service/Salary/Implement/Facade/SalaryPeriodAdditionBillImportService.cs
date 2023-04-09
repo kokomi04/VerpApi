@@ -142,7 +142,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 //CategoryFieldId = field.HrAreaFieldId,
                 FieldName = desField.FieldName,
                 FieldTitle = desField.FieldTitle,
-                IsRequired = true,
+                IsRequired = desField.IsRequired,
                 GroupName = detailGroupName,
                 RefCategory = null
             });
