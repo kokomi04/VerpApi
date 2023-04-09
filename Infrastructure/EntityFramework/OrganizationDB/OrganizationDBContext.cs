@@ -837,6 +837,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<SalaryPeriodAdditionBill>(entity =>
             {
+                entity.HasIndex(e => new { e.BillCode, e.SubsidiaryId }, "IDX_SalaryPeriodAdditionType_BillCode")
+                    .IsUnique()
+                    .HasFilter("([IsDeleted]=(0))");
+
                 entity.Property(e => e.BillCode)
                     .IsRequired()
                     .HasMaxLength(128);

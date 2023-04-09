@@ -281,6 +281,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 var detailEntity = _mapper.Map<SalaryPeriodAdditionBillEmployee>(detailModel);
                 detailEntity.SalaryPeriodAdditionBillId = info.SalaryPeriodAdditionBillId;
+                detailEntity.SalaryPeriodAdditionBillEmployeeId = 0;
                 lstDetailEntity.Add(detailEntity);
                 dicDetailEntityModel.Add(detailEntity, detailModel);
             }
