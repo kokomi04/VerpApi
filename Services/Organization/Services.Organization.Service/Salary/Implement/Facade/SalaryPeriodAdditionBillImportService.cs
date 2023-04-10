@@ -89,11 +89,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 throw HrDataValidationMessage.RefTableNotFound.BadRequestFormat(OrganizationConstants.EMPLOYEE_CATEGORY_CODE);
             }
 
-            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillBase>();
-
-            var detailFields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();
-            var employeeField = detailFields.First(f => f.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.EmployeeId));
-            var desField = detailFields.First(f => f.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.Description));
+            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillBase>();        
 
             const string detailGroupName = "Chi tiết";
             result.Fields.Add(new CategoryFieldNameModel()
@@ -205,6 +201,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                 var bills = new Dictionary<SalaryPeriodAdditionBillModel, IList<BillDataRow>>();
 
+                var contentMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Content));
+                var yearMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Year));
+                var monthMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Month));
+                var dateMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Date));
+                var descriptionMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.Description));
+                //var contentMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Content));
+                //var contentMapping = mapping.MappingFields.FirstOrDefault(m => m.FieldName == nameof(SalaryPeriodAdditionBillModel.Content));
+
                 foreach (var bill in billsByCode)
                 {
                     var modelBill = new SalaryPeriodAdditionBillModel();
@@ -218,22 +222,22 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                         var mapRow = new NonCamelCaseDictionary();
                         var row = bill.Value.ElementAt(rowIndex);
 
-                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillModel.Content), out var content) && !string.IsNullOrWhiteSpace(content))
+                        if (row.Data.TryGetValue(contentMapping?.Column ?? "", out var content) && !string.IsNullOrWhiteSpace(content))
                         {
                             modelBill.Content = content;
                         }
 
-                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillModel.Year), out var strYear) && int.TryParse(strYear, out var year))
+                        if (row.Data.TryGetValue(yearMapping?.Column ?? "", out var strYear) && int.TryParse(strYear, out var year))
                         {
                             modelBill.Year = year;
                         }
 
-                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillModel.Month), out var strMonth) && int.TryParse(strMonth, out var month))
+                        if (row.Data.TryGetValue(monthMapping?.Column ?? "", out var strMonth) && int.TryParse(strMonth, out var month))
                         {
                             modelBill.Month = month;
                         }
 
-                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillModel.Date), out var strDate) && DateTime.TryParse(strDate, out var date))
+                        if (row.Data.TryGetValue(dateMapping?.Column ?? "", out var strDate) && DateTime.TryParse(strDate, out var date))
                         {
                             modelBill.Date = date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                         }
@@ -241,7 +245,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                         var rowData = new SalaryPeriodAdditionBillEmployeeModel();
 
-                        if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillEmployeeModel.Description), out var des))
+                        if (row.Data.TryGetValue(descriptionMapping?.Column ?? "", out var des))
                         {
                             rowData.Description = des;
                         }
@@ -266,7 +270,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                                 continue;
                             }
 
-                            if (row.Data.TryGetValue(field.SalaryPeriodAdditionField.FieldName, out var strValue) && !string.IsNullOrWhiteSpace(strValue))
+                            if (row.Data.TryGetValue(mappingInfo.Column, out var strValue) && !string.IsNullOrWhiteSpace(strValue))
                             {
                                 if (!decimal.TryParse(strValue, out var decimalValue))
                                 {
@@ -295,9 +299,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                 var existedCodes = existedBills.Keys.ToHashSet();
 
-                var createBills = bills.Where(b => existedCodes.Contains(b.Key.BillCode?.ToLower()));
+                var createBills = bills.Where(b => !existedCodes.Contains(b.Key.BillCode?.ToLower()));
 
-                var updateBills = bills.Where(b => !existedCodes.Contains(b.Key.BillCode?.ToLower()));
+                var updateBills = bills.Where(b => existedCodes.Contains(b.Key.BillCode?.ToLower()));
                 if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied && updateBills.Count() > 0)
                 {
                     var firstDuplicate = updateBills.First();
@@ -435,7 +439,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 Operator = EnumOperator.InList,
                 Value = billsByCode.SelectMany(b => b.Value.Select(r =>
                 {
-                    r.Data.TryGetValue(employeeMappingField.FieldName, out var employeeData);
+                    r.Data.TryGetValue(employeeMappingField.Column, out var employeeData);
                     return employeeData;
                 }))
                 .Where(b => !b.IsNullOrEmptyObject())
@@ -456,7 +460,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         private long MatchEmployeeId(List<NonCamelCaseDictionary> employees, BillDataRow row, ReferFieldModel employeeRefField, ImportExcelMappingField employeeMappingField)
         {
 
-            if (row.Data.TryGetValue(nameof(SalaryPeriodAdditionBillEmployeeModel.EmployeeId), out var rowEmpoyee) && !string.IsNullOrWhiteSpace(rowEmpoyee))
+            if (row.Data.TryGetValue(employeeMappingField.Column, out var rowEmpoyee) && !string.IsNullOrWhiteSpace(rowEmpoyee))
             {
 
                 var employeeRow = employees.Where(e =>
