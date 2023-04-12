@@ -127,6 +127,6 @@
     <value>Trường dữ liệu {0} đã tồn tại</value>
   </data>
   <data name="SalaryFieldInUsed" xml:space="preserve">
-    <value>Trường dữ liệu {0} đang được sử dụng trong bảng lương</value>
+    <value>Trường dữ liệu {0} đang được sử dụng trong bảng lương {1}, kỳ tháng {2} năm {3}</value>
   </data>
 </root>
