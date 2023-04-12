@@ -355,21 +355,26 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private async Task ValidateModel(SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info, List<NonCamelCaseDictionary> emplyees)
         {
-            var emplyeesById = emplyees
-                .GroupBy(e =>
-                {
-                    if (e.TryGetValue(CategoryFieldConstants.F_Id, out var id))
-                    {
-                        return Convert.ToInt64(id);
-                    }
-                    return 0;
-                })
-                .ToDictionary(e => e.Key, e => e.First());
 
             DateTime? modelPeriodDate = null;
             DateTime? infoPeriodDate = null;
             if (model != null)
             {
+                var emplyeesById = emplyees
+                  .GroupBy(e =>
+                  {
+                      if (e.TryGetValue(CategoryFieldConstants.F_Id, out var id))
+                      {
+                          return Convert.ToInt64(id);
+                      }
+                      return 0;
+                  })
+                  .ToDictionary(e => e.Key, e => e.First());
+                if (emplyeesById == null)
+                {
+                    emplyeesById = new Dictionary<long, NonCamelCaseDictionary>();
+                }
+
                 if (model.Details?.Count <= 0)
                 {
                     throw SalaryPeriodAdditionTypeValidationMessage.RequireAtLeastOneDetail.BadRequestFormat(model.BillCode);
@@ -418,7 +423,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             await ValidateDateOfBill(modelPeriodDate, infoPeriodDate);
 
-            await ValidateDateOfBill(model.Date.UnixToDateTime(), info?.Date);
+            await ValidateDateOfBill(model?.Date.UnixToDateTime(), info?.Date);
         }
 
         private async Task<List<NonCamelCaseDictionary>> GetEmployees(SalaryPeriodAdditionBillModel model)
