@@ -57,31 +57,37 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
-            var anyEmployeeValue = await (
+            var usingEmployeeValue = await (
                  from v in _organizationDBContext.SalaryEmployeeValue
                  join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
+                 join p in _organizationDBContext.SalaryPeriod on e.SalaryPeriodId equals p.SalaryPeriodId
+                 join g in _organizationDBContext.SalaryGroup on e.SalaryGroupId equals g.SalaryGroupId
                  where v.SalaryFieldId == salaryFieldId && v.Value != null
-                 select v
-                ).AnyAsync();
+                 select new
+                 {
+                     e.SalaryGroupId,
+                     g.Title,
+                     e.SalaryPeriodId,
+                     p.Year,
+                     p.Month
+                 }
+                ).FirstOrDefaultAsync();
 
-            if (anyEmployeeValue)
+            if (usingEmployeeValue != null)
             {
-                throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.SalaryFieldName);
+                throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.SalaryFieldName + " (" + info.Title + ")", usingEmployeeValue.Title, usingEmployeeValue.Month, usingEmployeeValue.Year);
             }
 
             var nullEmployeeValues = await (
                 from v in _organizationDBContext.SalaryEmployeeValue
                 join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
                 where v.SalaryFieldId == salaryFieldId && v.Value == null
-                select e
+                select v
                ).ToListAsync();
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                foreach(var v in nullEmployeeValues)
-                {
-                    v.IsDeleted = true;
-                }                
+                _organizationDBContext.SalaryEmployeeValue.RemoveRange(nullEmployeeValues);
                 await _organizationDBContext.SaveChangesAsync();
 
                 var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();

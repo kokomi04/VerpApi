@@ -88,7 +88,7 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Trường dữ liệu {0} đang được sử dụng trong bảng lương.
+        ///   Looks up a localized string similar to Trường dữ liệu {0} đang được sử dụng trong bảng lương {1}, kỳ tháng {2} năm {3}.
         /// </summary>
         public static string SalaryFieldInUsed {
             get {
