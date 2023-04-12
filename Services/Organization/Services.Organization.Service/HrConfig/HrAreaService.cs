@@ -20,6 +20,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using static NPOI.HSSF.UserModel.HeaderFooter;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -357,6 +358,12 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             if (data.DataTypeId == EnumDataType.Text && data.DataSize <= 0)
+            {
+                throw new BadRequestException(HrErrorCode.HrFieldDataSizeInValid);
+            }
+
+            // Validate decimal size
+            if (data.DataTypeId == EnumDataType.Decimal && data.DataSize <= 1)
             {
                 throw new BadRequestException(HrErrorCode.HrFieldDataSizeInValid);
             }

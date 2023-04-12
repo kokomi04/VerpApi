@@ -1007,6 +1007,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             {
                 throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid);
             }
+
+            // Validate decimal size
+            if (data.DataTypeId == EnumDataType.Decimal && data.DataSize <= 1)
+            {
+                throw new BadRequestException(VoucherErrorCode.VoucherFieldDataSizeInValid);
+            }
         }
 
         private void FieldDataProcess(ref VoucherFieldInputModel data)
