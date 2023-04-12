@@ -1047,6 +1047,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 throw new BadRequestException(InputErrorCode.InputFieldDataSizeInValid);
             }
+
+            // Validate decimal size
+            if (data.DataTypeId == EnumDataType.Decimal && data.DataSize <= 1)
+            {
+                throw new BadRequestException(InputErrorCode.InputFieldDataSizeInValid);
+            }
         }
 
         private void FieldDataProcess(ref InputFieldInputModel data)

@@ -19,7 +19,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class HrErrorCodeDescription {
@@ -133,7 +133,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0.
+        ///   Looks up a localized string similar to DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0, Số thực phải &gt; 1.
         /// </summary>
         public static string HrFieldDataSizeInValid {
             get {

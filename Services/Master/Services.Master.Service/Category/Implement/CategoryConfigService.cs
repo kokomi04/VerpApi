@@ -541,25 +541,35 @@ namespace VErp.Services.Master.Service.Category
             categoryField.IsJoinField = data.IsJoinField;
         }
 
-        private void ValidateCategoryField(CategoryFieldModel data, CategoryField categoryField = null, int? categoryFieldId = null)
+        private void ValidateCategoryField(CategoryFieldModel model, CategoryField entity = null)
         {
-            bool updateFieldName = true;
-            if (categoryFieldId.HasValue && categoryFieldId.Value > 0)
-            {
-                if (categoryField == null)
-                {
-                    throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
-                }
-                updateFieldName = categoryField.CategoryFieldName == data.CategoryFieldName;
-            }
-            if (updateFieldName && _masterContext.CategoryField.Any(f => (!categoryFieldId.HasValue || f.CategoryFieldId != categoryFieldId.Value) && f.CategoryFieldId == data.CategoryFieldId && f.CategoryFieldName == data.CategoryFieldName))
+            var categoryFieldId = model.CategoryFieldId;
+            if (
+                (model.CategoryFieldName == CategoryFieldConstants.F_Id || entity.CategoryFieldName == CategoryFieldConstants.F_Id)
+                && model.CategoryFieldId != categoryFieldId
+                && categoryFieldId > 0
+            )
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
             }
-            if (!string.IsNullOrEmpty(data.RefTableCode) && ((EnumFormType)data.FormTypeId).IsSelectForm())
+
+            bool updateFieldName = true;
+            if (categoryFieldId > 0)
             {
-                string refTable = data.RefTableCode;
-                string refField = data.RefTableField;
+                if (entity == null)
+                {
+                    throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
+                }
+                updateFieldName = entity.CategoryFieldName == model.CategoryFieldName;
+            }
+            if (updateFieldName && _masterContext.CategoryField.Any(f => (categoryFieldId == 0 || f.CategoryFieldId != categoryFieldId) && f.CategoryFieldId == model.CategoryFieldId && f.CategoryFieldName == model.CategoryFieldName))
+            {
+                throw new BadRequestException(CategoryErrorCode.CategoryFieldNameAlreadyExisted);
+            }
+            if (!string.IsNullOrEmpty(model.RefTableCode) && ((EnumFormType)model.FormTypeId).IsSelectForm())
+            {
+                string refTable = model.RefTableCode;
+                string refField = model.RefTableField;
                 var sourceCategoryField = (from f in _masterContext.CategoryField
                                            join c in _masterContext.Category on f.CategoryId equals c.CategoryId
                                            where f.CategoryFieldName == refField && c.CategoryCode == refTable
@@ -671,50 +681,58 @@ namespace VErp.Services.Master.Service.Category
                     throw new BadRequestException(CategoryErrorCode.DataSizeInValid);
                 }
 
+
+                // Validate decimal size
+                if (fields.Any(f => f.DataTypeId == (int)EnumDataType.Decimal && f.DataSize <= 1))
+                {
+                    throw new BadRequestException(CategoryErrorCode.DataSizeInValid);
+                }
+
                 var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
                 for (int indx = 0; indx < fields.Count; indx++)
                 {
-                    var data = fields[indx];
+                    var model = fields[indx];
                     if (category == null)
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
                     }
 
-                    var categoryAreaField = data.CategoryFieldId > 0 ? _masterContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == data.CategoryFieldId) : null;
-                    ValidateCategoryField(data, categoryAreaField, data.CategoryFieldId);
-                    FieldDataProcess(ref data);
+                    var entity = model.CategoryFieldId > 0 ? _masterContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == model.CategoryFieldId) : null;
+                    ValidateCategoryField(model, entity);
+                    FieldDataProcess(ref model);
 
-                    int dataSize = data.DataTypeId == (int)EnumDataType.Email || data.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : data.DataSize;
 
-                    if (data.CategoryFieldId > 0 && !data.Compare(categoryAreaField))
+                    int dataSize = model.DataTypeId == (int)EnumDataType.Email || model.DataTypeId == (int)EnumDataType.PhoneNumber ? 64 : model.DataSize;
+
+                    if (model.CategoryFieldId > 0 && !model.Compare(entity))
                     {
                         // rename field
-                        if (!category.IsOutSideData && categoryAreaField.CategoryFieldName != data.CategoryFieldName)
+                        if (!category.IsOutSideData && entity.CategoryFieldName != model.CategoryFieldName)
                         {
-                            await _masterContext.RenameColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, data.CategoryFieldName);
+                            await _masterContext.RenameColumn(category.CategoryCode, entity.CategoryFieldName, model.CategoryFieldName);
                         }
                         // Update
-                        UpdateField(ref categoryAreaField, data);
-                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
+                        UpdateField(ref entity, model);
+                        int decimalPlace = model.DataTypeId == (int)EnumDataType.Decimal ? model.DecimalPlace : 0;
                         // update field 
-                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        if (!category.IsOutSideData && model.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            await _masterContext.UpdateColumn(category.CategoryCode, categoryAreaField.CategoryFieldName, (EnumDataType)categoryAreaField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryAreaField.IsRequired);
+                            await _masterContext.UpdateColumn(category.CategoryCode, entity.CategoryFieldName, (EnumDataType)entity.DataTypeId, dataSize, decimalPlace, model.DefaultValue, !entity.IsRequired);
                         }
                     }
-                    else if (data.CategoryFieldId == 0)
+                    else if (model.CategoryFieldId == 0)
                     {
                         // Create new
-                        var categoryField = _mapper.Map<CategoryField>(data);
+                        var categoryField = _mapper.Map<CategoryField>(model);
                         categoryField.CategoryId = categoryId;
                         await _masterContext.CategoryField.AddAsync(categoryField);
                         await _masterContext.SaveChangesAsync();
-                        int decimalPlace = data.DataTypeId == (int)EnumDataType.Decimal ? data.DecimalPlace : 0;
+                        int decimalPlace = model.DataTypeId == (int)EnumDataType.Decimal ? model.DecimalPlace : 0;
                         // Add field into table
-                        if (!category.IsOutSideData && data.FormTypeId != (int)EnumFormType.ViewOnly)
+                        if (!category.IsOutSideData && model.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            await _masterContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, decimalPlace, data.DefaultValue, !categoryField.IsRequired);
+                            await _masterContext.AddColumn(category.CategoryCode, categoryField.CategoryFieldName, (EnumDataType)categoryField.DataTypeId, dataSize, decimalPlace, model.DefaultValue, !categoryField.IsRequired);
                         }
                     }
                 }
