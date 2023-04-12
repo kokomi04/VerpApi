@@ -57,17 +57,42 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
-            if (await _organizationDBContext.SalaryEmployeeValue.AnyAsync(v => v.SalaryFieldId == salaryFieldId))
+            var anyEmployeeValue = await (
+                 from v in _organizationDBContext.SalaryEmployeeValue
+                 join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
+                 where v.SalaryFieldId == salaryFieldId && v.Value != null
+                 select v
+                ).AnyAsync();
+
+            if (anyEmployeeValue)
             {
                 throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.SalaryFieldName);
             }
 
-            var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();
-            _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
-            await _organizationDBContext.SaveChangesAsync();
+            var nullEmployeeValues = await (
+                from v in _organizationDBContext.SalaryEmployeeValue
+                join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
+                where v.SalaryFieldId == salaryFieldId && v.Value == null
+                select e
+               ).ToListAsync();
 
-            _organizationDBContext.SalaryField.Remove(info);
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                foreach(var v in nullEmployeeValues)
+                {
+                    v.IsDeleted = true;
+                }                
+                await _organizationDBContext.SaveChangesAsync();
+
+                var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();
+                _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
+                await _organizationDBContext.SaveChangesAsync();
+
+                info.IsDeleted = true;
+                await _organizationDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+            }
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Delete)
              .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
