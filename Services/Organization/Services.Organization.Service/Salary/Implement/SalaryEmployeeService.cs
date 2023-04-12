@@ -579,6 +579,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var additionValues = await PeriodAdditionValues(year, month);
 
+            var additionBillFields = await _organizationDBContext.SalaryPeriodAdditionField.AsNoTracking().ToListAsync();
             foreach (var item in lstData)
             {
                 long employeeId = 0;
@@ -594,6 +595,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         var colName = EscaseFieldName($"{ADDITION_ALIAS}.{fieldName}");
                         item.Add(colName, value);
                     }
+                }
+                foreach (var f in additionBillFields)
+                {
+                    var colName = EscaseFieldName($"{ADDITION_ALIAS}.{f.FieldName}");
+                    if (!item.ContainsKey(colName))
+                        item.Add(colName, 0);
                 }
 
             }
