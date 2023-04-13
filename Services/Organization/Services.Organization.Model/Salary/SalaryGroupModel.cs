@@ -57,6 +57,7 @@ namespace VErp.Services.Organization.Model.Salary
         public bool IsHidden { get; set; }
         public int SortOrder { get; set; }
         public bool IsGroupRow { get; set; }
+        public int GroupRowSortOrder { get; set; }
     }
 
 }

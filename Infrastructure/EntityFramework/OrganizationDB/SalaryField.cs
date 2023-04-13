@@ -26,6 +26,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public bool IsEditable { get; set; }
         public bool IsHidden { get; set; }
         public bool IsDisplayRefData { get; set; }
+        public bool IsCalcSum { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }
