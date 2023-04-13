@@ -413,7 +413,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join}", fieldNames);
+            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join} WHERE bill.IsDeleted = 0", fieldNames);
         }
 
 

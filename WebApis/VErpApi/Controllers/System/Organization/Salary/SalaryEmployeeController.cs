@@ -21,6 +21,14 @@ namespace VErpApi.Controllers.System.Organization.Salary
         }
 
 
+        [HttpGet("warnings")]
+        public async Task<GroupSalaryEmployeeWarningInfo> GetSalaryGroupEmployeesWarning()
+        {
+            return await _salaryEmployeeService.GetSalaryGroupEmployeesWarning();
+        }
+        
+
+
         [HttpPost("periods/{salaryPeriodId}/groups/{salaryGroupId}/Eval")]
         [VErpAction(EnumActionType.View)]
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
