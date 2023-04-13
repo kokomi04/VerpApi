@@ -613,6 +613,8 @@ namespace VErp.Infrastructure.EF.StockDB
 
                 entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
+                entity.Property(e => e.Url).HasMaxLength(1024);
+
                 entity.HasOne(d => d.Product)
                     .WithMany(p => p.ProductAttachment)
                     .HasForeignKey(d => d.ProductId)
