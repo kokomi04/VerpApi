@@ -290,6 +290,33 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return (false, null);
         }
 
+        public async Task<IList<GroupSalaryEmployeeEvalData>> GetSalaryEmployeeAll(int salaryPeriodId)
+        {
+            var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
+            if (period == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var groups = await _salaryPeriodGroupService.GetList(salaryPeriodId);
+
+            var result = new List<GroupSalaryEmployeeEvalData>();
+
+            foreach (var group in groups)
+            {
+                result.Add(new GroupSalaryEmployeeEvalData()
+                {
+                    FromDate = group.FromDate,
+                    ToDate = group.ToDate,
+                    SalaryGroupId = group.SalaryGroupId,
+                    SalaryPeriodId = group.SalaryPeriodId,
+                    Salaries = await GetSalaryEmployeeByGroup(period, group)
+                });
+            }
+
+            return result;
+        }
+
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
@@ -304,19 +331,23 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
             }
 
+            return await GetSalaryEmployeeByGroup(period, group);
+        }
+
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group)
+        {
+
             var salaryData = await _organizationDBContext.SalaryEmployee
                 .Include(s => s.SalaryEmployeeValue)
                 .ThenInclude(v => v.SalaryField)
-                .Where(s => s.SalaryPeriodId == salaryPeriodId && s.SalaryGroupId == salaryGroupId)
+                .Where(s => s.SalaryPeriodId == period.SalaryPeriodId && s.SalaryGroupId == group.SalaryGroupId)
                 .ToListAsync();
             var dbSalaries = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
 
             var resultByEmployee = new Dictionary<long, NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
 
-            var salaryPeriodGroup = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(g => g.SalaryPeriodId == salaryPeriodId && g.SalaryGroupId == salaryGroupId);
-
-            var fromDate = salaryPeriodGroup.FromDate.GetUnix();
-            var toDate = salaryPeriodGroup.ToDate.GetUnix();
+            var fromDate = group.FromDate;
+            var toDate = group.ToDate;
 
             var employeeIds = new List<long>();
             foreach (var item in salaryData)
@@ -349,8 +380,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 FromDate = fromDate,
                 ToDate = toDate,
-                SalaryPeriodId = salaryPeriodId,
-                SalaryGroupId = salaryGroupId,
+                SalaryPeriodId = period.SalaryPeriodId,
+                SalaryGroupId = group.SalaryGroupId,
                 Salaries = dbSalaries
             };
 

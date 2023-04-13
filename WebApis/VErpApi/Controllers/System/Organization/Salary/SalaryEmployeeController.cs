@@ -34,7 +34,13 @@ namespace VErpApi.Controllers.System.Organization.Salary
             return await _salaryEmployeeService.GetSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId);
         }
 
+        [HttpGet("periods/{salaryPeriodId}/AllData")]
+        public async Task<IList<GroupSalaryEmployeeEvalData>> GetSalaryEmployeeAll([FromRoute] int salaryPeriodId)
+        {
+            return await _salaryEmployeeService.GetSalaryEmployeeAll(salaryPeriodId);
+        }
 
+        
         [HttpPut("periods/{salaryPeriodId}/groups/{salaryGroupId}/UpdateData")]
         public async Task<bool> Update([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
         {
