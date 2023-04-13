@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public bool IsHidden { get; set; }
         public int SortOrder { get; set; }
         public bool IsGroupRow { get; set; }
+        public int GroupRowSortOrder { get; set; }
 
         public virtual SalaryField SalaryField { get; set; }
         public virtual SalaryGroup SalaryGroup { get; set; }

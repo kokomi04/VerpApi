@@ -32,6 +32,7 @@ namespace VErp.Services.Organization.Model.Salary
         public bool IsEditable { get; set; }
         public bool IsHidden { get; set; }
         public bool IsDisplayRefData { get; set; }
+        public bool IsCalcSum { get; set; }
 
         public void Mapping(Profile profile)
         {
