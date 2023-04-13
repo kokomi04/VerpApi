@@ -134,7 +134,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            var stream = await xssfwb.WriteToStream();
+            var stream = xssfwb.WriteToStream();
             stream.Seek(0, SeekOrigin.Begin);
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             var fileName = GetFileName(model.Body.FilterData, reportInfo.ReportTypeName);
