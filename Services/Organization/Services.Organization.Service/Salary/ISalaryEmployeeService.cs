@@ -18,6 +18,8 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);
 
+        Task<IList<GroupSalaryEmployeeEvalData>> GetSalaryEmployeeAll(int salaryPeriodId);
+
         Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);    
 
     }
