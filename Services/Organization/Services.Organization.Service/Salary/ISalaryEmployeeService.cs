@@ -14,6 +14,7 @@ namespace VErp.Services.Organization.Service.Salary
 {
     public interface ISalaryEmployeeService
     {
+        Task<GroupSalaryEmployeeWarningInfo> GetSalaryGroupEmployeesWarning();
         Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req);
 
         Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);

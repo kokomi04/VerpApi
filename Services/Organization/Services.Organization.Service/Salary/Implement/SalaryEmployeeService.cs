@@ -75,6 +75,57 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _salaryPeriodGroupService = salaryPeriodGroupService;
         }
 
+
+        public async Task<GroupSalaryEmployeeWarningInfo> GetSalaryGroupEmployeesWarning()
+        {
+            var groups = await _salaryGroupService.GetList();
+
+            var (allEmployees, _) = await FilterEmployee(null, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+
+            var employeeGroups = allEmployees
+                .ToDictionary(e =>
+                {
+                    long employeeId = 0;
+                    if (e.TryGetValue(OrganizationConstants.HR_TABLE_F_IDENTITY, out var employeeIdObj))
+                    {
+                        employeeId = Convert.ToInt64(employeeIdObj);
+                    }
+
+                    return employeeId;
+                }, e => new EmployeeSalaryGroupInfo()
+                {
+                    EmployeeInfo = e,
+                    SalaryGroupIds = new List<int>()
+                });
+
+            foreach (var group in groups)
+            {
+                var (groupEmployees, _) = await FilterEmployee(group.EmployeeFilter, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+
+                foreach (var employee in groupEmployees)
+                {
+                    long employeeId = 0;
+                    if (employee.TryGetValue(OrganizationConstants.HR_TABLE_F_IDENTITY, out var employeeIdObj))
+                    {
+                        employeeId = Convert.ToInt64(employeeIdObj);
+                    }
+
+                    if (employeeGroups.TryGetValue(employeeId, out var employeeGroup))
+                    {
+                        employeeGroup.SalaryGroupIds.Add(group.SalaryGroupId);
+                    }
+                }
+            }
+
+            return new GroupSalaryEmployeeWarningInfo()
+            {
+                NoSalaryGroupEmployees = employeeGroups.Values.Where(e => e.SalaryGroupIds.Count == 0).Select(e => e.EmployeeInfo).ToList(),
+                DuplicatedSalayGroupEmployees = employeeGroups.Values.Where(e => e.SalaryGroupIds.Count > 1).ToList(),
+            };
+        }
+
+
+
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
