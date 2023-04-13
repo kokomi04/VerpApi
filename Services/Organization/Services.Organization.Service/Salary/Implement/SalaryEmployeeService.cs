@@ -241,7 +241,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     else
                     {
-                        if (GetDecimal(fieldValue, out var decimalValue))
+                        if (GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue))
                         {
                             fieldValue = decimalValue;
                         }
@@ -847,7 +847,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         {
             if (dataTypeId.IsNumber())
             {
-                if (GetDecimal(value1, out var decimalValue1) && GetDecimal(value2, out var decimalValue2))
+                if (GetDecimal(value1, null, out var decimalValue1) && GetDecimal(value2, null, out var decimalValue2))
                 {
                     return decimalValue1 == decimalValue2;
                 }
@@ -855,11 +855,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             return value1?.ToString() == value2?.ToString();
         }
-        private bool GetDecimal(object value, out decimal decimalValue)
+        private bool GetDecimal(object value, int? decimalPlace, out decimal decimalValue)
         {
             try
             {
-                decimalValue = Convert.ToDecimal(value).RoundBy(DEFAULT_DECIMAL_PLACE);
+                decimalValue = Convert.ToDecimal(value).RoundBy(decimalPlace ?? DEFAULT_DECIMAL_PLACE);
                 return true;
             }
             catch (Exception e)
