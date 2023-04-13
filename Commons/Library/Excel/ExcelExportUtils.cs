@@ -54,7 +54,7 @@ namespace VErp.Commons.Library.Excel
             numberOfColumns = columns.Count;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> WriteExcel()
+        public (Stream stream, string fileName, string contentType) WriteExcel()
         {
 
             WriteHeader();
@@ -91,7 +91,7 @@ namespace VErp.Commons.Library.Excel
                 }
             }
 
-            var stream = await xssfwb.WriteToStream();
+            var stream = xssfwb.WriteToStream();
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";

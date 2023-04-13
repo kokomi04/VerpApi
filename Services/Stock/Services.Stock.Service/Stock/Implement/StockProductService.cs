@@ -574,7 +574,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             });
 
             var util = new ExcelExportUtils(productInfo.ProductCode + " Danh sách kiện của mặt hàng", _currentContextService, excelData, columns, headerData, 2);
-            return await util.WriteExcel();
+            return util.WriteExcel();
         }
 
 

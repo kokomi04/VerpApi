@@ -270,21 +270,10 @@ namespace VErp.Commons.Library
             return hssfwb.AddPicture(bytes, pictureType);
         }
 
-        public async Task<MemoryStream> WriteToStream()
+        public MemoryStream WriteToStream()
         {
-            string fileName = @"TempFile";
-            using (FileStream file = new FileStream(fileName, FileMode.Create, FileAccess.Write))
-            {
-                hssfwb.Write(file);
-                file.Close();
-            }
             var memory = new MemoryStream();
-            using (var stream = new FileStream(fileName, FileMode.Open))
-            {
-                await stream.CopyToAsync(memory);
-                stream.Close();
-            }
-            File.Delete(fileName);
+            hssfwb.Write(memory, true);
             memory.Position = 0;
             return memory;
         }
