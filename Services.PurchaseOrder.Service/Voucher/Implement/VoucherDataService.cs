@@ -2771,7 +2771,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var fileName = $"{voucherType.VoucherTypeCode}_{billCode}.xlsx";
 
-            MemoryStream stream = await writer.WriteToStream();
+            MemoryStream stream = writer.WriteToStream();
             return (stream, fileName);
         }
 
