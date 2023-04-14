@@ -115,7 +115,7 @@ namespace VErp.Commons.GlobalObject
             }
             catch (Exception e)
             {
-                throw new BadRequestException(GeneralCode.InvalidParams, "Định dạng bộ lọc truyền lên không hợp lệ");
+                throw new BadRequestException(GeneralCode.InvalidParams, "Định dạng bộ lọc truyền lên không hợp lệ " + e.Message);
             }
         }
 
