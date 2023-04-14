@@ -864,7 +864,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                         assign.StartDate = updateInfo.StartDate.UnixToDateTime();
                         assign.EndDate = updateInfo.EndDate.UnixToDateTime();
-                        assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate;
+                        assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate; 
                         assign.IsManualSetEndDate = updateInfo.IsManualSetEndDate;
                         assign.RateInPercent = updateInfo.RateInPercent;
 
@@ -879,7 +879,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         }
 
 
-                        var sumByDays = addingDetails?.Sum(d => d.QuantityPerDay) ?? 0;
+                        var sumByDays = details?.Sum(d => d.QuantityPerDay) ?? 0;
                         if (assign.AssignmentQuantity.SubDecimal(sumByDays) != 0)
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, "Tổng số lượng phân công từng ngày phải bằng số lượng phân công!");
