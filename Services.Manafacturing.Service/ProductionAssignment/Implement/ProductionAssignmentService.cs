@@ -1347,26 +1347,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             };
         }
 
-        public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
-        {
-            return (await (from sd in _manufacturingDBContext.StepDetail
-                           join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
-                           select new
-                           {
-                               s.StepId,
-                               sd.DepartmentId,
-                               s.Productivity,
-                               s.UnitId
-                           })
-                    .ToListAsync()
-                    )
-                    .GroupBy(sd => sd.StepId)
-                    .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
-                    {
-                        ProductivityPerPerson = sd.Productivity.GetValueOrDefault(),
-                        UnitId = sd.UnitId
-                    }));
-        }
+    
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
         {

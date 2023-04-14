@@ -124,12 +124,12 @@ namespace VErpApi.Controllers.Manufacturing
         //    return await _productionAssignmentService.GetProductivityDepartments(productionStepId);
         //}
 
-        [HttpGet]
-        [Route("productivity/general")]
-        public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
-        {
-            return await _productionAssignmentService.GetGeneralProductivityDepartments();
-        }
+        //[HttpGet]
+        //[Route("productivity/general")]
+        //public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
+        //{
+        //    return await _productionAssignmentService.GetGeneralProductivityDepartments();
+        //}
 
         //[HttpGet]
         //[Route("capacity/productionOrder/{productionOrderId}/productionStep/{productionStepId}")]

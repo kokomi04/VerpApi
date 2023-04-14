@@ -73,7 +73,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 ImageFileId = data.ImageFileId,
                 IsDeleted = false,
                 NumberOfPerson = data.NumberOfPerson,
-                NumberOfMachine = data.NumberOfMachine,
                 IsFactory = data.IsFactory
             };
 
@@ -161,7 +160,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = department.IsProduction,
                 ImageFileId = department.ImageFileId,
                 NumberOfPerson = department.NumberOfPerson,
-                NumberOfMachine = department.NumberOfMachine,
                 IsFactory = department.IsFactory
             };
         }
@@ -200,7 +198,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
                 NumberOfPerson = d.NumberOfPerson,
-                NumberOfMachine = d.NumberOfMachine,
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
@@ -230,7 +227,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsProduction = d.IsProduction,
                 ImageFileId = d.ImageFileId,
                 NumberOfPerson = d.NumberOfPerson,
-                NumberOfMachine = d.NumberOfMachine,
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
@@ -335,7 +331,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
             department.IsProduction = data.IsProduction;
             department.ImageFileId = data.ImageFileId;
             department.NumberOfPerson = data.NumberOfPerson;
-            department.NumberOfMachine = data.NumberOfMachine;
             department.IsFactory = data.IsFactory;
 
             await _organizationContext.SaveChangesAsync();
