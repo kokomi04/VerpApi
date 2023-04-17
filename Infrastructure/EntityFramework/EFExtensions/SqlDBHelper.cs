@@ -545,7 +545,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 condition.Append("( ");
                 if (clause is SingleClause)
                 {
-                    var singleClause = clause as SingleClause;
+                    var singleClause = (clause as SingleClause).DeepClone();
                     if (value != null)
                     {
                         singleClause.Value = value;
@@ -1086,8 +1086,8 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 foreach (var field in fields)
                 {
 
-                    row.TryGetValue(field.Key, out var celValue); 
-                    if (celValue == null) info.TryGetValue(field.Key, out celValue); 
+                    row.TryGetValue(field.Key, out var celValue);
+                    if (celValue == null) info.TryGetValue(field.Key, out celValue);
 
                     var value = (field.Value).GetSqlValue(celValue);
                     dataRow[field.Key] = value;

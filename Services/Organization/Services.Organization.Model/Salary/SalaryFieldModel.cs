@@ -26,6 +26,7 @@ namespace VErp.Services.Organization.Model.Salary
         [MaxLength(512)]
         public string Description { get; set; }
         public EnumDataType DataTypeId { get; set; }
+        [Range(0, 11)]
         public int DecimalPlace { get; set; }        
         public int SortOrder { get; set; }
         public IList<SalaryFieldExpressionModel> Expression { get; set; }
