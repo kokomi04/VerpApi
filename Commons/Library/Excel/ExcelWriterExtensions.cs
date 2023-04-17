@@ -113,6 +113,7 @@ namespace VErp.Commons.Library
 
         public static void ManualResize(this ISheet sheet, int column, int maxNumCharacters)
         {
+            maxNumCharacters = maxNumCharacters > 200 ? 200 : maxNumCharacters;//max 255
             int width = ((int)(maxNumCharacters * 1.14388)) * 256;
             sheet.SetColumnWidth(column, width);
         }
