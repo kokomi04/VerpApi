@@ -21,6 +21,17 @@ namespace VErp.Commons.GlobalObject
         public EnumOperator Operator { get; set; }
         public object Value { get; set; }
         public EnumDataType DataType { get; set; }
+
+        public SingleClause Clone()
+        {
+            return new SingleClause()
+            {
+                FieldName = FieldName,
+                Operator = Operator,
+                Value = Value,
+                DataType = DataType
+            };
+        }
     }
 
     public class ArrayClause : Clause
