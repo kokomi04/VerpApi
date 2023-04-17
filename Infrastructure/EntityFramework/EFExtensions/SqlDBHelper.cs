@@ -545,7 +545,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 condition.Append("( ");
                 if (clause is SingleClause)
                 {
-                    var singleClause = (clause as SingleClause).DeepClone();
+                    var singleClause = (clause as SingleClause).Clone();
                     if (value != null)
                     {
                         singleClause.Value = value;
@@ -864,7 +864,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             {
                                 case EnumDataType.BigInt:
                                     condition.Append($"SELECT [Value] FROM {paramName}");
-                                    sqlParam = values.Select(v => (long)v).ToList().ToSqlParameter(paramName);
+                                    sqlParam = values.Select(v => Convert.ToInt64(v)).ToList().ToSqlParameter(paramName);
                                     break;
                                 default:
                                     condition.Append($"SELECT [NValue] FROM {paramName}");
