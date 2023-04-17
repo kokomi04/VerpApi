@@ -493,15 +493,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
                 else
                 {
-                    await _salaryPeriodGroupService.DbUpdate(periodGroup.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
-                    {
-                        SalaryPeriodId = salaryPeriodId,
-                        SalaryGroupId = salaryGroupId,
-                        FromDate = model.FromDate,
-                        ToDate = model.ToDate
-                    }, true);
                     salaryPeriodGroupId = periodGroup.SalaryPeriodGroupId;
                 }
+
+                await _salaryPeriodGroupService.DbUpdate(salaryPeriodGroupId, new SalaryPeriodGroupModel()
+                {
+                    SalaryPeriodId = salaryPeriodId,
+                    SalaryGroupId = salaryGroupId,
+                    FromDate = model.FromDate,
+                    ToDate = model.ToDate
+                }, true);
+
 
                 await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
 
