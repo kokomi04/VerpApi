@@ -879,23 +879,24 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     var singleClause = clause as SingleClause;
 
+                    var value = singleClause.Value;
 
                     if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullOrEmptyObject())
                     {
-                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
+                        value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
                         {
                             var expression = match.Groups["ex"].Value;
                             return EvalUtils.EvalObject(expression, refValues)?.ToString();
                         });
 
-                        singleClause.Value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues);
+                        value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues);
 
                     }
 
 
 
 
-                    return EvalOperatorCompare(singleClause, refValues[singleClause.FieldName], singleClause.Value);
+                    return EvalOperatorCompare(singleClause, refValues[singleClause.FieldName], value);
                 }
                 else if (clause is ArrayClause)
                 {
