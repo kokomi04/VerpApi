@@ -718,7 +718,12 @@ namespace VErp.Services.Master.Service.Category
                         // update field 
                         if (!category.IsOutSideData && model.FormTypeId != (int)EnumFormType.ViewOnly)
                         {
-                            await _masterContext.UpdateColumn(category.CategoryCode, entity.CategoryFieldName, (EnumDataType)entity.DataTypeId, dataSize, decimalPlace, model.DefaultValue, !entity.IsRequired);
+                            var nullable = !entity.IsRequired;
+                            if (entity.CategoryFieldName == CategoryFieldConstants.F_Id)
+                            {
+                                nullable = false;
+                            }
+                            await _masterContext.UpdateColumn(category.CategoryCode, entity.CategoryFieldName, (EnumDataType)entity.DataTypeId, dataSize, decimalPlace, model.DefaultValue, nullable);
                         }
                     }
                     else if (model.CategoryFieldId == 0)
