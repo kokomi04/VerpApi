@@ -824,6 +824,8 @@ namespace VErp.Commons.Library
                     {
                         try
                         {
+                            var date = DateTime.FromOADate(cell.NumericCellValue);
+                            date = date.Date;
                             return DateTime.FromOADate(cell.NumericCellValue).ToString();
                         }
                         catch (Exception)
