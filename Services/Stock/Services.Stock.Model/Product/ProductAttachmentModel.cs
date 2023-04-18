@@ -1,5 +1,4 @@
-﻿using VErp.Commons.Enums.Product;
-using VErp.Commons.GlobalObject;
+﻿using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.StockDB;
 
 namespace VErp.Services.Stock.Model.Product
@@ -10,7 +9,6 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public long AttachmentFileId { get; set; }
         public string Title { get; set; }
-        public EnumProductAttachmentType ProductAttachmentTypeId { get; set; }
         public string Url { get; set; }
     }
 }
