@@ -826,7 +826,7 @@ namespace VErp.Commons.Library
                         {
                             var date = DateTime.FromOADate(cell.NumericCellValue);
                             date = date.Date;
-                            return DateTime.FromOADate(cell.NumericCellValue).ToString();
+                            return date.ToString();
                         }
                         catch (Exception)
                         {
