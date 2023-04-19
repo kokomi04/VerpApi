@@ -38,7 +38,7 @@ namespace VErpApi.Controllers.System.Organization.Salary
 
 
         [HttpPost("")]
-        public async Task<int> Create([FromBody] SalaryPeriodGroupModel model)
+        public async Task<long> Create([FromBody] SalaryPeriodGroupModel model)
         {
             return await _salaryPeriodGroupService.Create(model);
         }

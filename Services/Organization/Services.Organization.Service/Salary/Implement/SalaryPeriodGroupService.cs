@@ -135,7 +135,7 @@ namespace VErp.Services.Organization.Service.Salary
         }
 
 
-        public async Task<int> Create(SalaryPeriodGroupModel model)
+        public async Task<long> Create(SalaryPeriodGroupModel model)
         {
             if (await _organizationDBContext.SalaryPeriodGroup.AnyAsync(s => s.SalaryPeriodId == model.SalaryPeriodId && s.SalaryGroupId == model.SalaryGroupId))
             {
@@ -165,7 +165,7 @@ namespace VErp.Services.Organization.Service.Salary
                 .ObjectId(info.SalaryPeriodGroupId)
                 .JsonData(model.JsonSerialize())
                 .CreateLog();
-            return info.SalaryPeriodId;
+            return info.SalaryPeriodGroupId;
         }
 
         public async Task<bool> Delete(long salaryPeriodGroupId)

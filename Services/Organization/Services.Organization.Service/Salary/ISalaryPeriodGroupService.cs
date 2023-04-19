@@ -19,7 +19,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<SalaryPeriodGroupInfo> GetInfo(int salaryPeriodId, int salaryGroupId);
 
-        Task<int> Create(SalaryPeriodGroupModel model);
+        Task<long> Create(SalaryPeriodGroupModel model);
 
         Task<bool> Delete(long salaryPeriodGroupId);
 
