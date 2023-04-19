@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.GlobalObject;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
 
@@ -12,6 +13,7 @@ namespace VErp.Services.Organization.Model.Salary
         [MinLength(1)]
         [MaxLength(128)]
         [Required]
+        [RegularExpression(@"[a-zA-Z0-9_]*", ErrorMessageResourceName = nameof(ValidatorResources.InvalidFieldName), ErrorMessageResourceType = typeof(ValidatorResources))]
         public string FieldName { get; set; }
         [MinLength(1)]
         [MaxLength(128)]
