@@ -123,6 +123,9 @@
   <data name="GreaterThanAttribute_Invalid" xml:space="preserve">
     <value>Lỗi trường "{0}" phải có giá trị lớn hơn {1}</value>
   </data>
+  <data name="InvalidFieldName" xml:space="preserve">
+    <value>Trường dữ liệu chỉ chứa chữ cái hoặc số, ký tự gạch dưới _</value>
+  </data>
   <data name="MinAttribute_Invalid" xml:space="preserve">
     <value>Lỗi trường "{0}" phải lớn hơn hoặc bằng {1}</value>
   </data>

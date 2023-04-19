@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.GlobalObject;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -18,6 +19,7 @@ namespace VErp.Services.Organization.Model.Salary
         [Required]
         [MinLength(1)]
         [MaxLength(128)]
+        [RegularExpression(@"[a-zA-Z0-9_]*", ErrorMessageResourceName = nameof(ValidatorResources.InvalidFieldName), ErrorMessageResourceType = typeof(ValidatorResources))]
         public string SalaryFieldName { get; set; }
         [Required]
         [MinLength(1)]
@@ -27,7 +29,7 @@ namespace VErp.Services.Organization.Model.Salary
         public string Description { get; set; }
         public EnumDataType DataTypeId { get; set; }
         [Range(0, 11)]
-        public int DecimalPlace { get; set; }        
+        public int DecimalPlace { get; set; }
         public int SortOrder { get; set; }
         public IList<SalaryFieldExpressionModel> Expression { get; set; }
         public bool IsEditable { get; set; }
@@ -38,7 +40,7 @@ namespace VErp.Services.Organization.Model.Salary
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<SalaryFieldModel, SalaryField>()
-                    .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonSerialize()))   
+                    .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonSerialize()))
                     .ReverseMapCustom()
                     .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonDeserialize<IList<SalaryFieldExpressionModel>>()))
                     ;

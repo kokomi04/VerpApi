@@ -79,6 +79,15 @@ namespace Verp.Resources.GlobalObject {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Trường dữ liệu chỉ chứa chữ cái hoặc số, ký tự gạch dưới _.
+        /// </summary>
+        public static string InvalidFieldName {
+            get {
+                return ResourceManager.GetString("InvalidFieldName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Lỗi trường &quot;{0}&quot; phải lớn hơn hoặc bằng {1}.
         /// </summary>
         public static string MinAttribute_Invalid {
