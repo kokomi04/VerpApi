@@ -2,8 +2,10 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Library.Utilities;
 using VErp.Infrastructure.ServiceCore.Model;
 
 namespace VErp.Infrastructure.ApiCore.Filters
@@ -14,9 +16,27 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             if (context.ModelState.IsValid)
             {
-                string errorPropName;
-                if (!ValidateEnum(context.ActionArguments.Select(a => a.Value), string.Empty, out errorPropName).IsSuccess())
+                ICollection<CustomValidationResult> results = new List<CustomValidationResult>();
+                var opt = EnumCustomNormalizeAndValidateOption.TrimString | EnumCustomNormalizeAndValidateOption.ValidateEnum;
+                var args = context.ActionArguments.Select(a => a.Value);
+                var isValid = CustomValidator.TryNormalizeAndValidateObject(args, results, opt);
+
+                if (!isValid)
                 {
+                    string errorPropName = "";
+                    var firstError = results.FirstOrDefault();
+                    if (firstError != null)
+                    {
+                        var props = firstError.MemberNames?.ToArray();
+                        if (props?.Length > 0)
+                        {
+                            errorPropName = string.Join(".", props);
+                        }
+                        if (!string.IsNullOrWhiteSpace(firstError.DisplayName))
+                        {
+                            errorPropName += $"{firstError.DisplayName}";
+                        }
+                    }
                     var invalidParams = new ServiceResult()
                     {
                         Code = GeneralCode.InvalidParams,
@@ -46,6 +66,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             context.Result = new BadRequestObjectResult(invalidModels);
         }
 
+        /*
         private Enum ValidateEnum(dynamic objs, string propName, out string errorPropName)
         {
             foreach (object obj in objs)
@@ -106,6 +127,6 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
             errorPropName = "";
             return GeneralCode.Success;
-        }
+        }*/
     }
 }
