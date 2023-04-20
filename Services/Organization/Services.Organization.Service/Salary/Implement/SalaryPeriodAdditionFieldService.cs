@@ -92,13 +92,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var existedData = await (from v in _organizationDBContext.SalaryPeriodAdditionBillEmployeeValue
                                      join e in _organizationDBContext.SalaryPeriodAdditionBillEmployee on v.SalaryPeriodAdditionBillEmployeeId equals e.SalaryPeriodAdditionBillEmployeeId
+                                     join b in _organizationDBContext.SalaryPeriodAdditionBill on e.SalaryPeriodAdditionBillId equals b.SalaryPeriodAdditionBillId
                                      where v.SalaryPeriodAdditionFieldId == salaryPeriodAdditionFieldId
                                      select new
                                      {
                                          v.Value,
                                          v.SalaryPeriodAdditionFieldId,
                                          e.SalaryPeriodAdditionBillId,
-                                         e.EmployeeId
+                                         e.EmployeeId,
+                                         b.BillCode
                                      }
                                       ).FirstOrDefaultAsync();
 
