@@ -109,7 +109,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw SalaryPeriodAdditionFieldValiationMessage.FieldInUsed.BadRequestFormat(info.FieldName);
             }
 
-            var groupField = await _organizationDBContext.SalaryPeriodAdditionTypeField.Where(g => g.SalaryPeriodAdditionFieldId == salaryPeriodAdditionFieldId).FirstOrDefaultAsync();
+            var groupField = await (from f in _organizationDBContext.SalaryPeriodAdditionTypeField
+                                    join t in _organizationDBContext.SalaryPeriodAdditionType on f.SalaryPeriodAdditionTypeId equals t.SalaryPeriodAdditionTypeId
+                                    where f.SalaryPeriodAdditionFieldId == salaryPeriodAdditionFieldId
+                                    select new
+                                    {
+                                        t.Title,
+                                        t.SalaryPeriodAdditionTypeId
+                                    }).FirstOrDefaultAsync();
 
             if (groupField != null)
             {
