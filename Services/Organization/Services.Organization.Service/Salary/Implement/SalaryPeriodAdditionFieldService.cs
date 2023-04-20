@@ -117,9 +117,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             //_organizationDBContext.SalaryPeriodAdditionTypeField.RemoveRange(groupFields);
-            await _organizationDBContext.SaveChangesAsync();
-
-            _organizationDBContext.SalaryPeriodAdditionField.Remove(info);
+            //await _organizationDBContext.SaveChangesAsync();
+            info.IsDeleted = true;
+            //_organizationDBContext.SalaryPeriodAdditionField.Remove(info);
 
             await _organizationDBContext.SaveChangesAsync();
 
