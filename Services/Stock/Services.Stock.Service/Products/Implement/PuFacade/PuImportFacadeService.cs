@@ -252,13 +252,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 
                                             if (puModel.IsDefault)
                                             {
-                                                if (!entity.IsDefault)
-                                                {
-                                                    entity.IsDefault = true;
-                                                    entity.FactorExpression = "1";
-                                                    changeRatePuIds.Add(entity.ProductUnitConversionId);
-                                                }
-
                                                 foreach (var puEntity in productInfo.ProductUnitConversion)
                                                 {
                                                     if (puEntity.IsDefault)
@@ -268,11 +261,18 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                                     puEntity.IsDefault = false;
                                                 }
 
+                                                if (!entity.IsDefault)
+                                                {
+                                                    entity.IsDefault = true;
+                                                    entity.FactorExpression = "1";
+                                                    changeRatePuIds.Add(entity.ProductUnitConversionId);
+                                                }
+                                                
+
                                                 entity.UpdateIfAvaiable(v => v.ProductUnitConversionName, puModel.ProductUnitConversionName);
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
 
                                                 entity.ConversionDescription = "";
-
 
 
                                                 productInfo.UnitId = units[nameNormalize];
@@ -333,6 +333,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                         UploadDecimalPlace = puModel.DecimalPlace
                                     });
                                 }
+
+                               
                             }
                             foreach (var puModel in toRemoveModels)
                             {
@@ -346,6 +348,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                       .ObjectId(productInfo.ProductId)
                                       .JsonData(puByProduct.Value.JsonSerialize())
                                       .CreateLog();
+                            }
+
+
+                            if (productInfo.ProductUnitConversion.Where(u => u.IsDefault).Count() != 1)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequest($"Mặt hàng phải có duy nhất 1 đơn vị chính {productInfo.ProductCode}");
                             }
                         }
                     }
