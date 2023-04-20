@@ -24,6 +24,13 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using Verp.Resources.Organization.Salary;
 using DocumentFormat.OpenXml.InkML;
 using Verp.Resources.Organization.Salary.Validation;
+using System.Reflection;
+using DocumentFormat.OpenXml.Drawing;
+using OpenXmlPowerTools;
+using NPOI.SS.Formula.Functions;
+using DocumentFormat.OpenXml.Spreadsheet;
+using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Library.Utilities;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -89,7 +96,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 throw HrDataValidationMessage.RefTableNotFound.BadRequestFormat(OrganizationConstants.EMPLOYEE_CATEGORY_CODE);
             }
 
-            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillBase>();        
+            result.Fields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillBase>();
 
             const string detailGroupName = "Chi tiết";
             result.Fields.Add(new CategoryFieldNameModel()
@@ -299,7 +306,68 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                 var existedCodes = existedBills.Keys.ToHashSet();
 
+
+                var opt = EnumCustomNormalizeAndValidateOption.All | EnumCustomNormalizeAndValidateOption.IgnoreRequired;
+                
+                ICollection<CustomValidationResult> results = new List<CustomValidationResult>();
+
+                foreach (var (model, rows) in bills)
+                {
+                    var rowIndex = rows.First().Index;
+                    
+                    if (!CustomValidator.TryNormalizeAndValidateObject(model, results, opt))
+                    {
+                        var firstError = results.FirstOrDefault();
+                        var propName = firstError?.MemberNames?.LastOrDefault();
+                        var mappingProp = mapping.MappingFields.FirstOrDefault(m => m.FieldName == propName);
+
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Lỗi dữ liệu {firstError.DisplayName} dòng {rowIndex}, cột {mappingProp?.Column} không hợp lệ, " + string.Join(", ", firstError?.MemberNames) + ": " + firstError?.ErrorMessage);
+                    }
+                }
+
                 var createBills = bills.Where(b => !existedCodes.Contains(b.Key.BillCode?.ToLower()));
+
+                Func<Type, IList<PropertyInfo>> getRequiredProp = (type) =>
+                {
+                    return type.GetProperties()
+                    .Where(p =>
+                    {
+                        var reqireAtt = p.GetCustomAttribute<RequiredAttribute>();
+                        return reqireAtt != null;
+
+                    }).ToList();
+                };
+              
+
+                var requiredModelProps = getRequiredProp(typeof(SalaryPeriodAdditionBillModel));
+
+                var requiredDetailProps = getRequiredProp(typeof(SalaryPeriodAdditionBillEmployeeModel));
+
+                Action<IList<PropertyInfo>, object, int> validateRequiredProps = (requiedProps, obj, rowIndex) =>
+                {
+                    foreach (var prop in requiedProps)
+                    {
+                        if (prop.GetValue(obj) == null)
+                        {
+                            var displayAtt = prop.GetCustomAttribute<DisplayAttribute>();
+                            var mappingProp = mapping.MappingFields.FirstOrDefault(m => m.FieldName == prop.Name);
+                            throw GeneralCode.InvalidParams.BadRequest($"Trường {(displayAtt?.Name) ?? prop.Name} bắt buộc, dòng {rowIndex}, cột {mappingProp?.Column}");
+                        }
+                    }                   
+                };
+
+                foreach (var (createModel, rows) in createBills)
+                {
+                    var rowIndex = rows.First().Index;
+                    validateRequiredProps(requiredModelProps, createModel, rowIndex);
+                  
+                    foreach (var d in createModel.Details)
+                    {
+                        validateRequiredProps(requiredDetailProps, d, rowIndex);
+                    }
+                   
+                }
+               
 
                 var updateBills = bills.Where(b => existedCodes.Contains(b.Key.BillCode?.ToLower()));
                 if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied && updateBills.Count() > 0)
