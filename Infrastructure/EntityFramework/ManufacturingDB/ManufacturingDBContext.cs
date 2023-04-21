@@ -274,6 +274,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.AssignmentWorkload).HasColumnType("decimal(32, 12)");
 
+                entity.Property(e => e.Comment).HasMaxLength(512);
+
                 entity.Property(e => e.RateInPercent)
                     .HasColumnType("decimal(18, 5)")
                     .HasDefaultValueSql("((100))");
