@@ -62,10 +62,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var oldAttachment = oldAttachments.FirstOrDefault(a => a.ProductId == newItem.ProductId && a.AttachmentFileId == newItem.AttachmentFileId);
                 if (oldAttachment != null)
                 {
-                    if (oldAttachment.Title != newItem.Title)
-                    {
-                        changeAttachments.Add((oldAttachment, newItem));
-                    }
+                    changeAttachments.Add((oldAttachment, newItem));
                     newAttachments.Remove(newItem);
                     oldAttachments.Remove(oldAttachment);
                 }
@@ -93,7 +90,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             // update attachment
             foreach (var updateAttachment in changeAttachments)
             {
-                updateAttachment.OldValue.Title = updateAttachment.NewValue.Title;
+                _mapper.Map(updateAttachment.NewValue, updateAttachment.OldValue);
             }
 
             await _stockDbContext.SaveChangesAsync();
