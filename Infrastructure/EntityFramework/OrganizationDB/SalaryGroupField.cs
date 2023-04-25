@@ -9,6 +9,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
     {
         public int SalaryGroupId { get; set; }
         public int SalaryFieldId { get; set; }
+        public string GroupName { get; set; }
+        public string Title { get; set; }
         public bool IsEditable { get; set; }
         public bool IsHidden { get; set; }
         public int SortOrder { get; set; }

@@ -126,10 +126,46 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            var lstFields = _mapper.Map<List<SalaryGroupField>>(model.TableFields);
+
+            var toRemoveFieldsFromGroup = new List<int>();
+            foreach (var field in info.SalaryGroupField)
+            {
+                if (!lstFields.Any(f => f.SalaryFieldId == field.SalaryFieldId))
+                {
+                    toRemoveFieldsFromGroup.Add(field.SalaryFieldId);
+                }
+            }
+
+            if (toRemoveFieldsFromGroup.Count > 0)
+            {
+                var usingEmployeeValue = await (
+                 from v in _organizationDBContext.SalaryEmployeeValue
+                 join f in _organizationDBContext.SalaryField on v.SalaryFieldId equals f.SalaryFieldId
+                 join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
+                 join p in _organizationDBContext.SalaryPeriod on e.SalaryPeriodId equals p.SalaryPeriodId
+                 join g in _organizationDBContext.SalaryGroup on e.SalaryGroupId equals g.SalaryGroupId
+                 where toRemoveFieldsFromGroup.Contains(v.SalaryFieldId) && v.Value != null
+                 select new
+                 {
+                     f.SalaryFieldName,
+                     SalaryFieldTitle = f.Title,
+                     e.SalaryGroupId,
+                     g.Title,
+                     e.SalaryPeriodId,
+                     p.Year,
+                     p.Month
+                 }
+                ).FirstOrDefaultAsync();
+
+                if (usingEmployeeValue != null)
+                {
+                    throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(usingEmployeeValue.SalaryFieldName + " (" + usingEmployeeValue.SalaryFieldTitle + ")", usingEmployeeValue.Title, usingEmployeeValue.Month, usingEmployeeValue.Year);
+                }
+            }
+
             _mapper.Map(model, info);
             info.SalaryGroupId = salaryGroupId;
-
-            var lstFields = _mapper.Map<List<SalaryGroupField>>(model.TableFields);
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
