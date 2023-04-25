@@ -24,7 +24,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int SortOrder { get; set; }
         public string Expression { get; set; }
         public bool IsEditable { get; set; }
-        public bool IsHidden { get; set; }
         public bool IsDisplayRefData { get; set; }
         public bool IsCalcSum { get; set; }
         public int CreatedByUserId { get; set; }

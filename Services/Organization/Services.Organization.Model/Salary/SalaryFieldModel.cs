@@ -33,7 +33,6 @@ namespace VErp.Services.Organization.Model.Salary
         public int SortOrder { get; set; }
         public IList<SalaryFieldExpressionModel> Expression { get; set; }
         public bool IsEditable { get; set; }
-        public bool IsHidden { get; set; }
         public bool IsDisplayRefData { get; set; }
         public bool IsCalcSum { get; set; }
 
@@ -42,8 +41,7 @@ namespace VErp.Services.Organization.Model.Salary
             profile.CreateMapCustom<SalaryFieldModel, SalaryField>()
                     .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonSerialize()))
                     .ReverseMapCustom()
-                    .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonDeserialize<IList<SalaryFieldExpressionModel>>()))
-                    ;
+                    .ForMember(d => d.Expression, s => s.MapFrom(f => f.Expression.JsonDeserialize<IList<SalaryFieldExpressionModel>>()));
         }
     }
 

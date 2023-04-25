@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Verp.Resources.GlobalObject;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -53,6 +54,12 @@ namespace VErp.Services.Organization.Model.Salary
     public class SalaryGroupFieldModel : IMapFrom<SalaryGroupField>
     {
         public int SalaryFieldId { get; set; }
+        [MaxLength(128)]
+        public string GroupName { get; set; }
+        [Required]
+        [MinLength(1)]
+        [MaxLength(128)]
+        public string Title { get; set; }
         public bool IsEditable { get; set; }
         public bool IsHidden { get; set; }
         public int SortOrder { get; set; }

@@ -815,6 +815,10 @@ namespace VErp.Infrastructure.EF.OrganizationDB
             {
                 entity.HasKey(e => new { e.SalaryGroupId, e.SalaryFieldId });
 
+                entity.Property(e => e.GroupName).HasMaxLength(128);
+
+                entity.Property(e => e.Title).HasMaxLength(128);
+
                 entity.HasOne(d => d.SalaryField)
                     .WithMany(p => p.SalaryGroupField)
                     .HasForeignKey(d => d.SalaryFieldId)

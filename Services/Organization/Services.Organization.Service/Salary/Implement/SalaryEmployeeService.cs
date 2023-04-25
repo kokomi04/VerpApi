@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -196,6 +198,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var salaryFields = await _salaryFieldService.GetList();
             salaryFields = SortFieldNameByReference(salaryFields);
+
+
             var result = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
 
             var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
@@ -261,29 +265,34 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     var fieldVariableName = SALARY_FIELD_PREFIX + f.SalaryFieldName;
 
-                    var isOverride = groupFields.TryGetValue(f.SalaryFieldId, out var groupField);
-                    var fieldIsEditable = f.IsEditable && (!isOverride || groupField.IsEditable);
-                    SalaryEmployeeValueModel reqValue = null;
-                    var evalDataIsEdited = reqItem != null && reqItem.TryGetValue(f.SalaryFieldName, out reqValue) && reqValue?.IsEdited == true;
+                    var isFieldInGroup = groupFields.TryGetValue(f.SalaryFieldId, out var groupField);
 
                     object fieldValue = null;
                     var isEdited = false;
 
-                    if (!f.IsDisplayRefData && (fieldIsEditable && evalDataIsEdited || overrideNotRefData))
+                    if (isFieldInGroup)
                     {
-                        fieldValue = reqValue?.Value;
-                        isEdited = reqValue?.IsEdited == true;
-                    }
-                    else
-                    {
-                        foreach (var condition in f.Expression)
+                        var fieldIsEditable = f.IsEditable && (!isFieldInGroup || groupField.IsEditable);
+                        SalaryEmployeeValueModel reqValue = null;
+                        var evalDataIsEdited = reqItem != null && reqItem.TryGetValue(f.SalaryFieldName, out reqValue) && reqValue?.IsEdited == true;
+
+                        if (!f.IsDisplayRefData && (fieldIsEditable && evalDataIsEdited || overrideNotRefData))
                         {
-                            var (isSucess, value) = EvalValueExpression(f, condition, paramsData);
-                            if (isSucess)
+                            fieldValue = reqValue?.Value;
+                            isEdited = reqValue?.IsEdited == true;
+                        }
+                        else
+                        {
+                            foreach (var condition in f.Expression)
                             {
-                                fieldValue = value;
+                                var (isSucess, value) = EvalValueExpression(f, condition, paramsData);
+                                if (isSucess)
+                                {
+                                    fieldValue = value;
+                                }
                             }
                         }
+
                     }
 
                     if (fieldValue == null)
@@ -300,13 +309,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         paramsData.Add(fieldVariableName, fieldValue);
                     }
 
-                    model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(fieldValue, isEdited));
-
+                    if (isFieldInGroup)
+                    {
+                        model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(fieldValue, isEdited));
+                    }
                 }
             }
 
             return result;
         }
+     
 
 
         private (bool isSucess, object value) EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData)
