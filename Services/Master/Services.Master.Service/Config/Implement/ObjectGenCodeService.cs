@@ -430,6 +430,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             }
 
             result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Organization,
+               targeObjectTypeId: EnumObjectType.SalaryPeriodAdditionBill,
+               fieldName: "Số chứng từ")
+           );
+
+
+            result.Add(
                  GetObjectGenCodeMappingTypeModel(
                  moduleTypeId: EnumModuleType.Organization,
                  targeObjectTypeId: EnumObjectType.Customer,
