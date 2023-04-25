@@ -545,7 +545,7 @@ namespace VErp.Services.Master.Service.Category
         {
             var categoryFieldId = model.CategoryFieldId;
             if (
-                (model.CategoryFieldName == CategoryFieldConstants.F_Id || entity.CategoryFieldName == CategoryFieldConstants.F_Id)
+                (model.CategoryFieldName == CategoryFieldConstants.F_Id || entity?.CategoryFieldName == CategoryFieldConstants.F_Id)
                 && model.CategoryFieldId != categoryFieldId
                 && categoryFieldId > 0
             )
@@ -560,7 +560,7 @@ namespace VErp.Services.Master.Service.Category
                 {
                     throw new BadRequestException(CategoryErrorCode.CategoryFieldNotFound);
                 }
-                updateFieldName = entity.CategoryFieldName == model.CategoryFieldName;
+                updateFieldName = entity?.CategoryFieldName == model.CategoryFieldName;
             }
             if (updateFieldName && _masterContext.CategoryField.Any(f => (categoryFieldId == 0 || f.CategoryFieldId != categoryFieldId) && f.CategoryFieldId == model.CategoryFieldId && f.CategoryFieldName == model.CategoryFieldName))
             {
