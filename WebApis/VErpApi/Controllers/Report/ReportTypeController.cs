@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Report;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -107,28 +108,28 @@ namespace VErpApi.Controllers.Report
 
         [HttpGet]
         [Route("{reportTypeId}/ViewInfo")]
-        public async Task<ReportTypeViewModel> ReportTypeViewInfo([FromRoute] int reportTypeId)
+        public async Task<ReportTypeViewModel> ReportTypeViewInfo([FromRoute] int reportTypeId, [FromQuery] EmumReportViewFilterType reportViewFilterTypeId)
         {
             return await _reportConfigService
-                .ReportTypeViewGetInfo(reportTypeId)
+                .ReportTypeViewGetInfo(reportViewFilterTypeId, reportTypeId)
                 .ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("config/{reportTypeId}/ViewInfo")]
-        public async Task<ReportTypeViewModel> ReportTypeViewInfoConfig([FromRoute] int reportTypeId)
+        public async Task<ReportTypeViewModel> ReportTypeViewInfoConfig([FromRoute] int reportTypeId, [FromQuery] EmumReportViewFilterType reportViewFilterTypeId)
         {
             return await _reportConfigService
-                .ReportTypeViewGetInfo(reportTypeId, true)
+                .ReportTypeViewGetInfo(reportViewFilterTypeId, reportTypeId, true)
                 .ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{reportTypeId}/ViewInfo")]
-        public async Task<bool> ViewInfoUpdate([FromRoute] int reportTypeId, [FromBody] ReportTypeViewModel model)
+        public async Task<bool> ViewInfoUpdate([FromRoute] int reportTypeId, [FromBody] ReportTypeViewModel model, [FromQuery] EmumReportViewFilterType reportViewFilterTypeId)
         {
             return await _reportConfigService
-                .ReportTypeViewUpdate(reportTypeId, model)
+                .ReportTypeViewUpdate(reportViewFilterTypeId, reportTypeId, model)
                 .ConfigureAwait(true);
         }
 

@@ -14,6 +14,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
 
         public int ReportTypeViewId { get; set; }
         public string ReportTypeViewName { get; set; }
+        public int ReportViewFilterTypeId { get; set; }
         public int ReportTypeId { get; set; }
         public bool IsDefault { get; set; }
         public int? SortOrder { get; set; }

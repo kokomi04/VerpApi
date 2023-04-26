@@ -25,6 +25,7 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
         public virtual DbSet<ReportTypeGroup> ReportTypeGroup { get; set; }
         public virtual DbSet<ReportTypeView> ReportTypeView { get; set; }
         public virtual DbSet<ReportTypeViewField> ReportTypeViewField { get; set; }
+        public virtual DbSet<ReportTypeViewFieldValue> ReportTypeViewFieldValue { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
@@ -169,6 +170,11 @@ namespace VErp.Infrastructure.EF.ReportConfigDB
                     .HasForeignKey(d => d.ReportTypeViewId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ReportTypeViewField_ReportTypeView");
+            });
+
+            modelBuilder.Entity<ReportTypeViewFieldValue>(entity =>
+            {
+                entity.HasKey(e => new { e.ReportTypeViewFieldId, e.SubsidiaryId });
             });
 
             OnModelCreatingPartial(modelBuilder);

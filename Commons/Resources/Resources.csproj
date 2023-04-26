@@ -597,6 +597,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>VoucherDataValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Report\ReportTypeViewActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportTypeViewActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Report\ReportTypeViewValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportTypeViewValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Stock\Dictionary\ProductCateActivityMessage.Designer.cs">
       <DependentUpon>ProductCateActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -1222,6 +1232,14 @@
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>VoucherDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\ReportTypeViewActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportTypeViewActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\ReportTypeViewValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportTypeViewValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
       <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>

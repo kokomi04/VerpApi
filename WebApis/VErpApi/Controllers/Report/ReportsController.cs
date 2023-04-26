@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
@@ -9,15 +9,16 @@ using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.Report
 {
-    [Obsolete("This route is replaced by ReportsController")]
-    [Route("api/reports/accoutancy")]
+    [Route("api/Reports")]
     [ObjectDataApi(EnumObjectType.ReportType, "reportId")]
-    public class ReportDataController : VErpBaseController
+    public class ReportsController : VErpBaseController
     {
-        private readonly IDataReportService _accountancyReportService;
-        public ReportDataController(IDataReportService accountancyReportService)
+        private readonly IDataReportService _dataReportService;
+        private readonly IFilterSettingReportService _filterSettingReportService;
+        public ReportsController(IDataReportService accountancyReportService, IFilterSettingReportService filterSettingReportService)
         {
-            _accountancyReportService = accountancyReportService;
+            _dataReportService = accountancyReportService;
+            _filterSettingReportService = filterSettingReportService;
         }
 
 
@@ -26,16 +27,25 @@ namespace VErpApi.Controllers.Report
         [Route("view/{reportId}")]
         public async Task<ReportDataModel> ReportView([FromRoute] int reportId, [FromBody] ReportFilterModel model)
         {
-            return await _accountancyReportService.Report(reportId, model, model?.Page ?? 0, model?.Size ?? 0)
+            return await _dataReportService.Report(reportId, model, model?.Page ?? 0, model?.Size ?? 0)
                 .ConfigureAwait(true);
         }
+
+
+        [HttpPut]
+        [Route("setting/{reportId}")]
+        public async Task<bool> Setting([FromRoute] int reportId, [FromBody] Dictionary<int, object> fieldValues)
+        {
+            return await _filterSettingReportService.Update(reportId, fieldValues);
+        }
+
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("view/{reportId}/asDocument")]
         public async Task<IActionResult> ASDocument([FromRoute] int reportId, [FromBody] ReportDataModel dataModel)
         {
-            var r = await _accountancyReportService.GenerateReportAsPdf(reportId, dataModel);
+            var r = await _dataReportService.GenerateReportAsPdf(reportId, dataModel);
 
             return new FileStreamResult(r.file, !string.IsNullOrWhiteSpace(r.contentType) ? r.contentType : "application/octet-stream") { FileDownloadName = r.fileName };
         }
@@ -45,7 +55,7 @@ namespace VErpApi.Controllers.Report
         [Route("view/{reportId}/asExcel")]
         public async Task<FileStreamResult> AsExcel([FromRoute] int reportId, [FromBody] ReportFacadeModel model)
         {
-            var (stream, fileName, contentType) = await _accountancyReportService.ExportExcel(reportId, model);
+            var (stream, fileName, contentType) = await _dataReportService.ExportExcel(reportId, model);
 
             return new FileStreamResult(stream, contentType) { FileDownloadName = fileName };
         }
