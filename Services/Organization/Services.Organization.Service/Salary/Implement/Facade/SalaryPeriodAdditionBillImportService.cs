@@ -308,13 +308,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
 
                 var opt = EnumCustomNormalizeAndValidateOption.All | EnumCustomNormalizeAndValidateOption.IgnoreRequired;
-                
+
                 ICollection<CustomValidationResult> results = new List<CustomValidationResult>();
 
                 foreach (var (model, rows) in bills)
                 {
                     var rowIndex = rows.First().Index;
-                    
+
                     if (!CustomValidator.TryNormalizeAndValidateObject(model, results, opt))
                     {
                         var firstError = results.FirstOrDefault();
@@ -337,7 +337,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                     }).ToList();
                 };
-              
+
 
                 var requiredModelProps = getRequiredProp(typeof(SalaryPeriodAdditionBillModel));
 
@@ -353,21 +353,21 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             var mappingProp = mapping.MappingFields.FirstOrDefault(m => m.FieldName == prop.Name);
                             throw GeneralCode.InvalidParams.BadRequest($"Trường {(displayAtt?.Name) ?? prop.Name} bắt buộc, dòng {rowIndex}, cột {mappingProp?.Column}");
                         }
-                    }                   
+                    }
                 };
 
                 foreach (var (createModel, rows) in createBills)
                 {
                     var rowIndex = rows.First().Index;
                     validateRequiredProps(requiredModelProps, createModel, rowIndex);
-                  
+
                     foreach (var d in createModel.Details)
                     {
                         validateRequiredProps(requiredDetailProps, d, rowIndex);
                     }
-                   
+
                 }
-               
+
 
                 var updateBills = bills.Where(b => existedCodes.Contains(b.Key.BillCode?.ToLower()));
                 if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied && updateBills.Count() > 0)
@@ -375,6 +375,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     var firstDuplicate = updateBills.First();
                     var firstRow = firstDuplicate.Value.First();
                     throw GeneralCode.ItemCodeExisted.BadRequest($"Chứng từ {firstDuplicate.Key.BillCode} đã tồn tại, dòng {firstRow.Index}, cột {columnKey.Column}");
+                }
+
+                if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                {
+                    updateBills = new List<KeyValuePair<SalaryPeriodAdditionBillModel, IList<BillDataRow>>>();
                 }
 
                 var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
