@@ -7,4 +7,10 @@
         public const string SubsidiaryId = "subsidiaryId";
         public const string Developer = "is_developer";
     }
+
+    public static class OAuthFormKeyConstants
+    {
+        public const string SubsidiaryId = "subsidiary_id";
+        public const string SubsidiaryCode = "subsidiary_code";
+    }
 }

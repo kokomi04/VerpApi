@@ -13,11 +13,13 @@ using Services.PurchaseOrder.Service;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Verp.Services.PurchaseOrder.Model;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -181,7 +183,7 @@ namespace VErp.WebApis.VErpApi
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/system/swagger.json", "SYSTEM.API V1");
 
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/organization/swagger.json", "ORGANIZATION.API V1");
-                  
+
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/stock/swagger.json", "STOCK.API V1");
 
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
@@ -195,6 +197,7 @@ namespace VErp.WebApis.VErpApi
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");
                   c.OAuthAppName("VERP Swagger UI");
+                  c.OAuthAdditionalQueryStringParams(new Dictionary<string, string>() { { OAuthFormKeyConstants.SubsidiaryCode, AppSetting.Developer?.SubsidiaryCodes?.FirstOrDefault() } });
               });
 
         }
@@ -211,11 +214,9 @@ namespace VErp.WebApis.VErpApi
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
                 options.OperationFilter<SwaggerFileOperationFilter>();
-                options.IncludeXmlComments(Path.Combine(
-                        PlatformServices.Default.Application.ApplicationBasePath,
-                        "VErpApi.xml"));
+                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "VErpApi.xml"));
 
-               
+
                 options.SwaggerDoc("system", new OpenApiInfo
                 {
                     Title = "VERP System HTTP API",
@@ -243,7 +244,7 @@ namespace VErp.WebApis.VErpApi
                     Version = "v1",
                     Description = "The system Service HTTP API"
                 });
-               
+
 
                 options.SwaggerDoc("accountancy", new OpenApiInfo
                 {
@@ -274,11 +275,11 @@ namespace VErp.WebApis.VErpApi
                     {
                         Password = new OpenApiOAuthFlow()
                         {
-                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/authorize"),
-                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint}/connect/token"),
+                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint}connect/authorize"),
+                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint}connect/token"),
                             Scopes = new Dictionary<string, string>()
                             {
-                                { "scope", "verp offline_access openId" }
+                                { "verp offline_access", "verp api common access" }
                             }
                         }
                     },
