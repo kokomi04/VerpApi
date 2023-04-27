@@ -81,4 +81,9 @@ namespace VErp.Services.Organization.Model.Salary
         public NonCamelCaseDictionary<decimal?> Values { get; set; }
     }
 
+    public class SalaryPeriodAdditionBillEmployeeParseInfo: SalaryPeriodAdditionBillEmployeeModel
+    {
+        public NonCamelCaseDictionary EmployeeInfo { get; set; }
+    }
+
 }
