@@ -115,10 +115,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
               .FirstOrDefaultAsync();
 
         }
-        public async Task<IList<SalaryPeriodAdditionTypeInfo>> List()
+        public async Task<IEnumerable<SalaryPeriodAdditionTypeInfo>> List()
         {
             var lst = await _organizationDBContext.SalaryPeriodAdditionType.Include(t => t.SalaryPeriodAdditionTypeField).ToListAsync();
-
             var result = new List<SalaryPeriodAdditionTypeInfo>();
             foreach (var item in lst)
             {

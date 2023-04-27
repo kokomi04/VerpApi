@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.Hr.Salary;
 using VErp.Infrastructure.EF.OrganizationDB;
 
 namespace VErp.Services.Organization.Model.Salary
@@ -20,7 +21,7 @@ namespace VErp.Services.Organization.Model.Salary
         public IList<SalaryPeriodAdditionTypeFieldModel> Fields { get; set; }
     }
 
-    public class SalaryPeriodAdditionTypeInfo : SalaryPeriodAdditionTypeModel
+    public class SalaryPeriodAdditionTypeInfo : SalaryPeriodAdditionTypeModel, ISalaryPeriodAddtionTypeBase
     {
         public int SalaryPeriodAdditionTypeId { get; set; }
         public int CreatedByUserId { get; set; }
