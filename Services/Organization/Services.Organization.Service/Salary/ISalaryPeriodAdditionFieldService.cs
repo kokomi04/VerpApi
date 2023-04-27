@@ -10,7 +10,7 @@ namespace VErp.Services.Organization.Service.Salary
     public interface ISalaryPeriodAdditionTypeService
     {     
 
-        Task<IList<SalaryPeriodAdditionTypeInfo>> List();
+        Task<IEnumerable<SalaryPeriodAdditionTypeInfo>> List();
         Task<SalaryPeriodAdditionTypeInfo> GetInfo(int salaryPeriodAdditionTypeId);
         Task<SalaryPeriodAdditionType> GetFullEntityInfo(int salaryPeriodAdditionTypeId);
         Task<int> Create(SalaryPeriodAdditionTypeModel model);

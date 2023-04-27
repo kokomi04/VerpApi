@@ -180,6 +180,8 @@ namespace VErp.WebApis.VErpApi
               {
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/system/swagger.json", "SYSTEM.API V1");
 
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/organization/swagger.json", "ORGANIZATION.API V1");
+                  
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/stock/swagger.json", "STOCK.API V1");
 
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/purchaseorder/swagger.json", "PURCHASE-ORDER.API V1");
@@ -213,14 +215,7 @@ namespace VErp.WebApis.VErpApi
                         PlatformServices.Default.Application.ApplicationBasePath,
                         "VErpApi.xml"));
 
-
-                options.SwaggerDoc("stock", new OpenApiInfo
-                {
-                    Title = "VERP Stock HTTP API",
-                    Version = "v1",
-                    Description = "The Stock Service HTTP API"
-                });
-
+               
                 options.SwaggerDoc("system", new OpenApiInfo
                 {
                     Title = "VERP System HTTP API",
@@ -228,6 +223,19 @@ namespace VErp.WebApis.VErpApi
                     Description = "The system Service HTTP API"
                 });
 
+                options.SwaggerDoc("organization", new OpenApiInfo
+                {
+                    Title = "VERP Organization HTTP API",
+                    Version = "v1",
+                    Description = "The organization Service HTTP API"
+                });
+
+                options.SwaggerDoc("stock", new OpenApiInfo
+                {
+                    Title = "VERP Stock HTTP API",
+                    Version = "v1",
+                    Description = "The Stock Service HTTP API"
+                });
 
                 options.SwaggerDoc("purchaseorder", new OpenApiInfo
                 {

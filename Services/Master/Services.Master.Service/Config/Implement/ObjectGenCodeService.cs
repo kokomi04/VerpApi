@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -37,6 +38,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly ICategoryHelperService _categoryHelperService;
+        private readonly ISalaryPeriodAdditionBillTypeHelperService _salaryPeriodAdditionBillTypeHelperService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
@@ -50,7 +52,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IOrganizationHelperService organizationHelperService
-            , ICategoryHelperService categoryHelperService)
+            , ICategoryHelperService categoryHelperService
+            , ISalaryPeriodAdditionBillTypeHelperService salaryPeriodAdditionBillTypeHelperService)
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
@@ -65,6 +68,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
             _organizationHelperService = organizationHelperService;
             _categoryHelperService = categoryHelperService;
+            _salaryPeriodAdditionBillTypeHelperService = salaryPeriodAdditionBillTypeHelperService;
         }
 
 
@@ -429,12 +433,21 @@ namespace VErp.Services.Master.Service.Config.Implement
                 }
             }
 
-            result.Add(
-               GetObjectGenCodeMappingTypeModel(
-               moduleTypeId: EnumModuleType.Organization,
-               targeObjectTypeId: EnumObjectType.SalaryPeriodAdditionBill,
-               fieldName: "Số chứng từ")
-           );
+            var salaryAdditionBillTypes = await _salaryPeriodAdditionBillTypeHelperService.ListTypes();
+            foreach (var type in salaryAdditionBillTypes)
+            {
+
+                result.Add(
+                       GetObjectGenCodeMappingTypeModel(
+                       moduleTypeId: EnumModuleType.Organization,
+                       targeObjectTypeId: EnumObjectType.SalaryPeriodAdditionBill,
+                       configObjectTypeId: EnumObjectType.SalaryPeriodAdditionType,
+                       configObjectId: type.SalaryPeriodAdditionTypeId,
+                       targetObjectName: type.Title,
+                       fieldName: "Số chứng từ")
+                   );
+            }
+
 
 
             result.Add(
