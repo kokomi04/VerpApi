@@ -20,12 +20,14 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
     {
         private readonly ISalaryPeriodAdditionBillService _salaryPeriodAdditionBillService;
         private readonly ISalaryPeriodAdditionBillImportService _salaryPeriodAdditionBillImportService;
+        private readonly ISalaryPeriodAdditionBillParseService _salaryPeriodAdditionBillParseService;
         private readonly ISalaryPeriodAdditionBillExportService _salaryPeriodAdditionBillExportService;
-        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionBillImportService salaryPeriodAdditionBillImportService, ISalaryPeriodAdditionBillExportService salaryPeriodAdditionBillExportService)
+        public SalaryPeriodAdditionBillController(ISalaryPeriodAdditionBillService salaryPeriodAdditionBillService, ISalaryPeriodAdditionBillImportService salaryPeriodAdditionBillImportService, ISalaryPeriodAdditionBillExportService salaryPeriodAdditionBillExportService, ISalaryPeriodAdditionBillParseService salaryPeriodAdditionBillParseService)
         {
             _salaryPeriodAdditionBillService = salaryPeriodAdditionBillService;
             _salaryPeriodAdditionBillImportService = salaryPeriodAdditionBillImportService;
             _salaryPeriodAdditionBillExportService = salaryPeriodAdditionBillExportService;
+            _salaryPeriodAdditionBillParseService = salaryPeriodAdditionBillParseService;
         }
 
 
@@ -86,6 +88,25 @@ namespace VErpApi.Controllers.System.Organization.Salary.Addition
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             return await _salaryPeriodAdditionBillImportService.Import(salaryPeriodAdditionTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+
+        [HttpGet]
+        [Route("{salaryPeriodAdditionTypeId}/bills/fieldForParse")]
+        public async Task<CategoryNameModel> GetFieldDataMappingForParse([FromRoute] int salaryPeriodAdditionTypeId)
+        {
+            return await _salaryPeriodAdditionBillParseService.GetFieldDataMappingForParse(salaryPeriodAdditionTypeId);
+        }
+
+        [HttpPost]
+        [Route("{salaryPeriodAdditionTypeId}/bills/parseExcelFromMapping")]
+        public async Task<IList<SalaryPeriodAdditionBillEmployeeParseInfo>> parseExcelFromMapping([FromRoute] int salaryPeriodAdditionTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _salaryPeriodAdditionBillParseService.ParseExcel(salaryPeriodAdditionTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
         }
     }
 }

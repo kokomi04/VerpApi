@@ -27,6 +27,7 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
 using VErp.Services.Organization.Service.Salary.Implement.Abstract;
+using static VErp.Services.Organization.Service.Salary.Implement.Facade.SalaryPeriodAdditionBillFieldAbstract;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
