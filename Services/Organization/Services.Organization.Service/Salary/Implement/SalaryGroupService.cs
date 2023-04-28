@@ -145,7 +145,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                  join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
                  join p in _organizationDBContext.SalaryPeriod on e.SalaryPeriodId equals p.SalaryPeriodId
                  join g in _organizationDBContext.SalaryGroup on e.SalaryGroupId equals g.SalaryGroupId
-                 where toRemoveFieldsFromGroup.Contains(v.SalaryFieldId) && v.Value != null
+                 where toRemoveFieldsFromGroup.Contains(v.SalaryFieldId) && v.Value != null && g.SalaryGroupId == salaryGroupId
                  select new
                  {
                      f.SalaryFieldName,
