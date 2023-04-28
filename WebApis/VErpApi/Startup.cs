@@ -275,8 +275,8 @@ namespace VErp.WebApis.VErpApi
                     {
                         Password = new OpenApiOAuthFlow()
                         {
-                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint}connect/authorize"),
-                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint}connect/token"),
+                            AuthorizationUrl = new Uri($"{AppSetting.Identity.Endpoint?.TrimEnd('/')}/connect/authorize"),
+                            TokenUrl = new Uri($"{AppSetting.Identity.Endpoint?.TrimEnd('/')}/connect/token"),
                             Scopes = new Dictionary<string, string>()
                             {
                                 { "verp offline_access", "verp api common access" }
