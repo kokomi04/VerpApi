@@ -55,6 +55,22 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _reportTypeViewActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportType);
         }
 
+        public async Task<Dictionary<int, object>> Get(int reportTypeId)
+        {
+            var reportTypeInfo = await _reportConfigDBContext.ReportType.FirstOrDefaultAsync(t => t.ReportTypeId == reportTypeId);
+            if (reportTypeInfo == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var values = await (from v in _reportConfigDBContext.ReportTypeView
+                                join f in _reportConfigDBContext.ReportTypeViewField.AsNoTracking() on v.ReportTypeViewId equals f.ReportTypeViewId
+                                join value in _reportConfigDBContext.ReportTypeViewFieldValue on f.ReportTypeViewFieldId equals value.ReportTypeViewFieldId
+                                where v.ReportTypeId == reportTypeId && v.ReportViewFilterTypeId == (int)EmumReportViewFilterType.Setting
+                                select value).ToListAsync();
+            return values.ToDictionary(v => v.ReportTypeViewFieldId, v => v.JsonValue.JsonDeserialize());
+        }
+
         public async Task<bool> Update(int reportTypeId, Dictionary<int, object> fieldValues)
         {
             var reportTypeInfo = await _reportConfigDBContext.ReportType.FirstOrDefaultAsync(t => t.ReportTypeId == reportTypeId);

@@ -7,6 +7,7 @@ namespace Verp.Services.ReportConfig.Service
 {
     public interface IFilterSettingReportService
     {
+        Task<Dictionary<int, object>> Get(int reportTypeId);
         Task<bool> Update(int reportTypeId, Dictionary<int, object> fieldValues);
     }
 }

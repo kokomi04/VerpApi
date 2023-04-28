@@ -31,6 +31,12 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
+        [HttpGet]
+        [Route("setting/{reportId}")]
+        public async Task<Dictionary<int, object>> Setting([FromRoute] int reportId)
+        {
+            return await _filterSettingReportService.Get(reportId);
+        }
 
         [HttpPut]
         [Route("setting/{reportId}")]
