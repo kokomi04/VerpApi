@@ -615,7 +615,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
-                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0)
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, model.ProductTypeId ?? 0, productTypeInfo?.ProductTypeName)
                 .SetConfigData(productId ?? 0, null, productTypeInfo?.IdentityCode)
                 .TryValidateAndGenerateCode(_stockDbContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
 
@@ -661,7 +661,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
-                .SetConfig(EnumObjectType.Product, EnumObjectType.Product, 0)
+                .SetConfig(EnumObjectType.Product)
                 .SetConfigData(productId ?? 0, null, parentProductInfo?.ProductCode)
                 .TryValidateAndGenerateCode(_stockDbContext.Product, model.ProductCode, (s, code) => s.ProductId != productId && s.ProductCode == code);
 

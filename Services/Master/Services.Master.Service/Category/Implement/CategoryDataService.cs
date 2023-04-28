@@ -420,7 +420,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
                         var code = await ctx
-                            .SetConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId)
+                            .SetConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId, field.Title)
                             .SetConfigData(categoryId, ngayCtValue, categoryCode)
                             .TryValidateAndGenerateCode(null, value, null, (code) =>
                             {
