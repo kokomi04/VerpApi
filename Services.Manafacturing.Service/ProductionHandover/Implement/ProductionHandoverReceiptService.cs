@@ -339,7 +339,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
                 var code = await ctx
-                    .SetConfig(EnumObjectType.ProductionHandoverReceipt, EnumObjectType.ProductionHandoverReceipt)
+                    .SetConfig(EnumObjectType.ProductionHandoverReceipt)
                     .SetConfigData(0, data.Handovers.FirstOrDefault()?.HandoverDatetime)
                     .TryValidateAndGenerateCode(_manufacturingDBContext.ProductionHandoverReceipt, data.ProductionHandoverReceiptCode, (s, code) => s.ProductionHandoverReceiptCode == code);
 

@@ -21,6 +21,7 @@ using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
@@ -46,13 +47,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
+        private IDictionary<int, StockEntity> _stockInfoCaches = new Dictionary<int, StockEntity>();
         protected async Task<IGenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req, Dictionary<string, int> baseValueChains = null)
         {
+            if (!_stockInfoCaches.TryGetValue(req.StockId, out var stockInfo))
+            {
+                stockInfo = await _stockDbContext.Stock.AsNoTracking().FirstOrDefaultAsync(s => s.StockId == req.StockId);
+                _stockInfoCaches.TryAdd(req.StockId, stockInfo);
+            }
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
             var objectTypeId = inventoryTypeId == EnumInventoryType.Input ? EnumObjectType.InventoryInput : EnumObjectType.InventoryOutput;
             var code = await ctx
-                .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId)
+                .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId, stockInfo?.StockName)
                 .SetConfigData(0, req.Date)
                 .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryTypeId == (int)inventoryTypeId && s.InventoryCode == code);
 

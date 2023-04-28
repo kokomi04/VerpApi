@@ -149,7 +149,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var date = new DateTime(model.Year.Value, model.Month.Value, 1);
 
             var code = await ctx
-                .SetConfig(EnumObjectType.SalaryPeriodAdditionBill, EnumObjectType.SalaryPeriodAdditionType, salaryPeriodAdditionTypeId)
+                .SetConfig(EnumObjectType.SalaryPeriodAdditionBill, EnumObjectType.SalaryPeriodAdditionType, salaryPeriodAdditionTypeId, typeInfo.Title)
                 .SetConfigData(0, date.GetUnixUtc(_currentContextService.TimeZoneOffset))
                 .TryValidateAndGenerateCode(_organizationDBContext.SalaryPeriodAdditionBill, model.BillCode, (s, code) => s.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId && s.BillCode == code);
 

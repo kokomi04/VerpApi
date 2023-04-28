@@ -72,7 +72,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         }
 
 
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, string configObjectTitle, long? fId, string code, long? date)
         {
             var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.TargetObjectTypeId == (int)targetObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == configObjectId))?.CustomGenCodeId;
 
@@ -90,7 +90,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), configObjectId > 0 ? (long?)configObjectId : null);
+                throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), (configObjectId > 0 ? $"({configObjectId}) " : null) + configObjectTitle);
 
             }
 

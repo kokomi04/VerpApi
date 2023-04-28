@@ -174,6 +174,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     private EnumObjectType _targetObjectTypeId;
     private EnumObjectType _configObjectTypeId;
     private long _configObjectId;
+    private string _configObjectTitle;
     private IDictionary<string, int> _baseValueChains;
 
     private string _refCode;
@@ -191,14 +192,30 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     /// Set parameters which has configured code structure
     /// </summary>
     /// <param name="targetObjectTypeId"></param>
-    /// <param name="configObjectTypeId"></param>
-    /// <param name="configObjectId"></param>
     /// <returns></returns>
-    public IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0)
+    public IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId)
     {
         _targetObjectTypeId = targetObjectTypeId;
-        _configObjectTypeId = configObjectTypeId ?? targetObjectTypeId;
+        _configObjectTypeId = targetObjectTypeId;
+        _configObjectId = 0;
+        _configObjectTitle = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Set parameters which has configured code structure
+    /// </summary>
+    /// <param name="targetObjectTypeId"></param>
+    /// <param name="configObjectTypeId"></param>
+    /// <param name="configObjectId"></param>
+    /// <param name="configObjectTitle"></param>
+    /// <returns></returns>
+    public IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, string configObjectTitle)
+    {
+        _targetObjectTypeId = targetObjectTypeId;
+        _configObjectTypeId = configObjectTypeId;
         _configObjectId = configObjectId;
+        _configObjectTitle = configObjectTitle;
         return this;
     }
 
@@ -330,7 +347,9 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
 
 public interface IGenerateCodeContext
 {
-    IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType? configObjectTypeId = null, long configObjectId = 0);
+    IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId);
+
+    IGenerateCodeConfig SetConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, string configObjectTitle);
 
     Task<bool> ConfirmCode();
 }
