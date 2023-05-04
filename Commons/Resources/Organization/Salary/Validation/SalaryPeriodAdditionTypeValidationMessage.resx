@@ -120,6 +120,9 @@
   <data name="BillCodeAlreadyExisted" xml:space="preserve">
     <value>Mã chứng từ {0} đã tồn tại, vui lòng chọn mã khác</value>
   </data>
+  <data name="BillCodeAlreadyExistedInAnOtherType" xml:space="preserve">
+    <value>Mã chứng từ thưởng phụ cấp là duy nhất cho tất cả các loại. Mã chứng từ {0} đã tồn tại ở loại {1}, vui lòng chọn mã khác</value>
+  </data>
   <data name="BillCodeIsRequired" xml:space="preserve">
     <value>Yêu cầu nhập mã chứng từ</value>
   </data>

@@ -177,7 +177,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<SalaryPeriodAdditionBill> CreateToDb(SalaryPeriodAdditionType typFullInfo, SalaryPeriodAdditionBillModel model, List<NonCamelCaseDictionary> emplyees)
         {
-            await ValidateModel(model, null, emplyees);
+            await ValidateModel(typFullInfo.SalaryPeriodAdditionTypeId, model, null, emplyees);
 
 
             var info = _mapper.Map<SalaryPeriodAdditionBill>(model);
@@ -264,7 +264,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            await ValidateModel(model, info, emplyees);
+            await ValidateModel(typFullInfo.SalaryPeriodAdditionTypeId, model, info, emplyees);
 
 
             _mapper.Map(model, info);
@@ -336,7 +336,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            await ValidateModel(null, info, null);
+            await ValidateModel(salaryPeriodAdditionTypeId, null, info, null);
 
             info.IsDeleted = true;
 
@@ -353,7 +353,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
-        private async Task ValidateModel(SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info, List<NonCamelCaseDictionary> emplyees)
+        private async Task ValidateModel(int salaryPeriodAdditionTypeId, SalaryPeriodAdditionBillModel model, SalaryPeriodAdditionBill info, List<NonCamelCaseDictionary> emplyees)
         {
 
             DateTime? modelPeriodDate = null;
@@ -381,9 +381,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
 
                 var currentSalaryPeriodAdditionBillId = (info?.SalaryPeriodAdditionBillId) ?? 0;
-                if (await _organizationDBContext.SalaryPeriodAdditionBill.AnyAsync(b => b.BillCode == model.BillCode && b.SalaryPeriodAdditionBillId != currentSalaryPeriodAdditionBillId))
+                var existedBillByCode = await _organizationDBContext.SalaryPeriodAdditionBill.Include(b => b.SalaryPeriodAdditionType)
+                    .FirstOrDefaultAsync(b => b.BillCode == model.BillCode && b.SalaryPeriodAdditionBillId != currentSalaryPeriodAdditionBillId);
+
+                if (existedBillByCode != null)
                 {
-                    throw SalaryPeriodAdditionTypeValidationMessage.BillCodeAlreadyExisted.BadRequestFormat(model.BillCode);
+                    if (existedBillByCode.SalaryPeriodAdditionTypeId != salaryPeriodAdditionTypeId)
+                        throw SalaryPeriodAdditionTypeValidationMessage.BillCodeAlreadyExistedInAnOtherType.BadRequestFormat(model.BillCode, existedBillByCode.SalaryPeriodAdditionType.Title);
+                    else
+                        throw SalaryPeriodAdditionTypeValidationMessage.BillCodeAlreadyExisted.BadRequestFormat(model.BillCode);
                 }
 
                 if (string.IsNullOrWhiteSpace(model.BillCode))
