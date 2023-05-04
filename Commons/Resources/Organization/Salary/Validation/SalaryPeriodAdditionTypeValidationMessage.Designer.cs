@@ -71,6 +71,15 @@ namespace Verp.Resources.Organization.Salary.Validation {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mã chứng từ thưởng phụ cấp là duy nhất cho tất cả các loại. Mã chứng từ {0} đã tồn tại ở loại {1}, vui lòng chọn mã khác.
+        /// </summary>
+        public static string BillCodeAlreadyExistedInAnOtherType {
+            get {
+                return ResourceManager.GetString("BillCodeAlreadyExistedInAnOtherType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Yêu cầu nhập mã chứng từ.
         /// </summary>
         public static string BillCodeIsRequired {
