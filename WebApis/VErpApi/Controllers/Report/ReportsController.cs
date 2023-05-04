@@ -31,6 +31,11 @@ namespace VErpApi.Controllers.Report
                 .ConfigureAwait(true);
         }
 
+        /// <summary>
+        /// Get setting param for report
+        /// </summary>
+        /// <param name="reportId"></param>
+        /// <returns>Report type view field id - value dictionary</returns>
         [HttpGet]
         [Route("setting/{reportId}")]
         public async Task<Dictionary<int, object>> Setting([FromRoute] int reportId)
@@ -38,6 +43,12 @@ namespace VErpApi.Controllers.Report
             return await _filterSettingReportService.Get(reportId);
         }
 
+        /// <summary>
+        /// Set setting param for report
+        /// </summary>
+        /// <param name="reportId"></param>
+        /// <param name="fieldValues">Report type view field id - value dictionary</param>
+        /// <returns></returns>
         [HttpPut]
         [Route("setting/{reportId}")]
         public async Task<bool> Setting([FromRoute] int reportId, [FromBody] Dictionary<int, object> fieldValues)
