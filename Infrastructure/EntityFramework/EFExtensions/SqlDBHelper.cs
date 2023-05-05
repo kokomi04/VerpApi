@@ -1052,7 +1052,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static string ToDeclareString(this SqlParameter p)
         {
-            var declare = $"{p.ParameterName} {p.SqlDbType}";
+            var declare = $"{p.ParameterName} ";
+
+            if (p.SqlDbType == SqlDbType.Structured)
+            {
+                declare += $" {p.TypeName} READONLY";
+            }
+            else
+            {
+                declare += $" {p.SqlDbType}";
+            }
+
 
             if (p.DbType == DbType.String)
             {
