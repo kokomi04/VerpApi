@@ -782,17 +782,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+
+            var sqlParamReplace = sqlParams.Select(p => p).ToList();
+            if (_dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                var subIdParam = requestDbContext.CreateSubSqlParam();
+                if (!sqlParamReplace.Any(p => p.ParameterName == subIdParam.ParameterName))
+                {
+                    sqlParamReplace.Add(subIdParam);
+                }
+            }
+
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_DECLARE"))
             {
-                var dynamicParamDeclare = string.Join(", ", sqlParams?.Select(p => p.ToDeclareString())?.ToArray());
-
+                
+                var dynamicParamDeclare = string.Join(", ", sqlParamReplace?.Select(p => p.ToDeclareString())?.ToArray());
+                
                 sql = ReplaceCustom(sql, "$INPUT_PARAMS_DECLARE", dynamicParamDeclare);
 
             }
 
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_VALUE"))
             {
-                var dynamicParam = string.Join(", ", sqlParams?.Select(p => $"{p.ParameterName}")?.ToArray());
+                var dynamicParam = string.Join(", ", sqlParamReplace?.Select(p => $"{p.ParameterName}")?.ToArray());
                 sql = ReplaceCustom(sql, "$INPUT_PARAMS_VALUE", dynamicParam);
             }
 
