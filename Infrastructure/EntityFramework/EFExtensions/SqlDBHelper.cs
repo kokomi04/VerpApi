@@ -41,7 +41,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-        private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
+        public static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.SubsidiaryId };
         }
