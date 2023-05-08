@@ -14,7 +14,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
     public abstract class SalaryPeriodAdditionBillFieldAbstract
     {
-        private static IList<CategoryFieldNameModel> detailFields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();        
+        private static IList<CategoryFieldNameModel> detailFields = ExcelUtils.GetFieldNameModels<SalaryPeriodAdditionBillEmployeeModel>();
         private readonly CategoryFieldNameModel desField = detailFields.First(f => f.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.Description));
 
         protected readonly CategoryFieldNameModel employeeField = detailFields.First(f => f.FieldName == nameof(SalaryPeriodAdditionBillEmployeeModel.EmployeeId));
@@ -112,7 +112,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     Data = r,
                     Index = i + mapping.FromRow
                 })
-                .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
+                .Where(r => !r.Data.All(d => string.IsNullOrWhiteSpace(d.Value)) && !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
                 .ToList();
         }
 
