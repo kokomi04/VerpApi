@@ -260,19 +260,22 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
 
-        private void SetReportSqlParams(List<SqlParameter> sqlParams, ReportTypeViewFieldModel filterField, Dictionary<string, object> filters)
+        private void SetReportSqlParams(List<SqlParameter> sqlParams, ReportTypeViewFieldModel filterField, Dictionary<string, object> filtersValues)
         {
+            var filters = filtersValues.ToDictionary(k => k.Key.ToLower(), k => k.Value);
             object value = null;
             foreach (var param in filterField.ParamerterName.Split(','))
             {
                 if (string.IsNullOrWhiteSpace(param)) continue;
+               
+                var paramName = param.Trim();
+                var paramKey = paramName?.ToLower();
 
-                var paramName = param.Trim().ToLower();
                 if (filterField.FormTypeId == EnumFormType.MultiSelect)
                 {
-                    if (filters.ContainsKey(paramName))
+                    if (filters.ContainsKey(paramKey))
                     {
-                        value = filters[paramName];
+                        value = filters[paramKey];
 
                     }
                     switch (filterField.DataTypeId)
@@ -292,9 +295,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 else
                 {
-                    if (filters.ContainsKey(paramName))
+                    if (filters.ContainsKey(paramKey))
                     {
-                        value = filters[paramName];
+                        value = filters[paramKey];
                         if (!value.IsNullOrEmptyObject())
                         {
                             if (filterField.DataTypeId.IsTimeType())
