@@ -6,26 +6,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using Verp.Resources.Organization;
-using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
-using VErp.Infrastructure.ServiceCore.Facade;
 using Microsoft.EntityFrameworkCore;
-using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Commons.Constants;
-using VErp.Services.Organization.Model.Salary;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject.InternalDataInterface;
-using Verp.Resources.Organization.Salary;
-using DocumentFormat.OpenXml.InkML;
-using DocumentFormat.OpenXml.Spreadsheet;
 using NPOI.SS.Util;
-using static NPOI.HSSF.UserModel.HeaderFooter;
 using NPOI.XSSF.UserModel;
 using NPOI.SS.UserModel;
 
@@ -114,6 +104,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sheet.SetHeaderCellStyle(fRow, currentColumnIndex);
             }
 
+            currentColumnIndex++;
+            sheet.EnsureCell(fRow, currentColumnIndex).SetCellValue($"Mô tả");
+            sheet.SetHeaderCellStyle(fRow, currentColumnIndex);
+
+
             var title = "Danh sách " + typeInfo.Title;
             sheet.EnsureCell(1, 0, sheet.GetCellStyle(fontSize: 12, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center, isBold: true))
                 .SetCellValue(title.ToUpper());
@@ -178,6 +173,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                         }
 
                     }
+
+                    currentColumnIndex++;
+                    var desCell = sheet.EnsureCell(fRow, currentColumnIndex, textStyle);
+                    desCell.SetCellValue(detail.Description);
+
                 }
             }
 
