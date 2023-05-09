@@ -11,7 +11,7 @@ import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import './css/toastr.min.css';
 import './css/animate.min.css';
-
+import ApiServiceCore from './services/ApiServiceCore'
 // Create browser history to use in the Redux store
 const baseUrl = document.getElementsByTagName('base')[0].getAttribute('href');
 const history = createBrowserHistory({ basename: baseUrl });

@@ -8,6 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.WebApis.VErpApi;
 
@@ -15,7 +17,7 @@ namespace MigrateAndMappingApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ApiEndpointController : ControllerBase
+    public class ApiEndpointController : VErpBaseController
     {
         private readonly UnAuthorizeMasterDBContext _masterContext;
 
@@ -24,7 +26,6 @@ namespace MigrateAndMappingApi.Controllers
         {
             _masterContext = masterContext;
         }
-
         private IList<ApiEndpoint> GetApis()
         {
             var lst = new DiscoverApiEndpointService().GetActionsControllerFromAssenbly(typeof(VErpApiAssembly), VErpApiAssembly.ServiceId);
@@ -39,8 +40,6 @@ namespace MigrateAndMappingApi.Controllers
             }
             return lst.OrderBy(e => e.ServiceId).ThenBy(e => $"{e.Route}{e.MethodId}{e.ActionId}".ToLower()).ToList();
         }
-
-
         [Route("GetApiEndpoints")]
         [HttpGet]
         public IList<ApiEndpoint> GetApiEndpoints()
