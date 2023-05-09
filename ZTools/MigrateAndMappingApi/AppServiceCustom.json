@@ -1,4 +1,13 @@
 {
   "ServiceName": "MigrateAndMappingApi",
-  "Port": 8000
+  "Port": 8000,
+  "Identity": {
+    "Endpoint": "https://test-app.verp.vn/endpoint/connect/token"
+  },
+  "Configs": {
+    "subsidiary_id": 2,
+    "client_id": "web",
+    "client_secret":"secretWeb"
+  }
+
 }

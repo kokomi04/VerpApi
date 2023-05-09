@@ -1,12 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 
 namespace MigrateAndMappingApi.Controllers
 {
-    public class HomeController : Controller
+    [Route("api/[controller]")]
+    [ApiController]
+    public class HomeController : ControllerBase
     {
-        public IActionResult Index()
+        [Route("GetConfigs")]
+        [HttpGet]
+        public async Task<JObject> GetConfig()
         {
-            return View();
+            JObject data = JObject.Parse(System.IO.File.ReadAllText("AppServiceCustom.json"));
+            return data;
         }
     }
 }
