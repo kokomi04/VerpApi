@@ -1,8 +1,6 @@
 ﻿import axios, { AxiosInstance } from 'axios'
-//import * as axios from 'axios'
 class ApiServiceCore {
-    _axios = null;
-    _configs = null;
+    _axios;
     constructor() {
         const instance = axios.create({
             baseURL: '/api/',
@@ -28,29 +26,23 @@ class ApiServiceCore {
         });
 
         this._axios = instance;
-        if (localStorage.getItem('expires_at') < new Date().getTime()) {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('expires_at')
-        }
-        this._configs = { headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` } };
     }
 
-    get(url, params, configs = this._configs) {
+    get(url, params, configs = null) {
         if (url.indexOf('http') == 0) {
             return axios.create().get(url, { params: params, ...configs });
         }
         return this._axios.get(url, { params: params, ...configs });
     }
 
-    post(url, data, configs = this._configs) {
+    post(url, data, configs = null) {
         return this._axios.post(url, data, configs);
     }
-    put(url, data, configs = this._configs) {
+    put(url, data, configs = null) {
         return this._axios.put(url, data, configs);
     }
-    delete(url, data, configs = this._configs) {
+    delete(url, data, configs = null) {
         return this._axios.delete(url, { data: data, ...configs });
     }
 }
-const instance = new ApiServiceCore();
-export default instance;
+export default new ApiServiceCore();
