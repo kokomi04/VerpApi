@@ -11,8 +11,8 @@ namespace VErp.Services.Master.Service.Category
 {
     public interface ICategoryDataService
     {
-        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc);
-        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc);
+        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Dictionary<int, object> filters, Clause columnsFilters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc);
+        Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc);
 
         Task<NonCamelCaseDictionary> GetCategoryRow(int categoryId, int fId);
 

@@ -669,7 +669,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
             var rowInfo = await _categoryHelperService.GetDataRows(CurrencyCateConstants.CurrencyCategoryCode, new CategoryFilterModel()
             {
-                Filters = clause,
+                ColumnsFilters = clause,
                 Page = 1,
                 Size = 2
             });
@@ -693,7 +693,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
         {
             var defaultCurrency = await _categoryHelperService.GetDataRows(CurrencyCateConstants.CurrencyCategoryCode, new CategoryFilterModel()
             {
-                Filters = new SingleClause()
+                ColumnsFilters = new SingleClause()
                 {
                     DataType = EnumDataType.Boolean,
                     FieldName = CurrencyCateConstants.IsPrimary,
