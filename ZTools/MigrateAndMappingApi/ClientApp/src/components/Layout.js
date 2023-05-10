@@ -6,7 +6,7 @@ import ApiEndpointService from '../services/ApiEndpointService';
 
 export default props => (
     <div>
-        {localStorage.getItem('access_token') == null ? <Login /> : (
+        {localStorage.getItem('access_token') == null ? < Login /> : (
             < div>
                 < NavMenu />
                 <Container fluid={true}>

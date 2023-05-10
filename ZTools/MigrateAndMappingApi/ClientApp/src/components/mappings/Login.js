@@ -1,6 +1,8 @@
-﻿import React, { useState } from "react";
+﻿import React, { useCallback, useEffect, useState } from "react";
 import ApiEndPoint from "../../services/ApiEndpointService"
 import { createBrowserHistory } from 'history';
+import { useDispatch } from "react-redux";
+import { configs } from '../../index'
 function Login() {
     // React States
     const [errorMessages, setErrorMessages] = useState({});
@@ -12,13 +14,8 @@ function Login() {
         uname: "invalid username",
         pass: "invalid password"
     };
-    var configs = null;
-    ApiEndPoint.getConfig().then(reponse => {
-        configs = reponse.data;
 
-    })
     const handleSubmit = (event) => {
-
         //Prevent page reload
         event.preventDefault();
         var { uname, pass } = document.forms[0];
@@ -30,26 +27,25 @@ function Login() {
             setErrorMessages({ name: "pass", message: errors.pass });
         } else if (configs != null) {
             //setIsSubmitted(true);
-            const apiCore = ApiEndPoint.Login();
+            const apiCore = ApiEndPoint.getApiServiceCore();
             var bodyFormData = new URLSearchParams();
             bodyFormData.append(
                 "grant_type", "password"
             );
             bodyFormData.append("username", username);
             bodyFormData.append("password", password);
-            bodyFormData.append("subsidiary_id", configs.Configs["subsidiary_id"]);
-            bodyFormData.append("client_id", configs.Configs["client_id"]);
-            bodyFormData.append("client_secret", configs.Configs["client_secret"]);
+            bodyFormData.append("subsidiary_id", configs.Identity["subsidiary_id"]);
+            bodyFormData.append("client_id", configs.Identity["client_id"]);
+            bodyFormData.append("client_secret", configs.Identity["client_secret"]);
             const config = {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' }
             }
-            apiCore.post(configs.Identity["Endpoint"], bodyFormData, config)
+            apiCore.post(configs.SERVER_URL, bodyFormData, config)
                 .then(response => {
-                    if (response.data ) {
+                    if (response.data) {
                         setIsSubmitted(true);
                         localStorage.setItem("access_token", response.data["access_token"]);
                         localStorage.setItem("expires_at", JSON.stringify(response.data["expires_in"] * 1000 + new Date().getTime()));
-                        //  token = response.data["access_token"];
                         history.push('/');
                         history.go(0);
                     }
@@ -65,13 +61,6 @@ function Login() {
         name === errorMessages.name && (
             <div className="error">{errorMessages.message}</div>
         );
-
-    const goHome = () => {
-
-        history.push('/');
-        history.go(0);
-    }
-
     // JSX code for login form
     const renderForm = (
         <div className="form">
@@ -92,14 +81,19 @@ function Login() {
             </form>
         </div>
     );
-
-    return (
-        <div className="app">
-            <div className="login-form">
-                <div className="title">Sign In</div>
-                {isSubmitted ? <div>User is successfully logged in.</div> : renderForm}
+    if (localStorage.getItem('access_token') == null) {
+        return (
+            <div className="app">
+                <div className="login-form">
+                    <div className="title">Sign In</div>
+                    {isSubmitted ? <div>User is successfully logged in.</div> : renderForm}
+                </div>
             </div>
-        </div>
-    );
+        );
+    } else {
+        history.push('/');
+        history.go(0);
+    }
+
 }
 export default Login;

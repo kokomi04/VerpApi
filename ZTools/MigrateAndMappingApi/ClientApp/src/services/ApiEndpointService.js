@@ -52,11 +52,8 @@ class ApiEndpointService {
         return ApiServiceCore.delete('/ApiEndpoint/deleteModule', data).then(() => this.cleanCache());
     }
 
-    Login(username, password) {
+    getApiServiceCore() {
         return ApiServiceCore;
-    }
-    async getConfig() {
-        return await ApiServiceCore.get('/Home/GetConfigs');
     }
     cleanCache() {
         return ApiServiceCore.get('https://test-app.verp.vn/endpoint/api/roles/AuthCacheRemove')
