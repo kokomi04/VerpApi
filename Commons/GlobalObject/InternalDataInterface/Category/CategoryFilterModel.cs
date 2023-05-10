@@ -7,7 +7,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
     public class CategoryFilterModel
     {
         public string Keyword { get; set; }
-        public Clause Filters { get; set; }
+        public Clause ColumnsFilters { get; set; }
+        public Dictionary<int, object> Filters { get; set; }        
         public NonCamelCaseDictionary FilterData { get; set; }
         public string ExtraFilter { get; set; }
 

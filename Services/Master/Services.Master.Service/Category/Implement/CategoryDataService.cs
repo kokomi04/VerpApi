@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -767,28 +769,28 @@ namespace VErp.Services.Accountancy.Service.Category
             return sql.ToString();
         }
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(string categoryCode, string keyword, Dictionary<int, object> filters, Clause columnsFilters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryCode == categoryCode);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, columnsFilters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
 
-        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        public async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(int categoryId, string keyword, Dictionary<int, object> filters, Clause columnsFilters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
             {
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
             }
-            return await GetCategoryRows(category, keyword, filters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
+            return await GetCategoryRows(category, keyword, filters, columnsFilters, filterData, extraFilter, extraFilterParams, page, size, orderBy, asc);
         }
 
-        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Clause filters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
+        private async Task<PageData<NonCamelCaseDictionary>> GetCategoryRows(CategoryEntity category, string keyword, Dictionary<int, object> filters, Clause columnsFilters, NonCamelCaseDictionary filterData, string extraFilter, ExtraFilterParam[] extraFilterParams, int page, int size, string orderBy, bool asc)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -841,11 +843,65 @@ namespace VErp.Services.Accountancy.Service.Category
                 whereCondition.Append(")");
             }
 
+            int suffix = 0;
+
+            var filterClause = new ArrayClause() { Condition = EnumLogicOperator.And, Rules = new List<Clause>() };
             if (filters != null)
             {
+                var viewInfo = await _masterContext.CategoryView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
+
+                var categoryViewId = viewInfo?.CategoryViewId;
+
+                var viewFields = await (
+                     from f in _masterContext.CategoryViewField
+                     where f.CategoryViewId == categoryViewId
+                     select f
+                 ).ToListAsync();
+
+                foreach (var filter in filters)
+                {
+                    var viewField = viewFields.FirstOrDefault(f => f.CategoryViewFieldId == filter.Key);
+                    if (viewField == null) continue;
+
+                    var field = fields.FirstOrDefault(f => f.CategoryFieldName?.ToLower() == viewField.ParamerterName?.ToLower());
+                    if (field == null) continue;
+
+                    var value = filter.Value;
+
+                    if (value.IsNullOrEmptyObject()) continue;
+
+                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
+                    {
+                        value = Convert.ToInt64(value);
+                    }
+                    filterClause.Rules.Add(new SingleClause()
+                    {
+                        FieldName = field.CategoryFieldName,
+                        DataType = (EnumDataType)field.DataTypeId,
+                        Operator = EnumOperator.Equal,
+                        Value = value
+                    });
+
+
+                }
+
+                if (filterClause != null)
+                {
+                    if (whereCondition.Length > 0)
+                    {
+                        whereCondition.Append(" AND ");
+                    }
+
+                    suffix = filterClause.FilterClauseProcess(GetCategoryViewName(category), viewAlias, whereCondition, sqlParams, suffix, false);
+                }
+
+            }
+
+            if (columnsFilters != null)
+            {
                 if (whereCondition.Length > 0) whereCondition.Append(" AND ");
-                int suffix = 0;
-                suffix = filters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, whereCondition, sqlParams, suffix, refValues: filterData);
+
+                suffix = columnsFilters.FilterClauseProcess(GetCategoryViewName(category), viewAlias, whereCondition, sqlParams, suffix, refValues: filterData);
             }
 
             if (!string.IsNullOrEmpty(extraFilter))

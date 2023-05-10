@@ -55,7 +55,7 @@ namespace VErpApi.Controllers.System.Internal
             var key = categoryCode + "_" + JsonUtils.JsonSerialize(request).ToGuid();
             return await _cachingService.TryGetSet("CATEGORY", key, TimeSpan.FromMinutes(3), async () =>
              {
-                 return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
+                 return await _categoryDataService.GetCategoryRows(categoryCode, request.Keyword, request.Filters, request.ColumnsFilters, request.FilterData, request.ExtraFilter, request.ExtraFilterParams, request.Page, request.Size, request.OrderBy, request.Asc);
              }, TimeSpan.FromMinutes(1));
 
         }
