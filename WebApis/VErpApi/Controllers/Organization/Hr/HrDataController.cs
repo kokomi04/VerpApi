@@ -12,6 +12,7 @@ using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Organization.Service.HrConfig;
+using VErp.Services.Stock.Model.Product;
 
 namespace VErpApi.Controllers.Organization.Hr
 {
@@ -33,8 +34,24 @@ namespace VErpApi.Controllers.Organization.Hr
         {
             if (request == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _hrDataService.SearchHr(hrTypeId, request.FromDate, request.ToDate, request.Keyword, request.Filters, request.ColumnsFilters, request.OrderBy, request.Asc, request.Page, request.Size).ConfigureAwait(true);
+            return await _hrDataService.SearchHrV2(hrTypeId, false, request, request.Page, request.Size).ConfigureAwait(true);
         }
+
+
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{hrTypeId}/Export")]
+        public async Task<IActionResult> Export([FromRoute] int hrTypeId, [FromBody] HrTypeBillsRequestModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _hrDataService.Export(hrTypeId, req);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+
 
         [HttpGet]
         [Route("{hrTypeId}/{fId}")]

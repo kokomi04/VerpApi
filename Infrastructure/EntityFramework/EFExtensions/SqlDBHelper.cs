@@ -538,7 +538,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
         /// <param name="refValues"></param>
         /// <returns></returns>
         /// <exception cref="BadRequestException"></exception>
-        public static int FilterClauseProcess(this Clause clause, string tableName, string viewAlias, StringBuilder condition, List<SqlParameter> sqlParams, int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
+        public static int FilterClauseProcess(this Clause clause, string tableName, string viewAlias, StringBuilder condition, List<SqlParameter> sqlParams, int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null, Dictionary<string, string> aliasTableOfFields = null)
         {
             if (clause != null)
             {
@@ -560,7 +560,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         });
                     }
 
-                    suffix = BuildExpressionRef(singleClause, tableName, viewAlias, condition, sqlParams, suffix, not);
+                    var viewAliasOfField = aliasTableOfFields?.FirstOrDefault(a => a.Key?.ToLower() == singleClause.FieldName?.ToLower());
+                    var alias = viewAlias;
+                    if (!string.IsNullOrWhiteSpace(viewAliasOfField?.Value))
+                    {
+                        alias = viewAliasOfField?.Value;
+                    }
+                    suffix = BuildExpressionRef(singleClause, tableName, alias, condition, sqlParams, suffix, not);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -577,7 +583,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        suffix = FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, condition, sqlParams, suffix, isNot, value, refValues);
+                        suffix = FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, condition, sqlParams, suffix, isNot, value, refValues, aliasTableOfFields);
                     }
                 }
                 else
