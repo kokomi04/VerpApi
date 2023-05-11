@@ -22,10 +22,10 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         private Dictionary<int, List<HrValidateField>> _fieldsByArea = new Dictionary<int, List<HrValidateField>>();
         private IList<int> _columnMaxLineLength = new List<int>();
 
-        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields)
+        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields, IList<string> fieldNames)
         {
             _hrType = hrType;
-            _fieldsByArea = fields.GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
+            _fieldsByArea = fields.Where(f => fieldNames.Contains(f.FieldName)).GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
         }
 
         public (Stream stream, string fileName, string contentType) Export(IList<NonCamelCaseDictionary> hrDetails)
@@ -132,7 +132,6 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                     MergeRows(_currentRow, mergeRowsEnd, 0);
                 }
 
-
                 for (var i = 0; i < details.Count; i++)
                 {
                     var detail = details[i];
@@ -148,12 +147,19 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                         foreach (var f in areaFields)
                         {
                             var v = detail[f.FieldName];
+                            var dataTypeId = f.DataTypeId;
+                            if (!string.IsNullOrWhiteSpace(f.RefTableCode))
+                            {
+                                dataTypeId = EnumDataType.Text;
+                                v = detail[f.RefTitle];
+                            }
+
                             if (!f.IsMultiRow && details.Count > 1)
                             {
                                 MergeRows(_currentRow, mergeRowsEnd, sColIndex);
                             }
 
-                            switch (f.DataTypeId)
+                            switch (dataTypeId)
                             {
                                 case EnumDataType.BigInt:
                                 case EnumDataType.Int:
