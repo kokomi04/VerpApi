@@ -41,7 +41,7 @@ namespace VErpApi.Controllers.Organization.Hr
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{hrTypeId}/Export")]
-        public async Task<IActionResult> Export([FromRoute] int hrTypeId, [FromBody] HrTypeBillsRequestModel req)
+        public async Task<IActionResult> Export([FromRoute] int hrTypeId, [FromBody] HrTypeBillsExportModel req)
         {
             if (req == null)
             {

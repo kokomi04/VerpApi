@@ -50,7 +50,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id);
         //Task<PageDataTable> SearchHr(int hrTypeId, HrTypeBillsFilterModel req, int page, int size);
         Task<PageDataTable> SearchHrV2(int hrTypeId, bool isSelectMultirowArea, HrTypeBillsFilterModel req, int page, int size);
-        Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsFilterModel req);
+        Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsExportModel req);
 
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
@@ -318,6 +318,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 */
         public async Task<PageDataTable> SearchHrV2(int hrTypeId, bool isSelectMultirowArea, HrTypeBillsFilterModel req, int page, int size)
         {
+            return await GetHrData(hrTypeId, isSelectMultirowArea, null, req, page, size);
+        }
+
+        public async Task<PageDataTable> GetHrData(int hrTypeId, bool isSelectMultirowArea, IList<int> selectAreaIds, HrTypeBillsFilterModel req, int page, int size)
+        {
             var keyword = (req?.Keyword ?? "").Trim();
             var fromDate = req.FromDate;
             var toDate = req.ToDate;
@@ -519,10 +524,17 @@ namespace VErp.Services.Organization.Service.HrConfig
              *          Nguyen Van B                                        Nguyen Thi Me 2
              *          Nguyen Van B                                         
              */
+
+            var selectAreas = hrAreas;
+            if (selectAreaIds?.Count > 0)
+            {
+                selectAreas = selectAreas.Where(a => selectAreaIds.Contains(a.HrAreaId)).ToList();
+            }
+
             foreach (var (billId, details) in dataDetails)
             {
                 var areaDatas = new Dictionary<int, List<NonCamelCaseDictionary>>();
-                foreach (var hrArea in hrAreas)
+                foreach (var hrArea in selectAreas)
                 {
                     var areaFields = fieldsByArea[hrArea.HrAreaId];
 
@@ -541,7 +553,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var row = new NonCamelCaseDictionary();
                     row.Add(HR_TABLE_F_IDENTITY, areaDatas.First().Value.First()[HR_TABLE_F_IDENTITY]);
 
-                    foreach (var hrArea in hrAreas)
+                    foreach (var hrArea in selectAreas)
                     {
                         var areaFields = fieldsByArea[hrArea.HrAreaId];
                         var areaRows = areaDatas[hrArea.HrAreaId];
@@ -550,6 +562,10 @@ namespace VErp.Services.Organization.Service.HrConfig
                             foreach (var field in areaFields)
                             {
                                 row.Add(field.FieldName, areaRows[0][field.FieldName]);
+                                if (field.HasRefField)
+                                {
+                                    row.Add(field.RefTitle, areaRows[0][field.RefTitle]);
+                                }
                             }
                         }
                         else
@@ -558,6 +574,10 @@ namespace VErp.Services.Organization.Service.HrConfig
                             foreach (var field in areaFields)
                             {
                                 row.Add(field.FieldName, rowAreaData?[field.FieldName]);
+                                if (field.HasRefField)
+                                {
+                                    row.Add(field.RefTitle, rowAreaData?[field.RefTitle]);
+                                }
                             }
                         }
                     }
@@ -568,13 +588,15 @@ namespace VErp.Services.Organization.Service.HrConfig
             return (result, total);
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsFilterModel req)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsExportModel req)
         {
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, true);
-            var exportFacade = new HrDataExportFacade(hrType, fields);
-            var data = await SearchHrV2(hrTypeId, true, req, 1, -1);
+            fields = fields.Where(f => req.FieldNames == null || req.FieldNames.Contains(f.FieldName)).ToList();
+            var exportFacade = new HrDataExportFacade(hrType, fields, req.FieldNames);
+            var selectAreaIds = fields.Select(f => f.HrAreaId).Distinct().ToList();
+            var data = await GetHrData(hrTypeId, true, selectAreaIds, req, 1, -1);
             return exportFacade.Export(data.List);
         }
 
@@ -1359,9 +1381,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 @columns.Add(field.FieldName);
 
-                if (!string.IsNullOrWhiteSpace(field.RefTableCode)
-                    && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == EnumFormType.MultiSelect)
-                    && !string.IsNullOrWhiteSpace(field.RefTableTitle))
+                if (field.HasRefField && !string.IsNullOrWhiteSpace(field.RefTableTitle))
                 {
                     @columns.AddRange(field.RefTableTitle.Split(",").Select(refTitle => $"{field.FieldName}_{refTitle}"));
                     if (field.FormTypeId == EnumFormType.MultiSelect)
@@ -2211,6 +2231,38 @@ namespace VErp.Services.Organization.Service.HrConfig
             public string HrAreaCode { get; internal set; }
             public int HrAreaId { get; internal set; }
             public string HrAreaTitle { get; internal set; }
+
+
+            private bool? _hasRefField;
+            private string _refTitle;
+
+            public bool HasRefField
+            {
+                get
+                {
+                    if (_hasRefField.HasValue) return _hasRefField.Value;
+                    _hasRefField = ((FormTypeId).IsJoinForm() || FormTypeId == EnumFormType.MultiSelect);
+                    return _hasRefField.Value;
+                }
+            }
+
+            public string RefTitle
+            {
+                get
+                {
+                    if (_refTitle != null) return _refTitle;
+
+                    if (!HasRefField || string.IsNullOrWhiteSpace(RefTableTitle))
+                    {
+                        _refTitle = FieldName;
+                    }
+                    else
+                    {
+                        _refTitle = $"{FieldName}_{RefTableTitle.Split(',')[0]}";
+                    }
+                    return _refTitle;
+                }
+            }
         }
 
         protected class HrAreaTableBaseInfo

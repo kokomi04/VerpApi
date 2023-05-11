@@ -21,4 +21,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public int Page { get; set; }
         public int Size { get; set; }
     }
+
+    public class HrTypeBillsExportModel: HrTypeBillsFilterModel
+    {
+        public IList<string> FieldNames { get; set; }
+    }
 }
