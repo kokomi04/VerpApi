@@ -34,9 +34,9 @@ function Login() {
             );
             bodyFormData.append("username", username);
             bodyFormData.append("password", password);
-            bodyFormData.append("subsidiary_id", configs.Identity["subsidiary_id"]);
-            bodyFormData.append("client_id", configs.Identity["client_id"]);
-            bodyFormData.append("client_secret", configs.Identity["client_secret"]);
+            bodyFormData.append("subsidiary_id", configs.Identity["SubsidiaryId"]);
+            bodyFormData.append("client_id", configs.Identity["ClientId"]);
+            bodyFormData.append("client_secret", configs.Identity["ClientSecret"]);
             const config = {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' }
             }
