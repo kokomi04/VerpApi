@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Algorithm;
 using Newtonsoft.Json;
+using Org.BouncyCastle.Ocsp;
 using Services.Organization.Model.HrConfig;
 using System;
 using System.Collections.Generic;
@@ -32,19 +33,25 @@ using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Organization.Service.HrConfig.Facade;
 using static NPOI.HSSF.UserModel.HeaderFooter;
 using static VErp.Commons.Library.EvalUtils;
 using static VErp.Commons.Library.ExcelReader;
+using static VErp.Services.Organization.Service.HrConfig.HrDataService;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
     public interface IHrDataService
     {
         Task<long> CreateHr(int hrTypeId, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
+        Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<bool> DeleteHr(int hrTypeId, long hrBill_F_Id);
         Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id);
-        Task<PageDataTable> SearchHr(int hrTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
-        Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
+        //Task<PageDataTable> SearchHr(int hrTypeId, HrTypeBillsFilterModel req, int page, int size);
+        Task<PageDataTable> SearchHrV2(int hrTypeId, bool isSelectMultirowArea, HrTypeBillsFilterModel req, int page, int size);
+        Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsFilterModel req);
+
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
         Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
@@ -57,13 +64,11 @@ namespace VErp.Services.Organization.Service.HrConfig
         private const string HR_TABLE_F_IDENTITY = OrganizationConstants.HR_TABLE_F_IDENTITY;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICurrentContextService _currentContextService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
-        private readonly IOutsideMappingHelperService _outsideMappingHelperService;
         private readonly IHrTypeService _hrTypeService;
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly ObjectActivityLogFacade _hrDataActivityLog;
@@ -76,19 +81,16 @@ namespace VErp.Services.Organization.Service.HrConfig
             ICustomGenCodeHelperService customGenCodeHelperService,
             ICurrentContextService currentContextService,
             ICategoryHelperService httpCategoryHelperService,
-            IOutsideMappingHelperService outsideMappingHelperService,
             IHrTypeService hrTypeService,
             ILongTaskResourceLockService longTaskResourceLockService
             )
         {
             _logger = logger;
-            _activityLogService = activityLogService;
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
             _customGenCodeHelperService = customGenCodeHelperService;
             _currentContextService = currentContextService;
             _httpCategoryHelperService = httpCategoryHelperService;
-            _outsideMappingHelperService = outsideMappingHelperService;
             _hrTypeService = hrTypeService;
             this.longTaskResourceLockService = longTaskResourceLockService;
             _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
@@ -139,9 +141,17 @@ namespace VErp.Services.Organization.Service.HrConfig
             return true;
         }
 
-        public async Task<PageDataTable> SearchHr(int hrTypeId, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        /*
+        public async Task<PageDataTable> SearchHr(int hrTypeId, HrTypeBillsFilterModel req, int page, int size)
         {
-            keyword = (keyword ?? "").Trim();
+            var keyword = (req?.Keyword ?? "").Trim();
+            var fromDate = req.FromDate;
+            var toDate = req.ToDate;
+            var filters = req.Filters;
+            var columnsFilters = req.ColumnsFilters;
+            var orderByFieldName = req.OrderBy;
+            var asc = req.Asc;
+
 
             var viewInfo = await _organizationDBContext.HrTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
 
@@ -164,7 +174,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             /* 
              * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
              * trong thiết lập chứng từ hành chính nhân sự
-            */
+            * /
             var mainJoin = " FROM HrBill bill";
             var mainColumn = "SELECT bill.F_Id AS F_Id, CreatedDatetimeUtc ";
             foreach (var hrArea in hrAreas)
@@ -180,7 +190,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             /* 
              * Xử lý các bộ lọc
-            */
+            * /
             var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
 
             var viewFields = await (
@@ -259,7 +269,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             /* 
                 * Tính toán tổng số dòng dữ liệu trả về cho clients
-             */
+             * /
             var totalSql = @$"
                 ; WITH tmp AS(
                     {mainColumn}
@@ -279,7 +289,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             /* 
                 * Lấy dữ liệu trả về cho client
-             */
+             * /
             var dataSql = @$"
                  ;WITH tmp AS (
                     
@@ -304,6 +314,268 @@ namespace VErp.Services.Organization.Service.HrConfig
             var data = await _organizationDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             return (data, total);
+        }
+*/
+        public async Task<PageDataTable> SearchHrV2(int hrTypeId, bool isSelectMultirowArea, HrTypeBillsFilterModel req, int page, int size)
+        {
+            var keyword = (req?.Keyword ?? "").Trim();
+            var fromDate = req.FromDate;
+            var toDate = req.ToDate;
+            var filters = req.Filters;
+            var columnsFilters = req.ColumnsFilters;
+            var orderByFieldName = req.OrderBy;
+            var asc = req.Asc;
+
+            var viewInfo = await _organizationDBContext.HrTypeView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
+
+            var hrTypeViewId = viewInfo?.HrTypeViewId;
+
+            var hrAreas = await (from t in _organizationDBContext.HrType
+                                 join a in _organizationDBContext.HrArea on t.HrTypeId equals a.HrTypeId
+                                 where t.HrTypeId == hrTypeId && (isSelectMultirowArea || !a.IsMultiRow) && a.HrTypeReferenceId.HasValue == false
+                                 select new
+                                 {
+                                     t.HrTypeCode,
+                                     a.HrAreaCode,
+                                     a.HrAreaId,
+                                     t.HrTypeId,
+                                     a.IsMultiRow
+                                 }).ToListAsync();
+
+            var fields = (await GetHrFields(hrTypeId, null, true)).Where(x => hrAreas.Any(y => y.HrAreaId == x.HrAreaId) && x.FormTypeId != EnumFormType.MultiSelect).ToList();
+
+            var fieldsByArea = fields
+                .GroupBy(f => f.HrAreaId)
+                .ToDictionary(a => a.Key, a => a.ToList());
+            /* 
+             * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
+             * trong thiết lập chứng từ hành chính nhân sự
+            */
+            var mainJoin = " FROM HrBill bill";
+            var mainColumn = "SELECT bill.F_Id AS F_Id, CreatedDatetimeUtc ";
+
+            var aliasTableOfFields = new Dictionary<string, string>();
+            foreach (var hrArea in hrAreas)
+            {
+                var areaAlias = $"v{hrArea.HrAreaCode}";
+                var (query, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fieldsByArea[hrArea.HrAreaId], isMultiRow: true);
+                mainJoin += @$" LEFT JOIN ({query}) AS {areaAlias}
+                                    ON bill.[F_Id] = [{areaAlias}].[HrBill_F_Id]
+                                
+                                ";
+                if (columns.Count > 0)
+                    mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
+                foreach (var c in columns)
+                {
+                    aliasTableOfFields.TryAdd(c, areaAlias);
+                }
+
+            }//CreatedDatetimeUtc
+
+            /* 
+             * Xử lý các bộ lọc
+            */
+            var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
+
+            var viewFields = await (
+                 from f in _organizationDBContext.HrTypeViewField
+                 where f.HrTypeViewId == hrTypeViewId
+                 select f
+             ).ToListAsync();
+
+            var whereCondition = new StringBuilder("1 = 1");
+            var sqlParams = new List<SqlParameter>();
+            if (fromDate.HasValue && toDate.HasValue)
+            {
+                var dateField = "CreatedDatetimeUtc";
+                if (mainColumn.Contains("ngay_ct"))
+                {
+                    dateField = "ngay_ct";
+                }
+                whereCondition.Append($" AND r.{dateField} BETWEEN @FromDate AND @ToDate");
+
+                sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+                sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
+            }
+
+
+            int suffix = 0;
+            if (filters != null)
+            {
+                foreach (var filter in filters)
+                {
+                    var viewField = viewFields.FirstOrDefault(f => f.HrTypeViewFieldId == filter.Key);
+                    if (viewField == null) continue;
+
+                    var value = filter.Value;
+
+                    if (value.IsNullOrEmptyObject()) continue;
+
+                    if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)viewField.DataTypeId))
+                    {
+                        value = Convert.ToInt64(value);
+                    }
+
+                    if (!string.IsNullOrEmpty(viewField.SelectFilters))
+                    {
+                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(viewField.SelectFilters);
+                        if (filterClause != null)
+                        {
+                            if (whereCondition.Length > 0)
+                            {
+                                whereCondition.Append(" AND ");
+                            }
+
+                            suffix = filterClause.FilterClauseProcess("HrBill", "bill", whereCondition, sqlParams, suffix, false, value, null, aliasTableOfFields);
+                        }
+                    }
+                }
+            }
+
+            if (columnsFilters != null)
+            {
+                if (whereCondition.Length > 0)
+                {
+                    whereCondition.Append(" AND ");
+                }
+
+                suffix = columnsFilters.FilterClauseProcess("HrBill", "bill", whereCondition, sqlParams, suffix, false, null, null, aliasTableOfFields);
+            }
+
+            if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.Contains(orderByFieldName))
+            {
+                orderByFieldName = mainColumn.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
+                asc = false;
+            }
+
+            sqlParams.Add(new SqlParameter("@HrTypeId", hrTypeId));
+
+
+            /* 
+                * Tính toán tổng số dòng dữ liệu trả về cho clients
+             */
+            var totalSql = @$"
+                ; WITH data AS(
+                    SELECT
+                    bill.F_Id
+                    {mainJoin} 
+                    WHERE bill.HrTypeId = @HrTypeId AND {GlobalFilter()}
+                    {(whereCondition.Length > 0 ? $" AND ({whereCondition})" : "")} 
+                    GROUP BY bill.F_Id
+                )
+                SELECT COUNT(0) as Total FROM data
+                ";
+
+            var table = await _organizationDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
+
+            var total = 0;
+            if (table != null && table.Rows.Count > 0)
+            {
+                total = (table.Rows[0]["Total"] as int?).GetValueOrDefault();
+            }
+
+            /* 
+                * Lấy dữ liệu trả về cho client
+             */
+            sqlParams.Add(new SqlParameter("@Size", size));
+            sqlParams.Add(new SqlParameter("@FromRow", (page - 1) * size + 1));
+            sqlParams.Add(new SqlParameter("@ToRow", page * size));
+
+            var dataSql = @$"
+                 ;WITH tmp AS(
+                    SELECT
+                    bill.F_Id,
+                    ROW_NUMBER() OVER(ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}) RowNumber
+                    {mainJoin} 
+                    WHERE bill.HrTypeId = @HrTypeId AND {GlobalFilter()}
+                    {(whereCondition.Length > 0 ? $" AND ({whereCondition})" : "")}
+                )
+                    {mainColumn}
+                    {mainJoin}
+                    JOIN (
+                        SELECT F_Id, MIN(RowNumber) RowNumber 
+                        FROM tmp 
+                        WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow)
+                        GROUP BY F_Id
+                    ) t ON bill.F_Id = t.F_Id
+                ";
+
+            var dataTable = await _organizationDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+
+            var dataDetails = dataTable.ConvertData().GroupBy(d => d[HR_TABLE_F_IDENTITY]).ToDictionary(d => d.Key, d => d.ToList());
+
+            var result = new List<NonCamelCaseDictionary>();
+
+            /*
+             * flatten hr areas by hr bill
+             * Repeat single row and fill multirow
+             * Example
+             * STT      Ho Ten (Single row)          Bang Cap (multirow)    Than Nhan (multirow)
+             * 1        Nguyen Van A                 Dai hoc                Nguyen Van Cha
+             *          Nguyen Van A                 B1 Tieng Anh           Nguyen Thi Me
+             *          Nguyen Van A                 Tin hoc van phong          
+             *          
+             * 2        Nguyen Van B                 Dai hoc                Nguyen Van Cha 2
+             *          Nguyen Van B                                        Nguyen Thi Me 2
+             *          Nguyen Van B                                         
+             */
+            foreach (var (billId, details) in dataDetails)
+            {
+                var areaDatas = new Dictionary<int, List<NonCamelCaseDictionary>>();
+                foreach (var hrArea in hrAreas)
+                {
+                    var areaFields = fieldsByArea[hrArea.HrAreaId];
+
+                    var areaRows = details.GroupBy(d => d[AreaRowIdField(hrArea.HrAreaCode)])
+                           .Where(d => !d.Key.IsNullOrEmptyObject())
+                           .Select(g => g.First())
+                           .OrderBy(d => d[areaFields[0].FieldName])
+                           .ToList();
+
+                    areaDatas.Add(hrArea.HrAreaId, areaRows);
+                }
+
+                var maxAreaRow = areaDatas.Max(a => a.Value.Count);
+                for (var i = 0; i < maxAreaRow; i++)
+                {
+                    var row = new NonCamelCaseDictionary();
+                    row.Add(HR_TABLE_F_IDENTITY, areaDatas.First().Value.First()[HR_TABLE_F_IDENTITY]);
+
+                    foreach (var hrArea in hrAreas)
+                    {
+                        var areaFields = fieldsByArea[hrArea.HrAreaId];
+                        var areaRows = areaDatas[hrArea.HrAreaId];
+                        if (!hrArea.IsMultiRow)
+                        {
+                            foreach (var field in areaFields)
+                            {
+                                row.Add(field.FieldName, areaRows[0][field.FieldName]);
+                            }
+                        }
+                        else
+                        {
+                            var rowAreaData = i < areaRows.Count ? areaRows[i] : null;
+                            foreach (var field in areaFields)
+                            {
+                                row.Add(field.FieldName, rowAreaData?[field.FieldName]);
+                            }
+                        }
+                    }
+                    result.Add(row);
+                }
+            }
+
+            return (result, total);
+        }
+
+        public async Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsFilterModel req)
+        {
+            var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
+
+            var fields = await GetHrFields(hrTypeId, null, true);
+            var exportFacade = new HrDataExportFacade(hrType, fields);
+            var data = await SearchHrV2(hrTypeId, true, req, 1, -1);
+            return exportFacade.Export(data.List);
         }
 
         public async Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id)
@@ -1000,7 +1272,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                  .ToList();
         }
 
-        private string GetTitleCategoryField(ValidateField field)
+        private string GetTitleCategoryField(HrValidateField field)
         {
             var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
             if (rangeValue.Length > 0)
@@ -1011,8 +1283,12 @@ namespace VErp.Services.Organization.Service.HrConfig
             return field.Title;
         }
 
+        private string AreaRowIdField(string hrAreaCode)
+        {
+            return $"{hrAreaCode}_F_Id";
+        }
 
-        private async Task<List<ValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
+        private async Task<List<HrValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
         {
             var area = _organizationDBContext.HrArea.AsQueryable();
             if (areaId > 0)
@@ -1026,7 +1302,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                           && (includeSelectSqlField || f.FormTypeId != (int)EnumFormType.SqlSelect)
                           && a.HrTypeReferenceId.HasValue == false //&& f.FieldName != OrganizationConstants.F_IDENTITY
                           orderby a.SortOrder, af.SortOrder
-                          select new ValidateField
+                          select new HrValidateField
                           {
                               HrAreaFieldId = af.HrAreaFieldId,
                               Title = af.Title,
@@ -1051,11 +1327,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                           }).ToListAsync();
         }
 
-        private (string query, IList<string> columns) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<ValidateField> fields, bool isMultiRow = false)
+        private (string query, IList<string> columns) GetAliasViewAreaTable(string hrTypeCode, string hrAreaCode, IEnumerable<HrValidateField> fields, bool isMultiRow = false)
         {
             var tableName = GetHrAreaTableName(hrTypeCode, hrAreaCode);
             var @selectColumn = @$"
-                row.F_Id,
+                row.F_Id [{AreaRowIdField(hrAreaCode)}],
                 row.HrBill_F_Id,
                 row.HrBillReference_F_Id,
                 bill.HrTypeId
@@ -1065,7 +1341,10 @@ namespace VErp.Services.Organization.Service.HrConfig
                 JOIN HrBill AS bill WITH(NOLOCK) ON row.HrBill_F_Id = bill.F_Id
             ";
 
-            var @columns = new List<string>();
+            var @columns = new List<string>
+            {
+                AreaRowIdField(hrAreaCode)
+            };
 
             foreach (var field in fields)
             {
@@ -1121,7 +1400,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
         }
 
-        private async Task AddHrBillBase(int hrTypeId, long hrBill_F_Id, HrBill billInfo, string tableName, IEnumerable<NonCamelCaseDictionary> hrAreaData, IEnumerable<ValidateField> hrAreaFields, IEnumerable<NonCamelCaseDictionary> newHrAreaData)
+        private async Task AddHrBillBase(int hrTypeId, long hrBill_F_Id, HrBill billInfo, string tableName, IEnumerable<NonCamelCaseDictionary> hrAreaData, IEnumerable<HrValidateField> hrAreaFields, IEnumerable<NonCamelCaseDictionary> newHrAreaData)
         {
             var checkData = newHrAreaData.Select(data => new ValidateRowModel(data, null))
                                                              .ToList();
@@ -1189,7 +1468,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         }
 
-        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateField> fields, IEnumerable<NonCamelCaseDictionary> rows)
+        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, HrValidateField> fields, IEnumerable<NonCamelCaseDictionary> rows)
         {
             for (var i = 0; i < rows.Count(); i++)
             {
@@ -1312,7 +1591,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             };
         }
 
-        private void CheckValue(IEnumerable<ValidateRowModel> rows, IEnumerable<ValidateField> categoryFields)
+        private void CheckValue(IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> categoryFields)
         {
             foreach (var field in categoryFields)
             {
@@ -1323,7 +1602,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private void ValidValueAsync(ValidateRowModel checkData, ValidateField field)
+        private void ValidValueAsync(ValidateRowModel checkData, HrValidateField field)
         {
             if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
             {
@@ -1367,7 +1646,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return fields.Distinct().ToArray();
         }
 
-        private async Task CheckRequired(IEnumerable<ValidateRowModel> rows, IEnumerable<ValidateField> requiredFields, IEnumerable<ValidateField> hrAreaFields)
+        private async Task CheckRequired(IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> requiredFields, IEnumerable<HrValidateField> hrAreaFields)
         {
             var filters = requiredFields
                 .Where(f => !string.IsNullOrEmpty(f.RequireFilters))
@@ -1438,7 +1717,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private async Task<bool> CheckRequireFilter(Clause clause, IEnumerable<ValidateRowModel> rows, IEnumerable<ValidateField> hrAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, bool not = false)
+        private async Task<bool> CheckRequireFilter(Clause clause, IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> hrAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, bool not = false)
         {
             bool? isRequire = null;
             if (clause != null)
@@ -1537,7 +1816,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return isRequire.Value;
         }
 
-        private async Task CheckUniqueAsync(int hrTypeId, string tableName, List<ValidateRowModel> rows, List<ValidateField> uniqueFields, long? hrValueBillId = null)
+        private async Task CheckUniqueAsync(int hrTypeId, string tableName, List<ValidateRowModel> rows, List<HrValidateField> uniqueFields, long? hrValueBillId = null)
         {
             // Check unique
             foreach (var field in uniqueFields)
@@ -1570,7 +1849,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private async Task ValidUniqueAsync(int hrTypeId, string tableName, List<object> values, ValidateField field, long? HrValueBillId = null)
+        private async Task ValidUniqueAsync(int hrTypeId, string tableName, List<object> values, HrValidateField field, long? HrValueBillId = null)
         {
             var existSql = $"SELECT F_Id FROM {tableName} WHERE IsDeleted = 0 ";
             if (HrValueBillId.HasValue)
@@ -1601,7 +1880,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private async Task CheckReferAsync(List<ValidateRowModel> rows, List<ValidateField> selectFields, IEnumerable<ValidateField> hrAreaFields)
+        private async Task CheckReferAsync(List<ValidateRowModel> rows, List<HrValidateField> selectFields, IEnumerable<HrValidateField> hrAreaFields)
         {
             // Check refer
             foreach (var field in selectFields)
@@ -1613,7 +1892,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        private async Task ValidReferAsync(ValidateRowModel checkData, ValidateField field, IEnumerable<ValidateField> hrAreaFields)
+        private async Task ValidReferAsync(ValidateRowModel checkData, HrValidateField field, IEnumerable<HrValidateField> hrAreaFields)
         {
             string tableName = $"v{field.RefTableCode}";
 
@@ -1909,7 +2188,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
         }
 
-        protected class ValidateField
+        public class HrValidateField
         {
             public int HrAreaFieldId { get; set; }
             public string Title { get; set; }
