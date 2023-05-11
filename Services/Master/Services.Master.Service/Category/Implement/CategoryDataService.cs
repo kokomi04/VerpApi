@@ -885,7 +885,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                 }
 
-                if (filterClause != null)
+                if (filterClause != null && filterClause.Rules.Count > 0)
                 {
                     if (whereCondition.Length > 0)
                     {
