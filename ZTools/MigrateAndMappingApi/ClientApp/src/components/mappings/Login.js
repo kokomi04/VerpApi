@@ -2,7 +2,8 @@
 import ApiEndPoint from "../../services/ApiEndpointService"
 import { createBrowserHistory } from 'history';
 import { useDispatch } from "react-redux";
-import { configs } from '../../index'
+import { configs } from '../../implement/Configs'
+import ApiServiceCode from '../../services/ApiServiceCore';
 function Login() {
     // React States
     const [errorMessages, setErrorMessages] = useState({});
@@ -14,7 +15,6 @@ function Login() {
         uname: "invalid username",
         pass: "invalid password"
     };
-
     const handleSubmit = (event) => {
         //Prevent page reload
         event.preventDefault();
@@ -27,7 +27,6 @@ function Login() {
             setErrorMessages({ name: "pass", message: errors.pass });
         } else if (configs != null) {
             //setIsSubmitted(true);
-            const apiCore = ApiEndPoint.getApiServiceCore();
             var bodyFormData = new URLSearchParams();
             bodyFormData.append(
                 "grant_type", "password"
@@ -40,8 +39,7 @@ function Login() {
             const config = {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' }
             }
-            var a = configs.ServerURL;
-            apiCore.post(configs.ServerURL, bodyFormData, config)
+            ApiServiceCode.post(configs.ServerURL, bodyFormData, config)
                 .then(response => {
                     if (response.data) {
                         setIsSubmitted(true);
@@ -50,10 +48,8 @@ function Login() {
                         history.push('/');
                         history.go(0);
                     }
-
                 }).catch(err =>
                     setErrorMessages({ name: "pass", message: errors.pass }));
-
         }
     };
 

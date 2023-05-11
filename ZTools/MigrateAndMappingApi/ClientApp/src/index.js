@@ -11,13 +11,11 @@ import App from './App';
 import registerServiceWorker from './registerServiceWorker';
 import './css/toastr.min.css';
 import './css/animate.min.css';
-import json from './config.AppService.json'
 import ApiServiceCore from './services/ApiServiceCore'
 
 // Create browser history to use in the Redux store
 const baseUrl = document.getElementsByTagName('base')[0].getAttribute('href');
 const history = createBrowserHistory({ basename: baseUrl });
-const configs = json;
 // Get the application-wide store instance, prepopulating with state from the server where available.
 const initialState = window.initialReduxState;
 const store = configureStore(history, initialState);
@@ -33,4 +31,3 @@ ReactDOM.render(
     rootElement);
 
 registerServiceWorker();
-export { configs };

@@ -8,7 +8,7 @@ import { ToastContainer } from 'react-toastr';
 
 export default class NavMenu extends React.Component {
     container;
-    history ;
+    history;
 
     constructor(props) {
         super(props);
@@ -36,11 +36,6 @@ export default class NavMenu extends React.Component {
                 closeButton: true,
             });
         })
-    }
-    checkLogin() {
-        if (this.isLogin) {
-            this.btnLogoutClick();
-        } else this.btnLogoutClick();
     }
     btnLoginClick() {
         this.history.push('/login');
@@ -76,9 +71,16 @@ export default class NavMenu extends React.Component {
                                 <NavItem>
                                     <NavLink tag={Link} className="text-dark" to="/system-modules">Modules</NavLink>
                                 </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} onClick={() => this.checkLogin()} className="text-dark" to="/">{this.state.Login ? 'Login' : 'Logout'}</NavLink>
-                                </NavItem>
+                                {
+                                    this.isLogin ?
+                                        <NavItem>
+                                            <NavLink tag={Link} onClick={() => this.checkLogin()} className="text-dark" to="/">Login</NavLink>
+                                        </NavItem>
+                                        :
+                                        <NavItem>
+                                            <NavLink tag={Link} onClick={() => this.btnLogoutClick()} className="text-dark" to="/">Logout</NavLink>
+                                        </NavItem>
+                                }
                                 <NavItem>
                                     <button onClick={() => this.cleanCache()}>Clean cache</button>
                                 </NavItem>

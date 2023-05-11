@@ -4,5 +4,5 @@
     "ClientId": "web",
     "ClientSecret": "secretWeb"
   },
-    "ServerURL": "https://test-app.verp.vn/endpoint/connect/token"
+  "ServerURL": "https://test-app.verp.vn/endpoint/connect/token"
 }
