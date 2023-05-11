@@ -37,6 +37,11 @@ export default class NavMenu extends React.Component {
             });
         })
     }
+    checkLogin() {
+        if (this.isLogin) {
+            this.btnLogoutClick();
+        } else this.btnLogoutClick();
+    }
     btnLoginClick() {
         this.history.push('/login');
         this.history.go(0);
@@ -72,10 +77,7 @@ export default class NavMenu extends React.Component {
                                     <NavLink tag={Link} className="text-dark" to="/system-modules">Modules</NavLink>
                                 </NavItem>
                                 <NavItem>
-                                    <NavLink tag={Link} onClick={() => this.btnLoginClick()} className="text-dark" to="/">{this.state.Login ? 'Login' : null}</NavLink>
-                                </NavItem>
-                                <NavItem>
-                                    <NavLink tag={Link} onClick={() => this.btnLogoutClick()} className="text-dark" to="/">{this.state.Login ? null : 'Logout'}</NavLink>
+                                    <NavLink tag={Link} onClick={() => this.checkLogin()} className="text-dark" to="/">{this.state.Login ? 'Login' : 'Logout'}</NavLink>
                                 </NavItem>
                                 <NavItem>
                                     <button onClick={() => this.cleanCache()}>Clean cache</button>

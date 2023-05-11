@@ -40,7 +40,8 @@ function Login() {
             const config = {
                 headers: { 'content-type': 'application/x-www-form-urlencoded;charset=utf-8' }
             }
-            apiCore.post(configs.SERVER_URL, bodyFormData, config)
+            var a = configs.ServerURL;
+            apiCore.post(configs.ServerURL, bodyFormData, config)
                 .then(response => {
                     if (response.data) {
                         setIsSubmitted(true);
