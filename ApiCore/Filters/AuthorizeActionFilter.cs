@@ -91,6 +91,12 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
+            var developerApi = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is DeveloperApiAttribute);
+            if (developerApi != null && _currentContextService.IsDeveloper)
+            {
+                await next();
+                return;
+            }
 
 #if DEBUG
             await next();

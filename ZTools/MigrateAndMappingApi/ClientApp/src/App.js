@@ -8,6 +8,7 @@ import syncApiEndpoints from './components/mappings/sync-api-endpoints';
 import systemModules from './components/system-modules/system-modules';
 import { ModuleApiMapping } from './components/mappings/module-api-mapping';
 
+import Login from './components/mappings/Login'
 import './css/style.css'
 
 export default () => (
@@ -18,5 +19,6 @@ export default () => (
         <Route path='/sync-api-endpoint' component={syncApiEndpoints} />
         <Route path='/system-modules' component={systemModules} />
         <Route path='/module-apis-mapping/:moduleId?' component={ModuleApiMapping} />
-    </Layout>
+        <Route path='/login' component={Login} />
+        </Layout>
 );
