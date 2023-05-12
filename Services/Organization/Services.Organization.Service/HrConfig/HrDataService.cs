@@ -604,8 +604,11 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, true);
-            fields = fields.Where(f => req.FieldNames == null || req.FieldNames.Contains(f.FieldName)).ToList();
-            var exportFacade = new HrDataExportFacade(hrType, fields);
+            fields = fields
+                .Where(f => req.FieldNames == null || req.FieldNames.Contains(f.FieldName))
+                .Where(f => f.FormTypeId != EnumFormType.ImportFile)
+                .ToList();
+            var exportFacade = new HrDataExportFacade(hrType, fields, _currentContextService);
             var selectAreaIds = fields.Select(f => f.HrAreaId).Distinct().ToList();
             var data = await GetHrData(hrTypeId, true, selectAreaIds, req, 1, -1);
             return exportFacade.Export(data.List);

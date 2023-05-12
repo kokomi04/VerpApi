@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Reflection;
+using Verp.Resources.Values;
 
 namespace VErp.Commons.Enums.MasterEnum
 {
@@ -106,6 +107,18 @@ namespace VErp.Commons.Enums.MasterEnum
             {
                 return new string[] { };
             }
+        }
+
+        public static string GetDataTypeValueTitleByLanguage(this EnumDataType dataTypeId, object value)
+        {
+            switch(dataTypeId)
+            {
+                case EnumDataType.Boolean:
+                    if (value?.ToString()?.ToLower() == "true") return ValuesTitleBoolean.True;
+                    break;
+            }
+
+            return value?.ToString();
         }
     }
 }
