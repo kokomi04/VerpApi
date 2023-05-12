@@ -594,7 +594,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var fields = await GetHrFields(hrTypeId, null, true);
             fields = fields.Where(f => req.FieldNames == null || req.FieldNames.Contains(f.FieldName)).ToList();
-            var exportFacade = new HrDataExportFacade(hrType, fields, req.FieldNames);
+            var exportFacade = new HrDataExportFacade(hrType, fields);
             var selectAreaIds = fields.Select(f => f.HrAreaId).Distinct().ToList();
             var data = await GetHrData(hrTypeId, true, selectAreaIds, req, 1, -1);
             return exportFacade.Export(data.List);
