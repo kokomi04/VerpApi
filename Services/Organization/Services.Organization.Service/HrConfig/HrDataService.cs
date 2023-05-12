@@ -564,15 +564,12 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 row.Add(field.FieldName, areaRows[0][field.FieldName]);
                                 if (field.HasRefField)
                                 {
-                                    foreach(var titleField in field.FieldNameRefTitles)
+                                    foreach (var titleField in field.FieldNameRefTitles)
                                     {
-                                        if(areaRows[0].TryGetValue(titleField, out var v))
-                                        {
-                                            row.Add(titleField, v);
-                                        }
-                                        
+                                        areaRows[0].TryGetValue(titleField, out var v);
+                                        row.Add(titleField, v);
                                     }
-                                    
+
                                 }
                             }
                         }
@@ -586,10 +583,10 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 {
                                     foreach (var titleField in field.FieldNameRefTitles)
                                     {
-                                        if (rowAreaData.TryGetValue(titleField, out var v))
-                                        {
-                                            row.Add(titleField, v);
-                                        }
+                                        object v = null;
+                                        rowAreaData?.TryGetValue(titleField, out v);
+
+                                        row.Add(titleField, v);
                                     }
                                 }
                             }
