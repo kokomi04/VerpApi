@@ -30,11 +30,13 @@ namespace VErpApi.Controllers.Organization.Salary.Addition
             _salaryPeriodAdditionBillParseService = salaryPeriodAdditionBillParseService;
         }
 
+
         [HttpGet("{salaryPeriodAdditionTypeId}/bills")]
         public async Task<PageData<SalaryPeriodAdditionBillList>> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromQuery] int? year, [FromQuery] int? month, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
             return await _salaryPeriodAdditionBillService.GetList(salaryPeriodAdditionTypeId, year, month, keyword, page, size);
         }
+
 
         [HttpGet("{salaryPeriodAdditionTypeId}/bills/{salaryPeriodAdditionBillId}")]
         public async Task<SalaryPeriodAdditionBillInfo> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromRoute] long salaryPeriodAdditionBillId)
