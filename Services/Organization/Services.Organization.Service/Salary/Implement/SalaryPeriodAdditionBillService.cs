@@ -101,14 +101,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return info;
         }
 
-        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size, int sort)
+        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size)
         {
             var query = GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword);
 
             var total = await query.CountAsync();
-            var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider).Skip(page - 1).Take(size).ToListAsync();
-            
-            return (SortList(lst, sort), total);
+            var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider)
+                .OrderByDescending(salary =>salary.Year)
+                .ThenByDescending(salary=> salary.Month)
+                .Skip(page - 1).Take(size).ToListAsync();
+            var date = lst[0].Date.UnixToDateTime();
+            return (lst, total);
         }
 
         public IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
@@ -473,73 +476,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return employeeData.ConvertData();
 
 
-        }
-        private List<SalaryPeriodAdditionBillList> SortList(List<SalaryPeriodAdditionBillList> lst, int sort)
-        {
-            switch (sort)
-            {
-                case 0:
-                    for (int i = 0; i < lst.Count; i++)
-                    {
-                        for (int j = i + 1; j < lst.Count; j++)
-                        {
-                            if (lst[i].Year < lst[j].Year)
-                            {
-                                var changeSalary = lst[i];
-                                lst[i] = lst[j];
-                                lst[j] = changeSalary;
-                            }
-                            else if (lst[i].Year == lst[j].Year)
-                            {
-                                if (lst[i].Month < lst[j].Month)
-                                {
-                                    var changeSalary = lst[i];
-                                    lst[i] = lst[j];
-                                    lst[j] = changeSalary;
-                                }
-                                else if (lst[i].Month == lst[j].Month && lst[i].Date < lst[j].Date)
-                                {
-                                    var changeSalary = lst[i];
-                                    lst[i] = lst[j];
-                                    lst[j] = changeSalary;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case 1:
-                    for (int i = 0; i < lst.Count; i++)
-                    {
-                        for (int j = i + 1; j < lst.Count; j++)
-                        {
-                            if (lst[i].Year > lst[j].Year)
-                            {
-                                var changeSalary = lst[i];
-                                lst[i] = lst[j];
-                                lst[j] = changeSalary;
-                            }
-                            else if (lst[i].Year == lst[j].Year)
-                            {
-                                if (lst[i].Month > lst[j].Month)
-                                {
-                                    var changeSalary = lst[i];
-                                    lst[i] = lst[j];
-                                    lst[j] = changeSalary;
-                                }
-                                else if (lst[i].Month == lst[j].Month && lst[i].Date > lst[j].Date)
-                                {
-                                    var changeSalary = lst[i];
-                                    lst[i] = lst[j];
-                                    lst[j] = changeSalary;
-                                }
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    break;
-            }
-            return lst;
         }
     }
 }
