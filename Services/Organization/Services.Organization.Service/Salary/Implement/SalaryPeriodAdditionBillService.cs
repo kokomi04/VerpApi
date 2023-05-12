@@ -101,13 +101,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return info;
         }
 
-        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size)
+        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size, int sort)
         {
             var query = GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword);
 
             var total = await query.CountAsync();
             var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider).Skip(page - 1).Take(size).ToListAsync();
-            return (lst, total);
+            
+            return (SortList(lst, sort), total);
         }
 
         public IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
@@ -473,6 +474,72 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
         }
-
+        private List<SalaryPeriodAdditionBillList> SortList(List<SalaryPeriodAdditionBillList> lst, int sort)
+        {
+            switch (sort)
+            {
+                case 0:
+                    for (int i = 0; i < lst.Count; i++)
+                    {
+                        for (int j = i + 1; j < lst.Count; j++)
+                        {
+                            if (lst[i].Year < lst[j].Year)
+                            {
+                                var changeSalary = lst[i];
+                                lst[i] = lst[j];
+                                lst[j] = changeSalary;
+                            }
+                            else if (lst[i].Year == lst[j].Year)
+                            {
+                                if (lst[i].Month < lst[j].Month)
+                                {
+                                    var changeSalary = lst[i];
+                                    lst[i] = lst[j];
+                                    lst[j] = changeSalary;
+                                }
+                                else if (lst[i].Month == lst[j].Month && lst[i].Date < lst[j].Date)
+                                {
+                                    var changeSalary = lst[i];
+                                    lst[i] = lst[j];
+                                    lst[j] = changeSalary;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                case 1:
+                    for (int i = 0; i < lst.Count; i++)
+                    {
+                        for (int j = i + 1; j < lst.Count; j++)
+                        {
+                            if (lst[i].Year > lst[j].Year)
+                            {
+                                var changeSalary = lst[i];
+                                lst[i] = lst[j];
+                                lst[j] = changeSalary;
+                            }
+                            else if (lst[i].Year == lst[j].Year)
+                            {
+                                if (lst[i].Month > lst[j].Month)
+                                {
+                                    var changeSalary = lst[i];
+                                    lst[i] = lst[j];
+                                    lst[j] = changeSalary;
+                                }
+                                else if (lst[i].Month == lst[j].Month && lst[i].Date > lst[j].Date)
+                                {
+                                    var changeSalary = lst[i];
+                                    lst[i] = lst[j];
+                                    lst[j] = changeSalary;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                default:
+                    break;
+            }
+            return lst;
+        }
     }
 }
