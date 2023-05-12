@@ -22,10 +22,10 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         private Dictionary<int, List<HrValidateField>> _fieldsByArea = new Dictionary<int, List<HrValidateField>>();
         private IList<int> _columnMaxLineLength = new List<int>();
 
-        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields, IList<string> fieldNames)
+        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields)
         {
             _hrType = hrType;
-            _fieldsByArea = fields.Where(f => fieldNames.Contains(f.FieldName)).GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
+            _fieldsByArea = fields.GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
         }
 
         public (Stream stream, string fileName, string contentType) Export(IList<NonCamelCaseDictionary> hrDetails)
