@@ -1,3 +1,5 @@
+using DocumentFormat.OpenXml.Office2016.Excel;
+using DocumentFormat.OpenXml.Spreadsheet;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
@@ -21,11 +23,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         private int _currentRow = 0;
         private Dictionary<int, List<HrValidateField>> _fieldsByArea = new Dictionary<int, List<HrValidateField>>();
         private IList<int> _columnMaxLineLength = new List<int>();
+        private ICurrentContextService _currentContextService;
 
-        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields)
+        public HrDataExportFacade(HrType hrType, List<HrValidateField> fields, ICurrentContextService currentContextService)
         {
             _hrType = hrType;
             _fieldsByArea = fields.GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
+            _currentContextService = currentContextService;
         }
 
         public (Stream stream, string fileName, string contentType) Export(IList<NonCamelCaseDictionary> hrDetails)
@@ -120,6 +124,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             var textStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top);
             var intStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
+            var dateStyle = _sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
 
             var groupByBills = hrDetails.GroupBy(d => d[OrganizationConstants.HR_TABLE_F_IDENTITY]).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -184,6 +189,30 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                                         _sheet.EnsureCell(_currentRow, sColIndex, decimalStyle);
                                     }
                                     break;
+                                case EnumDataType.Date:
+                                    if (!v.IsNullOrEmptyObject())
+                                    {
+                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle).SetCellValue(Convert.ToInt64(v).UnixToDateTime(_currentContextService.TimeZoneOffset));
+                                    }
+
+                                    else
+                                    {
+                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle);
+                                    }
+                                    break;
+                                case EnumDataType.Boolean:
+                                    if (!v.IsNullOrEmptyObject())
+                                    {
+                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle).SetCellValue(dataTypeId.GetDataTypeValueTitleByLanguage(v));
+                                    }
+
+                                    else
+                                    {
+                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle);
+                                    }
+                                    break;
+
+                                    
                                 default:
                                     _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(v?.ToString());
                                     break;
