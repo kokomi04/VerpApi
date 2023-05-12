@@ -18,13 +18,11 @@ namespace MigrateAndMappingApi
     {
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
-
         }
-
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ConfigureStandardServices(services, false);
+            ConfigureStandardServices(services, true);
 
             ConfigReadWriteDBContext(services);
 
@@ -64,7 +62,7 @@ namespace MigrateAndMappingApi
                 spa.Options.SourcePath = "ClientApp";
 
                 //if (env.IsDevelopment())
-                if (env.EnvironmentName == "Development")
+                if (env.EnvironmentName == "ClientApp")
                 {
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }

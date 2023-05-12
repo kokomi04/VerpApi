@@ -18,6 +18,7 @@ namespace MigrateAndMappingApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [DeveloperApi]
     public class ApiEndpointController : VErpBaseController
     {
         private readonly UnAuthorizeMasterDBContext _masterContext;

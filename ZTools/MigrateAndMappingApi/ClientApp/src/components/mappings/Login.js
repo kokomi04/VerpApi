@@ -1,7 +1,5 @@
 ﻿import React, { useCallback, useEffect, useState } from "react";
-import ApiEndPoint from "../../services/ApiEndpointService"
 import { createBrowserHistory } from 'history';
-import { useDispatch } from "react-redux";
 import { configs } from '../../implement/Configs'
 import ApiServiceCode from '../../services/ApiServiceCore';
 function Login() {
@@ -42,11 +40,19 @@ function Login() {
             ApiServiceCode.post(configs.ServerURL, bodyFormData, config)
                 .then(response => {
                     if (response.data) {
-                        setIsSubmitted(true);
-                        localStorage.setItem("access_token", response.data["access_token"]);
-                        localStorage.setItem("expires_at", JSON.stringify(response.data["expires_in"] * 1000 + new Date().getTime()));
-                        history.push('/');
-                        history.go(0);
+                        ApiServiceCode.get(configs.ServerInfo, null, {
+                            headers: { 'Authorization': `Bearer ${response.data["access_token"]}`, "x-Module": 101 }
+                        }).then(r => {
+                            if (r.data["isDeveloper"]) {
+                                setIsSubmitted(true);
+                                localStorage.setItem("access_token", response.data["access_token"]);
+                                localStorage.setItem("expires_at", JSON.stringify(response.data["expires_in"] * 1000 + new Date().getTime()));
+                                history.push('/');
+                                history.go(0);
+                            } else {
+                                setErrorMessages({ name: "pass", message: "User is not a developer" });
+                            }
+                        });
                     }
                 }).catch(err =>
                     setErrorMessages({ name: "pass", message: errors.pass }));
