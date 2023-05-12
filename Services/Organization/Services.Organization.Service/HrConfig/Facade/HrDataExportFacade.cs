@@ -151,7 +151,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                             if (!string.IsNullOrWhiteSpace(f.RefTableCode))
                             {
                                 dataTypeId = EnumDataType.Text;
-                                v = detail[f.RefTitle];
+                                v = detail[f.FieldNameRefTitle];
                             }
 
                             if (!f.IsMultiRow && details.Count > 1)
