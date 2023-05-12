@@ -742,6 +742,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Values\ValuesTitleBoolean.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ValuesTitleBoolean.resx</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -1348,6 +1353,14 @@
     <EmbeddedResource Update="Stock\Stock\StockActivityLogMessage.resx">
       <LastGenOutput>StockActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Values\ValuesTitleBoolean.en-US.resx">
+      <LastGenOutput>ValuesTitleBoolean.en-US.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Values\ValuesTitleBoolean.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ValuesTitleBoolean.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

@@ -1,7 +1,9 @@
 using AutoMapper;
+using DocumentFormat.OpenXml.InkML;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Algorithm;
 using Newtonsoft.Json;
@@ -34,11 +36,10 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Organization.Service.HrConfig.Abstract;
 using VErp.Services.Organization.Service.HrConfig.Facade;
-using static NPOI.HSSF.UserModel.HeaderFooter;
 using static VErp.Commons.Library.EvalUtils;
 using static VErp.Commons.Library.ExcelReader;
-using static VErp.Services.Organization.Service.HrConfig.HrDataService;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -46,31 +47,27 @@ namespace VErp.Services.Organization.Service.HrConfig
     {
         Task<long> CreateHr(int hrTypeId, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
         Task<bool> UpdateHr(int hrTypeId, long hrBill_F_Id, NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data);
+
         Task<bool> DeleteHr(int hrTypeId, long hrBill_F_Id);
         Task<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>> GetHr(int hrTypeId, long hrBill_F_Id);
         //Task<PageDataTable> SearchHr(int hrTypeId, HrTypeBillsFilterModel req, int page, int size);
         Task<PageDataTable> SearchHrV2(int hrTypeId, bool isSelectMultirowArea, HrTypeBillsFilterModel req, int page, int size);
         Task<(Stream stream, string fileName, string contentType)> Export(int hrTypeId, HrTypeBillsExportModel req);
-
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
         Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
         Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode, bool includedMultiRowArea);
     }
 
-    public class HrDataService : IHrDataService
+    public class HrDataService : HrDataUpdateServiceAbstract, IHrDataService
     {
-        private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
+        //private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
         private const string HR_TABLE_F_IDENTITY = OrganizationConstants.HR_TABLE_F_IDENTITY;
 
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly ICurrentContextService _currentContextService;
-        private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IHrTypeService _hrTypeService;
-        private readonly ILongTaskResourceLockService longTaskResourceLockService;
+        private readonly IHrDataImportDIService _hrDataImportDIService;
         private readonly ObjectActivityLogFacade _hrDataActivityLog;
 
         public HrDataService(
@@ -80,20 +77,15 @@ namespace VErp.Services.Organization.Service.HrConfig
             OrganizationDBContext organizationDBContext,
             ICustomGenCodeHelperService customGenCodeHelperService,
             ICurrentContextService currentContextService,
-            ICategoryHelperService httpCategoryHelperService,
+            ICategoryHelperService categoryHelperService,
             IHrTypeService hrTypeService,
-            ILongTaskResourceLockService longTaskResourceLockService
-            )
+            IHrDataImportDIService hrDataImportDIService) : base(organizationDBContext, customGenCodeHelperService, currentContextService, categoryHelperService)
         {
             _logger = logger;
             _mapper = mapper;
-            _organizationDBContext = organizationDBContext;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
-            _httpCategoryHelperService = httpCategoryHelperService;
             _hrTypeService = hrTypeService;
-            this.longTaskResourceLockService = longTaskResourceLockService;
             _hrDataActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrBill);
+            _hrDataImportDIService = hrDataImportDIService;
         }
 
         #region public
@@ -761,6 +753,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
 
+            var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
+
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -835,7 +829,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {
                         var newHrAreaData = hrAreaData.Where(x => !x.ContainsKey(HR_TABLE_F_IDENTITY) || string.IsNullOrWhiteSpace(x[HR_TABLE_F_IDENTITY].ToString()))
                             .ToList();
-                        await AddHrBillBase(hrTypeId, hrBill_F_Id, billInfo: null, tableName, hrAreaData, hrAreaFields, newHrAreaData);
+                        await AddHrBillBase(hrTypeId, hrBill_F_Id, billInfo: null, generateTypeLastValues, tableName, hrAreaData, hrAreaFields, newHrAreaData);
                     }
                 }
 
@@ -847,6 +841,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .ObjectId(hrBill_F_Id)
                         .JsonData(data.JsonSerialize())
                         .CreateLog();
+
+                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 return true;
 
@@ -866,6 +862,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrAreaReferences = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == true).AsNoTracking().ToListAsync();
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockHrTypeKey(hrTypeId));
+
+            var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
@@ -894,7 +892,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
                     var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId, false);
 
-                    await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
+                    await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, generateTypeLastValues, tableName, hrAreaData, hrAreaFields, hrAreaData);
 
                 }
 
@@ -914,6 +912,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .JsonData(data.JsonSerialize())
                         .CreateLog();
 
+                await ConfirmCustomGenCode(generateTypeLastValues);
+
                 return billInfo.FId;
             }
             catch (System.Exception)
@@ -926,398 +926,28 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId)
         {
-            var inputTypeInfo = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
+            var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
-            // Lấy thông tin field
-            var fields = await GetHrFields(hrTypeId, areaId, false);
+            var fields = await GetHrFields(hrTypeId, null, false);
+            var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
-            var result = new CategoryNameModel()
-            {
-                //CategoryId = inputTypeInfo.HrTypeId,
-                CategoryCode = inputTypeInfo.HrTypeCode,
-                CategoryTitle = inputTypeInfo.Title,
-                IsTreeView = false,
-                Fields = new List<CategoryFieldNameModel>()
-            };
-
-            fields = fields
-                .Where(f => !f.IsHidden && !f.IsAutoIncrement && f.FieldName != OrganizationConstants.HR_TABLE_F_IDENTITY)
-                .ToList();
-
-            var referTableNames = fields.Select(f => f.RefTableCode).ToList();
-
-            var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, null);
-            var refCategoryFields = referFields.GroupBy(f => f.CategoryCode).ToDictionary(f => f.Key, f => f.ToList());
-
-            foreach (var field in fields)
-            {
-                var fileData = new CategoryFieldNameModel()
-                {
-                    //CategoryFieldId = field.HrAreaFieldId,
-                    FieldName = field.FieldName,
-                    FieldTitle = GetTitleCategoryField(field),
-                    RefCategory = null,
-                    IsRequired = field.IsRequire,
-                    GroupName = field.HrAreaTitle
-                };
-
-                if (!string.IsNullOrWhiteSpace(field.RefTableCode))
-                {
-                    if (!refCategoryFields.TryGetValue(field.RefTableCode, out var refCategory))
-                    {
-                        throw HrDataValidationMessage.RefTableNotFound.BadRequestFormat(field.RefTableCode);
-                    }
-
-
-                    fileData.RefCategory = new CategoryNameModel()
-                    {
-                        //CategoryId = 0,
-                        CategoryCode = refCategory.FirstOrDefault()?.CategoryCode,
-                        CategoryTitle = refCategory.FirstOrDefault()?.CategoryTitle,
-                        IsTreeView = false,
-
-                        Fields = GetRefFields(refCategory)
-                        .Select(f => new CategoryFieldNameModel()
-                        {
-                            //CategoryFieldId = f.id,
-                            FieldName = f.CategoryFieldName,
-                            FieldTitle = f.GetTitleCategoryField(),
-                            RefCategory = null,
-                            IsRequired = false
-                        }).ToList()
-                    };
-                }
-
-                result.Fields.Add(fileData);
-            }
-
-            result.Fields.Add(new CategoryFieldNameModel
-            {
-                FieldName = ImportStaticFieldConsants.CheckImportRowEmpty,
-                FieldTitle = "Cột kiểm tra",
-            });
-
-            return result;
+            return await importFacade.GetFieldDataForMapping();
         }
 
         public async Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream)
         {
-            var hrTypeInfo = await GetHrTypExecInfo(hrTypeId);
-            var hrAreas = await _organizationDBContext.HrArea.Where(x => x.HrTypeId == hrTypeId && x.HrTypeReferenceId.HasValue == false).AsNoTracking().ToListAsync();
+            var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
-            using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu nhân sự \"{hrTypeInfo.Title}\" từ excel"))
-            {
-                var reader = new ExcelReader(stream);
-                reader.RegisterLongTaskEvent(longTask);
+            var fields = await GetHrFields(hrTypeId, null, false);
+            var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
-                var dataExcel = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
-
-                var ignoreIfEmptyColumns = mapping.MappingFields.Where(f => f.IsIgnoredIfEmpty).Select(f => f.Column).ToList();
-                var columnKey = mapping.MappingFields.FirstOrDefault(f => f.FieldName == OrganizationConstants.BILL_CODE);
-                if (columnKey == null)
-                {
-                    throw HrDataValidationMessage.BillCodeError.BadRequest();
-                }
-
-                var sliceDataByBillCode = dataExcel.Rows.Select((r, i) => new
-                {
-                    Data = r,
-                    Index = i + mapping.FromRow
-                })
-                    .Where(r => !ignoreIfEmptyColumns.Any(c => !r.Data.ContainsKey(c) || string.IsNullOrWhiteSpace(r.Data[c])))//not any empty ignore column
-                    .Where(r => !string.IsNullOrWhiteSpace(r.Data[columnKey.Column]))
-                    .GroupBy(r => r.Data[columnKey.Column])
-                    .ToList();
-
-                var bills = new List<NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>>();
-
-                longTask.SetCurrentStep("Kiểm tra dữ liệu", sliceDataByBillCode.Count());
-
-                foreach (var bill in sliceDataByBillCode)
-                {
-                    var modelBill = new NonCamelCaseDictionary<IList<NonCamelCaseDictionary>>();
-                    foreach (var area in hrAreas)
-                    {
-                        var rows = new List<NonCamelCaseDictionary>();
-
-                        var fields = await GetHrFields(hrTypeId, area.HrAreaId, false);
-                        var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, area.HrAreaCode);
-
-                        var requiredField = fields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
-
-                        if (requiredField != null) throw HrDataValidationMessage.FieldRequired.BadRequestFormat(requiredField.Title);
-
-                        var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
-                        var referTableNames = fields.Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-
-                        var referFields = await _httpCategoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
-
-                        foreach (var field in fields.Where(f => f.IsUnique))
-                        {
-                            var mappingField = mapping.MappingFields.FirstOrDefault(mf => mf.FieldName == field.FieldName);
-                            if (mappingField == null) continue;
+            return await importFacade.ImportHrBillFromMapping(mapping, stream);
 
 
-                            var values = field.IsMultiRow
-                            ? sliceDataByBillCode.SelectMany(b => b.Select(r => r.Data[mappingField.Column]?.ToString())).ToList()
-                            : sliceDataByBillCode.Where(b => b.Count() > 0).Select(b => b.First().Data[mappingField.Column]?.ToString()).ToList();
-
-                            // Check unique trong danh sách values thêm mới
-                            if (values.Distinct().Count() < values.Count)
-                            {
-                                throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
-                            }
-
-                            var sql = @$"SELECT v.[F_Id] FROM {tableName} v WHERE v.[{field.FieldName}] IN (";
-
-                            List<SqlParameter> sqlParams = new List<SqlParameter>();
-                            var suffix = 0;
-                            foreach (var value in values)
-                            {
-                                var paramName = $"@{field.FieldName}_{suffix}";
-                                if (suffix > 0)
-                                {
-                                    sql += ",";
-                                }
-                                sql += paramName;
-                                sqlParams.Add(new SqlParameter(paramName, value));
-                                suffix++;
-                            }
-                            sql += ")";
-
-                            var result = await _organizationDBContext.QueryDataTable(sql, sqlParams.ToArray());
-
-                            bool isExisted = result != null && result.Rows.Count > 0;
-                            if (isExisted)
-                                throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
-                        }
-
-                        int count = bill.Count();
-                        for (int rowIndex = 0; rowIndex < count; rowIndex++)
-                        {
-                            var mapRow = new NonCamelCaseDictionary();
-                            var row = bill.ElementAt(rowIndex);
-                            foreach (var field in fields)
-                            {
-                                var mappingField = mapping.MappingFields.FirstOrDefault(f => f.FieldName == field.FieldName);
-
-                                if (mappingField == null && !field.IsRequire)
-                                    continue;
-                                else if (mappingField == null && field.IsRequire)
-                                    throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.FieldNameNotFound, field.FieldName);
-
-                                if (!field.IsMultiRow && rowIndex > 0) continue;
-
-                                string value = null;
-                                if (row.Data.ContainsKey((string)mappingField.Column))
-                                    value = row.Data[(string)mappingField.Column]?.ToString();
-                                // Validate require
-                                if (string.IsNullOrWhiteSpace(value) && field.IsRequire) throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { row.Index, field.Title });
-
-                                if (string.IsNullOrWhiteSpace(value)) continue;
-
-                                value = value.Trim();
-
-                                if (value.StartsWith(PREFIX_ERROR_CELL))
-                                {
-                                    throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(row.Index, mappingField.Column, $"\"{field.Title}\" {value}");
-                                }
-
-                                if (new[] { EnumDataType.Date, EnumDataType.Month, EnumDataType.QuarterOfYear, EnumDataType.Year }.Contains((EnumDataType)field.DataTypeId))
-                                {
-                                    if (!DateTime.TryParse(value.ToString(), out DateTime date))
-                                        throw HrDataValidationMessage.CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
-                                    value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
-                                }
-
-                                // Validate refer
-                                if (!((EnumFormType)field.FormTypeId).IsSelectForm())
-                                {
-                                    // Validate value
-                                    if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
-                                    {
-                                        string regex = ((EnumDataType)field.DataTypeId).GetRegex();
-                                        if ((field.DataSize > 0 && value.Length > field.DataSize)
-                                            || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                                            || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
-                                        {
-                                            throw new BadRequestException(HrErrorCode.HrValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    int suffix = 0;
-                                    var paramName = $"@{mappingField.RefFieldName}_{suffix}";
-                                    var referField = referFields.FirstOrDefault(f => f.CategoryCode == field.RefTableCode && f.CategoryFieldName == mappingField.RefFieldName);
-                                    if (referField == null)
-                                    {
-                                        throw HrDataValidationMessage.RefFieldNotExisted.BadRequestFormat(field.Title, field.FieldName);
-                                    }
-                                    var referSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
-                                    var referParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                                    suffix++;
-                                    if (!string.IsNullOrEmpty(field.Filters))
-                                    {
-                                        var filters = field.Filters;
-                                        var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
-                                        Regex rx = new Regex(pattern);
-                                        MatchCollection match = rx.Matches(field.Filters);
-
-                                        for (int i = 0; i < match.Count; i++)
-                                        {
-                                            var fieldName = match[i].Groups["word"].Value;
-                                            var startText = match[i].Groups["start"].Value;
-                                            var lengthText = match[i].Groups["length"].Value;
-                                            mapRow.TryGetStringValue(fieldName, out string filterValue);
-
-                                            if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
-                                            {
-                                                filterValue = filterValue.Substring(start, length);
-                                            }
-
-
-                                            if (string.IsNullOrEmpty(filterValue))
-                                            {
-                                                var beforeField = fields?.FirstOrDefault(f => f.FieldName == fieldName)?.Title;
-                                                throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(beforeField, field.Title);
-                                            }
-                                            filters = filters.Replace(match[i].Value, filterValue);
-                                        }
-
-                                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
-                                        if (filterClause != null)
-                                        {
-                                            var whereCondition = new StringBuilder();
-
-
-                                            try
-                                            {
-                                                var parameters = mapRow?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-
-
-                                                suffix = filterClause.FilterClauseProcess($"v{field.RefTableCode}", $"v{field.RefTableCode}", whereCondition, referParams, suffix, refValues: parameters);
-
-                                            }
-                                            catch (EvalObjectArgException agrEx)
-                                            {
-                                                var fieldBefore = (fields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
-                                                throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
-                                            }
-                                            catch (Exception)
-                                            {
-                                                throw;
-                                            }
-
-
-
-                                            if (whereCondition.Length > 0) referSql += $" AND {whereCondition}";
-                                        }
-                                    }
-
-                                    var referData = await _organizationDBContext.QueryDataTable(referSql, referParams.ToArray());
-                                    if (referData == null || referData.Rows.Count == 0)
-                                    {
-                                        // Check tồn tại
-                                        var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
-                                        var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                                        referData = await _organizationDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
-                                        if (referData == null || referData.Rows.Count == 0)
-                                        {
-                                            throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + value });
-                                        }
-                                        else
-                                        {
-                                            throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + value });
-                                        }
-                                    }
-                                    value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
-                                }
-
-                                mapRow.Add((string)field.FieldName, value);
-                            }
-                            rows.Add(mapRow);
-                        }
-
-                        modelBill.Add(area.HrAreaCode, rows);
-                    }
-
-                    if (modelBill.Count > 0)
-                        bills.Add(modelBill);
-
-                    longTask.IncProcessedRows();
-
-                }
-
-                var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
-                try
-                {
-                    longTask.SetCurrentStep("Lưu vào cơ sở dữ liệu", bills.Count());
-
-                    foreach (var data in bills)
-                    {
-                        var billInfo = new HrBill()
-                        {
-                            HrTypeId = hrTypeId,
-                            LatestBillVersion = 1,
-                            SubsidiaryId = _currentContextService.SubsidiaryId,
-                            IsDeleted = false
-                        };
-
-                        await _organizationDBContext.HrBill.AddAsync(billInfo);
-
-                        await _organizationDBContext.SaveChangesAsync();
-
-                        for (int i = 0; i < hrAreas.Count; i++)
-                        {
-                            var hrArea = hrAreas[i];
-
-                            if (!data.ContainsKey(hrArea.HrAreaCode) || data[hrArea.HrAreaCode].Count == 0) continue;
-
-                            var tableName = GetHrAreaTableName(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode);
-
-                            var hrAreaData = hrArea.IsMultiRow ? data[hrArea.HrAreaCode] : new[] { data[hrArea.HrAreaCode][0] };
-                            var hrAreaFields = await GetHrFields(hrTypeId, hrArea.HrAreaId, false);
-
-                            await AddHrBillBase(hrTypeId, billInfo.FId, billInfo, tableName, hrAreaData, hrAreaFields, hrAreaData);
-
-                        }
-
-                        longTask.IncProcessedRows();
-                    }
-
-                    await @trans.CommitAsync();
-                }
-                catch (System.Exception ex)
-                {
-
-                    await @trans.TryRollbackTransactionAsync();
-                    _logger.LogError("HrDataService: ImportHrBillFromMapping", ex);
-                    throw;
-                }
-                return true;
-            }
         }
         #endregion
 
         #region private
-
-        private IList<ReferFieldModel> GetRefFields(IList<ReferFieldModel> fields)
-        {
-            return fields.Where(x => !x.IsHidden && x.DataTypeId != (int)EnumDataType.Boolean && !((EnumDataType)x.DataTypeId).IsTimeType())
-                 .ToList();
-        }
-
-        private string GetTitleCategoryField(HrValidateField field)
-        {
-            var rangeValue = ((EnumDataType)field.DataTypeId).GetRangeValue();
-            if (rangeValue.Length > 0)
-            {
-                return $"{field.Title} ({string.Join(", ", ((EnumDataType)field.DataTypeId).GetRangeValue())})";
-            }
-
-            return field.Title;
-        }
 
         private string AreaRowIdField(string hrAreaCode)
         {
@@ -1434,638 +1064,11 @@ namespace VErp.Services.Organization.Service.HrConfig
                 throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
         }
 
-        private async Task AddHrBillBase(int hrTypeId, long hrBill_F_Id, HrBill billInfo, string tableName, IEnumerable<NonCamelCaseDictionary> hrAreaData, IEnumerable<HrValidateField> hrAreaFields, IEnumerable<NonCamelCaseDictionary> newHrAreaData)
-        {
-            var checkData = newHrAreaData.Select(data => new ValidateRowModel(data, null))
-                                                             .ToList();
-
-            var requiredFields = hrAreaFields.Where(f => !f.IsAutoIncrement && f.IsRequire).ToList();
-            var uniqueFields = hrAreaFields.Where(f => !f.IsAutoIncrement && f.IsUnique).ToList();
-            var selectFields = hrAreaFields.Where(f => !f.IsAutoIncrement && ((EnumFormType)f.FormTypeId).IsSelectForm()).ToList();
-
-            // Check field required
-            await CheckRequired(checkData, requiredFields, hrAreaFields);
-            // Check refer
-            await CheckReferAsync(checkData, selectFields, hrAreaFields);
-            // Check unique
-            await CheckUniqueAsync(hrTypeId, tableName, checkData, uniqueFields, hrBill_F_Id);
-
-            // Check value
-            CheckValue(checkData, hrAreaFields);
-
-            var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
-            var infoFields = hrAreaFields.Where(f => !f.IsMultiRow).ToDictionary(f => f.FieldName, f => f);
-
-            await FillGenerateColumn(hrBill_F_Id, generateTypeLastValues, infoFields, hrAreaData);
-
-            if (billInfo != null && hrAreaData.FirstOrDefault().TryGetStringValue(OrganizationConstants.BILL_CODE, out var sct))
-            {
-                Utils.ValidateCodeSpecialCharactors(sct);
-                sct = sct?.ToUpper();
-                hrAreaData.FirstOrDefault()[OrganizationConstants.BILL_CODE] = sct;
-                billInfo.BillCode = sct;
-            }
-
-            foreach (var row in newHrAreaData)
-            {
-                var columns = new List<string>();
-                var sqlParams = new List<SqlParameter>();
-
-                foreach (var f in hrAreaFields)
-                {
-                    if (!row.ContainsKey(f.FieldName)) continue;
-
-                    columns.Add(f.FieldName);
-                    sqlParams.Add(new SqlParameter("@" + f.FieldName, ((EnumDataType)f.DataTypeId).GetSqlValue(row[f.FieldName])));
-                }
-
-                columns.AddRange(GetColumnGlobal());
-                sqlParams.AddRange(GetSqlParamsGlobal());
-
-                columns.Add("HrBill_F_Id");
-                sqlParams.Add(new SqlParameter("@HrBill_F_Id", hrBill_F_Id));
-
-                var idParam = new SqlParameter("@F_Id", SqlDbType.Int) { Direction = ParameterDirection.Output };
-                sqlParams.Add(idParam);
-
-
-                var sql = $"INSERT INTO [{tableName}]({string.Join(",", columns.Select(c => $"[{c}]"))}) VALUES({string.Join(",", sqlParams.Where(p => p.ParameterName != "@F_Id").Select(p => $"{p.ParameterName}"))}); SELECT @F_Id = SCOPE_IDENTITY();";
-
-                await _organizationDBContext.Database.ExecuteSqlRawAsync($"{sql}", sqlParams);
-
-                if (null == idParam.Value)
-                    throw new InvalidProgramException();
-
-            }
-
-            await ConfirmCustomGenCode(generateTypeLastValues);
-
-        }
-
-        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, HrValidateField> fields, IEnumerable<NonCamelCaseDictionary> rows)
-        {
-            for (var i = 0; i < rows.Count(); i++)
-            {
-                var row = rows.ElementAt(i);
-
-                foreach (var infoField in fields)
-                {
-                    var field = infoField.Value;
-
-                    if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
-                        (!row.TryGetStringValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
-                    )
-                    {
-
-                        var code = rows.FirstOrDefault(r => r.ContainsKey(OrganizationConstants.BILL_CODE))?[OrganizationConstants.BILL_CODE]?.ToString();
-
-                        var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(OrganizationConstants.BILL_DATE))?[OrganizationConstants.BILL_DATE]?.ToString();
-
-                        long? ngayCtValue = null;
-                        if (long.TryParse(ngayCt, out var v))
-                        {
-                            ngayCtValue = v;
-                        }
-
-                        CustomGenCodeOutputModel currentConfig;
-                        try
-                        {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.HrTypeRow, EnumObjectType.HrAreaField, field.HrAreaFieldId, fId, code, ngayCtValue);
-
-                            if (currentConfig == null)
-                            {
-                                throw new BadRequestException(GeneralCode.ItemNotFound, "Thiết định cấu hình sinh mã null " + field.Title);
-                            }
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw new BadRequestException(badRequest.Code, "Cấu hình sinh mã " + field.Title + " => " + badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-                            throw;
-                        }
-
-                        var generateType = $"{currentConfig.CustomGenCodeId}_{currentConfig.CurrentLastValue.BaseValue}";
-
-                        if (!generateTypeLastValues.ContainsKey(generateType))
-                        {
-                            generateTypeLastValues.Add(generateType, currentConfig.CurrentLastValue);
-                        }
-
-                        var lastTypeValue = generateTypeLastValues[generateType];
-
-
-                        try
-                        {
-
-                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, lastTypeValue.LastValue, fId, code, ngayCtValue);
-                            if (generated == null)
-                            {
-                                throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã " + field.Title);
-                            }
-
-
-                            value = generated.CustomCode;
-                            lastTypeValue.LastValue = generated.LastValue;
-                            lastTypeValue.LastCode = generated.CustomCode;
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw new BadRequestException(badRequest.Code, "Sinh mã " + field.Title + " => " + badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-
-                            throw;
-                        }
-
-                        if (!row.ContainsKey(field.FieldName))
-                        {
-                            row.Add(field.FieldName, value);
-                        }
-                        else
-                        {
-                            row[field.FieldName] = value;
-                        }
-                    }
-                }
-            }
-        }
-
-        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
-        {
-            foreach (var (_, value) in generateTypeLastValues)
-            {
-                await _customGenCodeHelperService.ConfirmCode(value);
-            }
-        }
-
-        private string[] GetColumnGlobal()
-        {
-            return new string[]
-            {
-                "CreatedByUserId",
-                "UpdatedByUserId",
-                "CreatedDatetimeUtc",
-                "UpdatedDatetimeUtc",
-                "SubsidiaryId"
-            };
-        }
-
-        private SqlParameter[] GetSqlParamsGlobal()
-        {
-            return new SqlParameter[]
-            {
-                new SqlParameter("@CreatedByUserId", _currentContextService.UserId),
-                new SqlParameter("@UpdatedByUserId", _currentContextService.UserId),
-                new SqlParameter("@CreatedDatetimeUtc", DateTime.UtcNow),
-                new SqlParameter("@UpdatedDatetimeUtc",DateTime.UtcNow),
-                new SqlParameter("@SubsidiaryId", _currentContextService.SubsidiaryId)
-            };
-        }
-
-        private void CheckValue(IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> categoryFields)
-        {
-            foreach (var field in categoryFields)
-            {
-                foreach (var row in rows)
-                {
-                    ValidValueAsync(row, field);
-                }
-            }
-        }
-
-        private void ValidValueAsync(ValidateRowModel checkData, HrValidateField field)
-        {
-            if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
-            {
-                return;
-            }
-
-            checkData.Data.TryGetStringValue(field.FieldName, out string value);
-
-            if (string.IsNullOrEmpty(value))
-                return;
-
-            if (((EnumFormType)field.FormTypeId).IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
-                return;
-
-            string regex = ((EnumDataType)field.DataTypeId).GetRegex();
-            if ((field.DataSize > 0 && value.Length > field.DataSize)
-                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
-            {
-                throw new BadRequestException(HrErrorCode.HrValueInValid, new object[] { value?.JsonSerialize(), field.HrAreaCode, field.Title });
-            }
-        }
-
-        private string[] GetFieldInFilter(Clause[] clauses)
-        {
-            List<string> fields = new List<string>();
-            foreach (var clause in clauses)
-            {
-                if (clause == null) continue;
-
-                if (clause is SingleClause)
-                {
-                    fields.Add((clause as SingleClause).FieldName);
-                }
-                else if (clause is ArrayClause)
-                {
-                    fields.AddRange(GetFieldInFilter((clause as ArrayClause).Rules.ToArray()));
-                }
-            }
-
-            return fields.Distinct().ToArray();
-        }
-
-        private async Task CheckRequired(IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> requiredFields, IEnumerable<HrValidateField> hrAreaFields)
-        {
-            var filters = requiredFields
-                .Where(f => !string.IsNullOrEmpty(f.RequireFilters))
-                .ToDictionary(f => f.FieldName, f => JsonConvert.DeserializeObject<Clause>(f.RequireFilters));
-
-            string[] filterFieldNames = GetFieldInFilter(filters.Select(f => f.Value).ToArray());
-            var sfFields = hrAreaFields.Where(f => ((EnumFormType)f.FormTypeId).IsSelectForm() && filterFieldNames.Contains(f.FieldName)).ToList();
-            var sfValues = new Dictionary<string, Dictionary<object, object>>();
-
-            foreach (var field in sfFields)
-            {
-                var values = rows.Where(r => r.Data.ContainsKey(field.FieldName) && r.Data[field.FieldName] != null).Select(r => r.Data[field.FieldName]).ToList();
-
-                if (values.Count > 0)
-                {
-                    Dictionary<object, object> mapTitles = new Dictionary<object, object>(new DataEqualityComparer((EnumDataType)field.DataTypeId));
-                    var sqlParams = new List<SqlParameter>();
-                    var sql = new StringBuilder($"SELECT DISTINCT {field.RefTableField}, {field.RefTableTitle} FROM v{field.RefTableCode} WHERE {field.RefTableField} IN (");
-                    var suffix = 0;
-                    foreach (var value in values)
-                    {
-                        var paramName = $"@{field.RefTableField}_{suffix}";
-                        if (suffix > 0) sql.Append(",");
-                        sql.Append(paramName);
-                        sqlParams.Add(new SqlParameter(paramName, value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() });
-                        suffix++;
-                    }
-
-                    sql.Append(")");
-                    var data = await _organizationDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
-                    for (int i = 0; i < data.Rows.Count; i++)
-                    {
-                        mapTitles.Add(data.Rows[i][field.RefTableField], data.Rows[i][field.RefTableTitle]);
-                    }
-                    sfValues.Add(field.FieldName, mapTitles);
-                }
-            }
-
-
-            foreach (var field in requiredFields)
-            {
-                // ignore auto generate field
-                if (field.FormTypeId == EnumFormType.Generate) continue;
-
-
-                foreach (var (row, index) in rows.Select((value, i) => (value, i + 1)))
-                {
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
-                    {
-                        continue;
-                    }
-
-                    if (!string.IsNullOrEmpty(field.RequireFilters))
-                    {
-                        Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues)))
-                        {
-                            continue;
-                        }
-                    }
-
-                    row.Data.TryGetStringValue(field.FieldName, out string value);
-                    if (string.IsNullOrEmpty(value))
-                    {
-                        throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { index, field.Title });
-                    }
-                }
-            }
-        }
-
-        private async Task<bool> CheckRequireFilter(Clause clause, IEnumerable<ValidateRowModel> rows, IEnumerable<HrValidateField> hrAreaFields, Dictionary<string, Dictionary<object, object>> sfValues, bool not = false)
-        {
-            bool? isRequire = null;
-            if (clause != null)
-            {
-                if (clause is SingleClause)
-                {
-                    var singleClause = clause as SingleClause;
-                    var field = hrAreaFields.First(f => f.FieldName == singleClause.FieldName);
-                    // Data check nằm trong thông tin chung và data điều kiện nằm trong thông tin chi tiết
-                    var rowValues = rows.Select(r =>
-                    r.Data.ContainsKey(field.FieldName) ?
-                        (sfValues.ContainsKey(field.FieldName) ?
-                            (sfValues[field.FieldName].ContainsKey(r.Data[field.FieldName]) ?
-                                sfValues[field.FieldName][r.Data[field.FieldName]]
-                                    : null)
-                        : r.Data[field.FieldName])
-                    : null).ToList();
-                    switch (singleClause.Operator)
-                    {
-                        case EnumOperator.Equal:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) == 0);
-                            break;
-                        case EnumOperator.NotEqual:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) != 0);
-                            break;
-                        case EnumOperator.Contains:
-                            isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
-                            break;
-                        case EnumOperator.NotContains:
-                            isRequire = rowValues.All(v => !v.StringContains(singleClause.Value));
-                            break;
-                        case EnumOperator.InList:
-                            var arrValues = singleClause.Value.ToString().Split(",");
-                            isRequire = rowValues.Any(v => v != null && arrValues.Contains(v.ToString()));
-                            break;
-                        case EnumOperator.IsLeafNode:
-                            // Check is leaf node
-                            var paramName = $"@{field.RefTableField}";
-                            var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
-                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
-                            var result = await _organizationDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
-                            isRequire = result != null && result.Rows.Count > 0;
-                            break;
-                        case EnumOperator.StartsWith:
-                            isRequire = rowValues.Any(v => v.StringStartsWith(singleClause.Value));
-                            break;
-                        case EnumOperator.NotStartsWith:
-                            isRequire = rowValues.All(v => !v.StringStartsWith(singleClause.Value));
-                            break;
-                        case EnumOperator.EndsWith:
-                            isRequire = rowValues.Any(v => v.StringEndsWith(singleClause.Value));
-                            break;
-                        case EnumOperator.NotEndsWith:
-                            isRequire = rowValues.All(v => !v.StringEndsWith(singleClause.Value));
-                            break;
-                        case EnumOperator.IsNull:
-                            isRequire = rowValues.Any(v => v == null);
-                            break;
-                        case EnumOperator.IsEmpty:
-                            isRequire = rowValues.Any(v => v != null && string.IsNullOrEmpty(v.ToString()));
-                            break;
-                        case EnumOperator.IsNullOrEmpty:
-                            isRequire = rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString()));
-                            break;
-                        case EnumOperator.Greater:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) > 0);
-                            break;
-                        case EnumOperator.GreaterOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) >= 0);
-                            break;
-                        case EnumOperator.LessThan:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) < 0);
-                            break;
-                        case EnumOperator.LessThanOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) <= 0);
-                            break;
-                        default:
-                            isRequire = true;
-                            break;
-                    }
-
-                    isRequire = not ? !isRequire : isRequire;
-                }
-                else if (clause is ArrayClause)
-                {
-                    var arrClause = clause as ArrayClause;
-                    bool isNot = not ^ arrClause.Not;
-                    bool isOr = (!isNot && arrClause.Condition == EnumLogicOperator.Or) || (isNot && arrClause.Condition == EnumLogicOperator.And);
-                    for (int i = 0; i < arrClause.Rules.Count; i++)
-                    {
-                        bool clauseResult = await CheckRequireFilter(arrClause.Rules.ElementAt(i), rows, hrAreaFields, sfValues, isNot);
-                        isRequire = isRequire.HasValue ? isOr ? isRequire.Value || clauseResult : isRequire.Value && clauseResult : clauseResult;
-                    }
-                }
-            }
-            return isRequire.Value;
-        }
-
-        private async Task CheckUniqueAsync(int hrTypeId, string tableName, List<ValidateRowModel> rows, List<HrValidateField> uniqueFields, long? hrValueBillId = null)
-        {
-            // Check unique
-            foreach (var field in uniqueFields)
-            {
-                foreach (var row in rows)
-                {
-                    if (row.CheckFields != null && !row.CheckFields.Contains(field.FieldName))
-                    {
-                        continue;
-                    }
-                    // Get list change value
-                    List<object> values = new List<object>();
-                    row.Data.TryGetValue(field.FieldName, out object value);
-                    if (value != null)
-                    {
-                        values.Add(((EnumDataType)field.DataTypeId).GetSqlValue(value));
-                    }
-                    // Check unique trong danh sách values thêm mới/sửa
-                    if (values.Count != values.Distinct().Count())
-                    {
-                        throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
-                    }
-                    if (values.Count == 0)
-                    {
-                        continue;
-                    }
-                    // Checkin unique trong db
-                    await ValidUniqueAsync(hrTypeId, tableName, values, field, hrValueBillId);
-                }
-            }
-        }
-
-        private async Task ValidUniqueAsync(int hrTypeId, string tableName, List<object> values, HrValidateField field, long? HrValueBillId = null)
-        {
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE IsDeleted = 0 ";
-            if (HrValueBillId.HasValue)
-            {
-                existSql += $"AND HrBill_F_Id != {HrValueBillId}";
-            }
-            existSql += $" AND {field.FieldName} IN (";
-            List<SqlParameter> sqlParams = new List<SqlParameter>();
-            var suffix = 0;
-            foreach (var value in values)
-            {
-                var paramName = $"@{field.FieldName}_{suffix}";
-                if (suffix > 0)
-                {
-                    existSql += ",";
-                }
-                existSql += paramName;
-                sqlParams.Add(new SqlParameter(paramName, value));
-                suffix++;
-            }
-            existSql += ")";
-            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.ToArray());
-            bool isExisted = result != null && result.Rows.Count > 0;
-
-            if (isExisted)
-            {
-                throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
-            }
-        }
-
-        private async Task CheckReferAsync(List<ValidateRowModel> rows, List<HrValidateField> selectFields, IEnumerable<HrValidateField> hrAreaFields)
-        {
-            // Check refer
-            foreach (var field in selectFields)
-            {
-                for (int i = 0; i < rows.Count; i++)
-                {
-                    await ValidReferAsync(rows[i], field, hrAreaFields);
-                }
-            }
-        }
-
-        private async Task ValidReferAsync(ValidateRowModel checkData, HrValidateField field, IEnumerable<HrValidateField> hrAreaFields)
-        {
-            string tableName = $"v{field.RefTableCode}";
-
-            if (checkData.CheckFields != null && !checkData.CheckFields.Contains(field.FieldName))
-            {
-                return;
-            }
-
-            checkData.Data.TryGetStringValue(field.FieldName, out string textValue);
-
-            if (string.IsNullOrEmpty(textValue))
-            {
-                return;
-            }
-
-            var value = ((EnumDataType)field.DataTypeId).GetSqlValue(textValue);
-            var whereCondition = new StringBuilder();
-            var sqlParams = new List<SqlParameter>();
-
-            int suffix = 0;
-            var existSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField}";
-
-            var referField = (await _httpCategoryHelperService.GetReferFields(new[] { field.RefTableCode }, new[] { field.RefTableField })).FirstOrDefault();
-
-            if (field.FormTypeId == EnumFormType.MultiSelect)
-            {
-                var sValue = ((string)value).TrimEnd(']').TrimStart('[').Trim();
-                existSql += " IN (";
-                foreach (var v in sValue.Split(','))
-                {
-                    var paramName = $"@{field.RefTableField}_{suffix}";
-                    existSql += $"{paramName},";
-                    sqlParams.Add(new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(v)));
-                    suffix++;
-                }
-                existSql = existSql.TrimEnd(',');
-                existSql += ") ";
-            }
-            else
-            {
-                var paramName = $"@{field.RefTableField}_{suffix}";
-                existSql += $" = {paramName}";
-                sqlParams.Add(new SqlParameter(paramName, value));
-            }
-
-            if (!string.IsNullOrEmpty(field.Filters))
-            {
-                var filters = field.Filters;
-
-                var pattern = @"@{(?<word>\w+)}\((?<start>\d*),(?<length>\d*)\)";
-                Regex rx = new Regex(pattern);
-                MatchCollection match = rx.Matches(field.Filters);
-
-                for (int i = 0; i < match.Count; i++)
-                {
-                    var fieldName = match[i].Groups["word"].Value;
-                    var startText = match[i].Groups["start"].Value;
-                    var lengthText = match[i].Groups["length"].Value;
-                    checkData.Data.TryGetStringValue(fieldName, out string filterValue);
-
-                    if (!string.IsNullOrEmpty(startText) && !string.IsNullOrEmpty(lengthText) && int.TryParse(startText, out int start) && int.TryParse(lengthText, out int length))
-                    {
-                        filterValue = filterValue.Substring(start, length);
-                    }
-                    if (string.IsNullOrEmpty(filterValue))
-                    {
-                        var fieldBefore = (hrAreaFields.FirstOrDefault(f => f.FieldName == fieldName)?.Title) ?? fieldName;
-                        throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
-                    }
-
-                    filters = filters.Replace(match[i].Value, filterValue);
-                }
-
-                Clause filterClause = JsonConvert.DeserializeObject<Clause>(filters);
-                if (filterClause != null)
-                {
-
-
-                    try
-                    {
-                        var parameters = checkData.Data?.Where(d => !d.Value.IsNullOrEmptyObject())?.ToNonCamelCaseDictionary(k => k.Key, v => v.Value);
-                        suffix = filterClause.FilterClauseProcess(tableName, tableName, whereCondition, sqlParams, suffix, refValues: parameters);
-
-                    }
-                    catch (EvalObjectArgException agrEx)
-                    {
-                        var fieldBefore = (hrAreaFields.FirstOrDefault(f => f.FieldName == agrEx.ParamName)?.Title) ?? agrEx.ParamName;
-                        throw HrDataValidationMessage.RequireFieldBeforeField.BadRequestFormat(fieldBefore, field.Title);
-                    }
-                    catch (Exception)
-                    {
-                        throw;
-                    }
-
-                }
-            }
-
-            var checkExistedReferSql = existSql;
-            if (whereCondition.Length > 0)
-            {
-                existSql += $" AND {whereCondition}";
-            }
-
-            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.CloneSqlParams());
-            bool isExisted = result != null && result.Rows.Count > 0;
-            if (!isExisted)
-            {
-
-                // Check tồn tại
-                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.CloneSqlParams());
-                if (result == null || result.Rows.Count == 0)
-                {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaTitle, field.Title + ": " + value });
-                }
-                else
-                {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value });
-                }
-            }
-        }
-
-        protected class ValidateRowModel
-        {
-            public NonCamelCaseDictionary Data { get; set; }
-            public string[] CheckFields { get; set; }
-
-            public ValidateRowModel(NonCamelCaseDictionary Data, string[] CheckFields)
-            {
-                this.Data = Data;
-                this.CheckFields = CheckFields;
-            }
-        }
-
         public async Task<HrTypeExecData> GetHrTypExecInfo(string hrTypeCode)
         {
             var hrTypeInfo = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeCode == hrTypeCode);
             return await GetHrTypExecInfo(hrTypeInfo);
         }
-
 
 
         private async Task<HrTypeExecData> GetHrTypExecInfo(int hrTypeId)
@@ -2091,10 +1094,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return $"bill.SubsidiaryId = {_currentContextService.SubsidiaryId} AND bill.IsDeleted = 0";
         }
 
-        private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)
-        {
-            return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
-        }
+        private string GetHrAreaTableName(string hrTypeCode, string hrAreaCode) => OrganizationConstants.GetHrAreaTableName(hrTypeCode, hrAreaCode);
 
         private async Task CreateFistRowReferenceData(long hrBill_F_Id, long? hrBillReference_F_Id, string tableName)
         {
@@ -2202,25 +1202,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
         #region protected class
 
-        protected class DataEqualityComparer : IEqualityComparer<object>
-        {
-            private readonly EnumDataType dataType;
 
-            public DataEqualityComparer(EnumDataType dataType)
-            {
-                this.dataType = dataType;
-            }
-
-            public new bool Equals(object x, object y)
-            {
-                return dataType.CompareValue(x, y) == 0;
-            }
-
-            public int GetHashCode(object obj)
-            {
-                return obj.GetHashCode();
-            }
-        }
 
         public class HrValidateField
         {
@@ -2308,6 +1290,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 }
             }
+
+
         }
 
         protected class HrAreaTableBaseInfo
