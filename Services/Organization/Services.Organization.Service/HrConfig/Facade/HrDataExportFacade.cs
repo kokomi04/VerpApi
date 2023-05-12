@@ -124,7 +124,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             var textStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top);
             var intStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
-            var dateStyle = _sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
+            var dateStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
 
             var groupByBills = hrDetails.GroupBy(d => d[OrganizationConstants.HR_TABLE_F_IDENTITY]).ToDictionary(g => g.Key, g => g.ToList());
 
@@ -203,16 +203,16 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                                 case EnumDataType.Boolean:
                                     if (!v.IsNullOrEmptyObject())
                                     {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle).SetCellValue(dataTypeId.GetDataTypeValueTitleByLanguage(v));
+                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(dataTypeId.GetDataTypeValueTitleByLanguage(v));
                                     }
 
                                     else
                                     {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle);
+                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle);
                                     }
                                     break;
 
-                                    
+
                                 default:
                                     _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(v?.ToString());
                                     break;
