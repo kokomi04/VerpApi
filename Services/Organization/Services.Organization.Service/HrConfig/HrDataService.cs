@@ -564,7 +564,15 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 row.Add(field.FieldName, areaRows[0][field.FieldName]);
                                 if (field.HasRefField)
                                 {
-                                    row.Add(field.RefTitle, areaRows[0][field.RefTitle]);
+                                    foreach(var titleField in field.FieldNameRefTitles)
+                                    {
+                                        if(areaRows[0].TryGetValue(titleField, out var v))
+                                        {
+                                            row.Add(titleField, v);
+                                        }
+                                        
+                                    }
+                                    
                                 }
                             }
                         }
@@ -576,7 +584,13 @@ namespace VErp.Services.Organization.Service.HrConfig
                                 row.Add(field.FieldName, rowAreaData?[field.FieldName]);
                                 if (field.HasRefField)
                                 {
-                                    row.Add(field.RefTitle, rowAreaData?[field.RefTitle]);
+                                    foreach (var titleField in field.FieldNameRefTitles)
+                                    {
+                                        if (rowAreaData.TryGetValue(titleField, out var v))
+                                        {
+                                            row.Add(titleField, v);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -2234,7 +2248,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
 
             private bool? _hasRefField;
-            private string _refTitle;
+            private string _fieldNameRefTitle;
+            private IList<string> _fieldNameRefTitles;
 
             public bool HasRefField
             {
@@ -2246,21 +2261,51 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            public string RefTitle
+            public string FieldNameRefTitle
             {
                 get
                 {
-                    if (_refTitle != null) return _refTitle;
+                    if (_fieldNameRefTitle != null) return _fieldNameRefTitle;
 
-                    if (!HasRefField || string.IsNullOrWhiteSpace(RefTableTitle))
+                    SetFieldNameRefTitles();
+
+                    return _fieldNameRefTitle;
+                }
+            }
+
+            public IList<string> FieldNameRefTitles
+            {
+                get
+                {
+                    if (_fieldNameRefTitles != null) return _fieldNameRefTitles;
+
+                    SetFieldNameRefTitles();
+
+                    return _fieldNameRefTitles;
+                }
+            }
+
+            private void SetFieldNameRefTitles()
+            {
+                if (!HasRefField || string.IsNullOrWhiteSpace(RefTableTitle))
+                {
+                    _fieldNameRefTitle = FieldName;
+                    _fieldNameRefTitles = new[] { _fieldNameRefTitle };
+                }
+                else
+                {
+                    var fields = RefTableTitle.Split(',').ToArray();
+                    _fieldNameRefTitles = new List<string>();
+                    for (var i = 0; i < fields.Length; i++)
                     {
-                        _refTitle = FieldName;
+                        var name = $"{FieldName}_{fields[i].Trim()}";
+                        _fieldNameRefTitles.Add(name);
+                        if (i == 0)
+                        {
+                            _fieldNameRefTitle = name;
+                        }
                     }
-                    else
-                    {
-                        _refTitle = $"{FieldName}_{RefTableTitle.Split(',')[0]}";
-                    }
-                    return _refTitle;
+
                 }
             }
         }
