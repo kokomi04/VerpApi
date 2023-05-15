@@ -12,6 +12,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -134,9 +135,21 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName);
             }
 
-            _mapper.Map(model, info);
-            info.SalaryFieldId = salaryFieldId;
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+               
+                _mapper.Map(model, info);
+                info.SalaryFieldId = salaryFieldId;
+                await _organizationDBContext.SaveChangesAsync();
+                
+                if (!model.IsEditable)
+                {
+                    await _organizationDBContext.SalaryGroupField.Where(f => f.SalaryFieldId == salaryFieldId)
+                       .UpdateByBatch(f => new SalaryGroupField { IsEditable = model.IsEditable });
+                }
+
+                await trans.CommitAsync();
+            }
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Update)
                .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
