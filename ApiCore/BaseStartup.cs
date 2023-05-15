@@ -251,7 +251,7 @@ namespace VErp.Infrastructure.ApiCore
 
                 if (!env.IsProduction())
                 {
-                    response.Data = exception;
+                    response.Exception = exception;
                 }
 
                 var result = JsonConvert.SerializeObject(response, JsonSetting(null));

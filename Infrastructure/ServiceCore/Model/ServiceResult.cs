@@ -76,11 +76,14 @@ namespace VErp.Infrastructure.ServiceCore.Model
     {
         public string Code { get; set; }
         public string Message { get; set; }
+
+        public Exception Exception { get; set; }
+        public object AdditionData { get; set; }
     }
 
-    public class ApiErrorResponse<T> : ApiErrorResponse
-    {
-        public T Data { get; set; }
-    }
+    //public class ApiErrorResponse<T> : ApiErrorResponse
+    //{
+      
+    //}
 
 }

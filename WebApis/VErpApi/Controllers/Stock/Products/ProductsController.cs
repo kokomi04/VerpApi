@@ -270,5 +270,14 @@ namespace VErpApi.Controllers.Stock.Products
         {
             return await _productService.GetProductionProcessVersion(productId);
         }
+
+
+        [HttpPost]
+        [Route("GetProductTopInUsed")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<ProductInUsedInfo>> GetProductTopInUsed([FromBody] IList<int> productIds)
+        {
+            return (await _productService.GetProductTopInUsed(productIds, false)).ToList();
+        }
     }
 }
