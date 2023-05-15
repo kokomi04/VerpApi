@@ -272,7 +272,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
             }
 
-            var productionOrderData = await _manufacturingDBContext.QueryDataTable(sql, productionOrderParammeters.ToArray());
+            var productionOrderData = await _manufacturingDBContext.QueryDataTableRaw(sql, productionOrderParammeters.ToArray());
             var productionOrderDetails = productionOrderData
                 .ConvertData<ProductionOrderListEntity>()
                 .AsQueryable()
@@ -461,7 +461,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 sql = "SELECT * FROM vProductionOrderDetail v WHERE v.StartDate <= @ToDate AND v.EndDate >= @FromDate ORDER BY v.ProductionOrderId";
             }
 
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters.ToArray());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters.ToArray());
             var productionOrderDetails = resultData
                 .ConvertData<ProductionOrderListEntity>()
                 .AsQueryable()
@@ -605,7 +605,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 FROM vProductionOrder v 
                 WHERE v.ProductionOrderStatus IN ({strStatusId})";
 
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, Array.Empty<SqlParameter>());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, Array.Empty<SqlParameter>());
             var lst = resultData
                 .ConvertData<ProcessingOrderListEntity>()
                 .AsQueryable()
@@ -831,7 +831,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 sql.Append(" AND v.ProductionOrderId = @ProductionOrderId");
             }
 
-            var queryData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var queryData = await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var reportData = queryData
                 .ConvertData<OutsourcePartRequestDetailExtractInfo>()
                 .AsQueryable()
@@ -913,7 +913,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     sql.Append(whereCondition);
                 }
 
-                var lsLinkDataInfos = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
+                var lsLinkDataInfos = (await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray()))
                         .ConvertData<ProductionStepLinkDataInput>().ToDictionary(k => k.ProductionStepLinkDataId, v => v);
 
                 var quantityCompleteMaps = (await _manufacturingDBContext.RefOutsourceStepTrack.AsNoTracking()

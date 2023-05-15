@@ -252,7 +252,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
-                var data = await _dbContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTableRaw(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Foot = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
@@ -502,7 +502,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (sql.Length > 0)
             {
                 var delcareSql = string.Join("\n", declareValues.Select(k => $"DECLARE @{k} DECIMAL(32,12);").ToArray());
-                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{prefixSqlStatement}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTableRaw($"{delcareSql}\n{prefixSqlStatement}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -522,7 +522,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 foreach (var item in cacls)
                 {
-                    var data = await _dbContext.QueryDataTable($"\n{prefixSqlStatement}\nSELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                    var data = await _dbContext.QueryDataTableRaw($"\n{prefixSqlStatement}\nSELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                     selectValue = data.ConvertFirstRowData();
                     BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
                 }
@@ -626,7 +626,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     $"{whereClause}";
             }
 
-            var data = await dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).Union(localParams).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).Union(localParams).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var variableData = data.ConvertFirstRowData();
 
@@ -829,7 +829,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sql += " ORDER BY " + orderBy;
             }
 
-            var table = await _dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary<decimal>();
 
@@ -1104,7 +1104,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrEmpty(filterCondition))
                 totalSql.Append($" WHERE {filterCondition}");
 
-            var table = await _dbContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTableRaw(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
             if (table != null && table.Rows.Count > 0)
@@ -1150,7 +1150,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 ");
             }
 
-            var data = await _dbContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await _dbContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             return ((data, totalRows), totals);
         }
@@ -1215,7 +1215,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
                 //}
 
-                var rowData = await _dbContext.QueryDataTable(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var rowData = await _dbContext.QueryDataTableRaw(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 if (rowData.Rows.Count > 0)
                     data.Add(rowData.ConvertFirstRowData().ToNonCamelCaseDictionary());
             }

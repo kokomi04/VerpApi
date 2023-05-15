@@ -68,7 +68,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
-                var resultData = await _purchaseOrderDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _purchaseOrderDBContext.QueryDataTableRaw(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();

@@ -670,7 +670,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 suffix = filter.FilterClauseProcess($"({query}) vm", "v", whereCondition, sqlParams, suffix, false, null, data);
             }
             var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
-            var dataTable = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
+            var dataTable = await _organizationDBContext.QueryDataTableRaw(queryData, sqlParams.ToArray());
 
             var lstData = dataTable.ConvertData();
 

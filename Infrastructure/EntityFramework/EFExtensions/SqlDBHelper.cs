@@ -76,7 +76,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            return await QueryDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout);
+            return await QueryDataTableProc(dbContext, procedureName, parameters, timeout);
         }
 
         public static async Task<DataSet> ExecuteMultipleDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
@@ -124,13 +124,33 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbConnection.ChangeDatabaseAsync(dbName);
         }
 
-        public static async Task<IList<T>> QueryList<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+       
+
+        public static async Task<IList<T>> QueryListProc<T>(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            var dataTable = await QueryDataTable(dbContext, rawSql, parameters, cmdType, timeout);
+            var dataTable = await QueryDataTableProc(dbContext, procedureName, parameters, timeout);
             return dataTable.ConvertData<T>();
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
+        public static async Task<DataTable> QueryDataTableProc(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            return await QueryDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout, cachingService);
+        }
+
+
+        public static async Task<IList<T>> QueryListRaw<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, TimeSpan? timeout = null)
+        {
+            var dataTable = await QueryDataTable(dbContext, rawSql, parameters, CommandType.Text, timeout);
+            return dataTable.ConvertData<T>();
+        }
+
+
+        public static async Task<DataTable> QueryDataTableRaw(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            return await QueryDataTable(dbContext, rawSql, parameters, CommandType.Text, timeout, cachingService);
+        }
+
+        private static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
         {
             if (cachingService != null)
             {

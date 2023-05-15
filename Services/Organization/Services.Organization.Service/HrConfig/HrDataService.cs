@@ -108,7 +108,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var existSql = $"SELECT v.[F_Id] FROM [{tableName}] v WHERE v.[HrBill_F_Id] = @HrBill_F_Id";
 
-            var result = await _organizationDBContext.QueryDataTable(existSql, new SqlParameter[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) });
+            var result = await _organizationDBContext.QueryDataTableRaw(existSql, new SqlParameter[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) });
             bool isExisted = result != null && result.Rows.Count > 0;
 
             if (!isExisted)
@@ -463,7 +463,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 SELECT COUNT(0) as Total FROM data
                 ";
 
-            var table = await _organizationDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
+            var table = await _organizationDBContext.QueryDataTableRaw(totalSql, sqlParams.ToArray());
 
             var total = 0;
             if (table != null && table.Rows.Count > 0)
@@ -497,7 +497,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     ) t ON bill.F_Id = t.F_Id
                 ";
 
-            var dataTable = await _organizationDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var dataTable = await _organizationDBContext.QueryDataTableRaw(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
 
             var dataDetails = dataTable.ConvertData().GroupBy(d => d[HR_TABLE_F_IDENTITY]).ToDictionary(d => d.Key, d => d.ToList());
 
@@ -622,7 +622,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 var (alias, columns) = GetAliasViewAreaTable(hrTypeInfo.HrTypeCode, hrArea.HrAreaCode, fields.Where(x => x.HrAreaId == hrArea.HrAreaId), hrArea.HrTypeReferenceId.HasValue ? false : hrArea.IsMultiRow);
                 var query = $"{alias} AND [row].[HrBill_F_Id] IN (SELECT F_Id FROM HrBill WHERE F_Id = @HrBill_F_Id AND IsDeleted = 0)  ";
 
-                var data = (await _organizationDBContext.QueryDataTable(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
+                var data = (await _organizationDBContext.QueryDataTableRaw(query, new[] { new SqlParameter("@HrBill_F_Id", hrBill_F_Id) })).ConvertData();
 
                 results.Add(hrArea.HrAreaCode, data);
             }
@@ -777,7 +777,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                     var sqlOldData = @$"SELECT [{HR_TABLE_F_IDENTITY}], [HrBill_F_Id]
                                     FROM [{tableName}] WHERE [HrBill_F_Id] = @HrBill_F_Id AND [IsDeleted] = @IsDeleted";
-                    var oldHrAreaData = (await _organizationDBContext.QueryDataTable(sqlOldData, new SqlParameter[] {
+                    var oldHrAreaData = (await _organizationDBContext.QueryDataTableRaw(sqlOldData, new SqlParameter[] {
                         new SqlParameter("@HrBill_F_Id", hrBill_F_Id),
                         new SqlParameter("@IsDeleted", false)
                         })).ConvertData<HrAreaTableBaseInfo>();
@@ -1142,7 +1142,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 if (hrArea.HrTypeReferenceId.HasValue)
                 {
                     var selectSql = $@"SELECT [HrBillReference_F_Id] {OrganizationConstants.HR_TABLE_F_IDENTITY} FROM [{tableName}] WHERE [IsDeleted] = 0 AND [HrBill_F_Id] = @HrBill_F_Id";
-                    var dataRef = (await _organizationDBContext.QueryDataTable(selectSql, new[] {
+                    var dataRef = (await _organizationDBContext.QueryDataTableRaw(selectSql, new[] {
                         new SqlParameter($"@HrBill_F_Id", hrBill_F_Id),
                         })).ConvertData();
 

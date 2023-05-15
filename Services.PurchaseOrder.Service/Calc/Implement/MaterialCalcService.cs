@@ -112,7 +112,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             }
 
 
-            var totalTable = await _purchaseOrderDBContext.QueryDataTable("SELECT COUNT(DISTINCT MaterialCalcId) Total " + rawSql.ToString(), sqlParams.CloneSqlParams());
+            var totalTable = await _purchaseOrderDBContext.QueryDataTableRaw("SELECT COUNT(DISTINCT MaterialCalcId) Total " + rawSql.ToString(), sqlParams.CloneSqlParams());
             int total = totalTable.Rows.Count > 0 ? (int)totalTable.Rows[0]["Total"] : 0;
 
             var listSql = $@";WITH tmp AS (
@@ -122,7 +122,7 @@ SELECT
 )
 SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * size}
 ";
-            var paged = await _purchaseOrderDBContext.QueryList<MaterialCalcListModel>(listSql, sqlParams.CloneSqlParams());
+            var paged = await _purchaseOrderDBContext.QueryListRaw<MaterialCalcListModel>(listSql, sqlParams.CloneSqlParams());
 
             return (paged.OrderBy(d => d.RowNumber).ToList(), total);
         }

@@ -404,7 +404,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }
                 sql += ")";
 
-                var result = await _organizationDBContext.QueryDataTable(sql, sqlParams.ToArray());
+                var result = await _organizationDBContext.QueryDataTableRaw(sql, sqlParams.ToArray());
 
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
@@ -483,13 +483,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }
             }
 
-            var referData = await _organizationDBContext.QueryDataTable(referSql, referParams.ToArray());
+            var referData = await _organizationDBContext.QueryDataTableRaw(referSql, referParams.ToArray());
             if (referData == null || referData.Rows.Count == 0)
             {
                 // Check tồn tại
                 var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                referData = await _organizationDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                referData = await _organizationDBContext.QueryDataTableRaw(checkExistedReferSql, checkExistedReferParams.ToArray());
                 if (referData == null || referData.Rows.Count == 0)
                 {
                     throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { excelRow.Index, field.Title + ": " + value });

@@ -131,7 +131,7 @@ namespace VErp.Services.Accountancy.Service.Programing.Implement
                 }
             }
 
-            var data = await _accountancyDBContext.QueryDataTable(function.FunctionBody, sqlParams);
+            var data = await _accountancyDBContext.QueryDataTableRaw(function.FunctionBody, sqlParams);
             return data.ConvertData();
         }
     }

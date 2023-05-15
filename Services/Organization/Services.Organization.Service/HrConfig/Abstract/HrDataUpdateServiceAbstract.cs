@@ -287,7 +287,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     }
 
                     sql.Append(")");
-                    var data = await _organizationDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                    var data = await _organizationDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                     for (int i = 0; i < data.Rows.Count; i++)
                     {
                         mapTitles.Add(data.Rows[i][field.RefTableField], data.Rows[i][field.RefTableTitle]);
@@ -383,7 +383,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 suffix++;
             }
             existSql += ")";
-            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            var result = await _organizationDBContext.QueryDataTableRaw(existSql, sqlParams.ToArray());
             bool isExisted = result != null && result.Rows.Count > 0;
 
             if (isExisted)
@@ -508,13 +508,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 existSql += $" AND {whereCondition}";
             }
 
-            var result = await _organizationDBContext.QueryDataTable(existSql, sqlParams.CloneSqlParams());
+            var result = await _organizationDBContext.QueryDataTableRaw(existSql, sqlParams.CloneSqlParams());
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
 
                 // Check tồn tại
-                result = await _organizationDBContext.QueryDataTable(checkExistedReferSql, sqlParams.CloneSqlParams());
+                result = await _organizationDBContext.QueryDataTableRaw(checkExistedReferSql, sqlParams.CloneSqlParams());
                 if (result == null || result.Rows.Count == 0)
                 {
                     throw new BadRequestException(HrErrorCode.ReferValueNotFound, new object[] { field.HrAreaTitle, field.Title + ": " + value });
@@ -602,7 +602,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                             var paramName = $"@{field.RefTableField}";
                             var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
                             var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
-                            var result = await _organizationDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                            var result = await _organizationDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                             isRequire = result != null && result.Rows.Count > 0;
                             break;
                         case EnumOperator.StartsWith:

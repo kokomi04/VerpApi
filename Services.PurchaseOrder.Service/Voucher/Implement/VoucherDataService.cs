@@ -204,7 +204,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 asc = false;
             }
 
-            var table = await _purchaseOrderDBContext.QueryDataTable(totalSql, sqlParams.ToArray());
+            var table = await _purchaseOrderDBContext.QueryDataTableRaw(totalSql, sqlParams.ToArray());
             var total = 0;
             var additionResults = new Dictionary<string, decimal>();
             if (table != null && table.Rows.Count > 0)
@@ -254,7 +254,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 FETCH NEXT {size}
                 ROWS ONLY";
             }
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             return (data, total, additionResults);
         }
 
@@ -282,7 +282,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var totalSql = @$"SELECT COUNT(0) as Total FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = @VoucherBill_F_Id AND r.VoucherTypeId = @VoucherTypeId AND {GlobalFilter()} AND r.IsBillEntry = 0";
 
-            var table = await _purchaseOrderDBContext.QueryDataTable(totalSql, sqlParams);
+            var table = await _purchaseOrderDBContext.QueryDataTableRaw(totalSql, sqlParams);
 
             var total = 0;
             if (table != null && table.Rows.Count > 0)
@@ -312,11 +312,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 FETCH NEXT {size} ROWS ONLY
             ";
             }
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, sqlParams.CloneSqlParams());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, sqlParams.CloneSqlParams());
 
             var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = @VoucherBill_F_Id AND r.VoucherTypeId = @VoucherTypeId AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, sqlParams.CloneSqlParams());
+            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTableRaw(billEntryInfoSql, sqlParams.CloneSqlParams());
 
             if (billEntryInfo.Rows.Count > 0)
             {
@@ -361,7 +361,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             ";
 
-            var data = (await _purchaseOrderDBContext.QueryDataTable(dataSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
+            var data = (await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
 
             var billEntryInfoSql = @$"
 
@@ -371,7 +371,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 WHERE r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1
 
             ";
-            var billEntryInfos = (await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
+            var billEntryInfos = (await _purchaseOrderDBContext.QueryDataTableRaw(billEntryInfoSql, new[] { lstfId.ToSqlParameter("@FIds") })).ConvertData();
 
             var lst = new Dictionary<long, BillInfoModel>();
             foreach (var fId in lstfId)
@@ -431,11 +431,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, Array.Empty<SqlParameter>());
 
             var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTableRaw(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             result.Info = billEntryInfo.ConvertFirstRowData().ToNonCamelCaseDictionary();
 
@@ -607,7 +607,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 var paramName = $"@{field.RefTableField}";
                                 var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
                                 var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
-                                var result = await _purchaseOrderDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                                var result = await _purchaseOrderDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
@@ -677,7 +677,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                 var paramName = $"@{field.RefTableField}";
                                 var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
                                 var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
-                                var result = await _purchaseOrderDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                                var result = await _purchaseOrderDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                                 isRequire = result != null && result.Rows.Count > 0;
                                 break;
                             case EnumOperator.StartsWith:
@@ -752,7 +752,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@VoucherBillId", voucherBillId)
                 };
 
-                resultData = (await _purchaseOrderDBContext.QueryDataTable(script, parammeters)).ConvertData();
+                resultData = (await _purchaseOrderDBContext.QueryDataTableRaw(script, parammeters)).ConvertData();
             }
             return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
@@ -814,7 +814,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     }
 
                     sql.Append(")");
-                    var data = await _purchaseOrderDBContext.QueryDataTable(sql.ToString(), sqlParams.ToArray());
+                    var data = await _purchaseOrderDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                     for (int indx = 0; indx < data.Rows.Count; indx++)
                     {
                         mapTitles.Add(data.Rows[indx][field.RefTableField], data.Rows[indx][field.RefTableTitle]);
@@ -955,7 +955,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 suffix++;
             }
             existSql += ")";
-            var result = await _purchaseOrderDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            var result = await _purchaseOrderDBContext.QueryDataTableRaw(existSql, sqlParams.ToArray());
             bool isExisted = result != null && result.Rows.Count > 0;
 
             if (isExisted)
@@ -1068,14 +1068,14 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 existSql += $" AND {whereCondition}";
             }
 
-            var result = await _purchaseOrderDBContext.QueryDataTable(existSql, sqlParams.ToArray());
+            var result = await _purchaseOrderDBContext.QueryDataTableRaw(existSql, sqlParams.ToArray());
             bool isExisted = result != null && result.Rows.Count > 0;
             if (!isExisted)
             {
                 // Check tồn tại
                 var checkExistedReferSql = $"SELECT F_Id FROM {tableName} WHERE {field.RefTableField} = {paramName}";
                 var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, value) };
-                result = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                result = await _purchaseOrderDBContext.QueryDataTableRaw(checkExistedReferSql, checkExistedReferParams.ToArray());
                 if (result == null || result.Rows.Count == 0)
                 {
                     throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
@@ -1166,7 +1166,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var singleFields = voucherAreaFields.Where(f => !f.IsMultiRow).ToList();
             AppendSelectFields(ref infoSQL, singleFields);
             infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherTypeId = {voucherTypeId} AND VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
-            var currentInfo = (await _purchaseOrderDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
+            var currentInfo = (await _purchaseOrderDBContext.QueryDataTableRaw(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData().FirstOrDefault();
 
             if (currentInfo == null)
             {
@@ -1194,7 +1194,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (multiFields.Count > 0) rowsSQL.Append(",");
             AppendSelectFields(ref rowsSQL, multiFields);
             rowsSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherValueBillId} AND {GlobalFilter()}");
-            var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+            var currentRows = (await _purchaseOrderDBContext.QueryDataTableRaw(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
             foreach (var futureRow in data.Rows)
             {
                 futureRow.TryGetStringValue("F_Id", out string futureValue);
@@ -1318,7 +1318,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             LEFT JOIN {VOUCHERVALUEROW_TABLE} r ON db.VoucherBill_F_Id = r.VoucherBill_F_Id
                     WHERE req.VoucherBill_F_Id IS NULL OR req.TotalDetail < db.TotalDetail
                     ";
-                var invalids = await _purchaseOrderDBContext.QueryDataTable(checkUpdateMultipleFielsSql, new[] { billIds.ToSqlParameter("@BillIds"), detailIds.ToSqlParameter("@DetailIds") });
+                var invalids = await _purchaseOrderDBContext.QueryDataTableRaw(checkUpdateMultipleFielsSql, new[] { billIds.ToSqlParameter("@BillIds"), detailIds.ToSqlParameter("@DetailIds") });
                 if (invalids.Rows.Count > 0)
                 {
                     var billCode = invalids.Rows[0][PurchaseOrderConstants.BILL_CODE];
@@ -1339,7 +1339,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 if (oldValue != null)
                 {
-                    var oldResult = await _purchaseOrderDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
+                    var oldResult = await _purchaseOrderDBContext.QueryDataTableRaw(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldValue)) });
                     if (oldResult == null || oldResult.Rows.Count == 0) throw OldValueIsInvalid.BadRequest();
                     oldSqlValue = ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(oldResult.Rows[0][0]);
                 }
@@ -1350,7 +1350,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 if (newValue != null)
                 {
-                    var newResult = await _purchaseOrderDBContext.QueryDataTable(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)) });
+                    var newResult = await _purchaseOrderDBContext.QueryDataTableRaw(selectSQL, new SqlParameter[] { new SqlParameter("@ValueParam", ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newValue)) });
                     if (newResult == null || newResult.Rows.Count == 0) throw NewValueIsInvalid.BadRequest();
                     newSqlValue = ((EnumDataType)refTitleField.DataTypeId).GetSqlValue(newResult.Rows[0][0]);
                 }
@@ -1402,7 +1402,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             //    sqlParams.Add(new SqlParameter(paramName, oldSqlValue));
             //}
 
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.ToArray());
             var updateBillIds = new HashSet<long>();
 
             // Update new value
@@ -1578,7 +1578,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     infoSQL.Append(singleFields[indx].FieldName);
                 }
                 infoSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherBill_F_Id} AND {GlobalFilter()}");
-                var infoLst = (await _purchaseOrderDBContext.QueryDataTable(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+                var infoLst = (await _purchaseOrderDBContext.QueryDataTableRaw(infoSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
 
                 data.Info = infoLst.Count != 0 ? infoLst[0].ToNonCamelCaseDictionary(f => f.Key, f => f.Value) : new NonCamelCaseDictionary();
                 if (!string.IsNullOrEmpty(voucherTypeInfo.BeforeSaveActionExec) || !string.IsNullOrEmpty(voucherTypeInfo.AfterSaveActionExec))
@@ -1594,7 +1594,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         rowsSQL.Append(multiFields[indx].FieldName);
                     }
                     rowsSQL.Append($" FROM {VOUCHERVALUEROW_VIEW} r WHERE VoucherBill_F_Id = {voucherBill_F_Id} AND {GlobalFilter()}");
-                    var currentRows = (await _purchaseOrderDBContext.QueryDataTable(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
+                    var currentRows = (await _purchaseOrderDBContext.QueryDataTableRaw(rowsSQL.ToString(), Array.Empty<SqlParameter>())).ConvertData();
                     data.Rows = currentRows.Select(r => r.ToNonCamelCaseDictionary(f => f.Key, f => f.Value)).ToArray();
                 }
                 await ValidateSaleVoucherConfig(null, data?.Info);
@@ -2244,7 +2244,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     var existSql = $"SELECT F_Id,{field.FieldName} FROM {VOUCHERVALUEROW_VIEW} WHERE VoucherTypeId = {voucherTypeId} ";
                     existSql += $" AND {field.FieldName} IN (SELECT NValue FROM @Values)";
                     var existKeyParams = new List<SqlParameter>() { values.ToSqlParameter("@Values") };
-                    var result = await _purchaseOrderDBContext.QueryDataTable(existSql, existKeyParams.ToArray());
+                    var result = await _purchaseOrderDBContext.QueryDataTableRaw(existSql, existKeyParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -2571,13 +2571,13 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             }
                         }
 
-                        var referData = await _purchaseOrderDBContext.QueryDataTable(referSql, referParams.ToArray());
+                        var referData = await _purchaseOrderDBContext.QueryDataTableRaw(referSql, referParams.ToArray());
                         if (referData == null || referData.Rows.Count == 0)
                         {
                             // Check tồn tại
                             var checkExistedReferSql = $"SELECT TOP 1 {field.RefTableField} FROM v{field.RefTableCode} WHERE {mappingField.RefFieldName} = {paramName}";
                             var checkExistedReferParams = new List<SqlParameter>() { new SqlParameter(paramName, ((EnumDataType)referField.DataTypeId).GetSqlValue(value)) };
-                            referData = await _purchaseOrderDBContext.QueryDataTable(checkExistedReferSql, checkExistedReferParams.ToArray());
+                            referData = await _purchaseOrderDBContext.QueryDataTableRaw(checkExistedReferSql, checkExistedReferParams.ToArray());
                             if (referData == null || referData.Rows.Count == 0)
                             {
                                 throw new BadRequestException(VoucherErrorCode.ReferValueNotFound, new object[] { row.Index, field.Title + ": " + originValue });
@@ -2645,9 +2645,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 FROM {VOUCHERVALUEROW_VIEW} r 
                 WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND r.IsBillEntry = 0
             ";
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, Array.Empty<SqlParameter>());
             var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.VoucherBill_F_Id = {fId} AND r.VoucherTypeId = {voucherTypeId} AND r.IsBillEntry = 1";
-            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTableRaw(billEntryInfoSql, Array.Empty<SqlParameter>());
 
             var info = (billEntryInfo.Rows.Count > 0 ? billEntryInfo.ConvertFirstRowData() : data.ConvertFirstRowData()).ToNonCamelCaseDictionary();
             var rows = data.ConvertData();
@@ -2798,7 +2798,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         //var v = ((EnumDataType)referToField.DataTypeId).GetSqlValue(value);
 
                         var existSql = $"SELECT tk.F_Id FROM {VOUCHERVALUEROW_VIEW} tk WHERE tk.{referToField.FieldName} = @value;";
-                        var result = await _purchaseOrderDBContext.QueryDataTable(existSql, new[] { new SqlParameter("@value", value) });
+                        var result = await _purchaseOrderDBContext.QueryDataTableRaw(existSql, new[] { new SqlParameter("@value", value) });
                         bool isExisted = result != null && result.Rows.Count > 0;
                         if (isExisted)
                         {
@@ -2888,11 +2888,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {packingListVoucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 0
             ";
-            var data = await _purchaseOrderDBContext.QueryDataTable(dataSql, Array.Empty<SqlParameter>());
+            var data = await _purchaseOrderDBContext.QueryDataTableRaw(dataSql, Array.Empty<SqlParameter>());
             result.Info = null;
             var billEntryInfoSql = $"SELECT r.* FROM {VOUCHERVALUEROW_VIEW} r WHERE r.so_bh_xk = {voucherBill_BHXKId} AND r.VoucherTypeId = {packingListVoucherTypeId} AND {GlobalFilter()} AND r.IsBillEntry = 1";
 
-            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTable(billEntryInfoSql, Array.Empty<SqlParameter>());
+            var billEntryInfo = await _purchaseOrderDBContext.QueryDataTableRaw(billEntryInfoSql, Array.Empty<SqlParameter>());
             var billEntryInfos = billEntryInfo.ConvertData();
             for (var i = 0; i < data.Rows.Count; i++)
             {
@@ -2979,7 +2979,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CensorStatusId IS NULL OR  v.CensorStatusId <> {(int)EnumCensorStatus.Approved}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
-            return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", voucherTypeId) }))
+            return (await _purchaseOrderDBContext.QueryDataTableRaw(sql, new[] { new SqlParameter("@VoucherTypeId", voucherTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
                     .ToList();
         }
@@ -2988,7 +2988,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var sql = $"SELECT DISTINCT v.VoucherTypeId ObjectTypeId, v.VoucherBill_F_Id ObjectBill_F_Id, v.so_ct ObjectBillCode FROM {VOUCHERVALUEROW_TABLE} v WHERE (v.CheckStatusId IS NULL OR  v.CheckStatusId <> {(int)EnumCheckStatus.CheckedSuccess}) AND v.VoucherTypeId = @VoucherTypeId AND v.IsDeleted = 0";
 
-            return (await _purchaseOrderDBContext.QueryDataTable(sql, new[] { new SqlParameter("@VoucherTypeId", voucherTypeId) }))
+            return (await _purchaseOrderDBContext.QueryDataTableRaw(sql, new[] { new SqlParameter("@VoucherTypeId", voucherTypeId) }))
                     .ConvertData<ObjectBillSimpleInfoModel>()
                     .ToList();
         }

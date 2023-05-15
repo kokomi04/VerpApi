@@ -468,7 +468,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var sqlParams = new List<SqlParameter>();
             int prefix = 0;
             prefix = clause.FilterClauseProcess(employeeView, employeeView, condition, sqlParams, prefix, false, null, null);
-            var employeeData = await _organizationDBContext.QueryDataTable($"SELECT {CategoryFieldConstants.F_Id} {selecFieldsString} FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
+            var employeeData = await _organizationDBContext.QueryDataTableRaw($"SELECT {CategoryFieldConstants.F_Id} {selecFieldsString} FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
             return employeeData.ConvertData();
 
 

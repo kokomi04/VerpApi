@@ -834,7 +834,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 req.DepartmentIds.ToSqlParameter("@DepartmentIds"),
                 req.ExceptProductionOrderIds.ToSqlParameter("@ExceptProductionOrderIds"),
             };
-            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters, CommandType.StoredProcedure);
+            var resultData = await _manufacturingDBContext.QueryListProc<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters);
             return resultData;
         }
 
