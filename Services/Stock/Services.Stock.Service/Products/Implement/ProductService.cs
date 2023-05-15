@@ -724,11 +724,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             //await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed", checkParams);
 
-            var (usedProductId, msg) = await CheckProductIdsIsUsed(new List<int>() { productId });
-            //if (isInUsed.Value as bool? == true)
-            if (usedProductId.HasValue)
+            //var (usedProductId, msg) = await CheckProductIdsIsUsed(new List<int>() { productId });
+            ////if (isInUsed.Value as bool? == true)
+            //if (usedProductId.HasValue)
+            //{
+            //    throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, msg);
+            //}
+
+            var productTopUsed = await GetProductTopInUsed(new List<int>() { productId }, false);
+            if (productTopUsed.Count > 0)
             {
-                throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotDeleteProductWhichInUsed, msg);
+                throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotDeleteProductWhichInUsed, productTopUsed.First().Description);
             }
 
             var productExtra = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -1383,7 +1389,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
             }
         }
 
-        public async Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> listProduct)
+        /*
+        public async Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> productIds)
         {
             var outProductId = new SqlParameter("@OutProductId", SqlDbType.Int) { Direction = ParameterDirection.Output };
             var outMessage = new SqlParameter("@OutMessage", SqlDbType.NVarChar, 512) { Direction = ParameterDirection.Output };
@@ -1396,6 +1403,24 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _stockDbContext.ExecuteStoreProcedure("asp_Product_CheckUsed_ByList", checkParams);
             var msg = outMessage?.Value?.ToString();
             return (outProductId.Value as int?, msg);
+
+            //var lst = await GetProductTopUsed(productIds, true);
+            //if (lst.Any())
+            //{
+            //    return (lst[0].ProductId as int?, lst[0].Description);
+            //}
+            //return (null, null);
+        }*/
+
+        public async Task<IList<ProductInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                productIds.ToSqlParameter("@ProductIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _stockDbContext.QueryList<ProductInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
         }
+
     }
 }

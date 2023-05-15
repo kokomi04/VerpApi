@@ -33,9 +33,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public void OnException(ExceptionContext context)
         {
-            if (context.Exception is BadRequestException)
+            object additionData = null;
+            if (context.Exception is BadRequestException ex)
             {
-
+                additionData = ex.AdditionData;
                 _logger.LogWarning(context.Exception, context.Exception.Message);
             }
             else
@@ -47,7 +48,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (!_env.IsProduction())
             {
-                response.Data = context.Exception;
+                response.Exception = context.Exception;
+                response.AdditionData = additionData;
             }
 
             if (context.Exception is BadRequestException)
@@ -80,15 +82,15 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return message.Replace(absolutePath, string.Empty);
         }
 
-        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting)
+        public static (ApiErrorResponse response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting)
         {
-            ApiErrorResponse<Exception> response;
+            ApiErrorResponse response;
             HttpStatusCode statusCode;
 
             switch (exception)
             {
                 case BadRequestException badRequest:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = badRequest.Code.GetErrorCodeString(),
                         Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
@@ -98,7 +100,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                 case VerpException:
 
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
                         Message = RemoveAbsolutePathResource(appSetting, exception.Message)
@@ -109,7 +111,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                 case LongTaskResourceLockException:
 
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.LongTaskIsRunning.GetErrorCodeString(),
                         Message = GeneralCode.LongTaskIsRunning.GetEnumDescription()
@@ -119,7 +121,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     break;
 
                 case DistributedLockExeption:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
@@ -129,7 +131,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     break;
 
                 default:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
                         Message = RemoveAbsolutePathResource(appSetting, exception.Message)

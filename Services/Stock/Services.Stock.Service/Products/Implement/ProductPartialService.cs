@@ -143,10 +143,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     if (model.ConfirmFlag != true && productInfo.UnitId != model.UnitId)
                     {
-                        var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(new List<int>() { productId });
-                        if (usedProductId.HasValue)
+                        var productTopUsed = await _productService.GetProductTopInUsed(new List<int>() { productId }, false);
+                        if (productTopUsed.Count > 0)
                         {
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + msg);
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + productTopUsed.First().Description);
                         }
                     }
 
