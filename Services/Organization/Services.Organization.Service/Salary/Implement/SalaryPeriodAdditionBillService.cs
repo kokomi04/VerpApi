@@ -108,9 +108,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var total = await query.CountAsync();
 
             var lst = await query
-                 .OrderByDescending(salary => salary.Year)
-                 .ThenByDescending(salary => salary.Month)
-                 .ThenByDescending(salary=> salary.Date)
+                 .OrderByDescending(bill => bill.Year)
+                 .ThenByDescending(bill => bill.Month)
+                 .ThenByDescending(bill => bill.Date)
                  .ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider)
                  .Skip(page - 1).Take(size).ToListAsync();
 
