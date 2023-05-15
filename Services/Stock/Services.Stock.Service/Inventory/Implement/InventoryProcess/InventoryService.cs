@@ -87,11 +87,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
+        public async Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
         {
             keyword = keyword?.Trim();
 
-            var inventoryQuery = _stockDbContext.Inventory.AsNoTracking().AsQueryable();
+            var inventoryQuery = _stockDbContext.Inventory.Include(iv => iv.RefInventory).AsNoTracking().AsQueryable();
 
             if (stockId > 0)
             {
@@ -176,67 +176,70 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.CustomerId == customerId);
             }
 
-            //if (!string.IsNullOrWhiteSpace(accountancyAccountNumber))
-            //{
-            //    inventoryQuery = inventoryQuery.Where(q => q.AccountancyAccountNumber.StartsWith(accountancyAccountNumber));
-            //}
-
-            //IQueryable<VMappingOusideImportObject> mappingObjectQuery = null;
-
-            //if (mappingFunctionKeys != null && mappingFunctionKeys.Count > 0)
-            //{
-            //    mappingObjectQuery = _stockDbContext.VMappingOusideImportObject
-            //         .Where(m => mappingFunctionKeys.Contains(m.MappingFunctionKey));
-
-            //    if (isExistedInputBill != null)
-            //    {
-            //        if (isExistedInputBill.Value)
-            //        {
-            //            inventoryQuery = from q in inventoryQuery
-            //                             where mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
-            //                             select q;
-            //        }
-            //        else
-            //        {
-            //            inventoryQuery = from q in inventoryQuery
-            //                             where !mappingObjectQuery.Select(m => m.SourceId).Contains(q.InventoryId.ToString())
-            //                             select q;
-            //        }
-            //    }
-            //}
-
 
             IQueryable<RefInputBillBasic> billQuery = _stockDbContext.RefInputBillBasic.AsQueryable();
 
+#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
+            var query = from q in inventoryQuery
+                        join b in billQuery on q.InventoryCode equals b.SoCt into bs
+                        from b in bs.DefaultIfEmpty()
+                        select new
+                        {
+                            q.InventoryId,
+                            q.StockId,
+                            q.InventoryCode,
+                            q.InventoryTypeId,
+                            q.Shipper,
+                            q.Content,
+                            q.Date,
+
+                            q.CustomerId,
+
+                            q.Department,
+                            q.StockKeeperUserId,
+
+                            q.BillForm,
+                            q.BillCode,
+                            q.BillSerial,
+
+                            q.BillDate,
+
+                            q.TotalMoney,
+
+                            q.CreatedByUserId,
+                            q.UpdatedByUserId,
+
+                            q.CreatedDatetimeUtc,
+                            q.UpdatedDatetimeUtc,
+                            q.IsApproved,
+                            q.DepartmentId,
+                            IsInputBillCreated = b.InputBillFId != null,
+                            q.CensorByUserId,
+                            q.InventoryActionId,
+                            q.InventoryStatusId,
+
+                            q.RefInventoryId,
+                            RefInventoryCode = q != null ? q.RefInventory.InventoryCode : null,
+                            RefStockId = q != null ? (int?)q.RefInventory.StockId : null,
+                        };
+#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
             if (isExistedInputBill != null)
             {
                 if (isExistedInputBill.Value)
                 {
-                    inventoryQuery = from q in inventoryQuery
-                                     join b in billQuery on q.InventoryCode equals b.SoCt into bs
-                                     from b in bs.DefaultIfEmpty()
-#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-                                     where b.InputBillFId != null
-#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-                                     select q;
+                    query = query.Where(q => q.IsInputBillCreated);
                 }
                 else
                 {
-                    inventoryQuery = from q in inventoryQuery
-                                     join b in billQuery on q.InventoryCode equals b.SoCt into bs
-                                     from b in bs.DefaultIfEmpty()
-#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-                                     where b.InputBillFId == null
-#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-                                     select q;
+                    query = query.Where(q => !q.IsInputBillCreated);
                 }
             }
 
-            var total = await inventoryQuery.CountAsync();
+            query = query.InternalFilter(filters);
 
-            inventoryQuery = inventoryQuery.InternalFilter(filters);
+            var total = await query.CountAsync();
 
-            var inventoryDataList = await inventoryQuery.SortByFieldName(sortBy, asc).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync();
+            var inventoryDataList = await query.SortByFieldName(sortBy, asc).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync();
 
             //enrich data
             var stockIds = inventoryDataList.Select(iv => iv.StockId).ToList();
@@ -247,24 +250,18 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var inventoryCodes = inventoryDataList.Select(iv => iv.InventoryCode).ToList();
 
 
-            //var mappingObjects = new List<VMappingOusideImportObject>();
-            //if (mappingObjectQuery != null)
-            //{
-            //    mappingObjects = await mappingObjectQuery.Where(m => inventoryIds.Contains(m.SourceId)).ToListAsync();
-            //}
-
             var inputObjects = new List<RefInputBillBasic>();
             if (billQuery != null)
             {
                 inputObjects = await billQuery.Where(m => inventoryCodes.Contains(m.SoCt)).ToListAsync();
             }
 
-            var pagedData = new List<InventoryOutput>();
+            var pagedData = new List<InventoryListOutput>();
             foreach (var item in inventoryDataList)
             {
                 stockInfos.TryGetValue(item.StockId, out var stockInfo);
 
-                pagedData.Add(new InventoryOutput()
+                pagedData.Add(new InventoryListOutput()
                 {
                     InventoryId = item.InventoryId,
                     StockId = item.StockId,
@@ -295,8 +292,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockKeeperName = stockInfo.StockKeeperName,
                         StockKeeperId = stockInfo.StockKeeperId
                     },
-                    InventoryDetailOutputList = null,
-                    FileList = null,
+                    //InventoryDetailOutputList = null,
+                    //FileList = null,
                     //InputBills = mappingObjects
                     //    .Where(m => m.SourceId == item.InventoryId.ToString())
                     //    .Select(m => new MappingInputBillModel()
@@ -551,6 +548,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     },
                     InventoryDetailOutputList = listInventoryDetailsOutput,
                     FileList = attachedFiles,
+                    IsInputBillCreated = mappingObjects.Count() > 0,
                     InputBills = mappingObjects,
                     InventoryStatusId = inventoryObj.InventoryStatusId,
                     InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId,
