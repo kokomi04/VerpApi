@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
@@ -104,9 +105,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size)
         {
             var query = GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword);
-
             var total = await query.CountAsync();
-            var lst = await query.ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider).Skip(page - 1).Take(size).ToListAsync();
+
+            var lst = await query
+                 .OrderByDescending(bill => bill.Year)
+                 .ThenByDescending(bill => bill.Month)
+                 .ThenByDescending(bill => bill.Date)
+                 .ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider)
+                 .Skip(page - 1).Take(size).ToListAsync();
+
+
             return (lst, total);
         }
 
@@ -473,6 +481,5 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
         }
-
     }
 }
