@@ -15,6 +15,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -23,7 +24,7 @@ using VErp.Services.Stock.Model.StockTake;
 
 namespace VErp.Services.Stock.Service.StockTake.Implement
 {
-    public class StockTakePeriodService : IStockTakePeriodService
+    public class StockTakePeriodService : BillDateValidateionServiceAbstract, IStockTakePeriodService
     {
         private readonly StockDBContext _stockContext;
         private readonly IActivityLogService _activityLogService;
@@ -43,7 +44,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ILogger<StockTakePeriodService> logger
-            )
+            ) : base(stockContext)
         {
             _stockContext = stockContext;
             _activityLogService = activityLogService;
@@ -83,6 +84,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
         public async Task<StockTakePeriotModel> CreateStockTakePeriod(StockTakePeriotModel model)
         {
+            await ValidateDateOfBill(model.StockTakePeriodDate.UnixToDateTime(), null);
+
             var stock = _stockContext.Stock.FirstOrDefault(s => s.StockId == model.StockId);
             if (stock == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Kho kiểm không tồn tại");
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(0));
@@ -150,6 +153,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     .Where(p => p.StockTakePeriodId == stockTakePeriodId)
                     .FirstOrDefault();
                 if (stockTakePeriod == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+
+                await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, null);
+
                 stockTakePeriod.IsDeleted = true;
 
                 // Phiếu kiểm kê
@@ -392,6 +398,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
+            await ValidateDateOfBill(model.StockTakePeriodDate.UnixToDateTime(), stockTakePeriod.StockTakePeriodDate);
+
             try
             {
                 if (string.IsNullOrEmpty(model.StockTakePeriodCode)) new BadRequestException(GeneralCode.InvalidParams, "Mã kỳ kiểm kê không được để trống");
@@ -465,6 +473,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+            await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, null);
 
             var stockTakeAcceptanceCertificate = await _stockContext.StockTakeAcceptanceCertificate
                 .FirstOrDefaultAsync(ac => ac.StockTakePeriodId == stockTakePeriodId);
@@ -553,6 +563,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             if (stockTakePeriod == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
+            await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, null);
+
             var acceptanceCertificate = _stockContext.StockTakeAcceptanceCertificate
                    .Where(ac => ac.StockTakePeriodId == stockTakePeriodId)
                    .FirstOrDefault();
@@ -597,6 +609,9 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             {
                 var stockTakePeriod = _stockContext.StockTakePeriod.FirstOrDefault(stp => stp.StockTakePeriodId == stockTakePeriodId);
                 if (stockTakePeriod == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+
+                await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, null);
+
                 var acceptanceCertificate = _stockContext.StockTakeAcceptanceCertificate
                     .Where(p => p.StockTakePeriodId == stockTakePeriodId)
                     .FirstOrDefault();

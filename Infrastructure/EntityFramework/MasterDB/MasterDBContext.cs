@@ -344,13 +344,16 @@ namespace VErp.Infrastructure.EF.MasterDB
 
                 entity.Property(e => e.CodeLength).HasDefaultValueSql("((5))");
 
+                entity.Property(e => e.CreatedDatetimeUtc)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getutcdate())");
+
                 entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.CustomGenCodeName).HasMaxLength(128);
+               
 
-                entity.Property(e => e.DateFormat)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+                entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
                 entity.Property(e => e.Description)
                     .IsRequired()
@@ -362,26 +365,15 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false)
                     .HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.LastValue).HasDefaultValueSql("('')");
-
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
+              
 
                 entity.Property(e => e.ResetDate).HasColumnType("datetime");
 
-                entity.Property(e => e.Seperator)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .IsFixedLength(true);
+               
 
-                entity.Property(e => e.Suffix)
-                    .HasMaxLength(32)
-                    .IsUnicode(false);
-
-                entity.Property(e => e.TempCode)
-                    .HasMaxLength(64)
-                    .IsUnicode(false);
+                entity.Property(e => e.UpdatedDatetimeUtc)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("(getutcdate())");
 
                 entity.Property(e => e.UpdatedTime).HasDefaultValueSql("(getdate())");
             });

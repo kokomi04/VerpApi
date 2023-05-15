@@ -1,15 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
+using VErp.Commons.Enums.Report;
 using VErp.Infrastructure.ServiceCore.Model;
 
 namespace Verp.Services.ReportConfig.Service
 {
     public interface IReportConfigService
     {
-        Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId, bool isConfig = false);
+        Task<ReportTypeViewModel> ReportTypeViewGetInfo(EmumReportViewFilterType reportViewFilterTypeId, int reportTypeId, bool isConfig = false);
 
-        Task<bool> ReportTypeViewUpdate(int reportTypeId, ReportTypeViewModel model);
+        Task<bool> ReportTypeViewUpdate(EmumReportViewFilterType reportViewFilterTypeId, int reportTypeId, ReportTypeViewModel model);
 
         Task<int> ReportTypeGroupCreate(ReportTypeGroupModel model);
 

@@ -89,5 +89,11 @@ namespace VErp.Commons.Library
             return dateTime >= from && dateTime <= to;
         }
 
+
+        public static decimal? ToDecimal(this object obj)
+        {
+            if(obj == null) return null;
+            return Convert.ToDecimal(obj);
+        }
     }
 }

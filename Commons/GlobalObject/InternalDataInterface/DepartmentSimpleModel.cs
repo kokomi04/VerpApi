@@ -13,7 +13,5 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public string DepartmentName { get; set; }
         [Required(ErrorMessage = "Vui lòng nhập số người trong bộ phận")]
         public int NumberOfPerson { get; set; }
-        [Required(ErrorMessage = "Vui lòng nhập số máy trong bộ phận")]
-        public int NumberOfMachine { get; set; }
     }
 }

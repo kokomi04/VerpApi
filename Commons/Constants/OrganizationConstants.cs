@@ -10,5 +10,15 @@
 
         public const string BILL_CODE = "so_ct";
         public const string BILL_DATE = "ngay_ct";
+
+
+        public const string HR_EMPLOYEE_TYPE_CODE = "CTNS_Ho_So";
+
+        public const string EMPLOYEE_CATEGORY_CODE = "_HO_SO_NHAN_SU";
+
+        public static string GetHrAreaTableName(string hrTypeCode, string hrAreaCode)
+        {
+            return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
+        }
     }
 }

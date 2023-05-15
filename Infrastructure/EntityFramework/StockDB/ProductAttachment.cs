@@ -11,6 +11,7 @@ namespace VErp.Infrastructure.EF.StockDB
         public int ProductId { get; set; }
         public long AttachmentFileId { get; set; }
         public string Title { get; set; }
+        public string Url { get; set; }
         public bool IsDeleted { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public DateTime UpdatedDatetimeUtc { get; set; }

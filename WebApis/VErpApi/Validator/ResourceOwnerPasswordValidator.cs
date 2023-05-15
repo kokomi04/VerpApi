@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums;
 using VErp.Commons.Enums.MasterEnum;
@@ -51,24 +52,50 @@ namespace VErp.WebApis.VErpApi.Validator
             string userAgent = _accessor?.HttpContext?.Request.Headers["User-Agent"];
             string message = null;
 
-            var strSubId = context.Request.Raw["subsidiary_id"];
-            if (string.IsNullOrEmpty(strSubId))
+            var strSubId = context.Request.Raw[OAuthFormKeyConstants.SubsidiaryId];
+            var subsidiayCode = "";
+            var subsidiaryId = 0;
+
+            if (string.IsNullOrWhiteSpace(strSubId))
+            {
+                var queryStrings = HttpUtility.ParseQueryString(_accessor?.HttpContext?.Request?.QueryString + "");
+                if (queryStrings != null && queryStrings.AllKeys.Contains(OAuthFormKeyConstants.SubsidiaryCode))
+                {
+                    subsidiayCode = queryStrings[OAuthFormKeyConstants.SubsidiaryCode];
+                }
+            }
+            else
+            {
+                if (!int.TryParse(strSubId, out subsidiaryId))
+                {
+                    message = "Thông tin công ty không hợp lệ";
+                    await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
+                    context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
+                    return;
+                }
+            }
+
+
+            if (subsidiaryId == 0 && string.IsNullOrEmpty(subsidiayCode))
             {
                 message = "Bạn chưa chọn công ty";
                 await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
-            int subsidiaryId;
-            if (!int.TryParse(strSubId, out subsidiaryId))
+
+
+            Subsidiary subdiaryInfo = null;
+            if (subsidiaryId > 0)
             {
-                message = "Thông tin công ty không hợp lệ";
-                await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
-                context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
-                return;
+                subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == subsidiaryId);
+            }
+            else
+            {
+                subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryCode == subsidiayCode);
             }
 
-            var subdiaryInfo = _organizationDBContext.Subsidiary.FirstOrDefault(s => s.SubsidiaryId == subsidiaryId);
+
             if (subdiaryInfo == null)
             {
                 message = "Thông tin công ty không tồn tại";
@@ -76,6 +103,9 @@ namespace VErp.WebApis.VErpApi.Validator
                 context.Result = new GrantValidationResult(TokenRequestErrors.UnauthorizedClient, message);
                 return;
             }
+            subsidiaryId = subdiaryInfo.SubsidiaryId;
+            subsidiayCode = subdiaryInfo.SubsidiaryCode;
+            strSubId = subdiaryInfo.SubsidiaryId + "";
 
 
             if (string.IsNullOrEmpty(userName) || string.IsNullOrEmpty(context.Password))
@@ -86,7 +116,7 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
-            var user = await GetUserByUsername(userName, subsidiaryId);
+            var user = await GetUserByUsername(userName, subdiaryInfo.SubsidiaryId);
             if (user == null)
             {
                 message = $"Tên đăng nhập  {userName} không tồn tại";
@@ -106,7 +136,7 @@ namespace VErp.WebApis.VErpApi.Validator
                 return;
             }
 
-            if (user.SubsidiaryId != subsidiaryId)
+            if (user.SubsidiaryId != subdiaryInfo.SubsidiaryId)
             {
                 message = $"Thông tin công ty của tài khoản {userName} không hợp lệ";
                 await CreateUserLoginLog(userId, userName, ipAddress, userAgent, EnumUserLoginStatus.Failure, strSubId, message);
@@ -127,7 +157,7 @@ namespace VErp.WebApis.VErpApi.Validator
             {
                 new Claim(UserClaimConstants.UserId, user.UserId+""),
                 new Claim(UserClaimConstants.ClientId, context.Request.ClientId),
-                new Claim(UserClaimConstants.SubsidiaryId, subsidiaryId+""),
+                new Claim(UserClaimConstants.SubsidiaryId, subdiaryInfo.SubsidiaryId+""),
                 new Claim(UserClaimConstants.Developer, _appSetting.Developer?.IsDeveloper(userName, subdiaryInfo.SubsidiaryCode) == true? "1" :"0"),
             };
             await MaxFailedAccessAttempts(user, true);

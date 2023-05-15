@@ -1,10 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.Config
 {
-    public class CustomGenCodeInputModel
+    public class CustomGenCodeInputModel : IMapFrom<CustomGenCode>
     {
         public int? ParentId { get; set; }
         public int CodeLength { get; set; }
@@ -32,6 +35,7 @@ namespace VErp.Services.Master.Model.Config
         public bool IsDefault { get; set; }
 
         public IList<CustomGenCodeBaseValueModel> LastValues { get; set; }
+      
     }
 
 }

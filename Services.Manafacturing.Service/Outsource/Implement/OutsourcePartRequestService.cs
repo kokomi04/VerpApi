@@ -396,7 +396,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         public async Task<IList<OutsourcePartRequestDetailInfo>> GetOutsourcePartRequestDetailByProductionOrderId(long productionOrderId)
         {
             var sql = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v WHERE v.ProductionOrderId = {productionOrderId}");
-            var resultData = (await _manufacturingDBContext.QueryDataTable(sql.ToString(), Array.Empty<SqlParameter>()))
+            var resultData = (await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), Array.Empty<SqlParameter>()))
                 .ConvertData<OutsourcePartRequestDetailExtractInfo>()
                 .AsQueryable()
                 .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)

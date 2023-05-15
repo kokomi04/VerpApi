@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Category.Implement
                 throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
 
             var fields = _masterDBContext.CategoryField
-                .Where(f => f.CategoryId == categoryId && f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.CategoryId == categoryId && (f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect))
                 .ToDictionary(f => f.CategoryFieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
@@ -59,7 +59,7 @@ namespace VErp.Services.Master.Service.Category.Implement
                     parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
 
-                var resultData = await _masterDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _masterDBContext.QueryDataTableRaw(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();

@@ -42,7 +42,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                     new SqlParameter("@ProductionOrderId", productionOrderId)
             };
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
             var productionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 

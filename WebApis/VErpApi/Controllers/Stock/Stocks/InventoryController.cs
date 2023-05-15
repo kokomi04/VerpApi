@@ -62,7 +62,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<InventoryOutput>> Get([FromQuery] string keyword,
+        public async Task<PageData<InventoryListOutput>> Get([FromQuery] string keyword,
             [FromQuery] int? customerId,
             [FromQuery] IList<int> productIds,
             [FromQuery] int stockId,

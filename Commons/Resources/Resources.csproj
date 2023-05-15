@@ -232,6 +232,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ActionTypeValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Master\Config\DataConfig\BillDateValidateionMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>BillDateValidateionMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Master\Config\DataConfig\DataConfigActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -417,6 +422,36 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ObjectProcessActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\Salary\SalaryFieldActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryFieldActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\SalaryPeriodAdditionBillActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodAdditionBillActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\SalaryPeriodAdditionFieldActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodAdditionFieldActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\SalaryPeriodAdditionTypeActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodAdditionTypeActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryFieldValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryFieldValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryGroupValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryGroupValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\Salary\SalaryPeriodGroupActivityLogMessage.Designer.cs">
       <DependentUpon>SalaryPeriodGroupActivityLogMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
@@ -431,6 +466,21 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>SalaryGroupActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryPeriodAdditionFieldValiationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodAdditionFieldValiationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryPeriodAdditionTypeValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodAdditionTypeValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\Validation\SalaryPeriodValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryPeriodValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -546,6 +596,16 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>VoucherDataValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Report\ReportTypeViewActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportTypeViewActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Report\ReportTypeViewValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportTypeViewValidationMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Stock\Dictionary\ProductCateActivityMessage.Designer.cs">
       <DependentUpon>ProductCateActivityMessage.resx</DependentUpon>
@@ -681,6 +741,11 @@
       <DependentUpon>StockActivityLogMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Values\ValuesTitleBoolean.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ValuesTitleBoolean.resx</DependentUpon>
     </Compile>
   </ItemGroup>
 
@@ -865,6 +930,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ActionTypeValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Master\Config\DataConfig\BillDateValidateionMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>BillDateValidateionMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Master\Config\DataConfig\DataConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>DataConfigActivityLogMessage.Designer.cs</LastGenOutput>
@@ -1017,6 +1086,30 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ObjectProcessActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\SalaryFieldActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryFieldActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\SalaryPeriodAdditionBillActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodAdditionBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\SalaryPeriodAdditionFieldActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodAdditionFieldActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\SalaryPeriodAdditionTypeActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodAdditionTypeActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryFieldValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryFieldValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryGroupValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryGroupValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\Salary\SalaryPeriodGroupActivityLogMessage.resx">
       <LastGenOutput>SalaryPeriodGroupActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1028,6 +1121,18 @@
     <EmbeddedResource Update="Organization\Salary\SalaryGroupActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SalaryGroupActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryPeriodAdditionFieldValiationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodAdditionFieldValiationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryPeriodAdditionTypeValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodAdditionTypeValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\Validation\SalaryPeriodValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryPeriodValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\Subsidiary\SubsidiaryActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1132,6 +1237,14 @@
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>VoucherDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\ReportTypeViewActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportTypeViewActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\ReportTypeViewValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportTypeViewValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\Dictionary\ProductCateActivityMessage.resx">
       <LastGenOutput>ProductCateActivityMessage.Designer.cs</LastGenOutput>
@@ -1240,6 +1353,14 @@
     <EmbeddedResource Update="Stock\Stock\StockActivityLogMessage.resx">
       <LastGenOutput>StockActivityLogMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Values\ValuesTitleBoolean.en-US.resx">
+      <LastGenOutput>ValuesTitleBoolean.en-US.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Values\ValuesTitleBoolean.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ValuesTitleBoolean.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
 

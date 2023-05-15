@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
 using Verp.Services.ReportConfig.Model;
 using Verp.Services.ReportConfig.Service;
@@ -8,6 +9,7 @@ using VErp.Infrastructure.ApiCore.Attributes;
 
 namespace VErpApi.Controllers.Report
 {
+    [Obsolete("This route is replaced by ReportsController")]
     [Route("api/reports/accoutancy")]
     [ObjectDataApi(EnumObjectType.ReportType, "reportId")]
     public class ReportDataController : VErpBaseController
@@ -17,7 +19,6 @@ namespace VErpApi.Controllers.Report
         {
             _accountancyReportService = accountancyReportService;
         }
-
 
 
         [HttpPost]

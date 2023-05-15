@@ -404,10 +404,19 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Kỳ tính lương")]
         SalaryPeriod = 10004203,
         [Description("Bảng lương theo kỳ")]
-        SalaryPeriodTable = 10004204,
+        SalaryPeriodGroup = 10004204,
         [Description("Dữ liệu bảng lương")]
         SalaryEmployee = 10004205,
 
+
+        [Description("Trường Thưởng/phụ cấp và khấu trừ")]
+        SalaryPeriodAdditionField = 10004206,
+
+        [Description("Loại Thưởng/phụ cấp và khấu trừ")]
+        SalaryPeriodAdditionType = 10004207,
+
+        [Description("Chứng từ Thưởng/phụ cấp và khấu trừ")]
+        SalaryPeriodAdditionBill = 10004208,
 
         [Description("Dữ liệu nháp")]
         DraftData = 1043,

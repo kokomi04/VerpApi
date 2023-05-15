@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -35,7 +36,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<int> Create(SalaryRefTableModel model)
         {
+            await Validate(0, model);
+
             var info = _mapper.Map<SalaryRefTable>(model);
+
             await _organizationDBContext.SalaryRefTable.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
             await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Thêm mới bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
@@ -49,12 +53,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            await ValidateRefTableUseInOtherLink(info.Alias);
+            await ValidateRefTableUseInGroup(info.Alias);
+            await ValidateRefTableUseInFields(info.Alias);
+
 
             _organizationDBContext.SalaryRefTable.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
             await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Xóa bảng liên kết {info.RefTableCode} khỏi bảng lương", info.JsonSerialize());
             return true;
         }
+
+
 
         public async Task<IList<SalaryRefTableModel>> GetList()
         {
@@ -70,11 +80,105 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+
+            await Validate(salaryRefTableId, model);
+
             _mapper.Map(model, info);
             info.SalaryRefTableId = salaryRefTableId;
             await _organizationDBContext.SaveChangesAsync();
             await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Cập nhật bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
             return true;
         }
+
+        private async Task Validate(int salaryRefTableId, SalaryRefTableModel model)
+        {
+            if (await _organizationDBContext.SalaryRefTable.AnyAsync(s => s.Alias == model.Alias && s.SalaryRefTableId != salaryRefTableId))
+            {
+                throw GeneralCode.InvalidParams.BadRequest($"Định danh {model.Alias} đã tồn tại, vui lòng chọn định danh khác!");
+            }
+
+        }
+
+        private async Task ValidateRefTableUseInOtherLink(string alias)
+        {
+            var refTable = await _organizationDBContext.SalaryRefTable.FirstOrDefaultAsync(t => t.FromField.Contains(alias));
+            if (refTable != null)
+            {
+                throw GeneralCode.InvalidParams.BadRequest($"Liên kết đang sử dụng để liên kết sang danh mục khác {refTable.Alias}!");
+            }
+        }
+
+        private async Task ValidateRefTableUseInGroup(string alias)
+        {
+            var groups = await _organizationDBContext.SalaryGroup.ToListAsync();
+            foreach (var group in groups)
+            {
+                var groupModel = _mapper.Map<SalaryGroupModel>(group);
+
+                if (ContainText(groupModel.EmployeeFilter, alias + "."))
+                {
+                    throw GeneralCode.InvalidParams.BadRequest($"Bộ lọc loại bảng lương {group.Title} đang sử dụng thông tin liên kết!");
+                }
+            }
+        }
+
+        private async Task ValidateRefTableUseInFields(string alias)
+        {
+            var fields = await _organizationDBContext.SalaryField.ToListAsync();
+            foreach (var field in fields)
+            {
+                var fieldModel = _mapper.Map<SalaryFieldModel>(field);
+                foreach (var ex in fieldModel.Expression)
+                {
+                    if (ContainText(ex.Filter, alias + "."))
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest($"Điều kiện thành phần bảng lương {field.Title} đang sử dụng thông tin liên kết!");
+                    }
+
+                    if (ex.ValueExpression?.Contains(alias + ".") == true)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest($"Giá trị thành phần bảng lương {field.Title} đang sử dụng thông tin liên kết!");
+                    }
+
+                }
+
+            }
+        }
+
+
+        private bool ContainText(Clause clause, string text)
+        {
+            if (clause != null)
+            {
+                if (clause is SingleClause)
+                {
+                    var singleClause = clause as SingleClause;
+
+                    if (singleClause.FieldName.Contains(text)) return true;
+                    if (singleClause.Value?.ToString()?.Contains(text) == true) return true;
+                    return false;
+                }
+                else if (clause is ArrayClause)
+                {
+                    var arrClause = clause as ArrayClause;
+
+                    var res = new List<bool>();
+                    for (int indx = 0; indx < arrClause.Rules.Count; indx++)
+                    {
+                        if (ContainText(arrClause.Rules.ElementAt(indx), text))
+                        {
+                            return true;
+                        }
+                    }
+
+                }
+                else
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin lọc không sai định dạng");
+                }
+            }
+            return false;
+        }
+
     }
 }

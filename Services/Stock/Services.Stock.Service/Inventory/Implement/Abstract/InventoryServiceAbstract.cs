@@ -15,42 +15,51 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Formaters;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement
 {
-    public abstract class InventoryServiceAbstract : InventoryBillDateAbstract
+    public abstract class InventoryServiceAbstract : BillDateValidateionServiceAbstract
     {
         protected readonly ILogger _logger;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IQueueProcessHelperService _queueProcessHelperService;
-
+        protected readonly StockDBContext _stockDbContext;
+        protected readonly ICurrentContextService _currentContextService;
         internal InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoveHelperService
             , ICurrentContextService currentContextService
             , IQueueProcessHelperService queueProcessHelperService
-            ) : base(stockContext, currentContextService)
+            ) : base(stockContext)
         {
+            _stockDbContext = stockContext;
+            _currentContextService = currentContextService;
             _logger = logger;
             _customGenCodeHelperService = customGenCodeHelperService;
             _queueProcessHelperService = queueProcessHelperService;
         }
 
 
+        private IDictionary<int, StockEntity> _stockInfoCaches = new Dictionary<int, StockEntity>();
         protected async Task<IGenerateCodeContext> GenerateInventoryCode(EnumInventoryType inventoryTypeId, InventoryModelBase req, Dictionary<string, int> baseValueChains = null)
         {
+            if (!_stockInfoCaches.TryGetValue(req.StockId, out var stockInfo))
+            {
+                stockInfo = await _stockDbContext.Stock.AsNoTracking().FirstOrDefaultAsync(s => s.StockId == req.StockId);
+                _stockInfoCaches.TryAdd(req.StockId, stockInfo);
+            }
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
 
             var objectTypeId = inventoryTypeId == EnumInventoryType.Input ? EnumObjectType.InventoryInput : EnumObjectType.InventoryOutput;
             var code = await ctx
-                .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId)
+                .SetConfig(objectTypeId, EnumObjectType.Stock, req.StockId, stockInfo?.StockName)
                 .SetConfigData(0, req.Date)
                 .TryValidateAndGenerateCode(_stockDbContext.Inventory, req.InventoryCode, (s, code) => s.InventoryTypeId == (int)inventoryTypeId && s.InventoryCode == code);
 
@@ -108,7 +117,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         protected async Task ValidateInventoryConfig(DateTime? billDate, DateTime? oldDate)
         {
-            await ValidateBill(billDate, oldDate);
+            await ValidateDateOfBill(billDate, oldDate);
         }
 
         /// <summary>

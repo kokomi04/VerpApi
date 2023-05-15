@@ -64,7 +64,7 @@ namespace VErp.Services.Accountancy.Service.InputDashboard
                 GROUP BY YEAR(v.ngay_ct), MONTH(v.ngay_ct)
             ";
 
-            var resultData = (await _accountancyDBContext.QueryDataTable(querySQL.ToString(), new SqlParameter[]
+            var resultData = (await _accountancyDBContext.QueryDataTableRaw(querySQL.ToString(), new SqlParameter[]
                                 {
                                     new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
                                     new SqlParameter("@ToDate", toDate.UnixToDateTime()),

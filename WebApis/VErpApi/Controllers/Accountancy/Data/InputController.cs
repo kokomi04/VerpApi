@@ -73,7 +73,7 @@ namespace VErpApi.Controllers.Accountancy.Data
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("{inputTypeId}/Export")]
-        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExporttFilterModel req)
+        public async Task<IActionResult> ExportList([FromRoute] int inputTypeId, [FromBody] InputTypeBillsExportFilterModel req)
         {
             if (req == null)
             {

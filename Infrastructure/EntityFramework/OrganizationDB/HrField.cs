@@ -22,6 +22,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int DataSize { get; set; }
         public int DecimalPlace { get; set; }
         public int FormTypeId { get; set; }
+        public string SqlValue { get; set; }
         public string DefaultValue { get; set; }
         public string RefTableCode { get; set; }
         public string RefTableField { get; set; }

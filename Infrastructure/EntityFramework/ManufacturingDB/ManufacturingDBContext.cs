@@ -274,6 +274,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
                 entity.Property(e => e.AssignmentWorkload).HasColumnType("decimal(32, 12)");
 
+                entity.Property(e => e.Comment).HasMaxLength(512);
+
                 entity.Property(e => e.RateInPercent)
                     .HasColumnType("decimal(18, 5)")
                     .HasDefaultValueSql("((100))");
@@ -1033,19 +1035,13 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.HandoverTypeId).HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Productivity)
-                    .HasColumnType("decimal(18, 5)")
-                    .HasDefaultValueSql("((0))")
-                    .HasComment("Nang suat/nguoi-may");
+             
 
                 entity.Property(e => e.ShrinkageRate).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.StepName)
                     .IsRequired()
                     .HasMaxLength(128);
-
-                entity.Property(e => e.UnitId).HasComment("Đơn vị tính năng xuất (/h)");
 
                 entity.HasOne(d => d.StepGroup)
                     .WithMany(p => p.Step)

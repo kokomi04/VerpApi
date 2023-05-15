@@ -18,7 +18,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public string StepName { get; set; }
         public int SortOrder { get; set; }
         public int StepGroupId { get; set; }
-        public int UnitId { get; set; }
         public decimal ShrinkageRate { get; set; }
         public int HandoverTypeId { get; set; }
         public bool IsHide { get; set; }
@@ -30,7 +29,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int SubsidiaryId { get; set; }
-        public decimal? Productivity { get; set; }
 
         public virtual StepGroup StepGroup { get; set; }
         public virtual ICollection<ProductionStep> ProductionStep { get; set; }

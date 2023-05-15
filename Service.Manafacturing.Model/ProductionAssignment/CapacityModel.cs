@@ -40,11 +40,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public string ProductionOrderCode { get; set; }
     }
 
-    public class ProductivityModel
-    {
-        public decimal ProductivityPerPerson { get; set; }
-        public int UnitId { get; set; }
-    }
+    //public class ProductivityModel
+    //{
+    //    public decimal ProductivityPerPerson { get; set; }
+    //    public int UnitId { get; set; }
+    //}
 
     public class DepartmentAssignFreeDate
     {

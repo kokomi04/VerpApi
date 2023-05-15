@@ -12,6 +12,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -37,6 +38,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly ObjectActivityLogFacade _objectGenCodeActivityLog;
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly ICategoryHelperService _categoryHelperService;
+        private readonly ISalaryPeriodAdditionBillTypeHelperService _salaryPeriodAdditionBillTypeHelperService;
 
         public ObjectGenCodeService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
@@ -50,7 +52,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IInputPublicTypeHelperService inputPublicTypeHelperService
             , IVoucherTypeHelperService voucherTypeHelperService
             , IOrganizationHelperService organizationHelperService
-            , ICategoryHelperService categoryHelperService)
+            , ICategoryHelperService categoryHelperService
+            , ISalaryPeriodAdditionBillTypeHelperService salaryPeriodAdditionBillTypeHelperService)
         {
             _masterDbContext = masterDbContext;
             _appSetting = appSetting.Value;
@@ -65,10 +68,11 @@ namespace VErp.Services.Master.Service.Config.Implement
             _objectGenCodeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ObjectCustomGenCodeMapping);
             _organizationHelperService = organizationHelperService;
             _categoryHelperService = categoryHelperService;
+            _salaryPeriodAdditionBillTypeHelperService = salaryPeriodAdditionBillTypeHelperService;
         }
 
 
-        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date)
+        public async Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, string configObjectTitle, long? fId, string code, long? date)
         {
             var customGenCodeId = (await _masterDbContext.ObjectCustomGenCodeMapping.FirstOrDefaultAsync(m => m.TargetObjectTypeId == (int)targetObjectTypeId && m.ConfigObjectTypeId == (int)configObjectTypeId && m.ConfigObjectId == configObjectId))?.CustomGenCodeId;
 
@@ -86,7 +90,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             if (obj == null)
             {
-                throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), configObjectId > 0 ? (long?)configObjectId : null);
+                throw CustomConfigNotExisted.BadRequestFormat(targetObjectTypeId.GetEnumDescription(), (configObjectId > 0 ? $"({configObjectId}) " : null) + configObjectTitle);
 
             }
 
@@ -428,6 +432,23 @@ namespace VErp.Services.Master.Service.Config.Implement
                     );
                 }
             }
+
+            var salaryAdditionBillTypes = await _salaryPeriodAdditionBillTypeHelperService.ListTypes();
+            foreach (var type in salaryAdditionBillTypes)
+            {
+
+                result.Add(
+                       GetObjectGenCodeMappingTypeModel(
+                       moduleTypeId: EnumModuleType.Organization,
+                       targeObjectTypeId: EnumObjectType.SalaryPeriodAdditionBill,
+                       configObjectTypeId: EnumObjectType.SalaryPeriodAdditionType,
+                       configObjectId: type.SalaryPeriodAdditionTypeId,
+                       targetObjectName: type.Title,
+                       fieldName: "Số chứng từ")
+                   );
+            }
+
+
 
             result.Add(
                  GetObjectGenCodeMappingTypeModel(

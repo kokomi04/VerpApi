@@ -9,5 +9,6 @@ namespace VErp.Services.Stock.Model.Product
         public int ProductId { get; set; }
         public long AttachmentFileId { get; set; }
         public string Title { get; set; }
+        public string Url { get; set; }
     }
 }

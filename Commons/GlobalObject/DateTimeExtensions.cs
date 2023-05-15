@@ -23,7 +23,6 @@ namespace VErp.Commons.GlobalObject
 
         public static DateTime? UnixToDateTime(this long unixTime)
         {
-            if (unixTime == 0) return DateTime.MinValue;
             return UnixToDateTime((long?)unixTime, null);
         }
 
@@ -34,7 +33,7 @@ namespace VErp.Commons.GlobalObject
 
         public static DateTime? UnixToDateTime(this long? unixTime, int? timezoneOffset)
         {
-            if (unixTime == 0 || !unixTime.HasValue) return null;
+            if (!unixTime.HasValue) return null;
             return new DateTime(1970, 1, 1).AddSeconds(unixTime.Value).AddMinutes(-timezoneOffset ?? 0);
         }
 

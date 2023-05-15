@@ -270,11 +270,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     var listProductIds = GetProductIdsHasUnitChange(updateProducts, existsProduct);
                     if (listProductIds.Count() > 0)
                     {
-                        var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(listProductIds);
-                        if (usedProductId.HasValue)
+                        var productTopUsed = await _productService.GetProductTopInUsed(listProductIds, true);
+                        if (productTopUsed.Count > 0)
                         {
-                            var usedProductCode = existsProduct.Where(g => g.ProductId == usedProductId).Select(p => p.ProductCode).FirstOrDefault();
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + msg);
+                            var usedProductCode = existsProduct.Where(g => g.ProductId == productTopUsed.First().ProductId).Select(p => p.ProductCode).FirstOrDefault();
+                            throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + productTopUsed.First().Description);
                         }
                     }
                 }

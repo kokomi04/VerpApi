@@ -98,7 +98,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                     productionOrderCodes.ToSqlParameter("@ProductionOrderCodes")
             };
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
             var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
@@ -131,7 +131,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                     productionOrderIds.ToSqlParameter("@ProductionOrderIds")
             };
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
             var details = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
@@ -212,7 +212,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionOrderDetail", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
@@ -271,7 +271,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                    @") g
 	                GROUP BY g.ProductionOrderId ");
 
-            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var table = await _manufacturingDBContext.QueryDataTableRaw(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
             // decimal additionResult = 0;
             if (table != null && table.Rows.Count > 0)
@@ -294,7 +294,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             sql.Append(" ORDER BY t.RowNum");
 
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
             return (lst, total);
@@ -329,7 +329,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionOrderDetail", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionOrderDetail", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
@@ -387,7 +387,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                    @") g
 	                GROUP BY g.ProductionOrderId ");
 
-            var table = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var table = await _manufacturingDBContext.QueryDataTableRaw(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
             // decimal additionResult = 0;
             if (table != null && table.Rows.Count > 0)
@@ -412,7 +412,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 ORDER BY CAST(HasNewProductionProcessVersion AS int) DESC) u");
 
 
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductOrderModelExtra>();
 
             return (lst, total);
@@ -1261,7 +1261,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     new SqlParameter("@ProductionOrderId", productionOrderId)
                 };
-                var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+                var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
                 model.ProductionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
@@ -1756,7 +1756,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     new SqlParameter("@ProductionOrderDetailId", productionOrderDetailId.Value)
                 };
-                var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+                var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
                 var rs = resultData.ConvertData<ProductionOrderDetailOutputModel>().FirstOrDefault();
                 return rs;
@@ -1949,7 +1949,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (productionOrderIds.Count > 0)
             {
                 var sql = $"SELECT * FROM ProductionOrder p JOIN @PIds v ON p.ProductionOrderId = v.[Value]";
-                var resultData = await _manufacturingDBContext.QueryDataTable(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
+                var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, new[] { productionOrderIds.ToSqlParameter("@PIds") });
                 if (resultData.Rows.Count > 0)
                 {
                     if (updateDatas.Any(x => x.FieldName == "ProductionOrderCode"))

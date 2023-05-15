@@ -70,15 +70,6 @@ namespace Verp.Resources.Accountancy.InputData {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Ngày chứng từ không được phép trước ngày chốt sổ.
-        /// </summary>
-        public static string BillDateMustBeGreaterThanClosingDate {
-            get {
-                return ResourceManager.GetString("BillDateMustBeGreaterThanClosingDate", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy chứng từ.
         /// </summary>
         public static string BillNotFound {

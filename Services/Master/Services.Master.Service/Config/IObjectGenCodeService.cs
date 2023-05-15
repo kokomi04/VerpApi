@@ -11,7 +11,7 @@ namespace VErp.Services.Master.Service.Config
     {
         Task<PageData<ObjectGenCodeMappingTypeModel>> GetObjectGenCodeMappingTypes(EnumModuleType? moduleTypeId, string keyword, int page, int size);
 
-        Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, long? fId, string code, long? date);
+        Task<CustomGenCodeOutputModel> GetCurrentConfig(EnumObjectType targetObjectTypeId, EnumObjectType configObjectTypeId, long configObjectId, string configObjectTitle, long? fId, string code, long? date);
 
         public Task<bool> MapObjectGenCode(ObjectGenCodeMapping model);
 
