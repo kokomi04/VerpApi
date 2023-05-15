@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Infrastructure.ServiceCore.Model
@@ -77,7 +78,8 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public string Code { get; set; }
         public string Message { get; set; }
 
-        public Exception Exception { get; set; }
+        [JsonProperty("exception$")]
+        public Exception ExceptionDebug { get; set; }
         public object AdditionData { get; set; }
     }
 

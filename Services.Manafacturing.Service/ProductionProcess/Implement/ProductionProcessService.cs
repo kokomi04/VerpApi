@@ -340,7 +340,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             var productionOutsourcePartMappings = await _manufacturingDBContext.ProductionOutsourcePartMapping.Where(x => containerIds.Contains(x.ContainerId))
@@ -1402,7 +1402,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas;
@@ -1633,7 +1633,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataOutsourceStep>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataOutsourceStep>(sql.ToString(), parammeters);
 
                 foreach (var ld in stepLinkDatas)
                 {
@@ -2290,7 +2290,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                     };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas.Select(x =>

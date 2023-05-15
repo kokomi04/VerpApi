@@ -1419,7 +1419,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 productIds.ToSqlParameter("@ProductIds"),
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
-            return await _stockDbContext.QueryList<ProductInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
+            return await _stockDbContext.QueryListProc<ProductInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
         }
 
     }

@@ -232,7 +232,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var sqlParams = new List<SqlParameter>();
             int prefix = 0;
             prefix = clause.FilterClauseProcess(employeeView, employeeView, condition, sqlParams, prefix, false, null, null);
-            var employeeData = await _organizationDBContext.QueryDataTable($"SELECT * FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
+            var employeeData = await _organizationDBContext.QueryDataTableRaw($"SELECT * FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
             return (employeeData.ConvertData(), refCategory);
         }
     }

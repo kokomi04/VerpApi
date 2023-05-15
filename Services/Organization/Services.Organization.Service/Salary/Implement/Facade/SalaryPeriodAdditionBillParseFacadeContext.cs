@@ -93,7 +93,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var sqlParams = new List<SqlParameter>();
             int prefix = 0;
             prefix = clause.FilterClauseProcess(employeeView, employeeView, condition, sqlParams, prefix, false, null, null);
-            var employeeData = await dbContext.QueryDataTable($"SELECT * FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
+            var employeeData = await dbContext.QueryDataTableRaw($"SELECT * FROM {employeeView} WHERE {condition}", sqlParams.ToArray());
             Employees = employeeData.ConvertData();
         }
 

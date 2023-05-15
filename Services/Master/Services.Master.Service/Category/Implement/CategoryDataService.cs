@@ -94,7 +94,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     data.TryGetStringValue(field.Key, out var celValue);
                     parammeters.Add(new SqlParameter($"@{field.Key}", (field.Value).GetSqlValue(celValue)));
                 }
-                resultData = (await _masterContext.QueryDataTable(script, parammeters)).ConvertData();
+                resultData = (await _masterContext.QueryDataTableRaw(script, parammeters)).ConvertData();
             }
             return ((resultParam.Value as int?).GetValueOrDefault(), messageParam.Value as string, resultData);
         }
@@ -471,7 +471,7 @@ namespace VErp.Services.Accountancy.Service.Category
             if (category.IsTreeView)
             {
                 var existSql = $"SELECT [{tableName}].F_Id as Total FROM {tableName} WHERE [{tableName}].ParentId = {fId};";
-                var result = await _masterContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                var result = await _masterContext.QueryDataTableRaw(existSql, Array.Empty<SqlParameter>());
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
                 {
@@ -506,7 +506,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     var referToValue = new SqlParameter("@RefValue", value?.ToString());
                     var existSql = $"SELECT F_Id FROM [dbo].{referToTable} WHERE {referToField.CategoryFieldName} = @RefValue;";
-                    var result = await _masterContext.QueryDataTable(existSql, new[] { referToValue });
+                    var result = await _masterContext.QueryDataTableRaw(existSql, new[] { referToValue });
                     isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -596,7 +596,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         existSql += $" AND {whereCondition}";
                     }
                     sqlParams.Add(new SqlParameter(paramName, valueItem));
-                    var result = await _masterContext.QueryDataTable(existSql, sqlParams.ToArray());
+                    var result = await _masterContext.QueryDataTableRaw(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (!isExisted)
                     {
@@ -621,7 +621,7 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         existSql += $" AND F_Id != {fId}";
                     }
-                    var result = await _masterContext.QueryDataTable(existSql, sqlParams.ToArray());
+                    var result = await _masterContext.QueryDataTableRaw(existSql, sqlParams.ToArray());
                     bool isExisted = result != null && result.Rows.Count > 0;
                     if (isExisted)
                     {
@@ -673,7 +673,7 @@ namespace VErp.Services.Accountancy.Service.Category
             {
                 var existSql = $"SELECT F_Id FROM v{category.CategoryCode} WHERE F_Id = {parentId}";
 
-                var result = await _masterContext.QueryDataTable(existSql, Array.Empty<SqlParameter>());
+                var result = await _masterContext.QueryDataTableRaw(existSql, Array.Empty<SqlParameter>());
                 bool isExist = result != null && result.Rows.Count > 0;
                 if (!isExist)
                 {
@@ -724,7 +724,7 @@ namespace VErp.Services.Accountancy.Service.Category
             dataSql.Append(GetSelect(tableName, categoryFields, category.IsTreeView, category.IsOutSideData));
             dataSql.Append($" FROM {tableName} WHERE [{tableName}].F_Id = {fId}");
 
-            var currentData = await _masterContext.QueryDataTable(dataSql.ToString(), Array.Empty<SqlParameter>());
+            var currentData = await _masterContext.QueryDataTableRaw(dataSql.ToString(), Array.Empty<SqlParameter>());
             var categoryRow = currentData.ConvertData().FirstOrDefault();
             if (categoryRow == null)
             {
@@ -941,7 +941,7 @@ namespace VErp.Services.Accountancy.Service.Category
                 totalSql.Append($" WHERE {whereCondition}");
             }
 
-            var countTable = await _masterContext.QueryDataTable(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var countTable = await _masterContext.QueryDataTableRaw(totalSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var total = 0;
             var additionResult = new NonCamelCaseDictionary();
             if (countTable != null && countTable.Rows.Count > 0)
@@ -961,12 +961,12 @@ namespace VErp.Services.Accountancy.Service.Category
                     dataSql.Append($" OFFSET {(page - 1) * size} ROWS FETCH NEXT {size} ROWS ONLY;");
                 }
             }
-            var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var data = await _masterContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray());
             var lstData = data.ConvertData();
 
             if (category.IsTreeView)
             {
-                var allData = await _masterContext.QueryDataTable(allDataSql.ToString(), Array.Empty<SqlParameter>());
+                var allData = await _masterContext.QueryDataTableRaw(allDataSql.ToString(), Array.Empty<SqlParameter>());
                 var lstAll = allData.ConvertData();
 
                 AddParents(ref lstData, lstAll);
@@ -1145,7 +1145,7 @@ namespace VErp.Services.Accountancy.Service.Category
                         }
                     }
 
-                    var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                    var data = await _masterContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.ToArray());
                     var lst = data.ConvertData();
 
                     foreach (var item in groupByFilter)

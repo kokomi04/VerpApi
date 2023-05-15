@@ -48,7 +48,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
             if (!_env.IsProduction())
             {
-                response.Exception = context.Exception;
+                response.ExceptionDebug = context.Exception;
                 response.AdditionData = additionData;
             }
 

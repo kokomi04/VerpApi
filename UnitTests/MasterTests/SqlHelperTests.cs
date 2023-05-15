@@ -117,7 +117,7 @@ sdd WHERE
                 var newSlq2 = sql.TSqlAppendCondition("1=1");
 
 
-                var data = await _accountancyDBContext.QueryDataTable(newSlq2, Array.Empty<SqlParameter>());
+                var data = await _accountancyDBContext.QueryDataTableRaw(newSlq2, Array.Empty<SqlParameter>());
             }
             catch (Exception ex)
             {

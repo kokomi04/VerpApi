@@ -123,7 +123,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
 
-            var totalData = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+            var totalData = await _manufacturingDBContext.QueryDataTableRaw(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
 
             if (totalData != null && totalData.Rows.Count > 0)
@@ -139,7 +139,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             ROWS ONLY");
             }
 
-            var lst = await _manufacturingDBContext.QueryList<ProductionHandoverHistoryReceiptModel>(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = await _manufacturingDBContext.QueryListRaw<ProductionHandoverHistoryReceiptModel>(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
 
             return (lst, total);
         }

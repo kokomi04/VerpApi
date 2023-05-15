@@ -562,7 +562,7 @@ namespace VErp.Services.Master.Service.Category
                     }
                 }
 
-                var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                var data = await _masterContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.ToArray());
                 if (!categoriesData.ContainsKey(categoryQuery.CategoryCode))
                 {
                     categoriesData.Add(categoryQuery.CategoryCode, data.ConvertData());
