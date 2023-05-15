@@ -36,8 +36,7 @@ using Microsoft.EntityFrameworkCore;
 namespace VErp.Services.Organization.Service.HrConfig.Facade
 {
     public interface IHrDataImportDIService
-    {
-        IHrDataService HrDataService { get; }
+    {        
         ILongTaskResourceLockService LongTaskResourceLockService { get; }
         OrganizationDBContext OrganizationDBContext { get; }
         ICategoryHelperService CategoryHelperService { get; }
@@ -46,17 +45,15 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
     }
     public class HrDataImportDIService : IHrDataImportDIService
     {
-        public HrDataImportDIService(IHrDataService hrDataService, ILongTaskResourceLockService longTaskResourceLockService, OrganizationDBContext organizationDBContext, ICategoryHelperService categoryHelperService, ICurrentContextService currentContextService, ICustomGenCodeHelperService customGenCodeHelperService)
-        {
-            HrDataService = hrDataService;
+        public HrDataImportDIService(ILongTaskResourceLockService longTaskResourceLockService, OrganizationDBContext organizationDBContext, ICategoryHelperService categoryHelperService, ICurrentContextService currentContextService, ICustomGenCodeHelperService customGenCodeHelperService)
+        {           
             LongTaskResourceLockService = longTaskResourceLockService;
             OrganizationDBContext = organizationDBContext;
             CategoryHelperService = categoryHelperService;
             CurrentContextService = currentContextService;
             CustomGenCodeHelperService = customGenCodeHelperService;
         }
-
-        public IHrDataService HrDataService { get; }
+      
 
         public ILongTaskResourceLockService LongTaskResourceLockService { get; }
 
