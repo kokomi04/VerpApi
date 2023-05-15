@@ -115,7 +115,7 @@ namespace VErp.Commons.Enums.MasterEnum
             {
                 case EnumDataType.Boolean:
                     if (value?.ToString()?.ToLower() == "true") return ValuesTitleBoolean.True;
-                    break;
+                    return null;
             }
 
             return value?.ToString();
