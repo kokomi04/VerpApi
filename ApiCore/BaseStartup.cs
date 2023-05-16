@@ -235,6 +235,7 @@ namespace VErp.Infrastructure.ApiCore
                 app.UseIdentityServer();
             }
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
             var _logger = loggerFactory.CreateLogger<BaseStartup>();

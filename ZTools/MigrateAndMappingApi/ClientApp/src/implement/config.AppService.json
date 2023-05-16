@@ -1,0 +1,9 @@
+﻿{
+  "Identity": {
+    "SubsidiaryId": 2,
+    "ClientId": "web",
+    "ClientSecret": "secretWeb"
+  },
+  "ServerURL": "https://test-app.verp.vn/endpoint/connect/token",
+  "ServerInfo": "https://test-app.verp.vn/endpoint/api/users/me/info"
+}

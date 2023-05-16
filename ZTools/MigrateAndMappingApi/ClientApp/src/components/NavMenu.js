@@ -2,18 +2,23 @@
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
+import { createBrowserHistory } from 'history';
 import ApiEndpointService from '../services/ApiEndpointService';
 import { ToastContainer } from 'react-toastr';
 
 export default class NavMenu extends React.Component {
     container;
+    history;
+
     constructor(props) {
         super(props);
 
         this.toggle = this.toggle.bind(this);
         this.state = {
-            isOpen: false
+            isOpen: false,
+            isLogin: false
         };
+        this.history = createBrowserHistory();
     }
     toggle() {
         this.setState({
@@ -32,6 +37,17 @@ export default class NavMenu extends React.Component {
             });
         })
     }
+    btnLoginClick() {
+        this.history.push('/login');
+        this.history.go(0);
+    }
+
+    btnLogoutClick() {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('expires_at')
+        this.history.push('/login');
+        this.history.go(0);
+    }
 
     render() {
         return (
@@ -44,6 +60,7 @@ export default class NavMenu extends React.Component {
                         <NavbarToggler onClick={this.toggle} className="mr-2" />
                         <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={this.state.isOpen} navbar>
                             <ul className="navbar-nav flex-grow">
+
                                 <NavItem>
                                     <NavLink tag={Link} className="text-dark" to="/">Home</NavLink>
                                 </NavItem>
@@ -54,6 +71,16 @@ export default class NavMenu extends React.Component {
                                 <NavItem>
                                     <NavLink tag={Link} className="text-dark" to="/system-modules">Modules</NavLink>
                                 </NavItem>
+                                {
+                                    this.isLogin ?
+                                        <NavItem>
+                                            <NavLink tag={Link} onClick={() => this.checkLogin()} className="text-dark" to="/">Login</NavLink>
+                                        </NavItem>
+                                        :
+                                        <NavItem>
+                                            <NavLink tag={Link} onClick={() => this.btnLogoutClick()} className="text-dark" to="/">Logout</NavLink>
+                                        </NavItem>
+                                }
                                 <NavItem>
                                     <button onClick={() => this.cleanCache()}>Clean cache</button>
                                 </NavItem>
