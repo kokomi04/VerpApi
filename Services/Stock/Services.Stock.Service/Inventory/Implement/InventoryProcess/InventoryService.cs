@@ -87,7 +87,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
+        public async Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isInputBillCreated = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
         {
             keyword = keyword?.Trim();
 
@@ -223,9 +223,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             RefStockId = q != null ? (int?)q.RefInventory.StockId : null,
                         };
 #pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-            if (isExistedInputBill != null)
+            if (isInputBillCreated != null)
             {
-                if (isExistedInputBill.Value)
+                if (isInputBillCreated.Value)
                 {
                     query = query.Where(q => q.IsInputBillCreated);
                 }

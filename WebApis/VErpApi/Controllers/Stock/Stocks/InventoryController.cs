@@ -51,7 +51,7 @@ namespace VErpApi.Controllers.Stock.Inventory
         /// <param name="type">Loại (1: Nhập kho, 2: Xuất kho)</param>
         /// <param name="beginTime">Từ ngày</param>
         /// <param name="endTime">Đến ngày</param>
-        /// <param name="isExistedInputBill">Đã tạo CTGS hay chưa</param>        
+        /// <param name="isInputBillCreated">Đã tạo CTGS hay chưa</param>        
         /// <param name="sortBy">Cột sắp xếp</param>
         /// <param name="asc">Tăng dần hay giảm dần</param>
         /// <param name="page">Trang</param>
@@ -70,7 +70,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             [FromQuery] EnumInventoryType? type,
             [FromQuery] long? beginTime,
             [FromQuery] long? endTime,
-            [FromQuery] bool? isExistedInputBill,
+            [FromQuery] bool? isInputBillCreated,
             [FromQuery] string sortBy,
             [FromQuery] bool asc,
             [FromQuery] int page,
@@ -81,7 +81,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetList(keyword, customerId, productIds, stockId, inventoryStatusId, type, beginTime, endTime, isExistedInputBill, sortBy, asc, page, size, inventoryActionId, filters).ConfigureAwait(true);
+            return await _inventoryService.GetList(keyword, customerId, productIds, stockId, inventoryStatusId, type, beginTime, endTime, isInputBillCreated, sortBy, asc, page, size, inventoryActionId, filters).ConfigureAwait(true);
         }
 
 
