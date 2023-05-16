@@ -1360,7 +1360,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
 
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderCode, data.StartDate);
+                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderDetail.FirstOrDefault().OrderCode, data.StartDate);
                         if (generated == null)
                         {
                             throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
