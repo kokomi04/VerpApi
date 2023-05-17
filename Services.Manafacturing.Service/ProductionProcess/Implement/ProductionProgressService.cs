@@ -104,10 +104,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 /**
                  * All output not have input
                  */
-                var endSteps = steps.Where(s => s.ParentId != null &&
-                        outputs.Where(p => p.ProductionStepId == s.ProductionStepId)
-                                .All(d => !inputs.Any(o => o.d.ProductionStepLinkDataId == d.d.ProductionStepLinkDataId))
-                 ).ToList();
+                //var endSteps = steps.Where(s => s.ParentId != null &&
+                //        outputs.Where(p => p.ProductionStepId == s.ProductionStepId)
+                //                .All(d => !inputs.Any(o => o.d.ProductionStepLinkDataId == d.d.ProductionStepLinkDataId))
+                // ).ToList();
 
                 var assignments = await _manufacturingDBContext.ProductionAssignment.Where(s => s.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
 
@@ -119,19 +119,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 if (!data.Inventories.Any() && !hasHandOver && !hasAllocation)
                 {
-                    productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Waiting;
+                    if (!steps.Any() || !assignments.Any())
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+                    else
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Waiting;
                 }
                 else
                 {
-                    productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingLessStarted;
+                    if (departmentHandoverDetails.Any() && departmentHandoverDetails.All(s => s.InputDatas.Where(d => d.FromStepId == null).All(d => d.ReceivedQuantity >= d.RequireQuantity)))//startSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.All(a => a.ProductionStepId == s.StepId && (a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish))))
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
+                    else
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingLessStarted;
                 }
 
 
 
-                if (departmentHandoverDetails.All(s => s.InputDatas.Where(d => d.FromStepId == null).All(d => d.ReceivedQuantity >= d.RequireQuantity)))//startSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.All(a => a.ProductionStepId == s.StepId && (a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish))))
-                {
-                    productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.ProcessingFullStarted;
-                }
+
 
                 var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
 
@@ -152,7 +155,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         break;
                     }
                 }
-               
+
+                /*
 
                 if (isFinish || endSteps.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)))
                 {
@@ -172,9 +176,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.OverDeadline;
                     }
                     
+                }*/
+
+                var stepsToProceduction = steps.Where(s => s.ParentId != null).ToList();
+                var isCompletedHandoverAssignment = stepsToProceduction.All(s => assignments.Any(a => a.ProductionStepId == s.ProductionStepId) && assignments.Where(a => a.ProductionStepId == s.ProductionStepId).All(a => a.IsManualFinish || a.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish));
+
+                if (isFinish)
+                {
+                    if (!isCompletedHandoverAssignment)
+                    {
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.MissHandOverInfo;
+                    }
+                    else
+                    {
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Completed;
+                    }
+
+                }
+                else
+                {
+
+                    if (productionOrder.EndDate < DateTime.UtcNow)
+                    {
+                        productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.OverDeadline;
+                    }
+
                 }
 
-                
+
 
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {

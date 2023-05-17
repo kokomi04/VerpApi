@@ -206,7 +206,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         //}
 
-        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails, EnumProductionStatus status, string inventoryCode)
+        protected async Task UpdateProductionOrderStatus(IList<InventoryDetail> inventoryDetails)//, EnumProductionStatus status, string inventoryCode)
         {
             var productionOrderCodes = inventoryDetails.Where(d => !string.IsNullOrEmpty(d.ProductionOrderCode)).Select(d => d.ProductionOrderCode).Distinct().ToList();
 

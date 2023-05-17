@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -34,7 +35,7 @@ namespace VErp.Services.Stock.Service.Stock
 
         Task<bool> ApprovedInputDataUpdate(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req);
 
-        Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig);
+        Task<(IList<InventoryDetail> affectedDetails, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig);
 
         Task<bool> SentToCensor(long inventoryId);
 

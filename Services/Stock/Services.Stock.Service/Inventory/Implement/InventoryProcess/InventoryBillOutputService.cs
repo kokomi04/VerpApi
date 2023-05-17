@@ -428,7 +428,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.ProcessingLessStarted, inventoryObj.InventoryCode);
+                        await UpdateProductionOrderStatus(inventoryDetails);
 
                         //await UpdateIgnoreAllocation(inventoryDetails);
 
