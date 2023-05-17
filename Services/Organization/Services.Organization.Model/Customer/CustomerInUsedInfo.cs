@@ -1,16 +1,13 @@
-﻿using OpenXmlPowerTools;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Drawing.Drawing2D;
 using System.Text;
 using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Services.Stock.Model.Product
+namespace VErp.Services.Organization.Model.Customer
 {
-    public class ProductInUsedInfo
+    public class CustomerInUsedInfo
     {
-        public int ProductId { get; set; }
+        public int CustomerId { get; set; }
         public EnumObjectType ObjectTypeId { get; set; }
         public int BillTypeId { get; set; }
         public long BillId { get; set; }

@@ -237,19 +237,28 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var checkParams = new[]
-            {
-                new SqlParameter("@CustomerId",customerId),
-                isInUsed
-            };
+            //var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            //var checkParams = new[]
+            //{
+            //    new SqlParameter("@CustomerId",customerId),
+            //    isInUsed
+            //};
 
-            await _organizationContext.ExecuteStoreProcedure("asp_Customer_CheckUsed", checkParams);
+            //await _organizationContext.ExecuteStoreProcedure("asp_Customer_CheckUsed", checkParams);
 
-            if (isInUsed.Value as bool? == true)
+            //if (isInUsed.Value as bool? == true)
+            //{
+            //    throw CanNotDeleteCustomerWhichIsInUse.BadRequest();
+            //}
+
+
+
+            var customerTopUsed = await GetCustomerTopInUsed(new[] { customerId }, true);
+            if (customerTopUsed.Count > 0)
             {
-                throw CanNotDeleteCustomerWhichIsInUse.BadRequest();
+                throw CustomerErrorCode.CustomerInUsed.BadRequestFormatWithData(customerTopUsed, $"{CanNotDeleteCustomerWhichIsInUse} {customerInfo.CustomerCode} {customerTopUsed.First().Description}");
             }
+
 
             var customerContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             foreach (var c in customerContacts)
@@ -872,6 +881,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             return ctx;
 
+        }
+
+        public async Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                customerIds.ToSqlParameter("@CustomerIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _organizationContext.QueryListProc<CustomerInUsedInfo>("asp_Customer_GetTopUsed_ByList", checkParams);
         }
     }
 }
