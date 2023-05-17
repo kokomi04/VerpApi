@@ -19,7 +19,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Organization {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class CustomerErrorCodeDescription {
@@ -66,6 +66,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Organization {
         public static string CustomerCodeAlreadyExisted {
             get {
                 return ResourceManager.GetString("CustomerCodeAlreadyExisted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không thể xóa khách hàng đang được sử dụng.
+        /// </summary>
+        public static string CustomerInUsed {
+            get {
+                return ResourceManager.GetString("CustomerInUsed", resourceCulture);
             }
         }
         

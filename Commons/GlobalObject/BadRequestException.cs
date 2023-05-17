@@ -83,6 +83,10 @@ namespace VErp.Commons.GlobalObject
         {
             return new BadRequestException(message);
         }
+        public static BadRequestException BadRequestWithData(this string message, object additionData)
+        {
+            return new BadRequestException(additionData, GeneralCode.InvalidParams, message);
+        }
 
         public static BadRequestException BadRequest(this string message, Enum code)
         {

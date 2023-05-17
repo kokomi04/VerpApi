@@ -120,6 +120,9 @@
   <data name="CustomerCodeAlreadyExisted" xml:space="preserve">
     <value>The customer code already exists</value>
   </data>
+  <data name="CustomerInUsed" xml:space="preserve">
+    <value>Can not delete in used customer</value>
+  </data>
   <data name="CustomerNameAlreadyExisted" xml:space="preserve">
     <value>The customer name already exists</value>
   </data>
