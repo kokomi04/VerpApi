@@ -9,6 +9,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -53,11 +54,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        public async Task<bool> CalcAndUpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
+        public async Task<bool> CalcAndUpdateProductionOrderStatus(ProductionOrderCalcStatusMessage data)
         {
             await _materialAllocationService.UpdateIgnoreAllocation(new[] { data.ProductionOrderCode }, true);
 
-            await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
+            await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.Description, data.Inventories);
 
 
             var productionOrder = _manufacturingDBContext.ProductionOrder
@@ -139,7 +140,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrder.ProductionOrderId).ToListAsync();
 
 
-                var inputInventories = data.Inventories;
+                var inputInventories = data.Inventories.Where(d => d.InventoryTypeId == EnumInventoryType.Input);
 
                 bool isFinish = true;
 
@@ -208,7 +209,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {
                     _manufacturingDBContext.SaveChanges();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false }.JsonSerialize());
                 }
 
 

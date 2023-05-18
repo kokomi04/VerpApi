@@ -206,15 +206,15 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
                                 .ToList();
 
-                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
-                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input /*&& i.ProductionStepId == productionStepId*/).ToList();
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == EnumInventoryType.Input /*&& i.ProductionStepId == productionStepId*/).ToList();
 
                             foreach (var input in stepProductionProgressModel.InputData)
                             {
                                 var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
                                 if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                                 {
-                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity);
+                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity ?? 0);
                                 }
                                 input.ReceivedQuantity = receivedQuantity;
                             }
@@ -224,7 +224,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
                                 if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                                 {
-                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity);
+                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity ?? 0);
                                 }
                                 output.ReceivedQuantity = receivedQuantity;
 
@@ -386,15 +386,15 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 .Where(h => h.ProductionOrderId == productionOrderId && h.FromProductionStepId == productionStepId)
                                 .ToList();
 
-                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
-                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == (int)EnumInventoryType.Input/* && i.ProductionStepId == productionStepId*/).ToList();
+                            var stepInputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == EnumInventoryType.Output /*&& i.ProductionStepId == productionStepId*/).ToList();
+                            var stepOutputInventory = reqInventorys[productionOrderId].Where(i => i.InventoryTypeId == EnumInventoryType.Input/* && i.ProductionStepId == productionStepId*/).ToList();
 
                             foreach (var input in inputData)
                             {
                                 var receivedQuantity = stepInputHandovers.Where(h => h.ObjectId == input.ObjectId && h.ObjectTypeId == (int)input.ObjectTypeId).Sum(h => h.HandoverQuantity);
                                 if (input.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                                 {
-                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity);
+                                    receivedQuantity += stepInputInventory.Where(i => i.ProductId == (int)input.ObjectId).Sum(i => i.ActualQuantity ?? 0);
                                 }
                                 input.ReceivedQuantity = receivedQuantity;
                             }
@@ -406,7 +406,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                                 var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.ObjectId && h.ObjectTypeId == (int)output.ObjectTypeId).Sum(h => h.HandoverQuantity);
                                 if (output.ObjectTypeId == EnumProductionStepLinkDataObjectType.Product)
                                 {
-                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity);
+                                    receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.ObjectId).Sum(i => i.ActualQuantity ?? 0);
                                 }
                                 output.ReceivedQuantity = receivedQuantity;
 
@@ -487,7 +487,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
 
                 reqInventorys.Add(productionOrderId, invData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .Where(r => r.InventoryTypeId == EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList());
             }
 
@@ -558,7 +558,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == o.ObjectId && h.ObjectTypeId == (int)o.ObjectTypeId).Sum(h => h.HandoverQuantity);
                         if (o.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                         {
-                            receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)o.ObjectId).Sum(i => i.ActualQuantity);
+                            receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)o.ObjectId).Sum(i => i.ActualQuantity ?? 0);
                         }
                         return receivedQuantity < o.TotalQuantity;
                     }))
@@ -579,7 +579,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                       .Where(i => i.ProductId == productionOrderDetail.ProductId)
                       .Sum(i => i.ActualQuantity);
 
-                productionOrderDetail.CompletedQuantity = productImportQuantity;
+                productionOrderDetail.CompletedQuantity = productImportQuantity ?? 0;
             }
 
             return productionOrderDetails;
@@ -727,7 +727,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             };
             var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
             var reqInventorys = invData.ConvertData<ProductionInventoryRequirementEntity>()
-                    .Where(r => r.InventoryTypeId == (int)EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
+                    .Where(r => r.InventoryTypeId == EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
 
             var assignments = _manufacturingDBContext.ProductionAssignment
@@ -773,7 +773,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                     var receivedQuantity = stepOutputHandovers.Where(h => h.ObjectId == output.LinkDataObjectId && h.ObjectTypeId == (int)output.LinkDataObjectTypeId).Sum(h => h.HandoverQuantity);
                     if (output.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                     {
-                        receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity);
+                        receivedQuantity += stepOutputInventory.Where(i => i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity ?? 0);
                     }
                     var stepProgressPercent = Math.Round(receivedQuantity * 100 / output.TotalQuantity, 2);
                     if (stepProgressPercent > stepReport.StepProgressPercent) stepReport.StepProgressPercent = stepProgressPercent;
@@ -796,7 +796,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                         var receivedQuantity = stepOutputHandovers.Where(h => h.FromDepartmentId == stepAssignment.DepartmentId && h.ObjectId == output.LinkDataObjectId && h.ObjectTypeId == (int)output.LinkDataObjectTypeId).Sum(h => h.HandoverQuantity);
                         if (output.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
                         {
-                            receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity);
+                            receivedQuantity += stepOutputInventory.Where(i => i.DepartmentId == stepAssignment.DepartmentId && i.ProductId == (int)output.LinkDataObjectId).Sum(i => i.ActualQuantity ?? 0);
                         }
                         var departmentProgressPercent = Math.Round((receivedQuantity * 100 * totalQuantityAssign) / (stepAssignment.AssignmentQuantity * output.TotalQuantity), 2);
                         if (departmentProgressPercent > departmentProgress.DepartmentProgressPercent) departmentProgress.DepartmentProgressPercent = departmentProgressPercent;

@@ -22,6 +22,7 @@ using Verp.Services.ReportConfig.Service;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Queue;
 using VErp.Infrastructure.ApiCore;
@@ -120,12 +121,12 @@ namespace VErp.WebApis.VErpApi
         {
             services.AddInProcessBackgroundQueuePublisher();
 
-            services.AddInProcessBackgroundConsummer<IInventoryService, string>(PRODUCTION_INVENTORY_STATITICS, async (_inventoryService, msg, calcelToken) =>
+            services.AddInProcessBackgroundConsummer<IInventoryService, ProductionOrderStatusInventorySumaryMessage>(PRODUCTION_INVENTORY_STATITICS, async (_inventoryService, msg, calcelToken) =>
             {
-                await _inventoryService.ProductionOrderInventory(new[] { msg.Data }, EnumProductionStatus.ProcessingLessStarted, string.Empty);
+                await _inventoryService.ProductionOrderInventory(msg.Data);
             });
 
-            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderStatusDataModel>(PRODUCTION_INVENTORY_APPROVED, async (_productionOrderService, msg, calcelToken) =>
+            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusMessage>(PRODUCTION_CALC_STATUS, async (_productionOrderService, msg, calcelToken) =>
             {
                 await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
             });

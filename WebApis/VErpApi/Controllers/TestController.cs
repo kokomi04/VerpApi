@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -92,10 +93,14 @@ namespace VErpApi.Controllers.System
 
         [HttpPost]
         [Route("EnqueueProductionOrderStatus")]
-        public async Task<int> EnqueueProductionOrderStatus([FromBody] string productionOrderCode)
+        public async Task<int> EnqueueProductionOrderStatus([FromBody] string productionOrderCode, string inventoryCode, EnumInventoryType inventoryTypeId)
         {
 
-            await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderCode);
+            await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, new ProductionOrderStatusInventorySumaryMessage()
+            {
+                Description = "test",
+                ProductionOrderCode = productionOrderCode,
+            });
             return 0;
         }
 

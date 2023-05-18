@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Inventory;
@@ -37,7 +38,7 @@ namespace VErp.Services.Stock.Service.Stock
         Task<bool> SendMailNotifyCensor(long inventoryId, string mailCode, string[] mailTo);
 
 
-        Task ProductionOrderInventory(IList<string> productionOrderCodes, EnumProductionStatus status, string inventoryCode);
+        Task ProductionOrderInventory(ProductionOrderStatusInventorySumaryMessage msg);
 
     }
 }

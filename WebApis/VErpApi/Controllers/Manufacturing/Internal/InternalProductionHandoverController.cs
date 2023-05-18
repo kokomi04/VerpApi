@@ -20,13 +20,6 @@ namespace VErpApi.Controllers.Manufacturing.Internal
         }
 
         [HttpPut]
-        [Route("status")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromBody] ProductionOrderStatusDataModel data)
-        {
-            return await _productionHandoverReceiptService.ChangeAssignedProgressStatus(data.ProductionOrderCode, data.InventoryCode, data.Inventories);
-        }
-
-        [HttpPut]
         [Route("ignore-allocation")]
         public async Task<bool> UpdateIgnoreAllocation([FromBody] string[] productionOrderCodes)
         {
