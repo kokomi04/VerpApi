@@ -40,13 +40,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
             var genCodeConfig = ctx.SetConfig(EnumObjectType.Package)
                                 .SetConfigData(0);
-
-
+          
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             using var logBatch = _activityLogService.BeginBatchLog();
             try
             {
-                var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateDb(inventoryId, fromDate, toDate, req, genCodeConfig);
+                var (affectedDetails, isDeleted) = await ApprovedInputDataUpdateDb(inventoryId, fromDate, toDate, req, genCodeConfig);
 
                 trans.Commit();
 
@@ -70,6 +69,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 await ctx.ConfirmCode();
 
+                await UpdateProductionOrderStatus(affectedDetails);
+
                 return true;
             }
             catch (Exception ex)
@@ -80,17 +81,17 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
         }
 
-        public async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
+        public async Task<(IList<InventoryDetail> affectedDetails, bool isDeleted)> ApprovedInputDataUpdateDb(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
         {
             await ValidateInventoryCode(inventoryId, req.Inventory.InventoryCode);
 
-            var (affectedInventoryIds, isDeleted) = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req, genCodeConfig);
+            var (affectedDetails, isDeleted) = await ApprovedInputDataUpdateAction(inventoryId, fromDate, toDate, req, genCodeConfig);
 
-            foreach (var changedInventoryId in affectedInventoryIds)
+            foreach (var changedInventoryId in affectedDetails.Select(d=>d.InventoryId).Distinct().ToList())
             {
                 await ReCalculateRemainingAfterUpdate(changedInventoryId, inventoryId);
             }
-            return (affectedInventoryIds, isDeleted);
+            return (affectedDetails, isDeleted);
         }
 
         private async Task<InventoryInputUpdateGetAffectedModel> CensoredInventoryInputUpdateGetAffected(long inventoryId, long fromDate, long toDate, InventoryInModel req)
@@ -207,7 +208,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return new InventoryInputUpdateGetAffectedModel { Products = products, DbDetails = details, UpdateDetails = updateDetail.Data.Select(x => x.Detail).ToList() };
         }
 
-        private async Task<(HashSet<long> affectedInventoryIds, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
+        private async Task<(IList<InventoryDetail> affectedDetails, bool isDeleted)> ApprovedInputDataUpdateAction(long inventoryId, long fromDate, long toDate, ApprovedInputDataSubmitModel req, IGenerateCodeAction genCodeConfig)
         {
 
             var inventoryInfo = await _stockDbContext.Inventory.FirstOrDefaultAsync(iv => iv.InventoryId == inventoryId);
@@ -224,13 +225,39 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var dbDetails = data.DbDetails;
             var updateDetails = data.UpdateDetails;
 
+            IList<InventoryDetail> affectedDetails = new List<InventoryDetail>();
+
+            foreach (var inventoryDetail in dbDetails)
+            {
+                if (!affectedDetails.Contains(inventoryDetail))
+                {
+                    affectedDetails.Add(inventoryDetail);
+                }
+            }
+
+            foreach (var inventoryDetail in updateDetails)
+            {
+                if (!affectedDetails.Contains(inventoryDetail))
+                {
+                    affectedDetails.Add(inventoryDetail);
+                }
+            }
+
             await ApprovedInputDataUpdateAction_Normalize(req, products);
             var issuedDate = req.Inventory.Date.UnixToDateTime().Value;
 
             //need to update before validate quantity order by time
             inventoryInfo.Date = issuedDate;
 
-            var updateResult = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
+            var refChangesDetails = await ApprovedInputDataUpdateAction_Update(req, products, dbDetails);
+
+            foreach (var inventoryDetail in refChangesDetails)
+            {
+                if (!affectedDetails.Contains(inventoryDetail))
+                {
+                    affectedDetails.Add(inventoryDetail);
+                }
+            }
 
             var billDate = req.Inventory.BillDate?.UnixToDateTime();
 
@@ -274,12 +301,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             await _stockDbContext.SaveChangesAsync();
 
-            if (!updateResult.Contains(inventoryId))
-            {
-                updateResult.Add(inventoryId);
-            }
+            //if (!updateResult.Contains(inventoryId))
+            //{
+            //    updateResult.Add(inventoryId);               
+            //}
+          
 
-            return (updateResult, inventoryInfo.IsDeleted);
+            return (affectedDetails, inventoryInfo.IsDeleted);
         }
 
         private async Task ApprovedInputDataUpdateAction_Normalize(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products)
@@ -566,11 +594,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        private async Task<HashSet<long>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
+        private async Task<IList<InventoryDetail>> ApprovedInputDataUpdateAction_Update(ApprovedInputDataSubmitModel req, IList<CensoredInventoryInputProducts> products, IList<InventoryDetail> details)
         {
             var validateOutputDetails = new Dictionary<long, CensoredOutputInventoryDetailUpdate>();
 
-            HashSet<long> changesInventories = new HashSet<long>();
+            IList<InventoryDetail> changesDetails = new List<InventoryDetail>();
 
 
             foreach (var p in products)
@@ -582,19 +610,24 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 detail.PrimaryQuantity = p.NewPrimaryQuantity;
                 detail.ProductUnitConversionQuantity = p.NewProductUnitConversionQuantity;
-                detail.UnitPrice = submitDetail?.UnitPrice ?? 0;
-                detail.RefObjectId = submitDetail?.RefObjectId;
-                detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
-                detail.RefObjectCode = submitDetail?.RefObjectCode;
 
-                detail.OrderCode = submitDetail?.OrderCode;
-                detail.Pocode = submitDetail?.POCode;
-                detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
-                //detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
-                detail.InventoryRequirementDetailId = submitDetail?.InventoryRequirementDetailId;
-                detail.Description = submitDetail?.Description;
+                if (submitDetail != null)
+                {
+                    detail.UnitPrice = submitDetail?.UnitPrice ?? 0;
+                    detail.RefObjectId = submitDetail?.RefObjectId;
+                    detail.RefObjectTypeId = submitDetail?.RefObjectTypeId;
+                    detail.RefObjectCode = submitDetail?.RefObjectCode;
 
-                //detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
+                    detail.OrderCode = submitDetail?.OrderCode;
+                    detail.Pocode = submitDetail?.POCode;
+                    detail.ProductionOrderCode = submitDetail?.ProductionOrderCode;
+                    //detail.InventoryRequirementCode = submitDetail?.InventoryRequirementCode;
+                    detail.InventoryRequirementDetailId = submitDetail?.InventoryRequirementDetailId;
+                    detail.Description = submitDetail?.Description;
+
+                    //detail.AccountancyAccountNumberDu = submitDetail?.AccountancyAccountNumberDu;
+                }
+
 
                 if (p.NewPrimaryQuantity == 0)
                 {
@@ -877,10 +910,14 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         throw new Exception("Invalid negative inventory detail data");
                     }
 
-                    if (!changesInventories.Contains(inventoryDetail.InventoryId))
+                    if (!changesDetails.Contains(inventoryDetail))
                     {
-                        changesInventories.Add(inventoryDetail.InventoryId);
+                        changesDetails.Add(inventoryDetail);
                     }
+                    //if (!changesInventories.Contains(inventoryDetail.InventoryId))
+                    //{
+                    //    changesInventories.Add(inventoryDetail.InventoryId);
+                    //}
                 }
 
                 foreach (var inv in updatedInventories)
@@ -912,7 +949,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 }
             }
 
-            return changesInventories;
+            return changesDetails;
         }
 
         public class InventoryInputUpdateGetAffectedModel

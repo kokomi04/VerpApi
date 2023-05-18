@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -18,7 +19,7 @@ using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants
 namespace VErpApi.Controllers.System
 {
     [Route("api/[controller]")]
-    [AllowAnonymous]
+    [GlobalApi]
     public class TestController : VErpBaseController
     {
         private readonly MasterDBContext _masterDBContext;

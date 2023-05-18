@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using NPOI.HSSF.UserModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -169,14 +170,14 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                     var outDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(outDetails, EnumProductionStatus.ProcessingLessStarted, outputObj.InventoryCode);
+                    await UpdateProductionOrderStatus(outDetails);
 
                     // await UpdateIgnoreAllocation(outDetails);
 
 
                     var intDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inputObj.InventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(intDetails, EnumProductionStatus.ProcessingLessStarted, inputObj.InventoryCode);
+                    await UpdateProductionOrderStatus(intDetails);
 
                     // await UpdateIgnoreAllocation(intDetails);
 
@@ -348,7 +349,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             {
                 await _inventoryBillOutputService.DeleteInventoryOutputDb(outputObj);
 
-                var (affectedInventoryIds, isDeleted) = await _inventoryBillInputService.ApprovedInputDataUpdateDb(outputObj.RefInventoryId.Value, fromDate, toDate, req, genCodeConfig);
+                var (affectedDetails, isDeleted) = await _inventoryBillInputService.ApprovedInputDataUpdateDb(outputObj.RefInventoryId.Value, fromDate, toDate, req, genCodeConfig);
 
                 if (!isDeleted)
                 {
@@ -360,6 +361,8 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
                 await AcivitityLog(outputObj, inputObj, () => InventoryBillOutputActivityMessage.RotationDelete);
 
                 await ctx.ConfirmCode();
+
+                await UpdateProductionOrderStatus(affectedDetails);
 
                 return true;
             }

@@ -593,7 +593,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .CreateLog();
 
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
+                        await UpdateProductionOrderStatus(inventoryDetails);//, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
 
                         await ctx.ConfirmCode();
 
