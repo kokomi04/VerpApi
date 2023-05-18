@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                 await ctx.ConfirmCode();
 
-                await UpdateProductionOrderStatus(affectedDetails);
+                await UpdateProductionOrderStatus(affectedDetails, req?.Inventory?.InventoryCode);
 
                 return true;
             }

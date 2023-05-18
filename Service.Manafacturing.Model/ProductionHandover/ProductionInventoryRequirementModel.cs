@@ -3,6 +3,7 @@ using System;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -41,10 +42,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         }
     }
 
-    public class ProductionInventoryRequirementEntity : ProductionInventoryRequirementBaseModel
+    public class ProductionInventoryRequirementEntity : InternalProductionInventoryRequirementModel
     {
-        public int Status { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public int InventoryTypeId { get; set; }
+        //public int Status { get; set; }
+        //public DateTime CreatedDatetimeUtc { get; set; }
+        //public int InventoryTypeId { get; set; }
     }
 }

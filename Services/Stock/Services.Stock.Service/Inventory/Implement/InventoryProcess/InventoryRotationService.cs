@@ -16,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Inventory;
@@ -31,8 +32,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
         private readonly IInventoryBillInputService _inventoryBillInputService;
         private readonly IInventoryBillOutputService _inventoryBillOutputService;
         private readonly ObjectActivityLogFacade invActivityLogFacade;
-        private readonly ObjectActivityLogFacade outActivityLogFacade;
-        private readonly IActivityLogService activityLogService;
+        private readonly ObjectActivityLogFacade outActivityLogFacade;        
         private readonly ICurrentContextService contextService;
         public InventoryRotationService(
             StockDBContext stockContext,
@@ -43,15 +43,14 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             IInventoryBillOutputService inventoryBillOutputService,
             IActivityLogService activityLogService,
             ICurrentContextService contextService,
-            IQueueProcessHelperService queueProcessHelperService
+            IProductionOrderQueueHelperService productionOrderQueueHelperService
             )
-            : base(stockContext, logger, customGenCodeHelperService, currentContextService, queueProcessHelperService)
+            : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
             _inventoryBillInputService = inventoryBillInputService;
             _inventoryBillOutputService = inventoryBillOutputService;
             invActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
             outActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
-            this.activityLogService = activityLogService;
             this.contextService = contextService;
         }
 
@@ -170,14 +169,14 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                     var outDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(outDetails);
+                    await UpdateProductionOrderStatus(outDetails, outputObj.InventoryCode);
 
                     // await UpdateIgnoreAllocation(outDetails);
 
 
                     var intDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inputObj.InventoryId).ToListAsync();
 
-                    await UpdateProductionOrderStatus(intDetails);
+                    await UpdateProductionOrderStatus(intDetails, outputObj.InventoryCode);
 
                     // await UpdateIgnoreAllocation(intDetails);
 
@@ -362,7 +361,7 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
 
                 await ctx.ConfirmCode();
 
-                await UpdateProductionOrderStatus(affectedDetails);
+                await UpdateProductionOrderStatus(affectedDetails, outputObj.InventoryCode);
 
                 return true;
             }

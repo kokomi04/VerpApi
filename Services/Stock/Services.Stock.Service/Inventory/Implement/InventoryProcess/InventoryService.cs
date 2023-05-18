@@ -20,6 +20,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -67,9 +68,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            , IQueueProcessHelperService _queueProcessHelperService
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService
             , ILongTaskResourceLockService longTaskResourceLockService
-            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, currentContextService, _queueProcessHelperService)
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;

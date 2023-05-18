@@ -18,6 +18,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Inventory;
@@ -43,8 +44,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IAsyncRunnerService asyncRunner
             , ICurrentContextService currentContextService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IQueueProcessHelperService queueProcessHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, queueProcessHelperService)
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
             _asyncRunner = asyncRunner;
             _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
@@ -428,7 +429,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                        await UpdateProductionOrderStatus(inventoryDetails);
+                        await UpdateProductionOrderStatus(inventoryDetails, inventoryObj.InventoryCode);
 
                         //await UpdateIgnoreAllocation(inventoryDetails);
 
