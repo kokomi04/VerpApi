@@ -514,7 +514,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     await UpdateFullAssignedProgressStatus(productionOrderId);
 
                     await trans.CommitAsync();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
+
+                    var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderInfo?.ProductionOrderCode}", data.JsonSerialize());
+
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
 
                     return true;
                 }
