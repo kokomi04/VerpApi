@@ -26,6 +26,9 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
 
     public abstract class HrDataUpdateServiceAbstract
     {
+        //private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
+        protected const string HR_TABLE_F_IDENTITY = OrganizationConstants.HR_TABLE_F_IDENTITY;
+
         protected readonly OrganizationDBContext _organizationDBContext;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         protected readonly ICurrentContextService _currentContextService;
@@ -148,7 +151,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 {
                     var field = infoField.Value;
 
-                    if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
+                    if (field.FormTypeId == EnumFormType.Generate &&
                         (!row.TryGetStringValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {

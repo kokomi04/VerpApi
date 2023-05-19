@@ -120,10 +120,16 @@
   <data name="Create" xml:space="preserve">
     <value>Thêm chứng từ hành chính nhân sự {0}, số {1}</value>
   </data>
+  <data name="CreateFromExcel" xml:space="preserve">
+    <value>Thêm chứng từ hành chính nhân sự {0}, số {1} từ excel</value>
+  </data>
   <data name="Delete" xml:space="preserve">
     <value>Xóa chứng từ hành chính nhân sự  {0}, số {1}</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật chứng từ hành chính nhân sự  {0}, số {1}</value>
+  </data>
+  <data name="UpdateFromExcel" xml:space="preserve">
+    <value>Cập nhật chứng từ hành chính nhân sự  {0}, số {1} từ excel</value>
   </data>
 </root>
