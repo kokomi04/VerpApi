@@ -279,6 +279,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
                     TotalMoney = item.TotalMoney,
                     IsApproved = item.IsApproved,
+                    IsInputBillCreated = item.IsInputBillCreated,
                     //AccountancyAccountNumber = item.AccountancyAccountNumber,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,

@@ -464,7 +464,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 {
                     prop = Expression.PropertyOrField(prop, propertyName);
 
-                    
+
                     if (Nullable.GetUnderlyingType(prop.Type) != null)
                     {
                         //var getValueMethod = prop.Type.GetMethod("GetValueOrDefault", Type.EmptyTypes);
@@ -489,7 +489,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 object dbValue = null;
                 if (clause.Operator != EnumOperator.InList)
                 {
-                    dbValue = clause.DataType.GetSqlValue(clause.Value);
+                    dbValue = clause.Value.IsNullOrEmptyObject() ? clause.Value : clause.DataType.GetSqlValue(clause.Value);
 
                     //value = Expression.Constant(dbValue, prop.Type);
                     //if (nullable)
