@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
@@ -87,12 +88,12 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public string ProductionOrderCode { get; set; }
         public string InventoryCode { get; set; }
         public EnumProductionStatus ProductionOrderStatus { get; set; }
-        public IList<ProductionInventoryRequirementEntity> Inventories { get; set; }
+        public IList<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel> Inventories { get; set; }
 
         public string Description { get; set; }
         public ProductionOrderStatusDataModel()
         {
-            Inventories = new List<ProductionInventoryRequirementEntity>();
+            Inventories = new List<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel>();
         }
     }
 

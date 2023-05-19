@@ -12,6 +12,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -136,7 +137,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
             .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
             .ToList();
 
-            var reqInventorys = new Dictionary<long, List<ProductionInventoryRequirementEntity>>();
+            var reqInventorys = new Dictionary<long, List<InternalProductionInventoryRequirementModel>>();
 
             foreach (var productionOrderId in productionOrderIds)
             {
@@ -147,7 +148,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                reqInventorys.Add(productionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                reqInventorys.Add(productionOrderId, resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .Where(r => r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList());
             }
@@ -321,7 +322,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
                 .ToList();
 
-            var reqInventorys = new Dictionary<long, List<ProductionInventoryRequirementEntity>>();
+            var reqInventorys = new Dictionary<long, List<InternalProductionInventoryRequirementModel>>();
 
             foreach (var productionOrderId in productionOrderIds)
             {
@@ -332,7 +333,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                reqInventorys.Add(productionOrderId, resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                reqInventorys.Add(productionOrderId, resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .Where(r => r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList());
             }
@@ -475,7 +476,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 .Where(h => h.Status == (int)EnumHandoverStatus.Accepted)
                 .ToList();
 
-            var reqInventorys = new Dictionary<long, List<ProductionInventoryRequirementEntity>>();
+            var reqInventorys = new Dictionary<long, List<InternalProductionInventoryRequirementModel>>();
 
             foreach (var productionOrderId in productionOrderIds)
             {
@@ -486,7 +487,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
 
                 var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
 
-                reqInventorys.Add(productionOrderId, invData.ConvertData<ProductionInventoryRequirementEntity>()
+                reqInventorys.Add(productionOrderId, invData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .Where(r => r.InventoryTypeId == EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList());
             }
@@ -726,7 +727,7 @@ namespace VErp.Services.Manafacturing.Service.Report.Implement
                 new SqlParameter("@ProductionOrderId", productionOrderId)
             };
             var invData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", invParammeters);
-            var reqInventorys = invData.ConvertData<ProductionInventoryRequirementEntity>()
+            var reqInventorys = invData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .Where(r => r.InventoryTypeId == EnumInventoryType.Input && r.Status == (int)EnumProductionInventoryRequirementStatus.Accepted)
                     .ToList();
 

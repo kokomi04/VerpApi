@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -140,7 +141,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-            var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+            var inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                 .AsQueryable()
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -357,7 +358,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                var inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .AsQueryable()
                     .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                     .ToList();
