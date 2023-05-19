@@ -1476,7 +1476,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 // Xóa dữ liệu nháp
                 await _draftDataHelperService.DeleteDraftData((int)EnumObjectType.DraftData, monthPlanId);
                 trans.Commit();
-                foreach (var item in data)
+                foreach (var item in ctxs)
                 {
                     await item.ConfirmCode();
                 }
