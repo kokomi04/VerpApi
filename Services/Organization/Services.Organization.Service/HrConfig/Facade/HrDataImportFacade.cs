@@ -268,7 +268,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }).ToList();
 
                 var existedHrBillId = 0L;
-                if (existedBillData.FirstOrDefault()?.TryGetValue(HR_TABLE_F_IDENTITY, out var id) == true)
+                object id = null;
+                if (existedBillData.FirstOrDefault()?.TryGetValue(HR_TABLE_F_IDENTITY, out id) == true)
                 {
                     existedHrBillId = Convert.ToInt64(id);
                 }
