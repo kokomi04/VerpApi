@@ -1445,9 +1445,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var startDate = data.Min(d => d.StartDate);
-                List<IGenerateCodeContext> ctxs = new List<IGenerateCodeContext>();
+                var ctxs = new List<IGenerateCodeContext>();
 
-                Dictionary<string, int> baseValueChains = new Dictionary<string, int>();
+                var baseValueChains = new Dictionary<string, int>();
                 foreach (var item in data)
                 {
                     if (item.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
