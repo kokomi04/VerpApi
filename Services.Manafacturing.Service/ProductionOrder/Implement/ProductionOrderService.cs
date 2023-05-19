@@ -1323,7 +1323,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var config = await GetProductionOrderConfiguration();
-
+                IGenerateCodeContext generateCodeCtx = null;
                 if (config != null && !config.IsEnablePlanEndDate)
                 {
                     data.PlanEndDate = data.EndDate;
@@ -1347,27 +1347,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (data.ProductionOrderDetail.Any(x => x.Quantity <= 0))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
 
-                CustomGenCodeOutputModel currentConfig = null;
                 if (string.IsNullOrEmpty(data.ProductionOrderCode))
                 {
-                    currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, data.ProductionOrderCode, data.StartDate);
-                    if (currentConfig == null)
-                    {
-                        throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
-                    }
-                    bool isFirst = true;
-                    do
-                    {
-                        if (!isFirst) await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
-
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentConfig.CurrentLastValue.LastValue, null, data.ProductionOrderDetail.FirstOrDefault().OrderCode, data.StartDate);
-                        if (generated == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
-                        }
-                        data.ProductionOrderCode = generated.CustomCode;
-                        isFirst = false;
-                    } while (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == data.ProductionOrderCode));
+                    var (code, ctx) = await GenerateProductOrderCode(null, data);
+                    data.ProductionOrderCode = code;
+                    generateCodeCtx = ctx;
                 }
                 else
                 {
@@ -1378,9 +1362,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var productionOrder = await SaveProductionOrder(data);
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
-
-                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
-
+                if (generateCodeCtx != null)
+                {
+                    await generateCodeCtx.ConfirmCode();
+                }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
 
                 return data;
@@ -1460,13 +1445,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var startDate = data.Min(d => d.StartDate);
-                CustomGenCodeOutputModel currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.ProductionOrder, EnumObjectType.ProductionOrder, 0, null, null, startDate);
-                if (currentConfig == null)
-                {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
-                }
-                int currentValue = currentConfig.CurrentLastValue.LastValue;
-                string currentCode = currentConfig.CurrentLastValue.LastCode;
+                var ctxs = new List<IGenerateCodeContext>();
+
+                var baseValueChains = new Dictionary<string, int>();
                 foreach (var item in data)
                 {
                     if (item.StartDate <= 0) throw new BadRequestException(GeneralCode.InvalidParams, "Yêu cầu nhập ngày bắt đầu sản xuất.");
@@ -1483,17 +1464,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng vào lệnh không được để trống");
 
                     //string currentCode = currentConfig.CurrentLastValue.LastCode;
-                    do
-                    {
-                        var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, currentValue, null, item.ProductionOrderDetail.FirstOrDefault().OrderCode, item.StartDate);
-                        if (generated == null)
-                        {
-                            throw new BadRequestException(GeneralCode.InternalError, "Không thể sinh mã ");
-                        }
-                        item.ProductionOrderCode = generated.CustomCode;
-                        currentValue = generated.LastValue;
-                        currentCode = generated.CustomCode;
-                    } while (_manufacturingDBContext.ProductionOrder.Any(o => o.ProductionOrderCode == item.ProductionOrderCode));
+                    var (code, ctx) = await GenerateProductOrderCode(null, item, baseValueChains);
+                    item.ProductionOrderCode = code;
+                    ctxs.Add(ctx);
+
                 }
                 long productionOrderId = 0;
                 foreach (var item in data)
@@ -1501,16 +1475,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     var productionOrder = await SaveProductionOrder(item, monthPlanId);
                     productionOrderId = productionOrder.ProductionOrderId;
                 }
-
                 // Xóa dữ liệu nháp
                 await _draftDataHelperService.DeleteDraftData((int)EnumObjectType.DraftData, monthPlanId);
-
                 trans.Commit();
-                currentConfig.CurrentLastValue.LastValue = currentValue;
-                currentConfig.CurrentLastValue.LastCode = currentCode;
-
-                await _customGenCodeHelperService.ConfirmCode(currentConfig?.CurrentLastValue);
-
+                foreach (var item in ctxs)
+                {
+                    await item.ConfirmCode();
+                }
+                
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data.JsonSerialize());
 
                 return data.Length;
@@ -1521,6 +1493,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "CreateProductOrders");
                 throw;
             }
+        }
+        private async Task<(string, IGenerateCodeContext)> GenerateProductOrderCode(long? productOrderId, ProductionOrderInputModel model, Dictionary<string, int> baseValueChains = null)
+        {
+            model.ProductionOrderCode = (model.ProductionOrderCode ?? "").Trim();
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+
+            var code = await ctx
+                .SetConfig(EnumObjectType.ProductionOrder)
+                .SetConfigData(productOrderId ?? 0, model.Date, model.ProductionOrderDetail.FirstOrDefault().OrderCode)
+                .TryValidateAndGenerateCode(_manufacturingDBContext.ProductionOrder, model.ProductionOrderCode, (s, code) => s.ProductionOrderId != productOrderId && s.ProductionOrderCode == code); ;
+            return (code, ctx);
         }
 
         public async Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data)
