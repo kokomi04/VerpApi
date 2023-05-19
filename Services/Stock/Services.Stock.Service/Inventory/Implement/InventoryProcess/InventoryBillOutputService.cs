@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.InventoryProcess;
@@ -204,16 +205,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var issuedDate = req.Date.UnixToDateTime().Value;
                 await ValidateInventoryCode(inventoryId, req.InventoryCode);
 
+                var podCodes = new List<string>();
+
+                var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                if (inventoryObj == null)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+                }
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
-                        }
+
 
                         if (req.UpdatedDatetimeUtc != inventoryObj.UpdatedDatetimeUtc.GetUnix())
                         {
@@ -242,6 +246,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }
                         }
+
+                        podCodes.AddRange(inventoryDetails.Select(d => d.ProductionOrderCode));
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -289,6 +295,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
                             await _stockDbContext.SaveChangesAsync();
 
+                            podCodes.Add(item.Detail.ProductionOrderCode);
                         }
 
                         var totalMoney = InputCalTotalMoney(data.Select(x => x.Detail).ToList());
@@ -361,6 +368,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         _logger.LogError(ex, "UpdateInventoryOutput");
                         throw;
                     }
+                }
+
+                foreach (var podCode in podCodes.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct())
+                {
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Cập nhật xuất kho {inventoryObj.InventoryCode}");
                 }
 
                 //Move file from tmp folder
@@ -713,7 +725,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
                 //reload from db after lock
-                inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
+                inventoryObj = _stockDbContext.Inventory.Include(iv => iv.InventoryDetail).FirstOrDefault(p => p.InventoryId == inventoryId);
 
                 await ValidateInventoryConfig(null, inventoryObj.Date);
 
@@ -732,6 +744,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(inventoryObj.JsonSerialize())
                             .CreateLog();
 
+
+                        foreach (var podCode in inventoryObj.InventoryDetail.Select(p => p.ProductionOrderCode).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct())
+                        {
+                            await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Xóa xuất kho {inventoryObj.InventoryCode}");
+                        }
 
                         return true;
                     }
