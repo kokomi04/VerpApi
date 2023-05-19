@@ -1,5 +1,6 @@
 using AutoMapper;
 using DocumentFormat.OpenXml.InkML;
+using DocumentFormat.OpenXml.Math;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -61,8 +62,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
     public class HrDataService : HrDataUpdateServiceAbstract, IHrDataService
     {
-        //private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
-        private const string HR_TABLE_F_IDENTITY = OrganizationConstants.HR_TABLE_F_IDENTITY;
+
 
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
@@ -329,7 +329,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var hrAreas = await (from t in _organizationDBContext.HrType
                                  join a in _organizationDBContext.HrArea on t.HrTypeId equals a.HrTypeId
-                                 where t.HrTypeId == hrTypeId && (isSelectMultirowArea || !a.IsMultiRow) && a.HrTypeReferenceId.HasValue == false
+                                 where t.HrTypeId == hrTypeId && (isSelectMultirowArea || !a.IsMultiRow) && !a.HrTypeReferenceId.HasValue
                                  select new
                                  {
                                      t.HrTypeCode,
@@ -678,7 +678,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     fieldNames.Add(field.FieldName);
 
                     if (!string.IsNullOrWhiteSpace(field.RefTableCode)
-                        && (((EnumFormType)field.FormTypeId).IsJoinForm() || field.FormTypeId == EnumFormType.MultiSelect)
+                        && (field.FormTypeId.IsJoinForm() || field.FormTypeId == EnumFormType.MultiSelect)
                         && !string.IsNullOrWhiteSpace(field.RefTableTitle))
                     {
                         fieldNames.AddRange(field.RefTableTitle.Split(",").Select(f => $"{field.FieldName}_{f}"));
@@ -758,6 +758,16 @@ namespace VErp.Services.Organization.Service.HrConfig
             var @trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
+                var billInfo = await _organizationDBContext.HrBill.FirstOrDefaultAsync(b => b.HrTypeId == hrTypeId && b.FId == hrBill_F_Id);
+                if (billInfo == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+                billInfo.LatestBillVersion++;
+
+                await _organizationDBContext.SaveChangesAsync();
+
 
                 for (int i = 0; i < hrAreas.Count; i++)
                 {
@@ -799,7 +809,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                                 updateSql.Append($"[{field.FieldName}] = {paramName}, ");
 
-                                sqlParams.Add(new SqlParameter(paramName, ((EnumDataType)field.DataTypeId).GetSqlValue(oldData[field.FieldName])));
+                                sqlParams.Add(new SqlParameter(paramName, (field.DataTypeId).GetSqlValue(oldData[field.FieldName])));
                             }
                             updateSql.Append($"[UpdatedByUserId] = @UpdatedByUserId, [UpdatedDatetimeUtc] = @UpdatedDatetimeUtc WHERE [{HR_TABLE_F_IDENTITY}] = @{HR_TABLE_F_IDENTITY}");
 
@@ -1232,6 +1242,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             private bool? _hasRefField;
             private string _fieldNameRefTitle;
             private IList<string> _fieldNameRefTitles;
+
+
 
             public bool HasRefField
             {

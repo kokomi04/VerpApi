@@ -19,7 +19,7 @@ namespace Verp.Resources.Organization {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class HrDataValidationMessage {
@@ -29,7 +29,7 @@ namespace Verp.Resources.Organization {
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public HrDataValidationMessage() {
+        internal HrDataValidationMessage() {
         }
         
         /// <summary>
@@ -93,6 +93,15 @@ namespace Verp.Resources.Organization {
         public static string CannotConvertValueInRowFieldToDateTime {
             get {
                 return ResourceManager.GetString("CannotConvertValueInRowFieldToDateTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Chứng từ {0} đã tồn tại. Dòng {1}, cột {2}.
+        /// </summary>
+        public static string DuplicateBillCode {
+            get {
+                return ResourceManager.GetString("DuplicateBillCode", resourceCulture);
             }
         }
         
@@ -174,6 +183,33 @@ namespace Verp.Resources.Organization {
         public static string ListBillsToUpdateIsEmpty {
             get {
                 return ResourceManager.GetString("ListBillsToUpdateIsEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Dữ liệu đã tồn tại {0}, chứng từ {1}. Dòng {2}, cột {3}.
+        /// </summary>
+        public static string MultiRowIdentityExisted {
+            get {
+                return ResourceManager.GetString("MultiRowIdentityExisted", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tìm thấy nhiều hơn 1 dòng {0} đã tồn tại, chứng từ {1}. Dòng {2}, cột {3}.
+        /// </summary>
+        public static string MultiRowIdentityIncorrectInDb {
+            get {
+                return ResourceManager.GetString("MultiRowIdentityIncorrectInDb", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tìm thấy nhiều hơn 1 dòng {0} trong tệp tải lên, chứng từ {1}. Dòng {2}, cột {3}.
+        /// </summary>
+        public static string MultiRowIdentityIncorrectInExcel {
+            get {
+                return ResourceManager.GetString("MultiRowIdentityIncorrectInExcel", resourceCulture);
             }
         }
         
