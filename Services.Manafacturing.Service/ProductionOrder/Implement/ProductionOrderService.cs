@@ -1323,7 +1323,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             try
             {
                 var config = await GetProductionOrderConfiguration();
-                IGenerateCodeContext garenaCodeCtx = null;
+                IGenerateCodeContext generateCodeCtx = null;
                 if (config != null && !config.IsEnablePlanEndDate)
                 {
                     data.PlanEndDate = data.EndDate;
@@ -1351,7 +1351,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     var (code, ctx) = await GenerateProductOrderCode(null, data);
                     data.ProductionOrderCode = code;
-                    garenaCodeCtx = ctx;
+                    generateCodeCtx = ctx;
                 }
                 else
                 {
@@ -1362,8 +1362,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 var productionOrder = await SaveProductionOrder(data);
                 trans.Commit();
                 data.ProductionOrderId = productionOrder.ProductionOrderId;
-
-                await garenaCodeCtx.ConfirmCode();
+                if (generateCodeCtx != null)
+                {
+                    await generateCodeCtx.ConfirmCode();
+                }
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
 
                 return data;
