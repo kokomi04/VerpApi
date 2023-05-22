@@ -551,13 +551,14 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
             if (string.IsNullOrEmpty(value))
                 return;
 
-            if (((EnumFormType)field.FormTypeId).IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+            if (field.FormTypeId.IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
                 return;
 
-            string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+            string regex = (field.DataTypeId).GetRegex();
+            var strValue = value?.NormalizeAsInternalName();
             if ((field.DataSize > 0 && value.Length > field.DataSize)
-                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(strValue, regex))
+                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(strValue, field.RegularExpression)))
             {
                 throw new BadRequestException(HrErrorCode.HrValueInValid, new object[] { value?.JsonSerialize(), field.HrAreaCode, field.Title });
             }
@@ -585,10 +586,10 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     switch (singleClause.Operator)
                     {
                         case EnumOperator.Equal:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) == 0);
+                            isRequire = rowValues.Any(v => field.DataTypeId.CompareValue(v, singleClause.Value) == 0);
                             break;
                         case EnumOperator.NotEqual:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) != 0);
+                            isRequire = rowValues.Any(v => field.DataTypeId.CompareValue(v, singleClause.Value) != 0);
                             break;
                         case EnumOperator.Contains:
                             isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
@@ -604,7 +605,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                             // Check is leaf node
                             var paramName = $"@{field.RefTableField}";
                             var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
-                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
+                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = field.DataTypeId.GetSqlDataType() } };
                             var result = await _organizationDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                             isRequire = result != null && result.Rows.Count > 0;
                             break;
@@ -630,16 +631,16 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                             isRequire = rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString()));
                             break;
                         case EnumOperator.Greater:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) > 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) > 0);
                             break;
                         case EnumOperator.GreaterOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) >= 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) >= 0);
                             break;
                         case EnumOperator.LessThan:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) < 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) < 0);
                             break;
                         case EnumOperator.LessThanOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) <= 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) <= 0);
                             break;
                         default:
                             isRequire = true;
