@@ -532,10 +532,11 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                     // Validate value
                     if (!field.IsAutoIncrement && !string.IsNullOrEmpty(value))
                     {
+                        var strValue = value.NormalizeAsInternalName();
                         string regex = (field.DataTypeId).GetRegex();
                         if ((field.DataSize > 0 && value.Length > field.DataSize)
-                            || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                            || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                            || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(strValue, regex))
+                            || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(strValue, field.RegularExpression)))
                         {
                             throw new BadRequestException(HrErrorCode.HrValueInValid, new object[] { value?.JsonSerialize(), row.Index, field.Title });
                         }
@@ -780,7 +781,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                     throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
                 }
 
-                var sql = @$"SELECT v.[F_Id] FROM {tableName} v WHERE v.HrBill_F_Id <> @HrBill_F_Id AND v.[{field.FieldName}] IN (SELECT NValue FROM @Values)";
+                var sql = @$"SELECT v.[F_Id], v.[{field.FieldName}] FROM {tableName} v WHERE v.HrBill_F_Id <> @HrBill_F_Id AND v.[{field.FieldName}] IN (SELECT NValue FROM @Values) AND v.IsDeleted = 0";
 
                 List<SqlParameter> sqlParams = new List<SqlParameter>
                 {
@@ -792,7 +793,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
                 bool isExisted = result != null && result.Rows.Count > 0;
                 if (isExisted)
-                    throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title });
+                    throw new BadRequestException(HrErrorCode.UniqueValueAlreadyExisted, new string[] { field.Title + $": {result.Rows[0][field.FieldName]}, cột {mappingField.Column}" });
             }
         }
 
