@@ -437,7 +437,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }
                 else
                 {
-                    updateAreaFIds.Add(areaRowFId);
+                    if (areaRowFId > 0)
+                        updateAreaFIds.Add(areaRowFId);
                     return (areaRowFId, false);
                 }
 
