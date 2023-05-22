@@ -274,7 +274,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                     existedHrBillId = Convert.ToInt64(id);
                 }
 
-                if (!hasDetailIdentity)
+                if (!hasDetailIdentity && existedHrBillId > 0)
                 {
                     if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     {
