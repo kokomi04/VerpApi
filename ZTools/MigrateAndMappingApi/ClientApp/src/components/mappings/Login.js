@@ -58,7 +58,11 @@ function Login() {
                     setErrorMessages({ name: "pass", message: errors.pass }));
         }
     };
-
+    const handleEnterPress = (e) => {
+        if (e.key === 'Enter') {
+            handleSubmit;
+        }
+    }
     // Generate JSX code for error message
     const renderErrorMessage = (name) =>
         name === errorMessages.name && (
@@ -70,12 +74,12 @@ function Login() {
             <form onSubmit={handleSubmit}>
                 <div className="input-container">
                     <label>Username </label>
-                    <input type="text" name="uname" required />
+                    <input type="text" name="uname" onKeyDown={handleEnterPress} required />
                     {renderErrorMessage("uname")}
                 </div>
                 <div className="input-container">
                     <label>Password </label>
-                    <input type="password" name="pass" required />
+                    <input type="password" name="pass" onKeyDown={handleEnterPress} required />
                     {renderErrorMessage("pass")}
                 </div>
                 <div className="button-container">

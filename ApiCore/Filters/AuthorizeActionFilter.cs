@@ -97,6 +97,11 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
+            else if (developerApi != null && !_currentContextService.IsDeveloper)
+            {
+                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                return;
+            }
 
 #if DEBUG
             await next();
