@@ -150,5 +150,11 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionHandoverReceiptService.CreateBatch(data);
         }
+        [HttpPost]
+        [Route("")]
+        public async Task<long> CreateProductionHandoverReceipt([FromBody] ProductionHandoverReceiptModel data)
+        {
+            return await _productionHandoverReceiptService.Create(data);
+        }
     }
 }
