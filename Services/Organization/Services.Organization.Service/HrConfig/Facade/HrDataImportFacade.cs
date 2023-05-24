@@ -405,7 +405,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             {
                 var areaRowFId = existedBillData.Select(e => GetAreaRowId(e, areaRowInfo.AreaId)).FirstOrDefault();
 
-                return (areaRowFId, false);
+                return (areaRowFId, _mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore);
             }
             else
             {
