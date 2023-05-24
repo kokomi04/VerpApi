@@ -302,6 +302,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
+        public async Task<long> Create(ProductionHandoverReceiptModel data)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productionHandoverReceiptId = await Create(data, EnumHandoverStatus.Waiting);
+                await trans.CommitAsync();
+                return productionHandoverReceiptId;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+            
+        }
+
         private async Task<long> Create(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
         {
             try
@@ -805,6 +823,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                           }).ToListAsync();
         }
 
-
+        
     }
 }

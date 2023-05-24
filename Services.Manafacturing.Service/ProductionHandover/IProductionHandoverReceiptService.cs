@@ -30,5 +30,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<bool> Update(long productionHandoverReceiptId, ProductionHandoverReceiptModel data, EnumHandoverStatus status);
 
         Task<bool> CreateBatch(IList<ProductionHandoverReceiptModel> datas);
+        Task<long> Create(ProductionHandoverReceiptModel data);
     }
 }
