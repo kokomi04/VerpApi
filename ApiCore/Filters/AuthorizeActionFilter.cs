@@ -92,17 +92,19 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 return;
             }
             var developerApi = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is DeveloperApiAttribute);
-            if (developerApi != null && _currentContextService.IsDeveloper)
+            if (developerApi != null )
             {
-                await next();
-                return;
+                if (_currentContextService.IsDeveloper)
+                {
+                    await next();
+                    return;
+                }
+                else
+                {
+                    context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
+                    return;
+                }
             }
-            else if (developerApi != null && !_currentContextService.IsDeveloper)
-            {
-                context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                return;
-            }
-
 #if DEBUG
             await next();
             return;
