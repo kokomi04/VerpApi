@@ -260,19 +260,9 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             {
                 var areaModels = new List<HrDataAreaModel>();
 
-                var existedBillData = existedBills.Where(a =>
-                {
-                    var so_ct = string.Empty;
-                    a.TryGetStringValue(OrganizationConstants.BILL_CODE, out so_ct);
-                    return so_ct?.ToUpper() == billCode?.ToUpper();
-                }).ToList();
+                var existedBill = existedBills.Where(a => a.Code?.ToLower() == billCode?.ToLower()).FirstOrDefault();
 
-                var existedHrBillId = 0L;
-                object id = null;
-                if (existedBillData.FirstOrDefault()?.TryGetValue(HR_TABLE_F_IDENTITY, out id) == true)
-                {
-                    existedHrBillId = Convert.ToInt64(id);
-                }
+                var existedHrBillId = existedBill?.FId;
 
                 if (!hasDetailIdentity && existedHrBillId > 0)
                 {
@@ -318,7 +308,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
                         if (existedHrBillId > 0)
                         {
-                            var (areaRowFId, ignore) = GetExistsAreaRowIdAndValidateOption(firstField.IsMultiRow, updateAreaFIds, areaRowInfo, existedBillData);
+                            var (areaRowFId, ignore) = GetExistsAreaRowIdAndValidateOption(firstField.IsMultiRow, updateAreaFIds, areaRowInfo, existedBill.AreaData[areaId]);
                             if (ignore) continue;
 
                             if (areaRowFId > 0)
@@ -354,7 +344,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                         {
                             HrBillId = existedHrBillId,
                             SoCt = billCode,
-                            ExistedData = existedBillData,
+                            ExistedData = existedBill,
                             Areas = areaModels,
                         });
                     }
@@ -488,7 +478,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             return 0;
         }
 
-        private async Task<AreaRowInfoModel> GetRowData(long existedHrBillId, List<HrValidateField> areaFields, HrImportRowData row, int rowIndex, string billCode)
+        private async Task<AreaRowInfoModel> GetRowData(long? existedHrBillId, List<HrValidateField> areaFields, HrImportRowData row, int rowIndex, string billCode)
         {
             var areaRowKey = new NonCamelCaseDictionary();
             var rowInfo = new NonCamelCaseDictionary();
@@ -498,7 +488,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 var mappingField = _mapping.MappingFields.FirstOrDefault(f => f.FieldName == field.FieldName);
                 if (mappingField == null)
                 {
-                    if (existedHrBillId == 0 && field.IsRequire)
+                    if ((existedHrBillId == 0 || !existedHrBillId.HasValue) && field.IsRequire)
                         throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.FieldNameNotFound, field.FieldName);
                     continue;
                 }
@@ -568,38 +558,93 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             };
         }
 
-        private async Task<List<NonCamelCaseDictionary>> GetExistedBills(IList<string> billCodes)
+        private async Task<List<HrBillInforByAreaModel>> GetExistedBills(IList<string> billCodes)
         {
-            var join = new StringBuilder("FROM dbo.HrBill bill");
+            
             var select = new StringBuilder();
-            select.Append("bill.F_Id ");
+            select.Append($"bill.{HR_TABLE_F_IDENTITY} ");
 
-            foreach (var (areaId, areaFields) in _fieldsByArea)
+            var codeField = _fieldsByArea.SelectMany(a => a.Value).FirstOrDefault(v => v.FieldName == OrganizationConstants.BILL_CODE);
+
+            if (codeField == null) throw GeneralCode.NotYetSupported.BadRequest();
+
+            var codeAreaAlias = GetAreaAlias(codeField.HrAreaId);
+
+            select.Append($", {codeAreaAlias}.F_Id {GetAreaRowFIdAlias(codeField.HrAreaId)} ");
+
+            foreach (var f in _fieldsByArea[codeField.HrAreaId])
             {
-                var firstField = areaFields.First();
-                var alias = GetAreaAlias(areaId);
-
-                join.AppendLine($" LEFT JOIN {_areaTableName[areaId]} {alias} ON {alias}.[HrBill_F_Id] = bill.F_Id AND {alias}.IsDeleted = 0");
-                select.Append($", {alias}.F_Id {GetAreaRowFIdAlias(areaId)} ");
-
-                foreach (var f in areaFields)
-                {
-                    select.Append($", {alias}.{f.FieldName}");
-                }
+                select.Append($", {codeAreaAlias}.{f.FieldName}");
             }
+
+            var sql = $"SELECT {select} FROM dbo.HrBill bill " +
+               $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[HrBill_F_Id] " +
+               $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 " +
+               $"AND bill.HrTypeId = @HrTypeId " +
+               $"AND {OrganizationConstants.BILL_CODE} IN (SELECT NValue FROM @billCodes) ";
 
             var queryParams = new[]
             {
                     new SqlParameter("@HrTypeId", _hrType.HrTypeId),
                     billCodes.ToSqlParameter("@billCodes")
+            };
+
+            var codeAreaData = (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
+
+
+            var identityBills = codeAreaData.Select(d => new
+            {
+                FId = Convert.ToInt64(d[HR_TABLE_F_IDENTITY]),
+                Code = d[OrganizationConstants.BILL_CODE]
+            }).Distinct().ToList();
+            var fIds = identityBills.Select(b => b.FId).Distinct().ToList();
+
+
+            var result = identityBills.Select(b =>
+            new HrBillInforByAreaModel()
+            {
+                FId = b.FId,
+                Code = b.Code?.ToString(),
+                AreaData = _fieldsByArea.ToDictionary(a => a.Key, a =>
+
+                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d[HR_TABLE_F_IDENTITY]) == b.FId).ToList() 
+                                    : new List<NonCamelCaseDictionary>()
+                )
+            }).ToList();
+
+            foreach (var (areaId, areaFields) in _fieldsByArea)
+            {
+                if (areaId == codeField.HrAreaId) continue;
+                var alias = GetAreaAlias(areaId);
+
+                select = new StringBuilder();
+                select.Append($"{alias}.HrBill_F_Id");
+
+                foreach (var f in areaFields)
+                {
+                    select.Append($", {alias}.{f.FieldName}");
+                }
+
+                sql = $"SELECT {select} FROM {_areaTableName[areaId]} {alias} JOIN @fIds fId ON {alias}.HrBill_F_Id = fId.[Value] " +
+                  $"WHERE {alias}.IsDeleted = 0 ";
+
+                queryParams = new[]
+                {
+                     fIds.ToSqlParameter("@fIds")
                 };
 
-            var sql = $"SELECT {select} {join} " +
-                $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 " +
-                $"AND bill.HrTypeId = @HrTypeId " +
-                $"AND {OrganizationConstants.BILL_CODE} IN (SELECT NValue FROM @billCodes)";
+                var areaData = (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
 
-            return (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
+                foreach (var d in areaData)
+                {
+                    var fId = Convert.ToInt64(d["HrBill_F_Id"]);
+                    var info = result.First(r => r.FId == fId);
+                    info.AreaData[areaId].Add(d);
+                }
+
+            }
+
+            return result;
         }
 
         private async Task Creates(List<List<HrDataAreaModel>> creatingBillds, LongTaskResourceLock longTask)
@@ -656,10 +701,10 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                     if (hrAreaData == null) continue;
 
 
-                    var hrAreaRows = new List<NonCamelCaseDictionary>();
+                    //var hrAreaRows = new List<NonCamelCaseDictionary>();
 
                     var oldData = new Dictionary<long, NonCamelCaseDictionary>();
-                    foreach (var dbRow in data.ExistedData)
+                    foreach (var dbRow in data.ExistedData.AreaData[areaId])
                     {
                         dbRow.TryGetValue(GetAreaRowFIdAlias(areaId), out var areaFId);
                         if (!areaFId.IsNullOrEmptyObject())
@@ -759,10 +804,9 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         }
 
 
-        private async Task ValidateUniqueValue(long hrBill_F_Id, int areaId, IList<HrImportRowData> rows)
+        private async Task ValidateUniqueValue(long? hrBill_F_Id, int areaId, IList<HrImportRowData> rows)
         {
             var areaFields = _fieldsByArea[areaId];
-            var firstField = areaFields.First();
 
             var tableName = _areaTableName[areaId];
 
@@ -787,7 +831,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 List<SqlParameter> sqlParams = new List<SqlParameter>
                 {
                     values.ToSqlParameter("@Values"),
-                    new SqlParameter("@HrBill_F_Id", hrBill_F_Id)
+                    new SqlParameter("@HrBill_F_Id", hrBill_F_Id??0)
                 };
 
                 var result = await _organizationDBContext.QueryDataTableRaw(sql, sqlParams.ToArray());
@@ -893,13 +937,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         {
 
             public IList<HrDataAreaModel> Areas { get; set; }
-            public List<NonCamelCaseDictionary> ExistedData { get; internal set; }
-            public long HrBillId { get; internal set; }
+            public HrBillInforByAreaModel ExistedData { get; internal set; }
+            public long? HrBillId { get; internal set; }
             public string SoCt { get; internal set; }
         }
 
 
-        private class HrDataAreaModel
+        private sealed class HrDataAreaModel
         {
             public int AreaId { get; set; }
             public IList<AreaRowUpdate> Updatings { get; set; }
@@ -907,7 +951,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         }
 
 
-        private class AreaRowUpdate
+        private sealed class AreaRowUpdate
         {
             public AreaRowUpdate()
             {
@@ -917,13 +961,21 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             public long ExistedRowId_Id { get; set; }
         }
 
-        private class AreaRowInfoModel
+        private sealed class AreaRowInfoModel
         {
             public int AreaId { get; set; }
             public HrImportRowData RowExcelData { get; set; }
             public NonCamelCaseDictionary RowModelData { get; set; }
             public NonCamelCaseDictionary RowModelKey { get; set; }
             public string BillCode { get; set; }
+
+        }
+
+        private sealed class HrBillInforByAreaModel
+        {
+            public long FId { get; set; }
+            public string Code { get; set; }
+            public Dictionary<int, List<NonCamelCaseDictionary>> AreaData { get; set; }
 
         }
     }
