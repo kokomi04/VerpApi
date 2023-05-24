@@ -561,25 +561,15 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
         private async Task<List<HrBillInforByAreaModel>> GetExistedBills(IList<string> billCodes)
         {
             
-            var select = new StringBuilder();
-            select.Append($"bill.{HR_TABLE_F_IDENTITY} ");
-
             var codeField = _fieldsByArea.SelectMany(a => a.Value).FirstOrDefault(v => v.FieldName == OrganizationConstants.BILL_CODE);
 
             if (codeField == null) throw GeneralCode.NotYetSupported.BadRequest();
 
             var codeAreaAlias = GetAreaAlias(codeField.HrAreaId);
-
-            select.Append($", {codeAreaAlias}.F_Id {GetAreaRowFIdAlias(codeField.HrAreaId)} ");
-
-            foreach (var f in _fieldsByArea[codeField.HrAreaId])
-            {
-                select.Append($", {codeAreaAlias}.{f.FieldName}");
-            }
-
-            var sql = $"SELECT {select} FROM dbo.HrBill bill " +
+          
+            var sql = $"SELECT {SelectAreaColumns(codeField.HrAreaId, codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} FROM dbo.HrBill bill " +
                $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[HrBill_F_Id] " +
-               $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 " +
+               $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 AND {codeAreaAlias}.IsDeleted = 0 " +
                $"AND bill.HrTypeId = @HrTypeId " +
                $"AND {OrganizationConstants.BILL_CODE} IN (SELECT NValue FROM @billCodes) ";
 
@@ -594,7 +584,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
             var identityBills = codeAreaData.Select(d => new
             {
-                FId = Convert.ToInt64(d[HR_TABLE_F_IDENTITY]),
+                FId = Convert.ToInt64(d["HrBill_F_Id"]),
                 Code = d[OrganizationConstants.BILL_CODE]
             }).Distinct().ToList();
             var fIds = identityBills.Select(b => b.FId).Distinct().ToList();
@@ -607,7 +597,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 Code = b.Code?.ToString(),
                 AreaData = _fieldsByArea.ToDictionary(a => a.Key, a =>
 
-                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d[HR_TABLE_F_IDENTITY]) == b.FId).ToList() 
+                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d["HrBill_F_Id"]) == b.FId).ToList() 
                                     : new List<NonCamelCaseDictionary>()
                 )
             }).ToList();
@@ -617,15 +607,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 if (areaId == codeField.HrAreaId) continue;
                 var alias = GetAreaAlias(areaId);
 
-                select = new StringBuilder();
-                select.Append($"{alias}.HrBill_F_Id");
 
-                foreach (var f in areaFields)
-                {
-                    select.Append($", {alias}.{f.FieldName}");
-                }
-
-                sql = $"SELECT {select} FROM {_areaTableName[areaId]} {alias} JOIN @fIds fId ON {alias}.HrBill_F_Id = fId.[Value] " +
+                sql = $"SELECT {SelectAreaColumns(areaId, alias, _fieldsByArea[areaId])} FROM {_areaTableName[areaId]} {alias} JOIN @fIds fId ON {alias}.HrBill_F_Id = fId.[Value] " +
                   $"WHERE {alias}.IsDeleted = 0 ";
 
                 queryParams = new[]
@@ -647,6 +630,20 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             return result;
         }
 
+        private string SelectAreaColumns(int areaId,string alias,  List<HrValidateField> areaFields)
+        {
+            var areaFIdColumn = GetAreaRowFIdAlias(areaId);
+            var columns = new List<string>()
+            {
+                $"{alias}.HrBill_F_Id",
+                $"{alias}.F_Id AS {areaFIdColumn}",
+            };
+            foreach(var f in areaFields)
+            {
+                columns.Add($"{alias}.[{f.FieldName}]");
+            }
+            return string.Join(",", columns.ToArray());
+        }
         private async Task Creates(List<List<HrDataAreaModel>> creatingBillds, LongTaskResourceLock longTask)
         {
             foreach (var data in creatingBillds)

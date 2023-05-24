@@ -372,7 +372,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             /* 
              * Xử lý các bộ lọc
             */
-            var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
+            //var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
 
             var viewFields = await (
                  from f in _organizationDBContext.HrTypeViewField
