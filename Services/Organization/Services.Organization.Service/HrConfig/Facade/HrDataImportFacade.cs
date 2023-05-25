@@ -177,15 +177,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             return result;
         }
 
-        private string GetAreaAlias(int areaId)
-        {
-            return $"_a{areaId}";
-        }
 
-        private string GetAreaRowFIdAlias(int areaId)
-        {
-            return $"_a{areaId}_F_Id";
-        }
 
         private long? GetAreaRowId(NonCamelCaseDictionary dbRow, int areaId)
         {
@@ -560,15 +552,16 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
         private async Task<List<HrBillInforByAreaModel>> GetExistedBills(IList<string> billCodes)
         {
-            
+
             var codeField = _fieldsByArea.SelectMany(a => a.Value).FirstOrDefault(v => v.FieldName == OrganizationConstants.BILL_CODE);
 
             if (codeField == null) throw GeneralCode.NotYetSupported.BadRequest();
 
             var codeAreaAlias = GetAreaAlias(codeField.HrAreaId);
-          
-            var sql = $"SELECT {SelectAreaColumns(codeField.HrAreaId, codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} FROM dbo.HrBill bill " +
-               $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[HrBill_F_Id] " +
+
+            var sql = $"SELECT {SelectAreaColumns(codeField.HrAreaId, codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} " +
+                $"FROM dbo.HrBill bill " +
+               $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[{HR_BILL_ID_FIELD_IN_AREA}] " +
                $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 AND {codeAreaAlias}.IsDeleted = 0 " +
                $"AND bill.HrTypeId = @HrTypeId " +
                $"AND {OrganizationConstants.BILL_CODE} IN (SELECT NValue FROM @billCodes) ";
@@ -582,47 +575,35 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             var codeAreaData = (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
 
 
-            var identityBills = codeAreaData.Select(d => new
+            var identityBills = codeAreaData.GroupBy(d => new
             {
-                FId = Convert.ToInt64(d["HrBill_F_Id"]),
+                FId = Convert.ToInt64(d[HR_BILL_ID_FIELD_IN_AREA]),
                 Code = d[OrganizationConstants.BILL_CODE]
-            }).Distinct().ToList();
-            var fIds = identityBills.Select(b => b.FId).Distinct().ToList();
+            })
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+            var fIds = identityBills.Select(b => b.Key.FId).Distinct().ToList();
 
 
             var result = identityBills.Select(b =>
             new HrBillInforByAreaModel()
             {
-                FId = b.FId,
-                Code = b.Code?.ToString(),
-                AreaData = _fieldsByArea.ToDictionary(a => a.Key, a =>
-
-                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d["HrBill_F_Id"]) == b.FId).ToList() 
-                                    : new List<NonCamelCaseDictionary>()
+                FId = b.Key.FId,
+                Code = b.Key.Code?.ToString(),
+                AreaData = _fieldsByArea.ToDictionary(a => a.Key, a => a.Key == codeField.HrAreaId ? b.Value : new List<NonCamelCaseDictionary>()
                 )
             }).ToList();
 
             foreach (var (areaId, areaFields) in _fieldsByArea)
             {
                 if (areaId == codeField.HrAreaId) continue;
-                var alias = GetAreaAlias(areaId);
 
-
-                sql = $"SELECT {SelectAreaColumns(areaId, alias, _fieldsByArea[areaId])} FROM {_areaTableName[areaId]} {alias} JOIN @fIds fId ON {alias}.HrBill_F_Id = fId.[Value] " +
-                  $"WHERE {alias}.IsDeleted = 0 ";
-
-                queryParams = new[]
-                {
-                     fIds.ToSqlParameter("@fIds")
-                };
-
-                var areaData = (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
+                var areaData = await GetAreaData(_hrType.HrTypeCode, areaFields, fIds);
 
                 foreach (var d in areaData)
                 {
-                    var fId = Convert.ToInt64(d["HrBill_F_Id"]);
-                    var info = result.First(r => r.FId == fId);
-                    info.AreaData[areaId].Add(d);
+                    var info = result.First(r => r.FId == d.Key);
+                    info.AreaData[areaId].AddRange(d.Value);
                 }
 
             }
@@ -630,20 +611,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             return result;
         }
 
-        private string SelectAreaColumns(int areaId,string alias,  List<HrValidateField> areaFields)
-        {
-            var areaFIdColumn = GetAreaRowFIdAlias(areaId);
-            var columns = new List<string>()
-            {
-                $"{alias}.HrBill_F_Id",
-                $"{alias}.F_Id AS {areaFIdColumn}",
-            };
-            foreach(var f in areaFields)
-            {
-                columns.Add($"{alias}.[{f.FieldName}]");
-            }
-            return string.Join(",", columns.ToArray());
-        }
+
         private async Task Creates(List<List<HrDataAreaModel>> creatingBillds, LongTaskResourceLock longTask)
         {
             foreach (var data in creatingBillds)
@@ -968,13 +936,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
         }
 
-        private sealed class HrBillInforByAreaModel
-        {
-            public long FId { get; set; }
-            public string Code { get; set; }
-            public Dictionary<int, List<NonCamelCaseDictionary>> AreaData { get; set; }
 
-        }
     }
 
 }

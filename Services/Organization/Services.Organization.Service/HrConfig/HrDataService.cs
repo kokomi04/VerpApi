@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using NetTopologySuite.Algorithm;
 using Newtonsoft.Json;
+using NPOI.SS.Formula.PTG;
 using Org.BouncyCastle.Ocsp;
 using Services.Organization.Model.HrConfig;
 using System;
@@ -348,20 +349,19 @@ namespace VErp.Services.Organization.Service.HrConfig
              * Xử lý câu truy vấn lấy dữ liệu từ các vùng dữ liệu 
              * trong thiết lập chứng từ hành chính nhân sự
             */
-            var mainJoin = " FROM HrBill bill";
-            var mainColumn = "SELECT bill.F_Id AS F_Id, CreatedDatetimeUtc ";
+            var mainJoin = new StringBuilder(" FROM HrBill bill");
+            var mainColumn = new StringBuilder($"SELECT bill.F_Id AS {HR_BILL_ID_FIELD_IN_AREA}, CreatedDatetimeUtc ");
 
             var aliasTableOfFields = new Dictionary<string, string>();
-            foreach (var hrArea in hrAreas)
+            foreach (var hrArea in hrAreas.Where(a => !a.IsMultiRow))
             {
                 var areaAlias = $"v{hrArea.HrAreaCode}";
                 var (query, columns) = GetAliasViewAreaTable(hrArea.HrTypeCode, hrArea.HrAreaCode, fieldsByArea[hrArea.HrAreaId], isMultiRow: true);
-                mainJoin += @$" LEFT JOIN ({query}) AS {areaAlias}
-                                    ON bill.[F_Id] = [{areaAlias}].[HrBill_F_Id]
-                                
-                                ";
+                mainJoin.AppendLine(@$" LEFT JOIN ({query}) AS {areaAlias}
+                                    ON bill.[F_Id] = [{areaAlias}].[HrBill_F_Id]                                
+                                ");
                 if (columns.Count > 0)
-                    mainColumn += ", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]"));
+                    mainColumn.Append(", " + string.Join(", ", columns.Select(c => $"[v{hrArea.HrAreaCode}].[{c}]")));
                 foreach (var c in columns)
                 {
                     aliasTableOfFields.TryAdd(c, areaAlias);
@@ -372,7 +372,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             /* 
              * Xử lý các bộ lọc
             */
-            //var kvFields = fields.ToDictionary(f => f.FieldName, f => f);
 
             var viewFields = await (
                  from f in _organizationDBContext.HrTypeViewField
@@ -385,7 +384,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             if (fromDate.HasValue && toDate.HasValue)
             {
                 var dateField = "CreatedDatetimeUtc";
-                if (mainColumn.Contains("ngay_ct"))
+                if (mainColumn.ToString().Contains("ngay_ct"))
                 {
                     dateField = "ngay_ct";
                 }
@@ -439,9 +438,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                 suffix = columnsFilters.FilterClauseProcess("HrBill", "bill", whereCondition, sqlParams, suffix, false, null, null, aliasTableOfFields);
             }
 
-            if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.Contains(orderByFieldName))
+            if (string.IsNullOrWhiteSpace(orderByFieldName) || !mainColumn.ToString().Contains(orderByFieldName))
             {
-                orderByFieldName = mainColumn.Contains("ngay_ct") ? "ngay_ct" : "F_Id";
+                orderByFieldName = mainColumn.ToString().Contains("ngay_ct") ? "ngay_ct" : "F_Id";
                 asc = false;
             }
 
@@ -481,7 +480,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var dataSql = @$"
                  ;WITH tmp AS(
                     SELECT
-                    bill.F_Id,
+                    bill.F_Id AS {HR_BILL_ID_FIELD_IN_AREA},
                     ROW_NUMBER() OVER(ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}) RowNumber
                     {mainJoin} 
                     WHERE bill.HrTypeId = @HrTypeId AND {GlobalFilter()}
@@ -489,17 +488,46 @@ namespace VErp.Services.Organization.Service.HrConfig
                 )
                     {mainColumn}
                     {mainJoin}
-                    JOIN (
-                        SELECT F_Id, MIN(RowNumber) RowNumber 
-                        FROM tmp 
-                        WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow)
-                        GROUP BY F_Id
-                    ) t ON bill.F_Id = t.F_Id
+                    JOIN tmp ON bill.F_Id = tmp.{HR_BILL_ID_FIELD_IN_AREA}
+                    WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow)
                 ";
 
-            var dataTable = await _organizationDBContext.QueryDataTableRaw(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray());
+            var singleRowData = (await _organizationDBContext.QueryDataTableRaw(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray())).ConvertData();
 
-            var dataDetails = dataTable.ConvertData().GroupBy(d => d[HR_TABLE_F_IDENTITY]).ToDictionary(d => d.Key, d => d.ToList());
+            var identityBills = singleRowData.GroupBy(d => new
+            {
+                FId = Convert.ToInt64(d[HR_BILL_ID_FIELD_IN_AREA]),
+                Code = d[OrganizationConstants.BILL_CODE]
+            })
+            .ToDictionary(g=>g.Key, g=>g.ToList())
+            .ToList();
+
+            var fIds = identityBills.Select(b => b.Key.FId).Distinct().ToList();
+
+            var bills = identityBills.Select(b =>
+            new HrBillInforByAreaModel()
+            {
+                FId = b.Key.FId,
+                Code = b.Key.Code?.ToString(),
+                AreaData = fieldsByArea
+                .ToDictionary(a => a.Key, a =>
+                {
+                    if (a.Value.First().IsMultiRow) return new List<NonCamelCaseDictionary>();
+                    return b.Value;
+
+                })
+            }).ToList();
+
+            foreach (var multiArea in hrAreas.Where(a => a.IsMultiRow))
+            {
+                var areaData = await GetAreaData(multiArea.HrTypeCode, fieldsByArea[multiArea.HrAreaId], fIds);
+
+                foreach (var d in areaData)
+                {
+                    var info = bills.First(r => r.FId == d.Key);
+                    info.AreaData[multiArea.HrAreaId].AddRange(d.Value);
+                }
+            }
 
             var result = new List<NonCamelCaseDictionary>();
 
@@ -523,32 +551,18 @@ namespace VErp.Services.Organization.Service.HrConfig
                 selectAreas = selectAreas.Where(a => selectAreaIds.Contains(a.HrAreaId)).ToList();
             }
 
-            foreach (var (billId, details) in dataDetails)
-            {
-                var areaDatas = new Dictionary<int, List<NonCamelCaseDictionary>>();
-                foreach (var hrArea in selectAreas)
-                {
-                    var areaFields = fieldsByArea[hrArea.HrAreaId];
-
-                    var areaRows = details.GroupBy(d => d[AreaRowIdField(hrArea.HrAreaCode)])
-                           .Where(d => !d.Key.IsNullOrEmptyObject())
-                           .Select(g => g.First())
-                           .OrderBy(d => d[areaFields[0].FieldName])
-                           .ToList();
-
-                    areaDatas.Add(hrArea.HrAreaId, areaRows);
-                }
-
-                var maxAreaRow = areaDatas.Max(a => a.Value.Count);
+            foreach (var bill in bills)
+            {                
+                var maxAreaRow = bill.AreaData.Max(a => a.Value.Count);
                 for (var i = 0; i < maxAreaRow; i++)
                 {
                     var row = new NonCamelCaseDictionary();
-                    row.Add(HR_TABLE_F_IDENTITY, areaDatas.First().Value.First()[HR_TABLE_F_IDENTITY]);
+                    row.Add(HR_TABLE_F_IDENTITY, bill.FId);
 
                     foreach (var hrArea in selectAreas)
                     {
                         var areaFields = fieldsByArea[hrArea.HrAreaId];
-                        var areaRows = areaDatas[hrArea.HrAreaId];
+                        var areaRows = bill.AreaData[hrArea.HrAreaId];
                         if (!hrArea.IsMultiRow)
                         {
                             foreach (var field in areaFields)
