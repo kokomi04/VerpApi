@@ -277,7 +277,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 
                     switch (_mapping.ImportDuplicateOptionId)
                     {
-                        case EnumImportDuplicateOption.Ignore:
+                        case EnumImportDuplicateOption.IgnoreBill:
                             continue;
 
                         case EnumImportDuplicateOption.Denied:

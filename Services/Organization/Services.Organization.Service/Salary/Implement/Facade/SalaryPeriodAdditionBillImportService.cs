@@ -247,7 +247,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     throw GeneralCode.ItemCodeExisted.BadRequest($"Chứng từ {firstDuplicate.Key.BillCode} đã tồn tại, dòng {firstRow.Index}, cột {columnKey.Column}");
                 }
 
-                if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreBill)
                 {
                     updateBills = new List<KeyValuePair<SalaryPeriodAdditionBillModel, IList<SalaryAdditionBilExcelRow>>>();
                 }

@@ -264,19 +264,29 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
                 var existedHrBillId = existedBill?.FId;
 
-                if (!hasDetailIdentity && existedHrBillId > 0)
+                if (existedHrBillId > 0)
                 {
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    {
-                        var firstRow = billRows.First();
-                        throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.DuplicateBillCode, billCode, firstRow.Index, columnKey.Column);
-                    }
-
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreBill)
                     {
                         continue;
                     }
+
+                    if (!hasDetailIdentity)
+                    {
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                        {
+                            var firstRow = billRows.First();
+                            throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.DuplicateBillCode, billCode, firstRow.Index, columnKey.Column);
+                        }
+
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreBill)
+                        {
+                            continue;
+                        }
+                    }
+
                 }
+
 
                 foreach (var (areaId, areaFields) in _fieldsByArea)
                 {
@@ -395,7 +405,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             {
                 var areaRowFId = existedBillData.Select(e => GetAreaRowId(e, areaRowInfo.AreaId)).FirstOrDefault();
 
-                return (areaRowFId, _mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore);
+                return (areaRowFId, _mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreDetail);
             }
             else
             {
@@ -412,7 +422,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                         throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.MultiRowIdentityExisted, dataMessage, areaRowInfo.BillCode, areaRowInfo.RowExcelData.Index, firstMapping.Column);
                     }
 
-                    if (_mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                    if (_mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreDetail)
                     {
                         return (null, true);
                     }
@@ -560,13 +570,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
         private async Task<List<HrBillInforByAreaModel>> GetExistedBills(IList<string> billCodes)
         {
-            
+
             var codeField = _fieldsByArea.SelectMany(a => a.Value).FirstOrDefault(v => v.FieldName == OrganizationConstants.BILL_CODE);
 
             if (codeField == null) throw GeneralCode.NotYetSupported.BadRequest();
 
             var codeAreaAlias = GetAreaAlias(codeField.HrAreaId);
-          
+
             var sql = $"SELECT {SelectAreaColumns(codeField.HrAreaId, codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} FROM dbo.HrBill bill " +
                $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[HrBill_F_Id] " +
                $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 AND {codeAreaAlias}.IsDeleted = 0 " +
@@ -597,7 +607,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 Code = b.Code?.ToString(),
                 AreaData = _fieldsByArea.ToDictionary(a => a.Key, a =>
 
-                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d["HrBill_F_Id"]) == b.FId).ToList() 
+                    a.Key == codeField.HrAreaId ? codeAreaData.Where(d => Convert.ToInt64(d["HrBill_F_Id"]) == b.FId).ToList()
                                     : new List<NonCamelCaseDictionary>()
                 )
             }).ToList();
@@ -630,7 +640,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             return result;
         }
 
-        private string SelectAreaColumns(int areaId,string alias,  List<HrValidateField> areaFields)
+        private string SelectAreaColumns(int areaId, string alias, List<HrValidateField> areaFields)
         {
             var areaFIdColumn = GetAreaRowFIdAlias(areaId);
             var columns = new List<string>()
@@ -638,7 +648,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 $"{alias}.HrBill_F_Id",
                 $"{alias}.F_Id AS {areaFIdColumn}",
             };
-            foreach(var f in areaFields)
+            foreach (var f in areaFields)
             {
                 columns.Add($"{alias}.[{f.FieldName}]");
             }
