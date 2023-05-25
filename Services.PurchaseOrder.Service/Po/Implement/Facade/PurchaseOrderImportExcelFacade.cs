@@ -170,7 +170,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     {
                         case EnumImportDuplicateOption.Update:
                             throw GeneralCode.NotYetSupported.BadRequest();
-                        case EnumImportDuplicateOption.Ignore:
+                        case EnumImportDuplicateOption.IgnoreBill:
                             continue;
                         case EnumImportDuplicateOption.Denied:
                             throw PurchaseOrderErrorCode.PoCodeAlreadyExisted.BadRequest(PurchaseOrderErrorCodeDescription.PoCodeAlreadyExisted + " " + group.Key);

@@ -256,19 +256,29 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
                 var existedHrBillId = existedBill?.FId;
 
-                if (!hasDetailIdentity && existedHrBillId > 0)
+                if (existedHrBillId > 0)
                 {
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
-                    {
-                        var firstRow = billRows.First();
-                        throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.DuplicateBillCode, billCode, firstRow.Index, columnKey.Column);
-                    }
-
-                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreBill)
                     {
                         continue;
                     }
+
+                    if (!hasDetailIdentity)
+                    {
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                        {
+                            var firstRow = billRows.First();
+                            throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.DuplicateBillCode, billCode, firstRow.Index, columnKey.Column);
+                        }
+
+                        if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreBill)
+                        {
+                            continue;
+                        }
+                    }
+
                 }
+
 
                 foreach (var (areaId, areaFields) in _fieldsByArea)
                 {
@@ -387,7 +397,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             {
                 var areaRowFId = existedBillData.Select(e => GetAreaRowId(e, areaRowInfo.AreaId)).FirstOrDefault();
 
-                return (areaRowFId, _mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore);
+                return (areaRowFId, _mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreDetail);
             }
             else
             {
@@ -404,7 +414,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                         throw BadRequestExceptionExtensions.BadRequestFormat(HrDataValidationMessage.MultiRowIdentityExisted, dataMessage, areaRowInfo.BillCode, areaRowInfo.RowExcelData.Index, firstMapping.Column);
                     }
 
-                    if (_mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Ignore)
+                    if (_mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.IgnoreDetail)
                     {
                         return (null, true);
                     }

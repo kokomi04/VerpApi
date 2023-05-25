@@ -2432,7 +2432,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         case EnumImportDuplicateOption.Denied:
                             var errField = fields.First(f => f.FieldName == columnKey.FieldName);
                             throw new BadRequestException(InputErrorCode.UniqueValueAlreadyExisted, new string[] { errField.Title, string.Join(", ", existKeys.Select(c => c.Key).Distinct().Take(5).ToArray()), "" });
-                        case EnumImportDuplicateOption.Ignore:
+                        case EnumImportDuplicateOption.IgnoreBill:
                             createGroups = groups.Where(g => !existKeys.ContainsKey(g.Key)).ToDictionary(g => g.Key, g => g.Value);
                             break;
                         case EnumImportDuplicateOption.Update:
