@@ -18,6 +18,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsByOrder { get; set; }
         public bool IsByStock { get; set; }
 
+        public decimal? DauKy154 { get; set; }
+        public decimal? CuoiKy154 { get; set; }
+
         public NonCamelCaseDictionary<decimal?> AllocationRate { get; set; }
         public NonCamelCaseDictionary<decimal?> CustomPrice { get; set; }
         public NonCamelCaseDictionary<decimal?> DirectMaterialFee { get; set; }
@@ -43,7 +46,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public string GetHashString()
         {
-            return $"{ProductId}_{OrderCode}_{MaLsx}_{FromDate}_{ToDate}_{IsByLsx}_{IsByOrder}";
+            return $"{ProductId}_{OrderCode}_{MaLsx}_{FromDate}_{ToDate}_{IsByLsx}_{IsByOrder}_{DauKy154}_{CuoiKy154}";
         }
     }
 
