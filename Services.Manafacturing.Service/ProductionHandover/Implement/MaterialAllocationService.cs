@@ -9,10 +9,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
@@ -28,20 +30,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
         private const int STOCK_DEPARTMENT_ID = -1;
-        private readonly IQueueProcessHelperService _queueProcessHelperService;
+        private readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
 
         public MaterialAllocationService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<MaterialAllocationService> logger
             , IMapper mapper
-            , IProductHelperService productHelperService, IQueueProcessHelperService queueProcessHelperService)
+            , IProductHelperService productHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
-            _productHelperService = productHelperService;
-            _queueProcessHelperService = queueProcessHelperService;
+            _productHelperService = productHelperService;            
+            _productionOrderQueueHelperService = productionOrderQueueHelperService;
         }
 
         public async Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId)
@@ -110,8 +112,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .ProjectTo<IgnoreAllocationModel>(_mapper.ConfigurationProvider)
                     .ToListAsync();
 
-                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderCode);
-
+                await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderCode, $"Cập nhật phân bổ vật tư sản xuất");
                 return data;
             }
             catch (Exception ex)
@@ -140,7 +141,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-            var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+            var inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                 .AsQueryable()
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
@@ -357,7 +358,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                var inventories = resultData.ConvertData<ProductionInventoryRequirementEntity>()
+                var inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>()
                     .AsQueryable()
                     .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                     .ToList();
@@ -502,7 +503,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 foreach (var code in productionOrderCodes)
                 {
-                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(code, $"Cập nhật phân bổ vật tư sản xuất");
                 }
             }
 

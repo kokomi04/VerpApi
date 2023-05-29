@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -848,7 +846,7 @@ namespace VErp.Services.Accountancy.Service.Category
             var filterClause = new ArrayClause() { Condition = EnumLogicOperator.And, Rules = new List<Clause>() };
             if (filters != null)
             {
-                var viewInfo = await _masterContext.CategoryView.OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
+                var viewInfo = await _masterContext.CategoryView.Where(c => c.CategoryId == category.CategoryId).OrderByDescending(v => v.IsDefault).FirstOrDefaultAsync();
 
                 var categoryViewId = viewInfo?.CategoryViewId;
 
@@ -874,13 +872,60 @@ namespace VErp.Services.Accountancy.Service.Category
                     {
                         value = Convert.ToInt64(value);
                     }
-                    filterClause.Rules.Add(new SingleClause()
+
+                    var dataTypeId = (EnumDataType)viewField.DataTypeId;
+
+                    switch (dataTypeId)
                     {
-                        FieldName = field.CategoryFieldName,
-                        DataType = (EnumDataType)field.DataTypeId,
-                        Operator = EnumOperator.Equal,
-                        Value = value
-                    });
+                        case EnumDataType.Text:
+                            filterClause.Rules.Add(new SingleClause()
+                            {
+                                FieldName = field.CategoryFieldName,
+                                DataType = dataTypeId,
+                                Operator = EnumOperator.Contains,
+                                Value = value
+                            });
+                            break;
+
+                        case EnumDataType.DateRange:
+                            var type = value.GetType();
+                            IList<object> values = new List<object>();
+                            if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                            {
+                                foreach (object v in (dynamic)value)
+                                {
+                                    if (!values.Contains(v))
+                                        values.Add(v);
+                                }
+                            }
+
+                            filterClause.Rules.Add(new SingleClause()
+                            {
+                                FieldName = field.CategoryFieldName,
+                                DataType = dataTypeId,
+                                Operator = EnumOperator.GreaterOrEqual,
+                                Value = values[0]
+                            });
+
+                            filterClause.Rules.Add(new SingleClause()
+                            {
+                                FieldName = field.CategoryFieldName,
+                                DataType = dataTypeId,
+                                Operator = EnumOperator.LessThanOrEqual,
+                                Value = values[1]
+                            });
+                            break;
+                        default:
+                            filterClause.Rules.Add(new SingleClause()
+                            {
+                                FieldName = field.CategoryFieldName,
+                                DataType = dataTypeId,
+                                Operator = EnumOperator.Equal,
+                                Value = value
+                            });
+                            break;
+                    }
+
 
 
                 }

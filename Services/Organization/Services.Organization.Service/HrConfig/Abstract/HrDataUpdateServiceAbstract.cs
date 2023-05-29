@@ -20,12 +20,18 @@ using Verp.Resources.Organization;
 using VErp.Infrastructure.EF.EFExtensions;
 using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
+using DocumentFormat.OpenXml.Math;
 
 namespace VErp.Services.Organization.Service.HrConfig.Abstract
 {
 
     public abstract class HrDataUpdateServiceAbstract
     {
+        //private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
+        protected const string HR_TABLE_F_IDENTITY = OrganizationConstants.HR_TABLE_F_IDENTITY;
+        protected const string HR_BILL_ID_FIELD_IN_AREA = "HrBill_F_Id";
+
         protected readonly OrganizationDBContext _organizationDBContext;
         protected readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         protected readonly ICurrentContextService _currentContextService;
@@ -148,7 +154,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 {
                     var field = infoField.Value;
 
-                    if ((EnumFormType)field.FormTypeId == EnumFormType.Generate &&
+                    if (field.FormTypeId == EnumFormType.Generate &&
                         (!row.TryGetStringValue(field.FieldName, out var value) || value.IsNullOrEmptyObject())
                     )
                     {
@@ -548,13 +554,14 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
             if (string.IsNullOrEmpty(value))
                 return;
 
-            if (((EnumFormType)field.FormTypeId).IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
+            if (field.FormTypeId.IsSelectForm() || field.IsAutoIncrement || string.IsNullOrEmpty(value))
                 return;
 
-            string regex = ((EnumDataType)field.DataTypeId).GetRegex();
+            string regex = (field.DataTypeId).GetRegex();
+            var strValue = value?.NormalizeAsInternalName();
             if ((field.DataSize > 0 && value.Length > field.DataSize)
-                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(value, regex))
-                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(value, field.RegularExpression)))
+                || (!string.IsNullOrEmpty(regex) && !Regex.IsMatch(strValue, regex))
+                || (!string.IsNullOrEmpty(field.RegularExpression) && !Regex.IsMatch(strValue, field.RegularExpression)))
             {
                 throw new BadRequestException(HrErrorCode.HrValueInValid, new object[] { value?.JsonSerialize(), field.HrAreaCode, field.Title });
             }
@@ -582,10 +589,10 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     switch (singleClause.Operator)
                     {
                         case EnumOperator.Equal:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) == 0);
+                            isRequire = rowValues.Any(v => field.DataTypeId.CompareValue(v, singleClause.Value) == 0);
                             break;
                         case EnumOperator.NotEqual:
-                            isRequire = rowValues.Any(v => ((EnumDataType)field.DataTypeId).CompareValue(v, singleClause.Value) != 0);
+                            isRequire = rowValues.Any(v => field.DataTypeId.CompareValue(v, singleClause.Value) != 0);
                             break;
                         case EnumOperator.Contains:
                             isRequire = rowValues.Any(v => v.StringContains(singleClause.Value));
@@ -601,7 +608,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                             // Check is leaf node
                             var paramName = $"@{field.RefTableField}";
                             var sql = $"SELECT F_Id FROM {field.RefTableCode} t WHERE {field.RefTableField} = {paramName} AND NOT EXISTS( SELECT F_Id FROM {field.RefTableCode} WHERE ParentId = t.F_Id)";
-                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = ((EnumDataType)field.DataTypeId).GetSqlDataType() } };
+                            var sqlParams = new List<SqlParameter>() { new SqlParameter(paramName, singleClause.Value) { SqlDbType = field.DataTypeId.GetSqlDataType() } };
                             var result = await _organizationDBContext.QueryDataTableRaw(sql.ToString(), sqlParams.ToArray());
                             isRequire = result != null && result.Rows.Count > 0;
                             break;
@@ -627,16 +634,16 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                             isRequire = rowValues.Any(v => v == null || string.IsNullOrEmpty(v.ToString()));
                             break;
                         case EnumOperator.Greater:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) > 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) > 0);
                             break;
                         case EnumOperator.GreaterOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) >= 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) >= 0);
                             break;
                         case EnumOperator.LessThan:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) < 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) < 0);
                             break;
                         case EnumOperator.LessThanOrEqual:
-                            isRequire = rowValues.Any(value => ((EnumDataType)field.DataTypeId).CompareValue(value, singleClause.Value) <= 0);
+                            isRequire = rowValues.Any(value => field.DataTypeId.CompareValue(value, singleClause.Value) <= 0);
                             break;
                         default:
                             isRequire = true;
@@ -661,6 +668,52 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
         }
 
 
+        protected string SelectAreaColumns(int areaId, string alias, List<HrValidateField> areaFields)
+        {
+            var areaFIdColumn = GetAreaRowFIdAlias(areaId);
+            var columns = new List<string>()
+            {
+                $"{alias}.{HR_BILL_ID_FIELD_IN_AREA}",
+                $"{alias}.F_Id AS {areaFIdColumn}",
+            };
+            foreach (var f in areaFields)
+            {
+                columns.Add($"{alias}.[{f.FieldName}]");
+            }
+            return string.Join(",", columns.ToArray());
+        }
+
+        protected async Task<IDictionary<long, IList<NonCamelCaseDictionary>>> GetAreaData(string hrTypeCode, List<HrValidateField> areaFields, IList<long> fIds)
+        {
+            var firstField = areaFields.First();
+            var areaId = firstField.HrAreaId;
+            var areaCode = firstField.HrAreaCode;
+
+            var alias = GetAreaAlias(areaId);
+
+            var tableName = OrganizationConstants.GetHrAreaTableName(hrTypeCode, areaCode);
+
+            var sql = $"SELECT {SelectAreaColumns(areaId, alias, areaFields)} FROM {tableName} {alias} JOIN @fIds fId ON {alias}.{HR_BILL_ID_FIELD_IN_AREA} = fId.[Value] " +
+                 $"WHERE {alias}.IsDeleted = 0 ";
+
+            var queryParams = new[]
+            {
+                 fIds.ToSqlParameter("@fIds")
+            };
+
+            var data = (await _organizationDBContext.QueryDataTableRaw(sql, queryParams)).ConvertData();
+            return data.GroupBy(d => Convert.ToInt64(d[HR_BILL_ID_FIELD_IN_AREA])).ToDictionary(g => g.Key, g => g.ToIList());
+        }
+
+        protected string GetAreaAlias(int areaId)
+        {
+            return $"_a{areaId}";
+        }
+
+        protected string GetAreaRowFIdAlias(int areaId)
+        {
+            return $"_a{areaId}_F_Id";
+        }
 
         protected class ValidateRowModel
         {
@@ -693,7 +746,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 return obj.GetHashCode();
             }
         }
+        protected sealed class HrBillInforByAreaModel
+        {
+            public long FId { get; set; }
+            public string Code { get; set; }
+            public Dictionary<int, List<NonCamelCaseDictionary>> AreaData { get; set; }
 
+        }
     }
 
 }

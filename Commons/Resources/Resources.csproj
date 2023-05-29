@@ -1067,7 +1067,7 @@
       <Generator>ResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\HrDataValidationMessage.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
+      <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\Leave\LeaveActivityLogMessage.resx">

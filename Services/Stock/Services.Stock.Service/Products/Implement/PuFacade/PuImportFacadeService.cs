@@ -245,7 +245,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                             propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.ProductUnitConversionName), out var nameMap);
 
                                             throw GeneralCode.InvalidParams.BadRequest($"Đơn vị tính {puModel.ProductUnitConversionName} thuộc mặt hàng {productInfo.ProductCode}  {productInfo.ProductName} đã tồn tại, dòng " + puModel.RowNumber + ", cột " + nameMap?.Column);
-                                        case EnumImportDuplicateOption.Ignore:
+                                        case EnumImportDuplicateOption.IgnoreBill:
                                             toRemoveModels.Add(puModel);
                                             break;
                                         case EnumImportDuplicateOption.Update:

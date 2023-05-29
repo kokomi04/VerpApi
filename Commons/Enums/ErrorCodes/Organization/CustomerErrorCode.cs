@@ -10,5 +10,6 @@ namespace VErp.Commons.Enums.StandardEnum
         CustomerNotFound = 1,
         CustomerCodeAlreadyExisted = 2,
         CustomerNameAlreadyExisted = 3,
+        CustomerInUsed = 4
     }
 }

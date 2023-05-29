@@ -2,8 +2,9 @@
 {
     public enum EnumImportDuplicateOption
     {
-        Ignore = 0,
+        IgnoreBill = 0,
         Update = 1,
-        Denied = 2
+        Denied = 2,
+        IgnoreDetail = 3,
     }
 }

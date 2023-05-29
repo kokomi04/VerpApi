@@ -83,6 +83,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@IsByLsx", SqlDbType.Decimal){ Value = req.IsByLsx},
                     new SqlParameter("@IsByOrder", SqlDbType.Decimal){ Value = req.IsByOrder},
                     new SqlParameter("@IsByStock", SqlDbType.Decimal){ Value = req.IsByStock},
+                    new SqlParameter("@DauKy154", SqlDbType.Decimal){ Value = req.DauKy154},
+                    new SqlParameter("@CuoiKy154", SqlDbType.Decimal){ Value = req.CuoiKy154},
 
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),

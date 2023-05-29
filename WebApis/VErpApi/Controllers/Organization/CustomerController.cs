@@ -15,6 +15,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Service.Config;
 using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Service.Customer;
+using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Service.FileResources;
 
 namespace VErpApi.Controllers.Organization
@@ -177,6 +178,14 @@ namespace VErpApi.Controllers.Organization
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
             return await _customerService.ImportCustomerFromMapping(mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
+
+        [HttpPost]
+        [Route("GetCustomerTopInUsed")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed([FromBody] IList<int> customerIds)
+        {
+            return (await _customerService.GetCustomerTopInUsed(customerIds, false)).ToList();
         }
     }
 }

@@ -112,6 +112,12 @@ namespace VErp.Commons.Library
                     bool boolValue;
                     try
                     {
+                        if (value.GetType() == typeof(string))
+                        {
+                            var str = (value as string).NormalizeAsInternalName();
+
+                            return new[] { "co", "true" }.Contains(str);
+                        }
                         boolValue = Convert.ToBoolean(value);
                     }
                     catch (Exception)

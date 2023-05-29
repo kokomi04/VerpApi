@@ -19,7 +19,7 @@ namespace Verp.Resources.Organization {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class HrBillActivityLogMessage {
@@ -29,7 +29,7 @@ namespace Verp.Resources.Organization {
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        public HrBillActivityLogMessage() {
+        internal HrBillActivityLogMessage() {
         }
         
         /// <summary>
@@ -70,6 +70,15 @@ namespace Verp.Resources.Organization {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Thêm chứng từ hành chính nhân sự {0}, số {1} từ excel.
+        /// </summary>
+        public static string CreateFromExcel {
+            get {
+                return ResourceManager.GetString("CreateFromExcel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xóa chứng từ hành chính nhân sự  {0}, số {1}.
         /// </summary>
         public static string Delete {
@@ -84,6 +93,15 @@ namespace Verp.Resources.Organization {
         public static string Update {
             get {
                 return ResourceManager.GetString("Update", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật chứng từ hành chính nhân sự  {0}, số {1} từ excel.
+        /// </summary>
+        public static string UpdateFromExcel {
+            get {
+                return ResourceManager.GetString("UpdateFromExcel", resourceCulture);
             }
         }
     }

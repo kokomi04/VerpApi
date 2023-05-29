@@ -20,6 +20,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -67,9 +68,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , ICustomGenCodeHelperService customGenCodeHelperService
             , IInventoryBillOutputService inventoryBillOutputService
             , IInventoryBillInputService inventoryBillInputService
-            , IQueueProcessHelperService _queueProcessHelperService
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService
             , ILongTaskResourceLockService longTaskResourceLockService
-            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, currentContextService, _queueProcessHelperService)
+            , IUserHelperService userHelperService = null, IMailFactoryService mailFactoryService = null) : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
             _masterDBContext = masterDBContext;
             _activityLogService = activityLogService;
@@ -87,7 +88,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
 
-        public async Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isExistedInputBill = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
+        public async Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isInputBillCreated = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
         {
             keyword = keyword?.Trim();
 
@@ -223,9 +224,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             RefStockId = q != null ? (int?)q.RefInventory.StockId : null,
                         };
 #pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
-            if (isExistedInputBill != null)
+            if (isInputBillCreated != null)
             {
-                if (isExistedInputBill.Value)
+                if (isInputBillCreated.Value)
                 {
                     query = query.Where(q => q.IsInputBillCreated);
                 }
@@ -279,6 +280,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
                     TotalMoney = item.TotalMoney,
                     IsApproved = item.IsApproved,
+                    IsInputBillCreated = item.IsInputBillCreated,
                     //AccountancyAccountNumber = item.AccountancyAccountNumber,
                     CreatedByUserId = item.CreatedByUserId,
                     UpdatedByUserId = item.UpdatedByUserId,

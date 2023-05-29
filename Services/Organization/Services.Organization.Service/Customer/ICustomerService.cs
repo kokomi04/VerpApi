@@ -24,5 +24,7 @@ namespace VErp.Services.Organization.Service.Customer
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomers(IList<CustomerModel> customers);
         Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data, bool igDeleteRef = false);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers);
+
+        Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly);
     }
 }
