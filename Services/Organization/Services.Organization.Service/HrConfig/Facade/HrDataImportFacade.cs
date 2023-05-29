@@ -197,12 +197,15 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
             var referMapingFields = mapping.MappingFields.Where(f => !string.IsNullOrEmpty(f.RefFieldName)).ToList();
             var referTableNames = _fieldsByArea.SelectMany(a => a.Value).Where(f => referMapingFields.Select(mf => mf.FieldName).Contains(f.FieldName)).Select(f => f.RefTableCode).ToList();
-            foreach (var (areaId, areaFields) in _fieldsByArea)
-            {
-                var requiredField = areaFields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
 
-                if (requiredField != null) throw HrDataValidationMessage.FieldRequired.BadRequestFormat(requiredField.Title);
-            }
+            //if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+            //{
+            //    foreach (var (areaId, areaFields) in _fieldsByArea)
+            //    {
+            //        var requiredField = areaFields.FirstOrDefault(f => f.IsRequire && !mapping.MappingFields.Any(m => m.FieldName == f.FieldName));
+            //        if (requiredField != null) throw HrDataValidationMessage.FieldRequired.BadRequestFormat(requiredField.Title);
+            //    }
+            //}
 
 
             referFields = await _categoryHelperService.GetReferFields(referTableNames, referMapingFields.Select(f => f.RefFieldName).ToList());
