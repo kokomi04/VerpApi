@@ -27,7 +27,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumHandoverTypeStatus? HandoverTypeId { get; set; }
         public long? OutsourceStepRequestId { get; set; }
         public string OutsourceStepRequestCode { get; set; }
-
+        public string Comment { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionStepEntity, ProductionStepModel>()
@@ -36,6 +36,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))
+                .ForMember(m => m.Comment, a => a.MapFrom(s => s.Comment ?? ""))
                 .ReverseMapCustom()
                 .ForMember(m => m.Step, v => v.Ignore())
                 .ForMember(m => m.OutsourceStepRequest, v => v.Ignore());
@@ -53,6 +54,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))
+                .ForMember(m => m.Comment, a => a.MapFrom(s => s.Comment ?? ""))
                 .ReverseMapCustom()
                 .ForMember(m => m.ProductionStepLinkDataRole, a => a.Ignore())
                 .ForMember(m => m.Step, v => v.Ignore());

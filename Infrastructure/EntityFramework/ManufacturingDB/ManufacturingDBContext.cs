@@ -660,6 +660,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStep>(entity =>
             {
+                entity.Property(e => e.Comment).HasMaxLength(512);
+
                 entity.Property(e => e.ContainerId).HasComment("ID của Product hoặc lệnh SX");
 
                 entity.Property(e => e.ContainerTypeId).HasComment("1: Sản phẩm\r\n2: Lệnh SX");
@@ -1035,7 +1037,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.HandoverTypeId).HasDefaultValueSql("((1))");
-             
 
                 entity.Property(e => e.ShrinkageRate).HasColumnType("decimal(18, 5)");
 
