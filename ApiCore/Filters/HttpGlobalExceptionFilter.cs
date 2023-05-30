@@ -33,10 +33,8 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public void OnException(ExceptionContext context)
         {
-            object additionData = null;
             if (context.Exception is BadRequestException ex)
             {
-                additionData = ex.AdditionData;
                 _logger.LogWarning(context.Exception, context.Exception.Message);
             }
             else
@@ -44,13 +42,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 _logger.LogError(context.Exception, context.Exception.Message);
             }
 
-            var (response, statusCode) = Handler(context.Exception, _appSetting);
-
-            if (!_env.IsProduction())
-            {
-                response.ExceptionDebug = context.Exception;
-                response.AdditionData = additionData;
-            }
+            var (response, statusCode) = Handler(context.Exception, _appSetting, _env.IsProduction());
 
             if (context.Exception is BadRequestException)
             {
@@ -82,7 +74,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return message.Replace(absolutePath, string.Empty);
         }
 
-        public static (ApiErrorResponse response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting)
+        public static (ApiErrorResponse response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting, bool isProduction)
         {
             ApiErrorResponse response;
             HttpStatusCode statusCode;
@@ -93,6 +85,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     response = new ApiErrorResponse
                     {
                         Code = badRequest.Code.GetErrorCodeString(),
+                        AdditionData = badRequest.AdditionData,
                         Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
                     };
                     statusCode = HttpStatusCode.BadRequest;
@@ -139,6 +132,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                     statusCode = HttpStatusCode.InternalServerError;
                     break;
+            }
+            if (!isProduction)
+            {
+                response.ExceptionDebug = exception;
             }
 
             return (response, statusCode);
