@@ -28,6 +28,7 @@ using Serilog.Events;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
@@ -89,7 +90,7 @@ namespace VErp.Infrastructure.ApiCore
 
             services.AddHostedService<SyncApiEndpointService>();
             services.AddHostedService<LongTaskStatusService>();
-            
+
             services.AddControllers(options =>
             {
                 options.ModelBinderProviders.Insert(0, new CustomModelBinderProvider());
@@ -237,7 +238,7 @@ namespace VErp.Infrastructure.ApiCore
 
             app.UseAuthorization();
 
-            var _logger = loggerFactory.CreateLogger<BaseStartup>();
+            // var _logger = loggerFactory.CreateLogger<BaseStartup>();
 
             app.UseExceptionHandler(a => a.Run(async context =>
             {
@@ -245,14 +246,8 @@ namespace VErp.Infrastructure.ApiCore
 
                 var exception = feature.Error;
 
-                // _logger.LogError(exception, exception?.Message);
 
-                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception, AppSetting);
-
-                if (!env.IsProduction())
-                {
-                    response.ExceptionDebug = exception;
-                }
+                var (response, statusCode) = HttpGlobalExceptionFilter.Handler(exception, AppSetting, env.IsProduction());
 
                 var result = JsonConvert.SerializeObject(response, JsonSetting(null));
 
