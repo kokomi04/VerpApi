@@ -531,9 +531,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
-                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
 
-                await CreateBillVersion(voucherTypeId, billInfo, data, generateTypeLastValues);
+                var listGenerateCodeCtx = new List<IGenerateCodeContext>();
+
+                await CreateBillVersion(voucherTypeId, billInfo, data, listGenerateCodeCtx);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeId, voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Add);
@@ -544,9 +545,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, EnumObjectType.VoucherBill, billInfo.FId);
                 }
 
-                await ConfirmCustomGenCode(generateTypeLastValues);
-
                 trans.Commit();
+                await ConfirmIGenerateCodeContext(listGenerateCodeCtx);
 
                 await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.Create)
                  .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
@@ -1251,21 +1251,19 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await DeleteVoucherBillVersion(voucherTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
-
-                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
+                var lstCtx = new List<IGenerateCodeContext>();
 
                 billInfo.LatestBillVersion++;
 
-                await CreateBillVersion(voucherTypeId, billInfo, data, generateTypeLastValues);
+                await CreateBillVersion(voucherTypeId, billInfo, data, lstCtx);
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
                 await ProcessActionAsync(voucherTypeId, voucherTypeInfo.AfterSaveActionExec, data, voucherFields, EnumActionType.Update);
 
-                await ConfirmCustomGenCode(generateTypeLastValues);
-
                 trans.Commit();
+                await ConfirmIGenerateCodeContext(lstCtx);
 
                 await _voucherDataActivityLog.LogBuilder(() => VoucherBillActivityLogMessage.Update)
                 .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
@@ -1652,8 +1650,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
         }
 
-        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateVoucherField> fields, IList<NonCamelCaseDictionary> rows)
+        private async Task FillGenerateColumn(long? fId, List<IGenerateCodeContext> generateCodeCtxs, Dictionary<string, ValidateVoucherField> fields, IList<NonCamelCaseDictionary> rows)
         {
+            Dictionary<string, int> baseValueChains = new Dictionary<string, int>();
             for (var i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
@@ -1676,58 +1675,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             ngayCtValue = v;
                         }
 
-                        CustomGenCodeOutputModel currentConfig;
-                        try
-                        {
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId, fId, code, ngayCtValue);
-
-                            if (currentConfig == null)
-                            {
-                                throw GenerateCodeConfigForFieldNotFound.BadRequestFormat(field.Title);
-                            }
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw badRequest.Code.BadRequestFormat(GenerateCodeFieldBadRequest, field.Title, badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-                            throw;
-                        }
-
-                        var generateType = $"{currentConfig.CustomGenCodeId}_{currentConfig.CurrentLastValue.BaseValue}";
-
-                        if (!generateTypeLastValues.ContainsKey(generateType))
-                        {
-                            generateTypeLastValues.Add(generateType, currentConfig.CurrentLastValue);
-                        }
-
-                        var lastTypeValue = generateTypeLastValues[generateType];
-
-
-                        try
-                        {
-
-                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, lastTypeValue.LastValue, fId, code, ngayCtValue);
-                            if (generated == null)
-                            {
-                                throw GeneralCode.InternalError.BadRequestFormat(GenerateCodeFieldError, field.Title);
-                            }
-
-
-                            value = generated.CustomCode;
-                            lastTypeValue.LastValue = generated.LastValue;
-                            lastTypeValue.LastCode = generated.CustomCode;
-                            lastTypeValue.BaseValue = generated.BaseValue;
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw badRequest.Code.BadRequestFormat(GenerateCodeFieldBadRequest, field.Title, badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-                            throw;
-                        }
+                        value = (value ?? "").Trim();
+                        var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+                        value = await ctx.SetConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId, null)
+                            .SetConfigData(fId ?? 0, ngayCtValue)
+                            .TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, value, (s, code) => s.FId != field.VoucherAreaFieldId && s.BillCode == code);
 
                         if (!row.ContainsKey(field.FieldName))
                         {
@@ -1741,22 +1693,22 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
             }
         }
-
-        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task ConfirmIGenerateCodeContext(List<IGenerateCodeContext> lstCtx)
         {
-            foreach (var (_, value) in generateTypeLastValues)
+            foreach (var ctx in lstCtx)
             {
-                await _customGenCodeHelperService.ConfirmCode(value);
+                await ctx.ConfirmCode();
             }
         }
 
-        private async Task CreateBillVersion(int voucherTypeId, VoucherBill billInfo, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task CreateBillVersion(int voucherTypeId, VoucherBill billInfo, BillInfoModel data, List<IGenerateCodeContext> generateCodeCtxs)
         {
             var fields = (await GetVoucherFields(voucherTypeId)).ToDictionary(f => f.FieldName, f => f);
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
+            await FillGenerateColumn(billInfo.FId, generateCodeCtxs, infoFields, new[] { data.Info });
+
 
             if (data.Info.TryGetStringValue(PurchaseOrderConstants.BILL_CODE, out var sct))
             {
@@ -1768,7 +1720,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, rowFields, data.Rows);
+            await FillGenerateColumn(billInfo.FId, generateCodeCtxs, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -2178,6 +2130,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             var reader = new ExcelReader(stream);
 
+
             // Lấy thông tin field
             var fields = await GetVoucherFields(voucherTypeId);
 
@@ -2267,7 +2220,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 {
                     try
                     {
-                        var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
+                        var lstCtx = new List<IGenerateCodeContext>();
 
                         // Get all fields
                         var voucherFields = _purchaseOrderDBContext.VoucherField
@@ -2311,7 +2264,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                             await _purchaseOrderDBContext.SaveChangesAsync();
 
-                            await CreateBillVersion(voucherTypeId, billInfo, bill, generateTypeLastValues);
+                            await CreateBillVersion(voucherTypeId, billInfo, bill, lstCtx);
 
                             // After saving action (SQL)
                             await ProcessActionAsync(voucherTypeId, voucherType.AfterSaveActionExec, bill, voucherFields, EnumActionType.Add);
@@ -2320,9 +2273,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                         }
 
-                        await ConfirmCustomGenCode(generateTypeLastValues);
-
                         trans.Commit();
+                        await ConfirmIGenerateCodeContext(lstCtx);
                     }
                     catch (Exception ex)
                     {
@@ -2849,7 +2801,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             var billDate = ExtractBillDate(info);
             var oldDate = ExtractBillDate(oldInfo);
-            
+
             await ValidateSaleVoucherConfig(billDate as DateTime?, oldDate as DateTime?);
         }
 

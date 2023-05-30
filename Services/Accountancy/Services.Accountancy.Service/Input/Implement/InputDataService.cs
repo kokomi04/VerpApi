@@ -639,9 +639,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await _accountancyDBContext.SaveChangesAsync();
 
-                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
+                var listGenerateCodeCtx = new List<IGenerateCodeContext>();
 
-                await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
+                await CreateBillVersion(inputTypeId, billInfo, data, listGenerateCodeCtx);
 
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Add);
@@ -651,10 +651,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _outsideMappingHelperService.MappingObjectCreate(data.OutsideImportMappingData.MappingFunctionKey, data.OutsideImportMappingData.ObjectId, _inputTypeObjectType, billInfo.FId);
                 //}
 
-                await ConfirmCustomGenCode(generateTypeLastValues);
 
                 trans.Commit();
-
+                await ConfirmIGenerateCodeContext(listGenerateCodeCtx);
 
                 await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Create)
                 .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
@@ -1414,11 +1413,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await DeleteBillVersion(inputTypeId, billInfo.FId, billInfo.LatestBillVersion);
 
 
-                var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
+                var lstCtx = new List<IGenerateCodeContext>();
 
                 billInfo.LatestBillVersion++;
 
-                await CreateBillVersion(inputTypeId, billInfo, data, generateTypeLastValues);
+                await CreateBillVersion(inputTypeId, billInfo, data, lstCtx);
 
 
 
@@ -1427,9 +1426,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 // After saving action (SQL)
                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, data, inputFields, EnumActionType.Update, inputValueBillId);
 
-                await ConfirmCustomGenCode(generateTypeLastValues);
-
                 trans.Commit();
+
+                await ConfirmIGenerateCodeContext(lstCtx);
 
                 await _inputDataActivityLog.LogBuilder(() => AccountancyBillActivityLogMessage.Update)
                   .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
@@ -1809,8 +1808,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task FillGenerateColumn(long? fId, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
+        private async Task FillGenerateColumn(long? fId, List<IGenerateCodeContext> generateCodeCtxs, Dictionary<string, ValidateField> fields, IList<NonCamelCaseDictionary> rows)
         {
+            Dictionary<string, int> baseValueChains = new Dictionary<string, int>();
             for (var i = 0; i < rows.Count; i++)
             {
                 var row = rows[i];
@@ -1833,61 +1833,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             ngayCtValue = v;
                         }
+                        //currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
 
-                        CustomGenCodeOutputModel currentConfig;
-                        try
-                        {
+                        var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+                        value = await ctx.SetConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, null)
+                            .SetConfigData(fId ?? 0, ngayCtValue)
+                            .TryValidateAndGenerateCode(_accountancyDBContext.InputBill, value, (s, code) => s.FId != field.InputAreaFieldId && s.BillCode == code);
 
-                            currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
-
-                            if (currentConfig == null)
-                            {
-                                throw GenerateCodeConfigForFieldNotFound.BadRequestFormat(field.Title);
-                            }
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw badRequest.Code.BadRequestFormat(GenerateCodeFieldBadRequest, field.Title, badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-                            throw;
-                        }
-
-                        var generateType = $"{currentConfig.CustomGenCodeId}_{currentConfig.CurrentLastValue.BaseValue}";
-
-                        if (!generateTypeLastValues.ContainsKey(generateType))
-                        {
-                            generateTypeLastValues.Add(generateType, currentConfig.CurrentLastValue);
-                        }
-
-                        var lastTypeValue = generateTypeLastValues[generateType];
-
-
-                        try
-                        {
-
-                            var generated = await _customGenCodeHelperService.GenerateCode(currentConfig.CustomGenCodeId, lastTypeValue.LastValue, fId, code, ngayCtValue);
-                            if (generated == null)
-                            {
-                                throw GeneralCode.InternalError.BadRequestFormat(GenerateCodeFieldError, field.Title);
-                            }
-
-
-                            value = generated.CustomCode;
-                            lastTypeValue.LastValue = generated.LastValue;
-                            lastTypeValue.LastCode = generated.CustomCode;
-                            lastTypeValue.BaseValue = generated.BaseValue;
-                        }
-                        catch (BadRequestException badRequest)
-                        {
-                            throw badRequest.Code.BadRequestFormat(GenerateCodeFieldBadRequest, field.Title, badRequest.Message);
-                        }
-                        catch (Exception)
-                        {
-
-                            throw;
-                        }
 
                         if (!row.ContainsKey(field.FieldName))
                         {
@@ -1902,15 +1854,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        private async Task ConfirmCustomGenCode(Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task ConfirmIGenerateCodeContext(List<IGenerateCodeContext> lstCtx)
         {
-            foreach (var (_, lasValue) in generateTypeLastValues)
+            foreach (var ctx in lstCtx)
             {
-                await _customGenCodeHelperService.ConfirmCode(lasValue);
+                await ctx.ConfirmCode();
             }
         }
-
-        private async Task CreateBillVersion(int inputTypeId, InputBill billInfo, BillInfoModel data, Dictionary<string, CustomGenCodeBaseValueModel> generateTypeLastValues)
+        private async Task CreateBillVersion(int inputTypeId, InputBill billInfo, BillInfoModel data, List<IGenerateCodeContext> generateCodeCtxs)
         {
 
             var fields = (await GetInputFields(inputTypeId)).ToDictionary(f => f.FieldName, f => f);
@@ -1918,7 +1869,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var infoFields = fields.Where(f => !f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, infoFields, new[] { data.Info });
+            await FillGenerateColumn(billInfo.FId, generateCodeCtxs, infoFields, new[] { data.Info });
 
             if (data.Info.TryGetStringValue(AccountantConstants.BILL_CODE, out var sct))
             {
@@ -1930,7 +1881,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var rowFields = fields.Where(f => f.Value.IsMultiRow).ToDictionary(f => f.Key, f => f.Value);
 
-            await FillGenerateColumn(billInfo.FId, generateTypeLastValues, rowFields, data.Rows);
+            await FillGenerateColumn(billInfo.FId, generateCodeCtxs, rowFields, data.Rows);
 
             var insertColumns = new HashSet<string>();
 
@@ -2588,8 +2539,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         try
                         {
-                            var generateTypeLastValues = new Dictionary<string, CustomGenCodeBaseValueModel>();
-
+                            var lstCtx = new List<IGenerateCodeContext>();
 
 
                             // Thêm mới chứng từ
@@ -2637,12 +2587,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     BillCode = billCode?.ToUpper(),
                                     IsDeleted = false
                                 };
-
+                                 
                                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
                                 await _accountancyDBContext.SaveChangesAsync();
 
-                                await CreateBillVersion(inputTypeId, billInfo, bill, generateTypeLastValues);
+                                await CreateBillVersion(inputTypeId, billInfo, bill, lstCtx);
 
                                 // After saving action (SQL)
                                 await ProcessActionAsync(inputTypeId, inputTypeInfo.AfterSaveActionExec, bill, inputFields, EnumActionType.Add);
@@ -2789,7 +2739,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                                 billInfo.LatestBillVersion++;
 
-                                await CreateBillVersion(inputTypeId, billInfo, newBillInfo, generateTypeLastValues);
+                                await CreateBillVersion(inputTypeId, billInfo, newBillInfo, lstCtx);
 
                                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -2807,9 +2757,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                             }
 
-                            await ConfirmCustomGenCode(generateTypeLastValues);
 
                             trans.Commit();
+
+                            await ConfirmIGenerateCodeContext(lstCtx);
 
                             await logBatch.CommitAsync();
                         }
