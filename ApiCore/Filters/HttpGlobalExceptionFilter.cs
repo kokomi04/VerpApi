@@ -35,7 +35,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
         {
             if (context.Exception is BadRequestException ex)
             {
-                _logger.LogWarning(context.Exception, context.Exception.Message);
+                _logger.LogWarning(ex, context.Exception.Message);
             }
             else
             {
@@ -60,7 +60,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 }
                 else
                 {
-                    context.Result = new InternalServerErrorObjectResult(response);
+                    context.Result = new ObjectResult(response);
                 }
             }
 
