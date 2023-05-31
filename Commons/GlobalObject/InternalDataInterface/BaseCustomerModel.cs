@@ -62,9 +62,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Thông tin người liên hệ", GroupName ="TT bán hàng")]
         public string InformationContact { get; set; }
         [Display(Name ="Điều kiện thanh toán", GroupName ="TT bán hàng")]
-        public int? PayConditions { get; set; }
+        public int? PayConditionsId { get; set; }
         [Display(Name ="Điều kiện giao hàng", GroupName ="TT bán hàng")]
-        public int? DeliveryConditions { get; set; }
+        public int? DeliveryConditionsId { get; set; }
         [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)", GroupName = "TT bán hàng")]
         public EnumBeginningType? DebtBeginningTypeId { get; set; }
         [Display(Name = "NV quản lý nợ", GroupName = "TT bán hàng")]
@@ -242,8 +242,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public EnumBeginningType DebtBeginningTypeId { get; set; }
         public int? DebtManagerUserId { get; set; }
         public string InformationContact { get; set; }
-        public int? PayConditions { get; set; }
-        public int? DeliveryConditions { get; set; }
+        public int? PayConditionsId { get; set; }
+        public int? DeliveryConditionsId { get; set; }
 
         public int? LoanDays { get; set; }
         public decimal? LoanLimitation { get; set; }

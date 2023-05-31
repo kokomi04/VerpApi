@@ -330,8 +330,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 DebtBeginningTypeId = (EnumBeginningType)customerInfo.DebtBeginningTypeId,
                 DebtManagerUserId = customerInfo.DebtManagerUserId,
                 InformationContact = customerInfo.InformationContact,
-                PayConditions = customerInfo.PayConditions,
-                DeliveryConditions = customerInfo.DeliveryConditions,
+                PayConditionsId = customerInfo.PayConditionsId,
+                DeliveryConditionsId = customerInfo.DeliveryConditionsId,
                 LoanDays = customerInfo.LoanDays,
                 LoanLimitation = customerInfo.LoanLimitation,
                 LoanBeginningTypeId = (EnumBeginningType)customerInfo.LoanBeginningTypeId,
@@ -444,8 +444,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
                     DebtManagerUserId = c.DebtManagerUserId,
                     InformationContact = c.InformationContact,
-                    DeliveryConditions = c.DeliveryConditions,
-                    PayConditions = c.PayConditions,
+                    PayConditionsId = c.PayConditionsId,
+                    DeliveryConditionsId = c.DeliveryConditionsId,
                     LoanDays = c.LoanDays,
                     LoanLimitation = c.LoanLimitation,
                     LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
@@ -548,10 +548,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
             if (!igDeleteRef || !string.IsNullOrEmpty(data.InformationContact))
                 customerInfo.InformationContact = data.InformationContact;
-            if(!igDeleteRef || data.PayConditions.HasValue)
-                customerInfo.PayConditions = data.PayConditions;
-            if (!igDeleteRef || data.DeliveryConditions.HasValue)
-                customerInfo.DeliveryConditions = data.DeliveryConditions;
+            if(!igDeleteRef || data.PayConditionsId.HasValue)
+                customerInfo.PayConditionsId = data.PayConditionsId;
+            if (!igDeleteRef || data.DeliveryConditionsId.HasValue)
+                customerInfo.DeliveryConditionsId = data.DeliveryConditionsId;
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Description))
                 customerInfo.Description = data.Description;
             if (!igDeleteRef || data.IsActived.HasValue)
@@ -789,8 +789,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtBeginningTypeId = (int)(data.DebtBeginningTypeId ?? EnumBeginningType.BillDate),
                     DebtManagerUserId = data.DebtManagerUserId,
                     InformationContact = data.InformationContact,
-                    PayConditions = data.PayConditions,
-                    DeliveryConditions = data.DeliveryConditions,
+                    PayConditionsId = data.PayConditionsId,
+                    DeliveryConditionsId = data.DeliveryConditionsId,
                     LoanDays = data.LoanDays,
                     LoanLimitation = data.LoanLimitation,
                     LoanBeginningTypeId = (int)data.LoanBeginningTypeId,
