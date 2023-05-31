@@ -83,8 +83,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@IsByLsx", SqlDbType.Decimal){ Value = req.IsByLsx},
                     new SqlParameter("@IsByOrder", SqlDbType.Decimal){ Value = req.IsByOrder},
                     new SqlParameter("@IsByStock", SqlDbType.Decimal){ Value = req.IsByStock},
-                    new SqlParameter("@DauKy154", SqlDbType.Decimal){ Value = req.DauKy154},
-                    new SqlParameter("@CuoiKy154", SqlDbType.Decimal){ Value = req.CuoiKy154},
+
+                    new SqlParameter("@ProgressMaterialOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Materials?.Open},
+                    new SqlParameter("@ProgressMaterialEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Materials?.End},
+
+                    new SqlParameter("@ProgressLaborsOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Labors?.Open},
+                    new SqlParameter("@ProgressLaborsEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Labors?.End},
+
+                    new SqlParameter("@ProgressFactoriesOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Factories?.Open},
+                    new SqlParameter("@ProgressFactoriesEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Factories?.End},
 
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
@@ -211,7 +218,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
 
-            
+
             var priceSellInDirectlySum = new SqlParameter("@PriceSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costAccountingSum = new SqlParameter("@CostAccountingSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costSellInDirectlySum = new SqlParameter("@CostSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
