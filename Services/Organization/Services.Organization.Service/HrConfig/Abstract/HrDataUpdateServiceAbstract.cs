@@ -679,9 +679,30 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
             foreach (var f in areaFields)
             {
                 columns.Add($"{alias}.[{f.FieldName}]");
+
+                if (f.HasRefField)
+                {
+                    foreach (var refTitle in f.RefTableTitle.Split(',').Where(t => !string.IsNullOrWhiteSpace(t)).Select(t => t.Trim()))
+                    {
+                        columns.Add($"v{f.FieldName}.[{refTitle}] AS [{f.FieldName}_{refTitle}]");
+                    }
+
+                }
+
             }
             return string.Join(",", columns.ToArray());
         }
+
+        protected string AreaRefJoins(string alias, List<HrValidateField> areaFields)
+        {
+            var joins = new StringBuilder();
+            foreach (var f in areaFields.Where(f => f.HasRefField))
+            {
+                joins.AppendLine($"LEFT JOIN v{f.RefTableCode} v{f.FieldName} ON {alias}.{f.FieldName} = v{f.FieldName}.{f.RefTableField}");
+            }
+            return joins.ToString();
+        }
+
 
         protected async Task<IDictionary<long, IList<NonCamelCaseDictionary>>> GetAreaData(string hrTypeCode, List<HrValidateField> areaFields, IList<long> fIds)
         {
@@ -693,8 +714,11 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
 
             var tableName = OrganizationConstants.GetHrAreaTableName(hrTypeCode, areaCode);
 
-            var sql = $"SELECT {SelectAreaColumns(areaId, alias, areaFields)} FROM {tableName} {alias} JOIN @fIds fId ON {alias}.{HR_BILL_ID_FIELD_IN_AREA} = fId.[Value] " +
-                 $"WHERE {alias}.IsDeleted = 0 ";
+
+            var sql = $"SELECT {SelectAreaColumns(areaId, alias, areaFields)} " +
+                $"FROM {tableName} {alias} JOIN @fIds fId ON {alias}.{HR_BILL_ID_FIELD_IN_AREA} = fId.[Value] " +
+                $"{AreaRefJoins(alias, areaFields)} " +
+                $"WHERE {alias}.IsDeleted = 0 ";
 
             var queryParams = new[]
             {

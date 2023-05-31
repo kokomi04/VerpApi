@@ -575,6 +575,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             var sql = $"SELECT {SelectAreaColumns(codeField.HrAreaId, codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} " +
                 $"FROM dbo.HrBill bill " +
                $"JOIN {_areaTableName[codeField.HrAreaId]} {codeAreaAlias} ON bill.F_Id = {codeAreaAlias}.[{HR_BILL_ID_FIELD_IN_AREA}] " +
+               $"{AreaRefJoins(codeAreaAlias, _fieldsByArea[codeField.HrAreaId])} " +
                $"WHERE bill.SubSidiaryId = @SubId AND bill.IsDeleted = 0 AND {codeAreaAlias}.IsDeleted = 0 " +
                $"AND bill.HrTypeId = @HrTypeId " +
                $"AND {OrganizationConstants.BILL_CODE} IN (SELECT NValue FROM @billCodes) ";
