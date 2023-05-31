@@ -68,7 +68,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
     public class CalcProductPriceAccBalancePeriod
     {
-        public decimal Open { get; set; }
-        public decimal End { get; set; }
+        public decimal? Open { get; set; }
+        public decimal? End { get; set; }
     }
 }
