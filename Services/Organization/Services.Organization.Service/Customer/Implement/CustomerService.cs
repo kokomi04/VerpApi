@@ -548,9 +548,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
             if (!igDeleteRef || !string.IsNullOrEmpty(data.InformationContact))
                 customerInfo.InformationContact = data.InformationContact;
-            if(!igDeleteRef || !string.IsNullOrEmpty(data.PayConditions))
+            if(!igDeleteRef || data.PayConditions.HasValue)
                 customerInfo.PayConditions = data.PayConditions;
-            if (!igDeleteRef || !string.IsNullOrEmpty(data.DeliveryConditions))
+            if (!igDeleteRef || data.DeliveryConditions.HasValue)
                 customerInfo.DeliveryConditions = data.DeliveryConditions;
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Description))
                 customerInfo.Description = data.Description;
