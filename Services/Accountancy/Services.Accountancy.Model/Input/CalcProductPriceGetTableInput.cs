@@ -18,8 +18,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsByOrder { get; set; }
         public bool IsByStock { get; set; }
 
-        public decimal? DauKy154 { get; set; }
-        public decimal? CuoiKy154 { get; set; }
+        public CalcProductPriceWorkInProgressBalance ProgressBalances { get; set; }
 
         public NonCamelCaseDictionary<decimal?> AllocationRate { get; set; }
         public NonCamelCaseDictionary<decimal?> CustomPrice { get; set; }
@@ -46,7 +45,7 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public string GetHashString()
         {
-            return $"{ProductId}_{OrderCode}_{MaLsx}_{FromDate}_{ToDate}_{IsByLsx}_{IsByOrder}_{DauKy154}_{CuoiKy154}";
+            return $"{ProductId}_{OrderCode}_{MaLsx}_{FromDate}_{ToDate}_{IsByLsx}_{IsByOrder}";
         }
     }
 
@@ -58,5 +57,18 @@ namespace VErp.Services.Accountancy.Model.Input
         public decimal? IndirectLaborFeeSum { get; set; }
         public decimal? GeneralManufacturingSum { get; set; }
         public long? CalcPeriodId { get; set; }
+    }
+
+    public class CalcProductPriceWorkInProgressBalance
+    {
+        public CalcProductPriceAccBalancePeriod Materials { get; set; }
+        public CalcProductPriceAccBalancePeriod Labors { get; set; }
+        public CalcProductPriceAccBalancePeriod Factories { get; set; }
+    }
+
+    public class CalcProductPriceAccBalancePeriod
+    {
+        public decimal Open { get; set; }
+        public decimal End { get; set; }
     }
 }
