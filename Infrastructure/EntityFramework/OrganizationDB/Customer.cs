@@ -36,6 +36,9 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public decimal? DebtLimitation { get; set; }
         public int DebtBeginningTypeId { get; set; }
         public int? DebtManagerUserId { get; set; }
+        public string InformationContact { get; set; }
+        public string PayConditions { get; set; }
+        public string DeliveryConditions { get; set; }
         public int? LoanDays { get; set; }
         public decimal? LoanLimitation { get; set; }
         public int LoanBeginningTypeId { get; set; }
@@ -43,6 +46,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string PartnerId { get; set; }
         public int? CustomerCateId { get; set; }
         public long? LogoFileId { get; set; }
+
 
         public virtual CustomerCate CustomerCate { get; set; }
         public virtual ICollection<CustomerAttachment> CustomerAttachment { get; set; }

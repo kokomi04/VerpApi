@@ -216,17 +216,23 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.DebtLimitation).HasColumnType("decimal(18, 5)");
 
+                entity.Property(e => e.DeliveryConditions).HasMaxLength(512);
+
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.Email).HasMaxLength(128);
 
                 entity.Property(e => e.Identify).HasMaxLength(64);
 
+                entity.Property(e => e.InformationContact).HasMaxLength(512);
+
                 entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
 
                 entity.Property(e => e.LoanLimitation).HasColumnType("decimal(18, 5)");
 
                 entity.Property(e => e.PartnerId).HasMaxLength(32);
+
+                entity.Property(e => e.PayConditions).HasMaxLength(512);
 
                 entity.Property(e => e.PhoneNumber).HasMaxLength(32);
 
