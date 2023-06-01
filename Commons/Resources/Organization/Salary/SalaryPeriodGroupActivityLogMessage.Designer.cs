@@ -122,5 +122,14 @@ namespace Verp.Resources.Organization.Salary {
                 return ResourceManager.GetString("Update", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật bảng lương cho nhân viên nhóm {0} kỳ tháng {1}/{2}.
+        /// </summary>
+        public static string UpdateSalaryEmployee {
+            get {
+                return ResourceManager.GetString("UpdateSalaryEmployee", resourceCulture);
+            }
+        }
     }
 }

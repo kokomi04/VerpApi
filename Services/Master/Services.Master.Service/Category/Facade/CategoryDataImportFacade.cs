@@ -68,7 +68,7 @@ namespace VErp.Services.Master.Service.Category
                 await RefCategoryForProperty(mapping);
                 await MappingCategoryDate(mapping);
 
-                var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, 0, 0, "", true)).List;
+                var existsCategoryData = (await _categoryDataService.GetCategoryRows(_categoryId, null, null, null, null, null, null, 0, 0, "", true)).List;
 
                 var lsUpdateRow = new List<NonCamelCaseDictionary>();
                 var lsAddRow = new List<NonCamelCaseDictionary>();
@@ -224,7 +224,7 @@ namespace VErp.Services.Master.Service.Category
                 var categoryDataRow = new NonCamelCaseDictionary();
                 foreach (var mf in mapField)
                 {
-                    row.TryGetValue(mf.Column, out var value);
+                    row.TryGetStringValue(mf.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value) && mf.IsIgnoredIfEmpty)
                     {
@@ -327,7 +327,7 @@ namespace VErp.Services.Master.Service.Category
                 var refValues = new HashSet<string>();
                 foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
                 {
-                    row.TryGetValue(mapField.Column, out var value);
+                    row.TryGetStringValue(mapField.Column, out var value);
 
                     if (string.IsNullOrWhiteSpace(value)) continue;
 
@@ -381,7 +381,7 @@ namespace VErp.Services.Master.Service.Category
                         var refValues = new HashSet<string>();
                         foreach (var (row, i) in _importData.Rows.Select((value, i) => (value, i)))
                         {
-                            row.TryGetValue(mf.Column, out var value);
+                            row.TryGetStringValue(mf.Column, out var value);
 
                             if (string.IsNullOrWhiteSpace(value)) continue;
 
@@ -562,7 +562,7 @@ namespace VErp.Services.Master.Service.Category
                     }
                 }
 
-                var data = await _masterContext.QueryDataTable(dataSql.ToString(), sqlParams.ToArray());
+                var data = await _masterContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.ToArray());
                 if (!categoriesData.ContainsKey(categoryQuery.CategoryCode))
                 {
                     categoriesData.Add(categoryQuery.CategoryCode, data.ConvertData());

@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using NPOI.SS.Formula.Functions;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -17,6 +19,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
@@ -36,22 +39,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private const int STOCK_DEPARTMENT_ID = -1;
-        private readonly IQueueProcessHelperService _queueProcessHelperService;
+        private readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public ProductionHandoverReceiptService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
             , ILogger<ProductionHandoverReceiptService> logger
             , IMapper mapper
-            , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _currentContextService = currentContextService;
-            _queueProcessHelperService = queueProcessHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
+            _productionOrderQueueHelperService = productionOrderQueueHelperService;
         }
 
         public async Task<PageData<ProductionHandoverHistoryReceiptModel>> GetList(string keyword, long? fromDate, long? toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
@@ -60,7 +63,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var parammeters = new List<SqlParameter>();
 
             var whereCondition = new StringBuilder();
-           
+
 
             if (!string.IsNullOrEmpty(keyword))
             {
@@ -75,7 +78,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 whereCondition.Append("OR v.ProductionOrderCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductCode LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductName LIKE @Keyword ");
-                whereCondition.Append("OR v.HandoverNote LIKE @Keyword ");                
+                whereCondition.Append("OR v.HandoverNote LIKE @Keyword ");
                 whereCondition.Append("OR v.ProductionNote LIKE @Keyword ) ");
                 parammeters.Add(new SqlParameter("@Keyword", $"%{keyword}%"));
             }
@@ -94,7 +97,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 var suffix = 0;
                 var filterCondition = new StringBuilder();
-                filters.FilterClauseProcess("vProductionHandoverHistoryReceipt", "v", ref filterCondition, ref parammeters, ref suffix);
+                suffix = filters.FilterClauseProcess("vProductionHandoverHistoryReceipt", "v", filterCondition, parammeters, suffix);
                 if (filterCondition.Length > 2)
                 {
                     if (whereCondition.Length > 0) whereCondition.Append(" AND ");
@@ -121,11 +124,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 sql.Append(" WHERE ");
                 sql.Append(whereCondition);
             }
-       
-           
-            var totalData = await _manufacturingDBContext.QueryDataTable(totalSql.ToString(), parammeters.ToArray());
+
+
+            var totalData = await _manufacturingDBContext.QueryDataTableRaw(totalSql.ToString(), parammeters.ToArray());
             var total = 0;
-            
+
             if (totalData != null && totalData.Rows.Count > 0)
             {
                 total = (totalData.Rows[0]["Total"] as int?).GetValueOrDefault();
@@ -139,7 +142,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             ROWS ONLY");
             }
 
-            var lst = await _manufacturingDBContext.QueryList<ProductionHandoverHistoryReceiptModel>(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var lst = await _manufacturingDBContext.QueryListRaw<ProductionHandoverHistoryReceiptModel>(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
 
             return (lst, total);
         }
@@ -166,7 +169,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
 
             var productionOrderIds = receipts.SelectMany(r => r.ProductionHandover.Select(h => h.ProductionOrderId)).Distinct().ToList();
-            var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
+            var productionOrders = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId))
+                .Select(o => new { o.ProductionOrderCode, o.ProductionOrderId }).ToListAsync();
 
             using (var batchLog = _activityLogService.BeginBatchLog())
             {
@@ -204,9 +208,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                     await batchLog.CommitAsync();
 
-                    foreach (var code in productionOrderCodes)
+                    foreach (var pro in productionOrders)
                     {
-                        await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                        var codes = receipts.Where(r => r.ProductionHandover.Any(h => h.ProductionOrderId == pro.ProductionOrderId)).Select(r => r.ProductionHandoverReceiptCode).Distinct().ToArray();
+                        await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(pro.ProductionOrderCode, $"Xác nhận phiếu thống kê {string.Join(",", codes)}");
                     }
                     return true;
                 }
@@ -220,7 +225,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         public async Task<bool> Confirm(long receiptId, EnumHandoverStatus status)
         {
-            var info = _manufacturingDBContext.ProductionHandoverReceipt.Include(r=>r.ProductionHandover).FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
+            var info = _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
             if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
             if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
 
@@ -249,7 +254,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var code in productionOrderCodes)
                 {
-                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, code);
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(code, $"Xác nhận phiếu thống kê {info.ProductionHandoverReceiptCode}");
                 }
 
                 return true;
@@ -297,6 +302,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
         }
 
+        public async Task<long> Create(ProductionHandoverReceiptModel data)
+        {
+            var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
+            try
+            {
+                var productionHandoverReceiptId = await Create(data, EnumHandoverStatus.Waiting);
+                await trans.CommitAsync();
+                return productionHandoverReceiptId;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                _logger.LogError(ex, "CreateProductHandover");
+                throw;
+            }
+            
+        }
+
         private async Task<long> Create(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
         {
             try
@@ -326,12 +349,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     {
                         if (!_manufacturingDBContext.OutsourceStepRequestData.Any(o => o.ProductionStepId == h.ProductionStepId))
                             throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không có gia công công đoạn");
-                      
+
                     }
                     else
                     {
                         if (!_manufacturingDBContext.ProductionAssignment.Any(a => a.ProductionStepId == h.ProductionStepId && a.DepartmentId == h.DepartmentId && a.ProductionOrderId == h.ProductionOrderId))
-                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");                       
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn giao không tồn tại phân công công việc cho tổ bàn giao");
                     }
                 }
 
@@ -339,7 +362,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
                 var code = await ctx
-                    .SetConfig(EnumObjectType.ProductionHandoverReceipt, EnumObjectType.ProductionHandoverReceipt)
+                    .SetConfig(EnumObjectType.ProductionHandoverReceipt)
                     .SetConfigData(0, data.Handovers.FirstOrDefault()?.HandoverDatetime)
                     .TryValidateAndGenerateCode(_manufacturingDBContext.ProductionHandoverReceipt, data.ProductionHandoverReceiptCode, (s, code) => s.ProductionHandoverReceiptCode == code);
 
@@ -399,7 +422,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => data.Handovers.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
                 {
-                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(code, $"Tạo phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
                 }
 
                 return receiptInfo.ProductionHandoverReceiptId;
@@ -495,7 +518,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
                 {
-                    await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Xóa phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
                 }
                 return true;
             }
@@ -617,7 +640,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
             {
-                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, podCode);
+                await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Cập nhật phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
             }
             return true;
 

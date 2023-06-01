@@ -26,7 +26,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Email = 5,
         [Description("Boolean")]
         [DataSize(-1)]
-        [Regex("^true|false|True|False|1|0$")]
+        [Regex("^true|false|True|False|1|0|co|khong$")]
         [RangeValue(new[] { "Có", "Không", "True", "False" })]
         Boolean = 6,
         [Description("Tỷ lệ phần trăm")]

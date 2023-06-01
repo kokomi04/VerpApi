@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int? CensorByUserId { get; set; }
         public DateTime? CensorDatetimeUtc { get; set; }
         public int SalaryPeriodCensorStatusId { get; set; }
+        public bool IsSalaryDataCreated { get; set; }
         public int SubsidiaryId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

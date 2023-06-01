@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -55,9 +56,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _roleHelperService = roleHelperService;
         }
 
-        public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(int reportTypeId, bool isConfig = false)
+        public async Task<ReportTypeViewModel> ReportTypeViewGetInfo(EmumReportViewFilterType reportViewFilterTypeId, int reportTypeId, bool isConfig = false)
         {
-            var info = await _reportConfigContext.ReportTypeView.AsNoTracking().Where(t => t.ReportTypeId == reportTypeId).ProjectTo<ReportTypeViewModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var info = await _reportConfigContext.ReportTypeView.AsNoTracking()
+                .Where(t => t.ReportTypeId == reportTypeId && t.ReportViewFilterTypeId == (int)reportViewFilterTypeId)
+                .ProjectTo<ReportTypeViewModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
 
             if (info == null)
             {
@@ -100,16 +103,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return cipherFilter;
         }
 
-        public async Task<bool> ReportTypeViewUpdate(int reportTypeId, ReportTypeViewModel model)
+        public async Task<bool> ReportTypeViewUpdate(EmumReportViewFilterType reportViewFilterTypeId, int reportTypeId, ReportTypeViewModel model)
         {
             var reportTypeInfo = await _reportConfigContext.ReportType.FirstOrDefaultAsync(t => t.ReportTypeId == reportTypeId);
             if (reportTypeInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
-            var info = await _reportConfigContext.ReportTypeView.FirstOrDefaultAsync(v => v.ReportTypeId == reportTypeId);
+            var info = await _reportConfigContext.ReportTypeView.FirstOrDefaultAsync(v => v.ReportTypeId == reportTypeId && v.ReportViewFilterTypeId == (int)reportViewFilterTypeId);
 
             if (info == null)
             {
-                await ReportTypeViewCreate(reportTypeId, model);
+                await ReportTypeViewCreate(reportViewFilterTypeId, reportTypeId, model);
             }
             else
             {
@@ -197,7 +200,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         }
 
         #endregion
-        private async Task<bool> ReportTypeViewCreate(int reportTypeId, ReportTypeViewModel model)
+        private async Task<bool> ReportTypeViewCreate(EmumReportViewFilterType reportViewFilterTypeId, int reportTypeId, ReportTypeViewModel model)
         {
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
@@ -208,7 +211,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 var info = _mapper.Map<ReportTypeView>(model);
 
                 info.ReportTypeId = reportTypeId;
-
+                info.ReportViewFilterTypeId = (int)reportViewFilterTypeId;
                 await _reportConfigContext.ReportTypeView.AddAsync(info);
                 await _reportConfigContext.SaveChangesAsync();
 
@@ -511,7 +514,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 f.ReportTypeViewFieldId = 0;
             }
 
-            await ReportTypeViewUpdate(cloneReportEntity.ReportTypeId, info);
+            await ReportTypeViewUpdate(EmumReportViewFilterType.Filter, cloneReportEntity.ReportTypeId, info);
         }
 
         private async Task CloneAccountancyReportToPublic(ReportTypeModel info)
@@ -576,7 +579,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             else
             {
                 await AddReportType(info);
-                var viewInfo = await ReportTypeViewGetInfo(info.ReplicatedFromReportTypeId.Value, true);
+                var viewInfo = await ReportTypeViewGetInfo(EmumReportViewFilterType.Filter, info.ReplicatedFromReportTypeId.Value, true);
 
                 await CloneAccountancyReportViewToPublic(info.ReplicatedFromReportTypeId.Value, viewInfo);
             }

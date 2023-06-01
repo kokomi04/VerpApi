@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -30,13 +31,13 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly ObjectActivityLogFacade _genCodeConfigActivityLog;
 
         private readonly ICurrentContextService _currentContextService;
-
+        private readonly IMapper _mapper;
         public GenCodeConfigService(MasterDBContext masterDbContext
             , IOptions<AppSetting> appSetting
             , ILogger<ObjectGenCodeService> logger
             , IActivityLogService activityLogService
             , ICurrentContextService currentContextService
-
+            , IMapper mapper
         )
         {
             _masterDbContext = masterDbContext;
@@ -44,6 +45,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _logger = logger;
             _currentContextService = currentContextService;
             _genCodeConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.CustomGenCodeConfig);
+            _mapper = mapper;
         }
 
         public async Task<PageData<CustomGenCodeOutputModel>> GetList(string keyword = "", int page = 1, int size = 10)
@@ -221,21 +223,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             {
                 throw new BadRequestException(CustomGenCodeErrorCode.CustomConfigNotFound);
             }
-            obj.BaseFormat = model.BaseFormat;
-            obj.CodeFormat = model.CodeFormat;
-            obj.ParentId = model.ParentId;
-            obj.CustomGenCodeName = model.CustomGenCodeName;
-            obj.CodeLength = model.CodeLength;
-            //obj.Prefix = model.Prefix;
-            //obj.Suffix = model.Suffix;
-            obj.Description = model.Description;
-            obj.UpdatedUserId = _currentContextService.UserId;
-            obj.UpdatedTime = DateTime.UtcNow;
 
-            obj.SortOrder = model.SortOrder;
-
-            obj.IsDefault = model.IsDefault;
-
+            _mapper.Map(model, obj);
 
             if (model.LastValues != null)
             {
@@ -390,25 +379,10 @@ namespace VErp.Services.Master.Service.Config.Implement
                 throw new BadRequestException(ObjectGenCodeErrorCode.ConfigAlreadyExisted);
             }
 
-            var entity = new CustomGenCode()
-            {
-                CustomGenCodeName = model.CustomGenCodeName,
-                CodeLength = (model.CodeLength > 5) ? model.CodeLength : 5,
-                //Prefix = model.Prefix ?? string.Empty,
-                //Suffix = model.Suffix ?? string.Empty,
-                Description = model.Description,
-                BaseFormat = model.BaseFormat,
-                CodeFormat = model.CodeFormat,
-                //DateFormat = string.Empty,
-                LastCode = string.Empty,
-                IsActived = true,
-                IsDefault = model.IsDefault,
-                IsDeleted = false,
-                UpdatedUserId = _currentContextService.UserId,
-                ResetDate = DateTime.UtcNow,
-                CreatedTime = DateTime.UtcNow,
-                UpdatedTime = DateTime.UtcNow
-            };
+            var entity = _mapper.Map<CustomGenCode>(model);
+            entity.LastCode = string.Empty;
+            entity.IsActived = true;
+
             _masterDbContext.CustomGenCode.Add(entity);
 
             await _masterDbContext.SaveChangesAsync();

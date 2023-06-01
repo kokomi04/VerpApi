@@ -7,12 +7,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -20,7 +23,7 @@ using VErp.Services.Organization.Model.Salary;
 
 namespace VErp.Services.Organization.Service.Salary
 {
-    public class SalaryPeriodService : ISalaryPeriodService
+    public class SalaryPeriodService : BillDateValidateionServiceAbstract, ISalaryPeriodService
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
@@ -28,6 +31,7 @@ namespace VErp.Services.Organization.Service.Salary
         private readonly ObjectActivityLogFacade _salaryPeriodActivityLog;
 
         public SalaryPeriodService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
+            : base(organizationDBContext)
         {
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
@@ -43,9 +47,30 @@ namespace VErp.Services.Organization.Service.Salary
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
+
+            await ValidateCensor(salaryPeriodId);
+
+            if (isSuccess)
+            {
+
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CensorRejected && info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedAccepted)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+
+            }
+            else
+            {
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedAccepted)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+            }
+
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CensorApproved : EnumSalaryPeriodCensorStatus.CensorRejected);
             info.CensorByUserId = _currentContextService.UserId;
-            info.CensorDatetimeUtc= DateTime.UtcNow;
+            info.CensorDatetimeUtc = DateTime.UtcNow;
 
             await _organizationDBContext.SaveChangesAsync();
 
@@ -71,6 +96,27 @@ namespace VErp.Services.Organization.Service.Salary
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
+
+            await ValidateCensor(salaryPeriodId);
+
+            if (isSuccess)
+            {
+
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CheckedRejected && info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.New)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+
+            }
+            else
+            {
+                if (info.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.New)
+                {
+                    throw SalaryPeriodValidationMessage.InvalidStatus.BadRequest();
+                }
+            }
 
             info.SalaryPeriodCensorStatusId = (int)(isSuccess ? EnumSalaryPeriodCensorStatus.CheckedAccepted : EnumSalaryPeriodCensorStatus.CheckedRejected);
             info.CheckedByUserId = _currentContextService.UserId;
@@ -93,9 +139,39 @@ namespace VErp.Services.Organization.Service.Salary
             return true;
         }
 
+        private async Task ValidateCensor(int salaryPeriodId)
+        {
+            var childNotApproved = await _organizationDBContext.SalaryPeriodGroup.FirstOrDefaultAsync(g => g.SalaryPeriodId == salaryPeriodId && g.SalaryPeriodCensorStatusId != (int)EnumSalaryPeriodCensorStatus.CensorApproved);
+            if (childNotApproved != null)
+            {
+                throw SalaryPeriodValidationMessage.PeriodGroupHasNotApprovedYet.BadRequest();
+            }
+
+            var periodGroupIds = await _organizationDBContext.SalaryPeriodGroup.Where(p => p.SalaryPeriodId == salaryPeriodId).Select(p => p.SalaryGroupId).ToListAsync();
+
+            var groupIds = await _organizationDBContext.SalaryGroup
+                .Where(g => g.IsActived || periodGroupIds.Contains(g.SalaryGroupId))
+                .Select(g => g.SalaryGroupId).ToListAsync();
+
+            var notCreatedYet = groupIds.Except(periodGroupIds).ToList();
+            if (notCreatedYet.Count() > 0)
+            {
+                var groupInfo = await _organizationDBContext.SalaryGroup.FirstOrDefaultAsync(s => s.SalaryGroupId == notCreatedYet[0]);
+                throw SalaryPeriodValidationMessage.PeriodGroupHasNotCreatedYet.BadRequestFormat(groupInfo?.Title);
+            }
+        }
+
         public async Task<int> Create(SalaryPeriodModel model)
         {
+            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year && p.Month == model.Month))
+            {
+                throw SalaryPeriodValidationMessage.PeriodHasBeenCreated.BadRequestFormat(model.Month, model.Year);
+            }
+
             var info = _mapper.Map<SalaryPeriod>(model);
+
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
+
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             await _organizationDBContext.SalaryPeriod.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
@@ -109,42 +185,76 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Delete(int salaryPeriodId)
         {
-            var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
-            if (info == null)
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                throw GeneralCode.ItemNotFound.BadRequest();
+                var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
+                if (info == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+                await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), null);
+
+                info.IsDeleted = true;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+                await DeletePeriodGroupEmployee(salaryPeriodId);
+
+                await DeletePeriodGroup(salaryPeriodId);
+
+                await trans.CommitAsync();
+
+                await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
+                    .MessageResourceFormatDatas(info.Month, info.Year)
+                    .ObjectId(info.SalaryPeriodId)
+                    .JsonData(info.JsonSerialize())
+                    .CreateLog();
+
+                return true;
             }
-
-            info.IsDeleted = true;
-
-            await _organizationDBContext.SaveChangesAsync();
-            await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
-                .MessageResourceFormatDatas(info.Month, info.Year)
-                .ObjectId(info.SalaryPeriodId)
-                .JsonData(info.JsonSerialize())
-                .CreateLog();
-
-            return true;
         }
 
 
-        public async Task<SalaryPeriodModel> GetInfo(int year, int month)
+        private async Task DeletePeriodGroupEmployee(int salaryPeriodId)
         {
-            return await _organizationDBContext.SalaryPeriod.Where(s=>s.Year==year && s.Month==month)
-                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+            await _organizationDBContext.SalaryEmployee.Where(e => e.SalaryPeriodId == salaryPeriodId)
+                .UpdateByBatch(e => new SalaryEmployee
+                {
+                    IsDeleted = true,
+                    DeletedDatetimeUtc = DateTime.UtcNow,
+                    UpdatedByUserId = _currentContextService.UserId
+                });
+        }
+
+        private async Task DeletePeriodGroup(int salaryPeriodId)
+        {
+            await _organizationDBContext.SalaryPeriodGroup.Where(e => e.SalaryPeriodId == salaryPeriodId)
+               .UpdateByBatch(e => new SalaryPeriodGroup
+               {
+                   IsDeleted = true,
+                   DeletedDatetimeUtc = DateTime.UtcNow,
+                   UpdatedByUserId = _currentContextService.UserId
+               });
+        }
+
+
+        public async Task<SalaryPeriodInfo> GetInfo(int year, int month)
+        {
+            return await _organizationDBContext.SalaryPeriod.Where(s => s.Year == year && s.Month == month)
+                .ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<SalaryPeriodModel> GetInfo(int salaryPeriodId)
+        public async Task<SalaryPeriodInfo> GetInfo(int salaryPeriodId)
         {
             return await _organizationDBContext.SalaryPeriod.Where(s => s.SalaryPeriodId == salaryPeriodId)
-                .ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<PageData<SalaryPeriodModel>> GetList(int page, int size)
+        public async Task<PageData<SalaryPeriodInfo>> GetList(int page, int size)
         {
-            var lst = _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodModel>(_mapper.ConfigurationProvider);
+            var lst = _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider);
             var total = await lst.CountAsync();
             var lstPaged = await lst.Skip((page - 1) * size).Take(size).ToListAsync();
             return (lstPaged, total);
@@ -152,11 +262,19 @@ namespace VErp.Services.Organization.Service.Salary
 
         public async Task<bool> Update(int salaryPeriodId, SalaryPeriodModel model)
         {
+            if (await _organizationDBContext.SalaryPeriod.AnyAsync(p => p.Year == model.Year && p.Month == model.Month && p.SalaryPeriodId != salaryPeriodId))
+            {
+                throw SalaryPeriodValidationMessage.PeriodHasBeenCreated.BadRequestFormat(model.Month, model.Year);
+            }
+
             var info = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
             if (info == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
+            
+            await ValidateDateOfBill(new DateTime(info.Year, info.Month, 1).ToUniversalTime(), new DateTime(model.Year, model.Month, 1).ToUniversalTime());
+
             _mapper.Map(model, info);
             info.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
             info.SalaryPeriodId = salaryPeriodId;

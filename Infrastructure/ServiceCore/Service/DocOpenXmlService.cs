@@ -92,7 +92,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                                             {
                                                 var sqlParam = new SqlParameter("@data", (new[] { data }).JsonSerialize());
                                                 var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
-                                                var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
+                                                var tbl = await dbContext.QueryDataTableRaw($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                                                 rs = tbl.Rows[0][0].ToString();
                                             }
                                             else
@@ -127,7 +127,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
                         {
                             var sqlParam = new SqlParameter("@data", jsonData);
                             var timeZone = new SqlParameter("@timeZone", Math.Abs(_currentContextService.TimeZoneOffset.GetValueOrDefault() * 60));
-                            var tbl = await dbContext.QueryDataTable($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
+                            var tbl = await dbContext.QueryDataTableRaw($"SELECT {field.Substring(1)}", new[] { sqlParam, timeZone });
                             rs = tbl.Rows[0][0].ToString();
                         }
                         else

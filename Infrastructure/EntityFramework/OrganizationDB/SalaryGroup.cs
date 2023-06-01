@@ -17,6 +17,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public int SalaryGroupId { get; set; }
         public string Title { get; set; }
         public string EmployeeFilter { get; set; }
+        public bool IsActived { get; set; }
         public int SubsidiaryId { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }

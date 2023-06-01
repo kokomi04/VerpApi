@@ -53,7 +53,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 throw new BadRequestException(HrErrorCode.HrValueBillNotFound);
 
             var fields = _organizationDBContext.HrField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
@@ -71,7 +71,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 // parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" });
 
-                var resultData = await _organizationDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _organizationDBContext.QueryDataTableRaw(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();

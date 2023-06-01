@@ -41,7 +41,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
             }
         }
 
-        private static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
+        public static SqlParameter CreateSubSqlParam(this ISubsidiayRequestDbContext requestDbContext)
         {
             return new SqlParameter(SubIdParam, SqlDbType.Int) { Value = requestDbContext.SubsidiaryId };
         }
@@ -76,7 +76,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static async Task<DataTable> ExecuteDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            return await QueryDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout);
+            return await QueryDataTableProc(dbContext, procedureName, parameters, timeout);
         }
 
         public static async Task<DataSet> ExecuteMultipleDataProcedure(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
@@ -124,13 +124,33 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbConnection.ChangeDatabaseAsync(dbName);
         }
 
-        public static async Task<IList<T>> QueryList<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null)
+       
+
+        public static async Task<IList<T>> QueryListProc<T>(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {
-            var dataTable = await QueryDataTable(dbContext, rawSql, parameters, cmdType, timeout);
+            var dataTable = await QueryDataTableProc(dbContext, procedureName, parameters, timeout);
             return dataTable.ConvertData<T>();
         }
 
-        public static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
+        public static async Task<DataTable> QueryDataTableProc(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            return await QueryDataTable(dbContext, procedureName, parameters, CommandType.StoredProcedure, timeout, cachingService);
+        }
+
+
+        public static async Task<IList<T>> QueryListRaw<T>(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, TimeSpan? timeout = null)
+        {
+            var dataTable = await QueryDataTable(dbContext, rawSql, parameters, CommandType.Text, timeout);
+            return dataTable.ConvertData<T>();
+        }
+
+
+        public static async Task<DataTable> QueryDataTableRaw(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, TimeSpan? timeout = null, ICachingService cachingService = null)
+        {
+            return await QueryDataTable(dbContext, rawSql, parameters, CommandType.Text, timeout, cachingService);
+        }
+
+        private static async Task<DataTable> QueryDataTable(this DbContext dbContext, string rawSql, IList<SqlParameter> parameters, CommandType cmdType = CommandType.Text, TimeSpan? timeout = null, ICachingService cachingService = null)
         {
             if (cachingService != null)
             {
@@ -173,6 +193,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                     {
                         command.Parameters.Add(requestDbContext.CreateSubSqlParam());
                     }
+
+                    if (cmdType == CommandType.Text)
+                    {
+                        command.Parameters.Add(new SqlParameter("@ToDayUtc", DateTime.UtcNow));
+                        command.Parameters.Add(new SqlParameter("@ToDay", DateTime.Now));
+                    }
+
 
                     foreach (var param in parameters)
                     {
@@ -517,14 +544,28 @@ namespace VErp.Infrastructure.EF.EFExtensions
         }
 
 
-        public static void FilterClauseProcess(this Clause clause, string tableName, string viewAlias, ref StringBuilder condition, ref List<SqlParameter> sqlParams, ref int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="clause"></param>
+        /// <param name="tableName">Table or view, query for check if condition is leaf</param>
+        /// <param name="viewAlias"></param>
+        /// <param name="condition"></param>
+        /// <param name="sqlParams"></param>
+        /// <param name="suffix"></param>
+        /// <param name="not"></param>
+        /// <param name="value"></param>
+        /// <param name="refValues"></param>
+        /// <returns></returns>
+        /// <exception cref="BadRequestException"></exception>
+        public static int FilterClauseProcess(this Clause clause, string tableName, string viewAlias, StringBuilder condition, List<SqlParameter> sqlParams, int suffix, bool not = false, object value = null, NonCamelCaseDictionary refValues = null, Dictionary<string, string> aliasTableOfFields = null)
         {
             if (clause != null)
             {
                 condition.Append("( ");
                 if (clause is SingleClause)
                 {
-                    var singleClause = clause as SingleClause;
+                    var singleClause = (clause as SingleClause).Clone();
                     if (value != null)
                     {
                         singleClause.Value = value;
@@ -539,7 +580,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         });
                     }
 
-                    BuildExpressionRef(singleClause, tableName, viewAlias, ref condition, ref sqlParams, ref suffix, not);
+                    var viewAliasOfField = aliasTableOfFields?.FirstOrDefault(a => a.Key?.ToLower() == singleClause.FieldName?.ToLower());
+                    var alias = viewAlias;
+                    if (!string.IsNullOrWhiteSpace(viewAliasOfField?.Value))
+                    {
+                        alias = viewAliasOfField?.Value;
+                    }
+                    suffix = BuildExpressionRef(singleClause, tableName, alias, condition, sqlParams, suffix, not);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -556,7 +603,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             condition.Append(isOr ? " OR " : " AND ");
                         }
-                        FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, ref condition, ref sqlParams, ref suffix, isNot, value, refValues);
+                        suffix = FilterClauseProcess(arrClause.Rules.ElementAt(indx), tableName, viewAlias, condition, sqlParams, suffix, isNot, value, refValues, aliasTableOfFields);
                     }
                 }
                 else
@@ -565,9 +612,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
                 condition.Append(" )");
             }
+            return suffix;
         }
 
-        public static void BuildExpression(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
+        public static int BuildExpression(SingleClause clause, string tableName, string viewAlias, StringBuilder conditionAll, List<SqlParameter> sqlParams, int suffix, bool isNot)
         {
             var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
 
@@ -751,9 +799,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 conditionAll.Append(condition);
                 suffix++;
             }
+            return suffix;
         }
 
-        public static void BuildExpressionRef(SingleClause clause, string tableName, string viewAlias, ref StringBuilder conditionAll, ref List<SqlParameter> sqlParams, ref int suffix, bool isNot)
+        public static int BuildExpressionRef(SingleClause clause, string tableName, string viewAlias, StringBuilder conditionAll, List<SqlParameter> sqlParams, int suffix, bool isNot)
         {
             var aliasField = string.IsNullOrWhiteSpace(viewAlias) ? $"[{clause.FieldName}]" : $"[{viewAlias}].[{clause.FieldName}]";
 
@@ -841,7 +890,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             {
                                 case EnumDataType.BigInt:
                                     condition.Append($"SELECT [Value] FROM {paramName}");
-                                    sqlParam = values.Select(v => (long)v).ToList().ToSqlParameter(paramName);
+                                    sqlParam = values.Select(v => Convert.ToInt64(v)).ToList().ToSqlParameter(paramName);
                                     break;
                                 default:
                                     condition.Append($"SELECT [NValue] FROM {paramName}");
@@ -939,6 +988,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 conditionAll.Append(condition);
                 suffix++;
             }
+            return suffix;
         }
 
         /// <summary>
@@ -1028,7 +1078,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
         public static string ToDeclareString(this SqlParameter p)
         {
-            var declare = $"{p.ParameterName} {p.SqlDbType}";
+            var declare = $"{p.ParameterName} ";
+
+            if (p.SqlDbType == SqlDbType.Structured)
+            {
+                declare += $" {p.TypeName} READONLY";
+            }
+            else
+            {
+                declare += $" {p.SqlDbType}";
+            }
+
 
             if (p.DbType == DbType.String)
             {
@@ -1061,8 +1121,10 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 var dataRow = dataTable.NewRow();
                 foreach (var field in fields)
                 {
-                    row.TryGetValue(field.Key, out var celValue); 
-                    if (celValue == null) info.TryGetValue(field.Key, out celValue); 
+
+                    row.TryGetValue(field.Key, out var celValue);
+                    if (celValue == null) info.TryGetValue(field.Key, out celValue);
+
                     var value = (field.Value).GetSqlValue(celValue);
                     dataRow[field.Key] = value;
                 }

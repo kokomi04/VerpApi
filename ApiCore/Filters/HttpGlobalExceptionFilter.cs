@@ -33,22 +33,16 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
         public void OnException(ExceptionContext context)
         {
-            if (context.Exception is BadRequestException)
+            if (context.Exception is BadRequestException ex)
             {
-
-                _logger.LogWarning(context.Exception, context.Exception.Message);
+                _logger.LogWarning(ex, context.Exception.Message);
             }
             else
             {
                 _logger.LogError(context.Exception, context.Exception.Message);
             }
 
-            var (response, statusCode) = Handler(context.Exception, _appSetting);
-
-            if (!_env.IsProduction())
-            {
-                response.Data = context.Exception;
-            }
+            var (response, statusCode) = Handler(context.Exception, _appSetting, _env.IsProduction());
 
             if (context.Exception is BadRequestException)
             {
@@ -66,7 +60,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 }
                 else
                 {
-                    context.Result = new InternalServerErrorObjectResult(response);
+                    context.Result = new ObjectResult(response);
                 }
             }
 
@@ -80,17 +74,18 @@ namespace VErp.Infrastructure.ApiCore.Filters
             return message.Replace(absolutePath, string.Empty);
         }
 
-        public static (ApiErrorResponse<Exception> response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting)
+        public static (ApiErrorResponse response, HttpStatusCode statusCode) Handler(Exception exception, AppSetting appSetting, bool isProduction)
         {
-            ApiErrorResponse<Exception> response;
+            ApiErrorResponse response;
             HttpStatusCode statusCode;
 
             switch (exception)
             {
                 case BadRequestException badRequest:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = badRequest.Code.GetErrorCodeString(),
+                        AdditionData = badRequest.AdditionData,
                         Message = RemoveAbsolutePathResource(appSetting, badRequest.Message)
                     };
                     statusCode = HttpStatusCode.BadRequest;
@@ -98,7 +93,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                 case VerpException:
 
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
                         Message = RemoveAbsolutePathResource(appSetting, exception.Message)
@@ -109,7 +104,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                 case LongTaskResourceLockException:
 
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.LongTaskIsRunning.GetErrorCodeString(),
                         Message = GeneralCode.LongTaskIsRunning.GetEnumDescription()
@@ -119,7 +114,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     break;
 
                 case DistributedLockExeption:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.DistributedLockExeption.GetErrorCodeString(),
                         Message = GeneralCode.DistributedLockExeption.GetEnumDescription()
@@ -129,7 +124,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
                     break;
 
                 default:
-                    response = new ApiErrorResponse<Exception>
+                    response = new ApiErrorResponse
                     {
                         Code = GeneralCode.InternalError.GetErrorCodeString(),
                         Message = RemoveAbsolutePathResource(appSetting, exception.Message)
@@ -137,6 +132,10 @@ namespace VErp.Infrastructure.ApiCore.Filters
 
                     statusCode = HttpStatusCode.InternalServerError;
                     break;
+            }
+            if (!isProduction)
+            {
+                response.ExceptionDebug = exception;
             }
 
             return (response, statusCode);

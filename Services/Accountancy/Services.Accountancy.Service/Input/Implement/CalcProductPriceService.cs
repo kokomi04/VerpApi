@@ -84,6 +84,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     new SqlParameter("@IsByOrder", SqlDbType.Decimal){ Value = req.IsByOrder},
                     new SqlParameter("@IsByStock", SqlDbType.Decimal){ Value = req.IsByStock},
 
+                    new SqlParameter("@ProgressMaterialOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Materials?.Open},
+                    new SqlParameter("@ProgressMaterialEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Materials?.End},
+
+                    new SqlParameter("@ProgressLaborsOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Labors?.Open},
+                    new SqlParameter("@ProgressLaborsEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Labors?.End},
+
+                    new SqlParameter("@ProgressFactoriesOpen", SqlDbType.Decimal){ Value = req.ProgressBalances?.Factories?.Open},
+                    new SqlParameter("@ProgressFactoriesEnd", SqlDbType.Decimal){ Value =  req.ProgressBalances?.Factories?.End},
+
                     req.AllocationRate.ToDecimalKeyValueSqlParameter("@AllocationRate"),
                     req.DirectMaterialFee.ToDecimalKeyValueSqlParameter("@DirectMaterialFee"),
                     req.DirectLaborFee.ToDecimalKeyValueSqlParameter("@DirectLaborFee"),
@@ -151,7 +160,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var isInvalid = new SqlParameter("@IsInvalid", SqlDbType.Bit) { Direction = ParameterDirection.Output };
             var isError = new SqlParameter("@IsError", SqlDbType.Bit) { Direction = ParameterDirection.Output };
 
-            var data = (await _accountancyDBContext.QueryDataTable(
+            var data = (await _accountancyDBContext.QueryDataTableProc(
                 "asp_CalcProduct_OutputPrice",
                     new[] {
 
@@ -164,7 +173,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     isInvalid,
                     isError
 
-                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                }, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
             return new CalcProductOutputPriceModel
@@ -178,13 +187,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<IList<NonCamelCaseDictionary>> GetWeightedAverageProductPrice(CalcProductPriceInput req)
         {
             return (
-                await _accountancyDBContext.QueryDataTable(
+                await _accountancyDBContext.QueryDataTableProc(
                 "usp_CalcProductPrice_WeightedAverage",
                  new[] {
                     new SqlParameter("@Date", SqlDbType.DateTime2){ Value = req.Date.UnixToDateTime()},
                     req.ProductIds.ToSqlParameter("@ProductIds")
 
-                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                }, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
         }
@@ -192,13 +201,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<IList<NonCamelCaseDictionary>> GetProductPriceBuyLastest(CalcProductPriceInput req)
         {
             return (
-                await _accountancyDBContext.QueryDataTable(
+                await _accountancyDBContext.QueryDataTableProc(
                 "usp_CalcProductPrice_BuyLastest",
                  new[] {
                     new SqlParameter("@Date", SqlDbType.DateTime2){ Value = req.Date.UnixToDateTime()},
                     req.ProductIds.ToSqlParameter("@ProductIds")
 
-                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                }, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
         }
@@ -209,7 +218,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var fDate = req.FromDate.UnixToDateTime();
             var tDate = req.ToDate.UnixToDateTime();
 
-            
+
             var priceSellInDirectlySum = new SqlParameter("@PriceSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costAccountingSum = new SqlParameter("@CostAccountingSum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
             var costSellInDirectlySum = new SqlParameter("@CostSellInDirectlySum", SqlDbType.Decimal) { Direction = ParameterDirection.Output };
@@ -224,7 +233,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 req.IsByLsx = true;
             }
 
-            var data = (await _accountancyDBContext.QueryDataTable(
+            var data = (await _accountancyDBContext.QueryDataTableProc(
                 "asp_CalcProfitAndLoss",
                     new[] {
                     new SqlParameter("@IsByLsx", SqlDbType.Decimal){ Value = req.IsByLsx},
@@ -260,7 +269,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     req.CostManagerSumCustom.ToSqlParameterValue("@CostManagerSumCustom"),
                     costManagerSum,
 
-                }, CommandType.StoredProcedure, new TimeSpan(0, 30, 0))
+                }, new TimeSpan(0, 30, 0))
                 ).ConvertData();
 
             var result = new CalcProfitAndLossTableOutput()

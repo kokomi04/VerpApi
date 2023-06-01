@@ -358,7 +358,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
             sql.Append(" ORDER BY t.RowNum");
 
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<ProductionOrderListEntity>().AsQueryable().ProjectTo<ProductionOrderListModel>(_mapper.ConfigurationProvider).ToList();
 
             return lst;

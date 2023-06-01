@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.Data.Implement
                 new SqlParameter("@Code",code) ,
                 new SqlParameter("@TypeId",(int)objectTypeId) ,
             };
-            return await _masterContext.QueryList<DataRefModel>("asp_ObjectGetRef", sqlParams, CommandType.StoredProcedure);
+            return await _masterContext.QueryListProc<DataRefModel>("asp_ObjectGetRef", sqlParams);
         }
     }
 }

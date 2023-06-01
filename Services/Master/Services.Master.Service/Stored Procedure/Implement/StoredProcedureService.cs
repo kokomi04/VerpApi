@@ -55,7 +55,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
                 join sys.sql_modules m on m.object_id = o.object_id
                 where o.name like ('ufn%') or o.name like ('uv%') or o.name like ('usp%');";
 
-                var result = (await _masterDBContext.QueryDataTable(query, Array.Empty<SqlParameter>())).ConvertData();
+                var result = (await _masterDBContext.QueryDataTableRaw(query, Array.Empty<SqlParameter>())).ConvertData();
 
                 foreach (var type in new[]{EnumStoreProcedureType.View,
                                            EnumStoreProcedureType.Procedure,
@@ -113,7 +113,7 @@ namespace VErp.Services.Master.Service.StoredProcedure.Implement
 
                 InvalidStoreProcedure(storedProcedureModel);
 
-                if ((await _masterDBContext.QueryDataTable(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
+                if ((await _masterDBContext.QueryDataTableRaw(sqlQuery, new List<SqlParameter>().ToArray())).Rows.Count > 0)
                 {
                     throw StoredProcedureErrorCode.InvalidExists.BadRequestFormat(ObjectAlreadyExisted, storedProcedureModel.Name);
 

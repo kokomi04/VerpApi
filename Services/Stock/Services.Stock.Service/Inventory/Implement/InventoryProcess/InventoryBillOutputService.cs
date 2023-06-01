@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.InventoryProcess;
@@ -18,6 +19,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Inventory;
@@ -43,10 +45,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IAsyncRunnerService asyncRunner
             , ICurrentContextService currentContextService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService
-            , IQueueProcessHelperService queueProcessHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
             _asyncRunner = asyncRunner;
             _invOutputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
@@ -205,16 +205,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 var issuedDate = req.Date.UnixToDateTime().Value;
                 await ValidateInventoryCode(inventoryId, req.InventoryCode);
 
+                var podCodes = new List<string>();
+
+                var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
+                if (inventoryObj == null)
+                {
+                    throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
+                }
+
                 using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
                 {
                     try
                     {
-                        var inventoryObj = _stockDbContext.Inventory.FirstOrDefault(q => q.InventoryId == inventoryId);
-                        if (inventoryObj == null)
-                        {
-                            trans.Rollback();
-                            throw new BadRequestException(InventoryErrorCode.InventoryNotFound);
-                        }
+
 
                         if (req.UpdatedDatetimeUtc != inventoryObj.UpdatedDatetimeUtc.GetUnix())
                         {
@@ -243,6 +246,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 throw new BadRequestException(InventoryErrorCode.CanNotChangeProductInventoryHasRequirement);
                             }
                         }
+
+                        podCodes.AddRange(inventoryDetails.Select(d => d.ProductionOrderCode));
 
                         var rollbackResult = await RollbackInventoryOutput(inventoryObj);
                         if (!rollbackResult.IsSuccess())
@@ -290,6 +295,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await _stockDbContext.InventoryDetailSubCalculation.AddRangeAsync(item.Subs);
                             await _stockDbContext.SaveChangesAsync();
 
+                            podCodes.Add(item.Detail.ProductionOrderCode);
                         }
 
                         var totalMoney = InputCalTotalMoney(data.Select(x => x.Detail).ToList());
@@ -364,6 +370,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     }
                 }
 
+                foreach (var podCode in podCodes.Where(p => !string.IsNullOrWhiteSpace(p)).Distinct())
+                {
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Cập nhật xuất kho {inventoryObj.InventoryCode}");
+                }
+
                 //Move file from tmp folder
                 if (req.FileIdList != null)
                 {
@@ -430,7 +441,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         var inventoryDetails = await _stockDbContext.InventoryDetail.Where(d => d.InventoryId == inventoryId).ToListAsync();
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.ProcessingLessStarted, inventoryObj.InventoryCode);
+                        await UpdateProductionOrderStatus(inventoryDetails, inventoryObj.InventoryCode);
 
                         //await UpdateIgnoreAllocation(inventoryDetails);
 
@@ -714,7 +725,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             using (var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockResourceKey()))//inventoryObj.StockId
             {
                 //reload from db after lock
-                inventoryObj = _stockDbContext.Inventory.FirstOrDefault(p => p.InventoryId == inventoryId);
+                inventoryObj = _stockDbContext.Inventory.Include(iv => iv.InventoryDetail).FirstOrDefault(p => p.InventoryId == inventoryId);
 
                 await ValidateInventoryConfig(null, inventoryObj.Date);
 
@@ -733,6 +744,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             .JsonData(inventoryObj.JsonSerialize())
                             .CreateLog();
 
+
+                        foreach (var podCode in inventoryObj.InventoryDetail.Select(p => p.ProductionOrderCode).Where(p => !string.IsNullOrWhiteSpace(p)).Distinct())
+                        {
+                            await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Xóa xuất kho {inventoryObj.InventoryCode}");
+                        }
 
                         return true;
                     }

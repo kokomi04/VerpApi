@@ -9,11 +9,11 @@ namespace VErp.Services.Organization.Service.Salary
 {
     public interface ISalaryPeriodService
     {
-        Task<PageData<SalaryPeriodModel>> GetList(int page, int size);
+        Task<PageData<SalaryPeriodInfo>> GetList(int page, int size);
 
-        Task<SalaryPeriodModel> GetInfo(int year, int month);
+        Task<SalaryPeriodInfo> GetInfo(int year, int month);
 
-        Task<SalaryPeriodModel> GetInfo(int salaryPeriodId);
+        Task<SalaryPeriodInfo> GetInfo(int salaryPeriodId);
 
         Task<int> Create(SalaryPeriodModel model);
 

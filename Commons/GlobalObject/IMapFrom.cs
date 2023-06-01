@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Newtonsoft.Json.Linq;
 using System;
 using System.ComponentModel;
 using System.Linq;
@@ -30,11 +31,26 @@ namespace VErp.Commons.GlobalObject
         public MappingProfile()
         {
             this.CreateMapCustom<long, DateTime>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapCustom<long, DateTime?>().ConvertUsing(v => v.UnixToDateTime().Value);
+            this.CreateMapCustom<long?, DateTime>().ConvertUsing(v => ConvertDate(v));
             this.CreateMapCustom<long?, DateTime?>().ConvertUsing(v => v.UnixToDateTime());
 
             this.CreateMapCustom<DateTime, long>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime, long?>().ConvertUsing(v => v.GetUnix());
+            this.CreateMapCustom<DateTime?, long>().ConvertUsing(v => v.HasValue ? v.GetUnix().Value : DateTime.MinValue.GetUnix());
             this.CreateMapCustom<DateTime?, long?>().ConvertUsing(v => v.GetUnix());
         }
+
+        private DateTime ConvertDate(long? date)
+        {
+            if (!date.HasValue)
+            {
+                throw new InvalidCastException("Datetime need a value!");
+            }
+
+            return date.Value.UnixToDateTime().Value;
+        }
+
     }
 
     public static class MappingProfileExtension

@@ -1,16 +1,21 @@
 ﻿using AutoMapper;
-using DocumentFormat.OpenXml.Wordprocessing;
-using EFCore.BulkExtensions;
+using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.EMMA;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Salary;
+using Verp.Resources.Organization.Salary.Validation;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -21,15 +26,17 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
+using VErp.Services.Organization.Service.Salary.Implement.Abstract;
+using static VErp.Services.Organization.Service.Salary.Implement.Facade.SalaryPeriodAdditionBillFieldAbstract;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
-    public class SalaryEmployeeService : ISalaryEmployeeService
+    public class SalaryEmployeeService : SalaryPeriodGroupEmployeeAbstract, ISalaryEmployeeService
     {
-        private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
-        private readonly ObjectActivityLogFacade _salaryRefTableActivityLog;
+        private readonly ObjectActivityLogFacade _salaryEmployeeActivityLog;
+        private readonly ObjectActivityLogFacade _salaryPeriodGroupActivityLog;
+
         private readonly ISalaryGroupService _salaryGroupService;
         private readonly ISalaryRefTableService _salaryRefTableService;
         private readonly IHrDataService _hrDataService;
@@ -38,12 +45,30 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ISalaryPeriodService _salaryPeriodService;
         private readonly ISalaryPeriodGroupService _salaryPeriodGroupService;
 
-        public SalaryEmployeeService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService, ISalaryGroupService salaryGroupService, ISalaryRefTableService salaryRefTableService, IHrDataService hrDataService, ICategoryHelperService httpCategoryHelperService, ISalaryFieldService salaryFieldService, ISalaryPeriodService salaryPeriodService, ISalaryPeriodGroupService salaryPeriodGroupService)
+        private const string SALARY_FIELD_PREFIX = "__";
+
+        private const int DEFAULT_DECIMAL_PLACE = 2;
+
+        private const string ADDITION_ALIAS = "pc_va_khau_tru$";
+
+        public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
+            ICurrentContextService currentContextService,
+            IMapper mapper,
+            IActivityLogService activityLogService,
+            ISalaryGroupService salaryGroupService,
+            ISalaryRefTableService salaryRefTableService,
+            IHrDataService hrDataService,
+            ICategoryHelperService httpCategoryHelperService,
+            ISalaryFieldService salaryFieldService,
+            ISalaryPeriodService salaryPeriodService,
+            ISalaryPeriodGroupService salaryPeriodGroupService,
+            ILogger<SalaryEmployeeService> logger)
+            : base(organizationDBContext, currentContextService, logger)
         {
-            _organizationDBContext = organizationDBContext;
-            _currentContextService = currentContextService;
             _mapper = mapper;
-            _salaryRefTableActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
+            _salaryEmployeeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
+            _salaryPeriodGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriodGroup);
+
             _salaryGroupService = salaryGroupService;
             _salaryRefTableService = salaryRefTableService;
             _hrDataService = hrDataService;
@@ -53,7 +78,58 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _salaryPeriodGroupService = salaryPeriodGroupService;
         }
 
-        public async Task<IList<NonCamelCaseDictionary>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeRequestModel req)
+
+        public async Task<GroupSalaryEmployeeWarningInfo> GetSalaryGroupEmployeesWarning()
+        {
+            var groups = await _salaryGroupService.GetList();
+
+            var (allEmployees, _) = await FilterEmployee(null, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+
+            var employeeGroups = allEmployees
+                .ToDictionary(e =>
+                {
+                    long employeeId = 0;
+                    if (e.TryGetValue(OrganizationConstants.HR_TABLE_F_IDENTITY, out var employeeIdObj))
+                    {
+                        employeeId = Convert.ToInt64(employeeIdObj);
+                    }
+
+                    return employeeId;
+                }, e => new EmployeeSalaryGroupInfo()
+                {
+                    EmployeeInfo = e,
+                    SalaryGroupIds = new List<int>()
+                });
+
+            foreach (var group in groups)
+            {
+                var (groupEmployees, _) = await FilterEmployee(group.EmployeeFilter, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+
+                foreach (var employee in groupEmployees)
+                {
+                    long employeeId = 0;
+                    if (employee.TryGetValue(OrganizationConstants.HR_TABLE_F_IDENTITY, out var employeeIdObj))
+                    {
+                        employeeId = Convert.ToInt64(employeeIdObj);
+                    }
+
+                    if (employeeGroups.TryGetValue(employeeId, out var employeeGroup))
+                    {
+                        employeeGroup.SalaryGroupIds.Add(group.SalaryGroupId);
+                    }
+                }
+            }
+
+            return new GroupSalaryEmployeeWarningInfo()
+            {
+                NoSalaryGroupEmployees = employeeGroups.Values.Where(e => e.SalaryGroupIds.Count == 0).Select(e => e.EmployeeInfo).ToList(),
+                DuplicatedSalayGroupEmployees = employeeGroups.Values.Where(e => e.SalaryGroupIds.Count > 1).ToList(),
+            };
+        }
+
+
+
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
             if (period == null)
@@ -68,79 +144,244 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var lst = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
+            var (employees, columns) = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
+
+            var employeeInOtherGroups = (await
+                  _organizationDBContext.SalaryEmployee
+                  .Where(e => e.SalaryPeriodId == salaryPeriodId && e.SalaryGroupId != salaryGroupId)
+                  .Select(e => e.EmployeeId)
+                  .ToListAsync()
+              ).Distinct()
+              .ToHashSet();
+
+            var employeeData = new List<NonCamelCaseDictionary>();
+            foreach (var item in employees)
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                if (employeeInOtherGroups.Contains(employeeId)) continue;
+                employeeData.Add(item);
+            }
+
+
+            var data = new GroupSalaryEmployeeEvalData()
+            {
+                FromDate = req.FromDate,
+                ToDate = req.ToDate,
+                SalaryPeriodId = salaryPeriodId,
+                SalaryGroupId = salaryGroupId,
+                Salaries = req.Salaries
+            };
+
+            return await EvalSalaryEmployeeByGroup(data, employeeData, false);
+
+        }
+
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(GroupSalaryEmployeeEvalData data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
+        {
+            var period = await _salaryPeriodService.GetInfo(data.SalaryPeriodId);
+            if (period == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var groupInfo = await _salaryGroupService.GetInfo(data.SalaryGroupId);
+
+            if (groupInfo == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+
 
             var salaryFields = await _salaryFieldService.GetList();
+            salaryFields = SortFieldNameByReference(salaryFields);
 
-            var result = new List<NonCamelCaseDictionary>();
-            foreach (var item in lst)
+
+            var result = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
+
+            var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
+
+            if (data.Salaries == null)
             {
-                var model = new NonCamelCaseDictionary();
-                result.Add(model);
-                foreach (var column in item)
+                data.Salaries = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
+            }
+
+            var reqDataByEmployee = data.Salaries.ToDictionary(item =>
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
-                    model.Add(column.Key, column.Value);
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
+                }
+                return employeeId;
+            }, item => item);
+
+
+            var employeeIds = new HashSet<long>();
+            foreach (var item in employees)
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                if (employeeId == 0)
+                {
+                    throw SalaryPeriodValidationMessage.EmployeeIDZero.BadRequest();
+                }
+                if (employeeIds.Contains(employeeId))
+                {
+                    throw SalaryPeriodValidationMessage.EmployeeIDDuplicated.BadRequestFormat(employeeId);
                 }
 
-                model.Add("@FromDate", req.FromDate);
-                model.Add("@ToDate", req.ToDate);
-                model.Add("@Month", period.Month);
-                model.Add("@Year", period.Year);
+                employeeIds.Add(employeeId);
+
+                var paramsData = new NonCamelCaseDictionary();
+
+                foreach (var valuePaire in item)
+                {
+                    paramsData.Add(valuePaire.Key, valuePaire.Value);
+                }
+
+                paramsData.Add("@FromDate", data.FromDate);
+                paramsData.Add("@ToDate", data.ToDate);
+                paramsData.Add("@Month", period.Month);
+                paramsData.Add("@Year", period.Year);
+
+
+                var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>
+                {
+                    { OrganizationConstants.HR_TABLE_F_IDENTITY, new SalaryEmployeeValueModel(employeeId) }
+                };
+
+                result.Add(model);
+
+                reqDataByEmployee.TryGetValue(employeeId, out var reqItem);
 
                 foreach (var f in salaryFields)
                 {
-                    foreach (var condition in f.Expression)
+                    var fieldVariableName = SALARY_FIELD_PREFIX + f.SalaryFieldName;
+
+                    var isFieldInGroup = groupFields.TryGetValue(f.SalaryFieldId, out var groupField);
+
+                    object fieldValue = null;
+                    var isEdited = false;
+
+                    if (isFieldInGroup)
                     {
-                        var filter = condition?.Filter;
-                        var conditionResult = EvalClause(filter, model);
-                        if (conditionResult)
+                        var fieldIsEditable = f.IsEditable && (!isFieldInGroup || groupField.IsEditable);
+                        SalaryEmployeeValueModel reqValue = null;
+                        var evalDataIsEdited = reqItem != null && reqItem.TryGetValue(f.SalaryFieldName, out reqValue) && reqValue?.IsEdited == true;
+
+                        if (!f.IsDisplayRefData && (fieldIsEditable && evalDataIsEdited || overrideNotRefData))
                         {
-                            var value = EvalUtils.EvalObject(condition.ValueExpression, model);
-                            if (!model.ContainsKey(f.SalaryFieldName))
+                            fieldValue = reqValue?.Value;
+                            isEdited = reqValue?.IsEdited == true;
+                        }
+                        else
+                        {
+                            foreach (var condition in f.Expression)
                             {
-                                model.Add(f.SalaryFieldName, value);
+                                var (isSucess, value) = EvalValueExpression(f, condition, paramsData);
+                                if (isSucess)
+                                {
+                                    fieldValue = value;
+                                }
                             }
                         }
+
+                    }
+
+                    if (fieldValue == null)
+                    {
+                        paramsData.Add(fieldVariableName, GetDefaultValue(f.DataTypeId, data));
+                    }
+                    else
+                    {
+                        if (GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue))
+                        {
+                            fieldValue = decimalValue;
+                        }
+
+                        paramsData.Add(fieldVariableName, fieldValue);
+                    }
+
+                    if (isFieldInGroup)
+                    {
+                        model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(fieldValue, isEdited));
                     }
                 }
             }
 
             return result;
         }
+     
 
 
-        public async Task<IList<NonCamelCaseDictionary>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
+        private (bool isSucess, object value) EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData)
         {
-            var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
-            if (group == null)
+            var filter = condition?.Filter;
+            NormalizeFieldNameInClause(filter);
+            bool conditionResult;
+            try
+            {
+                conditionResult = EvalClause(filter, paramsData);
+            }
+            catch (Exception e)
+            {
+                _logger.LogError(e, "EvalClause {0}, field {1}, condition {2}", condition.Filter, field.SalaryFieldName, condition.Name);
+                throw GeneralCode.NotYetSupported.BadRequest($"Lỗi kiểm tra điều kiện {condition.Name} trường {field.GroupName} {field.SalaryFieldName} ({field.Title}). Lỗi {e.Message}");
+            }
+
+            if (conditionResult && !string.IsNullOrWhiteSpace(condition.ValueExpression))
+            {
+                try
+                {
+                    var value = EvalUtils.EvalObject(EscaseFieldName(condition.ValueExpression), paramsData);
+                    return (true, value);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Eval {0}, field {1}, condition {2}", condition.ValueExpression, field.SalaryFieldName, condition.Name);
+                    throw GeneralCode.NotYetSupported.BadRequest($"Lỗi tính giá trị biểu thức {condition.ValueExpression} trường {field.GroupName} {field.SalaryFieldName} ({field.Title}), điều kiện {condition.Name}. Lỗi {ex.Message}");
+                }
+
+            }
+            return (false, null);
+        }
+
+        public async Task<IList<GroupSalaryEmployeeEvalData>> GetSalaryEmployeeAll(int salaryPeriodId)
+        {
+            var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
+            if (period == null)
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            var salaryData = await _organizationDBContext.SalaryEmployee
-                .Include(s => s.SalaryEmployeeValue)
-                .ThenInclude(v => v.SalaryField)
-                .Where(s => s.SalaryPeriodId == salaryPeriodId && s.SalaryGroupId == salaryGroupId)
-                .ToListAsync();
-            var result = new List<NonCamelCaseDictionary>();
+            var groups = await _salaryPeriodGroupService.GetList(salaryPeriodId);
 
-            var salaryFields = await _salaryFieldService.GetList();
+            var result = new List<GroupSalaryEmployeeEvalData>();
 
-            foreach (var item in salaryData)
+            foreach (var group in groups)
             {
-                var model = new NonCamelCaseDictionary();
-                result.Add(model);
-
-                foreach (var v in item.SalaryEmployeeValue)
+                result.Add(new GroupSalaryEmployeeEvalData()
                 {
-                    model.Add(v.SalaryField.SalaryFieldName, v.Value);
-                }
+                    FromDate = group.FromDate,
+                    ToDate = group.ToDate,
+                    SalaryGroupId = group.SalaryGroupId,
+                    SalaryPeriodId = group.SalaryPeriodId,
+                    Salaries = await GetSalaryEmployeeByGroup(period, group)
+                });
             }
 
             return result;
         }
 
-        public async Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model)
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
             if (period == null)
@@ -151,30 +392,135 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var group = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
             if (group == null)
             {
-                await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
-                {
-                    SalaryPeriodId = salaryPeriodId,
-                    SalaryGroupId = salaryGroupId,
-                    FromDate = model.FromDate,
-                    ToDate = model.ToDate
-                });
+                return new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
             }
-            else
+
+            return await GetSalaryEmployeeByGroup(period, group);
+        }
+
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group)
+        {
+
+            var salaryData = await _organizationDBContext.SalaryEmployee
+                .Include(s => s.SalaryEmployeeValue)
+                .ThenInclude(v => v.SalaryField)
+                .Where(s => s.SalaryPeriodId == period.SalaryPeriodId && s.SalaryGroupId == group.SalaryGroupId)
+                .ToListAsync();
+            var dbSalaries = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
+
+            var resultByEmployee = new Dictionary<long, NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
+
+            var fromDate = group.FromDate;
+            var toDate = group.ToDate;
+
+            var employeeIds = new List<long>();
+            foreach (var item in salaryData)
             {
-                await _salaryPeriodGroupService.Update(group.SalaryPeriodGroupId, new SalaryPeriodGroupModel()
+                var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>();
+                dbSalaries.Add(model);
+                resultByEmployee.Add(item.EmployeeId, model);
+
+                model.Add(OrganizationConstants.HR_TABLE_F_IDENTITY, new SalaryEmployeeValueModel(item.EmployeeId));
+
+                foreach (var v in item.SalaryEmployeeValue)
                 {
-                    SalaryPeriodId = salaryPeriodId,
-                    SalaryGroupId = salaryGroupId,
-                    FromDate = model.FromDate,
-                    ToDate = model.ToDate
-                });
+                    model.Add(v.SalaryField.SalaryFieldName, new SalaryEmployeeValueModel(v.Value, v.IsEdited));
+                }
             }
+
+            var clause = new SingleClause()
+            {
+                Value = resultByEmployee.Keys.ToArray(),
+                DataType = EnumDataType.BigInt,
+                FieldName = OrganizationConstants.HR_TABLE_F_IDENTITY,
+                Operator = EnumOperator.InList
+            };
+
+            var (employees, columns) = await FilterEmployee(clause, period.Year, period.Month, fromDate, toDate);
+
+
+
+            var data = new GroupSalaryEmployeeEvalData()
+            {
+                FromDate = fromDate,
+                ToDate = toDate,
+                SalaryPeriodId = period.SalaryPeriodId,
+                SalaryGroupId = group.SalaryGroupId,
+                Salaries = dbSalaries
+            };
+
+            return await EvalSalaryEmployeeByGroup(data, employees, true);
+        }
+
+        public async Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model)
+        {
+            var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
+            if (period == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            await ValidateDateOfBill(new DateTime(period.Year, period.Month, 1).ToUniversalTime(), null);
+
+            var groupInfo = await _salaryGroupService.GetInfo(salaryGroupId);
+            if (groupInfo == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var periodGroup = await _salaryPeriodGroupService.GetInfo(salaryPeriodId, salaryGroupId);
+
 
             var salaryFields = await _salaryFieldService.GetList();
 
+            var evalData = await EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, model);
+
+            var evalDataByEmployee = evalData.ToDictionary(item =>
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
+                }
+                return employeeId;
+            }, item => item);
+
+            if (model.Salaries.Count != evalDataByEmployee.Count)
+            {
+                throw SalaryPeriodValidationMessage.DiffNumberOfUpdatedEmployeeSalary.BadRequest();
+            }
+
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                var salaries = new Dictionary<SalaryEmployee, NonCamelCaseDictionary>();
+                long salaryPeriodGroupId;
+                if (periodGroup == null)
+                {
+                    salaryPeriodGroupId = await _salaryPeriodGroupService.Create(new SalaryPeriodGroupModel()
+                    {
+                        SalaryPeriodId = salaryPeriodId,
+                        SalaryGroupId = salaryGroupId,
+                        FromDate = model.FromDate,
+                        ToDate = model.ToDate
+                    });
+
+                }
+                else
+                {
+                    salaryPeriodGroupId = periodGroup.SalaryPeriodGroupId;
+                }
+
+                await _salaryPeriodGroupService.DbUpdate(salaryPeriodGroupId, new SalaryPeriodGroupModel()
+                {
+                    SalaryPeriodId = salaryPeriodId,
+                    SalaryGroupId = salaryGroupId,
+                    FromDate = model.FromDate,
+                    ToDate = model.ToDate
+                }, true);
+
+
+                await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
+
+                var salaries = new Dictionary<SalaryEmployee, NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
 
                 var lst = new List<SalaryEmployee>();
                 foreach (var item in model.Salaries)
@@ -182,8 +528,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     long employeeId = 0;
                     if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                     {
-                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
                     }
+
+
                     var entity = new SalaryEmployee()
                     {
                         EmployeeId = employeeId,
@@ -198,21 +546,48 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
                 var salaryData = new List<SalaryEmployeeValue>();
+
+                var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
+
+
                 foreach (var item in lst)
                 {
+
+                    if (!evalDataByEmployee.TryGetValue(item.EmployeeId, out var evalItem))
+                    {
+                        throw SalaryPeriodValidationMessage.EmployeeNotFoundInEval.BadRequestFormat(item.EmployeeId);
+                    }
+
                     var data = salaries[item];
                     foreach (var field in salaryFields)
                     {
-                        if (data.ContainsKey(field.SalaryFieldName))
+                        var hasDataValue = data.TryGetValue(field.SalaryFieldName, out var dataValue);
+
+                        if (!field.IsEditable || groupFields.TryGetValue(field.SalaryFieldId, out var groupField) && !groupField.IsEditable)
                         {
-                            var value = data[field.SalaryFieldName];
-                            if (!value.IsNullOrEmptyObject())
+                            SalaryEmployeeValueModel evalValue = null;
+                            if (evalItem != null)
+                            {
+                                evalItem.TryGetValue(field.SalaryFieldName, out evalValue);
+                            }
+
+
+                            if (dataValue?.IsEdited == true || evalValue?.IsEdited == true || !IsEqualFieldsValue(field.DataTypeId, dataValue?.Value, evalValue?.Value))
+                            {
+                                throw SalaryPeriodValidationMessage.FieldIsNotEditable.BadRequestFormat(field.GroupName + " > " + field.Title, dataValue?.Value, evalValue?.Value);
+                            }
+                        }
+
+                        if (hasDataValue)
+                        {
+                            if (!dataValue.IsNullOrEmptyObject())
                             {
                                 salaryData.Add(new SalaryEmployeeValue()
                                 {
                                     SalaryEmployeeId = item.SalaryEmployeeId,
                                     SalaryFieldId = field.SalaryFieldId,
-                                    Value = value
+                                    IsEdited = dataValue.IsEdited,
+                                    Value = dataValue.Value
                                 });
                             }
                         }
@@ -222,26 +597,57 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 await _organizationDBContext.InsertByBatch(salaryData, false, false);
 
+
+                var periodInfo = await _organizationDBContext.SalaryPeriod.FirstOrDefaultAsync(s => s.SalaryPeriodId == salaryPeriodId);
+                if (periodInfo == null)
+                {
+                    throw GeneralCode.ItemNotFound.BadRequest();
+                }
+
+                periodInfo.SalaryPeriodCensorStatusId = (int)EnumSalaryPeriodCensorStatus.New;
+
+                await _organizationDBContext.SaveChangesAsync();
+
+
                 await trans.CommitAsync();
+
+                await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.UpdateSalaryEmployee)
+                   .MessageResourceFormatDatas(groupInfo.Title, period.Month, period.Year)
+                   .ObjectId(salaryPeriodGroupId)
+                   .JsonData(model.JsonSerialize())
+                   .CreateLog();
 
                 return true;
             }
         }
 
-        private async Task<IList<NonCamelCaseDictionary>> FilterEmployee(Clause filter, int year, int month, long fromDate, long toDate)
+
+
+
+        private async Task<(IList<NonCamelCaseDictionary> data, IList<string> columns)> FilterEmployee(Clause filter, int year, int month, long fromDate, long toDate)
         {
-            var refTables = await _salaryRefTableService.GetList();
-            var (query, fieldNames) = await _hrDataService.BuildHrQuery("CTNS_Ho_So");
+            var columns = new List<string>();
+
+            var (query, fieldNames) = await _hrDataService.BuildHrQuery(OrganizationConstants.HR_EMPLOYEE_TYPE_CODE, false);
 
             var select = new StringBuilder();
             var join = new StringBuilder($"({query}) v");
 
             foreach (var f in fieldNames)
             {
-                select.Append($"v.{f},");
+                columns.Add(f);
+                select.Append($"v.{f}");
+                select.Append(",");
             }
 
-            var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
+
+            var data = new NonCamelCaseDictionary()
+            {
+                {"FromDate",fromDate.UnixToDateTime() },
+                {"ToDate",toDate.UnixToDateTime() },
+                {"Year",year },
+                {"Month",month },
+            };
 
             var sqlParams = new List<SqlParameter>()
             {
@@ -252,56 +658,232 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             };
             var suffix = 0;
 
-            foreach (var refTable in refTables)
-            {
-                var fromField = refTable.FromField;
-                var lastPoint = fromField.LastIndexOf('.');
-
-                var refAlias = $"[v{fromField}]";
-
-                if (lastPoint < 0)
-                {
-                    fromField = $"v.[{fromField}]";
-                }
-                else
-                {
-                    fromField = $"v{fromField}";
-                }
-
-                var cateFields = refFields.Where(f => f.CategoryCode == refTable.RefTableCode).ToList();
-
-                foreach (var f in cateFields)
-                {
-                    select.Append($"[{refAlias}].{f.CategoryFieldName} AS [{refTable.FromField}_{f.CategoryFieldName}],");
-                }
-
-                var refWhereCondition = new StringBuilder();
-                if (refTable.Filter != null)
-                {
-
-                    filter.FilterClauseProcess(refTable.RefTableCode, refAlias, ref refWhereCondition, ref sqlParams, ref suffix);
-                }
-
-                join.AppendLine($"LEFT JOIN {refTable.RefTableCode} AS {refAlias} ON ({fromField} = [{refAlias}].{refTable.RefTableField})");
-                if (refWhereCondition.Length > 0)
-                {
-                    join.Append($" AND {refWhereCondition}");
-                }
-            }
+            suffix = await JoinRefTables(columns, select, join, suffix, sqlParams, data);
 
             var whereCondition = new StringBuilder();
 
 
             if (filter != null)
             {
+                NormalizeFieldNameInClause(filter);
 
-                filter.FilterClauseProcess("({query}) vm", "v", ref whereCondition, ref sqlParams, ref suffix);
+                suffix = filter.FilterClauseProcess($"({query}) vm", "v", whereCondition, sqlParams, suffix, false, null, data);
             }
-            var queryData = $"SELECT {select.ToString().TrimEnd(',')} FROM {join}" + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
-            var lstData = await _organizationDBContext.QueryDataTable(queryData, sqlParams.ToArray());
+            var queryData = $"SELECT * FROM (SELECT {select.ToString().TrimEnd().TrimEnd(',')} FROM {join}) v " + (whereCondition.Length > 0 ? "WHERE " : " ") + whereCondition;
+            var dataTable = await _organizationDBContext.QueryDataTableRaw(queryData, sqlParams.ToArray());
 
-            return lstData.ConvertData();
+            var lstData = dataTable.ConvertData();
 
+            var additionValues = await PeriodAdditionValues(year, month);
+
+            var additionBillFields = await _organizationDBContext.SalaryPeriodAdditionField.AsNoTracking().ToListAsync();
+            foreach (var item in lstData)
+            {
+                long employeeId = 0;
+                if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
+                {
+                    employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+
+                if (additionValues.TryGetValue(employeeId, out var fieldValues))
+                {
+                    foreach (var (fieldName, value) in fieldValues)
+                    {
+                        var colName = EscaseFieldName($"{ADDITION_ALIAS}.{fieldName}");
+                        item.Add(colName, value);
+                    }
+                }
+                foreach (var f in additionBillFields)
+                {
+                    var colName = EscaseFieldName($"{ADDITION_ALIAS}.{f.FieldName}");
+                    if (!item.ContainsKey(colName))
+                        item.Add(colName, 0);
+                }
+
+            }
+
+            return (lstData, columns);
+        }
+
+        private async Task<int> JoinRefTables(List<string> columns, StringBuilder select, StringBuilder join, int suffix, List<SqlParameter> sqlParams, NonCamelCaseDictionary data)
+        {
+            var refTables = (_salaryRefTableService.GetList()).Result;
+            var refFields = await _httpCategoryHelperService.GetReferFields(refTables.Select(c => c.RefTableCode).ToList(), null);
+
+            foreach (var refTable in refTables)
+            {
+                var fromField = refTable.FromField;
+                var lastPoint = fromField.LastIndexOf('.');
+
+                var refAlias = $"{refTable.Alias}";
+
+                if (lastPoint < 0)
+                {
+                    fromField = $"v.{fromField}";
+                }
+
+
+                var cateFields = refFields.Where(f => f.CategoryCode == refTable.RefTableCode).ToList();
+
+                foreach (var f in cateFields)
+                {
+                    var colName = $"{refTable.Alias}.{f.CategoryFieldName}";
+                    colName = EscaseFieldName(colName);
+                    var idx = 1;
+                    var originalColName = colName;
+                    while (columns.Contains(colName))
+                    {
+                        colName = originalColName + idx;
+                    }
+                    columns.Add(colName);
+                    select.Append($"{refAlias}.{f.CategoryFieldName} AS [{colName}]");
+
+
+                    select.Append(",");
+                }
+
+                var refWhereCondition = new StringBuilder();
+                if (refTable.Filter != null)
+                {
+
+                    suffix = refTable.Filter.FilterClauseProcess(refTable.RefTableCode, refAlias, refWhereCondition, sqlParams, suffix, false, null, data);
+                }
+
+                join.AppendLine($" LEFT JOIN v{refTable.RefTableCode} AS {refAlias} ON ({fromField} = [{refAlias}].{refTable.RefTableField})");
+                if (refWhereCondition.Length > 0)
+                {
+                    join.Append($" AND {refWhereCondition}");
+                }
+            }
+            return suffix;
+
+        }
+
+
+        private async Task<Dictionary<long, Dictionary<string, decimal>>> PeriodAdditionValues(int year, int month)
+        {
+            var employeeValues = await (
+                from b in _organizationDBContext.SalaryPeriodAdditionBill
+                join e in _organizationDBContext.SalaryPeriodAdditionBillEmployee on b.SalaryPeriodAdditionBillId equals e.SalaryPeriodAdditionBillId
+                join v in _organizationDBContext.SalaryPeriodAdditionBillEmployeeValue on e.SalaryPeriodAdditionBillEmployeeId equals v.SalaryPeriodAdditionBillEmployeeId
+                join f in _organizationDBContext.SalaryPeriodAdditionField on v.SalaryPeriodAdditionFieldId equals f.SalaryPeriodAdditionFieldId
+                where b.Year == year && b.Month == month
+                select new
+                {
+                    e.EmployeeId,
+                    f.FieldName,
+                    v.Value,
+                }).ToListAsync();
+
+            return employeeValues.Where(v => v.Value.HasValue)
+                .GroupBy(e => e.EmployeeId)
+                .ToDictionary(
+                e => e.Key,
+                e => e.GroupBy(f => f.FieldName).ToDictionary(f => f.Key, f => f.Sum(v => v.Value.Value))
+                );
+        }
+        private void NormalizeFieldNameInClause(Clause clause)
+        {
+            if (clause is SingleClause single)
+            {
+                single.FieldName = EscaseFieldName(single.FieldName);
+                single.Value = EscaseFieldName(single.Value);
+
+            }
+            else if (clause is ArrayClause arrClause && arrClause?.Rules?.Count > 0)
+            {
+                foreach (var c in arrClause.Rules)
+                {
+                    NormalizeFieldNameInClause(c);
+                }
+            }
+        }
+
+
+
+        private T EscaseFieldName<T>(T expression)
+        {
+            if (expression == null) return expression;
+            if (expression.GetType() == typeof(string))
+            {
+                var expressionStr = expression.ToString().Replace("#", SALARY_FIELD_PREFIX).Replace("$.", "_");
+
+                return (T)(expressionStr as object);
+            }
+            return expression;
+        }
+
+
+        private IList<SalaryFieldModel> SortFieldNameByReference(IList<SalaryFieldModel> fields)
+        {
+            var sortedFields = new List<SalaryFieldModel>();
+
+            foreach (var field in fields)
+            {
+                var stack = new Stack<SalaryFieldModel>();
+                stack.Push(field);
+                while (stack.Count > 0)
+                {
+                    SalaryFieldModel currentField = stack.Pop();
+                    var children = fields.Where(f => f != currentField && ContainRefField(currentField, "#" + f.SalaryFieldName)).ToList();
+                    if (children.Count == 0 || children.All(c => sortedFields.Contains(c)))
+                    {
+                        if (!sortedFields.Contains(currentField))
+                        {
+                            sortedFields.Add(currentField);
+                        }
+                    }
+                    else
+                    {
+                        stack.Push(currentField);
+                        foreach (var c in children)
+                        {
+                            if (!stack.Contains(c))
+                                stack.Push(c);
+                        }
+                    }
+                }
+
+            }
+
+            return sortedFields;
+
+        }
+
+        private bool ContainRefField(SalaryFieldModel expression, string fieldName)
+        {
+            if (expression.Expression == null || expression.Expression.Count == 0) return false;
+            return expression.Expression.Any(e => ContainRefField(e, fieldName));
+        }
+
+        private bool ContainRefField(SalaryFieldExpressionModel expression, string fieldName)
+        {
+            return ContainRefField(expression.Filter, fieldName) || ContainVarible(expression.ValueExpression, fieldName);
+        }
+
+        private bool ContainRefField(Clause clause, string fieldName)
+        {
+            if (clause == null) return false;
+            if (clause is SingleClause single)
+            {
+                if (ContainVarible(single.FieldName, fieldName)) return true;
+                if (ContainVarible(single.Value?.ToString(), fieldName)) return true;
+                return false;
+            }
+            else
+            {
+                var arrClause = clause as ArrayClause;
+                if (arrClause == null || arrClause.Rules == null || arrClause.Rules.Count == 0) return false;
+                return arrClause.Rules.Any(r => ContainRefField(r, fieldName));
+            }
+        }
+
+
+        private bool ContainVarible(string str, string childString)
+        {
+            if (string.IsNullOrWhiteSpace(str)) return false;
+            var _regContainVariable = new Regex($".*(^|[^a-zA-Z0-9_]){childString}([^a-zA-Z0-9_]|$).*");
+            return _regContainVariable.IsMatch(str);
         }
 
         private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)
@@ -312,18 +894,24 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     var singleClause = clause as SingleClause;
 
+                    var value = singleClause.Value;
 
                     if (singleClause.Value?.GetType() == typeof(string) && !singleClause.Value.IsNullOrEmptyObject())
                     {
-                        singleClause.Value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
+                        value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
                         {
                             var expression = match.Groups["ex"].Value;
                             return EvalUtils.EvalObject(expression, refValues)?.ToString();
                         });
+
+                        value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues);
+
                     }
 
 
-                    return EvalOperatorCompare(singleClause, refValues[singleClause.FieldName], singleClause.Value);
+
+
+                    return EvalOperatorCompare(singleClause, refValues[singleClause.FieldName], value);
                 }
                 else if (clause is ArrayClause)
                 {
@@ -331,7 +919,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                     if (arrClause.Rules.Count == 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin trong mảng điều kiện không được để trống.Vui lòng kiểm tra lại cấu hình điều kiện lọc!");
+                        return true;
                     }
 
                     var res = new List<bool>();
@@ -353,6 +941,70 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return true;
         }
 
+        private bool IsEqualFieldsValue(EnumDataType dataTypeId, object value1, object value2)
+        {
+            if (dataTypeId.IsNumber())
+            {
+                if (GetDecimal(value1, null, out var decimalValue1) && GetDecimal(value2, null, out var decimalValue2))
+                {
+                    return decimalValue1 == decimalValue2;
+                }
+            }
+
+            return value1?.ToString() == value2?.ToString();
+        }
+        private bool GetDecimal(object value, int? decimalPlace, out decimal decimalValue)
+        {
+            try
+            {
+                decimalValue = Convert.ToDecimal(value).RoundBy(decimalPlace ?? DEFAULT_DECIMAL_PLACE);
+                return true;
+            }
+            catch (Exception e)
+            {
+
+                _logger.LogWarning(e, "Can not convert {0} to decimal", value);
+                decimalValue = 0;
+                return false;
+            }
+        }
+
+        public object GetDefaultValue(EnumDataType dataTypeId, GroupSalaryEmployeeModel req)
+        {
+            object defaultValue;
+            switch (dataTypeId)
+            {
+                case EnumDataType.Int:
+                case EnumDataType.BigInt:
+                case EnumDataType.Month:
+                case EnumDataType.Year:
+                case EnumDataType.Decimal:
+                case EnumDataType.HBarRelative:
+                case EnumDataType.Percentage:
+                case EnumDataType.QuarterOfYear:
+                    defaultValue = 0;
+                    break;
+
+                case EnumDataType.Boolean:
+                    defaultValue = false;
+                    break;
+
+                case EnumDataType.Date:
+                case EnumDataType.DateRange:
+                    defaultValue = req.FromDate;
+                    break;
+                case EnumDataType.Text:
+                case EnumDataType.Email:
+                case EnumDataType.PhoneNumber:
+                    defaultValue = req.FromDate;
+                    break;
+                default:
+                    defaultValue = null;
+                    break;
+
+            }
+            return defaultValue;
+        }
         private bool EvalOperatorCompare(SingleClause clause, object x, object y)
         {
 
@@ -412,47 +1064,47 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 case EnumOperator.Greater:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x > (decimal)y;
+                        return x.ToDecimal() > y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x > (DateTime)y;
+                        return x.ToDecimal() > y.ToDecimal();
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.GreaterOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x >= (decimal)y;
+                        return x.ToDecimal() >= y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x >= (DateTime)y;
+                        return x.ToDecimal() >= y.ToDecimal();
                     }
                     throw new NotSupportedException();
 
                 case EnumOperator.LessThan:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x < (decimal)y;
+                        return x.ToDecimal() < y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x < (DateTime)y;
+                        return x.ToDecimal() < y.ToDecimal();
                     }
                     throw new NotSupportedException();
                 case EnumOperator.LessThanOrEqual:
                     if (clause.DataType.IsNumber())
                     {
-                        return (decimal)x <= (decimal)y;
+                        return x.ToDecimal() <= y.ToDecimal();
                     }
 
                     if (new[] { EnumDataType.Date, EnumDataType.DateRange }.Contains(clause.DataType))
                     {
-                        return (DateTime)x <= (DateTime)y;
+                        return x.ToDecimal() <= y.ToDecimal();
                     }
                     throw new NotSupportedException();
                 case EnumOperator.IsNull:

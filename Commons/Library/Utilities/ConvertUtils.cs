@@ -104,7 +104,6 @@ namespace VErp.Commons.Library
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu ngày tháng");
                     }
 
-                    if (dateValue <= 0) return DBNull.Value;
                     return dateValue.UnixToDateTime(timeZoneOffset).Value;
 
                 case EnumDataType.PhoneNumber: return value?.ToString()?.Trim();
@@ -113,6 +112,12 @@ namespace VErp.Commons.Library
                     bool boolValue;
                     try
                     {
+                        if (value.GetType() == typeof(string))
+                        {
+                            var str = (value as string).NormalizeAsInternalName();
+
+                            return new[] { "co", "true" }.Contains(str);
+                        }
                         boolValue = Convert.ToBoolean(value);
                     }
                     catch (Exception)
@@ -454,6 +459,12 @@ namespace VErp.Commons.Library
                 foreach (DataColumn c in data.Columns)
                 {
                     var v = row[c];
+                    if (v == DBNull.Value)
+                    {
+                        dic.Add(c.ColumnName, null);
+                        continue;
+                    }
+
                     if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                     {
                         var vInDateTime = (v as DateTime?).GetUnix();

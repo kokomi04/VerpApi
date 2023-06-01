@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
@@ -28,7 +29,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public bool IsManualSetStartDate { get; set; }
         public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }
-
+        [MaxLength(512)]
+        public string Comment { get; set; }
 
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }

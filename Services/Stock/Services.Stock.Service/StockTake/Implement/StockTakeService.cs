@@ -14,15 +14,17 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
+using VErp.Infrastructure.ServiceCore.Abstract;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.StockTake;
+using VErp.Services.Stock.Service.Stock.Implement;
 using StockTakeEntity = VErp.Infrastructure.EF.StockDB.StockTake;
 
 namespace VErp.Services.Stock.Service.StockTake.Implement
 {
-    public class StockTakeService : IStockTakeService
+    public class StockTakeService : BillDateValidateionServiceAbstract, IStockTakeService
     {
         private readonly StockDBContext _stockContext;
         private readonly IActivityLogService _activityLogService;
@@ -42,7 +44,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ILogger<StockTakeService> logger
-            )
+            ) : base(stockContext)
         {
             _stockContext = stockContext;
             _activityLogService = activityLogService;
@@ -64,6 +66,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
+
+            await ValidateDateOfBill(model.StockTakeDate.UnixToDateTime(), stockTakePeriod.StockTakePeriodDate);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(model.StockTakePeriodId));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -156,11 +160,15 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
             if (stockTakePeriod == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Kỳ kiểm kê không tồn tại");
 
+            await ValidateDateOfBill(model.StockTakeDate.UnixToDateTime(), stockTakePeriod.StockTakePeriodDate);
+
             if (_stockContext.StockTakeAcceptanceCertificate.Any(ac => ac.StockTakePeriodId == model.StockTakePeriodId))
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Đã tồn tại phiếu xử lý chênh lệch. Cần xóa phiếu xử lý chênh lệch trước khi thay đổi thông tin kiểm kê.");
 
             var stockTake = _stockContext.StockTake
              .FirstOrDefault(st => st.StockTakeId == stockTakeId);
+
+            await ValidateDateOfBill(model.StockTakeDate.UnixToDateTime(), stockTake.StockTakeDate);
 
             if (stockTake == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Phiếu kiểm kê không tồn tại");
@@ -295,6 +303,8 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
 
             var stockTakePeriod = _stockContext.StockTakePeriod
                  .FirstOrDefault(stp => stp.StockTakePeriodId == stockTake.StockTakePeriodId);
+            
+            await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, stockTake.StockTakeDate);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockStockKeyKey(stockTake.StockTakePeriodId));
             using var trans = await _stockContext.Database.BeginTransactionAsync();
@@ -343,6 +353,11 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                     .FirstOrDefault();
 
             if (stockTake == null) throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            var stockTakePeriod = _stockContext.StockTakePeriod
+               .FirstOrDefault(stp => stp.StockTakePeriodId == stockTake.StockTakePeriodId);
+
+            await ValidateDateOfBill(stockTakePeriod.StockTakePeriodDate, stockTake.StockTakeDate);
 
             if ((stockTake.AccountancyRepresentativeId != _currentContextService.UserId || stockTake.AccountancyStatus != (int)EnumStockTakeStatus.Processing)
                 && (stockTake.StockRepresentativeId != _currentContextService.UserId || stockTake.StockStatus != (int)EnumStockTakeStatus.Processing))

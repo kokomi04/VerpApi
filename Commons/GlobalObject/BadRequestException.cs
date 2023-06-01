@@ -8,6 +8,7 @@ namespace VErp.Commons.GlobalObject
     public class BadRequestException : Exception
     {
         public Enum Code { get; set; }
+        public object AdditionData { get; set; }
 
         public BadRequestException(Enum errorCode) : base(EnumExtensions.GetEnumDescription(errorCode))
         {
@@ -18,7 +19,11 @@ namespace VErp.Commons.GlobalObject
         {
             this.Code = errorCode;
         }
-
+        public BadRequestException(object additionData, Enum errorCode, string message) : base(message)
+        {
+            this.Code = errorCode;
+            this.AdditionData = additionData;
+        }
         public BadRequestException(string message) : base(message)
         {
             this.Code = GeneralCode.InvalidParams;
@@ -63,6 +68,12 @@ namespace VErp.Commons.GlobalObject
             return new BadRequestException(code, messageFormat.Format(args));
         }
 
+        public static BadRequestException BadRequestFormatWithData(this Enum code, object additionData, string messageFormat, params object[] args)
+        {
+            return new BadRequestException(additionData, code, messageFormat.Format(args));
+        }
+
+
         public static BadRequestException BadRequestDescriptionFormat(this Enum code, params object[] args)
         {
             return new BadRequestException(code, args);
@@ -71,6 +82,10 @@ namespace VErp.Commons.GlobalObject
         public static BadRequestException BadRequest(this string message)
         {
             return new BadRequestException(message);
+        }
+        public static BadRequestException BadRequestWithData(this string message, object additionData)
+        {
+            return new BadRequestException(additionData, GeneralCode.InvalidParams, message);
         }
 
         public static BadRequestException BadRequest(this string message, Enum code)

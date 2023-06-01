@@ -17,6 +17,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -38,7 +39,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
 
         private readonly IAsyncRunnerService _asyncRunner;
-        private readonly IProductService _productService;
         private readonly ObjectActivityLogFacade _invInputActivityLog;
         private readonly ObjectActivityLogFacade _invOutActivityLog;
         private readonly ObjectActivityLogFacade _packageActivityLog;
@@ -51,16 +51,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             , IActivityLogService activityLogService
             , IAsyncRunnerService asyncRunner
             , ICurrentContextService currentContextService
-            , IProductService productService
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , IProductionOrderHelperService productionOrderHelperService
-            , IProductionHandoverHelperService productionHandoverHelperService
-            , IQueueProcessHelperService queueProcessHelperService
-            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, productionOrderHelperService, productionHandoverHelperService, currentContextService, queueProcessHelperService)
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService
+            , INotificationFactoryService notificationFactoryService) : base(stockContext, logger, customGenCodeHelperService, currentContextService, productionOrderQueueHelperService)
         {
 
             _asyncRunner = asyncRunner;
-            _productService = productService;
             _invInputActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryInput);
             _invOutActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InventoryOutput);
             _packageActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Package);
@@ -593,7 +589,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         .CreateLog();
 
 
-                        await UpdateProductionOrderStatus(inventoryDetails, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
+                        await UpdateProductionOrderStatus(inventoryDetails, inventoryObj.InventoryCode);//, EnumProductionStatus.Finished, inventoryObj.InventoryCode);
 
                         await ctx.ConfirmCode();
 

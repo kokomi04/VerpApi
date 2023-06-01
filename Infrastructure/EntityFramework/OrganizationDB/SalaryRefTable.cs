@@ -13,6 +13,7 @@ namespace VErp.Infrastructure.EF.OrganizationDB
         public string RefTableCode { get; set; }
         public string Filter { get; set; }
         public string RefTableField { get; set; }
+        public string Alias { get; set; }
         public int CreatedByUserId { get; set; }
         public DateTime CreatedDatetimeUtc { get; set; }
         public int UpdatedByUserId { get; set; }

@@ -139,4 +139,7 @@
   <data name="Update" xml:space="preserve">
     <value>Cập nhật kỳ tính lương tháng {0}/{1} nhóm {2}</value>
   </data>
+  <data name="UpdateSalaryEmployee" xml:space="preserve">
+    <value>Cập nhật bảng lương cho nhân viên nhóm {0} kỳ tháng {1}/{2}</value>
+  </data>
 </root>

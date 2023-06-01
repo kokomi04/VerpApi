@@ -3,6 +3,7 @@ using System;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -26,7 +27,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public long? InventoryRequirementDetailId { get; set; }
     }
 
-    public class ProductionInventoryRequirementModel : ProductionInventoryRequirementBaseModel, IMapFrom<ProductionInventoryRequirementEntity>
+    public class ProductionInventoryRequirementModel : ProductionInventoryRequirementBaseModel, IMapFrom<InternalProductionInventoryRequirementModel>
     {
         public EnumProductionInventoryRequirementStatus Status { get; set; }
         public long CreatedDatetimeUtc { get; set; }
@@ -34,17 +35,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMapCustom<ProductionInventoryRequirementEntity, ProductionInventoryRequirementModel>()
-                .ForMember(m => m.InventoryTypeId, v => v.MapFrom(m => (EnumInventoryType)m.InventoryTypeId))
+            profile.CreateMapCustom<InternalProductionInventoryRequirementModel, ProductionInventoryRequirementModel>()
+                .ForMember(m => m.InventoryTypeId, v => v.MapFrom(m => m.InventoryTypeId))
                 .ForMember(m => m.Status, v => v.MapFrom(m => (EnumProductionInventoryRequirementStatus)m.Status))
                 .ForMember(m => m.CreatedDatetimeUtc, v => v.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()));
         }
     }
 
-    public class ProductionInventoryRequirementEntity : ProductionInventoryRequirementBaseModel
-    {
-        public int Status { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public int InventoryTypeId { get; set; }
-    }
 }

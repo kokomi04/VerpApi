@@ -84,7 +84,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                     new SqlParameter("@ProductionOrderId", productionProcess.ContainerId)
             };
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql, parammeters);
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql, parammeters);
 
             var productionOrderDetail = resultData.ConvertData<ProductionOrderDetailOutputModel>();
 
@@ -702,7 +702,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             var parammeters = new List<SqlParameter>();
             var sql = new StringBuilder($"SELECT * FROM vOutsourcePartRequestExtractInfo v Where v.ProductionOrderId = {productionOrderId}");
-            var resultData = await _manufacturingDBContext.QueryDataTable(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
+            var resultData = await _manufacturingDBContext.QueryDataTableRaw(sql.ToString(), parammeters.Select(p => p.CloneSqlParam()).ToArray());
             var lst = resultData.ConvertData<OutsourcePartRequestDetailExtractInfo>()
                .AsQueryable()
                .ProjectTo<OutsourcePartRequestDetailInfo>(_mapper.ConfigurationProvider)

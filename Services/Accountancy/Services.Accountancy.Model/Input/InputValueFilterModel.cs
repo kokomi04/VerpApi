@@ -21,7 +21,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int Size { get; set; }
     }
 
-    public class InputTypeBillsExporttFilterModel : InputTypeBillsRequestFilterModel
+    public class InputTypeBillsExportFilterModel : InputTypeBillsRequestFilterModel
     {
         public IList<string> FieldNames { get; set; }
     }

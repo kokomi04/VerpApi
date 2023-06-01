@@ -142,7 +142,7 @@
     <value>Trường dữ liệu đã tồn tại</value>
   </data>
   <data name="HrFieldDataSizeInValid" xml:space="preserve">
-    <value>DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0</value>
+    <value>DataSize của Trường dữ liệu kiểu Text không thể nhỏ hơn hoặc bằng 0, Số thực phải &gt; 1</value>
   </data>
   <data name="HrFieldIsUsed" xml:space="preserve">
     <value>Trường dữ liệu đang được sử dụng</value>

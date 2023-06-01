@@ -5,11 +5,11 @@ using VErp.Services.Stock.Model.Stock;
 
 namespace VErp.Services.Stock.Model.Inventory
 {
-    public class InventoryOutput
+    public class InventoryOutputQueryModel
     {
-        public InventoryOutput()
+        public InventoryOutputQueryModel()
         {
-            InventoryDetailOutputList = new List<InventoryDetailOutput>(50);
+           
         }
 
         public long InventoryId { get; set; }
@@ -47,12 +47,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public bool IsApproved { set; get; }
         //public string AccountancyAccountNumber { get; set; }
         public int? DepartmentId { get; set; }
-        public StockOutput StockOutput { get; set; }
-        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
-
-        public IList<FileToDownloadInfo> FileList { set; get; }
-
-        public IList<MappingInputBillModel> InputBills { get; set; }
+        public bool IsInputBillCreated { get; set; }
         public int? CensorByUserId { get; set; }
         public EnumInventoryAction InventoryActionId { get; set; }
         public int InventoryStatusId { get; set; }
@@ -62,6 +57,30 @@ namespace VErp.Services.Stock.Model.Inventory
         public int? RefStockId { get; set; }
 
 
+    }
+
+    public class InventoryListOutput : InventoryOutputQueryModel
+    {
+        public InventoryListOutput()
+        {
+         
+        }
+
+        public StockOutput StockOutput { get; set; }
+        public IList<MappingInputBillModel> InputBills { get; set; }
+    }
+
+    public class InventoryOutput: InventoryListOutput
+    {
+        public InventoryOutput()
+        {
+            InventoryDetailOutputList = new List<InventoryDetailOutput>(50);
+        }
+
+     
+        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
+
+        public IList<FileToDownloadInfo> FileList { set; get; }
     }
 
     public class MappingInputBillModel

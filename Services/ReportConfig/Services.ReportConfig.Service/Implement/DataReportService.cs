@@ -1,6 +1,8 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using Microsoft.Data.SqlClient;
 using Microsoft.Diagnostics.Tracing.Parsers.IIS_Trace;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
 using OpenXmlPowerTools;
@@ -12,9 +14,11 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Resources.Report;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Report;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -41,6 +45,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly IPhysicalFileService _physicalFileService;
         private readonly IServiceProvider _serviceProvider;
         private readonly ICurrentContextService _currentContextService;
+        private readonly ILogger _logger;
 
         private readonly Dictionary<EnumModuleType, Type> ModuleDbContextTypes = new Dictionary<EnumModuleType, Type>()
         {
@@ -62,8 +67,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             IOptions<AppSetting> appSetting,
             IPhysicalFileService physicalFileService,
             IServiceProvider serviceProvider,
-            ICurrentContextService currentContextService
-            )
+            ICurrentContextService currentContextService,
+            ILogger<DataReportService> logger)
         {
             _reportConfigDBContext = reportConfigDBContext;
             _reportConfigService = reportConfigService;
@@ -72,6 +77,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _physicalFileService = physicalFileService;
             _serviceProvider = serviceProvider;
             _currentContextService = currentContextService;
+            _logger = logger;
         }
 
 
@@ -104,59 +110,85 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
-            var reportViewInfo = await _reportConfigService.ReportTypeViewGetInfo(reportInfo.ReportTypeId);
+            var userView = await _reportConfigService.ReportTypeViewGetInfo(EmumReportViewFilterType.Filter, reportInfo.ReportTypeId);
+
+            var settingView = await _reportConfigService.ReportTypeViewGetInfo(EmumReportViewFilterType.Setting, reportInfo.ReportTypeId);
+
+            var fields = new List<ReportTypeViewFieldModel>();
 
             var sqlParams = new List<SqlParameter>()
             {
                 new SqlParameter("@TimeZoneOffset", _currentContextService.TimeZoneOffset)
             };
 
-            foreach (var filterFiled in reportViewInfo.Fields)
+            var settingData = new Dictionary<string, object>();
+
+            var settingValues = await (from v in _reportConfigDBContext.ReportTypeViewFieldValue
+                                       join f in _reportConfigDBContext.ReportTypeViewField on v.ReportTypeViewFieldId equals f.ReportTypeViewFieldId
+                                       where f.ReportTypeViewId == settingView.ReportTypeViewId
+                                       select new
+                                       {
+                                           f.ReportTypeViewFieldId,
+                                           f.DataTypeId,
+                                           f.ParamerterName,
+                                           f.Title,
+                                           v.JsonValue
+                                       }).ToListAsync();
+
+            foreach (var settingValue in settingValues)
             {
-                object value = null;
-                foreach (var param in filterFiled.ParamerterName.Split(','))
+                try
                 {
-                    if (string.IsNullOrWhiteSpace(param)) continue;
+                    var value = settingValue.JsonValue;
+                    if (value.IsNullOrEmptyObject() || settingValue.ParamerterName.IsNullOrEmptyObject()) continue;
 
-                    var paramName = param.Trim().ToLower();
-                    if (filterFiled.FormTypeId == EnumFormType.MultiSelect)
+                    var paramNames = settingValue.ParamerterName.Split(',').Where(p => !p.IsNullOrEmptyObject()).ToList();
+
+                    if (paramNames.Count == 0)
                     {
-                        if (filters.ContainsKey(paramName))
-                        {
-                            value = filters[paramName];
-
-                        }
-                        switch (filterFiled.DataTypeId)
-                        {
-                            case EnumDataType.Int:
-                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
-                                break;
-                            case EnumDataType.BigInt:
-                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
-                                break;
-                            case EnumDataType.Text:
-                                sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
-                                break;
-                            default:
-                                break;
-                        }
+                        continue;
                     }
-                    else
+
+
+                    if (paramNames.Count == 1)
                     {
-                        if (filters.ContainsKey(paramName))
+                        var paramName = paramNames[0];
+                        if (!settingData.ContainsKey(paramName))
                         {
-                            value = filters[paramName];
-                            if (!value.IsNullOrEmptyObject())
-                            {
-                                if (filterFiled.DataTypeId.IsTimeType())
-                                {
-                                    value = Convert.ToInt64(value);
-                                }
-                            }
+                            settingData.Add(paramName, JsonUtils.JsonDeserialize(value));
                         }
-                        sqlParams.Add(new SqlParameter($"@{paramName}", filterFiled.DataTypeId.GetSqlValue(value)));
+                        continue;
+                    }
+
+                    var list = JsonUtils.JsonDeserialize<List<object>>(value);
+
+                    for (var i = 0; i < paramNames.Count; i++)
+                    {
+                        var paramName = paramNames[i];
+
+                        if (!settingData.ContainsKey(paramName) && list.Count > i)
+                        {
+                            settingData.Add(paramName, list[i]);
+                        }
+
                     }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "ReportView");
+                    throw ReportTypeViewValidationMessage.FilterFieldSettinError.BadRequestFormat(settingValue.Title, settingValue.JsonValue + " " + ex.Message);
+                }
+
+            }
+
+            foreach (var filterField in settingView.Fields)
+            {
+                SetReportSqlParams(sqlParams, filterField, settingData);
+            }
+
+            foreach (var filterField in userView.Fields)
+            {
+                SetReportSqlParams(sqlParams, filterField, filters);
             }
 
             if (reportInfo.IsDbPaging.HasValue && reportInfo.IsDbPaging.Value)
@@ -186,7 +218,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     //viewAlias = "v";
                 }
-                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
+                suffix = model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, filterCondition, sqlParams, suffix);
             }
 
             if (reportInfo.IsBsc)
@@ -220,11 +252,63 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (!string.IsNullOrWhiteSpace(reportInfo.FooterSql))
             {
-                var data = await _dbContext.QueryDataTable(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTableRaw(reportInfo.FooterSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 result.Foot = data.ConvertFirstRowData().ToNonCamelCaseDictionary();
             }
 
             return result;
+        }
+
+
+        private void SetReportSqlParams(List<SqlParameter> sqlParams, ReportTypeViewFieldModel filterField, Dictionary<string, object> filtersValues)
+        {
+            var filters = filtersValues.ToDictionary(k => k.Key.ToLower(), k => k.Value);
+            object value = null;
+            foreach (var param in filterField.ParamerterName.Split(','))
+            {
+                if (string.IsNullOrWhiteSpace(param)) continue;
+               
+                var paramName = param.Trim();
+                var paramKey = paramName?.ToLower();
+
+                if (filterField.FormTypeId == EnumFormType.MultiSelect)
+                {
+                    if (filters.ContainsKey(paramKey))
+                    {
+                        value = filters[paramKey];
+
+                    }
+                    switch (filterField.DataTypeId)
+                    {
+                        case EnumDataType.Int:
+                            sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<int>>() : Array.Empty<int>()).ToSqlParameter($"@{paramName}"));
+                            break;
+                        case EnumDataType.BigInt:
+                            sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<long>>() : Array.Empty<long>()).ToSqlParameter($"@{paramName}"));
+                            break;
+                        case EnumDataType.Text:
+                            sqlParams.Add((!value.IsNullOrEmptyObject() ? ((JArray)value).ToObject<IList<string>>() : Array.Empty<string>()).ToSqlParameter($"@{paramName}"));
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else
+                {
+                    if (filters.ContainsKey(paramKey))
+                    {
+                        value = filters[paramKey];
+                        if (!value.IsNullOrEmptyObject())
+                        {
+                            if (filterField.DataTypeId.IsTimeType())
+                            {
+                                value = Convert.ToInt64(value);
+                            }
+                        }
+                    }
+                    sqlParams.Add(new SqlParameter($"@{paramName}", filterField.DataTypeId.GetSqlValue(value)));
+                }
+            }
         }
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByBsc(ReportType reportInfo, Clause columnsFilters, string orderByFieldName, bool asc, IList<SqlParameter> sqlParams)
@@ -418,7 +502,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (sql.Length > 0)
             {
                 var delcareSql = string.Join("\n", declareValues.Select(k => $"DECLARE @{k} DECIMAL(32,12);").ToArray());
-                var data = await _dbContext.QueryDataTable($"{delcareSql}\n{prefixSqlStatement}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var data = await _dbContext.QueryDataTableRaw($"{delcareSql}\n{prefixSqlStatement}\n{reportInfo.BodySql}\n {sql} ", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 selectValue = data.ConvertFirstRowData();
                 BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
             }
@@ -438,7 +522,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 foreach (var item in cacls)
                 {
-                    var data = await _dbContext.QueryDataTable($"\n{prefixSqlStatement}\nSELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                    var data = await _dbContext.QueryDataTableRaw($"\n{prefixSqlStatement}\nSELECT {item.SelectData}", sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                     selectValue = data.ConvertFirstRowData();
                     BscSetValue(bscRows, selectValue, keyValueRows, sqlParams);
                 }
@@ -542,7 +626,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     $"{whereClause}";
             }
 
-            var data = await dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).Union(localParams).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).Union(localParams).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var variableData = data.ConvertFirstRowData();
 
@@ -701,17 +785,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
+
+            var sqlParamReplace = sqlParams.Select(p => p).ToList();
+            if (_dbContext is ISubsidiayRequestDbContext requestDbContext)
+            {
+                var subIdParam = requestDbContext.CreateSubSqlParam();
+                if (!sqlParamReplace.Any(p => p.ParameterName == subIdParam.ParameterName))
+                {
+                    sqlParamReplace.Add(subIdParam);
+                }
+            }
+
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_DECLARE"))
             {
-                var dynamicParamDeclare = string.Join(", ", sqlParams?.Select(p => p.ToDeclareString())?.ToArray());
-
+                
+                var dynamicParamDeclare = string.Join(", ", sqlParamReplace?.Select(p => p.ToDeclareString())?.ToArray());
+                
                 sql = ReplaceCustom(sql, "$INPUT_PARAMS_DECLARE", dynamicParamDeclare);
 
             }
 
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_VALUE"))
             {
-                var dynamicParam = string.Join(", ", sqlParams?.Select(p => $"{p.ParameterName}")?.ToArray());
+                var dynamicParam = string.Join(", ", sqlParamReplace?.Select(p => $"{p.ParameterName}")?.ToArray());
                 sql = ReplaceCustom(sql, "$INPUT_PARAMS_VALUE", dynamicParam);
             }
 
@@ -733,7 +829,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sql += " ORDER BY " + orderBy;
             }
 
-            var table = await _dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary<decimal>();
 
@@ -1008,7 +1104,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (!string.IsNullOrEmpty(filterCondition))
                 totalSql.Append($" WHERE {filterCondition}");
 
-            var table = await _dbContext.QueryDataTable(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTableRaw(totalSql.ToString(), sqlParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totalRows = 0;
             if (table != null && table.Rows.Count > 0)
@@ -1054,7 +1150,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 ");
             }
 
-            var data = await _dbContext.QueryDataTable(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var data = await _dbContext.QueryDataTableRaw(dataSql.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             return ((data, totalRows), totals);
         }
@@ -1119,7 +1215,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 //    selectAliasSql += " WHERE " + string.Join(",", whereColumn);
                 //}
 
-                var rowData = await _dbContext.QueryDataTable(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+                var rowData = await _dbContext.QueryDataTableRaw(selectAliasSql, rowParams.ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
                 if (rowData.Rows.Count > 0)
                     data.Add(rowData.ConvertFirstRowData().ToNonCamelCaseDictionary());
             }

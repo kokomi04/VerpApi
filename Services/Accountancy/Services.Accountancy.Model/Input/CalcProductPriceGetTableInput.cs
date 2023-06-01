@@ -18,6 +18,8 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsByOrder { get; set; }
         public bool IsByStock { get; set; }
 
+        public CalcProductPriceWorkInProgressBalance ProgressBalances { get; set; }
+
         public NonCamelCaseDictionary<decimal?> AllocationRate { get; set; }
         public NonCamelCaseDictionary<decimal?> CustomPrice { get; set; }
         public NonCamelCaseDictionary<decimal?> DirectMaterialFee { get; set; }
@@ -55,5 +57,18 @@ namespace VErp.Services.Accountancy.Model.Input
         public decimal? IndirectLaborFeeSum { get; set; }
         public decimal? GeneralManufacturingSum { get; set; }
         public long? CalcPeriodId { get; set; }
+    }
+
+    public class CalcProductPriceWorkInProgressBalance
+    {
+        public CalcProductPriceAccBalancePeriod Materials { get; set; }
+        public CalcProductPriceAccBalancePeriod Labors { get; set; }
+        public CalcProductPriceAccBalancePeriod Factories { get; set; }
+    }
+
+    public class CalcProductPriceAccBalancePeriod
+    {
+        public decimal? Open { get; set; }
+        public decimal? End { get; set; }
     }
 }

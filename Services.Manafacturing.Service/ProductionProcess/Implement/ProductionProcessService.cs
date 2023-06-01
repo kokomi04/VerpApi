@@ -18,6 +18,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
@@ -38,6 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IProductHelperService _productHelperService;
         private readonly IValidateProductionProcessService _validateProductionProcessService;
         private readonly IProductionAssignmentService _productionAssignmentService;
+        protected readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
 
         public ProductionProcessService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -45,7 +47,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             , IMapper mapper
             , IProductHelperService productHelperService
             , IValidateProductionProcessService validateProductionProcessService
-            , IProductionAssignmentService productionAssignmentService)
+            , IProductionAssignmentService productionAssignmentService
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -54,6 +57,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _productHelperService = productHelperService;
             _validateProductionProcessService = validateProductionProcessService;
             _productionAssignmentService = productionAssignmentService;
+            _productionOrderQueueHelperService = productionOrderQueueHelperService;
         }
 
         public async Task<long> CreateProductionStep(ProductionStepInfo req)
@@ -340,7 +344,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             var productionOutsourcePartMappings = await _manufacturingDBContext.ProductionOutsourcePartMapping.Where(x => containerIds.Contains(x.ContainerId))
@@ -1095,6 +1099,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req.JsonSerialize());
 
+                if(containerTypeId== EnumContainerType.ProductionOrder)
+                {
+                    var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == containerId);
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
+                }
                 return true;
             }
             catch (Exception ex)
@@ -1402,7 +1411,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas;
@@ -1633,7 +1642,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                 };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataOutsourceStep>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataOutsourceStep>(sql.ToString(), parammeters);
 
                 foreach (var ld in stepLinkDatas)
                 {
@@ -2290,7 +2299,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         lsProductionStepLinkDataId.ToSqlParameter("@ProductionStepLinkDataIds"),
                     };
 
-                stepLinkDatas = await _manufacturingDBContext.QueryList<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
+                stepLinkDatas = await _manufacturingDBContext.QueryListRaw<ProductionStepLinkDataInput>(sql.ToString(), parammeters);
             }
 
             return stepLinkDatas.Select(x =>

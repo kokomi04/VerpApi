@@ -22,7 +22,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public decimal? CoordinateX { get; set; }
         public decimal? CoordinateY { get; set; }
         public string ProductionStepCode { get; set; }
-        public int UnitId { get; set; }
         public bool IsFinish { get; set; }
         public decimal? ShrinkageRate { get; set; }
         public EnumHandoverTypeStatus? HandoverTypeId { get; set; }
@@ -36,7 +35,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
                 .ForMember(m => m.Description, a => a.MapFrom(s => s.Step == null ? null : s.Step.Description))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
-                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.UnitId : 0))
                 .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))
                 .ReverseMapCustom()
                 .ForMember(m => m.Step, v => v.Ignore())
@@ -52,7 +50,6 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
             profile.CreateMapCustom<ProductionStepEntity, ProductionStepInfo>()
                 .ForMember(m => m.ProductionStepLinkDatas, a => a.MapFrom(s => s.ProductionStepLinkDataRole))
                 .ForMember(m => m.Title, a => a.MapFrom(s => string.IsNullOrEmpty(s.Title) ? s.Step == null ? null : s.Step.StepName : s.Title))
-                .ForMember(m => m.UnitId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.UnitId : 0))
                 .ForMember(m => m.ShrinkageRate, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.ShrinkageRate : 0))
                 .ForMember(m => m.HandoverTypeId, a => a.MapFrom(s => s.StepId.HasValue ? s.Step.HandoverTypeId : (int)EnumHandoverTypeStatus.Push))
                 .ForMember(m => m.OutsourceStepRequestCode, a => a.MapFrom(s => s.OutsourceStepRequest.OutsourceStepRequestCode))

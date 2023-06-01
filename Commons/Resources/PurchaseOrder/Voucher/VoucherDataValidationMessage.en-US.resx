@@ -159,9 +159,6 @@
   <data name="ListBillsToUpdateIsEmpty" xml:space="preserve">
     <value>List bills to update are empty</value>
   </data>
-  <data name="BillDateMustBeGreaterThanClosingDate" xml:space="preserve">
-    <value>The bill date must be greater than the closing date</value>
-  </data>
   <data name="SingleRowArea" xml:space="preserve">
     <value>General area</value>
   </data>

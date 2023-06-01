@@ -18,7 +18,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
 {
     public interface IInpuDataExportFacadeService
     {
-        Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req);
+        Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExportFilterModel req);
     }
 
     public class InpuDataExportFacadeService : IInpuDataExportFacadeService
@@ -39,7 +39,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             this.currentContextService = currentContextService;
         }
 
-        private async Task LoadFields(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req)
+        private async Task LoadFields(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExportFilterModel req)
         {
             //fields = (await inputDataService.GetFieldDataForMapping(inputTypeId, null))
             //    .Fields
@@ -56,7 +56,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement.Facade
             groups = fields.Select(g => g.AreaTitle).Distinct().ToList();
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExporttFilterModel req)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IInputDataServiceBase inputDataService, int inputTypeId, InputTypeBillsExportFilterModel req)
         {
             var typeInfo = await inputDataService.GetTypeInfo(inputTypeId);
             await LoadFields(inputDataService, inputTypeId, req);

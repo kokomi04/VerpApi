@@ -154,7 +154,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             if (model.ColumnsFilters != null)
             {
                 var viewAlias = string.Empty;
-                model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, ref filterCondition, ref sqlParams, ref suffix);
+                suffix = model.ColumnsFilters.FilterClauseProcess(string.Empty, viewAlias, filterCondition, sqlParams, suffix);
             }
 
             return await GetRowsByQuery(dashboardTypeInfo, filterCondition.ToString(), sqlParams.Select(p => p.CloneSqlParam()).ToList());
@@ -179,7 +179,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
 
-            var table = await _dbContext.QueryDataTable(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
+            var table = await _dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
             var totals = new NonCamelCaseDictionary<decimal>();
 

@@ -18,13 +18,11 @@ namespace MigrateAndMappingApi
     {
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
-
         }
-
 
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            ConfigureStandardServices(services, false);
+            ConfigureStandardServices(services, true);
 
             ConfigReadWriteDBContext(services);
 

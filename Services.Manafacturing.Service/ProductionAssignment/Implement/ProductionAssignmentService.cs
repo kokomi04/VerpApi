@@ -17,6 +17,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
@@ -37,9 +38,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
-        private readonly IQueueProcessHelperService _queueProcessHelperService;
+        private readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
         private readonly IProductHelperService _productHelperService;
         private readonly IProductionOrderService _productionOrderService;
 
@@ -48,16 +48,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             , IActivityLogService activityLogService
             , ILogger<ProductionAssignmentService> logger
             , IMapper mapper
-            , ICustomGenCodeHelperService customGenCodeHelperService
-            , IOrganizationHelperService organizationHelperService, IQueueProcessHelperService queueProcessHelperService, IProductHelperService productHelperService, IProductionOrderService productionOrderService) : base(manufacturingDB, activityLogService, logger, mapper)
+            , IOrganizationHelperService organizationHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService, IProductHelperService productHelperService, IProductionOrderService productionOrderService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
             _organizationHelperService = organizationHelperService;
-            _queueProcessHelperService = queueProcessHelperService;
+            _productionOrderQueueHelperService = productionOrderQueueHelperService;
             _productHelperService = productHelperService;
             _productionOrderService = productionOrderService;
         }
@@ -400,7 +398,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 deletedProductionStepAssignments.AddRange(oldProductionStepAssignments);
             }
 
-           
+
 
             //foreach (var item in deletedProductionStepAssignments)
             //{
@@ -516,7 +514,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     await UpdateFullAssignedProgressStatus(productionOrderId);
 
                     await trans.CommitAsync();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderId}", data.JsonSerialize());
+
+                    var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderInfo?.ProductionOrderCode}", data.JsonSerialize());
+
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
 
                     return true;
                 }
@@ -834,7 +837,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 req.DepartmentIds.ToSqlParameter("@DepartmentIds"),
                 req.ExceptProductionOrderIds.ToSqlParameter("@ExceptProductionOrderIds"),
             };
-            var resultData = await _manufacturingDBContext.QueryList<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters, CommandType.StoredProcedure);
+            var resultData = await _manufacturingDBContext.QueryListProc<DepartmentAssignFreeDate>("asp_ProductionAssignment_DepartmentFreeDate", parammeters);
             return resultData;
         }
 
@@ -864,7 +867,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                         assign.StartDate = updateInfo.StartDate.UnixToDateTime();
                         assign.EndDate = updateInfo.EndDate.UnixToDateTime();
-                        assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate; 
+                        assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate;
                         assign.IsManualSetEndDate = updateInfo.IsManualSetEndDate;
                         assign.RateInPercent = updateInfo.RateInPercent;
 
@@ -1347,26 +1350,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             };
         }
 
-        public async Task<IDictionary<int, Dictionary<int, ProductivityModel>>> GetGeneralProductivityDepartments()
-        {
-            return (await (from sd in _manufacturingDBContext.StepDetail
-                           join s in _manufacturingDBContext.Step on sd.StepId equals s.StepId
-                           select new
-                           {
-                               s.StepId,
-                               sd.DepartmentId,
-                               s.Productivity,
-                               s.UnitId
-                           })
-                    .ToListAsync()
-                    )
-                    .GroupBy(sd => sd.StepId)
-                    .ToDictionary(g => g.Key, g => g.ToDictionary(sd => sd.DepartmentId, sd => new ProductivityModel
-                    {
-                        ProductivityPerPerson = sd.Productivity.GetValueOrDefault(),
-                        UnitId = sd.UnitId
-                    }));
-        }
+
 
         public async Task<IList<ProductionStepWorkInfoOutputModel>> GetListProductionStepWorkInfo(long productionOrderId)
         {
@@ -1402,8 +1386,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment.JsonSerialize());
 
                 var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
+                var step = await _manufacturingDBContext.ProductionStep.FirstOrDefaultAsync(s => s.ProductionStepId == assignment.ProductionStepId);
 
-                await _queueProcessHelperService.EnqueueAsync(PRODUCTION_INVENTORY_STATITICS, productionOrderInfo?.ProductionOrderCode);
+                await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật trạng thái công đoạn {step?.Title}");
 
                 return true;
             }

@@ -129,6 +129,9 @@
   <data name="CannotConvertValueInRowFieldToDateTime" xml:space="preserve">
     <value>Không thể chuyển giá trị {0}, dòng {1}, trường {2} sang kiểu ngày tháng</value>
   </data>
+  <data name="DuplicateBillCode" xml:space="preserve">
+    <value>Chứng từ {0} đã tồn tại. Dòng {1}, cột {2}</value>
+  </data>
   <data name="FieldNameNotFound" xml:space="preserve">
     <value>Trường dữ liệu {0} không tìm thấy</value>
   </data>
@@ -155,6 +158,15 @@
   </data>
   <data name="ListBillsToUpdateIsEmpty" xml:space="preserve">
     <value>Không tồn tại chứng từ cần thay đổi</value>
+  </data>
+  <data name="MultiRowIdentityExisted" xml:space="preserve">
+    <value>Dữ liệu đã tồn tại {0}, chứng từ {1}. Dòng {2}, cột {3}</value>
+  </data>
+  <data name="MultiRowIdentityIncorrectInDb" xml:space="preserve">
+    <value>Tìm thấy nhiều hơn 1 dòng {0} đã tồn tại, chứng từ {1}. Dòng {2}, cột {3}</value>
+  </data>
+  <data name="MultiRowIdentityIncorrectInExcel" xml:space="preserve">
+    <value>Tìm thấy nhiều hơn 1 dòng {0} trong tệp tải lên, chứng từ {1}. Dòng {2}, cột {3}</value>
   </data>
   <data name="NewValueIsInvalid" xml:space="preserve">
     <value>Giá trị mới truyền vào không hợp lệ</value>

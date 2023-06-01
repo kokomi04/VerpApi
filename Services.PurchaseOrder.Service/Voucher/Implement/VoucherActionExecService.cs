@@ -51,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             if (!_purchaseOrderDBContext.VoucherBill.Any(b => b.VoucherTypeId == voucherTypeId && b.FId == voucherBillId))
                 throw new BadRequestException(VoucherErrorCode.VoucherValueBillNotFound);
             var fields = _purchaseOrderDBContext.VoucherField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
@@ -68,7 +68,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@UserId", _currentContextService.UserId),
                     new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.VoucherTableType" }
                 };
-                var resultData = await _purchaseOrderDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _purchaseOrderDBContext.QueryDataTableRaw(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();

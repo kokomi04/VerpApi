@@ -74,7 +74,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 throw new BadRequestException(InputErrorCode.InputValueBillNotFound);
 
             var fields = _accountancyDBContext.InputField
-                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly)
+                .Where(f => f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect)
                 .ToDictionary(f => f.FieldName, f => (EnumDataType)f.DataTypeId);
             // Validate permission
 
@@ -93,7 +93,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 DataTable rows = SqlDBHelper.ConvertToDataTable(data.Info, data.Rows, fields);
                 parammeters.Add(new SqlParameter("@Rows", rows) { SqlDbType = SqlDbType.Structured, TypeName = "dbo.InputTableType" });
 
-                var resultData = await _accountancyDBContext.QueryDataTable(action.SqlAction, parammeters);
+                var resultData = await _accountancyDBContext.QueryDataTableRaw(action.SqlAction, parammeters);
                 result = resultData.ConvertData();
             }
             var code = (resultParam.Value as int?).GetValueOrDefault();

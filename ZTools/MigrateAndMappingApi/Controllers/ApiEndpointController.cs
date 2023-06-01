@@ -2,12 +2,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MigrateAndMappingApi.Services;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.WebApis.VErpApi;
 
@@ -15,7 +18,8 @@ namespace MigrateAndMappingApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ApiEndpointController : ControllerBase
+    [DeveloperApi]
+    public class ApiEndpointController : VErpBaseController
     {
         private readonly UnAuthorizeMasterDBContext _masterContext;
 

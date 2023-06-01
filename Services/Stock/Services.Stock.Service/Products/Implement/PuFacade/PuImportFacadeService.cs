@@ -174,11 +174,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                 var listProductIds = GetProductIdsHasUnitChange(puModelsByProduct, productEntities);
                 if (listProductIds.Count() > 0)
                 {
-                    var (usedProductId, msg) = await _productService.CheckProductIdsIsUsed(listProductIds);
-                    if (usedProductId.HasValue)
+
+                    var productTopUsed = await _productService.GetProductTopInUsed(listProductIds, true);
+                    if (productTopUsed.Count > 0)
                     {
-                        productEntities.TryGetValue(usedProductId ?? 0, out var usedUnitProduct);
-                        throw ProductErrorCode.ProductInUsed.BadRequestFormat(CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + msg);
+                        productEntities.TryGetValue(productTopUsed.First().ProductId, out var usedUnitProduct);
+                        throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + productTopUsed.First().Description);
                     }
                 }
             }
@@ -244,7 +245,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                             propertyMaps.TryGetValue(ExcelUtils.GetFullPropertyPath<PuConversionImportRow>(x => x.ProductUnitConversionName), out var nameMap);
 
                                             throw GeneralCode.InvalidParams.BadRequest($"Đơn vị tính {puModel.ProductUnitConversionName} thuộc mặt hàng {productInfo.ProductCode}  {productInfo.ProductName} đã tồn tại, dòng " + puModel.RowNumber + ", cột " + nameMap?.Column);
-                                        case EnumImportDuplicateOption.Ignore:
+                                        case EnumImportDuplicateOption.IgnoreBill:
                                             toRemoveModels.Add(puModel);
                                             break;
                                         case EnumImportDuplicateOption.Update:
@@ -267,7 +268,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                                     entity.FactorExpression = "1";
                                                     changeRatePuIds.Add(entity.ProductUnitConversionId);
                                                 }
-                                                
+
 
                                                 entity.UpdateIfAvaiable(v => v.ProductUnitConversionName, puModel.ProductUnitConversionName);
                                                 entity.UpdateIfAvaiable(v => v.DecimalPlace, puModel.DecimalPlace);
@@ -334,7 +335,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                     });
                                 }
 
-                               
+
                             }
                             foreach (var puModel in toRemoveModels)
                             {
