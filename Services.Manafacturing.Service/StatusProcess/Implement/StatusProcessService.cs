@@ -846,7 +846,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 productionAssignment.AssignedProgressStatus = (int)status;
                 productionAssignment.IsManualFinish = false;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", productionAssignment.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", _mapper.Map<ProductionAssignmentModel>(productionAssignment).JsonSerialize());
                 return true;
             }
             catch (Exception ex)
@@ -950,7 +950,17 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             if (isFinish)
             {
                 productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.Finished;
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất khởi tạo", new { productionOrder, isManual = false }.JsonSerialize());
+                var logObj = new
+                {
+                    productionOrder = new
+                    {
+                        productionOrder.ProductionOrderId,
+                        productionOrder.ProductionOrderCode,
+                    },
+                    isManual = false
+                };
+
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất khởi tạo", logObj.JsonSerialize());
             }
 
             // Đổi trạng thái phân công
