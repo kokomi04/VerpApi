@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DocumentFormat.OpenXml.Drawing;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.EMMA;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
@@ -127,8 +128,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             };
         }
 
-
-
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
@@ -144,11 +143,22 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
+            var salaryFields = await _salaryFieldService.GetList();
+            var sortedSalaryFields = new SortedSalaryFields(salaryFields);
+
+            return await EvalSalaryEmployeeByGroup(period, groupInfo, sortedSalaryFields, req);
+        }
+
+
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(SalaryPeriodInfo period, SalaryGroupInfo groupInfo, SortedSalaryFields sortedSalaryFields, GroupSalaryEmployeeModel req)
+        {
+
+
             var (employees, columns) = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate);
 
             var employeeInOtherGroups = (await
                   _organizationDBContext.SalaryEmployee
-                  .Where(e => e.SalaryPeriodId == salaryPeriodId && e.SalaryGroupId != salaryGroupId)
+                  .Where(e => e.SalaryPeriodId == period.SalaryPeriodId && e.SalaryGroupId != groupInfo.SalaryGroupId)
                   .Select(e => e.EmployeeId)
                   .ToListAsync()
               ).Distinct()
@@ -167,35 +177,26 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
 
-            var data = new GroupSalaryEmployeeEvalData()
+            var data = new PeriodGroupSalaryEmployeeEvelInput()
             {
                 FromDate = req.FromDate,
                 ToDate = req.ToDate,
-                SalaryPeriodId = salaryPeriodId,
-                SalaryGroupId = salaryGroupId,
-                Salaries = req.Salaries
+                Salaries = req.Salaries,
+
+                PeriodInfo = period,
+                GroupInfo = groupInfo,
+                SortedSalaryFields = sortedSalaryFields
             };
 
-            return await EvalSalaryEmployeeByGroup(data, employeeData, false);
+            return await EvalSalaryEmployeeExpressionByGroup(data, employeeData, false);
 
         }
 
-        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(GroupSalaryEmployeeEvalData data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeExpressionByGroup(PeriodGroupSalaryEmployeeEvelInput data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
         {
-            var period = await _salaryPeriodService.GetInfo(data.SalaryPeriodId);
-            if (period == null)
-            {
-                throw GeneralCode.ItemNotFound.BadRequest();
-            }
+            var period = data.PeriodInfo;
 
-            var groupInfo = await _salaryGroupService.GetInfo(data.SalaryGroupId);
-
-            if (groupInfo == null)
-            {
-                throw GeneralCode.ItemNotFound.BadRequest();
-            }
-
-
+            var groupInfo = data.GroupInfo;
 
             var salaryFields = await _salaryFieldService.GetList();
             salaryFields = SortFieldNameByReference(salaryFields);
@@ -319,7 +320,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             return result;
         }
-     
+
 
 
         private (bool isSucess, object value) EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData)
@@ -366,15 +367,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var result = new List<GroupSalaryEmployeeEvalData>();
 
+            var salaryFields = await _salaryFieldService.GetList();
+            var sortedSalaryFields = new SortedSalaryFields(salaryFields);
             foreach (var group in groups)
             {
+                var groupInfo = await _salaryGroupService.GetInfo(group.SalaryGroupId);
+
                 result.Add(new GroupSalaryEmployeeEvalData()
                 {
                     FromDate = group.FromDate,
                     ToDate = group.ToDate,
                     SalaryGroupId = group.SalaryGroupId,
                     SalaryPeriodId = group.SalaryPeriodId,
-                    Salaries = await GetSalaryEmployeeByGroup(period, group)
+                    Salaries = await GetSalaryEmployeePeriodByGroup(period, group, groupInfo, sortedSalaryFields)
                 });
             }
 
@@ -395,10 +400,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
             }
 
-            return await GetSalaryEmployeeByGroup(period, group);
+            var groupInfo = await _salaryGroupService.GetInfo(salaryGroupId);
+
+            if (groupInfo == null)
+            {
+                throw GeneralCode.ItemNotFound.BadRequest();
+            }
+
+            var salaryFields = await _salaryFieldService.GetList();
+
+            return await GetSalaryEmployeePeriodByGroup(period, group, groupInfo, new SortedSalaryFields(salaryFields));
         }
 
-        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group)
+        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeePeriodByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group, SalaryGroupInfo groupInfo, SortedSalaryFields sortedSalaryFields)
         {
 
             var salaryData = await _organizationDBContext.SalaryEmployee
@@ -413,7 +427,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var fromDate = group.FromDate;
             var toDate = group.ToDate;
 
-            var employeeIds = new List<long>();
             foreach (var item in salaryData)
             {
                 var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>();
@@ -438,18 +451,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var (employees, columns) = await FilterEmployee(clause, period.Year, period.Month, fromDate, toDate);
 
-
-
-            var data = new GroupSalaryEmployeeEvalData()
+            var data = new PeriodGroupSalaryEmployeeEvelInput()
             {
                 FromDate = fromDate,
                 ToDate = toDate,
-                SalaryPeriodId = period.SalaryPeriodId,
-                SalaryGroupId = group.SalaryGroupId,
-                Salaries = dbSalaries
+                Salaries = dbSalaries,
+
+                PeriodInfo = period,
+                GroupInfo = groupInfo,
+                SortedSalaryFields = sortedSalaryFields
             };
 
-            return await EvalSalaryEmployeeByGroup(data, employees, true);
+            return await EvalSalaryEmployeeExpressionByGroup(data, employees, true);
         }
 
         public async Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model)
@@ -473,7 +486,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var salaryFields = await _salaryFieldService.GetList();
 
-            var evalData = await EvalSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId, model);
+            var evalData = await EvalSalaryEmployeeByGroup(period, groupInfo, new SortedSalaryFields(salaryFields), model);
 
             var evalDataByEmployee = evalData.ToDictionary(item =>
             {
@@ -1120,5 +1133,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
         }
+
+
     }
 }

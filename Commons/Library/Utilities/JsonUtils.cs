@@ -1,54 +1,110 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Org.BouncyCastle.Utilities.Collections;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace VErp.Commons.Library
 {
     public static class JsonUtils
     {
-        private static readonly JsonSerializerSettings settings = new JsonSerializerSettings()
+
+
+        private static JsonSerializerSettings CreateSettings()
         {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            PreserveReferencesHandling = PreserveReferencesHandling.None,
-        };
+            return new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                PreserveReferencesHandling = PreserveReferencesHandling.None,
+            };
+        }
+
+        private static readonly JsonSerializerSettings settings = CreateSettings();
 
         public static string JsonSerialize(this object obj, bool isIgnoreSensitiveData)
         {
-            try
+            var cfg = CreateSettings();
+            if (isIgnoreSensitiveData)
             {
-                var cfg = settings;
-                if (isIgnoreSensitiveData)
+                cfg.ContractResolver = new SensitiveDataResolver();
+            }
+            else
+            {
+                cfg.ContractResolver = null;
+            }
+
+            if (obj != null)
+            {
+                var type = obj.GetType();
+                var fullTypeName = type.FullName;
+                if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
                 {
-                    cfg.ContractResolver = new SensitiveDataResolver();
+                    cfg.MaxDepth = 2;
+                    return JsonConvert.SerializeObject(CloneEntityForLog(obj, new Stack<object>(), 1, 10), cfg);
+
                 }
                 else
                 {
-                    cfg.ContractResolver = null;
+                    cfg.MaxDepth = 10;
                 }
+            }
 
-                if (obj != null)
+            return JsonConvert.SerializeObject(obj, cfg);
+
+        }
+
+        private static object CloneEntityForLog(object obj, Stack<object> ancestors, int level, int maxDeep)
+        {
+            if (level > maxDeep || obj == null) return null;
+
+            var type = obj.GetType();
+
+            if (ObjectUtils.IsPrimitiveType(type))
+            {
+                return obj;
+            }
+
+            if (ancestors.Contains(obj))
+            {
+                return null;
+            }
+
+            ancestors.Push(obj);
+
+            var props = obj.GetType().GetProperties();
+
+            var instance = Activator.CreateInstance(type);
+            foreach (var p in props)
+            {
+                var values = p.GetValue(obj, null);
+
+                if (values != null)
                 {
-                    var fullTypeName = obj.GetType().FullName;
-                    if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
+                    if (ObjectUtils.IsCollectionType(p.PropertyType))
                     {
-                        cfg.MaxDepth = 2;
+                        dynamic lst = Activator.CreateInstance(values.GetType());
+
+                        foreach (var v in (dynamic)values)
+                        {
+                            var v1 = CloneEntityForLog(v, ancestors, level + 1, maxDeep);
+
+                            lst.Add(v1);
+                        }
+                        p.SetValue(instance, lst);
                     }
                     else
                     {
-                        cfg.MaxDepth = 10;
+                        p.SetValue(instance, CloneEntityForLog(values, ancestors, level + 1, maxDeep));
                     }
                 }
 
-                return JsonConvert.SerializeObject(obj, cfg);
             }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
+            ancestors.Pop();
+            return instance;
         }
+
+
 
         public static string JsonSerialize(this object obj)
         {
