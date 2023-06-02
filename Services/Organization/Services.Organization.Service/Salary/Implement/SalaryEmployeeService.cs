@@ -188,18 +188,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 SortedSalaryFields = sortedSalaryFields
             };
 
-            return await EvalSalaryEmployeeExpressionByGroup(data, employeeData, false);
+            return EvalSalaryEmployeeExpressionByGroup(data, employeeData, false);
 
         }
 
-        private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeExpressionByGroup(PeriodGroupSalaryEmployeeEvelInput data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
+        private IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> EvalSalaryEmployeeExpressionByGroup(PeriodGroupSalaryEmployeeEvelInput data, IList<NonCamelCaseDictionary> employees, bool overrideNotRefData)
         {
             var period = data.PeriodInfo;
 
             var groupInfo = data.GroupInfo;
 
-            var salaryFields = await _salaryFieldService.GetList();
-            salaryFields = SortFieldNameByReference(salaryFields);
+            var salaryFields = data.SortedSalaryFields.SalariesFields;
 
 
             var result = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
@@ -462,7 +461,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 SortedSalaryFields = sortedSalaryFields
             };
 
-            return await EvalSalaryEmployeeExpressionByGroup(data, employees, true);
+            return EvalSalaryEmployeeExpressionByGroup(data, employees, true);
         }
 
         public async Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model)
