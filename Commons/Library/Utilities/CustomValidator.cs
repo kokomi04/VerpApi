@@ -57,7 +57,7 @@ namespace VErp.Commons.Library.Utilities
             var validateResults = new List<ValidationResult>();
             if (opt.ValidateModel && !Validator.TryValidateValue(obj, context, validateResults, validationAttributes))
             {
-                foreach(var r in validateResults)
+                foreach (var r in validateResults)
                 {
                     results.Add(new CustomValidationResult(r) { DisplayName = context.DisplayName });
                 }
@@ -71,7 +71,7 @@ namespace VErp.Commons.Library.Utilities
             }
 
             var type = obj.GetType();
-            bool isPrimitiveType = type.IsPrimitive || type.IsValueType || (type == typeof(string));
+            bool isPrimitiveType = ObjectUtils.IsPrimitiveType(type);
 
             if (isPrimitiveType)
             {

@@ -243,5 +243,14 @@ namespace VErp.Commons.Library
             return result;
         }
 
+        public static bool IsPrimitiveType(Type type)
+        {
+            return type.IsPrimitive || type.IsValueType || type == typeof(string) || type == typeof(decimal);
+        }
+
+        public static bool IsCollectionType(Type type)
+        {
+            return type.IsArray || typeof(IEnumerable).IsAssignableFrom(type);
+        }
     }
 }
