@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Org.BouncyCastle.Utilities.Collections;
 using System;
@@ -10,6 +11,21 @@ namespace VErp.Commons.Library
     public static class JsonUtils
     {
 
+        private static ILogger __logger;
+        private static ILogger _logger
+        {
+            get
+            {
+                if (__logger != null) return __logger;
+                var loggerFactory = Utils.LoggerFactory;
+                if (loggerFactory != null)
+                {
+                    __logger = Utils.LoggerFactory.CreateLogger(typeof(JsonUtils));
+                    return __logger;
+                }
+                return Utils.DefaultLoggerFactory.CreateLogger(typeof(JsonUtils));
+            }
+        }
 
         private static JsonSerializerSettings CreateSettings()
         {
@@ -41,7 +57,7 @@ namespace VErp.Commons.Library
                 if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
                 {
                     cfg.MaxDepth = 2;
-                    return JsonConvert.SerializeObject(CloneEntityForLog(obj, new Stack<object>(), 1, 10), cfg);
+                    return JsonConvert.SerializeObject(CloneEntityForSerialize(obj, new Stack<object>(), 1, 10), cfg);
 
                 }
                 else
@@ -54,7 +70,7 @@ namespace VErp.Commons.Library
 
         }
 
-        private static object CloneEntityForLog(object obj, Stack<object> ancestors, int level, int maxDeep)
+        private static object CloneEntityForSerialize(object obj, Stack<object> ancestors, int level, int maxDeep)
         {
             if (level > maxDeep || obj == null) return null;
 
@@ -74,7 +90,17 @@ namespace VErp.Commons.Library
 
             var props = obj.GetType().GetProperties();
 
-            var instance = Activator.CreateInstance(type);
+            object instance;
+            try
+            {
+                instance = Activator.CreateInstance(type);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CloneEntityForSerialize {0}", type);
+                return obj;
+            }
+            
             foreach (var p in props)
             {
                 var values = p.GetValue(obj, null);
@@ -87,7 +113,7 @@ namespace VErp.Commons.Library
 
                         foreach (var v in (dynamic)values)
                         {
-                            var v1 = CloneEntityForLog(v, ancestors, level + 1, maxDeep);
+                            var v1 = CloneEntityForSerialize(v, ancestors, level + 1, maxDeep);
 
                             lst.Add(v1);
                         }
@@ -95,7 +121,7 @@ namespace VErp.Commons.Library
                     }
                     else
                     {
-                        p.SetValue(instance, CloneEntityForLog(values, ancestors, level + 1, maxDeep));
+                        p.SetValue(instance, CloneEntityForSerialize(values, ancestors, level + 1, maxDeep));
                     }
                 }
 
