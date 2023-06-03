@@ -250,6 +250,7 @@ namespace VErp.Commons.Library
 
         public static bool IsCollectionType(Type type)
         {
+            if (type == typeof(string)) return false;
             return type.IsArray || typeof(IEnumerable).IsAssignableFrom(type);
         }
     }
