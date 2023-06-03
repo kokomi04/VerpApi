@@ -736,7 +736,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 var dataClient = await _manufacturingDBContext.ProductionStepRoleClient.FirstOrDefaultAsync(x => x.ContainerId == productionOrderId && x.ContainerTypeId == (int)EnumContainerType.ProductionOrder);
                 var roleClients = (await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking()
                          .Where(x => productionOrderDetails.Select(p => (long)p.ProductId).Contains(x.ContainerId) && x.ContainerTypeId == (int)EnumContainerType.Product)
-                         .ToListAsync()).SelectMany(x => (x.ClientData.JsonDeserialize<IList<RoleClientData>>()));
+                         .ToListAsync())
+                         .SelectMany(x => (x.ClientData.JsonDeserialize<IList<RoleClientData>>()))
+                         .ToList();
 
                 if (dataClient != null)
                 {
