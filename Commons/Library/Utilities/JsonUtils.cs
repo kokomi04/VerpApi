@@ -56,8 +56,8 @@ namespace VErp.Commons.Library
                 var fullTypeName = type.FullName;
                 if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
                 {
-                    cfg.MaxDepth = 2;
-                    return JsonConvert.SerializeObject(CloneEntityForSerialize(obj, new Stack<object>(), 1, 10), cfg);
+                    cfg.MaxDepth = 3;
+                    //return JsonConvert.SerializeObject(CloneEntityForSerialize(obj, new Stack<object>(), 1, 10), cfg);
 
                 }
                 else
