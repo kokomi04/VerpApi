@@ -249,12 +249,13 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     /// <param name="checkExisted">expression to check if code/ generated code had been existed</param>
     /// <param name="checkExistedFormat">Raw sql to check if code/ generated code had been existed</param>
     /// <returns></returns>
-    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class
-    {       
+    public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
+    {
 
-        return await TryValidateAndGenerateCode(currentCode, async (s) => {
+        return await TryValidateAndGenerateCode(currentCode, async (code) =>
+        {
 
-            var entity = await GetExistedItem(query, currentCode, checkExisted,checkExistedFormat);
+            var entity = await GetExistedItem(query, code, checkExisted);
 
             return entity != null;
         });
@@ -279,7 +280,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
         }
         int dem = 0;
         string code;
-        bool exisCode = false;
+        bool isCodeExisted;
         do
         {
             var date = _date ?? _currentContextService.GetNowUtc().GetUnix();
@@ -299,8 +300,8 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
                 lastValue = _baseValueChains[genChainKey];
             }
             code = (await _customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, _fId, _refCode, date))?.CustomCode;
-            exisCode = await checkExisted.Invoke(code);
-            if (!exisCode)
+            isCodeExisted = await checkExisted.Invoke(code);
+            if (isCodeExisted)
             {
                 await ConfirmCode();
             }
@@ -323,18 +324,15 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sinh mã hoặc cấu hình sinh mã chưa đúng!");
             }
-        } while (exisCode && dem < 10);
+        } while (isCodeExisted && dem < 10);
         return code;
     }
 
-    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
+    private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class
     {
         if (checkExisted == null) return null;
 
-        if (checkExistedFormat != null)
-        {
-            return checkExistedFormat.Invoke(code);
-        }
+      
 
         var entityParameter = Expression.Parameter(typeof(TSource), "p");
 
@@ -376,7 +374,7 @@ public interface IGenerateCodeConfig
 
 public interface IGenerateCodeAction
 {
-    Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class;
-    Task<string> TryValidateAndGenerateCode(string currentCode,Func<string, Task<bool>> checkExisted);
+    Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted) where TSource : class;
+    Task<string> TryValidateAndGenerateCode(string currentCode, Func<string, Task<bool>> checkExisted);
 
 }

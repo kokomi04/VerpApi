@@ -424,9 +424,9 @@ namespace VErp.Services.Accountancy.Service.Category
                         var code = await ctx
                             .SetConfig(EnumObjectType.Category, EnumObjectType.CategoryField, field.CategoryFieldId, field.Title)
                             .SetConfigData(categoryId, ngayCtValue, categoryCode)
-                            .TryValidateAndGenerateCode(null, value, null, (code) =>
+                            .TryValidateAndGenerateCode(value, (code) =>
                             {
-                                return new NonCamelCaseDictionary();
+                                return Task.FromResult(true);
                             });
 
                         value = code;

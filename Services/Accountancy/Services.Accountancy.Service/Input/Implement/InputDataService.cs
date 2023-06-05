@@ -1833,12 +1833,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         {
                             ngayCtValue = v;
                         }
-                        //currentConfig = await _customGenCodeHelperService.CurrentConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, fId, code, ngayCtValue);
 
                         var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
                         value = await ctx.SetConfig(_inputRowObjectType, _inputRowAreaObjectType, field.InputAreaFieldId, null)
                            .SetConfigData(fId ?? 0, ngayCtValue)
-                           //.TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, currentCode, (s, code) => s.FId != fId && s.BillCode == code);
                            .TryValidateAndGenerateCode(currentCode,
                            async (code) =>
                            {

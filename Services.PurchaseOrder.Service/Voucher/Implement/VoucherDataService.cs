@@ -1669,7 +1669,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         var code = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_CODE))?[PurchaseOrderConstants.BILL_CODE]?.ToString();
 
                         var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_DATE))?[PurchaseOrderConstants.BILL_DATE]?.ToString();
-                        //SELECT TOP(1) 0 FROM INPUTVALUEROW_TABLE WHERE field.FieldName = code && InputBill_F_Id != fId && isDeleted = 0
 
                         var currentCode = rows.FirstOrDefault(r => r.ContainsKey(field.FieldName) && !string.IsNullOrWhiteSpace(r[field.FieldName]?.ToString()))?.ToString();
                         long? ngayCtValue = null;
@@ -1681,7 +1680,6 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
                         value = await ctx.SetConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId, null)
                             .SetConfigData(fId ?? 0, ngayCtValue)
-                            //.TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, currentCode, (s, code) => s.FId != fId && s.BillCode == code);
                             .TryValidateAndGenerateCode(currentCode,
                             async (code) =>
                             {
