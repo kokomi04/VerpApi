@@ -1,7 +1,9 @@
-﻿using Microsoft.Data.SqlClient;
+﻿using DocumentFormat.OpenXml.Vml.Office;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson.Serialization.Serializers;
 using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
@@ -248,83 +250,36 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     /// <param name="checkExistedFormat">Raw sql to check if code/ generated code had been existed</param>
     /// <returns></returns>
     public async Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class
-    {
-        TSource existedItem;
+    {       
 
-        if (!string.IsNullOrWhiteSpace(currentCode))
-        {
+        return await TryValidateAndGenerateCode(currentCode, async (s) => {
 
-            existedItem = await GetExistedItem(query, currentCode, checkExisted, checkExistedFormat);
-            if (existedItem != null) throw new BadRequestException(GeneralCode.ItemCodeExisted);
-            return currentCode;
-        }
-        else
-        {
+            var entity = await GetExistedItem(query, currentCode, checkExisted,checkExistedFormat);
 
-
-            var date = _date ?? _currentContextService.GetNowUtc().GetUnix();
-
-            var config = await _customGenCodeHelper.CurrentConfig(_targetObjectTypeId, _configObjectTypeId, _configObjectId, _fId, _refCode, date);
-
-            if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã");
-
-            configBaseValue = config.CurrentLastValue;
-
-
-            var lastValue = config.CurrentLastValue.LastValue;
-            var genChainKey = config.CustomGenCodeId + "|" + config.CurrentLastValue.BaseValue;
-
-            if (_baseValueChains?.ContainsKey(genChainKey) == true)
-            {
-                lastValue = _baseValueChains[genChainKey];
-            }
-
-            int dem = 0;
-            string code;
-            do
-            {
-                code = (await _customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, _fId, _refCode, date))?.CustomCode;
-                existedItem = await GetExistedItem(query, code, checkExisted, checkExistedFormat);
-                if (existedItem != null)
-                {
-                    await ConfirmCode();
-                }
-                lastValue++;
-
-                if (_baseValueChains != null)
-                {
-                    if (_baseValueChains.ContainsKey(genChainKey))
-                    {
-                        _baseValueChains[genChainKey] = lastValue;
-                    }
-                    else
-                    {
-                        _baseValueChains.Add(genChainKey, lastValue);
-                    }
-                }
-
-                dem++;
-                if (dem == 10)
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sinh mã hoặc cấu hình sinh mã chưa đúng!");
-                }
-            } while (existedItem != null && dem < 10);
-            return code;
-        }
+            return entity != null;
+        });
 
     }
 
-    public async Task<string> TryValidateAndGenerateCode(string currentCode, Func<string, string, Task<bool>> checkExisted)
+    /// <summary>
+    /// Validate existed code if currentCode is not empty, try to generate code (10 times) if currentCode is empty
+    /// </summary>
+    /// <typeparam name="TSource">Entity</typeparam>
+    /// <param name="query">DbSet<Entity></param>
+    /// <param name="currentCode">currentCode</param>
+    /// <param name="checkExisted">expression to check if code/ generated code had been existed</param>
+    /// <returns></returns>
+    public async Task<string> TryValidateAndGenerateCode(string currentCode, Func<string, Task<bool>> checkExisted)
     {
         if (!string.IsNullOrEmpty(currentCode))
         {
-            if (!(await checkExisted.Invoke(_fId.ToString(), currentCode)))
+            if (!(await checkExisted.Invoke(currentCode)))
                 throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
         int dem = 0;
         string code;
-        bool confirmCode = false;
+        bool exisCode = false;
         do
         {
             var date = _date ?? _currentContextService.GetNowUtc().GetUnix();
@@ -344,8 +299,8 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
                 lastValue = _baseValueChains[genChainKey];
             }
             code = (await _customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, _fId, _refCode, date))?.CustomCode;
-            confirmCode = await checkExisted.Invoke(_fId.ToString(), code);
-            if (confirmCode)
+            exisCode = await checkExisted.Invoke(code);
+            if (!exisCode)
             {
                 await ConfirmCode();
             }
@@ -368,9 +323,10 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
             {
                 throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sinh mã hoặc cấu hình sinh mã chưa đúng!");
             }
-        } while (confirmCode && dem < 10);
+        } while (exisCode && dem < 10);
         return code;
     }
+
     private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
     {
         if (checkExisted == null) return null;
@@ -421,6 +377,6 @@ public interface IGenerateCodeConfig
 public interface IGenerateCodeAction
 {
     Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class;
-    Task<string> TryValidateAndGenerateCode(string currentCode,Func<string, string, Task<bool>> checkExisted);
+    Task<string> TryValidateAndGenerateCode(string currentCode,Func<string, Task<bool>> checkExisted);
 
 }

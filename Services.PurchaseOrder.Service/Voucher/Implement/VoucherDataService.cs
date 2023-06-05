@@ -1683,21 +1683,21 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             .SetConfigData(fId ?? 0, ngayCtValue)
                             //.TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, currentCode, (s, code) => s.FId != fId && s.BillCode == code);
                             .TryValidateAndGenerateCode(currentCode,
-                            async (s, code) =>
+                            async (code) =>
                             {
                                 var sqlCommand = $"SELECT {field.FieldName} FROM {VOUCHERVALUEROW_TABLE}" +
                                 $" WHERE {field.FieldName} = @Code " +
-                                $"AND VoucherBill_F_Id != @FId " +
+                                $"AND VoucherBill_F_Id <> @FId " +
                                 $"AND isDeleted = 0";
                                 var dataRow = await _purchaseOrderDBContext.QueryDataTableRaw(sqlCommand, new[]
                                 {
                                     new SqlParameter("@Code", code),
-                                    new SqlParameter("@FId", s)
+                                    new SqlParameter("@FId", fId)
                                 });
 
                                 return dataRow.Rows.Count > 0;
                             });
-
+                        generateCodeCtxs.Add(ctx);
                         if (!row.ContainsKey(field.FieldName))
                         {
                             row.Add(field.FieldName, value);

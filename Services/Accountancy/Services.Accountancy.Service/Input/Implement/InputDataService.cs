@@ -1840,22 +1840,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                            .SetConfigData(fId ?? 0, ngayCtValue)
                            //.TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, currentCode, (s, code) => s.FId != fId && s.BillCode == code);
                            .TryValidateAndGenerateCode(currentCode,
-                           async (s, code) =>
+                           async (code) =>
                            {
                                var sqlCommand = $"SELECT {field.FieldName} FROM {INPUTVALUEROW_TABLE}" +
                                $" WHERE {field.FieldName} = @Code " +
-                               $"AND InputBill_F_Id != @FId " +
+                               $"AND InputBill_F_Id <> @FId " +
                                $"AND isDeleted = 0";
                                var dataRow = await _accountancyDBContext.QueryDataTableRaw(sqlCommand, new[]
                                {
                                     new SqlParameter("@Code", code),
-                                    new SqlParameter("@FId", s)
+                                    new SqlParameter("@FId", fId)
                                });
 
                                return dataRow.Rows.Count > 0;
                            });
 
-
+                        generateCodeCtxs.Add(ctx);
                         if (!row.ContainsKey(field.FieldName))
                         {
                             row.Add(field.FieldName, value);
