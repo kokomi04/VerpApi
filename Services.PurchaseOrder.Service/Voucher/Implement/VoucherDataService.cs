@@ -4,6 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MongoDB.Driver.Core.Operations;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -1668,18 +1669,34 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         var code = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_CODE))?[PurchaseOrderConstants.BILL_CODE]?.ToString();
 
                         var ngayCt = rows.FirstOrDefault(r => r.ContainsKey(PurchaseOrderConstants.BILL_DATE))?[PurchaseOrderConstants.BILL_DATE]?.ToString();
+                        //SELECT TOP(1) 0 FROM INPUTVALUEROW_TABLE WHERE field.FieldName = code && InputBill_F_Id != fId && isDeleted = 0
 
+                        var currentCode = rows.FirstOrDefault(r => r.ContainsKey(field.FieldName) && !string.IsNullOrWhiteSpace(r[field.FieldName]?.ToString()))?.ToString();
                         long? ngayCtValue = null;
                         if (long.TryParse(ngayCt, out var v))
                         {
                             ngayCtValue = v;
                         }
-
                         value = (value ?? "").Trim();
                         var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
                         value = await ctx.SetConfig(EnumObjectType.VoucherTypeRow, EnumObjectType.VoucherAreaField, field.VoucherAreaFieldId, null)
                             .SetConfigData(fId ?? 0, ngayCtValue)
-                            .TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, value, (s, code) => s.FId != field.VoucherAreaFieldId && s.BillCode == code);
+                            //.TryValidateAndGenerateCode(_purchaseOrderDBContext.VoucherBill, currentCode, (s, code) => s.FId != fId && s.BillCode == code);
+                            .TryValidateAndGenerateCode(currentCode,
+                            async (s, code) =>
+                            {
+                                var sqlCommand = $"SELECT {field.FieldName} FROM {VOUCHERVALUEROW_TABLE}" +
+                                $" WHERE {field.FieldName} = @Code " +
+                                $"AND VoucherBill_F_Id != @FId " +
+                                $"AND isDeleted = 0";
+                                var dataRow = await _purchaseOrderDBContext.QueryDataTableRaw(sqlCommand, new[]
+                                {
+                                    new SqlParameter("@Code", code),
+                                    new SqlParameter("@FId", s)
+                                });
+
+                                return dataRow.Rows.Count > 0;
+                            });
 
                         if (!row.ContainsKey(field.FieldName))
                         {

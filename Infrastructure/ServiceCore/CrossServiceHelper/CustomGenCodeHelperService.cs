@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +14,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -311,6 +314,63 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
 
     }
 
+    public async Task<string> TryValidateAndGenerateCode(string currentCode, Func<string, string, Task<bool>> checkExisted)
+    {
+        if (!string.IsNullOrEmpty(currentCode))
+        {
+            if (!(await checkExisted.Invoke(_fId.ToString(), currentCode)))
+                throw new BadRequestException(GeneralCode.ItemCodeExisted);
+            return currentCode;
+        }
+        int dem = 0;
+        string code;
+        bool confirmCode = false;
+        do
+        {
+            var date = _date ?? _currentContextService.GetNowUtc().GetUnix();
+
+            var config = await _customGenCodeHelper.CurrentConfig(_targetObjectTypeId, _configObjectTypeId, _configObjectId, _fId, _refCode, date);
+
+            if (config == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết lập cấu hình sinh mã");
+
+            configBaseValue = config.CurrentLastValue;
+
+
+            var lastValue = config.CurrentLastValue.LastValue;
+            var genChainKey = config.CustomGenCodeId + "|" + config.CurrentLastValue.BaseValue;
+
+            if (_baseValueChains?.ContainsKey(genChainKey) == true)
+            {
+                lastValue = _baseValueChains[genChainKey];
+            }
+            code = (await _customGenCodeHelper.GenerateCode(config.CustomGenCodeId, lastValue, _fId, _refCode, date))?.CustomCode;
+            confirmCode = await checkExisted.Invoke(_fId.ToString(), code);
+            if (confirmCode)
+            {
+                await ConfirmCode();
+            }
+            lastValue++;
+
+            if (_baseValueChains != null)
+            {
+                if (_baseValueChains.ContainsKey(genChainKey))
+                {
+                    _baseValueChains[genChainKey] = lastValue;
+                }
+                else
+                {
+                    _baseValueChains.Add(genChainKey, lastValue);
+                }
+            }
+
+            dem++;
+            if (dem == 10)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể sinh mã hoặc cấu hình sinh mã chưa đúng!");
+            }
+        } while (confirmCode && dem < 10);
+        return code;
+    }
     private async Task<TSource> GetExistedItem<TSource>(DbSet<TSource> query, string code, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat) where TSource : class
     {
         if (checkExisted == null) return null;
@@ -361,4 +421,6 @@ public interface IGenerateCodeConfig
 public interface IGenerateCodeAction
 {
     Task<string> TryValidateAndGenerateCode<TSource>(DbSet<TSource> query, string currentCode, Expression<Func<TSource, string, bool>> checkExisted, Func<string, TSource> checkExistedFormat = null) where TSource : class;
+    Task<string> TryValidateAndGenerateCode(string currentCode,Func<string, string, Task<bool>> checkExisted);
+
 }
