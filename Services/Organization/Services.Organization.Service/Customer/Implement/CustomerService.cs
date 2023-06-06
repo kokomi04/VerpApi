@@ -329,7 +329,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 DebtLimitation = customerInfo.DebtLimitation,
                 DebtBeginningTypeId = (EnumBeginningType)customerInfo.DebtBeginningTypeId,
                 DebtManagerUserId = customerInfo.DebtManagerUserId,
-                InformationContact = customerInfo.InformationContact,
                 PayConditionsId = customerInfo.PayConditionsId,
                 DeliveryConditionsId = customerInfo.DeliveryConditionsId,
                 LoanDays = customerInfo.LoanDays,
@@ -443,7 +442,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtLimitation = c.DebtLimitation,
                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
                     DebtManagerUserId = c.DebtManagerUserId,
-                    InformationContact = c.InformationContact,
                     PayConditionsId = c.PayConditionsId,
                     DeliveryConditionsId = c.DeliveryConditionsId,
                     LoanDays = c.LoanDays,
@@ -546,8 +544,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
             if (!igDeleteRef || data.LoanManagerUserId.HasValue)
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
-            if (!igDeleteRef || !string.IsNullOrEmpty(data.InformationContact))
-                customerInfo.InformationContact = data.InformationContact;
             if(!igDeleteRef || data.PayConditionsId.HasValue)
                 customerInfo.PayConditionsId = data.PayConditionsId;
             if (!igDeleteRef || data.DeliveryConditionsId.HasValue)
@@ -788,7 +784,6 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtLimitation = data.DebtLimitation,
                     DebtBeginningTypeId = (int)(data.DebtBeginningTypeId ?? EnumBeginningType.BillDate),
                     DebtManagerUserId = data.DebtManagerUserId,
-                    InformationContact = data.InformationContact,
                     PayConditionsId = data.PayConditionsId,
                     DeliveryConditionsId = data.DeliveryConditionsId,
                     LoanDays = data.LoanDays,

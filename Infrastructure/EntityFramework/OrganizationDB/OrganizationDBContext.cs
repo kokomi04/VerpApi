@@ -222,8 +222,6 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
                 entity.Property(e => e.Identify).HasMaxLength(64);
 
-                entity.Property(e => e.InformationContact).HasMaxLength(512);
-
                 entity.Property(e => e.LegalRepresentative).HasMaxLength(128);
 
                 entity.Property(e => e.LoanLimitation).HasColumnType("decimal(18, 5)");
