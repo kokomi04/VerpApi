@@ -1675,6 +1675,43 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+
+
+                var histories = await _manufacturingDBContext.ProductionHistory.Where(a => a.ProductionOrderId == productionOrderId).ToListAsync();
+                foreach (var h in histories)
+                {
+                    h.IsDeleted = true;
+                }
+
+
+
+                var handovers = await _manufacturingDBContext.ProductionHandover.Where(a => a.ProductionOrderId == productionOrderId).ToListAsync();
+                foreach (var h in handovers)
+                {
+                    h.IsDeleted = true;
+                }
+
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                var receivedIds = histories.Select(h => h.ProductionHandoverReceiptId).Distinct()
+                    .Union(handovers.Select(h => h.ProductionHandoverReceiptId).Distinct())
+                    .Distinct()
+                    .ToList();
+
+                var receiveInfos = await _manufacturingDBContext.ProductionHandoverReceipt
+                    .Include(r => r.ProductionHandover)
+                    .Include(r => r.ProductionHistory)
+                    .Where(r => receivedIds.Contains(r.ProductionHandoverReceiptId))
+                    .ToListAsync();
+                foreach (var r in receiveInfos)
+                {
+                    if(!r.ProductionHandover.Any() && !r.ProductionHistory.Any())
+                    {
+                        r.IsDeleted = true;
+                    }
+                }
+
                 productionOrder.IsDeleted = true;
 
                 var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
