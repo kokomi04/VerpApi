@@ -35,5 +35,10 @@ namespace VErp.Commons.Constants
 
 
         public static readonly TimeSpan REPORT_QUERY_TIMEOUT = new TimeSpan(0, 10, 0);
+
+        public static string VoucherTypeView(string code)
+        {
+            return $"vVoucher_{code}";
+        }
     }
 }
