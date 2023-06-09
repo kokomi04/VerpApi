@@ -151,9 +151,10 @@ namespace VErpApi.Controllers.PurchaseOrder.Data
         }
 
         [HttpGet]
-        [Route("{invoiceVoucherTypeId}/{invoiceId}/info/pkl/{packingListVoucherTypeId}")]
-        public async Task<BillInfoModel> GetPackingListInfo([FromRoute] int invoiceVoucherTypeId, [FromRoute] long invoiceId, [FromRoute] int packingListVoucherTypeId)
+        [Route("{invoiceVoucherTypeId}/{invoiceId}/info/pkl/{voucherTypeId}")]
+        public async Task<BillInfoModel> GetPackingListInfo([FromRoute] int invoiceVoucherTypeId, [FromRoute] long invoiceId, [FromRoute] int voucherTypeId)
         {
+            var packingListVoucherTypeId = voucherTypeId;
             if (invoiceVoucherTypeId == 0) throw new BadRequestException(GeneralCode.InvalidParams);
             return await _voucherDataService.GetPackingListInfo(packingListVoucherTypeId, invoiceId);
         }
