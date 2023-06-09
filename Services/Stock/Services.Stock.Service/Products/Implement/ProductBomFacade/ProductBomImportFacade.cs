@@ -438,7 +438,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 {
                     ProductTypeId = IsPreview ? GetNewId() : 0,
                     ProductTypeName = t.Value,
-                    IdentityCode = t.Value
+                    IdentityCode = t.Value.NormalizeAsInternalName()
                 }).ToList();
             if (!IsPreview)
             {

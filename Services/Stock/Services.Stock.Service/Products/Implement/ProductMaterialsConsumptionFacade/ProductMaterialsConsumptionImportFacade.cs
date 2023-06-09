@@ -753,7 +753,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 .Select(t => new ProductType()
                 {
                     ProductTypeName = t.Value,
-                    IdentityCode = t.Value
+                    IdentityCode = t.Value.NormalizeAsInternalName()
                 }).ToList();
 
             if (!IsPreview)

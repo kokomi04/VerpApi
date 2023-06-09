@@ -162,7 +162,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         includeProductTypes.Add(new ProductType
                         {
-                            IdentityCode = row.ProductTypeCode,
+                            IdentityCode = row.ProductTypeCode.NormalizeAsInternalName(),
                             ProductTypeName = string.IsNullOrEmpty(row.ProductTypeName) ? row.ProductTypeCode : row.ProductTypeName
                         });
                     }
