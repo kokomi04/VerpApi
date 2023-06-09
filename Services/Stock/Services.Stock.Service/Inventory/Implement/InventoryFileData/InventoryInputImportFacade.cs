@@ -690,7 +690,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                 .Select(c => new ProductType()
                 {
                     ProductTypeName = c,
-                    IdentityCode = c,
+                    IdentityCode = c.NormalizeAsInternalName(),
                     ParentProductTypeId = null,
                     CreatedDatetimeUtc = DateTime.UtcNow,
                     UpdatedDatetimeUtc = DateTime.UtcNow,
