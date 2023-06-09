@@ -62,7 +62,11 @@ namespace VErp.Infrastructure.ApiCore.Filters
                 await next();
                 return;
             }
-            var anonymous = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousAttribute);
+            var anonymous = context.ActionDescriptor.FilterDescriptors.FirstOrDefault(x => x.Filter is AllowAnonymousAttribute)?.Filter as AllowAnonymousAttribute;
+            if (anonymous == null)
+            {
+                anonymous = context.ActionDescriptor.EndpointMetadata.FirstOrDefault(x => x is AllowAnonymousAttribute) as AllowAnonymousAttribute;
+            }
             if (anonymous != null)
             {
                 await next();
