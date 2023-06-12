@@ -501,7 +501,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 FId = Convert.ToInt64(d[HR_BILL_ID_FIELD_IN_AREA]),
                 Code = d[OrganizationConstants.BILL_CODE]
             })
-            .ToDictionary(g=>g.Key, g=>g.ToList())
+            .ToDictionary(g => g.Key, g => g.ToList())
             .ToList();
 
             var fIds = identityBills.Select(b => b.Key.FId).Distinct().ToList();
@@ -554,7 +554,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             foreach (var bill in bills)
-            {                
+            {
                 var maxAreaRow = bill.AreaData.Max(a => a.Value.Count);
                 for (var i = 0; i < maxAreaRow; i++)
                 {
@@ -1159,10 +1159,10 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ hành chính nhân sự");
 
-            var billTopUsed = await GetHrBillTopInUsed(new[] { hrBill_F_Id }, false);
+            var billTopUsed = await GetHrBillTopInUsed(new[] { hrBill_F_Id }, true);
             if (billTopUsed.Count > 0)
             {
-                throw GeneralCode.InvalidParams.BadRequestFormatWithData(billTopUsed, $"{hrTypeInfo.Title} {billInfo.BillCode} đang được sử dụng {billTopUsed.First().Description}");
+                throw HrErrorCode.HrBillInUsed.BadRequestFormatWithData(billTopUsed, $"{HrErrorCode.HrBillInUsed.GetEnumDescription()}. {billTopUsed.First().Description}", hrTypeInfo.Title + " " + billInfo.BillCode);
             }
 
 
