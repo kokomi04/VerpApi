@@ -257,7 +257,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
 
             var entity = await GetExistedItem(query, code, checkExisted);
 
-            return entity == null;
+            return entity != null;
         });
 
     }
@@ -274,7 +274,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     {
         if (!string.IsNullOrEmpty(currentCode))
         {
-            if (!(await checkExisted.Invoke(currentCode)))
+            if ((await checkExisted.Invoke(currentCode)))
                 throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
