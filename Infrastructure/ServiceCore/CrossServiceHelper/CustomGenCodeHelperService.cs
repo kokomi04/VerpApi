@@ -257,7 +257,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
 
             var entity = await GetExistedItem(query, code, checkExisted);
 
-            return entity != null;
+            return entity == null;
         });
 
     }
