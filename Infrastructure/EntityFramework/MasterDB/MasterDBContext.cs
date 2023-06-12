@@ -351,7 +351,6 @@ namespace VErp.Infrastructure.EF.MasterDB
                 entity.Property(e => e.CreatedTime).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.CustomGenCodeName).HasMaxLength(128);
-               
 
                 entity.Property(e => e.DeletedDatetimeUtc).HasColumnType("datetime");
 
@@ -365,11 +364,7 @@ namespace VErp.Infrastructure.EF.MasterDB
                     .IsUnicode(false)
                     .HasDefaultValueSql("((0))");
 
-              
-
                 entity.Property(e => e.ResetDate).HasColumnType("datetime");
-
-               
 
                 entity.Property(e => e.UpdatedDatetimeUtc)
                     .HasColumnType("datetime")

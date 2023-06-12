@@ -36,6 +36,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         public bool IsDeleted { get; set; }
         public DateTime? DeletedDatetimeUtc { get; set; }
         public int? ModuleTypeId { get; set; }
+        public int? MinimumTableRows { get; set; }
 
         public virtual ICollection<PrintConfigStandardModuleType> PrintConfigStandardModuleType { get; set; }
     }
