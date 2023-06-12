@@ -135,6 +135,9 @@
   <data name="HrAreaTitleAlreadyExisted" xml:space="preserve">
     <value>Tiêu đề vùng dữ liệu đã tồn tại</value>
   </data>
+  <data name="HrBillInUsed" xml:space="preserve">
+    <value>Dữ liệu {0} đang được sử dụng</value>
+  </data>
   <data name="HrCodeAlreadyExisted" xml:space="preserve">
     <value>Mã chứng từ hành chính nhân sự đã tồn tại</value>
   </data>
