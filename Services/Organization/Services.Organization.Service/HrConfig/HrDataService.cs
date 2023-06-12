@@ -38,6 +38,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Organization.Model.Customer;
+using VErp.Services.Organization.Model.Employee;
 using VErp.Services.Organization.Service.HrConfig.Abstract;
 using VErp.Services.Organization.Service.HrConfig.Facade;
 using static VErp.Commons.Library.EvalUtils;
@@ -1157,6 +1159,13 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ hành chính nhân sự");
 
+            var billTopUsed = await GetHrBillTopInUsed(new[] { hrBill_F_Id }, false);
+            if (billTopUsed.Count > 0)
+            {
+                throw GeneralCode.InvalidParams.BadRequestFormatWithData(billTopUsed, $"{hrTypeInfo.Title} {billInfo.BillCode} đang được sử dụng {billTopUsed.First().Description}");
+            }
+
+
             for (int i = 0; i < hrAreas.Count; i++)
             {
                 var hrArea = hrAreas[i];
@@ -1220,6 +1229,16 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _organizationDBContext.SaveChangesAsync();
 
             return (billInfo, hrTypeInfo.Title);
+        }
+
+        public async Task<IList<HrBillInUsedInfo>> GetHrBillTopInUsed(IList<long> fIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                fIds.ToSqlParameter("@FIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _organizationDBContext.QueryListProc<HrBillInUsedInfo>("asp_HrBill_GetTopUsed_ByList", checkParams);
         }
 
         #endregion

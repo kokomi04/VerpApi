@@ -114,7 +114,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     throw new InvalidProgramException();
 
             }
-
+            await _organizationDBContext.SaveChangesAsync();
 
 
         }
