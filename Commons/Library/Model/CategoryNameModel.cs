@@ -47,12 +47,7 @@ namespace VErp.Commons.Library.Model
         }
     }
 
-    public class ValidateDuplicateByKeyCodeAttribute : Attribute
-    {
-        public ValidateDuplicateByKeyCodeAttribute()
-        {
-        }
-    }
+    
 
     public class FieldDataIgnoreAttribute : Attribute
     {
@@ -76,10 +71,6 @@ namespace VErp.Commons.Library.Model
 
     }
 
-    public class DynamicCategoryMappingAttribute : Attribute
-    {
-        public string CategoryCode { get; set; }
-    }
 
     public abstract class MappingDataRowAbstract
     {

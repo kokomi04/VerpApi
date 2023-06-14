@@ -1,12 +1,11 @@
 ﻿using AutoMapper;
-using DocumentFormat.OpenXml.InkML;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Verp.Cache.RedisCache;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -22,8 +21,8 @@ using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Customer;
 using static Verp.Resources.Organization.Customer.CustomerValidationMessage;
 using static VErp.Commons.Constants.CategoryFieldConstants;
+using static VErp.Commons.Constants.ConditionsConstants;
 using static VErp.Commons.Constants.CurrencyCateConstants;
-
 
 namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 {
@@ -39,7 +38,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         private IList<CustomerBankAccount> _bankAccounts;
         private IList<CustomerContact> _customerContact;
-
+        private IList<ReferFieldModel> _refFields;
+        private IList<NonCamelCaseDictionary> _payConditionData;
+        private IList<NonCamelCaseDictionary> _deliveryConditionData;
 
         public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
         {
@@ -55,6 +56,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         {
             using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu đối tác từ excel"))
             {
+                var refProps = mapping.MappingFields.Select(f => f.RefFieldName).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct().ToList();
+                _refFields = await _httpCategoryHelperService.GetReferFields(new[] { PayConditionCode, DeliveryConditionCode }, refProps);
+
                 var reader = new ExcelReader(stream);
                 reader.RegisterLongTaskEvent(longTask);
 
@@ -195,20 +199,35 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private async Task<IList<BaseCustomerImportModel>> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
             var currencies = await _httpCategoryHelperService.GetDataRows(CurrencyCategoryCode, new CategoryFilterModel());
-
-
+           
+            _payConditionData = (await _httpCategoryHelperService.GetDataRows(PayConditionCode, new CategoryFilterModel())).List;
+            _deliveryConditionData = (await _httpCategoryHelperService.GetDataRows(DeliveryConditionCode, new CategoryFilterModel())).List;
             var lstCates = await _organizationContext.CustomerCate.ToListAsync();
             var cates = lstCates.GroupBy(c => c.Name.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.FirstOrDefault());
-
             var strContactGender = nameof(BaseCustomerImportModel.ContactGender1);
             strContactGender = strContactGender.Substring(0, strContactGender.Length - 1);
 
+            CheckExisCondition();
 
             var strBankAccCurrency = nameof(BaseCustomerImportModel.BankAccCurrency1);
             strBankAccCurrency = strBankAccCurrency.Substring(0, strBankAccCurrency.Length - 1);
 
-            return reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, (entity, propertyName, value) =>
+            return await reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, async (entity, propertyName, value, refObj, refPropertyName, refPropertyPathSeparateByPoint) =>
             {
+                if (propertyName == nameof(BaseCustomerImportModel.PayConditionsId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+
+                    entity.PayConditionsId = ReadCondition(PayConditionCode, refPropertyName, value, _payConditionData);
+                    return true;
+                }
+                if (propertyName == nameof(BaseCustomerImportModel.DeliveryConditionsId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData);
+                    return true;
+                }
+
                 if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
@@ -299,6 +318,32 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             });
 
         }
+
+        private void CheckExisCondition()
+        {
+            var payFieldInfo = _refFields.FirstOrDefault(f => f.CategoryCode == PayConditionCode);
+            if (payFieldInfo == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {payFieldInfo.CategoryFieldName} trong bảng {PayConditionCode}");
+            var deliveryFieldInfo = _refFields.FirstOrDefault(f=> f.CategoryCode == DeliveryConditionCode);
+            if(deliveryFieldInfo == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {deliveryFieldInfo.CategoryFieldName} trong bảng {DeliveryConditionCode}");
+
+        }
+        private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data)
+        {
+            var condition = data.Where(f => f.ContainsKey(refPropertyName) && f[refPropertyName].ToString() == value).ToList();
+            if (condition.Count == 0)
+            {
+                throw CustomerConditionNotFound.BadRequestFormat(category, value);
+            }
+
+            if (condition.Count > 1)
+            {
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(category, value);
+            }
+            return Convert.ToInt32(condition[0][F_Id]);
+        }
+
         private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
         {
             model.Contacts = new List<CustomerContactModel>();
