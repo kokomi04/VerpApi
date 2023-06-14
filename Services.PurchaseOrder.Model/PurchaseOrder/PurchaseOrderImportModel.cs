@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.Library.Model;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder

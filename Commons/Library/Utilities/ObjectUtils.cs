@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
@@ -245,7 +246,7 @@ namespace VErp.Commons.Library
 
         public static bool IsPrimitiveType(Type type)
         {
-            return type.IsPrimitive || type.IsValueType || type == typeof(string) || type == typeof(decimal);
+            return type.IsPrimitive || type.IsValueType || type == typeof(string) || type == typeof(decimal) || type == typeof(JValue);
         }
 
         public static bool IsCollectionType(Type type)

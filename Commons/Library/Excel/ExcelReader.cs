@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.Library.Model;
 using static NPOI.HSSF.UserModel.HeaderFooter;
 
@@ -635,8 +636,11 @@ namespace VErp.Commons.Library
                             {
                                 fieldName = field.Name;
                             }
+                            if (refField.GetCustomAttribute<DynamicObjectCategoryMappingAttribute>() != null)
+                                isAutoSet = !(await OnAssignProperty(entityInfo, fieldName, value, refObj, mappingField.RefFieldName, refPropertyPathSeparateByPoint));
+                            else
+                                isAutoSet = !(await OnAssignProperty(entityInfo, fieldName, value, refObj, refField.Name, refPropertyPathSeparateByPoint));
 
-                            isAutoSet = !(await OnAssignProperty(entityInfo, fieldName, value, refObj, refField.Name, refPropertyPathSeparateByPoint));
                         }
 
                         if (isAutoSet && !string.IsNullOrWhiteSpace(value))
