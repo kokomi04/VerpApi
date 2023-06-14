@@ -3,7 +3,8 @@
     "Production": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Production"
+        "ASPNETCORE_ENVIRONMENT": "Production",
+        "CONFIG": "/usr/verp/config/config.Production.json"
       },
       "applicationUrl": "http://localhost:5000/"
     },
@@ -18,28 +19,32 @@
     "Local": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Local"
+        "ASPNETCORE_ENVIRONMENT": "Local",
+        "CONFIG": "/usr/verp/config/config.Local.json"
       },
       "applicationUrl": "http://localhost:5000/"
     },
     "Development": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "CONFIG": "/usr/verp/config/config.Development.json"
       },
       "applicationUrl": "http://localhost:5000/"
     },
     "Test": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Test"
+        "ASPNETCORE_ENVIRONMENT": "Test",
+        "CONFIG": "/usr/verp/config/config.Test.json"
       },
       "applicationUrl": "http://localhost:5000/"
     },
     "Sandbox": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Sandbox"
+        "ASPNETCORE_ENVIRONMENT": "Sandbox",
+        "CONFIG": "/usr/verp/config/config.Sandbox.json"
       },
       "applicationUrl": "http://localhost:5000/"
     }
