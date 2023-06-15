@@ -206,8 +206,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             var cates = lstCates.GroupBy(c => c.Name.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.FirstOrDefault());
             var strContactGender = nameof(BaseCustomerImportModel.ContactGender1);
             strContactGender = strContactGender.Substring(0, strContactGender.Length - 1);
-
-            CheckExisCondition();
+            CheckExisCondition(mapping);
 
             var strBankAccCurrency = nameof(BaseCustomerImportModel.BankAccCurrency1);
             strBankAccCurrency = strBankAccCurrency.Substring(0, strBankAccCurrency.Length - 1);
@@ -319,14 +318,22 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-        private void CheckExisCondition()
+        private void CheckExisCondition(ImportExcelMapping mapping)
         {
             var payFieldInfo = _refFields.FirstOrDefault(f => f.CategoryCode == PayConditionCode);
-            if (payFieldInfo == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {payFieldInfo.CategoryFieldName} trong bảng {PayConditionCode}");
+            var payPropertyName = mapping.MappingFields.FirstOrDefault(f => f.FieldName == nameof(BaseCustomerImportModel.PayConditionsId));
+            if (payPropertyName != null && payFieldInfo == null)
+            {
+                var payFieldName = string.IsNullOrEmpty(payPropertyName.RefFieldName) ? payPropertyName.FieldName : payPropertyName.RefFieldName;
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {payFieldName} trong bảng {PayConditionCode}");
+            }
             var deliveryFieldInfo = _refFields.FirstOrDefault(f=> f.CategoryCode == DeliveryConditionCode);
-            if(deliveryFieldInfo == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {deliveryFieldInfo.CategoryFieldName} trong bảng {DeliveryConditionCode}");
+            var deliveryPropertyName = mapping.MappingFields.FirstOrDefault(f => f.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId));
+            if (deliveryPropertyName != null&& deliveryFieldInfo == null)
+            {
+                var deliveryFieldName = string.IsNullOrEmpty(deliveryPropertyName.RefFieldName) ? deliveryPropertyName.FieldName : deliveryPropertyName.RefFieldName;
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {deliveryFieldName} trong bảng {DeliveryConditionCode}");
+            }
 
         }
         private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data)
