@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "UpgradeTool": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\Verp\\tools\\upgrade_local.json D:\\Verp\\tools\\Verp-Versions"
+    }
+  }
+}
