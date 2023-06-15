@@ -145,20 +145,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var processedProductIds = new HashSet<int>();
             var productBoms = new List<ProductBom>();
 
-            var processingProductIds = productIds;
-            while (processingProductIds.Count > 0)
-            {
-                var boms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => processingProductIds.Contains(b.ProductId)).ToListAsync();
-                productBoms.AddRange(boms);
-
-                foreach (var productId in processingProductIds)
-                {
-                    processedProductIds.Add(productId);
-                }
-
-                processingProductIds = boms.Where(b => b.ChildProductId.HasValue).Select(b => b.ChildProductId.Value).Where(c => !processedProductIds.Contains(c)).ToList();
-            }
-
+            var boms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => productIds.Contains(b.ProductId)).ToListAsync();
+            productBoms.AddRange(boms);
             var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
 
             var productBomProperties = await _stockDbContext.ProductProperty.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
