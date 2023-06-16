@@ -762,6 +762,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
+            var isProductionManualFinish = productionOrder.IsManualFinish && productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished;
+
             var productionAssignments = _manufacturingDBContext.ProductionAssignment
                  .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId)
                  .ToList();
@@ -780,7 +782,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             {
                 foreach (var productionAssignment in productionAssignments)
                 {
-                    if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) continue;
+                    if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && (productionAssignment.IsManualFinish || isProductionManualFinish)) continue;
 
                     var productionStep = productionSteps.FirstOrDefault(ps => ps.ProductionStepId == productionAssignment.ProductionStepId);
 
