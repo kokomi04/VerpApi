@@ -118,7 +118,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 var hasHandOver = await _manufacturingDBContext.ProductionHandover.AnyAsync(s => s.ProductionOrderId == productionOrder.ProductionOrderId);
 
-                if (!data.Inventories.Any() && !hasHandOver && !hasAllocation)
+                if (!data.Inventories.Any(iv => iv.ActualQuantity > 0) && !hasHandOver && !hasAllocation)
                 {
                     if (!steps.Any() || !assignments.Any())
                         productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
