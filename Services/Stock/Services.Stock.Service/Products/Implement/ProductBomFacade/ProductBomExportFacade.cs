@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
@@ -6,8 +7,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Product;
 
@@ -143,10 +147,23 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private async Task<string> WriteTableDetailData()
         {
             var processedProductIds = new HashSet<int>();
-            var productBoms = new List<ProductBom>();
-
-            var boms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => productIds.Contains(b.ProductId)).ToListAsync();
-            productBoms.AddRange(boms);
+           
+            foreach (var productId in productIds)
+            {
+                var checkParams = new[]
+                {
+                    new SqlParameter("@InputProductId",productId)
+                };
+                var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopProductBoms", checkParams)).ConvertData();
+                foreach (var p in productParentIds)
+                {
+                    foreach (var productParentId in p)
+                    {
+                        processedProductIds.Add(Convert.ToInt32(productParentId.Value));
+                    }
+                }
+            }
+            var productBoms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => processedProductIds.Contains(b.ProductId)).ToListAsync();
             var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
 
             var productBomProperties = await _stockDbContext.ProductProperty.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
