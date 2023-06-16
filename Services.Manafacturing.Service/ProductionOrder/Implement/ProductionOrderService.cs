@@ -1482,7 +1482,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     await item.ConfirmCode();
                 }
-                
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data.JsonSerialize());
 
                 return data.Length;
@@ -1543,7 +1543,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
 
+                var oldIsManualFinish = productionOrder.IsManualFinish;
+
+                var isSetManualFinish = false;
+                if ((int)data.ProductionOrderStatus != productionOrder.ProductionOrderStatus && data.ProductionOrderStatus == EnumProductionStatus.Finished)
+                {
+                    isSetManualFinish = true;
+                }
+
                 _mapper.Map(data, productionOrder);
+
+                if (isSetManualFinish)
+                {
+                    productionOrder.IsManualFinish = true;
+                }
+                else
+                {
+                    if (data.ProductionOrderStatus != EnumProductionStatus.Finished)
+                    {
+                        productionOrder.IsManualFinish = false;
+                    }
+                    else
+                    {
+                        productionOrder.IsManualFinish = oldIsManualFinish;
+                    }
+
+                }
+
+
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
                 var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
@@ -1622,6 +1649,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         var entity = _mapper.Map<ProductionOrderAttachment>(item);
                         _manufacturingDBContext.ProductionOrderAttachment.Add(entity);
                     }
+                }
+
+                if (isSetManualFinish)//set all assign to finish
+                {
+                    var productionAssignments = _manufacturingDBContext.ProductionAssignment
+                     .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId)
+                     .ToList();
+                    foreach (var productionAssignment in productionAssignments)
+                    {
+                        productionAssignment.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Finish;
+                    }
+
                 }
 
                 await _manufacturingDBContext.SaveChangesAsync();
@@ -1706,7 +1745,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .ToListAsync();
                 foreach (var r in receiveInfos)
                 {
-                    if(!r.ProductionHandover.Any() && !r.ProductionHistory.Any())
+                    if (!r.ProductionHandover.Any() && !r.ProductionHistory.Any())
                     {
                         r.IsDeleted = true;
                     }

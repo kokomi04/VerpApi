@@ -72,7 +72,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var oldStatus = productionOrder.ProductionOrderStatus;
 
-            if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished) return true;
+            if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished && productionOrder.IsManualFinish) return true;
             try
             {
                 var steps = await _manufacturingDBContext.ProductionStep.Where(s => !s.IsFinish && s.ContainerId == productionOrder.ProductionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToListAsync();
@@ -118,7 +118,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 var hasHandOver = await _manufacturingDBContext.ProductionHandover.AnyAsync(s => s.ProductionOrderId == productionOrder.ProductionOrderId);
 
-                if (!data.Inventories.Any() && !hasHandOver && !hasAllocation)
+                if (!data.Inventories.Any(iv => iv.ActualQuantity > 0) && !hasHandOver && !hasAllocation)
                 {
                     if (!steps.Any() || !assignments.Any())
                         productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;

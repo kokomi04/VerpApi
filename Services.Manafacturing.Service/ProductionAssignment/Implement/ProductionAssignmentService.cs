@@ -1381,7 +1381,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             try
             {
                 assignment.AssignedProgressStatus = (int)status;
-                assignment.IsManualFinish = true;
+                if (status != EnumAssignedProgressStatus.Finish)
+                {
+                    assignment.IsManualFinish = false;
+                }
+                else
+                {
+                    if (assignment.AssignedProgressStatus != (int)status)
+                    {
+                        assignment.IsManualFinish = true;
+                    }
+
+                }
+                
+
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment.JsonSerialize());
 

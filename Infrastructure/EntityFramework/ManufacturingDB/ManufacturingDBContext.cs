@@ -400,9 +400,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionHandoverReceiptId)
                     .HasConstraintName("FK_ProductionHistory_ProductionHandoverReceipt");
 
-                entity.HasOne(d => d.ProductionOrder)
+                entity.HasOne(d => d.ProductionStep)
                     .WithMany(p => p.ProductionHistory)
-                    .HasForeignKey(d => d.ProductionOrderId)
+                    .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHistory_ProductionStep");
             });

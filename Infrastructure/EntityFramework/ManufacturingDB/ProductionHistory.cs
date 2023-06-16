@@ -28,6 +28,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int RowIndex { get; set; }
 
         public virtual ProductionHandoverReceipt ProductionHandoverReceipt { get; set; }
-        public virtual ProductionStep ProductionOrder { get; set; }
+        public virtual ProductionStep ProductionStep { get; set; }
     }
 }
