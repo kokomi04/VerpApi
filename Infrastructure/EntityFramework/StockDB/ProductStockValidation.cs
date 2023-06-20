@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.StockDB;
 
-namespace VErp.Infrastructure.EF.StockDB
+public partial class ProductStockValidation
 {
-    public partial class ProductStockValidation
-    {
-        public int ProductId { get; set; }
-        public int StockId { get; set; }
+    public int ProductId { get; set; }
 
-        public virtual Product Product { get; set; }
-    }
+    public int StockId { get; set; }
+
+    public virtual Product Product { get; set; }
 }

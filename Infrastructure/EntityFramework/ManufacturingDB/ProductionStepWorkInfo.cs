@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.ManufacturingDB;
 
-namespace VErp.Infrastructure.EF.ManufacturingDB
+public partial class ProductionStepWorkInfo
 {
-    public partial class ProductionStepWorkInfo
-    {
-        public long ProductionStepId { get; set; }
-        public int HandoverType { get; set; }
-        public decimal? MinHour { get; set; }
-        public decimal? MaxHour { get; set; }
+    public long ProductionStepId { get; set; }
 
-        public virtual ProductionStep ProductionStep { get; set; }
-    }
+    public int HandoverType { get; set; }
+
+    public decimal? MinHour { get; set; }
+
+    public decimal? MaxHour { get; set; }
+
+    public virtual ProductionStep ProductionStep { get; set; }
 }

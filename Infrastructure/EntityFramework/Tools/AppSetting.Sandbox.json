@@ -1,6 +1,5 @@
 {
   "Configuration": {
-    "ConfigFileKey": "/usr/verp/config/config.Sandbox.json",
     "SigninCert": "/usr/verp/certificate/cert.pfx",
     "FileUploadFolder": "/usr/resources/",
     "FileUploadMaxLength": 50000000,

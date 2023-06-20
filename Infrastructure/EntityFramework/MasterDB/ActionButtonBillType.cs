@@ -1,21 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Infrastructure.EF.MasterDB
+public partial class ActionButtonBillType
 {
-    public partial class ActionButtonBillType
-    {
-        public int ActionButtonId { get; set; }
-        public long BillTypeObjectId { get; set; }
-        public int CreatedByUserId { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public int UpdatedByUserId { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public bool IsDeleted { get; set; }
-        public DateTime? DeletedDatetimeUtc { get; set; }
+    public int ActionButtonId { get; set; }
 
-        public virtual ActionButton ActionButton { get; set; }
-    }
+    public long BillTypeObjectId { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public DateTime CreatedDatetimeUtc { get; set; }
+
+    public int UpdatedByUserId { get; set; }
+
+    public DateTime UpdatedDatetimeUtc { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public virtual ActionButton ActionButton { get; set; }
 }
