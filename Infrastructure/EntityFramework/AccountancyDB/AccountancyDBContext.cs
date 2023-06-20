@@ -1,4 +1,6 @@
+using System;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 #nullable disable
 
@@ -16,7 +18,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         }
 
         public virtual DbSet<CalcPeriod> CalcPeriod { get; set; }
-        //public virtual DbSet<InputAction> InputAction { get; set; }
         public virtual DbSet<InputArea> InputArea { get; set; }
         public virtual DbSet<InputAreaField> InputAreaField { get; set; }
         public virtual DbSet<InputBill> InputBill { get; set; }
@@ -27,9 +28,9 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         public virtual DbSet<InputTypeView> InputTypeView { get; set; }
         public virtual DbSet<InputTypeViewField> InputTypeViewField { get; set; }
         public virtual DbSet<ProgramingFunction> ProgramingFunction { get; set; }
+        public virtual DbSet<RefObjectApprovalStep> RefObjectApprovalStep { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -42,25 +43,6 @@ namespace VErp.Infrastructure.EF.AccountancyDB
 
                 entity.Property(e => e.Title).HasMaxLength(512);
             });
-
-            //modelBuilder.Entity<InputAction>(entity =>
-            //{
-            //    entity.Property(e => e.ActionPositionId).HasDefaultValueSql("((2))");
-
-            //    entity.Property(e => e.IconName).HasMaxLength(25);
-
-            //    entity.Property(e => e.InputActionCode)
-            //        .IsRequired()
-            //        .HasMaxLength(128);
-
-            //    entity.Property(e => e.Title).HasMaxLength(128);
-
-            //    entity.HasOne(d => d.InputType)
-            //        .WithMany(p => p.InputAction)
-            //        .HasForeignKey(d => d.InputTypeId)
-            //        .OnDelete(DeleteBehavior.ClientSetNull)
-            //        .HasConstraintName("FK_InputAction_InputType");
-            //});
 
             modelBuilder.Entity<InputArea>(entity =>
             {
@@ -236,6 +218,17 @@ namespace VErp.Infrastructure.EF.AccountancyDB
                 entity.Property(e => e.ProgramingFunctionName)
                     .IsRequired()
                     .HasMaxLength(128);
+            });
+
+            modelBuilder.Entity<RefObjectApprovalStep>(entity =>
+            {
+                entity.HasNoKey();
+
+                entity.ToView("RefObjectApprovalStep");
+
+                entity.Property(e => e.ObjectApprovalStepId).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.ObjectFieldEnable).HasMaxLength(1024);
             });
 
             OnModelCreatingPartial(modelBuilder);

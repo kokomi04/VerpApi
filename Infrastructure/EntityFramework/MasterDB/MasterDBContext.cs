@@ -522,7 +522,8 @@ namespace VErp.Infrastructure.EF.MasterDB
 
             modelBuilder.Entity<ModuleApiEndpointMapping>(entity =>
             {
-                entity.HasKey(e => new { e.ModuleId, e.ApiEndpointId });
+                entity.HasIndex(e => new { e.ModuleId, e.ApiEndpointId }, "IX_ModuleApiEndpointMapping")
+                    .IsUnique();
 
                 entity.HasOne(d => d.ApiEndpoint)
                     .WithMany(p => p.ModuleApiEndpointMapping)

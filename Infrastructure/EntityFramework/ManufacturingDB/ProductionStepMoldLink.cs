@@ -7,6 +7,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 {
     public partial class ProductionStepMoldLink
     {
+        public long ProductionStepMoldLinkId { get; set; }
         public long FromProductionStepMoldId { get; set; }
         public long ToProductionStepMoldId { get; set; }
 

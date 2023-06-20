@@ -811,7 +811,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStepMoldLink>(entity =>
             {
-                entity.HasKey(e => new { e.FromProductionStepMoldId, e.ToProductionStepMoldId });
+                entity.HasIndex(e => new { e.FromProductionStepMoldId, e.ToProductionStepMoldId }, "IX_ProductionStepMoldLink")
+                    .IsUnique();
 
                 entity.HasOne(d => d.FromProductionStepMold)
                     .WithMany(p => p.ProductionStepMoldLinkFromProductionStepMold)
