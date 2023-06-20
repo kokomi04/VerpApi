@@ -15,10 +15,10 @@ namespace VErp.Infrastructure.AppSettings
 
         public static AppConfigSetting Config(string environmentName = null, string basePath = null)
         {
-            var exeFolder = Path.GetDirectoryName(Assembly.GetEntryAssembly().CodeBase) ?? string.Empty;
+            var exeFolder = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location) ?? string.Empty;
             if (EnviromentConfig.IsUnitTest)
             {
-                exeFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+                exeFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             }
 
             exeFolder = exeFolder

@@ -64,10 +64,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 return entity.WorkScheduleMarkId;
 
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -95,10 +95,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await trans.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -123,10 +123,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await trans.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
 
         }

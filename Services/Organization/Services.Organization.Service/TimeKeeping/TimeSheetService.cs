@@ -31,7 +31,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate);
 
-        Task<bool> ImportTimeSheetFromMapping(int year, int month, long beginDate, long endDate, ImportExcelMapping mapping, Stream stream);
+        Task<bool> ImportTimeSheetFromMapping(int month, int year, long beginDate, long endDate, ImportExcelMapping mapping, Stream stream);
 
         Task<bool> ApproveTimeSheet(int year, int month);
     }
@@ -119,10 +119,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 return entity.TimeSheetId;
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -227,10 +227,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 return true;
 
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -261,10 +261,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 return true;
 
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -387,7 +387,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var overtimeLevels = await _organizationDBContext.OvertimeLevel.ToListAsync();
             var absentSymbol = await _organizationDBContext.CountedSymbol.FirstOrDefaultAsync(x => x.CountedSymbolType == (int)EnumCountedSymbol.AbsentSymbol);
 
-            var _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).FirstOrDefault();
+            var _importData = reader.ReadSheets(mapping.SheetName, mapping.FromRow, mapping.ToRow, null).First();
 
             var dataTimeSheetWithPrimaryKey = new List<RowDataImportTimeSheetModel>();
             int i = 0;
@@ -414,7 +414,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     if (row.ContainsKey(mappingField.Column))
                         value = row[mappingField.Column]?.ToString();
 
-                    if (value.StartsWith(PREFIX_ERROR_CELL))
+                    if (value != null && value.StartsWith(PREFIX_ERROR_CELL))
                     {
                         throw ValidatorResources.ExcelFormulaNotSupported.BadRequestFormat(i + mapping.FromRow, mappingField.Column, $"{value}");
                     }
@@ -434,10 +434,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
 
 
-            // var data = (reader.ReadSheetEntity<TimeSheetImportFieldModel>(mapping, (entity, propertyName, value) =>
-            // {
-            //     return false;
-            // })).GroupBy(x => x.EmployeeCode).ToDictionary(k => k.Key, v => v.ToList());
+        
 
             var timeSheetDetails = new List<TimeSheetDetail>();
             var timeSheetAggregates = new List<TimeSheetAggregateModel>();
@@ -447,12 +444,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 var employeeCode = key.NormalizeAsInternalName();
 
-                var employee = employees.Where(e => e.EmployeeCode.NormalizeAsInternalName() == employeeCode || e.Email.NormalizeAsInternalName() == employeeCode)
-                                        .FirstOrDefault();
+                var employee = employees.FirstOrDefault(e => e.EmployeeCode.NormalizeAsInternalName() == employeeCode || e.Email.NormalizeAsInternalName() == employeeCode);
 
                 if (employee == null) throw new BadRequestException(GeneralCode.InvalidParams, $"Nhân viên {employeeCode} không tồn tại");
 
-                // int maxDayNumberInMoth = 31;
+                
 
                 var rowIn = rows.First();
                 var rowOut = rows.Last();
@@ -494,22 +490,41 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                     var date = unixTime.UnixToDateTime().Value;
 
-                    var timeSheetDetail = absenceTypeSymbolId.HasValue ? new TimeSheetDetail()
+
+                    TimeSheetDetail timeSheetDetail;
+
+                    if (absenceTypeSymbolId.HasValue)
                     {
-                        AbsenceTypeSymbolId = absenceTypeSymbolId,
-                        Date = date,
-                        EmployeeId = employee.UserId
-                    } : string.IsNullOrWhiteSpace(timeInAsString) || string.IsNullOrWhiteSpace(timeOutAsString) ? new TimeSheetDetail()
+                        timeSheetDetail = new TimeSheetDetail()
+                        {
+                            AbsenceTypeSymbolId = absenceTypeSymbolId,
+                            Date = date,
+                            EmployeeId = employee.UserId
+                        };
+                    }
+                    else
                     {
-                        Date = date,
-                        EmployeeId = employee.UserId
-                    } : new TimeSheetDetail()
-                    {
-                        Date = date,
-                        TimeIn = TimeSpan.Parse(timeInAsString),
-                        TimeOut = TimeSpan.Parse(timeOutAsString),
-                        EmployeeId = employee.UserId
-                    };
+                        var anyTimeAsStringEmpty = string.IsNullOrWhiteSpace(timeInAsString) || string.IsNullOrWhiteSpace(timeOutAsString);
+                        if (anyTimeAsStringEmpty)
+                        {
+                            timeSheetDetail = new TimeSheetDetail()
+                            {
+                                Date = date,
+                                EmployeeId = employee.UserId
+                            };
+                        }
+                        else
+                        {
+                            timeSheetDetail = new TimeSheetDetail()
+                            {
+                                Date = date,
+                                TimeIn = TimeSpan.Parse(timeInAsString),
+                                TimeOut = TimeSpan.Parse(timeOutAsString),
+                                EmployeeId = employee.UserId
+                            };
+                        }
+                    }
+
                     timeSheetDetails.Add(timeSheetDetail);
                 }
 
@@ -697,10 +712,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _organizationDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
 
             return true;

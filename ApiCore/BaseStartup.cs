@@ -2,6 +2,7 @@
 using Autofac.Extensions.DependencyInjection;
 using Elastic.Apm.NetCoreAll;
 using HealthChecks.UI.Client;
+using IdentityModel.AspNetCore.AccessTokenValidation;
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -22,6 +23,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -88,8 +90,8 @@ namespace VErp.Infrastructure.ApiCore
                   ValidationAlgorithm = ValidationAlgorithm.HMACSHA256
               });
 
-            services.AddHostedService<SyncApiEndpointService>();
-            services.AddHostedService<LongTaskStatusService>();
+            //services.AddHostedService<SyncApiEndpointService>();
+            //services.AddHostedService<LongTaskStatusService>();
 
             services.AddControllers(options =>
             {
@@ -125,18 +127,18 @@ namespace VErp.Infrastructure.ApiCore
                 //}
 
             })
-            //.AddJsonOptions(options =>
-            //{
-            //    //options.JsonSerializerOptions
-            //    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            //    options.JsonSerializerOptions.IgnoreNullValues = true;
+           //.AddJsonOptions(options =>
+           //{
+           //    //options.JsonSerializerOptions
+           //    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+           //    options.JsonSerializerOptions.IgnoreNullValues = true;
 
 
-            //    //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            //    //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            //    //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-            //    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-            //})
+           //    //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+           //    //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
+           //    //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+           //    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
+           //})
            //.SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
            .AddControllersAsServices();
 
@@ -208,6 +210,7 @@ namespace VErp.Infrastructure.ApiCore
                 app.UsePathBase(pathBase);
             }
 
+
             ConfigureHelthCheck(app);
 
             //if (env.IsDevelopment())
@@ -267,31 +270,94 @@ namespace VErp.Infrastructure.ApiCore
             Utils.LoggerFactory = loggerFactory;
         }
 
+        public static string SchemeSelector(HttpContext context)
+        {
+            var token = CustomTokenRetriever.FromHeaderAndQueryString(context.Request);
+
+            //if (!string.Equals(scheme, "Bearer", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    return null;
+            //}
+
+            if (token.Contains("."))
+            {
+                return "jwt";
+            }
+            else
+            {
+                return "introspection";
+            }
+        }
+
         private void ConfigureAuthService(IServiceCollection services)
         {
             // prevent from mapping "sub" claim to nameidentifier.
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+            services.AddAuthorization(options =>
+            {
+                options.AddScopePolicy("admin", "scope1");
+
+                options.AddPolicy("tokens", p =>
+                {
+                    p.AddAuthenticationSchemes("jwt", "introspection");
+                    p.RequireAuthenticatedUser();
+                });
+            });
 
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddIdentityServerAuthentication(options =>
+
+            .AddPolicyScheme("token", "token", policySchemeOptions =>
+            {
+                policySchemeOptions.ForwardDefaultSelector = context =>
+                    SchemeSelector(context) ?? "jwt";
+            })
+            // JWT tokens (default scheme)
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = AppSetting.Identity.Endpoint;
+                options.Audience = AppSetting.Identity.ApiName;
+
+                options.TokenValidationParameters.ValidTypes = new[] { "at+jwt" };
+
+                // if token does not contain a dot, it is a reference token
+                options.ForwardDefaultSelector = Selector.ForwardReferenceToken("introspection");
                 options.RequireHttpsMetadata = false;
+            })
 
-                options.ApiName = AppSetting.Identity.ApiName;
-                options.ApiSecret = AppSetting.Identity.ApiSecret;
+            // reference tokens
+            .AddOAuth2Introspection("introspection", options =>
+            {
+                options.Authority = AppSetting.Identity.Endpoint;
 
-
-                options.EnableCaching = false;
-                options.CacheDuration = TimeSpan.FromMinutes(10);
+                options.ClientId = AppSetting.Identity.ApiName;
+                options.ClientSecret = AppSetting.Identity.ApiSecret;
 
                 options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
+
+                options.CacheDuration = TimeSpan.FromMinutes(10);
+                options.EnableCaching = true;
             });
+            //.AddIdentityServerAuthentication(options =>
+            //{
+            //    options.Authority = AppSetting.Identity.Endpoint;
+            //    options.RequireHttpsMetadata = false;
+
+            //    options.ApiName = AppSetting.Identity.ApiName;
+            //    options.ApiSecret = AppSetting.Identity.ApiSecret;
+
+
+            //    options.EnableCaching = false;
+            //    options.CacheDuration = TimeSpan.FromMinutes(10);
+
+            //    options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
+            //});
+
+            services.AddScopeTransformation();
         }
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)

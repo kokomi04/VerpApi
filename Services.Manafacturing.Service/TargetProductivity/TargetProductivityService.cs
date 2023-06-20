@@ -35,16 +35,14 @@ namespace VErp.Services.Manafacturing.Service
     public class TargetProductivityService : ITargetProductivityService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IStepService _stepService;
 
-        public TargetProductivityService(ManufacturingDBContext manufacturingDBContext, IActivityLogService activityLogService
+        public TargetProductivityService(ManufacturingDBContext manufacturingDBContext
             , ILogger<TargetProductivityService> logger, IMapper mapper, IStepService stepService)
         {
             _manufacturingDBContext = manufacturingDBContext;
-            _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
             _stepService = stepService;
@@ -82,7 +80,7 @@ namespace VErp.Services.Manafacturing.Service
             {
                 await trans.RollbackAsync();
                 _logger.LogError("TargetProductivityService.AddTargetProductivity", ex);
-                throw ex;
+                throw;
             }
         }
 
@@ -94,7 +92,7 @@ namespace VErp.Services.Manafacturing.Service
                 if (!_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
-                var entity = _manufacturingDBContext.TargetProductivity.FirstOrDefault(x => x.TargetProductivityId == targetProductivityId);
+                var entity = _manufacturingDBContext.TargetProductivity.First(x => x.TargetProductivityId == targetProductivityId);
                 var details = _manufacturingDBContext.TargetProductivityDetail.Where(x => x.TargetProductivityId == targetProductivityId).ToList();
 
                 if (entity.TargetProductivityCode != model.TargetProductivityCode && _manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityCode == model.TargetProductivityCode))
@@ -135,7 +133,7 @@ namespace VErp.Services.Manafacturing.Service
             {
                 await trans.RollbackAsync();
                 _logger.LogError("TargetProductivityService.UpdateTargetProductivity", ex);
-                throw ex;
+                throw;
             }
         }
 
@@ -148,7 +146,7 @@ namespace VErp.Services.Manafacturing.Service
                 if (!_manufacturingDBContext.TargetProductivity.Any(x => x.TargetProductivityId == targetProductivityId))
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
-                var entity = _manufacturingDBContext.TargetProductivity.FirstOrDefault(x => x.TargetProductivityId == targetProductivityId);
+                var entity = _manufacturingDBContext.TargetProductivity.First(x => x.TargetProductivityId == targetProductivityId);
                 var details = _manufacturingDBContext.TargetProductivityDetail.Where(x => x.TargetProductivityId == targetProductivityId).ToList();
 
                 foreach (var detail in details)
@@ -168,7 +166,7 @@ namespace VErp.Services.Manafacturing.Service
             {
                 await trans.RollbackAsync();
                 _logger.LogError("TargetProductivityService.DeleteTargetProductivity", ex);
-                throw ex;
+                throw;
             }
         }
 
@@ -190,7 +188,7 @@ namespace VErp.Services.Manafacturing.Service
             catch (System.Exception ex)
             {
                 _logger.LogError("TargetProductivityService.DeleteTargetProductivity", ex);
-                throw ex;
+                throw;
             }
         }
 
@@ -255,7 +253,7 @@ namespace VErp.Services.Manafacturing.Service
 
         private async Task<bool> RemoveDefaultTargetProductivity()
         {
-            var defaults = await _manufacturingDBContext.TargetProductivity.Where(x => x.IsDefault == true).ToListAsync();
+            var defaults = await _manufacturingDBContext.TargetProductivity.Where(x => x.IsDefault).ToListAsync();
             defaults.ForEach(x => x.IsDefault = false);
             await _manufacturingDBContext.SaveChangesAsync();
             return true;
@@ -263,7 +261,7 @@ namespace VErp.Services.Manafacturing.Service
 
         private async Task<bool> SetDefaultTargetProductivity()
         {
-            var target = await _manufacturingDBContext.TargetProductivity.FirstOrDefaultAsync(x => x.IsDefault == false);
+            var target = await _manufacturingDBContext.TargetProductivity.FirstOrDefaultAsync(x => !x.IsDefault);
             target.IsDefault = true;
             await _manufacturingDBContext.SaveChangesAsync();
             return true;

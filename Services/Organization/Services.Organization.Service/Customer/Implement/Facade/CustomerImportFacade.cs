@@ -32,8 +32,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly ICustomerService _customerService;
         private readonly OrganizationDBContext _organizationContext;
-        private IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
-        private IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+        private readonly IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
+        private readonly IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
         private readonly ObjectActivityLogFacade _customerActivityLog;
 
         private IList<CustomerBankAccount> _bankAccounts;
@@ -118,8 +118,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     var customerInfo = _mapper.Map<CustomerModel>(customerModel);
                     customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
-                    LoadContacts(customerInfo, customerModel, mapping);
-                    LoadBankAccounts(customerInfo, customerModel, mapping);
+                    LoadContacts(customerInfo, customerModel);
+                    LoadBankAccounts(customerInfo, customerModel);
 
                     if (customerInfo.CustomerTypeId == 0)
                     {
@@ -128,12 +128,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                     var existedCustomers = existsCustomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
 
-                    if (existedCustomers != null && existedCustomers.Count() > 0 && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                    if (existedCustomers != null && existedCustomers.Any() && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     {
                         var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
                         var existingCodes = existedCodes.Intersect(new[] { customerInfo.CustomerCode }, StringComparer.OrdinalIgnoreCase);
 
-                        if (existingCodes.Count() > 0)
+                        if (existingCodes.Any())
                         {
                             throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                         }
@@ -213,6 +213,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
             return await reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, async (entity, propertyName, value, refObj, refPropertyName, refPropertyPathSeparateByPoint) =>
             {
+                await Task.CompletedTask;
+
                 if (propertyName == nameof(BaseCustomerImportModel.PayConditionsId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
@@ -351,7 +353,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             return Convert.ToInt32(condition[0][F_Id]);
         }
 
-        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
+        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj)
         {
             model.Contacts = new List<CustomerContactModel>();
             for (var number = 1; number <= 3; number++)
@@ -375,7 +377,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
+        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj)
         {
             model.BankAccounts = new List<CustomerBankAccountModel>();
             for (var number = 1; number <= 3; number++)
@@ -420,7 +422,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             return obj.GetType().GetProperty(filedName).GetValue(obj)?.ToString();
         }
 
-        Dictionary<string, string> FieldPrefixs = new Dictionary<string, string>();
+        readonly Dictionary<string, string> FieldPrefixs = new Dictionary<string, string>();
         private string GetFieldNameWithoutNumber(string propertyName)
         {
             if (FieldPrefixs.ContainsKey(propertyName)) return FieldPrefixs[propertyName];
