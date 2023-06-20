@@ -844,6 +844,10 @@ namespace VErp.Infrastructure.EF.StockDB
             {
                 entity.HasIndex(e => new { e.ProductId, e.IsDefault }, "IDX_Product");
 
+                entity.HasIndex(e => new { e.ProductId, e.IsDefault }, "IDX_Pu_Default")
+                    .IsUnique()
+                    .HasFilter("([IsDefault]=(1))");
+
                 entity.Property(e => e.ConversionDescription).HasMaxLength(512);
 
                 entity.Property(e => e.FactorExpression)

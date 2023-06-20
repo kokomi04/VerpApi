@@ -710,7 +710,8 @@ namespace VErp.Infrastructure.EF.OrganizationDB
 
             modelBuilder.Entity<ObjectProcessStepDepend>(entity =>
             {
-                entity.HasKey(e => new { e.ObjectProcessStepId, e.DependObjectProcessStepId });
+                entity.HasIndex(e => new { e.ObjectProcessStepId, e.DependObjectProcessStepId }, "IX_ObjectProcessStepDepend")
+                    .IsUnique();
 
                 entity.HasOne(d => d.DependObjectProcessStep)
                     .WithMany(p => p.ObjectProcessStepDependDependObjectProcessStep)
