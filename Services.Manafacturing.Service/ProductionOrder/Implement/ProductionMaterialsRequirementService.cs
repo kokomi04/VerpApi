@@ -137,11 +137,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                     return resultId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
                     _logger.LogError("AddProductionMaterialsRequirement");
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -306,7 +306,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 var newDetail = model.MaterialsRequirementDetails.AsQueryable()
                     .ProjectTo<ProductionMaterialsRequirementDetail>(_mapper.ConfigurationProvider)
-                    .Where(x => !(x.ProductionMaterialsRequirementDetailId > 0));
+                    .Where(x => x.ProductionMaterialsRequirementDetailId < 0);
 
                 foreach (var item in detail)
                 {

@@ -56,7 +56,7 @@ namespace VErp.WebApis.VErpApi
             
         }
 
-        private X509Certificate2 _cert;
+        //private X509Certificate2 _cert;
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
             ConfigureStandardServices(services, true);
@@ -74,11 +74,11 @@ namespace VErp.WebApis.VErpApi
 
             var migrationsAssembly = typeof(Startup).GetTypeInfo().Assembly.GetName().Name;
 
-            _cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
+            var cert = Certificate.Get(AppSetting.Configuration.SigninCert, AppSetting.Configuration.SigninCertPassword);
 
             services
                 .AddIdentityServer()
-                .AddSigningCredential(_cert)
+                .AddSigningCredential(cert)
                 .AddConfigurationStore((option) =>
                 {
                     option.ConfigureDbContext = (builder) =>

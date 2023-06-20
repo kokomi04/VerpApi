@@ -20,7 +20,8 @@ namespace VErp.Commons.Library
     public static class Utils
     {
 
-        public static ILoggerFactory LoggerFactory;
+        public static ILoggerFactory LoggerFactory { get; set; }
+        
 
         public static ILoggerFactory DefaultLoggerFactory
         {
@@ -90,15 +91,8 @@ namespace VErp.Commons.Library
         {
             var type = typeof(T);
 
-            PropertyInfo propertyInfo = null;
-            foreach (var p in type.GetProperties())
-            {
-                if (p.Name.Equals(filedName, StringComparison.OrdinalIgnoreCase))
-                {
-                    propertyInfo = p;
-                    break;
-                }
-            }
+            PropertyInfo propertyInfo = type.GetProperties().FirstOrDefault(p=> p.Name.Equals(filedName, StringComparison.OrdinalIgnoreCase));
+           
             if (propertyInfo == null) return query.OrderBy(s => 1);
 
             var ex = propertyInfo.Name.ToMemberOf<T>();
@@ -139,6 +133,7 @@ namespace VErp.Commons.Library
             return valueInNumber;
         }*/
 
+        /*
         public static long GetLongHash(this string input)
         {
             long hashCode = 0;
@@ -159,7 +154,7 @@ namespace VErp.Commons.Library
                 hashCode = hashCodeStart ^ hashCodeMedium ^ hashCodeEnd;
             }
             return (hashCode);
-        }
+        }*/
 
 
         public const string DOCUMENT_TEMPLATE_FOLDER = "_document_template_";

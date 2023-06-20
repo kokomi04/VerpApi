@@ -91,9 +91,9 @@ namespace IdentityServer4.Hosting
             await _inner.SignOutAsync(context, scheme, properties);
         }
 
-        public Task<AuthenticateResult> AuthenticateAsync(HttpContext context, string scheme)
+        public async Task<AuthenticateResult> AuthenticateAsync(HttpContext context, string scheme)
         {
-            return _inner.AuthenticateAsync(context, scheme);
+            return await _inner.AuthenticateAsync(context, scheme);
         }
 
         public Task ChallengeAsync(HttpContext context, string scheme, AuthenticationProperties properties)

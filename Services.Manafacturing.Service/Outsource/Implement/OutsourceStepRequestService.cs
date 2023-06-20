@@ -35,7 +35,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IProductHelperService _productHelperService;
         private readonly IProductionProcessService _productionProcessService;
 
@@ -44,7 +43,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , ILogger<OutsourceStepRequestService> logger
             , IMapper mapper
             , ICustomGenCodeHelperService customGenCodeHelperService
-            , ICurrentContextService currentContextService
             , IProductHelperService productHelperService
             , IProductionProcessService productionProcessService)
         {
@@ -53,7 +51,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
-            _currentContextService = currentContextService;
             _productHelperService = productHelperService;
             _productionProcessService = productionProcessService;
         }
@@ -222,7 +219,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                     var role = roles.FirstOrDefault(r => r.ProductionStepLinkDataId == x.ProductionStepLinkDataId && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output);
                     var productionStepInfo = request.ProductionStep.FirstOrDefault(s => s.ProductionStepId == role.ProductionStepId);
-                    var productionStepParentInfo = productionStepParents.FirstOrDefault(s => s.ProductionStepId == productionStepInfo.ParentId);
+                    var productionStepParentInfo = productionStepParents.First(s => s.ProductionStepId == productionStepInfo.ParentId);
 
                     var purchaseOrderDetail = purchaseOrder.Where(o => o.ProductionStepLinkDataId == x.ProductionStepLinkDataId).ToList();
 
@@ -264,7 +261,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             };
         }
 
-        public async Task<bool> UpdateOutsourceStepRequest(long outsourceStepRequestId, OutsourceStepRequestInput requestModel)
+        public async Task<bool> UpdateOutsourceStepRequest(long outsourceStepRequestId, OutsourceStepRequestInput req)
         {
             var request = await _manufacturingDBContext.OutsourceStepRequest.FirstOrDefaultAsync(x => x.OutsourceStepRequestId == outsourceStepRequestId);
             if (request == null)
@@ -273,11 +270,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
+                var hasProductSemi = req.ProductionProcessOutsource.ProductionStepLinkDatas.Any(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi);
 
-                request.OutsourceStepRequestFinishDate = requestModel.OutsourceStepRequestFinishDate.UnixToDateTime(0);
+                request.OutsourceStepRequestFinishDate = req.OutsourceStepRequestFinishDate.UnixToDateTime(0);
                 request.IsInvalid = hasProductSemi;
-                request.Setting = requestModel.Setting.JsonSerialize();
+                request.Setting = req.Setting.JsonSerialize();
 
                 var oldDetail = await _manufacturingDBContext.OutsourceStepRequestData
                     .Where(d => d.OutsourceStepRequestId == outsourceStepRequestId)
@@ -285,8 +282,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 _manufacturingDBContext.OutsourceStepRequestData.RemoveRange(oldDetail);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                var lsLinkDataOutput = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas
-                    .Where(x => requestModel.ProductionProcessOutsource.ProductionStepLinkDataOutput.Contains(x.ProductionStepLinkDataId));
+                var lsLinkDataOutput = req.ProductionProcessOutsource.ProductionStepLinkDatas
+                    .Where(x => req.ProductionProcessOutsource.ProductionStepLinkDataOutput.Contains(x.ProductionStepLinkDataId));
                 // Create outsourceStepRequestData
                 foreach (var d in lsLinkDataOutput)
                 {
@@ -302,8 +299,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                         });
                 }
 
-                var lsLinkDataInput = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas
-                    .Where(x => requestModel.ProductionProcessOutsource.ProductionStepLinkDataIntput.Contains(x.ProductionStepLinkDataId));
+                var lsLinkDataInput = req.ProductionProcessOutsource.ProductionStepLinkDatas
+                    .Where(x => req.ProductionProcessOutsource.ProductionStepLinkDataIntput.Contains(x.ProductionStepLinkDataId));
                 // Create outsourceStepRequestData
                 foreach (var d in lsLinkDataInput)
                 {
@@ -322,12 +319,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 // Update productionStep and linkData
-                await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, request.OutsourceStepRequestId);
+                await SyncInfoForProductionProcess(req.ProductionProcessOutsource, request.OutsourceStepRequestId);
 
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
-                    $"Cập nhật yêu cầu gia công công đoạn", requestModel.JsonSerialize());
+                    $"Cập nhật yêu cầu gia công công đoạn", req.JsonSerialize());
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
 
@@ -460,6 +457,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             foreach (var item in lsOutsourceStepRequestDetail)
             {
                 var ldInfo = lsProductionStepLinkDataInfo.FirstOrDefault(x => x.ProductionStepLinkDataId == item.ProductionStepLinkDataId);
+                if (ldInfo == null) throw "ProductionStepLinkDataId was not found".BadRequest();
                 var stepInfo = _mapper.Map<ProductionStepModel>(item.ProductionStep);
                 var data = new OutsourceStepRequestDataExtraInfo
                 {
@@ -469,10 +467,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     OutsourceStepRequestId = item.OutsourceStepRequestId,
                     ProductionStepId = item.ProductionStepId,
                     ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)item.ProductionStepLinkDataRoleTypeId,
-                    ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
+                    ProductionStepLinkDataTitle = ldInfo.ObjectTitle,
                     ProductionStepTitle = stepInfo?.Title,
-                    ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
-                    ProductionStepLinkDataObjectId = (int)ldInfo.LinkDataObjectId,
+                    ProductionStepLinkDataUnitId = ldInfo.UnitId,
+                    ProductionStepLinkDataObjectId = ldInfo.LinkDataObjectId,
                     OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
                     DecimalPlace = ldInfo.DecimalPlace
                 };
@@ -505,6 +503,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             foreach (var item in lsOutsourceStepRequestDetail)
             {
                 var ldInfo = lsProductionStepLinkDataInfo.FirstOrDefault(x => x.ProductionStepLinkDataId == item.ProductionStepLinkDataId);
+                if (ldInfo == null) throw "ProductionStepLinkDataId was not found".BadRequest();
+
                 var stepInfo = _mapper.Map<ProductionStepModel>(item.ProductionStep);
                 var data = new OutsourceStepRequestDataExtraInfo
                 {
@@ -516,8 +516,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     ProductionStepLinkDataRoleTypeId = (EnumProductionStepLinkDataRoleType)item.ProductionStepLinkDataRoleTypeId,
                     ProductionStepLinkDataTitle = ldInfo?.ObjectTitle,
                     ProductionStepTitle = stepInfo?.Title,
-                    ProductionStepLinkDataUnitId = (int)(ldInfo?.UnitId),
-                    ProductionStepLinkDataObjectId = (int)ldInfo.LinkDataObjectId,
+                    ProductionStepLinkDataUnitId = ldInfo.UnitId,
+                    ProductionStepLinkDataObjectId = ldInfo.LinkDataObjectId,
                     OutsourceStepRequestDataQuantityProcessed = quantityProcessedMap.ContainsKey(item.ProductionStepLinkDataId) ? quantityProcessedMap[item.ProductionStepLinkDataId] : 0,
                     OutsourceStepRequestCode = item.OutsourceStepRequest.OutsourceStepRequestCode,
                     OutsourceStepRequestFinishDate = item.OutsourceStepRequest.OutsourceStepRequestFinishDate.GetUnix(),
@@ -578,7 +578,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     else
                     {
                         var mapQuantityProcessed = _manufacturingDBContext.RefOutsourceStepOrder
-                                .Where(x => x.OutsourceRequestId == rq.OutsourceStepRequestId).ToList()
+                                .Where(x => x.OutsourceRequestId == rq.OutsourceStepRequestId).AsEnumerable()
                                 .GroupBy(x => x.ProductionStepLinkDataId)
                                 .ToDictionary(k => k.Key, v => v.Sum(x => x.PrimaryQuantity));
 
@@ -594,7 +594,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                             isCheckOrder = true;
                         }
-                        if (isCheckOrder && (totalStatus.GetValueOrDefault() == ((int)EnumOutsourceTrackStatus.HandedOver * arrPurchaseOrderId.Count())))
+                        if (isCheckOrder && (totalStatus.GetValueOrDefault() == ((int)EnumOutsourceTrackStatus.HandedOver * arrPurchaseOrderId.Count)))
                             rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Processed;
                         else rq.OutsourceStepRequestStatusId = (int)EnumOutsourceRequestStatusType.Processing;
                     }
@@ -604,10 +604,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await transaction.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (Exception)
             {
                 transaction.TryRollbackTransaction();
-                throw ex;
+                throw;
             }
         }
 
@@ -667,7 +667,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     isFirst = false;
                 } while (_manufacturingDBContext.ProductionMaterialsRequirement.Any(o => o.RequirementCode == outsourceStepRequestCode));
 
-                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Where(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi).Count() > 0;
+                var hasProductSemi = requestModel.ProductionProcessOutsource.ProductionStepLinkDatas.Any(x => x.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi);
 
                 var entityRequest = new OutsourceStepRequest
                 {
@@ -776,14 +776,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                     {
                         OutsourceStepRequestId = outsourceStepRequestId,
                         ProductId = materials.MaterialsConsumptionId,
-                        Quantity = (decimal)((materials.Quantity + materials.TotalQuantityInheritance) * rate)
+                        Quantity = ((materials.Quantity + materials.TotalQuantityInheritance) * rate)
                     };
 
                     results.Add(element);
                 }
                 else
                 {
-                    exists.Quantity += (decimal)((materials.Quantity + materials.TotalQuantityInheritance) * rate);
+                    exists.Quantity += ((materials.Quantity + materials.TotalQuantityInheritance) * rate);
                 }
             }
 
