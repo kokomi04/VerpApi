@@ -97,6 +97,28 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return dic;
         }
 
+        public async Task<IList<ProductBomOutput>> GetBomsV2(IList<int> productIds)
+        {
+            var productProperties = await _stockDbContext.ProductProperty
+               .Where(p => productIds.Contains( p.RootProductId))
+               .ToListAsync();
+            var parammeters = new SqlParameter[]
+            {
+                productIds.ToSqlParameter("@ProductIds")
+            };
+
+            var resultData = (await _stockDbContext.ExecuteDataProcedure("asp_GetProductBoms", parammeters)).ConvertData<ProductBomEntity>();
+            var result = new List<ProductBomOutput>();
+            foreach (var item in resultData)
+            {
+                var bom = _mapper.Map<ProductBomOutput>(item);
+                bom.PathProductIds = Array.ConvertAll(item.PathProductIds.Split(','), s => int.Parse(s));
+                bom.Properties = productProperties.Where(p => p.RootProductId==item.ProductId && p.ProductId == item.ChildProductId && p.PathProductIds == item.PathProductIds).Select(p => p.PropertyId).Distinct().ToList();
+                result.Add(bom);
+            }
+            return result;
+        }
+
         public async Task<IList<ProductBomOutput>> GetBom(int productId)
         {
             if (!_stockDbContext.Product.Any(p => p.ProductId == productId)) throw new BadRequestException(ProductErrorCode.ProductNotFound);
@@ -316,7 +338,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         {
             var steps = await _manufacturingHelperService.GetSteps();
             var properties = await _propertyService.GetProperties();
-            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties);
+            var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties, this);
             return await bomExport.BomExport();
         }
 

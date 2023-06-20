@@ -1,20 +1,27 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Microsoft.EntityFrameworkCore;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Model;
 using static VErp.Commons.Constants.CategoryFieldConstants;
 using static VErp.Commons.Constants.CurrencyCateConstants;
 using static VErp.Commons.GlobalObject.InternalDataInterface.BaseCustomerImportModelExtensions;
@@ -29,12 +36,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private readonly OrganizationDBContext _organizationContext;
         private ISheet sheet = null;
         private int currentRow = 0;
-
+        private string groupPayCondition;
+        private string groupDeliveryCondition;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IUserHelperService _userHelperService;
 
         private readonly IList<CategoryFieldNameModel> fields;
         private readonly IList<string> groups;
+        private List<ReferFieldModel> _refFields;
 
         private IDictionary<int, string> users;
         private IDictionary<int, string> currencies;
@@ -48,14 +57,16 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             _organizationContext = organizationContext;
             _httpCategoryHelperService = httpCategoryHelperService;
             _userHelperService = userHelperService;
-
-            fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>().Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
+            fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null, false, false, "", 0, _httpCategoryHelperService).Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
             groups = fields.Select(g => g.GroupName).Distinct().ToList();
+            groupPayCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.PayConditionsId)).FirstOrDefault().GroupName;
+            groupDeliveryCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId)).FirstOrDefault().GroupName;
         }
 
 
         public async Task<(Stream stream, string fileName, string contentType)> Export(IList<CustomerEntity> customers)
         {
+            _refFields = await _httpCategoryHelperService.GetReferFields(new[] { ConditionsConstants.PayConditionCode, ConditionsConstants.DeliveryConditionCode }, new[] { F_Id });
             var currencyData = await _httpCategoryHelperService.GetDataRows(CurrencyCategoryCode, new CategoryFilterModel());
             currencies = currencyData.List.ToDictionary(c => Convert.ToInt32(c[F_Id]), c => c[CurrencyCode]?.ToString());
 
@@ -120,6 +131,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             foreach (var g in groups)
             {
                 var groupCols = fields.Where(f => f.GroupName == g);
+                if (g == groupDeliveryCondition || g == groupPayCondition)
+                {
+                    var condition = groupCols.First().RefCategory.Fields;
+                    condition.Remove(condition.Where(c => c.FieldName == F_Id).FirstOrDefault());
+                    groupCols = condition;
+                }
+
                 sheet.EnsureCell(fRow, sColIndex).SetCellValue(g);
                 sheet.SetHeaderCellStyle(fRow, sColIndex);
 
@@ -374,14 +392,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
 
+            var deliveryConditionsIds = customers.Select(c => c.DeliveryConditionsId).Where(d => d.HasValue).Select(d => (object)d).Distinct().ToList();
+            var deliveryConditions = await GetDataCondition(ConditionsConstants.DeliveryConditionCode, deliveryConditionsIds);
+            var payConditionIds = customers.Select(c => c.PayConditionsId).Where(p => p.HasValue).Select(p => (object)p).Distinct().ToList();
+            var payConditions = await GetDataCondition(ConditionsConstants.PayConditionCode, payConditionIds);
+
             foreach (var p in customers)
             {
                 var sColIndex = 1;
                 sheet.EnsureCell(currentRow, 0, intStyle).SetCellValue(stt);
-
+                deliveryConditions.TryGetValue(p.DeliveryConditionsId?.ToString() ?? "", out var deliveryInfo);
+                payConditions.TryGetValue(p.PayConditionsId?.ToString() ?? "", out var payconditionInfo);
                 foreach (var g in groups)
                 {
                     var groupCols = fields.Where(f => f.GroupName == g);
+                    if (g == groupDeliveryCondition || g == groupPayCondition)
+                    {
+                        groupCols = groupCols.First().RefCategory.Fields;
+                    }
 
                     foreach (var f in groupCols)
                     {
@@ -390,23 +418,35 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                         bankAccs.TryGetValue(p.CustomerId, out var customerBankAcc);
                         if (customerBankAcc == null) customerBankAcc = new List<CustomerBankAccount>();
+                        var isFormula = false;
+                        EnumDataType dataTypeId = f.DataTypeId ?? EnumDataType.Text;
+                        object value = null;
 
-                        var v = GetCustomerValue(p, customerCates, customerContacts, customerBankAcc, f.FieldName, out var isFormula);
-                        switch (v.type)
+                        if (g == groupDeliveryCondition)
+                        {
+                            deliveryInfo?.TryGetValue(f.FieldName, out value);
+                        }
+                        else if (g == groupPayCondition)
+                        {
+                            payconditionInfo?.TryGetValue(f.FieldName, out value);
+                        }
+                        else
+                            (dataTypeId, value) = GetCustomerValue(p, customerCates, customerContacts, customerBankAcc, f.FieldName, out isFormula);
+                        switch (dataTypeId)
                         {
                             case EnumDataType.BigInt:
                             case EnumDataType.Int:
-                                if (!v.IsNullOrEmptyObject())
+                                if (!value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
                                         sheet.EnsureCell(currentRow, sColIndex, intStyle)
-                                            .SetCellFormula(v.value?.ToString());
+                                            .SetCellFormula(value?.ToString());
                                     }
                                     else
                                     {
                                         sheet.EnsureCell(currentRow, sColIndex, intStyle)
-                                            .SetCellValue(Convert.ToDouble(v.value));
+                                            .SetCellValue(Convert.ToDouble(value));
                                     }
                                 }
                                 else
@@ -415,17 +455,17 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                                 }
                                 break;
                             case EnumDataType.Decimal:
-                                if (!v.IsNullOrEmptyObject())
+                                if (!value.IsNullOrEmptyObject())
                                 {
                                     if (isFormula)
                                     {
                                         sheet.EnsureCell(currentRow, sColIndex, decimalStyle)
-                                            .SetCellFormula(v.value?.ToString());
+                                            .SetCellFormula(value?.ToString());
                                     }
                                     else
                                     {
                                         sheet.EnsureCell(currentRow, sColIndex, decimalStyle)
-                                            .SetCellValue(Convert.ToDouble(v.value));
+                                            .SetCellValue(Convert.ToDouble(value));
                                     }
                                 }
                                 else
@@ -434,12 +474,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                                 }
                                 break;
                             default:
-                                sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(v.value?.ToString());
+                                sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(value?.ToString());
                                 break;
                         }
-                        if (v.value?.ToString()?.Length > columnMaxLineLength[sColIndex])
+                        if (value?.ToString()?.Length > columnMaxLineLength[sColIndex])
                         {
-                            columnMaxLineLength[sColIndex] = v.value?.ToString()?.Length ?? 10;
+                            columnMaxLineLength[sColIndex] = value?.ToString()?.Length ?? 10;
                         }
 
                         sColIndex++;
@@ -451,8 +491,30 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
 
             return "";
-        }
 
+        }
+        private async Task<IDictionary<string, NonCamelCaseDictionary>> GetDataCondition(string categoryCode, IList<object> fIds)
+        {
+            var fieldInfo = _refFields.FirstOrDefault(f => f.CategoryCode == categoryCode);
+            var dataTypeId = (EnumDataType)fieldInfo.DataTypeId;
+            var clause = new SingleClause()
+            {
+                DataType = dataTypeId,
+                FieldName = F_Id,
+                Operator = EnumOperator.InList,
+                Value = fIds
+            };
+            var data = await _httpCategoryHelperService.GetDataRows(categoryCode, new CategoryFilterModel()
+            {
+                ColumnsFilters = clause,
+                Page = 1,
+                Size = 0
+            });
+            return data.List.ToDictionary(row =>
+            {
+                return row[F_Id].ToString();
+            }, r => r);
+        }
 
     }
 }

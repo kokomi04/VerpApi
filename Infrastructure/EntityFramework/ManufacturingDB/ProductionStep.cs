@@ -41,6 +41,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int SubsidiaryId { get; set; }
         public bool IsFinish { get; set; }
         public long? OutsourceStepRequestId { get; set; }
+        public string Comment { get; set; }
 
         public virtual OutsourceStepRequest OutsourceStepRequest { get; set; }
         public virtual Step Step { get; set; }

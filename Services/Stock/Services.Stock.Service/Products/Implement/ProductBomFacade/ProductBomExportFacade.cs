@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
 using System;
@@ -6,8 +8,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Services.Stock.Model.Product;
 
@@ -26,14 +31,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IList<int> productIds;
         private readonly IList<StepSimpleInfo> steps;
         private readonly IList<PropertyModel> _productBomProperties;
+        private readonly IProductBomService _productBomService;
 
-        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps, IList<PropertyModel> productBomProperties)
+        public ProductBomExportFacade(StockDBContext stockDbContext, IList<int> productIds, IList<StepSimpleInfo> steps, IList<PropertyModel> productBomProperties, IProductBomService productBomService)
         {
             _stockDbContext = stockDbContext;
             this.productIds = productIds;
             this.steps = steps;
             _productBomProperties = productBomProperties;
             maxColumnIndex = 15 + productBomProperties.Count;
+            _productBomService = productBomService;
         }
 
 
@@ -68,7 +75,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var stream = new MemoryStream();
             xssfwb.Write(stream, true);
             stream.Seek(0, SeekOrigin.Begin);
-
+            
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             var fileName = StringUtils.RemoveDiacritics($"{firstProductCode.NormalizeAsInternalName()} product bom.xlsx").Replace(" ", "#");
             return (stream, fileName, contentType);
@@ -139,29 +146,24 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return await WriteTableDetailData();
         }
 
-
         private async Task<string> WriteTableDetailData()
         {
-            var processedProductIds = new HashSet<int>();
-            var productBoms = new List<ProductBom>();
+            IList<int> topMostProductIds = new List<int>();
 
-            var processingProductIds = productIds;
-            while (processingProductIds.Count > 0)
+
+            var checkParams = new[]
             {
-                var boms = await _stockDbContext.ProductBom.AsNoTracking().Where(b => processingProductIds.Contains(b.ProductId)).ToListAsync();
-                productBoms.AddRange(boms);
-
-                foreach (var productId in processingProductIds)
-                {
-                    processedProductIds.Add(productId);
-                }
-
-                processingProductIds = boms.Where(b => b.ChildProductId.HasValue).Select(b => b.ChildProductId.Value).Where(c => !processedProductIds.Contains(c)).ToList();
+                   productIds.ToSqlParameter("@InputProductIds")
+            };
+            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
+            foreach (var p in productParentIds)
+            {
+                topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
             }
+            var productBomsLevels = await _productBomService.GetBoms(topMostProductIds);
+            var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => topMostProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
 
-            var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
-
-            var productBomProperties = await _stockDbContext.ProductProperty.Where(m => processedProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
+            var productBomProperties = await _stockDbContext.ProductProperty.Where(m => topMostProductIds.Contains(m.RootProductId)).AsNoTracking().ToListAsync();
 
             var productInfos = (await (
                 from p in _stockDbContext.Product
@@ -183,83 +185,72 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             var firstProductCode = "";
 
-            object currentProduct = null;
             var mapTotalQuantity = new Dictionary<int?, decimal?>();
-            foreach (var item in productBoms)
+            foreach (var productBoms in productBomsLevels)
             {
-                sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
-
-                productInfos.TryGetValue(item.ProductId, out var productInfo);
-
-                productInfos.TryGetValue(item.ChildProductId ?? 0, out var childProductInfo);
-
-                var totalQuantity = item.Quantity * item.Wastage * (mapTotalQuantity.ContainsKey(item.ProductId) ? mapTotalQuantity[item.ProductId] : 1);
-
-                if (!mapTotalQuantity.ContainsKey(item.ChildProductId))
-                    mapTotalQuantity.Add(item.ChildProductId, totalQuantity);
-
-                if (productInfo != null)
+                foreach (var item in productBoms.Value)
                 {
-                    if (string.IsNullOrWhiteSpace(firstProductCode))
-                    {
-                        firstProductCode = productInfo.ProductCode;
-                    }
 
-                    sheet.EnsureCell(currentRow, 1).SetCellValue(productInfo.ProductCode);
-                    if (currentProduct != productInfo)
+                    sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
+                    productInfos.TryGetValue(item.ProductId, out var productInfo);
+                    productInfos.TryGetValue(item.ChildProductId ?? 0, out var childProductInfo);
+
+                    if (productInfo != null )
                     {
-                        currentProduct = productInfo;
+                        if (string.IsNullOrWhiteSpace(firstProductCode))
+                        {
+                            firstProductCode = productInfo.ProductCode;
+                        }
+                        sheet.EnsureCell(currentRow, 1).SetCellValue(productInfo.ProductCode);
                         sheet.EnsureCell(currentRow, 2).SetCellValue(productInfo.ProductName);
                         sheet.EnsureCell(currentRow, 3).SetCellValue(productInfo.ProductUnitConversionName);
                         sheet.EnsureCell(currentRow, 4).SetCellValue(productInfo.Specification);
                     }
-                }
-
-                if (childProductInfo != null)
-                {
-                    sheet.EnsureCell(currentRow, 5).SetCellValue(childProductInfo.ProductCode);
-                    sheet.EnsureCell(currentRow, 6).SetCellValue(childProductInfo.ProductName);
-                    sheet.EnsureCell(currentRow, 7).SetCellValue(childProductInfo.ProductUnitConversionName);
-                    sheet.EnsureCell(currentRow, 8).SetCellValue(childProductInfo.Specification);
-                }
-
-                sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
-                sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
-                sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(totalQuantity));
-
-                sheet.EnsureCell(currentRow, 12).SetCellValue(item.Description);
-
-
-                if (productMaterial.Contains(item.ChildProductId ?? 0))
-                {
-                    sheet.EnsureCell(currentRow, 13).SetCellValue("Có");
-                    sheet.EnsureCell(currentRow, 13).CellStyle.Alignment = HorizontalAlignment.Center;
-                    //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
-                }
-
-                sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.InputStepId));
-                sheet.EnsureCell(currentRow, 15).SetCellValue(GetStepName(item.OutputStepId));
-
-                var col = START_PROP_COLUMN_INDEX;
-
-                foreach (var p in _productBomProperties)
-                {
-                    if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId))
+                    if (childProductInfo != null)
                     {
-                        sheet.EnsureCell(currentRow, col).SetCellValue("Có");
-                        sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
+                        sheet.EnsureCell(currentRow, 5).SetCellValue(childProductInfo.ProductCode);
+                        sheet.EnsureCell(currentRow, 6).SetCellValue(childProductInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 7).SetCellValue(childProductInfo.ProductUnitConversionName);
+                        sheet.EnsureCell(currentRow, 8).SetCellValue(childProductInfo.Specification);
                     }
 
-                    col++;
-                }
+                    sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
+                    sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
+                    sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.TotalQuantity));
 
-                currentRow++;
-                stt++;
+                    sheet.EnsureCell(currentRow, 12).SetCellValue(item.Description);
+
+
+                    if (productMaterial.Contains(item.ChildProductId ?? 0))
+                    {
+                        sheet.EnsureCell(currentRow, 13).SetCellValue("Có");
+                        sheet.EnsureCell(currentRow, 13).CellStyle.Alignment = HorizontalAlignment.Center;
+                        //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
+                    }
+
+                    sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.InputStepId));
+                    sheet.EnsureCell(currentRow, 15).SetCellValue(GetStepName(item.OutputStepId));
+
+                    var col = START_PROP_COLUMN_INDEX;
+
+                    foreach (var p in _productBomProperties)
+                    {
+                        if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId))
+                        {
+                            sheet.EnsureCell(currentRow, col).SetCellValue("Có");
+                            sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
+                        }
+
+                        col++;
+                    }
+
+                    currentRow++;
+                    stt++;
+                }
             }
 
             return firstProductCode;
         }
-
         private string GetStepName(int? stepId)
         {
             if (!stepId.HasValue) return string.Empty;

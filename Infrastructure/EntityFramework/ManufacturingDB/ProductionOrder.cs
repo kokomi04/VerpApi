@@ -47,6 +47,7 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
         public int? ToWeekPlanId { get; set; }
         public int? FactoryDepartmentId { get; set; }
         public int? ProductionOrderAssignmentStatusId { get; set; }
+        public bool IsManualFinish { get; set; }
 
         public virtual WeekPlan FromWeekPlan { get; set; }
         public virtual MonthPlan MonthPlan { get; set; }

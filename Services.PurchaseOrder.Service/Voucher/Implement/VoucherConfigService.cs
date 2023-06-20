@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -34,9 +36,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly IActivityLogService _activityLogService;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
-        private readonly IMenuHelperService _menuHelperService;
-        private readonly ICurrentContextService _currentContextService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;        
         private readonly IHttpCrossService _httpCrossService;
         private readonly IRoleHelperService _roleHelperService;
         private readonly IVoucherActionConfigService _voucherActionConfigService;
@@ -58,9 +58,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _logger = logger;
             _activityLogService = activityLogService;
             _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;
-            _menuHelperService = menuHelperService;
-            _currentContextService = currentContextService;
+            _customGenCodeHelperService = customGenCodeHelperService;           
             _httpCrossService = httpCrossService;
             _roleHelperService = roleHelperService;
             _voucherActionConfigService = voucherActionConfigService;
@@ -290,7 +288,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await _purchaseOrderDBContext.VoucherType.AddAsync(voucherType);
                 await _purchaseOrderDBContext.SaveChangesAsync();
 
+                await UpdateVoucherTableView(voucherType.VoucherTypeId, voucherType.VoucherTypeCode);
+
                 trans.Commit();
+                
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Thêm chứng từ {voucherType.Title}", data.JsonSerialize());
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.SalesBill, EnumObjectType.VoucherType, voucherType.VoucherTypeId);
@@ -399,6 +400,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     }
                 }
                 await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await UpdateVoucherTableView(cloneType.VoucherTypeId, cloneType.VoucherTypeCode);
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, cloneType.VoucherTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
@@ -444,6 +448,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
+                await DeleteVoucherTableView(voucherType.VoucherTypeCode);
+
                 voucherType.VoucherTypeCode = data.VoucherTypeCode;
                 voucherType.Title = data.Title;
                 voucherType.SortOrder = data.SortOrder;
@@ -461,6 +467,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     voucherType.UpdatedDatetimeUtc = DateTime.UtcNow;
 
                 await _purchaseOrderDBContext.SaveChangesAsync();
+
+                await UpdateVoucherTableView(voucherType.VoucherTypeId, voucherType.VoucherTypeCode);
 
                 trans.Commit();
 
@@ -488,6 +496,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     new SqlParameter("@ResStatus",0){ Direction = ParameterDirection.Output },
                     });
 
+            await DeleteVoucherTableView(voucherType.VoucherTypeCode);
 
             try
             {
@@ -1201,6 +1210,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     trans.TryRollbackTransaction();
                     throw new BadRequestException(VoucherErrorCode.MapGenCodeConfigFail);
                 }
+
+                await UpdateVoucherTableView(voucherTypeInfo.VoucherTypeId, voucherTypeInfo.VoucherTypeCode);
+
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherTypeId, $"Cập nhật trường dữ liệu chứng từ {voucherTypeInfo.Title}", fields.JsonSerialize());
@@ -1255,7 +1267,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             using var trans = await _purchaseOrderDBContext.Database.BeginTransactionAsync();
             try
             {
-                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly && voucherField.FormTypeId!=(int)EnumFormType.SqlSelect)
+                if (voucherField.FormTypeId != (int)EnumFormType.ViewOnly && voucherField.FormTypeId != (int)EnumFormType.SqlSelect)
                 {
                     if (data.FieldName != voucherField.FieldName)
                     {
@@ -1331,6 +1343,22 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private async Task UpdateVoucherTableType()
         {
             await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_UpdateVoucherTableType", Array.Empty<SqlParameter>());
+        }
+
+        private async Task UpdateVoucherTableView(int voucherTypeId, string voucherTypeCode)
+        {
+            var viewName = PurchaseOrderConstants.VoucherTypeView(voucherTypeCode);
+
+            await _purchaseOrderDBContext.ExecuteStoreProcedure("asp_VoucherType_UpdateView", new[] {
+                new SqlParameter("@VoucherTypeId", voucherTypeId) ,
+                new SqlParameter("@ViewName", viewName)
+            });
+        }
+
+        private async Task DeleteVoucherTableView(string voucherTypeCode)
+        {
+            var viewName = PurchaseOrderConstants.VoucherTypeView(voucherTypeCode);
+            await _purchaseOrderDBContext.Database.ExecuteSqlRawAsync($"DROP VIEW IF EXISTS {viewName}", new SqlParameter("@ViewName", viewName));
         }
     }
 }

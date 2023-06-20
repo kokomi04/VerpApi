@@ -419,12 +419,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 await ctx.ConfirmCode();
 
-                var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => data.Handovers.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
+                var productionOrderIds = data.Handovers.Select(h => h.ProductionOrderId).Union(data.Histories.Select(t => t.ProductionOrderId)).Distinct().ToList();
+                var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
                 {
-                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(code, $"Tạo phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Tạo phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
                 }
 
+                
                 return receiptInfo.ProductionHandoverReceiptId;
             }
             catch (Exception ex)
@@ -652,6 +654,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 h.ProductionOrderId = productionOrderId;
             }
+
+            foreach (var h in data.Histories)
+            {
+                h.ProductionOrderId = productionOrderId;
+            }
+
             return await Create(data, EnumHandoverStatus.Accepted);
         }
         /*

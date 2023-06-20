@@ -38,6 +38,8 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Organization.Model.Customer;
+using VErp.Services.Organization.Model.Employee;
 using VErp.Services.Organization.Service.HrConfig.Abstract;
 using VErp.Services.Organization.Service.HrConfig.Facade;
 using static VErp.Commons.Library.EvalUtils;
@@ -499,7 +501,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 FId = Convert.ToInt64(d[HR_BILL_ID_FIELD_IN_AREA]),
                 Code = d[OrganizationConstants.BILL_CODE]
             })
-            .ToDictionary(g=>g.Key, g=>g.ToList())
+            .ToDictionary(g => g.Key, g => g.ToList())
             .ToList();
 
             var fIds = identityBills.Select(b => b.Key.FId).Distinct().ToList();
@@ -552,7 +554,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             }
 
             foreach (var bill in bills)
-            {                
+            {
                 var maxAreaRow = bill.AreaData.Max(a => a.Value.Count);
                 for (var i = 0; i < maxAreaRow; i++)
                 {
@@ -953,6 +955,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, false);
+            fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
             return await importFacade.GetFieldDataForMapping();
@@ -963,6 +966,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, false);
+            fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
             return await importFacade.ImportHrBillFromMapping(mapping, stream);
@@ -1157,6 +1161,13 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             if (billInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy chứng từ hành chính nhân sự");
 
+            var billTopUsed = await GetHrBillTopInUsed(new[] { hrBill_F_Id }, true);
+            if (billTopUsed.Count > 0)
+            {
+                throw HrErrorCode.HrBillInUsed.BadRequestFormatWithData(billTopUsed, $"{HrErrorCode.HrBillInUsed.GetEnumDescription()}. {billTopUsed.First().Description}", hrTypeInfo.Title + " " + billInfo.BillCode);
+            }
+
+
             for (int i = 0; i < hrAreas.Count; i++)
             {
                 var hrArea = hrAreas[i];
@@ -1220,6 +1231,16 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _organizationDBContext.SaveChangesAsync();
 
             return (billInfo, hrTypeInfo.Title);
+        }
+
+        public async Task<IList<HrBillInUsedInfo>> GetHrBillTopInUsed(IList<long> fIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                fIds.ToSqlParameter("@FIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _organizationDBContext.QueryListProc<HrBillInUsedInfo>("asp_HrBill_GetTopUsed_ByList", checkParams);
         }
 
         #endregion

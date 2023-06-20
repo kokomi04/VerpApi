@@ -14,7 +14,7 @@ namespace VErp.Commons.Enums.MasterEnum
         Int = 2,
         [Description("Date")]
         [DataSize(-1)]
-        [Regex("^[0-9]*$")]
+        [Regex("^[\\-0-9]*$")]
         Date = 3,
         [Description("Số điện thoại")]
         [DataSize(-1)]

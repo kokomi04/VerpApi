@@ -400,9 +400,9 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                     .HasForeignKey(d => d.ProductionHandoverReceiptId)
                     .HasConstraintName("FK_ProductionHistory_ProductionHandoverReceipt");
 
-                entity.HasOne(d => d.ProductionOrder)
+                entity.HasOne(d => d.ProductionStep)
                     .WithMany(p => p.ProductionHistory)
-                    .HasForeignKey(d => d.ProductionOrderId)
+                    .HasForeignKey(d => d.ProductionStepId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_ProductionHistory_ProductionStep");
             });
@@ -660,6 +660,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStep>(entity =>
             {
+                entity.Property(e => e.Comment).HasMaxLength(512);
+
                 entity.Property(e => e.ContainerId).HasComment("ID của Product hoặc lệnh SX");
 
                 entity.Property(e => e.ContainerTypeId).HasComment("1: Sản phẩm\r\n2: Lệnh SX");
@@ -809,7 +811,8 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
 
             modelBuilder.Entity<ProductionStepMoldLink>(entity =>
             {
-                entity.HasKey(e => new { e.FromProductionStepMoldId, e.ToProductionStepMoldId });
+                entity.HasIndex(e => new { e.FromProductionStepMoldId, e.ToProductionStepMoldId }, "IX_ProductionStepMoldLink")
+                    .IsUnique();
 
                 entity.HasOne(d => d.FromProductionStepMold)
                     .WithMany(p => p.ProductionStepMoldLinkFromProductionStepMold)
@@ -1035,7 +1038,6 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
                 entity.Property(e => e.Description).HasMaxLength(512);
 
                 entity.Property(e => e.HandoverTypeId).HasDefaultValueSql("((1))");
-             
 
                 entity.Property(e => e.ShrinkageRate).HasColumnType("decimal(18, 5)");
 
