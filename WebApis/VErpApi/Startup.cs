@@ -49,9 +49,11 @@ namespace VErp.WebApis.VErpApi
 {
     public class Startup : BaseStartup
     {
+       
+
         public Startup(AppConfigSetting appConfig) : base(appConfig)
         {
-
+            
         }
 
         private X509Certificate2 _cert;
@@ -176,7 +178,7 @@ namespace VErp.WebApis.VErpApi
 
             app.UseEndpointsGrpcService(GrpcServiceAssembly.Assembly);
             app.UseSignalRHubEndpoints(ServiceCoreAssembly.Assembly);
-
+          
             app.UseSwagger()
               .UseSwaggerUI(c =>
               {
@@ -214,8 +216,11 @@ namespace VErp.WebApis.VErpApi
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
                 options.OperationFilter<SwaggerFileOperationFilter>();
-                options.IncludeXmlComments(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath), "VErpApi.xml"));
+                //options.IncludeXmlComments("VErpApi.xml");
+                var runDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
+
+                options.IncludeXmlComments(Path.Combine(runDir, "VErpApi.xml"));
 
                 options.SwaggerDoc("system", new OpenApiInfo
                 {
