@@ -1,26 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.OrganizationDB;
 
-namespace VErp.Infrastructure.EF.OrganizationDB
+public partial class BusinessInfo
 {
-    public partial class BusinessInfo
-    {
-        public int BusinessInfoId { get; set; }
-        public int SubsidiaryId { get; set; }
-        public string CompanyName { get; set; }
-        public string CompanyNameEng { get; set; }
-        public string LegalRepresentative { get; set; }
-        public string Address { get; set; }
-        public string AddressEng { get; set; }
-        public string TaxIdNo { get; set; }
-        public string Website { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Email { get; set; }
-        public int? LogoFileId { get; set; }
-        public DateTime CreatedTime { get; set; }
-        public DateTime UpdatedTime { get; set; }
-        public int UpdatedUserId { get; set; }
-    }
+    public int BusinessInfoId { get; set; }
+
+    public int SubsidiaryId { get; set; }
+
+    public string CompanyName { get; set; }
+
+    public string CompanyNameEng { get; set; }
+
+    public string LegalRepresentative { get; set; }
+
+    public string Address { get; set; }
+
+    public string AddressEng { get; set; }
+
+    public string TaxIdNo { get; set; }
+
+    public string Website { get; set; }
+
+    public string PhoneNumber { get; set; }
+
+    public string Email { get; set; }
+
+    public int? LogoFileId { get; set; }
+
+    public DateTime CreatedTime { get; set; }
+
+    public DateTime UpdatedTime { get; set; }
+
+    public int UpdatedUserId { get; set; }
 }

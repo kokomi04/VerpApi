@@ -1,20 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Infrastructure.EF.MasterDB
+public partial class Method
 {
-    public partial class Method
-    {
-        public Method()
-        {
-            ApiEndpoint = new HashSet<ApiEndpoint>();
-        }
+    public int MethodId { get; set; }
 
-        public int MethodId { get; set; }
-        public string MethodName { get; set; }
+    public string MethodName { get; set; }
 
-        public virtual ICollection<ApiEndpoint> ApiEndpoint { get; set; }
-    }
+    public virtual ICollection<ApiEndpoint> ApiEndpoint { get; set; } = new List<ApiEndpoint>();
 }

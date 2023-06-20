@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Infrastructure.EF.MasterDB
+public partial class OutsideImportMappingObject
 {
-    public partial class OutsideImportMappingObject
-    {
-        public int OutsideImportMappingFunctionId { get; set; }
-        public string SourceId { get; set; }
-        public long InputBillFId { get; set; }
-        public int BillObjectTypeId { get; set; }
+    public int OutsideImportMappingFunctionId { get; set; }
 
-        public virtual OutsideImportMappingFunction OutsideImportMappingFunction { get; set; }
-    }
+    public string SourceId { get; set; }
+
+    public long InputBillFId { get; set; }
+
+    public int BillObjectTypeId { get; set; }
+
+    public virtual OutsideImportMappingFunction OutsideImportMappingFunction { get; set; }
 }

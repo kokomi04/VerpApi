@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Infrastructure.EF.PurchaseOrderDB
+public partial class PurchasingSuggestFile
 {
-    public partial class PurchasingSuggestFile
-    {
-        public long PurchasingSuggestId { get; set; }
-        public long FileId { get; set; }
-        public bool IsDeleted { get; set; }
+    public long PurchasingSuggestId { get; set; }
 
-        public virtual PurchasingSuggest PurchasingSuggest { get; set; }
-    }
+    public long FileId { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public virtual PurchasingSuggest PurchasingSuggest { get; set; }
 }

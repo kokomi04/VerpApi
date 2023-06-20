@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.StockDB;
 
-namespace VErp.Infrastructure.EF.StockDB
+public partial class InventoryRequirementFile
 {
-    public partial class InventoryRequirementFile
-    {
-        public long InventoryRequirementId { get; set; }
-        public long FileId { get; set; }
-        public bool IsDeleted { get; set; }
+    public long InventoryRequirementId { get; set; }
 
-        public virtual InventoryRequirement InventoryRequirement { get; set; }
-    }
+    public long FileId { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public virtual InventoryRequirement InventoryRequirement { get; set; }
 }
