@@ -137,7 +137,7 @@ namespace VErp.Infrastructure.ApiCore
             //    //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
             //    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
             //})
-           .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
+           //.SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
            .AddControllersAsServices();
 
             ConfigureAuthService(services);

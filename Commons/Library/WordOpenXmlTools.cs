@@ -50,7 +50,7 @@ namespace VErp.Commons.Library
                         pageTitle = (string)part.GetXDocument().Descendants(DC.title).FirstOrDefault() ?? fileInfo.FullName;
                     }
 
-                    var settings = new WmlToHtmlConverterSettings(pageTitle, new CustomImageHandler(imageDirectoryName), new TextDummyHandler(), new SymbolHandler(), new CustomBreakHandler(), true);
+                    var settings = new WmlToHtmlConverterSettings(pageTitle, new CustomImageHandler(imageDirectoryName), new TextDummyHandler(), new SymbolHandler(), new CustomBreakHandler(), new FontHandler() , true);
                     XElement htmlElement = WmlToHtmlConverter.ConvertToHtml(wDoc, settings);
 
                     var elements = htmlElement.Elements().ToList();
@@ -106,7 +106,7 @@ namespace VErp.Commons.Library
             {
                 string path = Path.Combine(puppeteerSetting?.Path, product == Product.Chrome ? "chrome" : "firefox");
 #pragma warning disable CS0618 // Type or member is obsolete
-                int version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? int.Parse(puppeteerSetting?.Version, CultureInfo.CurrentCulture.NumberFormat) : BrowserFetcher.DefaultRevision;
+                string version = !string.IsNullOrWhiteSpace(puppeteerSetting?.Version) ? puppeteerSetting?.Version : BrowserFetcher.DefaultChromiumRevision;
 #pragma warning restore CS0618 // Type or member is obsolete
                 string host = puppeteerSetting?.Host;
 

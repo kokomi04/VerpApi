@@ -202,5 +202,14 @@ namespace Verp.Cache.RedisCache
                 _resources.Remove(_resource);
             }
         }
+
+        public ValueTask DisposeAsync()
+        {
+            lock (_objLock)
+            {
+                _resources.Remove(_resource);
+            }
+            return ValueTask.CompletedTask;
+        }
     }
 }

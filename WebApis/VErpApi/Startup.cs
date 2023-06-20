@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
 using Services.Organization.Model;
 using Services.PurchaseOrder.Service;
@@ -215,7 +214,7 @@ namespace VErp.WebApis.VErpApi
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
                 options.OperationFilter<SwaggerFileOperationFilter>();
-                options.IncludeXmlComments(Path.Combine(PlatformServices.Default.Application.ApplicationBasePath, "VErpApi.xml"));
+                options.IncludeXmlComments(Path.Combine(Path.GetDirectoryName(Environment.ProcessPath), "VErpApi.xml"));
 
 
                 options.SwaggerDoc("system", new OpenApiInfo

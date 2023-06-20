@@ -10,8 +10,9 @@ namespace VErp.Infrastructure.EF.EFExtensions
     }
 
     public class DynamicModelCacheKeyFactory : IModelCacheKeyFactory
-    {
-        public object Create(DbContext context)
+    {       
+
+        public object Create(DbContext context, bool designTime)
         {
             if (context is IDbContextFilterTypeCache dynamicContext)
             {
