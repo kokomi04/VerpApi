@@ -955,6 +955,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, false);
+            fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
             return await importFacade.GetFieldDataForMapping();
@@ -965,6 +966,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             var hrType = await _organizationDBContext.HrType.AsNoTracking().FirstOrDefaultAsync(t => t.HrTypeId == hrTypeId);
 
             var fields = await GetHrFields(hrTypeId, null, false);
+            fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
 
             return await importFacade.ImportHrBillFromMapping(mapping, stream);
