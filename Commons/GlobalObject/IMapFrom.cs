@@ -178,26 +178,26 @@ namespace VErp.Commons.GlobalObject
             return expression;
         }
 
-        public static IMappingExpression<ISource, IDestination> IgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
-        {
-            var sourceType = typeof(ISource);
-            var destinationType = typeof(IDestination);
+        //public static IMappingExpression<ISource, IDestination> IgnoreNoneExist<ISource, IDestination>(this IMappingExpression<ISource, IDestination> expression)
+        //{
+        //    var sourceType = typeof(ISource);
+        //    var destinationType = typeof(IDestination);
 
-            if (!sourceType.IsClass) return expression;
-            if (!destinationType.IsClass) return expression;
+        //    if (!sourceType.IsClass) return expression;
+        //    if (!destinationType.IsClass) return expression;
 
-            var sourceProps = sourceType.GetProperties();
+        //    var sourceProps = sourceType.GetProperties();
 
-            var desProps = destinationType.GetProperties();
+        //    var desProps = destinationType.GetProperties();
 
-            expression.ForAllOtherMembers(opts =>
-            {
-                if (!sourceProps.Any(d => d.Name == opts.DestinationMember.Name))
-                    opts.Ignore();
-            });
+        //    expression.ForAllOtherMembers(opts =>
+        //    {
+        //        if (!sourceProps.Any(d => d.Name == opts.DestinationMember.Name))
+        //            opts.Ignore();
+        //    });
 
-            return expression;
-        }
+        //    return expression;
+        //}
 
     }
 }

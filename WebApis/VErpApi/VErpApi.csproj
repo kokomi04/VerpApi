@@ -69,12 +69,6 @@
   </ItemGroup>
   
   <ItemGroup>    
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />    
-    <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />    
-    <PackageReference Include="IdentityServer4" Version="4.1.2" />    
-    <PackageReference Include="IdentityServer4.EntityFramework" Version="4.1.2" />    
-    <PackageReference Include="IdentityServer4.EntityFramework.Storage" Version="4.1.2" />    
-    <PackageReference Include="IdentityServer4.Storage" Version="4.1.2" />    
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.7" />
   </ItemGroup>
 
@@ -83,6 +77,8 @@
     <ProjectReference Include="..\..\Commons\Enums\Enums.csproj" />
     <ProjectReference Include="..\..\Commons\Library\Library.csproj" />
     <ProjectReference Include="..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Ids4\EntityFramework.Storage\IdentityServer4.EntityFramework.Storage.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\Ids4\EntityFramework\IdentityServer4.EntityFramework.csproj" />
     <ProjectReference Include="..\..\Services.Grpc.Service\Services.Grpc.Service.csproj" />
     <ProjectReference Include="..\..\Services.Manafacturing.Service\Services.Manafacturing.Service.csproj" />
     <ProjectReference Include="..\..\Services.PurchaseOrder.Model\Services.PurchaseOrder.Model.csproj" />

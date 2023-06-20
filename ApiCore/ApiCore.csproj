@@ -11,9 +11,8 @@
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="6.0.5" />
     <PackageReference Include="Autofac" Version="7.0.1" />
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="8.1.1" />
+    <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
-    <PackageReference Include="IdentityServer4" Version="4.1.2" />
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="3.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="7.0.7" />
@@ -50,6 +49,7 @@
     <ProjectReference Include="..\Infrastructure\EntityFramework\PurchaseOrderDB\PurchaseOrderDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\ReportConfigDB\ReportConfigDB.csproj" />
     <ProjectReference Include="..\Infrastructure\EntityFramework\StockDB\StockDB.csproj" />
+    <ProjectReference Include="..\Infrastructure\Ids4\IdentityServer4\IdentityServer4.csproj" />
     <ProjectReference Include="..\Infrastructure\ServiceCore\ServiceCore.csproj" />
   </ItemGroup>
 
