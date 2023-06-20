@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
@@ -118,8 +117,7 @@ namespace ConfigApi
                 options.OperationFilter<HeaderFilter>();
                 options.OperationFilter<AuthorizeCheckOperationFilter>();
                 options.OperationFilter<SwaggerFileOperationFilter>();
-                options.IncludeXmlComments(Path.Combine(
-                        PlatformServices.Default.Application.ApplicationBasePath,
+                options.IncludeXmlComments(Path.Combine(Environment.ProcessPath,
                         "ConfigApi.xml"));
 
                 options.SwaggerDoc("accountancy", new OpenApiInfo

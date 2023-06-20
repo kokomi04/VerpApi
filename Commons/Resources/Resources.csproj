@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
+    <LangVersion>11.0</LangVersion>
     <AssemblyName>Verp.Resources</AssemblyName>
     <RootNamespace>Verp.Resources</RootNamespace>
   </PropertyGroup>
