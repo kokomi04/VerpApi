@@ -1,16 +1,22 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
+using OpenXmlPowerTools;
 using Org.BouncyCastle.Utilities.Collections;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Utilities;
 
 namespace VErp.Commons.Library
 {
     public static class JsonUtils
     {
 
+        public const int JSON_MAX_DEPTH = 10;
         private static ILogger __logger;
         private static ILogger _logger
         {
@@ -27,58 +33,68 @@ namespace VErp.Commons.Library
             }
         }
 
-        private static JsonSerializerSettings CreateSettings()
+        private static JsonSerializerSettings CreateSettings(int maxDept = JSON_MAX_DEPTH)
         {
             return new JsonSerializerSettings()
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 PreserveReferencesHandling = PreserveReferencesHandling.None,
+                NullValueHandling = NullValueHandling.Ignore,
+                ContractResolver = new CamelCaseExceptDictionaryKeysResolver(),
+                Converters = new List<JsonConverter>
+                {
+                    new JsonSerializeDeepConverter(maxDept)
+                }
             };
         }
 
         private static readonly JsonSerializerSettings settings = CreateSettings();
-
-        public static string JsonSerialize(this object obj, bool isIgnoreSensitiveData)
+        public static readonly JsonSerializer JsonSerializer = JsonSerializer.Create(new JsonSerializerSettings()
         {
-            var cfg = CreateSettings();
-            if (isIgnoreSensitiveData)
-            {
-                cfg.ContractResolver = new SensitiveDataResolver();
-            }
-            else
-            {
-                cfg.ContractResolver = null;
-            }
+            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+            PreserveReferencesHandling = PreserveReferencesHandling.None,
+            NullValueHandling = NullValueHandling.Ignore,
+            ContractResolver = new CamelCaseExceptDictionaryKeysResolver()           
+        });
 
-            if (obj != null)
+        class CamelCaseExceptDictionaryKeysResolver : CamelCasePropertyNamesContractResolver
+        {
+            protected override JsonDictionaryContract CreateDictionaryContract(Type objectType)
             {
-                var type = obj.GetType();
-                var fullTypeName = type.FullName;
-                if (obj != null && fullTypeName.Contains(".EF.") && fullTypeName.Contains("DB"))
+                JsonDictionaryContract contract = base.CreateDictionaryContract(objectType);
+                if (objectType == typeof(NonCamelCaseDictionary) || (objectType.IsGenericType && objectType.GetGenericTypeDefinition() == typeof(NonCamelCaseDictionary<>)))
                 {
-                    cfg.MaxDepth = 3;
-                    //return JsonConvert.SerializeObject(CloneEntityForSerialize(obj, new Stack<object>(), 1, 10), cfg);
+                    contract.DictionaryKeyResolver = propertyName => propertyName;
+                }
 
-                }
-                else
-                {
-                    cfg.MaxDepth = 10;
-                }
+                return contract;
             }
-
-            return JsonConvert.SerializeObject(obj, cfg);
-
         }
 
-        private static object CloneEntityForSerialize(object obj, Stack<object> ancestors, int level, int maxDeep)
+        public static JToken GetJobjectNoneLoopDeep(object obj, Stack<object> ancestors, int level, int maxDeep)
         {
-            if (level > maxDeep || obj == null) return null;
+            //return obj;
+            if (level > maxDeep || obj == null)
+            {
+                return null;
+            }
+
+            if (obj is Exception ex)
+            {
+                var jEx = new JObject();
+                jEx.Add(nameof(ex.Message), ex.Message);
+                jEx.Add(nameof(ex.Source), ex.Source);
+                jEx.Add(nameof(ex.StackTrace), ex.StackTrace);
+                jEx.Add(nameof(ex.InnerException), GetJobjectNoneLoopDeep(ex.InnerException, ancestors, level, maxDeep));
+                return jEx;
+            }
+          
 
             var type = obj.GetType();
 
             if (ObjectUtils.IsPrimitiveType(type))
             {
-                return obj;
+                return JToken.FromObject(obj, JsonSerializer);
             }
 
             if (ancestors.Contains(obj))
@@ -86,55 +102,60 @@ namespace VErp.Commons.Library
                 return null;
             }
 
+
             ancestors.Push(obj);
 
-            var props = obj.GetType().GetProperties();
+            if (ObjectUtils.IsCollectionType(type))
+            {
+                var lst = new JArray();
 
-            object instance;
-            try
-            {
-                instance = Activator.CreateInstance(type);
+                foreach (var v in (dynamic)obj)
+                {
+                    var v1 = GetJobjectNoneLoopDeep(v, ancestors, level + 1, maxDeep);
+
+                    lst.Add(v1);
+                }
+                ancestors.Pop();
+                return lst;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "CloneEntityForSerialize {0}", type);
-                return obj;
-            }
-            
+
+            var props = obj.GetType().GetProperties().Where(p => p.CanRead).ToList();
+            if (props.Any(p => p.GetIndexParameters().Length > 0)) return JToken.FromObject(obj, JsonSerializer);
+
+            var instance = new Dictionary<string, JToken>();
+
             foreach (var p in props)
             {
-                var values = p.GetValue(obj, null);
+
+                object values;
+                try
+                {
+                    values = p.GetValue(obj, null);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
 
                 if (values != null)
                 {
-                    if (ObjectUtils.IsCollectionType(p.PropertyType))
-                    {
-                        dynamic lst = Activator.CreateInstance(values.GetType());
-
-                        foreach (var v in (dynamic)values)
-                        {
-                            var v1 = CloneEntityForSerialize(v, ancestors, level + 1, maxDeep);
-
-                            lst.Add(v1);
-                        }
-                        p.SetValue(instance, lst);
-                    }
-                    else
-                    {
-                        p.SetValue(instance, CloneEntityForSerialize(values, ancestors, level + 1, maxDeep));
-                    }
+                    instance.Add(p.Name, GetJobjectNoneLoopDeep(values, ancestors, level + 1, maxDeep));
                 }
 
             }
             ancestors.Pop();
-            return instance;
+            return JObject.FromObject(instance, JsonSerializer);
         }
 
 
 
         public static string JsonSerialize(this object obj)
         {
-            return obj.JsonSerialize(false);
+            var cfg = CreateSettings();
+
+            cfg.ContractResolver = new SensitiveDataResolver();
+
+            return JsonConvert.SerializeObject(obj, cfg);
         }
 
 

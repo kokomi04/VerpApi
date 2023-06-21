@@ -1,5 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace VErp.Commons.Library
@@ -10,9 +13,8 @@ namespace VErp.Commons.Library
         {
             var property = base.CreateProperty(member, memberSerialization);
 
-            if (member is PropertyInfo)
+            if (member is PropertyInfo prop)
             {
-                var prop = (PropertyInfo)member;
                 //var isSensitiveData = Attribute.IsDefined(prop, typeof(SensitiveDataAttribute));
 
                 var isSensitiveData = prop.Name.ToLower().Contains("password");
@@ -37,7 +39,8 @@ namespace VErp.Commons.Library
 
         public void SetValue(object target, object value)
         {
-            target = sesitiveDatatag;
+            //Nothing to do
         }
     }
+
 }

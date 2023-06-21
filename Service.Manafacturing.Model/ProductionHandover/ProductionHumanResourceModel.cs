@@ -9,7 +9,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int CreatedByUserId { get; set; }
         public override void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHumanResourceModel, ProductionHumanResource>()
+            profile.CreateMap<ProductionHumanResourceModel, ProductionHumanResource>(MemberList.None)
                 .ForMember(d => d.ProductionOrder, s => s.Ignore())
                 .ForMember(d => d.ProductionStep, s => s.Ignore())
                 .ReverseMap();
@@ -31,7 +31,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
         public virtual void Mapping(Profile profile)
         {
-            profile.CreateMap<ProductionHumanResourceInputModel, ProductionHumanResource>()
+            profile.CreateMap<ProductionHumanResourceInputModel, ProductionHumanResource>(MemberList.None)
                 .ForMember(d => d.ProductionOrder, s => s.Ignore())
                 .ForMember(d => d.ProductionStep, s => s.Ignore())
                 .ReverseMap();
