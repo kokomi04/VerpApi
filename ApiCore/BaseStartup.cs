@@ -30,6 +30,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Utilities;
 using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
@@ -333,14 +334,16 @@ namespace VErp.Infrastructure.ApiCore
             if (serializerSettings == null)
                 serializerSettings = new JsonSerializerSettings();
 
-            serializerSettings.NullValueHandling = NullValueHandling.Ignore;
-            serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
+            serializerSettings.NullValueHandling = NullValueHandling.Ignore;           
             serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-            //serializerSettings.MaxDepth = 10;
+           
+            serializerSettings.Converters.Add(new JsonSerializeDeepConverter(JsonUtils.JSON_MAX_DEPTH));
             return serializerSettings;
         }
     }
+
+
     class ExceptionEnricher : ILogEventEnricher
     {
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)

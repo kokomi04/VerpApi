@@ -164,8 +164,10 @@ namespace VErp.WebApis.VErpApi
             services.AddAutoMapper(cfg => cfg.AddProfile(profile), this.GetType().Assembly);
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory, IMapper mapper)
         {
+            mapper.ConfigurationProvider.AssertConfigurationIsValid();
+
             var pathBase = AppSetting.PathBase;
             if (!string.IsNullOrEmpty(pathBase))
             {

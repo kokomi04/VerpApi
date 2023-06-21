@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -62,15 +63,23 @@ namespace VErp.Commons.GlobalObject
                     i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMapFrom<>)))
                 .ToList();
 
+            var methods = new HashSet<string>();
             foreach (var type in types)
             {
                 var instance = Activator.CreateInstance(type);
 
-                var methodInfo = type.GetMethod("Mapping")
+                var customMethodMapping = type.GetMethod("Mapping");
+                if (customMethodMapping != null)
+                {
+                    var fullPath = customMethodMapping.DeclaringType.FullName + ">" + customMethodMapping.Name;
+                    if (methods.Contains(fullPath)) continue;
+                    methods.Add(fullPath);
+                }
+
+                var methodInfo = customMethodMapping
                     ?? type.GetInterface("IMapFrom`1").GetMethod("Mapping");
 
                 methodInfo?.Invoke(instance, new object[] { profile });
-
             }
 
             var customs = assembly.GetExportedTypes()
@@ -107,7 +116,7 @@ namespace VErp.Commons.GlobalObject
 
         public static IMappingExpression CreateMapCustom(this Profile profile, Type sourceType, Type destinationType)
         {
-            return profile.CreateMap(sourceType, destinationType);
+            return profile.CreateMap(sourceType, destinationType, MemberList.None);
             //var expression = profile.CreateMap(sourceType, destinationType);
             //return MapIgnoreNoneExist(expression, sourceType, destinationType);
         }
@@ -115,7 +124,7 @@ namespace VErp.Commons.GlobalObject
 
         public static IMappingExpression<ISource, IDestination> CreateMapCustom<ISource, IDestination>(this Profile profile)
         {
-            return profile.CreateMap<ISource, IDestination>();
+            return profile.CreateMap<ISource, IDestination>(MemberList.None);
             //var expression = profile.CreateMap<ISource, IDestination>();
             //return MapIgnoreNoneExist(expression);
         }
