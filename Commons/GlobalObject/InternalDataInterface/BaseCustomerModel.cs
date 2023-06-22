@@ -1,6 +1,9 @@
 ﻿using AutoMapper;
+using System;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.Attributes;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface
 {
@@ -58,12 +61,20 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         [Display(Name = "Số ngày nợ", GroupName = "TT bán hàng")]
         public int? DebtDays { get; set; }
         [Display(Name = "Hạn mức nợ", GroupName = "TT bán hàng")]
-        public decimal? DebtLimitation { get; set; }
+        public decimal? DebtLimitation { get; set; }      
         [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)", GroupName = "TT bán hàng")]
         public EnumBeginningType? DebtBeginningTypeId { get; set; }
         [Display(Name = "NV quản lý nợ", GroupName = "TT bán hàng")]
         public int? DebtManagerUserId { get; set; }
 
+        [DynamicObjectCategoryMappingAttribute]
+        [Display(Name = "Điều kiện thanh toán", GroupName = "TT bán hàng - Điều kiện thanh toán")]
+        [DynamicCategoryMapping(CategoryCode = ConditionsConstants.PayConditionCode)]
+        public int? PayConditionsId { get; set; }
+        [DynamicObjectCategoryMappingAttribute]
+        [Display(Name = "Điều kiện giao hàng", GroupName = "TT bán hàng - Điều kiện giao hàng")]
+        [DynamicCategoryMapping(CategoryCode = ConditionsConstants.DeliveryConditionCode)]
+        public int? DeliveryConditionsId { get; set; }
         [Display(Name = "Số ngày vay nợ", GroupName = "TT mua hàng")]
         public int? LoanDays { get; set; }
         [Display(Name = "Hạn mức vay nợ", GroupName = "TT mua hàng")]
@@ -235,6 +246,8 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? DebtLimitation { get; set; }
         public EnumBeginningType DebtBeginningTypeId { get; set; }
         public int? DebtManagerUserId { get; set; }
+        public int? PayConditionsId { get; set; }
+        public int? DeliveryConditionsId { get; set; }
 
         public int? LoanDays { get; set; }
         public decimal? LoanLimitation { get; set; }

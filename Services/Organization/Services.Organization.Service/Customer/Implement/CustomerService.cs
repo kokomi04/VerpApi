@@ -329,6 +329,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 DebtLimitation = customerInfo.DebtLimitation,
                 DebtBeginningTypeId = (EnumBeginningType)customerInfo.DebtBeginningTypeId,
                 DebtManagerUserId = customerInfo.DebtManagerUserId,
+                PayConditionsId = customerInfo.PayConditionsId,
+                DeliveryConditionsId = customerInfo.DeliveryConditionsId,
                 LoanDays = customerInfo.LoanDays,
                 LoanLimitation = customerInfo.LoanLimitation,
                 LoanBeginningTypeId = (EnumBeginningType)customerInfo.LoanBeginningTypeId,
@@ -440,6 +442,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtLimitation = c.DebtLimitation,
                     DebtBeginningTypeId = (EnumBeginningType)c.DebtBeginningTypeId,
                     DebtManagerUserId = c.DebtManagerUserId,
+                    PayConditionsId = c.PayConditionsId,
+                    DeliveryConditionsId = c.DeliveryConditionsId,
                     LoanDays = c.LoanDays,
                     LoanLimitation = c.LoanLimitation,
                     LoanBeginningTypeId = (EnumBeginningType)c.LoanBeginningTypeId,
@@ -540,6 +544,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
             if (!igDeleteRef || data.LoanManagerUserId.HasValue)
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
+            if(!igDeleteRef || data.PayConditionsId.HasValue)
+                customerInfo.PayConditionsId = data.PayConditionsId;
+            if (!igDeleteRef || data.DeliveryConditionsId.HasValue)
+                customerInfo.DeliveryConditionsId = data.DeliveryConditionsId;
             if (!igDeleteRef || !string.IsNullOrWhiteSpace(data.Description))
                 customerInfo.Description = data.Description;
             if (!igDeleteRef || data.IsActived.HasValue)
@@ -680,7 +688,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null,false,false,"",0, _httpCategoryHelperService);
             result.Fields = fields;
             return result;
         }
@@ -776,6 +784,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     DebtLimitation = data.DebtLimitation,
                     DebtBeginningTypeId = (int)(data.DebtBeginningTypeId ?? EnumBeginningType.BillDate),
                     DebtManagerUserId = data.DebtManagerUserId,
+                    PayConditionsId = data.PayConditionsId,
+                    DeliveryConditionsId = data.DeliveryConditionsId,
                     LoanDays = data.LoanDays,
                     LoanLimitation = data.LoanLimitation,
                     LoanBeginningTypeId = (int)data.LoanBeginningTypeId,

@@ -142,6 +142,24 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tồn tại nhiều điều kiện &quot;{1}&quot; trong {0}.
+        /// </summary>
+        public static string CustomerConditionFoundMoreThanOne {
+            get {
+                return ResourceManager.GetString("CustomerConditionFoundMoreThanOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy điều kiện &quot;{1}&quot; trong {0}.
+        /// </summary>
+        public static string CustomerConditionNotFound {
+            get {
+                return ResourceManager.GetString("CustomerConditionNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Tên đối tác &quot;{0}&quot; đã tồn tại.
         /// </summary>
         public static string CustomerNameAlreadyExists {
@@ -156,6 +174,24 @@ namespace Verp.Resources.Organization.Customer {
         public static string MultipleCustomerFound {
             get {
                 return ResourceManager.GetString("MultipleCustomerFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Tồn tại nhiều &quot;{1}&quot; trong {0}.
+        /// </summary>
+        public static string UserFoundMoreThanOne {
+            get {
+                return ResourceManager.GetString("UserFoundMoreThanOne", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy &quot;{1}&quot; trong {0}.
+        /// </summary>
+        public static string UserNotFound {
+            get {
+                return ResourceManager.GetString("UserNotFound", resourceCulture);
             }
         }
     }

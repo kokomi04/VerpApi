@@ -27,7 +27,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionStep
         public EnumHandoverTypeStatus? HandoverTypeId { get; set; }
         public long? OutsourceStepRequestId { get; set; }
         public string OutsourceStepRequestCode { get; set; }
-
+        public string Comment { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<ProductionStepEntity, ProductionStepModel>()

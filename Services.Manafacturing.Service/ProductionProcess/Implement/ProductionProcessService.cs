@@ -654,7 +654,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             CoordinateX = step.CoordinateX,
                             CoordinateY = maxY + step.CoordinateY,
                             SortOrder = step.SortOrder,
-                            IsFinish = step.IsFinish
+                            IsFinish = step.IsFinish,
+                            Comment =step.Comment
                         };
                         if (newStep.CoordinateY.GetValueOrDefault() > newMaxY) newMaxY = newStep.CoordinateY.GetValueOrDefault();
                         if (step.ParentId.HasValue)

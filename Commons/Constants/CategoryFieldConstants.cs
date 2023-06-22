@@ -1,4 +1,7 @@
-﻿namespace VErp.Commons.Constants
+﻿using System.Collections;
+using System.Collections.Generic;
+
+namespace VErp.Commons.Constants
 {
     public static class CategoryFieldConstants
     {
@@ -10,6 +13,13 @@
         public static string F_Id = "F_Id";
 
     }
+
+    public static class ConditionsConstants
+    {
+        public const string PayConditionCode = "_PayConditions";
+        public const string DeliveryConditionCode = "_DeliveryConditions";
+
+    } 
 
     public static class CurrencyCateConstants
     {

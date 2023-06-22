@@ -1482,7 +1482,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     await item.ConfirmCode();
                 }
-                
+
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data.JsonSerialize());
 
                 return data.Length;
@@ -1543,7 +1543,34 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
 
+                var oldIsManualFinish = productionOrder.IsManualFinish;
+
+                var isSetManualFinish = false;
+                if ((int)data.ProductionOrderStatus != productionOrder.ProductionOrderStatus && data.ProductionOrderStatus == EnumProductionStatus.Finished)
+                {
+                    isSetManualFinish = true;
+                }
+
                 _mapper.Map(data, productionOrder);
+
+                if (isSetManualFinish)
+                {
+                    productionOrder.IsManualFinish = true;
+                }
+                else
+                {
+                    if (data.ProductionOrderStatus != EnumProductionStatus.Finished)
+                    {
+                        productionOrder.IsManualFinish = false;
+                    }
+                    else
+                    {
+                        productionOrder.IsManualFinish = oldIsManualFinish;
+                    }
+
+                }
+
+
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
                 var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
@@ -1624,6 +1651,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                 }
 
+                if (isSetManualFinish)//set all assign to finish
+                {
+                    var productionAssignments = _manufacturingDBContext.ProductionAssignment
+                     .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId)
+                     .ToList();
+                    foreach (var productionAssignment in productionAssignments)
+                    {
+                        productionAssignment.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Finish;
+                    }
+
+                }
+
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 invalidPlan = invalidPlan || oldDetail.Count > 0;
@@ -1675,6 +1714,43 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     .Where(o => o.ProductionOrderId == productionOrderId)
                     .FirstOrDefault();
                 if (productionOrder == null) throw new BadRequestException(ProductOrderErrorCode.ProductOrderNotfound);
+
+
+                var histories = await _manufacturingDBContext.ProductionHistory.Where(a => a.ProductionOrderId == productionOrderId).ToListAsync();
+                foreach (var h in histories)
+                {
+                    h.IsDeleted = true;
+                }
+
+
+
+                var handovers = await _manufacturingDBContext.ProductionHandover.Where(a => a.ProductionOrderId == productionOrderId).ToListAsync();
+                foreach (var h in handovers)
+                {
+                    h.IsDeleted = true;
+                }
+
+
+                await _manufacturingDBContext.SaveChangesAsync();
+
+                var receivedIds = histories.Select(h => h.ProductionHandoverReceiptId).Distinct()
+                    .Union(handovers.Select(h => h.ProductionHandoverReceiptId).Distinct())
+                    .Distinct()
+                    .ToList();
+
+                var receiveInfos = await _manufacturingDBContext.ProductionHandoverReceipt
+                    .Include(r => r.ProductionHandover)
+                    .Include(r => r.ProductionHistory)
+                    .Where(r => receivedIds.Contains(r.ProductionHandoverReceiptId))
+                    .ToListAsync();
+                foreach (var r in receiveInfos)
+                {
+                    if (!r.ProductionHandover.Any() && !r.ProductionHistory.Any())
+                    {
+                        r.IsDeleted = true;
+                    }
+                }
+
                 productionOrder.IsDeleted = true;
 
                 var detail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();

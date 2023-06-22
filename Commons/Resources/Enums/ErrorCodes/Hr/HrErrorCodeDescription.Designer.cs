@@ -115,6 +115,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Hr {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dữ liệu {0} đang được sử dụng.
+        /// </summary>
+        public static string HrBillInUsed {
+            get {
+                return ResourceManager.GetString("HrBillInUsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Mã chứng từ hành chính nhân sự đã tồn tại.
         /// </summary>
         public static string HrCodeAlreadyExisted {

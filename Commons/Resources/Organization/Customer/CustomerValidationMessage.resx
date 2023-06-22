@@ -144,10 +144,22 @@
   <data name="CustomerCodeIsRequired" xml:space="preserve">
     <value>Vui lòng nhập mã đối tác</value>
   </data>
+  <data name="CustomerConditionFoundMoreThanOne" xml:space="preserve">
+    <value>Tồn tại nhiều điều kiện "{1}" trong {0}</value>
+  </data>
+  <data name="CustomerConditionNotFound" xml:space="preserve">
+    <value>Không tìm thấy điều kiện "{1}" trong {0}</value>
+  </data>
   <data name="CustomerNameAlreadyExists" xml:space="preserve">
     <value>Tên đối tác "{0}" đã tồn tại</value>
   </data>
   <data name="MultipleCustomerFound" xml:space="preserve">
     <value>Tồn tại nhiều đối tác "{0}" trong file excel</value>
+  </data>
+  <data name="UserFoundMoreThanOne" xml:space="preserve">
+    <value>Tồn tại nhiều "{1}" trong {0}</value>
+  </data>
+  <data name="UserNotFound" xml:space="preserve">
+    <value>Không tìm thấy "{1}" trong {0}</value>
   </data>
 </root>
