@@ -41,10 +41,10 @@ namespace VErp.Commons.Library
                 PreserveReferencesHandling = PreserveReferencesHandling.None,
                 NullValueHandling = NullValueHandling.Ignore,
                 ContractResolver = new CamelCaseExceptDictionaryKeysResolver(),
-                Converters = new List<JsonConverter>
-                {
-                    new JsonSerializeDeepConverter(maxDept)
-                }
+                //Converters = new List<JsonConverter>
+                //{
+                //    new JsonSerializeDeepConverter(maxDept)
+                //}
             };
         }
 
@@ -57,7 +57,7 @@ namespace VErp.Commons.Library
             ContractResolver = new CamelCaseExceptDictionaryKeysResolver()           
         });
 
-        class CamelCaseExceptDictionaryKeysResolver : CamelCasePropertyNamesContractResolver
+        public class CamelCaseExceptDictionaryKeysResolver : CamelCasePropertyNamesContractResolver
         {
             protected override JsonDictionaryContract CreateDictionaryContract(Type objectType)
             {
