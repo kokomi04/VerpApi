@@ -93,10 +93,11 @@ namespace VErp.Infrastructure.ServiceCore.Model
 
         public ExceptionModel(Exception ex)
         {
-            Message = ex.Message;
-            StackTrace = ex.StackTrace;
-            Source = ex.Source;
-            InnerException = new ExceptionModel(ex.InnerException);
+            Message = ex?.Message;
+            StackTrace = ex?.StackTrace;
+            Source = ex?.Source;
+            if (ex.InnerException != null)
+                InnerException = new ExceptionModel(ex.InnerException);
         }
     }
     //public class ApiErrorResponse<T> : ApiErrorResponse
