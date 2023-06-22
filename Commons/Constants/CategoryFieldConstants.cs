@@ -23,7 +23,7 @@ namespace VErp.Commons.Constants
 
     public static class UserManager
     {
-        public const string UserMangerCode = "Employee";
+        public const string UserMangerCode = "_User";
     }
 
     public static class CurrencyCateConstants

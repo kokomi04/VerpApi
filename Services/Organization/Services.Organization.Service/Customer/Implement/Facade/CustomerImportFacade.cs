@@ -368,7 +368,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         }
         private int ReadUser(string refPropertyName, string value)
         {
-            var user = _users.Where(u => u.GetType().GetProperty(refPropertyName) != null && u.GetPropertyValue<string>(refPropertyName) == value).ToList();
+            var user = _users.Where(u => u.GetType().GetProperty(refPropertyName) != null && u.GetPropertyValue<string>(refPropertyName)?.ToUpper() == value.ToUpper()).ToList();
             if (user.Count == 0)
             {
                 throw CustomerConditionNotFound.BadRequestFormat(UserManager.UserMangerCode, value);
