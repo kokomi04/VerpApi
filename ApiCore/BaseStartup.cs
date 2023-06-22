@@ -22,6 +22,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -38,6 +39,7 @@ using VErp.Infrastructure.ApiCore.Middleware;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
+using static VErp.Commons.Library.JsonUtils;
 
 namespace VErp.Infrastructure.ApiCore
 {
@@ -337,8 +339,8 @@ namespace VErp.Infrastructure.ApiCore
             serializerSettings.NullValueHandling = NullValueHandling.Ignore;           
             serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-           
-            serializerSettings.Converters.Add(new JsonSerializeDeepConverter(JsonUtils.JSON_MAX_DEPTH));
+            serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
+            //serializerSettings.Converters.Add(new JsonSerializeDeepConverter(JsonUtils.JSON_MAX_DEPTH));
             return serializerSettings;
         }
     }

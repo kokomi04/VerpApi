@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Infrastructure.ServiceCore.Model
@@ -79,13 +80,28 @@ namespace VErp.Infrastructure.ServiceCore.Model
         public string Message { get; set; }
 
         [JsonProperty("exception$")]
-        public Exception ExceptionDebug { get; set; }
+        public ExceptionModel ExceptionDebug { get; set; }
         public object AdditionData { get; set; }
     }
 
+    public class ExceptionModel
+    {
+        public string Message { get; }
+        public string StackTrace { get; }
+        public string Source { get; }
+        public ExceptionModel InnerException { get; }
+
+        public ExceptionModel(Exception ex)
+        {
+            Message = ex.Message;
+            StackTrace = ex.StackTrace;
+            Source = ex.Source;
+            InnerException = new ExceptionModel(ex.InnerException);
+        }
+    }
     //public class ApiErrorResponse<T> : ApiErrorResponse
     //{
-      
+
     //}
 
 }
