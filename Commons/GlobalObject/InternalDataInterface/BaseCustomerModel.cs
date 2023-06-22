@@ -10,12 +10,12 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
     public class BaseCustomerImportModel
     {
         [Display(Name = "Mã KH", GroupName = "TT chung")]
-        //[Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
+        [Required(ErrorMessage = "Vui lòng nhập mã đối tác")]
         [MaxLength(128, ErrorMessage = "Mã đối tác quá dài")]
         public string CustomerCode { get; set; }
 
         [Display(Name = "Tên KH", GroupName = "TT chung")]
-        [Required(ErrorMessage = "Vui lòng nhập tên đối tác")]
+        //[Required(ErrorMessage = "Vui lòng nhập tên đối tác")]
         [MaxLength(128, ErrorMessage = "Tên đối tác quá dài")]
         public string CustomerName { get; set; }
 
@@ -64,7 +64,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? DebtLimitation { get; set; }      
         [Display(Name = "Thời điểm tính nợ (0: Ngày HĐ, 1: Cuối tháng)", GroupName = "TT bán hàng")]
         public EnumBeginningType? DebtBeginningTypeId { get; set; }
+        [DynamicObjectCategoryMappingAttribute]
         [Display(Name = "NV quản lý nợ", GroupName = "TT bán hàng")]
+        [DynamicCategoryMapping(CategoryCode = UserManager.UserMangerCode)]
         public int? DebtManagerUserId { get; set; }
 
         [DynamicObjectCategoryMappingAttribute]
@@ -81,7 +83,9 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface
         public decimal? LoanLimitation { get; set; }
         [Display(Name = "Thời điểm tính vay nợ (0: Ngày HĐ, 1: Cuối tháng)", GroupName = "TT mua hàng")]
         public EnumBeginningType LoanBeginningTypeId { get; set; }
+        [DynamicObjectCategoryMappingAttribute]
         [Display(Name = "NV quản lý vay nợ", GroupName = "TT mua hàng")]
+        [DynamicCategoryMapping(CategoryCode = UserManager.UserMangerCode)]
         public int? LoanManagerUserId { get; set; }
 
 

@@ -21,6 +21,11 @@ namespace VErp.Commons.Constants
 
     } 
 
+    public static class UserManager
+    {
+        public const string UserMangerCode = "Employee";
+    }
+
     public static class CurrencyCateConstants
     {
         public const string CurrencyCategoryCode = "_Currency";
