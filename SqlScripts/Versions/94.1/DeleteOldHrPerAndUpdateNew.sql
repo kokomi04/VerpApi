@@ -1,5 +1,14 @@
 USE MasterDB
 GO
+DECLARE @HrTypeModuleId_Old INT = 111001--Old
+DECLARE @HrTypeObjectTypeId_Old INT  = 1037
+delete dbo.RolePermission where 
+ ModuleId = @HrTypeModuleId_Old AND ObjectTypeId = @HrTypeObjectTypeId_Old
+
+GO
+
+USE MasterDB
+GO
 DECLARE @CategoryDataModuleId INT = 702;
 DECLARE @InputTypeModuleId INT = 802;
 DECLARE @InputPublicTypeModuleId INT = 8002;
