@@ -238,7 +238,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.HrType.AddAsync(hrType);
                 await _organizationDBContext.SaveChangesAsync();
 
-                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.Hr, EnumObjectType.HrType, hrType.HrTypeId);
+                await _roleHelperService.GrantPermissionForAllRoles(EnumModule.HrBill, EnumObjectType.HrType, hrType.HrTypeId);
 
                 trans.Commit();
 
