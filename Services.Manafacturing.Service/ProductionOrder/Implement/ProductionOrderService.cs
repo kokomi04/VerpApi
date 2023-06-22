@@ -23,6 +23,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
@@ -45,6 +46,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IDraftDataHelperService _draftDataHelperService;
         private readonly ICurrentContextService _currentContextService;
+        private readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
 
         public ProductionOrderService(ManufacturingDBContext manufacturingDB
             , IActivityLogService activityLogService
@@ -55,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , IOrganizationHelperService organizationHelperService
             , IDraftDataHelperService draftDataHelperService
             , ICurrentContextService currentContextService
-            )
+            , IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
             _activityLogService = activityLogService;
@@ -66,6 +68,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             _organizationHelperService = organizationHelperService;
             _draftDataHelperService = draftDataHelperService;
             _currentContextService = currentContextService;
+            _productionOrderQueueHelperService = productionOrderQueueHelperService;
         }
 
         public async Task<bool> UpdateProductionProcessVersion(long productionOrderId, int productId)
@@ -1694,6 +1697,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 trans.Commit();
 
                 await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data);
+       
+                await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrder?.ProductionOrderCode, $"Cập nhật thông tin lệnh");
+
                 return data;
             }
             catch (Exception ex)
