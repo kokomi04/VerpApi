@@ -99,9 +99,9 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             this.messageResourceFormatData = datas;
             return this;
         }
-        public ObjectActivityLogModelBuilder<T> JsonData(object obj)
+        public ObjectActivityLogModelBuilder<T> JsonData(string jsonData)
         {
-            this.jsonData = obj.JsonSerialize();
+            this.jsonData = jsonData;
             return this;
         }
         public ObjectActivityLogModelBuilder<T> Action(EnumActionType? action)

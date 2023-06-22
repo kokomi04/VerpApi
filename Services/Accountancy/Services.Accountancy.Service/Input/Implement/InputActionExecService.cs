@@ -107,7 +107,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
 
-            await _inputDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
+            await _inputDataActivityLog.CreateLog(billId, logMessage, data, (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
 
             return result;
         }
