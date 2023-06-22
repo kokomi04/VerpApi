@@ -96,7 +96,7 @@ namespace VErp.Infrastructure.ServiceCore.Model
             Message = ex?.Message;
             StackTrace = ex?.StackTrace;
             Source = ex?.Source;
-            if (ex.InnerException != null)
+            if (ex?.InnerException != null)
                 InnerException = new ExceptionModel(ex.InnerException);
         }
     }
