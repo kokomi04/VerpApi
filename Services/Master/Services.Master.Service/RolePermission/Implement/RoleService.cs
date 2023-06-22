@@ -200,7 +200,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                                 }
                                 break;
 
-                            case (int)EnumModule.Hr:
+                            case (int)EnumModule.HrBill:
                                 foreach (var c in hrTypes)
                                 {
                                     var permission = new RolePermissionEntity

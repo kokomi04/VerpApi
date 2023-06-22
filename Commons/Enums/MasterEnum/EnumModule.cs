@@ -15,7 +15,7 @@
 
         SalesBill = 902,
 
-        Hr = 111001,
+        HrBill = 111002,
         DashboardView = 120002,
     }
 }
