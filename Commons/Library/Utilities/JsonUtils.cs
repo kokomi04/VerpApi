@@ -6,6 +6,7 @@ using Newtonsoft.Json.Serialization;
 using OpenXmlPowerTools;
 using Org.BouncyCastle.Utilities.Collections;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using VErp.Commons.GlobalObject;
@@ -54,7 +55,7 @@ namespace VErp.Commons.Library
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
             PreserveReferencesHandling = PreserveReferencesHandling.None,
             NullValueHandling = NullValueHandling.Ignore,
-            ContractResolver = new CamelCaseExceptDictionaryKeysResolver()           
+            ContractResolver = new CamelCaseExceptDictionaryKeysResolver()
         });
 
         public class CamelCaseExceptDictionaryKeysResolver : CamelCasePropertyNamesContractResolver
@@ -88,7 +89,7 @@ namespace VErp.Commons.Library
                 jEx.Add(nameof(ex.InnerException), GetJobjectNoneLoopDeep(ex.InnerException, ancestors, level, maxDeep));
                 return jEx;
             }
-          
+
 
             var type = obj.GetType();
 
@@ -104,6 +105,32 @@ namespace VErp.Commons.Library
 
 
             ancestors.Push(obj);
+
+            var isDict = typeof(IDictionary).IsAssignableFrom(type);
+
+            if (isDict)
+            {
+                var dicObj = (IDictionary)obj;
+                var typeKey = dicObj.Keys.GetType().GenericTypeArguments[0];
+
+                if (ObjectUtils.IsPrimitiveType(typeKey))
+                {
+                    ancestors.Pop();
+                    return JObject.FromObject(obj, JsonSerializer);
+                }
+
+                var dic = new Dictionary<JToken, JToken>();
+                foreach (var key in dicObj.Keys)
+                {
+
+                    var k1 = GetJobjectNoneLoopDeep(key, ancestors, level + 1, maxDeep);
+                    var v1 = GetJobjectNoneLoopDeep(dicObj[key], ancestors, level + 1, maxDeep);
+
+                    dic.Add(k1, v1);
+                }
+                ancestors.Pop();
+                return JObject.FromObject(dic, JsonSerializer);
+            }
 
             if (ObjectUtils.IsCollectionType(type))
             {
@@ -144,6 +171,7 @@ namespace VErp.Commons.Library
 
             }
             ancestors.Pop();
+
             return JObject.FromObject(instance, JsonSerializer);
         }
 
