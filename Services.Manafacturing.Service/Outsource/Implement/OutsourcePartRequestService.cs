@@ -107,7 +107,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request);
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
 
@@ -218,7 +218,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, model.OutsourcePartRequestId, $"Cập nhật yêu cầu gia công chi tiết {model.OutsourcePartRequestId}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, model.OutsourcePartRequestId, $"Cập nhật yêu cầu gia công chi tiết {model.OutsourcePartRequestId}", model);
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
                 return true;

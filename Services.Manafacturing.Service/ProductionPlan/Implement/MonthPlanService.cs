@@ -86,7 +86,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.SaveChanges();
                 data.MonthPlanId = monthPlan.MonthPlanId;
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlan.MonthPlanId, $"Thêm mới kế hoạch tháng {monthPlan.MonthPlanName}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlan.MonthPlanId, $"Thêm mới kế hoạch tháng {monthPlan.MonthPlanName}", data);
                 return data;
             }
             catch (Exception ex)
@@ -177,7 +177,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlan.MonthPlanId, $"Cập nhật kế hoạch tháng {monthPlan.MonthPlanName}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlan.MonthPlanId, $"Cập nhật kế hoạch tháng {monthPlan.MonthPlanName}", data);
                 return data;
             }
             catch (Exception ex)
@@ -210,7 +210,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 }
                 monthPlan.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlanId, $"Xóa kế hoạch tháng {monthPlan.MonthPlanName}", monthPlan.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, monthPlanId, $"Xóa kế hoạch tháng {monthPlan.MonthPlanName}", monthPlan);
                 return true;
             }
             catch (Exception ex)

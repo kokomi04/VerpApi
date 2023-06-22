@@ -209,7 +209,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {
                     _manufacturingDBContext.SaveChanges();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false }.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false });
                 }
 
 

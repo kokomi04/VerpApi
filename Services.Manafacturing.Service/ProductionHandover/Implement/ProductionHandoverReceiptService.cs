@@ -201,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                             }
                         }
 
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận phiếu thống kê sản xuất", info.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận phiếu thống kê sản xuất", info);
 
                     }
 
@@ -249,7 +249,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}", info.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}", info);
 
 
                 foreach (var code in productionOrderCodes)
@@ -415,7 +415,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     }
                 }
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", data);
 
                 await ctx.ConfirmCode();
 
@@ -515,7 +515,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
 
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
@@ -637,7 +637,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await trans.CommitAsync();
 
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
 
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
@@ -712,7 +712,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(productionOrderId, item.ToProductionStepId, item.ToDepartmentId, null, departmentHandoverDetails);
                     }
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, item.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionHandover, item.ProductionHandoverId, $"Tạo bàn giao công việc / yêu cầu xuất kho", data);
                 }
 
                 trans.Commit();

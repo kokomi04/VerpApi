@@ -50,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlanExtraInfo, monthPlanId, $"Cập nhật thông tin thêm kế hoạch", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionPlanExtraInfo, monthPlanId, $"Cập nhật thông tin thêm kế hoạch", data);
 
                 return data;
             }

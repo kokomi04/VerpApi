@@ -100,7 +100,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.MaterialAllocation, productionOrderId, $"Cập nhật phân bổ vật tư sản xuât", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.MaterialAllocation, productionOrderId, $"Cập nhật phân bổ vật tư sản xuât", data);
 
                 data.MaterialAllocations = await _manufacturingDBContext.MaterialAllocation
                     .Where(ma => ma.ProductionOrderId == productionOrderId)

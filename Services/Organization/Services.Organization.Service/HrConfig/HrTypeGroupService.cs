@@ -44,7 +44,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _organizationDBContext.HrTypeGroup.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Thêm nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Thêm nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model);
 
             return info.HrTypeGroupId;
         }
@@ -59,7 +59,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Cập nhật nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Cập nhật nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model);
 
             return true;
         }
@@ -74,7 +74,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Xóa nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", new { hrTypeGroupId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Xóa nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", new { hrTypeGroupId });
 
             return true;
         }

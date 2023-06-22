@@ -251,5 +251,31 @@ namespace VErp.Commons.Library
             return mod.JsonSerialize();
         }
 
+        public static bool IsValidJson(string stringValue)
+        {
+            if (string.IsNullOrWhiteSpace(stringValue))
+            {
+                return false;
+            }
+
+            var value = stringValue.Trim();
+
+            if ((value.StartsWith("{") && value.EndsWith("}")) ||
+                (value.StartsWith("[") && value.EndsWith("]")))
+            {
+                try
+                {
+                    var obj = JToken.Parse(value);
+                    return true;
+                }
+                catch (JsonReaderException)
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
     }
 }
