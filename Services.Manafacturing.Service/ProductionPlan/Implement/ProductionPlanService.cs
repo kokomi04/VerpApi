@@ -196,7 +196,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
                     var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data);
                 }
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
@@ -242,7 +242,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                 _manufacturingDBContext.ProductionWeekPlan.RemoveRange(currentProductionWeekPlans);
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderId, $"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", currentProductionWeekPlans.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderId, $"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", currentProductionWeekPlans);
                 return true;
             }
             catch (Exception ex)

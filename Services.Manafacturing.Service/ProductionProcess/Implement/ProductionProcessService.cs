@@ -77,7 +77,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
-                        $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req.JsonSerialize());
+                        $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
                     return step.ProductionStepId;
                 }
                 catch (Exception ex)
@@ -119,7 +119,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
-                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep.JsonSerialize());
+                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep);
                     return true;
                 }
                 catch (Exception ex)
@@ -926,7 +926,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
-                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req.JsonSerialize());
+                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req);
                     return true;
                 }
                 catch (Exception ex)
@@ -1023,7 +1023,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
 
             await _activityLogService.CreateLog(EnumObjectType.ProductionStep, stepGroup.ProductionStepId,
-                        $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req.JsonSerialize());
+                        $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
             return stepGroup.ProductionStepId;
         }
 
@@ -1040,7 +1040,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionStep, req.First().ProductionStepId,
-                        $"Cập nhật vị trí cho các công đoạn", req.JsonSerialize());
+                        $"Cập nhật vị trí cho các công đoạn", req);
                 return true;
             }
             catch (Exception ex)
@@ -1100,7 +1100,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _productHelperService.UpdateProductionProcessVersion(containerId);
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req);
 
                 if(containerTypeId== EnumContainerType.ProductionOrder)
                 {

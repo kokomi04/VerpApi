@@ -1,6 +1,8 @@
 ﻿using Grpc.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,9 +27,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);
 
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
+        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
 
-        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
+        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object data, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
 
         ActivityLogBatchs BeginBatchLog();
 
@@ -103,8 +105,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
+        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, object objData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
         {
+            var jsonData = JsonSerialize(objData);
             if (ignoreBatch)
             {
                 return await CreateLogRequest(objectTypeId, objectId, message, jsonData, action, messageResourceName, messageResourceFormatData, billTypeId);
@@ -157,8 +160,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
+        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object objData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
         {
+            var jsonData = JsonSerialize(objData);
             var propertyInfo = ((MemberExpression)messageResourceName.Body).Member as PropertyInfo;
             if (propertyInfo == null)
             {
@@ -197,7 +201,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
 
 
-            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, data.JsonSerialize(), billTypeId);
+            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, JsonSerialize(data), billTypeId);
         }
 
         public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
@@ -258,6 +262,24 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
+        public const int JSON_ACTIVITY_LOG_MAX_DEPTH = 3;
+        private string JsonSerialize(object obj)
+        {
+            if (obj != null)
+            {
+                if (obj is string)
+                {
+                    if (JsonUtils.IsValidJson(obj.ToString()))
+                    {
+                        return obj.ToString();
+                    }
+                }
+
+                return JsonUtils.GetJobjectNoneLoopDeep(obj, new Stack<object>(), 1, JSON_ACTIVITY_LOG_MAX_DEPTH).JsonSerialize();
+
+            }
+            return null;
+        }
         public class ActivityLogBatchs : IDisposable
         {
             private readonly IActivityLogService _activityLogService;

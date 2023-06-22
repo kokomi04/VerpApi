@@ -56,7 +56,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity);
                 await trans.CommitAsync();
 
                 return entity.StepId;
@@ -87,7 +87,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa danh mục công đoạn '{step.StepName}'", step);
                 await trans.CommitAsync();
                 return true;
             }
@@ -169,7 +169,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Cập nhật danh mục công đoạn '{step.StepName}'", step.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Cập nhật danh mục công đoạn '{step.StepName}'", step);
                 await trans.CommitAsync();
 
                 return true;

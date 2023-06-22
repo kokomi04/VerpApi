@@ -140,7 +140,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, inputArea.HrAreaId, $"Thêm vùng thông tin {inputArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, inputArea.HrAreaId, $"Thêm vùng thông tin {inputArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", data);
                 return inputArea.HrAreaId;
             }
             catch (Exception ex)
@@ -204,7 +204,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrAreaId, $"Cập nhật vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrAreaId, $"Cập nhật vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", data);
                 return true;
             }
             catch (Exception ex)
@@ -238,7 +238,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             hrArea.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrTypeId, $"Xóa vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", hrArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrType, hrArea.HrTypeId, $"Xóa vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}", hrArea);
             return true;
         }
         #endregion
@@ -543,7 +543,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrTypeId, $"Cập nhật trường dữ liệu chứng từ {hrTypeInfo.Title}", fields.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, hrTypeId, $"Cập nhật trường dữ liệu chứng từ {hrTypeInfo.Title}", fields);
 
                 return true;
             }
@@ -591,7 +591,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrTableType();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrField.HrFieldId, $"Thêm trường dữ liệu {hrField.Title} cho vùng thông tin {hrAreaId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, hrField.HrFieldId, $"Thêm trường dữ liệu {hrField.Title} cho vùng thông tin {hrAreaId}", data);
                 return data;
             }
             catch (Exception ex)
@@ -655,7 +655,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrTableType();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, inputField.HrFieldId, $"Cập nhật trường dữ liệu {inputField.Title} cho vùng thông tin {hrAreaId}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, inputField.HrFieldId, $"Cập nhật trường dữ liệu {inputField.Title} cho vùng thông tin {hrAreaId}", data);
                 return data;
             }
             catch (Exception ex)
@@ -706,7 +706,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrValueView();
                 // await UpdateHrTableType();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.HrType, inputField.HrFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, inputField.HrFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField);
                 return true;
             }
             catch (Exception ex)

@@ -145,7 +145,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             await trans.CommitAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật bảng tính nhu cầu vật tư {productionOrder.ProductionOrderCode}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật bảng tính nhu cầu vật tư {productionOrder.ProductionOrderCode}", model);
 
             return true;
         }

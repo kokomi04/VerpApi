@@ -133,7 +133,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement);
 
                     return resultId;
                 }
@@ -166,7 +166,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Xóa yêu cầu vật tư thêm", requirement.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Xóa yêu cầu vật tư thêm", requirement);
                 return true;
             }
             catch (Exception ex)
@@ -320,7 +320,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Cập nhật yêu cầu vật tư thêm", requirement.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Cập nhật yêu cầu vật tư thêm", requirement);
 
                 return true;
             }

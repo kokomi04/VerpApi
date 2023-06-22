@@ -56,7 +56,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Tạo mới bán thành phẩm {productSemiEntity.ProductSemiId}", model.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Tạo mới bán thành phẩm {productSemiEntity.ProductSemiId}", model);
                 return productSemiEntity.ProductSemiId;
 
             }
@@ -85,7 +85,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _manuDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Xóa bán thành phẩm {productSemiEntity.ProductSemiId}", productSemiEntity.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Xóa bán thành phẩm {productSemiEntity.ProductSemiId}", productSemiEntity);
                 return true;
             }
             catch (Exception ex)
@@ -154,7 +154,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _manuDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Cập nhật bán thành phẩm {productSemiEntity.ProductSemiId}", model.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Cập nhật bán thành phẩm {productSemiEntity.ProductSemiId}", model);
                 return true;
             }
             catch (Exception ex)
@@ -192,7 +192,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Tạo mới bán thành phẩm {results.JsonSerialize()}", results.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Tạo mới bán thành phẩm {results}", results);
                 return results.ToArray();
 
             }
@@ -235,7 +235,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Cập nhật bán thành phẩm {models.Select(x => x.ProductSemiId).JsonSerialize()}", models.Select(x => x.ProductSemiId).JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Cập nhật bán thành phẩm {models.Select(x => x.ProductSemiId)}", models.Select(x => x.ProductSemiId));
                 return true;
             }
             catch (Exception ex)

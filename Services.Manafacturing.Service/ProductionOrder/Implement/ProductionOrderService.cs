@@ -1366,7 +1366,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     await generateCodeCtx.ConfirmCode();
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data);
 
                 return data;
             }
@@ -1483,7 +1483,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await item.ConfirmCode();
                 }
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrderId, $"Thêm {data.Length} lệnh sản xuất từ kế hoạch", data);
 
                 return data.Length;
             }
@@ -1693,7 +1693,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}", data);
                 return data;
             }
             catch (Exception ex)
@@ -1795,7 +1795,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Xóa lệnh sản xuất {productionOrder.ProductionOrderCode}", productionOrder.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Xóa lệnh sản xuất {productionOrder.ProductionOrderCode}", productionOrder);
                 return true;
             }
             catch (Exception ex)
@@ -1877,7 +1877,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     if (isFinish)
                     {
                         productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false });
                     }
                 }
                 else
@@ -1886,7 +1886,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     if (productionOrder.ProductionOrderStatus < (int)data.ProductionOrderStatus)
                     {
                         productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false }.JsonSerialize());
+                        await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất ", new { productionOrder, data, isManual = false });
                     }
                 }
                 _manufacturingDBContext.SaveChanges();
@@ -1913,7 +1913,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
                 {
                     productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệch sản xuất ", new { productionOrder, status, isManual = true }.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệch sản xuất ", new { productionOrder, status, isManual = true });
                 }
                 _manufacturingDBContext.SaveChanges();
                 return true;
@@ -1994,7 +1994,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 foreach (var productionOrder in productionOrders)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật thời gian lệch sản xuất từ kế hoạch", productionOrder.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật thời gian lệch sản xuất từ kế hoạch", productionOrder);
                 }
                 return true;
             }

@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DraftData, draftData.ObjectId, $"Cập nhật kế dữ liệu nháp", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DraftData, draftData.ObjectId, $"Cập nhật kế dữ liệu nháp", data);
 
                 return data;
             }
@@ -82,7 +82,7 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
 
                 _manufacturingDBContext.DraftData.Remove(draftData);
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.DraftData, objectId, $"Xóa dữ liệu nháp", draftData.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DraftData, objectId, $"Xóa dữ liệu nháp", draftData);
                 return true;
             }
             catch (Exception ex)
