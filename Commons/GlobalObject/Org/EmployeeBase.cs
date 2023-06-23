@@ -19,5 +19,7 @@ namespace VErp.Commons.GlobalObject.Org
         public int UserId { get; set; }
         public string EmployeeCode { get; set; }
         public string FullName { get; set; }
+        public string Email { get; set; }
+        public string Phone { get; set; }
     }
 }

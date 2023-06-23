@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -368,7 +369,11 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         }
         private int ReadUser(string refPropertyName, string value)
         {
-            var user = _users.Where(u => u.GetType().GetProperty(refPropertyName) != null && u.GetPropertyValue<string>(refPropertyName)?.ToUpper() == value.ToUpper()).ToList();
+            refPropertyName = refPropertyName== F_Id ? nameof(EmployeeBasicNameModel.UserId) : refPropertyName;
+            if (_users == null || _users.Count == 0)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy dữ liệu bảng {UserManager.UserMangerCode}");
+            var user = _users.Where(u => _users.First().GetType().GetProperty(refPropertyName) != null &&
+            u.GetPropertyValue<object>(refPropertyName)?.ToString()?.ToUpper() == value.ToUpper()).ToList();
             if (user.Count == 0)
             {
                 throw CustomerConditionNotFound.BadRequestFormat(UserManager.UserMangerCode, value);
