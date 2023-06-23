@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -34,6 +36,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private readonly OrganizationDBContext _organizationContext;
         private readonly IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
         private readonly IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+        private readonly IUserHelperService _userHelperService;
         private readonly ObjectActivityLogFacade _customerActivityLog;
 
         private IList<CustomerBankAccount> _bankAccounts;
@@ -41,14 +44,15 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<ReferFieldModel> _refFields;
         private IList<NonCamelCaseDictionary> _payConditionData;
         private IList<NonCamelCaseDictionary> _deliveryConditionData;
-
-        public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
+        private IList<EmployeeBasicNameModel> _users;
+        public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext, IUserHelperService userHelperService)
         {
             _customerService = customerService;
             _customerActivityLog = customerActivityLog;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
             _organizationContext = organizationContext;
+            _userHelperService = userHelperService;
         }
 
 
@@ -155,7 +159,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
-                        if (lstUpdateCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        if (lstUpdateCustomer.Any(x => (!string.IsNullOrEmpty(customerInfo.CustomerName) && x.CustomerName == customerInfo.CustomerName) || (!string.IsNullOrEmpty( customerInfo.CustomerCode) &&  x.CustomerCode == customerInfo.CustomerCode) ))
                             continue;
 
                         customerInfo.CustomerId = oldCustomer.CustomerId;
@@ -199,7 +203,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private async Task<IList<BaseCustomerImportModel>> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
             var currencies = await _httpCategoryHelperService.GetDataRows(CurrencyCategoryCode, new CategoryFilterModel());
-           
+            _users = await _userHelperService.GetAll();
             _payConditionData = (await _httpCategoryHelperService.GetDataRows(PayConditionCode, new CategoryFilterModel())).List;
             _deliveryConditionData = (await _httpCategoryHelperService.GetDataRows(DeliveryConditionCode, new CategoryFilterModel())).List;
             var lstCates = await _organizationContext.CustomerCate.ToListAsync();
@@ -228,7 +232,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData);
                     return true;
                 }
-
+                if (propertyName == nameof(BaseCustomerImportModel.DebtManagerUserId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    entity.DebtManagerUserId = ReadUser(refPropertyName, value);
+                    return true;
+                }
+                if (propertyName == nameof(BaseCustomerImportModel.LoanManagerUserId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    entity.LoanManagerUserId = ReadUser(refPropertyName, value);
+                    return true;
+                }
                 if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
@@ -352,7 +367,24 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
             return Convert.ToInt32(condition[0][F_Id]);
         }
+        private int ReadUser(string refPropertyName, string value)
+        {
+            refPropertyName = refPropertyName== F_Id ? nameof(EmployeeBasicNameModel.UserId) : refPropertyName;
+            if (_users == null || _users.Count == 0)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy dữ liệu bảng {UserManager.UserMangerCode}");
+            var user = _users.Where(u => _users.First().GetType().GetProperty(refPropertyName) != null &&
+            u.GetPropertyValue<object>(refPropertyName)?.ToString()?.ToUpper() == value.ToUpper()).ToList();
+            if (user.Count == 0)
+            {
+                throw CustomerConditionNotFound.BadRequestFormat(UserManager.UserMangerCode, value);
+            }
 
+            if (user.Count > 1)
+            {
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(UserManager.UserMangerCode, value);
+            }
+            return user[0].UserId;
+        }
         private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj)
         {
             model.Contacts = new List<CustomerContactModel>();

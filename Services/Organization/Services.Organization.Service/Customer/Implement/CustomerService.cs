@@ -544,7 +544,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
             if (!igDeleteRef || data.LoanManagerUserId.HasValue)
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
-            if(!igDeleteRef || data.PayConditionsId.HasValue)
+            if (!igDeleteRef || data.PayConditionsId.HasValue)
                 customerInfo.PayConditionsId = data.PayConditionsId;
             if (!igDeleteRef || data.DeliveryConditionsId.HasValue)
                 customerInfo.DeliveryConditionsId = data.DeliveryConditionsId;
@@ -582,9 +582,10 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     c.IsDeleted = true;
                 }
             }
-
-
-            var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
+            
+            var lstContacts = igDeleteRef ? data.Contacts.Where(c => !dbContacts.Any(dc => c.FullName == dc.FullName)).ToList()
+                : data.Contacts.Where(c => !(c.CustomerContactId > 0)).ToList();
+            var newContacts = lstContacts.Select(c => new CustomerContact()
             {
                 CustomerId = customerInfo.CustomerId,
                 FullName = c.FullName,
@@ -600,7 +601,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             foreach (var c in dbContacts)
             {
-                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
+                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId || s.FullName == c.FullName);
                 if (reqContact != null)
                 {
                     c.FullName = reqContact.FullName;
@@ -622,16 +623,20 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     ba.IsDeleted = true;
                 }
             }
+           
 
 
-            var newBankAccounts = data.BankAccounts
-                .Where(ba => ba.BankAccountId <= 0)
+            var newBankAccounts = (igDeleteRef ? data.BankAccounts
+                .Where(ba => !dbBankAccounts.Any(da=> da.AccountName == ba.AccountName))
+                : data.BankAccounts
+                .Where(ba => ba.BankAccountId <=0))
                 .Select(ba => TransformBankAccEntity(customerId, ba));
+
             await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
             foreach (var ba in dbBankAccounts)
             {
-                var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
+                var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId || s.AccountName == ba.AccountName);
                 if (reqBankAccount != null)
                 {
                     ba.AccountNumber = reqBankAccount.AccountNumber;
@@ -688,14 +693,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null,false,false,"",0, _httpCategoryHelperService);
+            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null, false, false, "", 0, _httpCategoryHelperService);
             result.Fields = fields;
             return result;
         }
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
+            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext, _userHelperService);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(longTaskResourceLockService, mapping, stream);
 
