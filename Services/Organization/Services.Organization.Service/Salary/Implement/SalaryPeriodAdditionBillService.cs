@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using AutoMapper.Internal;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Bibliography;
 using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Functions;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -102,37 +104,57 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return info;
         }
 
-        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword, int page, int size)
+        public async Task<PageData<SalaryPeriodAdditionBillList>> GetList(int salaryPeriodAdditionTypeId, SalaryPeriodAdditionBillsRequestModel req)
         {
-            var query = GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword);
+            var query = GetListQuery(salaryPeriodAdditionTypeId, req);
             var total = await query.CountAsync();
 
             var lst = await query
-                 .OrderByDescending(bill => bill.Year)
-                 .ThenByDescending(bill => bill.Month)
-                 .ThenByDescending(bill => bill.Date)
                  .ProjectTo<SalaryPeriodAdditionBillList>(_mapper.ConfigurationProvider)
-                 .Skip(page - 1).Take(size).ToListAsync();
+                 .Skip(req.Page - 1).Take(req.Size).ToListAsync();
 
 
             return (lst, total);
         }
 
-        public IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
+        public IQueryable<SalaryPeriodAdditionBill> GetListQuery(int salaryPeriodAdditionTypeId, SalaryPeriodAdditionBillFilterModel filter)
         {
             var query = _organizationDBContext.SalaryPeriodAdditionBill.Where(b => b.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId);
-            if (year > 0)
+            if (filter.Year > 0)
             {
-                query = query.Where(b => b.Year == year.Value);
+                query = query.Where(b => b.Year == filter.Year.Value);
             }
 
-            if (month > 0)
+            if (filter.Month > 0)
             {
-                query = query.Where(b => b.Month == month.Value);
+                query = query.Where(b => b.Month == filter.Month.Value);
             }
-            if (!string.IsNullOrEmpty(keyword))
+
+            if (filter.FromDate.HasValue)
             {
-                query = query.Where(b => b.Content.Contains(keyword));
+                query = query.Where(b => b.Date >= filter.FromDate.Value.UnixToDateTime());
+            }
+
+            if (filter.ToDate.HasValue)
+            {
+                query = query.Where(b => b.Date <= filter.ToDate.Value.UnixToDateTime());
+            }
+
+            if (!string.IsNullOrEmpty(filter.Keyword))
+            {
+                query = query.Where(b => b.Content.Contains(filter.Keyword));
+            }
+
+            query = query.InternalFilter(filter.ColumnsFilters);
+            if (string.IsNullOrEmpty(filter.OrderBy))
+            {
+                query = query.OrderByDescending(bill => bill.Year)
+                     .ThenByDescending(bill => bill.Month)
+                     .ThenByDescending(bill => bill.Date);
+            }
+            else
+            {
+                query = query.InternalOrderBy(filter.OrderBy, filter.Asc);
             }
 
             return query;

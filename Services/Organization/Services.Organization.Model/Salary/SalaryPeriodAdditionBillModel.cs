@@ -85,5 +85,6 @@ namespace VErp.Services.Organization.Model.Salary
     {
         public NonCamelCaseDictionary EmployeeInfo { get; set; }
     }
-
+   
+    
 }
