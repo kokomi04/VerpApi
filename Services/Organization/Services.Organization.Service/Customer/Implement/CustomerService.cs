@@ -493,9 +493,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
-            var checkExisted = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
-            if (checkExisted)
+            var checkExistedCode = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
+            if (checkExistedCode)
                 throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+
+            var checkExistedName = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerName == data.CustomerName);
+            if (checkExistedName)
+                throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", data.CustomerName));
 
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
@@ -582,7 +586,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     c.IsDeleted = true;
                 }
             }
-            
+
             var lstContacts = igDeleteRef ? data.Contacts.Where(c => !dbContacts.Any(dc => c.FullName == dc.FullName)).ToList()
                 : data.Contacts.Where(c => !(c.CustomerContactId > 0)).ToList();
             var newContacts = lstContacts.Select(c => new CustomerContact()
@@ -623,13 +627,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                     ba.IsDeleted = true;
                 }
             }
-           
+
 
 
             var newBankAccounts = (igDeleteRef ? data.BankAccounts
-                .Where(ba => !dbBankAccounts.Any(da=> da.AccountName == ba.AccountName))
+                .Where(ba => !dbBankAccounts.Any(da => da.AccountName == ba.AccountName))
                 : data.BankAccounts
-                .Where(ba => ba.BankAccountId <=0))
+                .Where(ba => ba.BankAccountId <= 0))
                 .Select(ba => TransformBankAccEntity(customerId, ba));
 
             await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);

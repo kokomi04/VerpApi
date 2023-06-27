@@ -134,7 +134,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                         customerInfo.CustomerTypeId = customerInfo.Contacts?.Count > 0 ? EnumCustomerType.Organization : EnumCustomerType.Personal;
                     }
 
-                    var existedCustomers = existsCustomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
+                    var existedCustomers = existsCustomers.Where(x => x.CustomerCode == customerInfo.CustomerCode);
 
                     if (existedCustomers != null && existedCustomers.Any() && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     {
@@ -153,7 +153,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                     if (oldCustomer == null)
                     {
-                        if (lstAddCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        if (lstAddCustomer.Any(x => x.CustomerCode == customerInfo.CustomerCode))
                             if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                                 throw MultipleCustomerFound.BadRequestFormat(customerInfo.CustomerCode);
                             else
@@ -163,7 +163,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
-                        if (lstUpdateCustomer.Any(x => (!string.IsNullOrEmpty(customerInfo.CustomerName) && x.CustomerName == customerInfo.CustomerName) || (!string.IsNullOrEmpty( customerInfo.CustomerCode) &&  x.CustomerCode == customerInfo.CustomerCode) ))
+                        if (lstUpdateCustomer.Any(x => !string.IsNullOrEmpty( customerInfo.CustomerCode) &&  x.CustomerCode == customerInfo.CustomerCode ))
                             continue;
 
                         customerInfo.CustomerId = oldCustomer.CustomerId;
@@ -202,7 +202,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 return true;
             }
         }
-
+       
 
         private async Task<IList<BaseCustomerImportModel>> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
