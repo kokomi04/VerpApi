@@ -1,10 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Util;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -42,6 +45,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private IList<CustomerBankAccount> _bankAccounts;
         private IList<CustomerContact> _customerContact;
         private IList<ReferFieldModel> _refFields;
+        private IList<ReferFieldModel> _refFieldUsers;
         private IList<NonCamelCaseDictionary> _payConditionData;
         private IList<NonCamelCaseDictionary> _deliveryConditionData;
         private IList<EmployeeBasicNameModel> _users;
@@ -61,8 +65,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu đối tác từ excel"))
             {
                 var refProps = mapping.MappingFields.Select(f => f.RefFieldName).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct().ToList();
-                _refFields = await _httpCategoryHelperService.GetReferFields(new[] { PayConditionCode, DeliveryConditionCode }, refProps);
-
+                _refFields = await _httpCategoryHelperService.GetReferFields(new[] { PayConditionCode, DeliveryConditionCode }, null);
+                _refFieldUsers = await _httpCategoryHelperService.GetReferFields(new[] { UserManager.UserMangerCode }, null);
                 var reader = new ExcelReader(stream);
                 reader.RegisterLongTaskEvent(longTask);
 
@@ -219,29 +223,31 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             {
                 await Task.CompletedTask;
 
+                var fieldName = typeof(BaseCustomerImportModel).GetProperty(propertyName)?.GetCustomAttributes<DisplayAttribute>()?.FirstOrDefault()?.Name ?? string.Empty;
+
                 if (propertyName == nameof(BaseCustomerImportModel.PayConditionsId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
 
-                    entity.PayConditionsId = ReadCondition(PayConditionCode, refPropertyName, value, _payConditionData);
+                    entity.PayConditionsId = ReadCondition(PayConditionCode, refPropertyName, value, _payConditionData, fieldName);
                     return true;
                 }
                 if (propertyName == nameof(BaseCustomerImportModel.DeliveryConditionsId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
-                    entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData);
+                    entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData, fieldName);
                     return true;
                 }
                 if (propertyName == nameof(BaseCustomerImportModel.DebtManagerUserId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
-                    entity.DebtManagerUserId = ReadUser(refPropertyName, value);
+                    entity.DebtManagerUserId = ReadUser(refPropertyName, value, fieldName);
                     return true;
                 }
                 if (propertyName == nameof(BaseCustomerImportModel.LoanManagerUserId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
-                    entity.LoanManagerUserId = ReadUser(refPropertyName, value);
+                    entity.LoanManagerUserId = ReadUser(refPropertyName, value, fieldName);
                     return true;
                 }
                 if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
@@ -353,35 +359,37 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
 
         }
-        private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data)
+        private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data, string fieldName)
         {
             var condition = data.Where(f => f.ContainsKey(refPropertyName) && f[refPropertyName].ToString() == value).ToList();
+            var propertyName = _refFields.FirstOrDefault(f=> f.CategoryCode == category && f.CategoryFieldName == refPropertyName)?.CategoryFieldTitle ?? string.Empty;
             if (condition.Count == 0)
             {
-                throw CustomerConditionNotFound.BadRequestFormat(category, value);
+                throw CustomerConditionNotFound.BadRequestFormat(propertyName, value, fieldName);
             }
 
             if (condition.Count > 1)
             {
-                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(category, value);
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(propertyName, value, fieldName);
             }
             return Convert.ToInt32(condition[0][F_Id]);
         }
-        private int ReadUser(string refPropertyName, string value)
+        private int ReadUser(string refPropertyName, string value, string fieldName)
         {
+            var userPropertyName = _refFieldUsers.FirstOrDefault(f => f.CategoryFieldName == refPropertyName)?.CategoryFieldTitle ?? string.Empty;
             refPropertyName = refPropertyName== F_Id ? nameof(EmployeeBasicNameModel.UserId) : refPropertyName;
             if (_users == null || _users.Count == 0)
-                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy dữ liệu bảng {UserManager.UserMangerCode}");
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường {fieldName}");
             var user = _users.Where(u => _users.First().GetType().GetProperty(refPropertyName) != null &&
             u.GetPropertyValue<object>(refPropertyName)?.ToString()?.ToUpper() == value.ToUpper()).ToList();
             if (user.Count == 0)
             {
-                throw CustomerConditionNotFound.BadRequestFormat(UserManager.UserMangerCode, value);
+                throw CustomerConditionNotFound.BadRequestFormat(userPropertyName, value, fieldName);
             }
 
             if (user.Count > 1)
             {
-                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(UserManager.UserMangerCode, value);
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(userPropertyName, value, fieldName);
             }
             return user[0].UserId;
         }
