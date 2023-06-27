@@ -64,7 +64,7 @@ namespace VErpApi.Controllers.Organization
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerCateId, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size);
+            var (stream, fileName, contentType) = await _customerService.ExportList(req.FieldNames, req.Keyword, req.CustomerCateId, req.CustomerIds, req.CustomerStatusId, req.Page, req.Size,req.ColumnsFilters);
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
