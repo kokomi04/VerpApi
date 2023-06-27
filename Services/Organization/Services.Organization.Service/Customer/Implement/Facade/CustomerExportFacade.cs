@@ -59,8 +59,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             _userHelperService = userHelperService;
             fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null, false, false, "", 0, _httpCategoryHelperService).Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
             groups = fields.Select(g => g.GroupName).Distinct().ToList();
-            groupPayCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.PayConditionsId)).FirstOrDefault().GroupName;
-            groupDeliveryCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId)).FirstOrDefault().GroupName;
+            groupPayCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.PayConditionsId)).FirstOrDefault()?.GroupName;
+            groupDeliveryCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId)).FirstOrDefault()?.GroupName;
         }
 
 
