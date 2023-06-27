@@ -49,7 +49,7 @@ namespace VErpApi.Controllers.Organization.Salary.Addition
         }
 
 
-        [HttpPost("{salaryPeriodAdditionTypeId}/bills")]
+        [HttpPost("{salaryPeriodAdditionTypeId}/bills/Search")]
         [VErpAction(EnumActionType.View)]
         public async Task<PageData<SalaryPeriodAdditionBillList>> GetList([FromRoute] int salaryPeriodAdditionTypeId, [FromBody] SalaryPeriodAdditionBillsRequestModel req)
         {
