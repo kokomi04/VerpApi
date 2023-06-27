@@ -40,5 +40,6 @@ namespace VErp.Services.Organization.Model.Customer
     public class CustomerListExportModel : CustomerListFilterModel
     {
         public IList<string> FieldNames { get; set; }
+        public Clause ColumnsFilters { get; set; }
     }
 }
