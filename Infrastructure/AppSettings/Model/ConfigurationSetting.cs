@@ -8,5 +8,6 @@
         public long FileUploadMaxLength { get; set; }
         public long BackupStorageFolder { get; set; }
         public string InternalCrossServiceKey { get; set; }
+        public string ExternalHelpApiKey { get; set;}
     }
 }
