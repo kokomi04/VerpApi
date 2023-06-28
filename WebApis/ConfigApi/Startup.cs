@@ -31,7 +31,7 @@ namespace ConfigApi
 
             ConfigSwagger(services);
 
-            ConfigDbOwnerContext(services);
+            ConfigReadWriteDBContext(services);
 
             ConfigureBussinessService(services);
 
