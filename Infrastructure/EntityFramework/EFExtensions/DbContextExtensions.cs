@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore.SqlServer.Infrastructure.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -487,6 +488,28 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
 
                 object dbValue = null;
+
+                Expression fromDate = null;
+                Expression toDate = null;
+                if (clause.DataType == EnumDataType.Date)
+                {
+                    if (clause.Value.IsNullOrEmptyObject())
+                    {
+                        fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
+                        toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
+                    }
+                    else
+                    {
+                        var date = ((long)clause.Value).UnixToDateTime(timeZoneOffset);
+                        var fDate = new DateTime(date.Year, date.Month, date.Day).ToUtc(timeZoneOffset);
+                        var tDate = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, 990).ToUtc(timeZoneOffset);
+
+                        fromDate = Expression.PropertyOrField(Expression.Constant(new { p = fDate }), "p");
+                        toDate = Expression.PropertyOrField(Expression.Constant(new { p = tDate }), "p");
+                    }
+
+                }
+
                 if (clause.Operator != EnumOperator.InList)
                 {
                     dbValue = clause.Value.IsNullOrEmptyObject() ? clause.Value : clause.DataType.GetSqlValue(clause.Value);
@@ -506,9 +529,17 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 {
                     case EnumOperator.Equal:
                         expression = Expression.Equal(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.And(Expression.GreaterThanOrEqual(prop, fromDate), Expression.LessThanOrEqual(prop, toDate));
+                        }
                         break;
                     case EnumOperator.NotEqual:
                         expression = Expression.NotEqual(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.Or(Expression.LessThan(prop, fromDate), Expression.GreaterThan(prop, toDate));
+                        }
                         break;
                     case EnumOperator.Contains:
 
@@ -601,15 +632,31 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         break;
                     case EnumOperator.GreaterOrEqual:
                         expression = Expression.GreaterThanOrEqual(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.GreaterThanOrEqual(prop, fromDate);
+                        }
                         break;
                     case EnumOperator.LessThanOrEqual:
                         expression = Expression.LessThanOrEqual(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.LessThanOrEqual(prop, toDate);
+                        }
                         break;
                     case EnumOperator.Greater:
                         expression = Expression.GreaterThan(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.GreaterThan(prop, toDate);
+                        }
                         break;
                     case EnumOperator.LessThan:
                         expression = Expression.LessThan(prop, value);
+                        if (clause.DataType == EnumDataType.Date)
+                        {
+                            expression = Expression.LessThan(prop, fromDate);
+                        }
                         break;
                     default:
                         expression = Expression.Constant(true);
