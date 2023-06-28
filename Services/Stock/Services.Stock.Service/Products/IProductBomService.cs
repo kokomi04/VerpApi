@@ -14,8 +14,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<IList<ProductBomOutput>> GetBom(int productId);
         Task<IList<ProductElementModel>> GetProductElements(IList<int> productIds);
-        Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds);
-
+        Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds, bool isTopBom =false);
         Task<bool> UpdateProductBomDb(int productId, ProductBomUpdateInfoModel bomInfo);
 
         Task<bool> Update(int productId, ProductBomUpdateInfoModel bomInfo);
