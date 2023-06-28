@@ -62,10 +62,12 @@ namespace MigrateAndMappingApi
                 spa.Options.SourcePath = "ClientApp";
 
                 //if (env.IsDevelopment())
-                if (env.EnvironmentName == "Development")
-                {
-                    spa.UseReactDevelopmentServer(npmScript: "start");
-                }
+                //if (env.EnvironmentName == "Local")
+                //{
+#if DEBUG
+                spa.UseReactDevelopmentServer(npmScript: "start");
+#endif
+                //}
             });
 
         }
