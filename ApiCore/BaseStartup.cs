@@ -310,6 +310,8 @@ namespace VErp.Infrastructure.ApiCore
                 options.CacheDuration = TimeSpan.FromMinutes(10);
                 options.EnableCaching = true;
             });
+            services.AddDistributedMemoryCache();
+
             //.AddIdentityServerAuthentication(options =>
             //{
             //    options.Authority = AppSetting.Identity.Endpoint;
