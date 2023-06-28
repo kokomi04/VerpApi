@@ -183,7 +183,12 @@ namespace MigrateAndMappingApi.Controllers
                 await _masterContext.ApiEndpoint.AddRangeAsync(lst);
 
                 var lstNewIds = lst.Select(a => a.ApiEndpointId).ToList();
-                _masterContext.ModuleApiEndpointMapping.AddRange(storedMappings.Where(a => lstNewIds.Contains(a.ApiEndpointId)));
+                var newMappings = storedMappings.Where(a => lstNewIds.Contains(a.ApiEndpointId));
+                foreach(var m in newMappings)
+                {
+                    m.ModuleApiEndpointMappingId = 0;
+                }
+                _masterContext.ModuleApiEndpointMapping.AddRange(newMappings);
 
                 await _masterContext.SaveChangesAsync();
                 trans.Commit();
