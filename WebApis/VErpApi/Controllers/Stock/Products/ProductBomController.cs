@@ -67,6 +67,16 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("exports")]
+        public async Task<IActionResult> Exports([FromBody] IList<int> productIds)
+        {
+            if (productIds == null) throw new BadRequestException(GeneralCode.InvalidParams);
+            var (stream, fileName, contentType) = await _productBomService.ExportBoms(productIds);
+
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("export")]
         public async Task<IActionResult> Export([FromBody] IList<int> productIds)
         {
             if (productIds == null) throw new BadRequestException(GeneralCode.InvalidParams);
