@@ -9,7 +9,6 @@
         public string PathBase { get; set; }
         public ConfigurationSetting Configuration { get; set; }
         public DatabaseConnectionSetting DatabaseConnections { get; set; }
-        public DatabaseConnectionSetting OwnerDatabaseConnections { get; set; }
         public string PasswordPepper { get; set; }
         public string FileUrlEncryptPepper { get; set; }
         public string ExtraFilterEncryptPepper { get; set; }
