@@ -23,9 +23,12 @@ namespace VErp.Services.Organization.Model.Salary
             {
                 var stack = new Stack<SalaryFieldModel>();
                 stack.Push(field);
+                var traveled = new HashSet<SalaryFieldModel>();
                 while (stack.Count > 0)
                 {
                     SalaryFieldModel currentField = stack.Pop();
+                    traveled.Add(currentField);
+
                     var children = fields.Where(f => f != currentField && ContainRefField(currentField, "#" + f.SalaryFieldName)).ToList();
                     if (children.Count == 0 || children.All(c => sortedFields.Contains(c)))
                     {
@@ -39,7 +42,7 @@ namespace VErp.Services.Organization.Model.Salary
                         stack.Push(currentField);
                         foreach (var c in children)
                         {
-                            if (!stack.Contains(c))
+                            if (!traveled.Contains(c))
                                 stack.Push(c);
                         }
                     }
