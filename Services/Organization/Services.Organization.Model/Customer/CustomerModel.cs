@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 
 namespace VErp.Services.Organization.Model.Customer
 {

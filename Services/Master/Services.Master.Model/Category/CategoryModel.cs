@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Services.Master.Model.CategoryConfig;
 using CategoryEntity = VErp.Infrastructure.EF.MasterDB.Category;
 

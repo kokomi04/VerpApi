@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;

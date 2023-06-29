@@ -1,6 +1,6 @@
 using ActivityLogDB;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 
 namespace VErp.Services.Master.Model.Notification
 {

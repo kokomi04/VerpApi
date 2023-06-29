@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;

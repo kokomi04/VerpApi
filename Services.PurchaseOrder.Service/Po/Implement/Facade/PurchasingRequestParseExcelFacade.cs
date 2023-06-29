@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using Verp.Resources.PurchaseOrder.PurchasingRequest;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;

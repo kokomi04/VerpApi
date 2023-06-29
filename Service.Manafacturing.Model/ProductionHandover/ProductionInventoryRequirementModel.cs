@@ -3,7 +3,7 @@ using System;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {

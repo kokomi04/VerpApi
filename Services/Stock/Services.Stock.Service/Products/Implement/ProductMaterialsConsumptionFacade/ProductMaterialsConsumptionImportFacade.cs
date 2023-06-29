@@ -8,7 +8,9 @@ using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.Product;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
@@ -20,7 +22,7 @@ using VErp.Services.Master.Model.Dictionary;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade
 {

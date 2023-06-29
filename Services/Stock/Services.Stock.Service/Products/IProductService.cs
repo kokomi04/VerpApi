@@ -2,7 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Stock.Model.Product;

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
 using VErp.Services.Manafacturing.Model.ProductionStep;

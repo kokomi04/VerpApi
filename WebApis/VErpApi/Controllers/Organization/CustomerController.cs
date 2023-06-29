@@ -130,7 +130,7 @@ namespace VErpApi.Controllers.Organization
         /// <returns></returns>
         [HttpDelete]
         [Route("{customerId}")]
-        public async Task<bool> DeleteUnit([FromRoute] int customerId)
+        public async Task<bool> DeleteCustomer([FromRoute] int customerId)
         {
             return await _customerService.DeleteCustomer(customerId);
         }

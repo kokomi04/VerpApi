@@ -8,7 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;

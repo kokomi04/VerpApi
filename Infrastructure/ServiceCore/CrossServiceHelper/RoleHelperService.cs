@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.user;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 

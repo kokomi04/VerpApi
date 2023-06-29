@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Reflection;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 
 namespace VErp.Commons.Library.Model
 {

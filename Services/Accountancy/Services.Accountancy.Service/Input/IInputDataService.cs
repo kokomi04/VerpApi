@@ -4,7 +4,7 @@ using System.Data;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;

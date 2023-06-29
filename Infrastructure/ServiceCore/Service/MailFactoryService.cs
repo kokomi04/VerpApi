@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.ServiceCore.Service

@@ -1,13 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Accountancy.Service.Input;
 
 namespace VErpApi.Controllers.Accountancy.Action
-{   
+{
     public abstract class InputActionConfigControllerAbstract : VErpBaseController
     {
         private readonly IActionButtonConfigHelper _actionButtonConfigHelper;

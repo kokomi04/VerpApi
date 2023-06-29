@@ -14,11 +14,11 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Constants;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using NPOI.SS.UserModel;
 using VErp.Services.Organization.Model.Salary;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {

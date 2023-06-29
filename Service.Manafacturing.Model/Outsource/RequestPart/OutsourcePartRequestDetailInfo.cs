@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.PurchaseOrder;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart

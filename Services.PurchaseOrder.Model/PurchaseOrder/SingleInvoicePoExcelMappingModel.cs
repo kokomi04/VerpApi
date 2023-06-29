@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum.PO;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library.Model;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 {

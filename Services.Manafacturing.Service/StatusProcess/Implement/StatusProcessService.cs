@@ -13,7 +13,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -68,7 +68,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             return result;
         }
 
-        public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel> inventories = null)
+        public async Task<IList<DepartmentHandoverDetailModel>> GetDepartmentHandoverDetail(long productionOrderId, long? productionStepId = null, int? departmentId = null, IList<InternalProductionInventoryRequirementModel> inventories = null)
         {
             var result = new List<DepartmentHandoverDetailModel>();
 
@@ -201,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 };
                 var resultData = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionHandover_GetInventoryRequirementByProductionOrder", parammeters);
 
-                inventories = resultData.ConvertData<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel>();
+                inventories = resultData.ConvertData<InternalProductionInventoryRequirementModel>();
             }
 
             var inventoryRequirements = inventories
@@ -754,7 +754,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             return result;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, string description, IList<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel> inventories = null)
+        public async Task<bool> ChangeAssignedProgressStatus(string productionOrderCode, string description, IList<InternalProductionInventoryRequirementModel> inventories = null)
         {
             var productionOrder = _manufacturingDBContext.ProductionOrder
                 .FirstOrDefault(po => po.ProductionOrderCode == productionOrderCode);
@@ -813,7 +813,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             return bOk;
         }
 
-        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<Commons.GlobalObject.InternalDataInterface.InternalProductionInventoryRequirementModel> inventories = null, IList<DepartmentHandoverDetailModel> departmentHandoverDetails = null)
+        public async Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, IList<InternalProductionInventoryRequirementModel> inventories = null, IList<DepartmentHandoverDetailModel> departmentHandoverDetails = null)
         {
             var productionAssignment = _manufacturingDBContext.ProductionAssignment
                    .Where(a => a.ProductionOrderId == productionOrderId
