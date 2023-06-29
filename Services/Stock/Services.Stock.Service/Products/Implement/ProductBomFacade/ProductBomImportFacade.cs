@@ -273,7 +273,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             foreach (var bom in _bomByProductCodes)
             {
 
-
                 _existedProducts.TryGetValue(bom.Key, out var rootProductInfo);
 
                 var productBoms = bom.Value.Select(b =>
@@ -282,6 +281,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
                     TryGetStepId(b.InputStepName, out int? inputStepId);
                     TryGetStepId(b.OutputStepName, out int? outputStepId);
+
+                    if (rootProductInfo.ProductId == childProduct.ProductId)
+                    {
+                        throw ($"Chi tiết của mặt hàng không được là chính nó {b.ProductCode} dòng {b.RowNumber}").BadRequest();
+                    }
 
                     return new ProductBomInput()
                     {
@@ -374,6 +378,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var bomIndex = 1;
             foreach (var b in productBoms)
             {
+                if (pathProductIds.Contains(b.ChildProductId)) continue;
+
                 var childInfo = _existedProducts.Values.FirstOrDefault(v => v.ProductId == b.ChildProductId);
 
                 var totalQuantity = quantity * (b.Quantity ?? 0) * (b.Wastage ?? 1);
