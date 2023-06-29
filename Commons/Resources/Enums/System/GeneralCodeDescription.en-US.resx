@@ -138,6 +138,9 @@
   <data name="ItemCodeExisted" xml:space="preserve">
     <value>The item code already exists!</value>
   </data>
+  <data name="ItemInUsed" xml:space="preserve">
+    <value>Data is being used</value>
+  </data>
   <data name="ItemNotFound" xml:space="preserve">
     <value>The record was not found</value>
   </data>

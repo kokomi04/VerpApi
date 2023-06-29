@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface.Category
 {

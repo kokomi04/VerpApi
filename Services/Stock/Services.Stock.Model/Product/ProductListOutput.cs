@@ -2,7 +2,7 @@
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Services.Stock.Model.Stock;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Model.Product
 {

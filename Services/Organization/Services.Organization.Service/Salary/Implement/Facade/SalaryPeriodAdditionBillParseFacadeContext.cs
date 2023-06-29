@@ -15,7 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Constants;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {

@@ -9,7 +9,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -322,7 +323,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return result;
         }
 
-        private List<int> GetMaterialsConsumptionIds(IEnumerable<VErp.Commons.GlobalObject.InternalDataInterface.ProductMaterialsConsumptionSimpleModel> materialsConsumptions)
+        private List<int> GetMaterialsConsumptionIds(IEnumerable<ProductMaterialsConsumptionSimpleModel> materialsConsumptions)
         {
             var materialsConsumptionIds = new List<int>();
             foreach (var item in materialsConsumptions)

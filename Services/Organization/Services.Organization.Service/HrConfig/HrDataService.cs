@@ -27,7 +27,8 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -1233,14 +1234,14 @@ namespace VErp.Services.Organization.Service.HrConfig
             return (billInfo, hrTypeInfo.Title);
         }
 
-        public async Task<IList<HrBillInUsedInfo>> GetHrBillTopInUsed(IList<long> fIds, bool isCheckExistOnly)
+        public async Task<IList<ObjectBillInUsedInfo>> GetHrBillTopInUsed(IList<long> fIds, bool isCheckExistOnly)
         {
             var checkParams = new[]
             {
                 fIds.ToSqlParameter("@FIds"),
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
-            return await _organizationDBContext.QueryListProc<HrBillInUsedInfo>("asp_HrBill_GetTopUsed_ByList", checkParams);
+            return await _organizationDBContext.QueryListProc<ObjectBillInUsedInfo>("asp_HrBill_GetTopUsed_ByList", checkParams);
         }
 
         #endregion

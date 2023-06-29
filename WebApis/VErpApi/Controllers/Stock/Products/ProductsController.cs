@@ -9,7 +9,8 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -275,7 +276,7 @@ namespace VErpApi.Controllers.Stock.Products
         [HttpPost]
         [Route("GetProductTopInUsed")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<ProductInUsedInfo>> GetProductTopInUsed([FromBody] IList<int> productIds)
+        public async Task<IList<ObjectBillInUsedInfo>> GetProductTopInUsed([FromBody] IList<int> productIds)
         {
             return (await _productService.GetProductTopInUsed(productIds, false)).ToList();
         }

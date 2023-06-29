@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.MasterDB;
@@ -24,6 +23,7 @@ using Verp.Resources.Stock.Inventory.InventoryFileData;
 using Verp.Cache.RedisCache;
 using DocumentFormat.OpenXml.InkML;
 using VErp.Infrastructure.ServiceCore.Extensions;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {

@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Verp.Services.PurchaseOrder.Model;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Accountancy.Model;
 using VErp.Services.Manafacturing.Model;

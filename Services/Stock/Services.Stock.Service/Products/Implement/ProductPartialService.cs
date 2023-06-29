@@ -21,7 +21,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product.Partial;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -146,7 +146,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var productTopUsed = await _productService.GetProductTopInUsed(new List<int>() { productId }, false);
                         if (productTopUsed.Count > 0)
                         {
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + productTopUsed.First().Description);
+                            throw GeneralCode.ItemInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + productTopUsed.First().Description);
                         }
                     }
 

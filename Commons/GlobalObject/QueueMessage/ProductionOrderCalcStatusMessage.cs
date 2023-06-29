@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using VErp.Commons.Enums.Manafacturing;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 
 namespace VErp.Commons.GlobalObject.QueueMessage
 {

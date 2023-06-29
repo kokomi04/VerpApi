@@ -13,7 +13,8 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -31,7 +32,7 @@ using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -734,7 +735,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             var productTopUsed = await GetProductTopInUsed(new List<int>() { productId }, false);
             if (productTopUsed.Count > 0)
             {
-                throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotDeleteProductWhichInUsed, productTopUsed.First().Description);
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(productTopUsed, CanNotDeleteProductWhichInUsed, productTopUsed.First().Description);
             }
 
             var productExtra = await _stockDbContext.ProductExtraInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
@@ -1412,14 +1413,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
             //return (null, null);
         }*/
 
-        public async Task<IList<ProductInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly)
+        public async Task<IList<ObjectBillInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly)
         {
             var checkParams = new[]
             {
                 productIds.ToSqlParameter("@ProductIds"),
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
-            return await _stockDbContext.QueryListProc<ProductInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
+            return await _stockDbContext.QueryListProc<ObjectBillInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
         }
 
     }

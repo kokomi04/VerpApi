@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Organization.Service.BusinessInfo;
 using VErp.Services.Organization.Service.Customer;

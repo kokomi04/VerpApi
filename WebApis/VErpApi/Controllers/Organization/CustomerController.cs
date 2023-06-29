@@ -7,6 +7,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -130,7 +131,7 @@ namespace VErpApi.Controllers.Organization
         /// <returns></returns>
         [HttpDelete]
         [Route("{customerId}")]
-        public async Task<bool> DeleteUnit([FromRoute] int customerId)
+        public async Task<bool> DeleteCustomer([FromRoute] int customerId)
         {
             return await _customerService.DeleteCustomer(customerId);
         }
@@ -183,7 +184,7 @@ namespace VErpApi.Controllers.Organization
         [HttpPost]
         [Route("GetCustomerTopInUsed")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed([FromBody] IList<int> customerIds)
+        public async Task<IList<ObjectBillInUsedInfo>> GetCustomerTopInUsed([FromBody] IList<int> customerIds)
         {
             return (await _customerService.GetCustomerTopInUsed(customerIds, false)).ToList();
         }

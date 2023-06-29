@@ -2,7 +2,7 @@ using Lib.Net.Http.WebPush;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 
 namespace VErp.Services.Master.Model.WebPush
 {
