@@ -142,7 +142,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             if (!string.IsNullOrEmpty(filter.Keyword))
             {
-                query = query.Where(b => b.Content.Contains(filter.Keyword));
+                query = query.Where(b => b.Content.Contains(filter.Keyword) || b.BillCode.Contains(filter.Keyword));
             }
 
             query = query.InternalFilter(filter.ColumnsFilters);
