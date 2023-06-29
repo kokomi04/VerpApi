@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using MongoDB.Bson;
+using Newtonsoft.Json;
 using NPOI.POIFS.Crypt;
 using System;
 using System.Collections.Generic;
@@ -37,7 +39,7 @@ namespace VErpApi.Controllers.Help
         {
             var secretKey = _appSetting.Configuration.ExternalHelpApiKey;
 
-            _httpClient.BaseAddress = new Uri("http://localhost:5232");
+            _httpClient.BaseAddress = new Uri("https://help-service.verp.vn");
             var request = new HttpRequestMessage(HttpMethod.Get, "/api/verp");
 
             _httpClient.DefaultRequestHeaders.Add("SecretKey", secretKey);
@@ -49,14 +51,8 @@ namespace VErpApi.Controllers.Help
                 {
                     return Unauthorized();
                 }
-
-                IEnumerable<string> headerValues;
-                if (response.Headers.TryGetValues("Token", out headerValues))
-                {
-                    throw new BadRequestException(GeneralCode.ItemNotFound, "Can't try to get token!");
-                }
-
-                return Ok(headerValues.FirstOrDefault());
+                var tokens = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
+                return Ok(tokens);
             }
             catch
             {
