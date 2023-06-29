@@ -111,20 +111,20 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
             }
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var checkParams = new[]
-            {
-                    new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.All),
-                    isInUsed
-                };
+            //var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            //var checkParams = new[]
+            //{
+            //        new SqlParameter("@DepartmentId",departmentId),
+            //        new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.All),
+            //        isInUsed
+            //    };
 
-            await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
+            //await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
 
-            if (isInUsed.Value as bool? == true)
-            {
-                throw new BadRequestException("Bộ phận đã được sử dụng, không được phép xóa");
-            }
+            //if (isInUsed.Value as bool? == true)
+            //{
+            //    throw new BadRequestException("Bộ phận đã được sử dụng, không được phép xóa");
+            //}
 
             var departmentTopUsed = await GetDepartmentTopInUsed(new[] { departmentId }, true);
             if (departmentTopUsed.Count > 0)
