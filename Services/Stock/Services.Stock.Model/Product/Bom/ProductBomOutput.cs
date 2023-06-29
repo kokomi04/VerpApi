@@ -67,7 +67,7 @@ namespace VErp.Services.Stock.Model.Product
         }
     }
 
-    public class ProductBomImportModel
+    public class ProductBomImportModel : MappingDataRowAbstract
     {
         const string MainProductGroup = "Mặt hàng chính";
         const string ChildProductGroup = "Chi tiết";
