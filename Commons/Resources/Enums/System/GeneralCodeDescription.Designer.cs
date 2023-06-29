@@ -124,6 +124,15 @@ namespace Verp.Resources.Enums.System {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Dữ liệu đang được sử dụng.
+        /// </summary>
+        public static string ItemInUsed {
+            get {
+                return ResourceManager.GetString("ItemInUsed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Bản ghi không tồn tại.
         /// </summary>
         public static string ItemNotFound {

@@ -178,6 +178,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Manafacturing\Step\StepValidationMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>StepValidationMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Manafacturing\TargetProductivity\TargetProductivityValidation.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -886,6 +891,14 @@
     <EmbeddedResource Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.resx">
       <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.en-US.resx">
+      <LastGenOutput>StepValidationMessage.en-US.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>StepValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\TargetProductivity\TargetProductivityValidation.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

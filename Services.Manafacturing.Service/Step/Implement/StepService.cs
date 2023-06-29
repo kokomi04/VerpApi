@@ -1,17 +1,22 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Step;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Step;
@@ -81,6 +86,13 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                     throw new BadRequestException(GeneralCode.ItemNotFound);
                 if (step.ProductionStep.Count > 0)
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
+
+
+                var stepTopUsed = await GetStepTopInUsed(new[] { stepId }, true);
+                if (stepTopUsed.Count > 0)
+                {
+                    throw GeneralCode.ItemInUsed.BadRequestFormatWithData(stepTopUsed, $"{StepValidationMessage.CanNotDeleteWhichIsInUse} {step.StepName} {stepTopUsed.First().Description}");
+                }
 
                 step.IsDeleted = true;
                 stepDetail.ForEach(x => { x.IsDeleted = true; });
@@ -181,6 +193,16 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 throw;
             }
 
+        }
+
+        public async Task<IList<ObjectBillInUsedInfo>> GetStepTopInUsed(IList<int> stepIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                stepIds.ToSqlParameter("@StepIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _manufacturingDBContext.QueryListProc<ObjectBillInUsedInfo>("asp_Step_GetTopUsed_ByList", checkParams);
         }
     }
 }

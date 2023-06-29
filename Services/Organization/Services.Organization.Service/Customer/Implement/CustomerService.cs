@@ -12,7 +12,8 @@ using Verp.Resources.Organization.Customer;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -256,7 +257,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var customerTopUsed = await GetCustomerTopInUsed(new[] { customerId }, true);
             if (customerTopUsed.Count > 0)
             {
-                throw CustomerErrorCode.CustomerInUsed.BadRequestFormatWithData(customerTopUsed, $"{CanNotDeleteCustomerWhichIsInUse} {customerInfo.CustomerCode} {customerTopUsed.First().Description}");
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(customerTopUsed, $"{CanNotDeleteCustomerWhichIsInUse} {customerInfo.CustomerCode} {customerTopUsed.First().Description}");
             }
 
 
@@ -902,14 +903,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         }
 
-        public async Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly)
+        public async Task<IList<ObjectBillInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly)
         {
             var checkParams = new[]
             {
                 customerIds.ToSqlParameter("@CustomerIds"),
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
-            return await _organizationContext.QueryListProc<CustomerInUsedInfo>("asp_Customer_GetTopUsed_ByList", checkParams);
+            return await _organizationContext.QueryListProc<ObjectBillInUsedInfo>("asp_Customer_GetTopUsed_ByList", checkParams);
         }
     }
 }

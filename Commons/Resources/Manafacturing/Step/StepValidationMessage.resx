@@ -117,37 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="DepartmentActived" xml:space="preserve">
-    <value>Can not delete the active department</value>
-  </data>
-  <data name="DepartmentChildActivedAlreadyExisted" xml:space="preserve">
-    <value>There are some active children departments of the department</value>
-  </data>
-  <data name="DepartmentChildAlreadyExisted" xml:space="preserve">
-    <value>There are some children departments of the department</value>
-  </data>
-  <data name="DepartmentCodeAlreadyExisted" xml:space="preserve">
-    <value>The department code already exists</value>
-  </data>
-  <data name="DepartmentInActived" xml:space="preserve">
-    <value>The department is inactive</value>
-  </data>
-  <data name="DepartmentInUsed" xml:space="preserve">
-    <value>Department is in used {0}</value>
-  </data>
-  <data name="DepartmentNameAlreadyExisted" xml:space="preserve">
-    <value>The department name already exists</value>
-  </data>
-  <data name="DepartmentNotFound" xml:space="preserve">
-    <value>The department was not found</value>
-  </data>
-  <data name="DepartmentParentInActived" xml:space="preserve">
-    <value>The parent department is inactive</value>
-  </data>
-  <data name="DepartmentParentNotFound" xml:space="preserve">
-    <value>The parent department was not found</value>
-  </data>
-  <data name="DepartmentUserActivedAlreadyExisted" xml:space="preserve">
-    <value>There are some employee in the department</value>
+  <data name="CanNotDeleteWhichIsInUse" xml:space="preserve">
+    <value>Không thể xóa công đoạn đang sử dụng</value>
   </data>
 </root>

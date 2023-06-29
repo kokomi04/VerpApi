@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -43,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<long> GetProductionProcessVersion(int productId);
         //Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> productIds);
 
-        Task<IList<ProductInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly);
+        Task<IList<ObjectBillInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly);
 
     }
 }

@@ -156,4 +156,7 @@
   <data name="DataIsOld" xml:space="preserve">
     <value>Dữ liệu của bạn đã cũ, đã có ai đó chỉnh sửa dữ liệu, vui lòng tải lại trang để lấy dữ liệu mới nhất trước khi chỉnh sửa</value>
   </data>
+  <data name="ItemInUsed" xml:space="preserve">
+    <value>Dữ liệu đang được sử dụng</value>
+  </data>
 </root>
