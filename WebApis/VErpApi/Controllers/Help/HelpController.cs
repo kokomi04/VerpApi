@@ -16,6 +16,8 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Model.Guides;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 
@@ -25,38 +27,23 @@ namespace VErpApi.Controllers.Help
     [ApiController]
     public class HelpController : VErpBaseController
     {
-        private readonly HttpClient _httpClient;
-        private readonly AppSetting _appSetting;
+        private readonly IGuidesHelperService _guidesHelper;
 
-        public HelpController(HttpClient httpClient, IOptionsSnapshot<AppSetting> appSetting) 
+        public HelpController(IGuidesHelperService guidesHelper)
         {
-            _httpClient = httpClient;
-            _appSetting = appSetting?.Value;
+            _guidesHelper = guidesHelper;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTokenViaHelpApi()
+        public async Task<GuideTokenResponse> GetTokenViaHelpApi()
         {
-            var secretKey = _appSetting.Configuration.ExternalHelpApiKey;
-
-            _httpClient.BaseAddress = new Uri("https://help-service.verp.vn");
-            var request = new HttpRequestMessage(HttpMethod.Get, "/api/verp");
-
-            _httpClient.DefaultRequestHeaders.Add("SecretKey", secretKey);
-
             try
             {
-                var response = await _httpClient.SendAsync(request);
-                if (response.StatusCode == HttpStatusCode.Unauthorized || !response.IsSuccessStatusCode)
-                {
-                    return Unauthorized();
-                }
-                var tokens = JsonConvert.DeserializeObject(response.Content.ReadAsStringAsync().Result);
-                return Ok(tokens);
+                return await _guidesHelper.GetToken();
             }
             catch
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Can't connect to Help API!");
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Can't get token from Help API!");
             }
         }
     }
