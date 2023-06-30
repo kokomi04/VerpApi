@@ -84,9 +84,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 var stepDetail = await _manufacturingDBContext.StepDetail.Where(x => x.StepId == step.StepId).ToListAsync();
                 if (step == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound);
-                if (step.ProductionStep.Count > 0)
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
-
 
                 var stepTopUsed = await GetStepTopInUsed(new[] { stepId }, true);
                 if (stepTopUsed.Count > 0)
@@ -94,12 +91,15 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                     throw GeneralCode.ItemInUsed.BadRequestFormatWithData(stepTopUsed, $"{StepValidationMessage.CanNotDeleteWhichIsInUse} {step.StepName} {stepTopUsed.First().Description}");
                 }
 
+                if (step.ProductionStep.Count > 0)
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa do nó đang được sử dụng trong quy trình sản xuất");
+
                 step.IsDeleted = true;
                 stepDetail.ForEach(x => { x.IsDeleted = true; });
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa danh mục công đoạn '{step.StepName}'", step);
+                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa công đoạn '{step.StepName}'", step);
                 await trans.CommitAsync();
                 return true;
             }
