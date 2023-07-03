@@ -44,14 +44,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> BomExport(bool isTopBOM = false)
+        public async Task<(Stream stream, string fileName, string contentType)> BomExport(bool isFindTopBOM = false)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
 
 
-            var firstProductCode = await WriteTable(isTopBOM);
+            var firstProductCode = await WriteTable(isFindTopBOM);
 
             var currentRowTmp = currentRow;
 
@@ -84,7 +84,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
 
 
-        private async Task<string> WriteTable(bool isTopBOM)
+        private async Task<string> WriteTable(bool isFindTopBOM)
         {
             currentRow = 1;
 
@@ -143,14 +143,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             currentRow = sRow + 1;
 
-            return await WriteTableDetailData(isTopBOM);
+            return await WriteTableDetailData(isFindTopBOM);
         }
 
-        private async Task<string> WriteTableDetailData(bool isTopBOM)
+        private async Task<string> WriteTableDetailData(bool isFindTopBOM)
         {
             IList<int> topMostProductIds = new List<int>();
 
-            if (isTopBOM)
+            if (!isFindTopBOM)
             {
                 topMostProductIds = productIds;
             }
