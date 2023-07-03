@@ -43,7 +43,7 @@ namespace VErpApi.Controllers.Help
             }
             catch
             {
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Can't get token from Help API!");
+                throw new BadRequestException(GeneralCode.InternalError, "Can't get token from Help API!");
             }
         }
     }

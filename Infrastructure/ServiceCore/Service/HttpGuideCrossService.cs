@@ -5,11 +5,15 @@ using System;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
 using VErp.Commons.Constants;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
+using static VErp.Commons.Constants.Caching.ConfigCacheKeys;
+using static VErp.Commons.Constants.Caching.ConfigCachingTtlConstants;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {
@@ -27,13 +31,15 @@ namespace VErp.Infrastructure.ServiceCore.Service
         private readonly ILogger _logger;
         private readonly AppSetting _appSetting;
         private readonly MasterDBContext _masterDBContext;
+        private readonly ICachingService _cachingService;
 
-        public HttpGuideCrossService(IHttpClientFactoryService httpClient, ILogger<HttpCrossService> logger, IOptionsSnapshot<AppSetting> appSetting, MasterDBContext masterDBContext)
+        public HttpGuideCrossService(IHttpClientFactoryService httpClient, ILogger<HttpCrossService> logger, IOptionsSnapshot<AppSetting> appSetting, MasterDBContext masterDBContext, ICachingService cachingService)
         {
             _httpClient = httpClient;
             _logger = logger;
             _appSetting = appSetting.Value;
             _masterDBContext = masterDBContext;
+            _cachingService = cachingService;
         }
 
         public async Task<T> Post<T>(string relativeUrl, object postData, object queries = null)
@@ -102,15 +108,39 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         private async Task<string> GetFullUriPath(string relativeUrl)
         {
-            var guideApiEndpoint = await _masterDBContext.Config.Where(x => x.ConfigName == GuideConstants.GuideApiEndpoint).FirstOrDefaultAsync();
+            var t = CONFIG_PRODUCTION_LONG_CACHING_TIMEOUT;
+            if (!EnviromentConfig.IsProduction)
+            {
+                t = CONFIG_CACHING_TIMEOUT;
+            }
 
-            return $"{guideApiEndpoint.Value.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
+            var guideApiEndpoint = await _cachingService.TryGetSet(CONFIG_TAG, ConfigCacheKey(GuideConstants.GuideApiEndpoint), t, async () =>
+            {
+                return await _masterDBContext.Config
+                    .Where(x => x.ConfigName == GuideConstants.GuideApiEndpoint)
+                    .Select(x => x.Value)
+                    .FirstOrDefaultAsync();
+            });
+
+            return $"{guideApiEndpoint.TrimEnd('/')}/{relativeUrl.TrimStart('/')}";
         }
         private async void SetContextHeaders(HttpRequestMessage request)
         {
-            var guideApiKey = await _masterDBContext.Config.Where(x=>x.ConfigName == GuideConstants.GuideApiKey).FirstOrDefaultAsync();
+            var t = CONFIG_PRODUCTION_LONG_CACHING_TIMEOUT;
+            if (!EnviromentConfig.IsProduction)
+            {
+                t = CONFIG_CACHING_TIMEOUT;
+            }
 
-            request.Headers.TryAddWithoutValidation(Headers.GuideServiceKey, guideApiKey.Value);
+            var guideApiKey = await _cachingService.TryGetSet(CONFIG_TAG, ConfigCacheKey(GuideConstants.GuideApiKey), t, async () =>
+            {
+                return await _masterDBContext.Config
+                    .Where(x => x.ConfigName == GuideConstants.GuideApiKey)
+                    .Select(x => x.Value)
+                    .FirstOrDefaultAsync();
+            });
+
+            request.Headers.TryAddWithoutValidation(Headers.GuideServiceKey, guideApiKey);
         }
 
     }
