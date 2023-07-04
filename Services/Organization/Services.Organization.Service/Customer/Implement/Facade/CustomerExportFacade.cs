@@ -14,8 +14,9 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.MasterDB;
@@ -24,7 +25,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model;
 using static VErp.Commons.Constants.CategoryFieldConstants;
 using static VErp.Commons.Constants.CurrencyCateConstants;
-using static VErp.Commons.GlobalObject.InternalDataInterface.BaseCustomerImportModelExtensions;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Organization.BaseCustomerImportModelExtensions;
 using CustomerCate = VErp.Infrastructure.EF.OrganizationDB.CustomerCate;
 using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
@@ -59,8 +60,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             _userHelperService = userHelperService;
             fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null, false, false, "", 0, _httpCategoryHelperService).Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
             groups = fields.Select(g => g.GroupName).Distinct().ToList();
-            groupPayCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.PayConditionsId)).FirstOrDefault().GroupName;
-            groupDeliveryCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId)).FirstOrDefault().GroupName;
+            groupPayCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.PayConditionsId)).FirstOrDefault()?.GroupName;
+            groupDeliveryCondition = fields.Where(g => g.FieldName == nameof(BaseCustomerImportModel.DeliveryConditionsId)).FirstOrDefault()?.GroupName;
         }
 
 

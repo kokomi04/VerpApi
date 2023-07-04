@@ -246,7 +246,7 @@ namespace VErp.Commons.Library
 
         public static bool IsPrimitiveType(Type type)
         {
-            return type.IsPrimitive || type.IsValueType || type == typeof(string) || type == typeof(decimal) || type == typeof(JValue);
+            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(JValue) || type.IsEnum;
         }
 
         public static bool IsCollectionType(Type type)

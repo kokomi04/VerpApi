@@ -14,6 +14,8 @@ using VErp.Commons.Enums.Stock;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -133,15 +135,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement);
 
                     return resultId;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     await trans.RollbackAsync();
                     _logger.LogError("AddProductionMaterialsRequirement");
-                    throw ex;
+                    throw;
                 }
             }
         }
@@ -166,7 +168,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Xóa yêu cầu vật tư thêm", requirement.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Xóa yêu cầu vật tư thêm", requirement);
                 return true;
             }
             catch (Exception ex)
@@ -306,7 +308,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 var newDetail = model.MaterialsRequirementDetails.AsQueryable()
                     .ProjectTo<ProductionMaterialsRequirementDetail>(_mapper.ConfigurationProvider)
-                    .Where(x => !(x.ProductionMaterialsRequirementDetailId > 0));
+                    .Where(x => x.ProductionMaterialsRequirementDetailId < 0);
 
                 foreach (var item in detail)
                 {
@@ -320,7 +322,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Cập nhật yêu cầu vật tư thêm", requirement.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Cập nhật yêu cầu vật tư thêm", requirement);
 
                 return true;
             }

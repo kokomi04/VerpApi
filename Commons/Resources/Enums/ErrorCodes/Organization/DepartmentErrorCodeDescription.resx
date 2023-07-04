@@ -132,6 +132,9 @@
   <data name="DepartmentInActived" xml:space="preserve">
     <value>Bộ phận đang không hoạt động</value>
   </data>
+  <data name="DepartmentInUsed" xml:space="preserve">
+    <value>Bộ phận đang được sử dụng {0}</value>
+  </data>
   <data name="DepartmentNameAlreadyExisted" xml:space="preserve">
     <value>Tên bộ phận đã tồn tại</value>
   </data>

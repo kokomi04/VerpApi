@@ -14,7 +14,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Commons.ObjectExtensions.Extensions;
@@ -414,7 +414,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo);
 
                     _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
 
@@ -565,7 +565,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {simpleFileInfo.FileName}", fileRes.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {simpleFileInfo.FileName}", fileRes);
 
                     return fileRes.FileId;
                 }

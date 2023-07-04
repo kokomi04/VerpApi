@@ -135,7 +135,7 @@ namespace VErp.Infrastructure.ApiCore.Filters
             }
             if (!isProduction)
             {
-                response.ExceptionDebug = exception;
+                response.ExceptionDebug = new ExceptionModel(exception);
             }
 
             return (response, statusCode);

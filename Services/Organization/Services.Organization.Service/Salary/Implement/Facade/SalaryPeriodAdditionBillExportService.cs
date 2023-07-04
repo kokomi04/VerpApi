@@ -14,10 +14,11 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Constants;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using NPOI.SS.UserModel;
+using VErp.Services.Organization.Model.Salary;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -42,9 +43,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryPeriodAdditionTypeService = salaryPeriodAdditionTypeService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(int salaryPeriodAdditionTypeId, int? year, int? month, string keyword)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(int salaryPeriodAdditionTypeId, SalaryPeriodAdditionBillsExportModel req)
         {
-            var bills = await _salaryPeriodAdditionBillService.GetListQuery(salaryPeriodAdditionTypeId, year, month, keyword)
+            var bills = await _salaryPeriodAdditionBillService.GetListQuery(salaryPeriodAdditionTypeId, req)
                 .Include(b => b.SalaryPeriodAdditionBillEmployee)
                 .ThenInclude(e => e.SalaryPeriodAdditionBillEmployeeValue)
                 .AsNoTracking()

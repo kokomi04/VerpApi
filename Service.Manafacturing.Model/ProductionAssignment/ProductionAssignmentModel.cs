@@ -19,9 +19,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         [GreaterThan(0, ErrorMessage = "Số lượng phân công phải >0")]
         public decimal AssignmentQuantity { get; set; }
         public decimal? AssignmentHours { get; set; }
-        //public int CompletedQuantity { get; set; }
+        
         public long ProductionStepLinkDataId { get; set; }
-        //public decimal Productivity { get; set; }
+        
         public long? StartDate { get; set; }
         public long? EndDate { get; set; }
         public long CreatedDatetimeUtc { get; set; }
@@ -55,9 +55,11 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.AssignedProgressStatus, d => d.Ignore());
         }
 
-        public bool IsChange(ProductionAssignmentEntity entity)
+        public bool IsChange(ProductionAssignmentEntity _entity)
+#pragma warning disable S125 // Sections of code should not be commented out
         {
             return true;
+            /*
             var isChange = entity.AssignmentQuantity != AssignmentQuantity
                 || entity.ProductionStepLinkDataId != ProductionStepLinkDataId
                 || entity.StartDate.GetUnix() != StartDate
@@ -70,7 +72,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                     .Any(oad => oad.WorkDate == ad.WorkDate.GetUnix() && oad.QuantityPerDay == ad.QuantityPerDay));
             }
             return isChange;
+            */
         }
+#pragma warning restore S125 // Sections of code should not be commented out
 
         public decimal? AssignmentWorkload { get; set; }
     }

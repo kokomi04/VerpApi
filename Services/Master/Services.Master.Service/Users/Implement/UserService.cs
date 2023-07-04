@@ -363,7 +363,9 @@ namespace VErp.Services.Master.Service.Users.Implement
             {
                 UserId = e.UserId,
                 EmployeeCode = e.EmployeeCode,
-                FullName = e.FullName
+                FullName = e.FullName,
+                Email = e.Email,
+                Phone = e.Phone
             }).ToListAsync();
 
         }

@@ -105,7 +105,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.ProductionStepMoldLink.AddRangeAsync(nLinks);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, process.ProductionProcessMoldId, $"Tạo quy trình mẫu {process.ProductionProcessMoldId}", model.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, process.ProductionProcessMoldId, $"Tạo quy trình mẫu {process.ProductionProcessMoldId}", model);
 
                 await trans.CommitAsync();
                 return process.ProductionProcessMoldId;
@@ -173,7 +173,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Cập nhật quy trình mẫu {productionProcessMoldId}", model.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Cập nhật quy trình mẫu {productionProcessMoldId}", model);
 
                 await trans.CommitAsync();
                 return true;
@@ -205,7 +205,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Xóa quy trình sản xuất mẫu {productionProcessMoldId}", process.JsonSerialize());
+                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Xóa quy trình sản xuất mẫu {productionProcessMoldId}", process);
 
                 await trans.CommitAsync();
                 return true;

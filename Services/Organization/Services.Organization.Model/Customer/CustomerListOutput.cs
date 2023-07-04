@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using CustomerEntity = VErp.Infrastructure.EF.OrganizationDB.Customer;
 
 namespace VErp.Services.Organization.Model.Customer
@@ -40,5 +40,6 @@ namespace VErp.Services.Organization.Model.Customer
     public class CustomerListExportModel : CustomerListFilterModel
     {
         public IList<string> FieldNames { get; set; }
+        public Clause ColumnsFilters { get; set; }
     }
 }

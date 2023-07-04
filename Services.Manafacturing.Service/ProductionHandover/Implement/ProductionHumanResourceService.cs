@@ -45,7 +45,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
                 _manufacturingDBContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResource.ProductionHumanResourceId, $"Tạo thống kê nhân công sản xuất", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResource.ProductionHumanResourceId, $"Tạo thống kê nhân công sản xuất", data);
                 return _mapper.Map<ProductionHumanResourceModel>(productionHumanResource);
             }
             catch (Exception ex)
@@ -70,7 +70,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data);
                 return _mapper.Map<ProductionHumanResourceModel>(info);
             }
             catch (Exception ex)
@@ -92,7 +92,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại thống kê nhân công");
                 productionHumanResource.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Xoá thống kê nhân công", productionHumanResource.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Xoá thống kê nhân công", productionHumanResource);
                 return true;
             }
             catch (Exception ex)
@@ -140,7 +140,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data);
                 }
 
                 trans.Commit();
@@ -324,7 +324,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data.JsonSerialize());
+                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data);
                 }
 
                 trans.Commit();

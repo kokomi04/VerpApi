@@ -134,7 +134,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Cập nhật bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Cập nhật bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model);
 
                 return true;
             }
@@ -167,7 +167,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Tạo bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Tạo bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model);
 
                 return true;
             }
@@ -201,7 +201,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.DashboardTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Thêm nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Thêm nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model);
 
             return info.DashboardTypeGroupId;
         }
@@ -216,7 +216,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Cập nhật nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Cập nhật nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model);
 
             return true;
         }
@@ -234,7 +234,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Xóa nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", new { dashboardTypeGroupId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Xóa nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", new { dashboardTypeGroupId });
 
             return true;
         }
@@ -302,7 +302,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Thêm biểu đồ báo cáo {dashboard.DashboardTypeName}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Thêm biểu đồ báo cáo {dashboard.DashboardTypeName}", data);
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.DashboardView, EnumObjectType.DashboardType, dashboard.DashboardTypeId);
 
@@ -341,7 +341,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Cập nhật biểu đồ báo cáo {dashboard.DashboardTypeName}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Cập nhật biểu đồ báo cáo {dashboard.DashboardTypeName}", data);
 
                 return true;
             }
@@ -369,7 +369,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Xóa biểu đồ báo cáo {dashboard.DashboardTypeName}", dashboard.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Xóa biểu đồ báo cáo {dashboard.DashboardTypeName}", dashboard);
 
                 return true;
             }

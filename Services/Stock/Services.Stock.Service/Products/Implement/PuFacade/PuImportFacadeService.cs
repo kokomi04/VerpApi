@@ -16,13 +16,13 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.Product;
 using VErp.Services.Stock.Model.Product.Pu;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
 using VErp.Services.Stock.Service.Products.Implement.ProductFacade;
 using Microsoft.EntityFrameworkCore;
 using Verp.Resources.Stock.Product;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 
 namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
 {
@@ -178,8 +178,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                     var productTopUsed = await _productService.GetProductTopInUsed(listProductIds, true);
                     if (productTopUsed.Count > 0)
                     {
-                        productEntities.TryGetValue(productTopUsed.First().ProductId, out var usedUnitProduct);
-                        throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + productTopUsed.First().Description);
+                        productEntities.TryGetValue((int)productTopUsed.First().Id, out var usedUnitProduct);
+                        throw GeneralCode.ItemInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedUnitProduct?.ProductCode + " " + productTopUsed.First().Description);
                     }
                 }
             }

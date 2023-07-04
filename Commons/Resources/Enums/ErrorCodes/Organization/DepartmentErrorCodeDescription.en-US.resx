@@ -132,6 +132,9 @@
   <data name="DepartmentInActived" xml:space="preserve">
     <value>The department is inactive</value>
   </data>
+  <data name="DepartmentInUsed" xml:space="preserve">
+    <value>Department is in used {0}</value>
+  </data>
   <data name="DepartmentNameAlreadyExisted" xml:space="preserve">
     <value>The department name already exists</value>
   </data>

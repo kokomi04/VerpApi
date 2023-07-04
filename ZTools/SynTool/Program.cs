@@ -63,7 +63,7 @@ namespace SynTool
                 File.Move(f, f + ".txt");
             }
 
-            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj --no-pluralize";
+            var cmd = $"dotnet ef dbcontext scaffold \"{cnn}\" {tableOnly} Microsoft.EntityFrameworkCore.SqlServer -p {projectFolder}\\{args[2]}.csproj -c {context} -f -s EF.Generator\\EF.Generator.csproj --no-pluralize --no-onconfiguring";
             Console.WriteLine("\n\n" + cmd + "\n\n");
             Bash(cmd);
 
@@ -83,8 +83,8 @@ namespace SynTool
                 //text = text.Replace("protected override void OnModelCreating", "protected void OnModelCreated");
                 //text.Replace("OnModelCreating", "OnModelCreated");
 
-                var reg = new Regex("(?<fName>protected override void OnConfiguring[^\\}]*})", RegexOptions.Multiline);
-                text = text.Replace(reg.Match(text).Groups["fName"].Value, "protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {");
+               // var reg = new Regex("(?<fName>protected override void OnConfiguring[^\\}]*})", RegexOptions.Multiline);
+                //text = text.Replace(reg.Match(text).Groups["fName"].Value, "protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) {");
 
                 System.IO.File.WriteAllText(contextPath, text);
             }

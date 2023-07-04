@@ -242,7 +242,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Thêm chứng từ {hrType.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Thêm chứng từ {hrType.Title}", data);
 
                 return hrType.HrTypeId;
             }
@@ -403,7 +403,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, cloneType.HrTypeId, $"Thêm chứng từ hành chính nhân sự {cloneType.Title}", cloneType.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, cloneType.HrTypeId, $"Thêm chứng từ hành chính nhân sự {cloneType.Title}", cloneType);
                 return cloneType.HrTypeId;
             }
             catch (Exception ex)
@@ -472,7 +472,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Cập nhật chứng từ hành chính nhân sự {hrType.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Cập nhật chứng từ hành chính nhân sự {hrType.Title}", data);
                 return true;
             }
             catch (Exception ex)
@@ -505,7 +505,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 _logger.LogError(ex, $"HrTypeService: DeleteHrType({hrTypeId})");
             }
-            await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Xóa chứng từ hành chính nhân sự {hrType.Title}", hrType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Xóa chứng từ hành chính nhân sự {hrType.Title}", hrType);
             return true;
         }
 
@@ -541,7 +541,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeGlobalSetting, 0, $"Cập nhật cấu hình chung chứng từ hành chính nhân sự", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrTypeGlobalSetting, 0, $"Cập nhật cấu hình chung chứng từ hành chính nhân sự", data);
                 return true;
             }
             catch (Exception ex)
@@ -646,7 +646,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Tạo bộ lọc {info.HrTypeViewName} cho chứng từ  {hrTypeInfo.Title}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Tạo bộ lọc {info.HrTypeViewName} cho chứng từ  {hrTypeInfo.Title}", model);
 
                 return info.HrTypeViewId;
             }
@@ -684,7 +684,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Cập nhật bộ lọc {info.HrTypeViewName} cho chứng từ hành chính nhân sự  {inputTypeInfo.Title}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Cập nhật bộ lọc {info.HrTypeViewName} cho chứng từ hành chính nhân sự  {inputTypeInfo.Title}", model);
 
                 return true;
             }
@@ -712,7 +712,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Xóa bộ lọc {info.HrTypeViewName} chứng từ hành chính nhân sự  {inputTypeInfo.Title}", new { hrTypeViewId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Xóa bộ lọc {info.HrTypeViewName} chứng từ hành chính nhân sự  {inputTypeInfo.Title}", new { hrTypeViewId });
 
             return true;
 

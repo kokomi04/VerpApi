@@ -22,6 +22,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
+using OpenXmlPowerTools;
+using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
@@ -30,6 +32,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.IO;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Utilities;
 using VErp.Infrastructure.ApiCore.BackgroundTasks;
 using VErp.Infrastructure.ApiCore.Extensions;
 using VErp.Infrastructure.ApiCore.Filters;
@@ -37,6 +40,8 @@ using VErp.Infrastructure.ApiCore.Middleware;
 using VErp.Infrastructure.ApiCore.ModelBinders;
 using VErp.Infrastructure.AppSettings;
 using VErp.Infrastructure.AppSettings.Model;
+using static VErp.Commons.Library.JsonUtils;
+using System.Threading.Tasks;
 
 namespace VErp.Infrastructure.ApiCore
 {
@@ -108,37 +113,7 @@ namespace VErp.Infrastructure.ApiCore
            .AddNewtonsoftJson(options =>
            {
                JsonSetting(options.SerializerSettings);
-
-               //options.SerializerSettings.Converters.Add(new StringEnumConverter());
            });
-
-
-            services.AddRazorPages(options =>
-            {
-                //options.Conventions.Add(new ApiExplorerGroupPerVersionConvention());
-
-                //options.Filters.Add(typeof(HttpGlobalExceptionFilter));
-                //options.Filters.Add(typeof(ValidateModelStateFilter));
-                //if (isRequireAuthrize)
-                //{
-                //    options.Filters.Add(typeof(AuthorizeActionFilter));
-                //}
-
-            })
-            //.AddJsonOptions(options =>
-            //{
-            //    //options.JsonSerializerOptions
-            //    options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            //    options.JsonSerializerOptions.IgnoreNullValues = true;
-
-
-            //    //options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
-            //    //options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-            //    //options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
-            //    //options.SerializerSettings.PreserveReferencesHandling = Newtonsoft.Json.PreserveReferencesHandling.None;
-            //})
-           .SetCompatibilityVersion(CompatibilityVersion.Version_3_0)
-           .AddControllersAsServices();
 
             ConfigureAuthService(services);
 
@@ -158,26 +133,11 @@ namespace VErp.Infrastructure.ApiCore
             services.ConfigStockDBContext(AppSetting.DatabaseConnections);
             services.ConfigPurchaseOrderContext(AppSetting.DatabaseConnections);
             services.ConfigOrganizationContext(AppSetting.DatabaseConnections);
-            //services.ConfigAccountingContext(AppSetting.DatabaseConnections);
             services.ConfigAccountancyContext(AppSetting.DatabaseConnections);
             services.ConfigActivityLogContext(AppSetting.DatabaseConnections);
             services.ConfigReportConfigDBContextContext(AppSetting.DatabaseConnections);
             services.ConfigManufacturingContext(AppSetting.DatabaseConnections);
         }
-
-        protected void ConfigDbOwnerContext(IServiceCollection services)
-        {
-            services.ConfigMasterDBContext(AppSetting.OwnerDatabaseConnections, ServiceLifetime.Scoped);
-            services.ConfigStockDBContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigPurchaseOrderContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigOrganizationContext(AppSetting.OwnerDatabaseConnections);
-            //services.ConfigAccountingContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigAccountancyContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigActivityLogContext(AppSetting.OwnerDatabaseConnections);
-            services.ConfigReportConfigDBContextContext(AppSetting.OwnerDatabaseConnections);
-        }
-
-
 
         protected IServiceProvider BuildService(IServiceCollection services)
         {
@@ -207,6 +167,7 @@ namespace VErp.Infrastructure.ApiCore
             {
                 app.UsePathBase(pathBase);
             }
+
 
             ConfigureHelthCheck(app);
 
@@ -239,7 +200,6 @@ namespace VErp.Infrastructure.ApiCore
             app.UseAuthentication();
             app.UseAuthorization();
 
-            // var _logger = loggerFactory.CreateLogger<BaseStartup>();
 
             app.UseExceptionHandler(a => a.Run(async context =>
             {
@@ -266,32 +226,108 @@ namespace VErp.Infrastructure.ApiCore
 
             Utils.LoggerFactory = loggerFactory;
         }
-
+      
         private void ConfigureAuthService(IServiceCollection services)
         {
             // prevent from mapping "sub" claim to nameidentifier.
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+            //services.AddAuthorization(options =>
+            //{                
+            //    options.AddPolicy("tokens", p =>
+            //    {
+            //        p.AddAuthenticationSchemes("jwt", "introspection");
+            //        p.RequireAuthenticatedUser();
+            //    });
+            //});
 
             services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddIdentityServerAuthentication(options =>
+
+            // JWT tokens (default scheme)
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
+                /*
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+
+                        // If the request is for our hub...
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && (path.StartsWithSegments("/signalr/hubs")))
+                        {
+                            // Read the token out of the query string
+                            // context.Token = "Bearer " + accessToken;
+                            context.Request.Headers.Authorization = "Bearer " + accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };*/
+
                 options.Authority = AppSetting.Identity.Endpoint;
+                options.Audience = AppSetting.Identity.ApiName;
+
+                options.TokenValidationParameters.ValidTypes = new[] { "at+jwt" };
                 options.RequireHttpsMetadata = false;
 
-                options.ApiName = AppSetting.Identity.ApiName;
-                options.ApiSecret = AppSetting.Identity.ApiSecret;
 
+                // if token does not contain a dot, it is a reference token
+                options.ForwardDefaultSelector = (HttpContext context) =>
+                {
+                    var token = CustomTokenRetriever.FromHeaderAndQueryString(context.Request);
 
-                options.EnableCaching = false;
-                options.CacheDuration = TimeSpan.FromMinutes(10);
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        return null;
+                    }
+
+                    if (token.Contains("."))
+                    {
+                        return "jwt";
+                    }
+                    else
+                    {
+                        return "introspection";
+                    }
+                };
+            })
+            // reference tokens
+            .AddOAuth2Introspection("introspection", options =>
+            {
+                options.Authority = AppSetting.Identity.Endpoint;
+
+                options.ClientId = AppSetting.Identity.ApiName;
+                options.ClientSecret = AppSetting.Identity.ApiSecret;
 
                 options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
+
+                options.CacheDuration = TimeSpan.FromMinutes(10);
+                options.EnableCaching = true;
             });
+            services.AddDistributedMemoryCache();
+
+            //.AddIdentityServerAuthentication(options =>
+            //{
+            //    options.Authority = AppSetting.Identity.Endpoint;
+            //    options.RequireHttpsMetadata = false;
+
+            //    options.ApiName = AppSetting.Identity.ApiName;
+            //    options.ApiSecret = AppSetting.Identity.ApiSecret;
+
+
+            //    options.EnableCaching = false;
+            //    options.CacheDuration = TimeSpan.FromMinutes(10);
+
+            //    options.TokenRetriever = CustomTokenRetriever.FromHeaderAndQueryString;
+            //});
+
+            //services.AddScopeTransformation();
         }
 
         protected virtual void ConfigureHelthCheck(IApplicationBuilder app)
@@ -334,13 +370,15 @@ namespace VErp.Infrastructure.ApiCore
                 serializerSettings = new JsonSerializerSettings();
 
             serializerSettings.NullValueHandling = NullValueHandling.Ignore;
-            serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
             serializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
             serializerSettings.PreserveReferencesHandling = PreserveReferencesHandling.None;
-            //serializerSettings.MaxDepth = 10;
+            serializerSettings.ContractResolver = new CamelCaseExceptDictionaryKeysResolver();
+            //serializerSettings.Converters.Add(new JsonSerializeDeepConverter(JsonUtils.JSON_MAX_DEPTH));
             return serializerSettings;
         }
     }
+
+
     class ExceptionEnricher : ILogEventEnricher
     {
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)

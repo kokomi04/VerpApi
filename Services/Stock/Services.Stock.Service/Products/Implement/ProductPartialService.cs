@@ -21,7 +21,7 @@ using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product.Partial;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
 using static Verp.Resources.Stock.Product.ProductValidationMessage;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Service.Products.Implement
 {
@@ -146,7 +146,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         var productTopUsed = await _productService.GetProductTopInUsed(new List<int>() { productId }, false);
                         if (productTopUsed.Count > 0)
                         {
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + productTopUsed.First().Description);
+                            throw GeneralCode.ItemInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, productInfo.ProductCode + " " + productTopUsed.First().Description);
                         }
                     }
 
@@ -169,7 +169,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     }
                     */
 
-                    if (model.IsMaterials == false && model.IsProduct == false && model.IsProductSemi == false)
+                    if (model.IsMaterials == false && model.IsProduct == false && !model.IsProductSemi)
                     {
                         model.IsProduct = true;
                     }
@@ -321,7 +321,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var stockInfo = await _stockDbContext.ProductStockInfo.FirstOrDefaultAsync(p => p.ProductId == productId);
                 var stockValidation = await _stockDbContext.ProductStockValidation.Where(p => p.ProductId == productId).ToListAsync();
-                var pus = await _stockDbContext.ProductUnitConversion.Where(p => p.ProductId == productId).ToListAsync();
+
 
                 var lstStockValidations = model?.StockIds?
                         .Select(s => new ProductStockValidation()
@@ -430,8 +430,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         newUnitConversionList.Add(defaultUnitConversion);
                 }
                 var duplicateUnit = newUnitConversionList.GroupBy(u => u.ProductUnitConversionName?.NormalizeAsInternalName())
-                   .Where(g => g.Count() > 1)
-                   .FirstOrDefault();
+                   .FirstOrDefault(g => g.Count() > 1);
 
                 if (duplicateUnit != null)
                 {
@@ -464,7 +463,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (!pu.IsDefault)
                 {
                     var eval = EvalUtils.EvalPrimaryQuantityFromProductUnitConversionQuantity(1, pu.FactorExpression);
-                    if (!(eval > 0))
+                    if (eval <= 0)
                     {
                         throw ProductErrorCode.InvalidUnitConversionExpression.BadRequest();
                     }
@@ -593,7 +592,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            var productCustomers = await _stockDbContext.ProductCustomer.AsNoTracking().Where(p => p.ProductId == productId).ToListAsync();
+            
 
             return new ProductProcessModel()
             {

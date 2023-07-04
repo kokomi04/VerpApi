@@ -142,7 +142,7 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tồn tại nhiều điều kiện &quot;{1}&quot; trong {0}.
+        ///   Looks up a localized string similar to Tồn tại nhiều {0} &quot;{1}&quot; ở trường {2} trong hệ thống..
         /// </summary>
         public static string CustomerConditionFoundMoreThanOne {
             get {
@@ -151,7 +151,7 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không tìm thấy điều kiện &quot;{1}&quot; trong {0}.
+        ///   Looks up a localized string similar to Không tìm thấy {0} &quot;{1}&quot; ở trường {2} trong hệ thống..
         /// </summary>
         public static string CustomerConditionNotFound {
             get {

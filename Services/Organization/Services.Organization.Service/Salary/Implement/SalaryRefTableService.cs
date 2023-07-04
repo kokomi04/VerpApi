@@ -60,7 +60,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             _organizationDBContext.SalaryRefTable.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Xóa bảng liên kết {info.RefTableCode} khỏi bảng lương", info.JsonSerialize());
+            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Xóa bảng liên kết {info.RefTableCode} khỏi bảng lương", info);
             return true;
         }
 
@@ -86,7 +86,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _mapper.Map(model, info);
             info.SalaryRefTableId = salaryRefTableId;
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Cập nhật bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
+            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Cập nhật bảng liên kết {model.RefTableCode} vào bảng lương", model);
             return true;
         }
 

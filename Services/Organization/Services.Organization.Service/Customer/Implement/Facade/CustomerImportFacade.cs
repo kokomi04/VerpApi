@@ -1,16 +1,22 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Util;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
+using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -32,23 +38,26 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly ICustomerService _customerService;
         private readonly OrganizationDBContext _organizationContext;
-        private IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
-        private IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+        private readonly IList<CustomerModel> lstAddCustomer = new List<CustomerModel>();
+        private readonly IList<CustomerModel> lstUpdateCustomer = new List<CustomerModel>();
+        private readonly IUserHelperService _userHelperService;
         private readonly ObjectActivityLogFacade _customerActivityLog;
 
         private IList<CustomerBankAccount> _bankAccounts;
         private IList<CustomerContact> _customerContact;
         private IList<ReferFieldModel> _refFields;
+        private IList<ReferFieldModel> _refFieldUsers;
         private IList<NonCamelCaseDictionary> _payConditionData;
         private IList<NonCamelCaseDictionary> _deliveryConditionData;
-
-        public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext)
+        private IList<EmployeeBasicNameModel> _users;
+        public CustomerImportFacade(ICustomerService customerService, ObjectActivityLogFacade customerActivityLog, IMapper mapper, ICategoryHelperService httpCategoryHelperService, OrganizationDBContext organizationContext, IUserHelperService userHelperService)
         {
             _customerService = customerService;
             _customerActivityLog = customerActivityLog;
             _mapper = mapper;
             _httpCategoryHelperService = httpCategoryHelperService;
             _organizationContext = organizationContext;
+            _userHelperService = userHelperService;
         }
 
 
@@ -57,8 +66,8 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             using (var longTask = await longTaskResourceLockService.Accquire($"Nhập dữ liệu đối tác từ excel"))
             {
                 var refProps = mapping.MappingFields.Select(f => f.RefFieldName).Where(f => !string.IsNullOrWhiteSpace(f)).Distinct().ToList();
-                _refFields = await _httpCategoryHelperService.GetReferFields(new[] { PayConditionCode, DeliveryConditionCode }, refProps);
-
+                _refFields = await _httpCategoryHelperService.GetReferFields(new[] { PayConditionCode, DeliveryConditionCode }, null);
+                _refFieldUsers = await _httpCategoryHelperService.GetReferFields(new[] { UserManager.UserMangerCode }, null);
                 var reader = new ExcelReader(stream);
                 reader.RegisterLongTaskEvent(longTask);
 
@@ -118,22 +127,22 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     var customerInfo = _mapper.Map<CustomerModel>(customerModel);
                     customerInfo.CustomerStatusId = EnumCustomerStatus.Actived;
 
-                    LoadContacts(customerInfo, customerModel, mapping);
-                    LoadBankAccounts(customerInfo, customerModel, mapping);
+                    LoadContacts(customerInfo, customerModel);
+                    LoadBankAccounts(customerInfo, customerModel);
 
                     if (customerInfo.CustomerTypeId == 0)
                     {
                         customerInfo.CustomerTypeId = customerInfo.Contacts?.Count > 0 ? EnumCustomerType.Organization : EnumCustomerType.Personal;
                     }
 
-                    var existedCustomers = existsCustomers.Where(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode);
+                    var existedCustomers = existsCustomers.Where(x => x.CustomerCode == customerInfo.CustomerCode);
 
-                    if (existedCustomers != null && existedCustomers.Count() > 0 && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                    if (existedCustomers != null && existedCustomers.Any() && mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     {
                         var existedCodes = existedCustomers.Select(c => c.CustomerCode).ToList();
                         var existingCodes = existedCodes.Intersect(new[] { customerInfo.CustomerCode }, StringComparer.OrdinalIgnoreCase);
 
-                        if (existingCodes.Count() > 0)
+                        if (existingCodes.Any())
                         {
                             throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                         }
@@ -145,7 +154,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
                     if (oldCustomer == null)
                     {
-                        if (lstAddCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        if (lstAddCustomer.Any(x => x.CustomerCode == customerInfo.CustomerCode))
                             if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                                 throw MultipleCustomerFound.BadRequestFormat(customerInfo.CustomerCode);
                             else
@@ -155,7 +164,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                     }
                     else if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
                     {
-                        if (lstUpdateCustomer.Any(x => x.CustomerName == customerInfo.CustomerName || x.CustomerCode == customerInfo.CustomerCode))
+                        if (lstUpdateCustomer.Any(x => !string.IsNullOrEmpty( customerInfo.CustomerCode) &&  x.CustomerCode == customerInfo.CustomerCode ))
                             continue;
 
                         customerInfo.CustomerId = oldCustomer.CustomerId;
@@ -194,12 +203,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
                 return true;
             }
         }
-
+       
 
         private async Task<IList<BaseCustomerImportModel>> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
             var currencies = await _httpCategoryHelperService.GetDataRows(CurrencyCategoryCode, new CategoryFilterModel());
-           
+            _users = await _userHelperService.GetAll();
             _payConditionData = (await _httpCategoryHelperService.GetDataRows(PayConditionCode, new CategoryFilterModel())).List;
             _deliveryConditionData = (await _httpCategoryHelperService.GetDataRows(DeliveryConditionCode, new CategoryFilterModel())).List;
             var lstCates = await _organizationContext.CustomerCate.ToListAsync();
@@ -213,20 +222,35 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
             return await reader.ReadSheetEntity<BaseCustomerImportModel>(mapping, async (entity, propertyName, value, refObj, refPropertyName, refPropertyPathSeparateByPoint) =>
             {
+                await Task.CompletedTask;
+
+                var fieldName = typeof(BaseCustomerImportModel).GetProperty(propertyName)?.GetCustomAttributes<DisplayAttribute>()?.FirstOrDefault()?.Name ?? string.Empty;
+
                 if (propertyName == nameof(BaseCustomerImportModel.PayConditionsId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
 
-                    entity.PayConditionsId = ReadCondition(PayConditionCode, refPropertyName, value, _payConditionData);
+                    entity.PayConditionsId = ReadCondition(PayConditionCode, refPropertyName, value, _payConditionData, fieldName);
                     return true;
                 }
                 if (propertyName == nameof(BaseCustomerImportModel.DeliveryConditionsId))
                 {
                     if (string.IsNullOrWhiteSpace(value)) return true;
-                    entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData);
+                    entity.DeliveryConditionsId = ReadCondition(DeliveryConditionCode, refPropertyName, value, _deliveryConditionData, fieldName);
                     return true;
                 }
-
+                if (propertyName == nameof(BaseCustomerImportModel.DebtManagerUserId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    entity.DebtManagerUserId = ReadUser(refPropertyName, value, fieldName);
+                    return true;
+                }
+                if (propertyName == nameof(BaseCustomerImportModel.LoanManagerUserId))
+                {
+                    if (string.IsNullOrWhiteSpace(value)) return true;
+                    entity.LoanManagerUserId = ReadUser(refPropertyName, value, fieldName);
+                    return true;
+                }
                 if (propertyName == nameof(BaseCustomerImportModel.CustomerTypeId))
                 {
                     if (value.NormalizeAsInternalName().Equals(EnumCustomerType.Personal.GetEnumDescription().NormalizeAsInternalName()))
@@ -336,22 +360,41 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             }
 
         }
-        private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data)
+        private int ReadCondition(string category, string refPropertyName, string value, IList<NonCamelCaseDictionary> data, string fieldName)
         {
             var condition = data.Where(f => f.ContainsKey(refPropertyName) && f[refPropertyName].ToString() == value).ToList();
+            var propertyName = _refFields.FirstOrDefault(f=> f.CategoryCode == category && f.CategoryFieldName == refPropertyName)?.CategoryFieldTitle ?? string.Empty;
             if (condition.Count == 0)
             {
-                throw CustomerConditionNotFound.BadRequestFormat(category, value);
+                throw CustomerConditionNotFound.BadRequestFormat(propertyName, value, fieldName);
             }
 
             if (condition.Count > 1)
             {
-                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(category, value);
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(propertyName, value, fieldName);
             }
             return Convert.ToInt32(condition[0][F_Id]);
         }
+        private int ReadUser(string refPropertyName, string value, string fieldName)
+        {
+            var userPropertyName = _refFieldUsers.FirstOrDefault(f => f.CategoryFieldName == refPropertyName)?.CategoryFieldTitle ?? string.Empty;
+            refPropertyName = refPropertyName== F_Id ? nameof(EmployeeBasicNameModel.UserId) : refPropertyName;
+            if (_users == null || _users.Count == 0)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường {fieldName}");
+            var user = _users.Where(u => _users.First().GetType().GetProperty(refPropertyName) != null &&
+            u.GetPropertyValue<object>(refPropertyName)?.ToString()?.ToUpper() == value.ToUpper()).ToList();
+            if (user.Count == 0)
+            {
+                throw CustomerConditionNotFound.BadRequestFormat(userPropertyName, value, fieldName);
+            }
 
-        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
+            if (user.Count > 1)
+            {
+                throw CustomerConditionFoundMoreThanOne.BadRequestFormat(userPropertyName, value, fieldName);
+            }
+            return user[0].UserId;
+        }
+        private void LoadContacts(CustomerModel model, BaseCustomerImportModel obj)
         {
             model.Contacts = new List<CustomerContactModel>();
             for (var number = 1; number <= 3; number++)
@@ -375,7 +418,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
 
         }
 
-        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj, ImportExcelMapping mapping)
+        private void LoadBankAccounts(CustomerModel model, BaseCustomerImportModel obj)
         {
             model.BankAccounts = new List<CustomerBankAccountModel>();
             for (var number = 1; number <= 3; number++)
@@ -420,7 +463,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement.Facade
             return obj.GetType().GetProperty(filedName).GetValue(obj)?.ToString();
         }
 
-        Dictionary<string, string> FieldPrefixs = new Dictionary<string, string>();
+        readonly Dictionary<string, string> FieldPrefixs = new Dictionary<string, string>();
         private string GetFieldNameWithoutNumber(string propertyName)
         {
             if (FieldPrefixs.ContainsKey(propertyName)) return FieldPrefixs[propertyName];

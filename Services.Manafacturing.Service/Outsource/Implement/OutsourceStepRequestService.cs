@@ -12,7 +12,8 @@ using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.PurchaseOrder;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
@@ -327,7 +328,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
-                    $"Cập nhật yêu cầu gia công công đoạn", requestModel.JsonSerialize());
+                    $"Cập nhật yêu cầu gia công công đoạn", requestModel);
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
 
@@ -424,7 +425,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
-                    $"Xóa yêu cầu gia công công đoạn", request.JsonSerialize());
+                    $"Xóa yêu cầu gia công công đoạn", request);
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
 
@@ -725,7 +726,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await trans.CommitAsync();
 
                 await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, entityRequest.OutsourceStepRequestId,
-                    $"Thêm mới yêu cầu gia công công đoạn", requestModel.JsonSerialize());
+                    $"Thêm mới yêu cầu gia công công đoạn", requestModel);
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(entityRequest.ProductionOrderId);
 

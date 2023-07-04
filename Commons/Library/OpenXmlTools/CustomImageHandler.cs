@@ -74,7 +74,8 @@ namespace VErp.Commons.Library.OpenXmlTools
             }
             var imageSource = localDirInfo.Name + "/image" + ImageCounter.ToString() + "." + extension;
 
-            //string base64 = null;
+            // This is code commentstring
+            // base64 = null;
             //try
             //{
             //    using (MemoryStream ms = new MemoryStream())

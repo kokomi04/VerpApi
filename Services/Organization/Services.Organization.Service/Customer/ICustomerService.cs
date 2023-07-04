@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Customer;
@@ -25,6 +26,6 @@ namespace VErp.Services.Organization.Service.Customer
         Task<CustomerEntity> UpdateCustomerBase(int customerId, CustomerModel data, bool igDeleteRef = false);
         Task<Dictionary<CustomerEntity, CustomerModel>> AddBatchCustomersBase(IList<CustomerModel> customers);
 
-        Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly);
+        Task<IList<ObjectBillInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly);
     }
 }

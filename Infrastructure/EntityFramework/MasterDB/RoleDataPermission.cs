@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.MasterDB;
 
-namespace VErp.Infrastructure.EF.MasterDB
+public partial class RoleDataPermission
 {
-    public partial class RoleDataPermission
-    {
-        public int RoleId { get; set; }
-        public int ObjectTypeId { get; set; }
-        public long ObjectId { get; set; }
+    public int RoleId { get; set; }
 
-        public virtual Role Role { get; set; }
-    }
+    public int ObjectTypeId { get; set; }
+
+    public long ObjectId { get; set; }
+
+    public virtual Role Role { get; set; }
 }

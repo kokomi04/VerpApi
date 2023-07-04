@@ -9,7 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Organization;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
@@ -44,14 +44,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> BomExport()
+        public async Task<(Stream stream, string fileName, string contentType)> BomExport(bool isFindTopBOM = false)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
 
 
-            var firstProductCode = await WriteTable();
+            var firstProductCode = await WriteTable(isFindTopBOM);
 
             var currentRowTmp = currentRow;
 
@@ -84,7 +84,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
 
 
-        private async Task<string> WriteTable()
+        private async Task<string> WriteTable(bool isFindTopBOM)
         {
             currentRow = 1;
 
@@ -143,23 +143,30 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             currentRow = sRow + 1;
 
-            return await WriteTableDetailData();
+            return await WriteTableDetailData(isFindTopBOM);
         }
 
-        private async Task<string> WriteTableDetailData()
+        private async Task<string> WriteTableDetailData(bool isFindTopBOM)
         {
             IList<int> topMostProductIds = new List<int>();
 
-
-            var checkParams = new[]
+            if (!isFindTopBOM)
             {
-                   productIds.ToSqlParameter("@InputProductIds")
-            };
-            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
-            foreach (var p in productParentIds)
-            {
-                topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+                topMostProductIds = productIds;
             }
+            else
+            {
+                var checkParams = new[]
+                {
+                     productIds.ToSqlParameter("@InputProductIds")
+                };
+                var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
+                foreach (var p in productParentIds)
+                {
+                    topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+                }
+            }
+            
             var productBomsLevels = await _productBomService.GetBoms(topMostProductIds);
             var productMaterial = (await _stockDbContext.ProductMaterial.Where(m => topMostProductIds.Contains(m.RootProductId)).AsNoTracking().Select(m => m.ProductId).Distinct().ToListAsync()).ToHashSet();
 
