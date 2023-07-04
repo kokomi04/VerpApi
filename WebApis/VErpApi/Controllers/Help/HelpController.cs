@@ -35,6 +35,7 @@ namespace VErpApi.Controllers.Help
         }
 
         [HttpGet]
+        [Route("Token")]
         public async Task<GuideTokenResponse> GetTokenViaHelpApi()
         {
             try
