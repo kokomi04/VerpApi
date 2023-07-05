@@ -95,5 +95,12 @@ namespace VErpApi.Controllers.Stock.Internal
         {
             return await _productService.GetProductionProcessVersion(productId);
         }
+
+        [HttpPut]
+        [Route("{productId}/{productProcessStatus}")]
+        public async Task<bool> UpdateProductProcessStatus([FromRoute] int productId, [FromRoute] EnumProductionProcessStatus productProcessStatus, [FromBody] bool isSaveLog = false)
+        {
+            return await _productService.UpdateProductProcessStatus(productId, productProcessStatus, isSaveLog);
+        }
     }
 }

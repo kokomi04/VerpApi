@@ -26,6 +26,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Partial;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
@@ -1421,6 +1422,32 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
             return await _stockDbContext.QueryListProc<ObjectBillInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
+        }
+
+        public async Task<bool> UpdateProductProcessStatus(int productId, EnumProductionProcessStatus enumProductionProcessStatus, bool isSaveLog =false)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                if (productInfo == null)
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                productInfo.ProductionProcessStatusId = (int)enumProductionProcessStatus;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                if (isSaveLog)
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
+                  .MessageResourceFormatDatas(productInfo.ProductCode)
+                  .ObjectId(productId)
+                  .JsonData(productInfo.JsonSerialize())
+                  .CreateLog();
+
+                return true;
+            }
         }
 
     }

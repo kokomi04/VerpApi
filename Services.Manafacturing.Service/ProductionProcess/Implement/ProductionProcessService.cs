@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -1057,6 +1058,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                await _productHelperService.UpdateProductionProcessStatus(containerId, EnumProductionProcessStatus.CreateButNotYet, false);
                 var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)containerTypeId && c.ContainerId == containerId);
                 if (info == null)
                 {
@@ -1143,7 +1145,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return await _manufacturingDBContext.ProductionAssignment.AnyAsync(a => a.ProductionOrderId == productionOrderId);
         }
 
-
+        
         private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req, bool isFromCopy)
         {
             foreach (var s in req.ProductionSteps)
@@ -1376,6 +1378,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
             }
+            if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, req)).Count() == 0)
+            {
+                await _productHelperService.UpdateProductionProcessStatus(containerId, EnumProductionProcessStatus.Created, true);
+            }
+            else await _productHelperService.UpdateProductionProcessStatus(containerId, EnumProductionProcessStatus.CreateButNotYet, true);
         }
 
         private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
