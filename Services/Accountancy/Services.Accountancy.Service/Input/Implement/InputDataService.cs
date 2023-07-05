@@ -977,9 +977,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = filters[field.FieldName];
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null)))
+                        if (filterClause != null)
                         {
-                            continue;
+                            if(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null))
+                                continue;
+                            else
+                                throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                         }
                     }
 
@@ -1003,9 +1006,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1)))
+                            if (filterClause != null)
                             {
-                                continue;
+                                if (await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1))
+                                    continue;
+                                else
+                                    throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                             }
                         }
 
@@ -1245,7 +1251,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value });
+                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -2978,7 +2984,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];
@@ -3497,6 +3503,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public bool IsReadOnly { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public int DataTypeId { get; set; }
@@ -3507,6 +3514,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
 
             public string AreaTitle { get; set; }

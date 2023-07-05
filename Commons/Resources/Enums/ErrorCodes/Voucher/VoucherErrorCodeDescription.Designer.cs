@@ -88,7 +88,7 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện lọc.
+        ///   Looks up a localized string similar to Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện của bộ lọc {2}.
         /// </summary>
         public static string ReferValueNotValidFilter {
             get {
@@ -102,6 +102,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Voucher {
         public static string RequiredFieldIsEmpty {
             get {
                 return ResourceManager.GetString("RequiredFieldIsEmpty", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Thông tin giá trị dòng {0} của trường {1} không thỏa mãn điều kiện của bộ lọc {2}.
+        /// </summary>
+        public static string RequireValueNotValidFilter {
+            get {
+                return ResourceManager.GetString("RequireValueNotValidFilter", resourceCulture);
             }
         }
         

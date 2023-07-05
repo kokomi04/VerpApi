@@ -1186,6 +1186,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.IsCalcSum = field.IsCalcSum;
                         curField.RegularExpression = field.RegularExpression;
                         curField.DefaultValue = field.DefaultValue;
+                        curField.FiltersName = field.FiltersName;
                         curField.Filters = field.Filters;
                         curField.IsDeleted = false;
                         // update field id

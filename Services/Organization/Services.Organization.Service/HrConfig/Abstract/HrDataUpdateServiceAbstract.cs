@@ -319,9 +319,12 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues)))
+                        if (filterClause != null)
                         {
-                            continue;
+                            if(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues))
+                                continue;
+                            else
+                                throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, new object[] { index, field.Title, field.RequireFiltersName });
                         }
                     }
 
@@ -527,7 +530,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }

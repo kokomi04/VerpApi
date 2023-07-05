@@ -1258,6 +1258,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             public bool IsHidden { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public EnumDataType DataTypeId { get; set; }
@@ -1269,6 +1270,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
             public string HrAreaCode { get; internal set; }
             public int HrAreaId { get; internal set; }

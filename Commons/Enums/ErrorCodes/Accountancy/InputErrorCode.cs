@@ -30,6 +30,7 @@ namespace VErp.Commons.Enums.StandardEnum
 
         InputAreaFieldNotFound = 11,
 
+        RequireValueNotValidFilter = 14,
 
         RequiredFieldIsEmpty = 15,
 

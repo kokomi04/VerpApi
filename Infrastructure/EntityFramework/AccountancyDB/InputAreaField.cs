@@ -35,6 +35,8 @@ public partial class InputAreaField
 
     public string Filters { get; set; }
 
+    public string FiltersName { get; set; }
+
     public int? Width { get; set; }
 
     public int? Height { get; set; }
@@ -70,6 +72,8 @@ public partial class InputAreaField
     public DateTime? DeletedDatetimeUtc { get; set; }
 
     public string RequireFilters { get; set; }
+
+    public string RequireFiltersName { get; set; }
 
     public string ReferenceUrl { get; set; }
 

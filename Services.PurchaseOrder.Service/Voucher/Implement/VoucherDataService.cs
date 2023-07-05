@@ -848,9 +848,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = filters[field.FieldName];
-                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null)))
+                        if (filterClause != null)
                         {
-                            continue;
+                            if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null))
+                                continue;
+                            else
+                                throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                         }
                     }
 
@@ -874,9 +877,12 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1)))
+                            if (filterClause != null)
                             {
-                                continue;
+                                if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1))
+                                    continue;
+                                else
+                                    throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { rowIndx, field.Title, field.RequireFiltersName });
                             }
                         }
 
@@ -1090,7 +1096,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -2565,7 +2571,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];
@@ -3073,6 +3079,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public bool IsAutoIncrement { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public int DataTypeId { get; set; }
@@ -3083,6 +3090,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
             public bool IsReadOnly { get; set; }
             public bool IsHidden { get; set; }
