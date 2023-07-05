@@ -31,7 +31,7 @@ namespace VErp.Commons.Enums.StandardEnum
         VoucherAreaFieldNotFound = 11,
 
 
-
+        RequireValueNotValidFilter = 14,
 
         RequiredFieldIsEmpty = 15,
 

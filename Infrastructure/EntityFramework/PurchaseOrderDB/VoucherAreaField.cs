@@ -33,6 +33,8 @@ public partial class VoucherAreaField
 
     public string DefaultValue { get; set; }
 
+    public string FiltersName { get; set; }
+
     public string Filters { get; set; }
 
     public int? Width { get; set; }
@@ -68,6 +70,8 @@ public partial class VoucherAreaField
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public string RequireFiltersName { get; set; }
 
     public string RequireFilters { get; set; }
 

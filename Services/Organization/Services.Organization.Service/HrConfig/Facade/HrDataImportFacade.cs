@@ -906,7 +906,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { excelRow.Index, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { excelRow.Index, field.Title + ": " + value, field.FiltersName });
                 }
             }
             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;
