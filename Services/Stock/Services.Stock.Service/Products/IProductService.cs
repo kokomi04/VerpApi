@@ -47,7 +47,7 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<IList<ObjectBillInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly);
 
-        Task<bool> UpdateProductProcessStatus(int productId, EnumProductionProcessStatus enumProductionProcessStatus, bool isSaveLog =false);
+        Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog);
 
     }
 }

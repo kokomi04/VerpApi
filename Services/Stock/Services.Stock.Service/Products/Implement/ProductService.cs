@@ -1424,17 +1424,17 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return await _stockDbContext.QueryListProc<ObjectBillInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
         }
 
-        public async Task<bool> UpdateProductProcessStatus(int productId, EnumProductionProcessStatus enumProductionProcessStatus, bool isSaveLog =false)
+        public async Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog =false)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {
-                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == productId);
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == processStatus.ProductId);
                 if (productInfo == null)
                 {
                     throw new BadRequestException(ProductErrorCode.ProductNotFound);
                 }
 
-                productInfo.ProductionProcessStatusId = (int)enumProductionProcessStatus;
+                productInfo.ProductionProcessStatusId = (int)processStatus.ProcessStatus;
 
                 await _stockDbContext.SaveChangesAsync();
 
@@ -1442,7 +1442,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 if (isSaveLog)
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
                   .MessageResourceFormatDatas(productInfo.ProductCode)
-                  .ObjectId(productId)
+                  .ObjectId(processStatus.ProductId)
                   .JsonData(productInfo.JsonSerialize())
                   .CreateLog();
 

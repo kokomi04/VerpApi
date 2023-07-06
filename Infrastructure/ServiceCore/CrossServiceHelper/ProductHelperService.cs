@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Infrastructure.AppSettings.Model;
@@ -26,7 +29,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<bool> UpdateProductionProcessVersion(long productId);
         Task<long> GetProductionProcessVersion(long productId);
 
-        Task<bool> UpdateProductionProcessStatus(long productId, EnumProductionProcessStatus productProcessStatus, bool isSaveLog);
+        Task<bool> UpdateProductionProcessStatus(InternalProductProcessStatus productProcessStatus, bool isSaveLog);
     }
 
 
@@ -217,9 +220,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Get<long>($"api/internal/InternalProduct/{productId}/productionProcessVersion");
         }
 
-        public Task<bool> UpdateProductionProcessStatus(long productId, EnumProductionProcessStatus productProcessStatus, bool isSaveLog)
+        public Task<bool> UpdateProductionProcessStatus( InternalProductProcessStatus productProcessStatus, bool isSaveLog)
         {
-            return _httpCrossService.Put<bool>($"api/internal/InternalProduct/{productId}/{productProcessStatus}", isSaveLog);
+            return _httpCrossService.Put<bool>(QueryHelpers.AddQueryString($"api/internal/InternalProduct/productProcessStatus", "isSvaeLog", isSaveLog.ToString()), productProcessStatus);
         }
     }
 }

@@ -18,7 +18,12 @@ namespace MigrateInternalProductProcessStatus
         static AppSetting AppSetting;
         static void Main(string[] args)
         {
-            var development = args[0];
+            if (args.Length < 2)
+            {
+                Console.WriteLine($"Not enought value! Please input enought value!");
+                return;
+            }
+            var enviroment = args[0];
             var file = args[1];
             if (!File.Exists(file))
             {
@@ -26,17 +31,17 @@ namespace MigrateInternalProductProcessStatus
                 return;
             }
             Console.WriteLine("Wellcome to migrate product internal name");
-            SetEnviroment(development, file);
+            SetEnviroment(enviroment, file);
             DI();
             ExcuteWithSubId();
             Console.WriteLine("Suscess update product process status all data!");
             Console.ReadLine();
         }
-        private static void SetEnviroment(string development, string file)
+        private static void SetEnviroment(string enviroment, string file)
         {
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", development);
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", enviroment);
             Environment.SetEnvironmentVariable("CONFIG", file);
-            Console.WriteLine($"\nSet enviroment variable ASPNETCORE_ENVIRONMENT = {development}");
+            Console.WriteLine($"\nSet enviroment variable ASPNETCORE_ENVIRONMENT = {enviroment}");
         }
         private static void DI()
         {

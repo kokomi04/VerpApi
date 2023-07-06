@@ -97,10 +97,10 @@ namespace VErpApi.Controllers.Stock.Internal
         }
 
         [HttpPut]
-        [Route("{productId}/{productProcessStatus}")]
-        public async Task<bool> UpdateProductProcessStatus([FromRoute] int productId, [FromRoute] EnumProductionProcessStatus productProcessStatus, [FromBody] bool isSaveLog = false)
+        [Route("productProcessStatus")]
+        public async Task<bool> UpdateProductProcessStatus([FromBody] InternalProductProcessStatus productProcessStatus, [FromQuery] bool isSaveLog)
         {
-            return await _productService.UpdateProductProcessStatus(productId, productProcessStatus, isSaveLog);
+            return await _productService.UpdateProductProcessStatus(productProcessStatus, isSaveLog);
         }
     }
 }
