@@ -13,24 +13,25 @@ namespace MigrateInternalProductProcessStatus
 {
     internal class Program
     {
-        const string DEVELOPMENT = "Development";
+        
         static IServiceProvider ServiceProvider;
         static AppSetting AppSetting;
         static void Main(string[] args)
         {
+            var development = args[0];
+            var file = args[1];
             Console.WriteLine("Wellcome to migrate product internal name");
-            SetEnviroment();
+            SetEnviroment(development, file);
             DI();
             ExcuteWithSubId();
+            Console.WriteLine("Suscess update product process status all data!");
             Console.ReadLine();
         }
-        private static void SetEnviroment()
+        private static void SetEnviroment(string development, string file)
         {
-            Console.WriteLine("Enter enviroment path:");
-            var command = Console.ReadLine();
-            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", DEVELOPMENT);
-            Environment.SetEnvironmentVariable("CONFIG", command);
-            Console.WriteLine($"\nSet enviroment variable ASPNETCORE_ENVIRONMENT = {DEVELOPMENT}");
+            Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", development);
+            Environment.SetEnvironmentVariable("CONFIG", file);
+            Console.WriteLine($"\nSet enviroment variable ASPNETCORE_ENVIRONMENT = {development}");
         }
         private static void DI()
         {
@@ -56,7 +57,7 @@ namespace MigrateInternalProductProcessStatus
 
                     var service = scope.ServiceProvider.GetRequiredService<IMigrateProductProcessStatus>();
                     service.Execute().ConfigureAwait(true).GetAwaiter().GetResult();
-                    Console.WriteLine("Success for " + subId);
+                    Console.WriteLine("Success update status for subid " + subId);
                 }
             }
         }
