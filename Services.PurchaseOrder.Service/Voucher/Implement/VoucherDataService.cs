@@ -848,19 +848,16 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = filters[field.FieldName];
-                        if (filterClause != null)
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null)))
                         {
-                            if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null))
-                                continue;
-                            else
-                                throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
+                            continue;
                         }
                     }
 
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
+                        throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -877,19 +874,16 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null)
+                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1)))
                             {
-                                if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1))
                                     continue;
-                                else
-                                    throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { rowIndx, field.Title, field.RequireFiltersName });
                             }
                         }
 
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
+                            throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }

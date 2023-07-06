@@ -977,19 +977,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = filters[field.FieldName];
-                        if (filterClause != null)
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null)))
                         {
-                            if(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null))
                                 continue;
-                            else
-                                throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                         }
                     }
 
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
+                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -1006,19 +1003,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         if (!string.IsNullOrEmpty(field.RequireFilters))
                         {
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                            if (filterClause != null)
+                            if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1)))
                             {
-                                if (await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1))
                                     continue;
-                                else
-                                    throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                             }
                         }
 
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.ExcelRow ?? rowIndx, field.Title });
+                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }

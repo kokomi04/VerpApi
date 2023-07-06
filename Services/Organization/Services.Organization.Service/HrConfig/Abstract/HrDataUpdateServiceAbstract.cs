@@ -319,19 +319,16 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     if (!string.IsNullOrEmpty(field.RequireFilters))
                     {
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
-                        if (filterClause != null)
+                        if (filterClause != null && !(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues)))
                         {
-                            if(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues))
                                 continue;
-                            else
-                                throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, new object[] { index, field.Title, field.RequireFiltersName });
                         }
                     }
 
                     row.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { index, field.Title });
+                        throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, new object[] { index, field.Title, field.RequireFiltersName });
                     }
                 }
             }
