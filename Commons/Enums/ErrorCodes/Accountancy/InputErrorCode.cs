@@ -64,7 +64,6 @@ namespace VErp.Commons.Enums.StandardEnum
         PrintConfigNotFound = 36,
 
 
-
         InputActionNotFound = 39,
 
         InputActionCodeAlreadyExisted = 40,
