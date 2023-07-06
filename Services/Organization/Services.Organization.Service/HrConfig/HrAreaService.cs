@@ -493,6 +493,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         curField.IsCalcSum = field.IsCalcSum;
                         curField.RegularExpression = field.RegularExpression;
                         curField.DefaultValue = field.DefaultValue;
+                        curField.FiltersName = field.FiltersName;
                         curField.Filters = field.Filters;
                         curField.IsDeleted = false;
                         // update field id
@@ -509,6 +510,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                        curField.RequireFiltersName = field.RequireFiltersName;
                         curField.RequireFilters = field.RequireFilters;
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;

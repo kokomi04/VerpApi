@@ -2201,6 +2201,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     IsReadOnly = f.IsReadOnly,
                                     IsRequire = af.IsRequire,
                                     IsUnique = af.IsUnique,
+                                    FiltersName = af.FiltersName,
                                     Filters = af.Filters,
                                     FieldName = f.FieldName,
                                     DataTypeId = f.DataTypeId,
@@ -2210,6 +2211,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     RefTableTitle = f.RefTableTitle,
                                     RegularExpression = af.RegularExpression,
                                     IsMultiRow = a.IsMultiRow,
+                                    RequireFiltersName = af.RequireFiltersName,
                                     RequireFilters = af.RequireFilters,
                                     AreaTitle = a.Title,
                                     AreaId = a.InputAreaId
