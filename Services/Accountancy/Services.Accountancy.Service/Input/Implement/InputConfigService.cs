@@ -1203,6 +1203,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.OnChange = field.OnChange;
                         curField.AutoFocus = field.AutoFocus;
                         curField.Column = field.Column;
+                        curField.RequireFiltersName = field.RequireFiltersName;
                         curField.RequireFilters = field.RequireFilters;
                         curField.ReferenceUrl = field.ReferenceUrl;
                         curField.IsBatchSelect = field.IsBatchSelect;
