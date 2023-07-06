@@ -20,6 +20,11 @@ namespace MigrateInternalProductProcessStatus
         {
             var development = args[0];
             var file = args[1];
+            if (!File.Exists(file))
+            {
+                Console.WriteLine($"File {file} not found!");
+                return;
+            }
             Console.WriteLine("Wellcome to migrate product internal name");
             SetEnviroment(development, file);
             DI();
