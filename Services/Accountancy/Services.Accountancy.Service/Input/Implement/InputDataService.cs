@@ -979,7 +979,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         Clause filterClause = filters[field.FieldName];
                         if (filterClause != null)
                         {
-                            if(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null))
+                            if(!await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null))
                                 continue;
                             else
                                 throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
@@ -1008,7 +1008,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                             if (filterClause != null)
                             {
-                                if (await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1))
+                                if (!await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1))
                                     continue;
                                 else
                                     throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });

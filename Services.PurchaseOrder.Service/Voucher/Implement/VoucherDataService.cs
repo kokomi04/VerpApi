@@ -850,7 +850,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         Clause filterClause = filters[field.FieldName];
                         if (filterClause != null)
                         {
-                            if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null))
+                            if(!await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, null))
                                 continue;
                             else
                                 throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
@@ -879,7 +879,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                             if (filterClause != null)
                             {
-                                if(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1))
+                                if(!await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1))
                                     continue;
                                 else
                                     throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { rowIndx, field.Title, field.RequireFiltersName });

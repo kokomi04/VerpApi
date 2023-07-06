@@ -321,7 +321,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                         if (filterClause != null)
                         {
-                            if(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues))
+                            if(!await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues))
                                 continue;
                             else
                                 throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, new object[] { index, field.Title, field.RequireFiltersName });
