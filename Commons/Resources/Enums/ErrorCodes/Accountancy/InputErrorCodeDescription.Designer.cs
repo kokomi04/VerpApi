@@ -232,6 +232,15 @@ namespace Verp.Resources.Enums.ErrorCodes.Accountancy {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Không tìm thấy cấu hình header phiếu in.
+        /// </summary>
+        public static string PrintConfigHeaderNotFound {
+            get {
+                return ResourceManager.GetString("PrintConfigHeaderNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy cấu hình phiếu in.
         /// </summary>
         public static string PrintConfigNotFound {

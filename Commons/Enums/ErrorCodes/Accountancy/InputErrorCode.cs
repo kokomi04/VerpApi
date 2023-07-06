@@ -63,6 +63,7 @@ namespace VErp.Commons.Enums.StandardEnum
 
         PrintConfigNotFound = 36,
 
+        PrintConfigHeaderNotFound = 37,
 
 
         InputActionNotFound = 39,
