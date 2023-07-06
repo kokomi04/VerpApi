@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
@@ -45,6 +46,8 @@ namespace VErp.Services.Stock.Service.Products
         //Task<(int? productId, string msg)> CheckProductIdsIsUsed(List<int> productIds);
 
         Task<IList<ObjectBillInUsedInfo>> GetProductTopInUsed(IList<int> productIds, bool isCheckExistOnly);
+
+        Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog);
 
     }
 }
