@@ -19,6 +19,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
     {
         Task<bool> ProductionOrderStatiticChanges(string productionOrderCode, string description);
         Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg);
+
+        Task<bool> CalcProductionOrderStatusV2(ProductionOrderCalcStatusV2Message msg);
     }
 
 
@@ -43,6 +45,11 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
         public async Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg)
         {
             return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_CALC_STATUS, msg);
+        }
+
+        public async Task<bool> CalcProductionOrderStatusV2(ProductionOrderCalcStatusV2Message msg)
+        {
+            return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_CALC_STATUS_V2, msg);
         }
     }
 }

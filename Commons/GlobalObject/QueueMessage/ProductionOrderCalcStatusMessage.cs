@@ -19,4 +19,18 @@ namespace VErp.Commons.GlobalObject.QueueMessage
         }
 
     }
+
+    public class ProductionOrderCalcStatusV2Message
+    {
+
+        public string ProductionOrderCode { get; set; }
+        public IList<InventoryByProductionOrderModel> Inventories { get; set; }
+
+        public string Description { get; set; }
+        public ProductionOrderCalcStatusV2Message()
+        {
+            Inventories = new List<InventoryByProductionOrderModel>();
+        }
+
+    }
 }

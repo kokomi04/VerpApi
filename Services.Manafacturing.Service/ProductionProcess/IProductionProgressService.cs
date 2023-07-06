@@ -7,5 +7,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
     public interface IProductionProgressService
     {
         Task<bool> CalcAndUpdateProductionOrderStatus(ProductionOrderCalcStatusMessage data);
+
+        Task<bool> CalcAndUpdateProductionOrderStatusV2(ProductionOrderCalcStatusV2Message data);
     }
 }

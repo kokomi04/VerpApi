@@ -131,6 +131,11 @@ namespace VErp.WebApis.VErpApi
             {
                 await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
             });
+
+            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusV2Message>(PRODUCTION_CALC_STATUS_V2, async (_productionOrderService, msg, calcelToken) =>
+            {
+                await _productionOrderService.CalcAndUpdateProductionOrderStatusV2(msg.Data);
+            });
         }
 
         private static void ConfigureBussinessService(IServiceCollection services)

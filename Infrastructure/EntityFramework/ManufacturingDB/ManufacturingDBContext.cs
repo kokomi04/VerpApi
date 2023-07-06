@@ -61,6 +61,8 @@ public partial class ManufacturingDBContext : DbContext
 
     public virtual DbSet<ProductionOrderDetail> ProductionOrderDetail { get; set; }
 
+    public virtual DbSet<ProductionOrderInventoryConflict> ProductionOrderInventoryConflict { get; set; }
+
     public virtual DbSet<ProductionOrderMaterialSet> ProductionOrderMaterialSet { get; set; }
 
     public virtual DbSet<ProductionOrderMaterialSetConsumptionGroup> ProductionOrderMaterialSetConsumptionGroup { get; set; }
@@ -358,6 +360,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.HasIndex(e => new { e.ProductionOrderId, e.FromDepartmentId, e.ObjectId, e.ObjectTypeId, e.Status, e.FromProductionStepId, e.ToDepartmentId, e.ToProductionStepId, e.HandoverDatetime }, "IDX_ProductionHandover_Search");
 
             entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.InventoryProductId).HasComment("Product id in production process");
 
             entity.HasOne(d => d.FromProductionStep).WithMany(p => p.ProductionHandoverFromProductionStep)
                 .HasForeignKey(d => d.FromProductionStepId)
@@ -521,6 +524,19 @@ public partial class ManufacturingDBContext : DbContext
                 .HasForeignKey(d => d.ProductionOrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionOrderDetail_ProductionOrder");
+        });
+
+        modelBuilder.Entity<ProductionOrderInventoryConflict>(entity =>
+        {
+            entity.HasKey(e => new { e.ProductionOrderId, e.InventoryDetailId });
+
+            entity.Property(e => e.Content).HasMaxLength(512);
+            entity.Property(e => e.InventoryCode)
+                .IsRequired()
+                .HasMaxLength(128);
+            entity.Property(e => e.InventoryQuantity).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.InventoryRequirementCode).HasMaxLength(128);
+            entity.Property(e => e.RequireQuantity).HasColumnType("decimal(32, 12)");
         });
 
         modelBuilder.Entity<ProductionOrderMaterialSet>(entity =>
@@ -842,7 +858,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.Property(e => e.PurchaseOrderCode)
                 .IsRequired()
                 .HasMaxLength(128);
-            entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+            entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
         });
 
         modelBuilder.Entity<RefOutsourceStepOrder>(entity =>
@@ -867,7 +883,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.Property(e => e.PurchaseOrderCode)
                 .IsRequired()
                 .HasMaxLength(128);
-            entity.Property(e => e.Quantity).HasColumnType("decimal(18, 5)");
+            entity.Property(e => e.Quantity).HasColumnType("decimal(32, 12)");
         });
 
         modelBuilder.Entity<RefProduct>(entity =>

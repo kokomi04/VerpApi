@@ -289,13 +289,8 @@ public partial class StockDBContext : DbContext
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
 
-            entity.Property(e => e.BillCode)
-                .HasMaxLength(64)
-                .IsUnicode(false);
-            entity.Property(e => e.BillForm).HasMaxLength(128);
-            entity.Property(e => e.BillSerial)
-                .HasMaxLength(64)
-                .IsUnicode(false);
+         
+           
             entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
             entity.Property(e => e.Content).HasMaxLength(512);
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -303,7 +298,7 @@ public partial class StockDBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(128);
             entity.Property(e => e.ModuleTypeId).HasDefaultValueSql("((2))");
-            entity.Property(e => e.Shipper).HasMaxLength(128);
+        
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
         });
 
@@ -322,15 +317,12 @@ public partial class StockDBContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("POCode");
             entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
-            entity.Property(e => e.ProductUnitConversionPrice).HasColumnType("decimal(18, 5)");
+         
             entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.ProductionOrderCode)
                 .HasMaxLength(64)
                 .IsUnicode(false);
-            entity.Property(e => e.UnitPrice)
-                .HasDefaultValueSql("((0))")
-                .HasColumnType("decimal(18, 5)");
-
+        
             entity.HasOne(d => d.AssignStock).WithMany(p => p.InventoryRequirementDetail)
                 .HasForeignKey(d => d.AssignStockId)
                 .HasConstraintName("FK_InventoryRequirementDetail_Stock");

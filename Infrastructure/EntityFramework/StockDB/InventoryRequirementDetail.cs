@@ -39,10 +39,6 @@ public partial class InventoryRequirementDetail
 
     public int? AssignStockId { get; set; }
 
-    public decimal? UnitPrice { get; set; }
-
-    public decimal? ProductUnitConversionPrice { get; set; }
-
     public string OrderCode { get; set; }
 
     public int? DepartmentId { get; set; }
