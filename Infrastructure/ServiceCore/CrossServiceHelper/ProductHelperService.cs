@@ -222,7 +222,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
 
         public Task<bool> UpdateProductionProcessStatus( InternalProductProcessStatus productProcessStatus, bool isSaveLog)
         {
-            return _httpCrossService.Put<bool>(QueryHelpers.AddQueryString($"api/internal/InternalProduct/productProcessStatus", "isSvaeLog", isSaveLog.ToString()), productProcessStatus);
+            return _httpCrossService.Put<bool>(QueryHelpers.AddQueryString($"api/internal/InternalProduct/productProcessStatus", "isSaveLog", isSaveLog.ToString()), productProcessStatus);
         }
     }
 }
