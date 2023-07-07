@@ -87,6 +87,8 @@ public partial class MasterDBContext : DbContext
 
     public virtual DbSet<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; }
 
+    public virtual DbSet<PrintConfigHeader> PrintConfigHeader { get; set; }
+
     public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
 
     public virtual DbSet<PrintConfigStandardModuleType> PrintConfigStandardModuleType { get; set; }
@@ -578,6 +580,18 @@ public partial class MasterDBContext : DbContext
                 .HasForeignKey(d => d.PrintConfigCustomId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PrintConfigCustomModuleType_PrintConfigCustom");
+        });
+
+        modelBuilder.Entity<PrintConfigHeader>(entity =>
+        {
+            entity.HasKey(e => e.PrintConfigHeaderId).HasName("PK__PrintCon__EC5237919588D18D");
+
+            entity.Property(e => e.IsShow)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.Layout).HasMaxLength(128);
+            entity.Property(e => e.PrintConfigHeaderName).HasMaxLength(255);
+            entity.Property(e => e.Title).HasMaxLength(255);
         });
 
         modelBuilder.Entity<PrintConfigStandard>(entity =>
