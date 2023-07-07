@@ -590,7 +590,7 @@ public partial class MasterDBContext : DbContext
                 .IsRequired()
                 .HasDefaultValueSql("((1))");
             entity.Property(e => e.Layout).HasMaxLength(128);
-            entity.Property(e => e.PrintHeaderName).HasMaxLength(255);
+            entity.Property(e => e.PrintConfigHeaderName).HasMaxLength(255);
             entity.Property(e => e.Title).HasMaxLength(255);
         });
 

@@ -7,7 +7,7 @@ public partial class PrintConfigHeader
 {
     public int PrintConfigHeaderId { get; set; }
 
-    public string PrintHeaderName { get; set; }
+    public string PrintConfigHeaderName { get; set; }
 
     public string Title { get; set; }
 

@@ -18,7 +18,7 @@ namespace VErp.Services.Master.Model.PrintConfig
     }
     public class PrintConfigHeaderBaseModel : IMapFrom<PrintConfigHeader>
     {
-        public string PrintHeaderName { get; set; }
+        public string PrintConfigHeaderName { get; set; }
 
         public string Title { get; set; }
 

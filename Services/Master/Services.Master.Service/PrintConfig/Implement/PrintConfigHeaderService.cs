@@ -38,7 +38,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             var query = _masterDBContext.PrintConfigHeader.Where(x => x.IsDeleted == false).AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
-                query = query.Where(x => x.PrintHeaderName.Contains(keyword) || x.Title.Contains(keyword));
+                query = query.Where(x => x.PrintConfigHeaderName.Contains(keyword) || x.Title.Contains(keyword));
             
             var total = await query.CountAsync();
             var lst = await(size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
