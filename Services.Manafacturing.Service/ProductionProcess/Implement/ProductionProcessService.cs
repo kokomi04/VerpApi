@@ -1059,9 +1059,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus() {
-                    ProductId = containerId,
-                    ProcessStatus = EnumProductionProcessStatus.CreateButNotYet}, false);
+                if (containerTypeId == EnumContainerType.Product)
+                {
+                    await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                    {
+                        ProductId = containerId,
+                        ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
+                    }, false);
+                }
+               
                 var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)containerTypeId && c.ContainerId == containerId);
                 if (info == null)
                 {
@@ -1381,16 +1387,23 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
             }
-            if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, req)).Count() == 0)
+            if (containerTypeId == EnumContainerType.Product)
             {
-                await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus() { 
+                if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, req)).Count() == 0)
+                {
+                    await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                    {
+                        ProductId = containerId,
+                        ProcessStatus = EnumProductionProcessStatus.Created
+                    }, true);
+                }
+                else await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                {
                     ProductId = containerId,
-                    ProcessStatus = EnumProductionProcessStatus.Created
+                    ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
                 }, true);
             }
-            else await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus() { 
-                ProductId = containerId,
-                ProcessStatus = EnumProductionProcessStatus.CreateButNotYet }, true);
+            
         }
 
         private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
