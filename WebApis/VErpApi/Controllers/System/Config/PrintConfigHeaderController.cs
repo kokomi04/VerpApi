@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Infrastructure.ApiCore;
@@ -56,5 +57,11 @@ namespace VErpApi.Controllers.System.Config
             return await _printConfigHeaderService.DeleteHeader(printConfigHeaderId);
         }
 
+        [HttpPut]
+        [Route("{printConfigHeaderId}/mapping")]
+        public Task<bool> MapToPrintConfigCustom([FromRoute] int printConfigHeaderId, List<int> printConfigIds)
+        {
+            return _printConfigHeaderService.MapToPrintConfigCustom(printConfigHeaderId, printConfigIds);
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using OpenXmlPowerTools;
@@ -43,6 +44,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             var total = await query.CountAsync();
             var lst = await(size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
                 .OrderBy(x=>x.SortOrder)
+                .Include(x => x.PrintConfigCustoms)
                 .ProjectTo<PrintConfigHeaderViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
@@ -52,6 +54,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         {
             var header = await _masterDBContext.PrintConfigHeader
                     .Where(x => x.IsDeleted == false && x.PrintConfigHeaderId == headerId)
+                    .Include(x => x.PrintConfigCustoms)
                     .ProjectTo<PrintConfigHeaderModel>(_mapper.ConfigurationProvider)
                     .FirstOrDefaultAsync();
             if (header == null) throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
@@ -127,6 +130,32 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DeletePrintConfigHeader");
+                throw;
+            }
+        }
+
+        public async Task<bool> MapToPrintConfigCustom(int printConfigHeaderId, List<int> printConfigIds)
+        {
+            await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
+
+            try
+            {
+                if(await _masterDBContext.PrintConfigHeader.FindAsync(printConfigHeaderId) == null)
+                    throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
+
+                var printConfigs = _masterDBContext.PrintConfigCustom.Where(x => printConfigIds.Contains(x.PrintConfigCustomId));
+
+                await printConfigs.ForEachAsync(x => x.PrintConfigHeaderId = printConfigHeaderId);
+
+                await _masterDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MappingPrintConfigHeader");
                 throw;
             }
         }

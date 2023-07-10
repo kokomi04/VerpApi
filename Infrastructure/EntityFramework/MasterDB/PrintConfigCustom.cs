@@ -59,5 +59,9 @@ public partial class PrintConfigCustom
 
     public int? MinimumTableRows { get; set; }
 
+    public int? PrintConfigHeaderId { get; set; }
+
     public virtual ICollection<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; } = new List<PrintConfigCustomModuleType>();
+
+    public virtual PrintConfigHeader PrintConfigHeader { get; set; }
 }

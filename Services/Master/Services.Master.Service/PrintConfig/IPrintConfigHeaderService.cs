@@ -16,6 +16,7 @@ namespace VErp.Services.Master.Service.PrintConfig
         Task<int> CreateHeader(PrintConfigHeaderModel model);
         Task<bool> UpdateHeader(int headerId, PrintConfigHeaderModel model);
         Task<bool> DeleteHeader(int headerId);
+        Task<bool> MapToPrintConfigCustom(int printConfigHeaderId, List<int> printConfigIds);
     }
 
 }
