@@ -30,4 +30,6 @@ public partial class PrintConfigHeader
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public virtual ICollection<PrintConfigCustom> PrintConfigCustoms { get; set; } = new List<PrintConfigCustom>();
 }

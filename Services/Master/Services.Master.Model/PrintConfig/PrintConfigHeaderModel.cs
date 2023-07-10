@@ -27,5 +27,15 @@ namespace VErp.Services.Master.Model.PrintConfig
         public bool? IsShow { get; set; }
 
         public int SortOrder { get; set; }
+
+        public List<PrintConfigCustomOutputHeaderModel> PrintConfigCustoms { get; set; }
+    }
+
+    public class PrintConfigCustomOutputHeaderModel : IMapFrom<PrintConfigCustom>
+    {
+
+        public int? PrintConfigCustomId { get; set; }
+        public string PrintConfigName { get; set; }
+        public string Title { get; set; }
     }
 }

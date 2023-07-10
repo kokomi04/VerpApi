@@ -570,6 +570,10 @@ public partial class MasterDBContext : DbContext
             entity.Property(e => e.PrintConfigName).HasMaxLength(255);
             entity.Property(e => e.TemplateFileName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(255);
+
+            entity.HasOne(d => d.PrintConfigHeader).WithMany(p => p.PrintConfigCustoms)
+                .HasForeignKey(d => d.PrintConfigHeaderId)
+                .HasConstraintName("FK_PrintConfigCustom_PrintConfigHeader");
         });
 
         modelBuilder.Entity<PrintConfigCustomModuleType>(entity =>
