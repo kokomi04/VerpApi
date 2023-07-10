@@ -1389,7 +1389,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             if (containerTypeId == EnumContainerType.Product)
             {
-                if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, req)).Count() == 0)
+                var productProcessModel = await GetProductionProcessByContainerId(containerTypeId, containerId);
+                if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productProcessModel)).Count() == 0)
                 {
                     await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
                     {
@@ -1402,8 +1403,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductId = containerId,
                     ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
                 }, true);
-            }
-            
+            }                       
+
         }
 
         private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
