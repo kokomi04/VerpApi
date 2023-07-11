@@ -328,7 +328,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                     row.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, new object[] { index, field.Title, field.RequireFiltersName });
+                        throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, 
+                            new object[] { index, field.Title, field.RequireFiltersName });
                     }
                 }
             }
@@ -527,7 +528,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value, field.FiltersName });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, 
+                        new object[] { field.HrAreaTitle, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }

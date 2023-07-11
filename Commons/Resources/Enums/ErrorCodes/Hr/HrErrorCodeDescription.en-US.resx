@@ -166,7 +166,7 @@
     <value>The reference value of row {0} as field {1} was not found</value>
   </data>
   <data name="ReferValueNotValidFilter" xml:space="preserve">
-    <value>The reference value of row {0} as field {1} is not pass by filter {2}</value>
+    <value>The reference value of row {0} as field [{1}] is not pass by filter [{2}]</value>
   </data>
   <data name="RequiredFieldIsEmpty" xml:space="preserve">
     <value>The row {0} has empty required field {1}</value>
@@ -184,6 +184,6 @@
     <value>The DataSize of Text field cannot less or equal than 0, decimal &gt; 1</value>
   </data>
   <data name="RequireValueNotValidFilter" xml:space="preserve">
-    <value>The reference value of row {0} as field {1} is not pass by filter {2}</value>
+    <value>The reference value of row {0} as field [{1}] is not pass by filter [{2}]</value>
   </data>
 </root>

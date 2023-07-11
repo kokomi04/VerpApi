@@ -857,7 +857,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
+                        throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, 
+                            new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -883,7 +884,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, new object[] { rowIndx, field.Title, field.RequireFiltersName });
+                            throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, 
+                                new object[] { rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }
@@ -1090,7 +1092,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value, field.FiltersName });
+                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, 
+                        new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", 
+                            field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -2567,7 +2571,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, 
+                                    new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];

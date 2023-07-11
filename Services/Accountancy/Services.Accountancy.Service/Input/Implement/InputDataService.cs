@@ -986,7 +986,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
+                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, 
+                            new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -1012,7 +1013,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
+                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, 
+                                new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }
@@ -1245,7 +1247,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value, field.FiltersName });
+                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, 
+                        new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -2980,7 +2983,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, 
+                                    new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];
