@@ -22,8 +22,10 @@ namespace VErpApi.Controllers.System.Config
             _printConfigHeaderService = printConfigHeaderService;
         }
 
-        [HttpGet]
+        [HttpPost]
         [Route("search")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
         public async Task<PageData<PrintConfigHeaderViewModel>> Search(string keyword, int page, int size)
         {
             return await _printConfigHeaderService.Search(keyword, page, size);
@@ -31,6 +33,7 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpGet]
         [Route("{printConfigHeaderId}")]
+        [GlobalApi]
         public async Task<PrintConfigHeaderModel> GetPrintConfigHeader([FromRoute] int printConfigHeaderId)
         {
             return await _printConfigHeaderService.GetHeaderById(printConfigHeaderId);
