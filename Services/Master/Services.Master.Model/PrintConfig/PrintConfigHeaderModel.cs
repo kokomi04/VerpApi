@@ -11,6 +11,8 @@ namespace VErp.Services.Master.Model.PrintConfig
     public class PrintConfigHeaderModel : PrintConfigHeaderBaseModel
     {
         public string PrintConfigHeaderCode { get; set; }
+
+        public string JsAction { get; set; }
     }
     public class PrintConfigHeaderViewModel : PrintConfigHeaderBaseModel
     {
@@ -21,8 +23,6 @@ namespace VErp.Services.Master.Model.PrintConfig
         public string PrintConfigHeaderName { get; set; }
 
         public string Title { get; set; }
-
-        public string Layout { get; set; }
 
         public bool? IsShow { get; set; }
 
@@ -35,7 +35,6 @@ namespace VErp.Services.Master.Model.PrintConfig
     {
 
         public int? PrintConfigCustomId { get; set; }
-        public string PrintConfigName { get; set; }
         public string Title { get; set; }
     }
 }

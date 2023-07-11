@@ -7,13 +7,11 @@ public partial class PrintConfigHeader
 {
     public int PrintConfigHeaderId { get; set; }
 
-    public string PrintConfigHeaderName { get; set; }
-
     public string Title { get; set; }
 
     public string PrintConfigHeaderCode { get; set; }
 
-    public string Layout { get; set; }
+    public string JsAction { get; set; }
 
     public bool? IsShow { get; set; }
 

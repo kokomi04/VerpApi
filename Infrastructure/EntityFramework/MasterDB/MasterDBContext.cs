@@ -593,9 +593,8 @@ public partial class MasterDBContext : DbContext
             entity.Property(e => e.IsShow)
                 .IsRequired()
                 .HasDefaultValueSql("((1))");
-            entity.Property(e => e.Layout).HasMaxLength(128);
-            entity.Property(e => e.PrintConfigHeaderName).HasMaxLength(255);
-            entity.Property(e => e.Title).HasMaxLength(255);
+            entity.Property(e => e.PrintConfigHeaderCode).HasMaxLength(255);
+            entity.Property(e => e.Title).HasMaxLength(128);
         });
 
         modelBuilder.Entity<PrintConfigStandard>(entity =>
