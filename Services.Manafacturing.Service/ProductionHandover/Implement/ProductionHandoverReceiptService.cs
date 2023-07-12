@@ -136,7 +136,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$" ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
