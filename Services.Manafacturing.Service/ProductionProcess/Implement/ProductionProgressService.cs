@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -12,6 +14,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionAssignment;
@@ -29,7 +32,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private readonly IMaterialAllocationService _materialAllocationService;
         private readonly IProductionOrderService _productionOrderService;
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly IProductionAssignmentService _productionAssignmentService;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
@@ -47,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _materialAllocationService = materialAllocationService;
             _productionOrderService = productionOrderService;
             _manufacturingDBContext = manufacturingDBContext;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
             _mapper = mapper;
             _logger = logger;
             _productionAssignmentService = productionAssignmentService;
@@ -209,7 +212,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {
                     _manufacturingDBContext.SaveChanges();
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false });
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                              .MessageResourceFormatDatas($"Cập nhật trạng thái lệnh sản xuất, {data.Description}")
+                              .ObjectId(productionOrder.ProductionOrderId)
+                              .ObjectType(EnumObjectType.ProductionOrder)
+                              .JsonData(new { productionOrder, data, isManual = false })
+                              .CreateLog();
                 }
 
 

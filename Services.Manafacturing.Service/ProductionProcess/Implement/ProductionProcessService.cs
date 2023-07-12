@@ -1,14 +1,17 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -21,6 +24,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
@@ -35,7 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
     public class ProductionProcessService : IProductionProcessService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -53,7 +57,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             , IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionStep);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -78,8 +82,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
-                        $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                            .MessageResourceFormatDatas($"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}")
+                            .ObjectId(step.ProductionStepId)
+                            .ObjectType(EnumObjectType.ProductionStep)
+                            .JsonData(req)
+                            .CreateLog();
                     return step.ProductionStepId;
                 }
                 catch (Exception ex)
@@ -120,8 +128,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
-                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                            .MessageResourceFormatDatas($"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}")
+                            .ObjectId(productionStep.ProductionStepId)
+                            .ObjectType(EnumObjectType.ProductionStep)
+                            .JsonData(productionStep)
+                            .CreateLog();
                     return true;
                 }
                 catch (Exception ex)
@@ -927,8 +939,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
-                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                            .MessageResourceFormatDatas($"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}")
+                            .ObjectId(sProductionStep.ProductionStepId)
+                            .ObjectType(EnumObjectType.ProductionStep)
+                            .JsonData(req)
+                            .CreateLog();
                     return true;
                 }
                 catch (Exception ex)
@@ -1024,8 +1040,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductionStep, stepGroup.ProductionStepId,
-                        $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                            .MessageResourceFormatDatas($"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}")
+                            .ObjectId(stepGroup.ProductionStepId)
+                            .ObjectType(EnumObjectType.ProductionStep)
+                            .JsonData(req)
+                            .CreateLog();
             return stepGroup.ProductionStepId;
         }
 
@@ -1041,8 +1061,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionStep, req.First().ProductionStepId,
-                        $"Cập nhật vị trí cho các công đoạn", req);
+
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                           .MessageResourceFormatDatas($"Cập nhật vị trí cho các công đoạn")
+                           .ObjectId(req.First().ProductionStepId)
+                           .ObjectType(EnumObjectType.ProductionStep)
+                           .JsonData(req)
+                           .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -1111,7 +1136,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _productHelperService.UpdateProductionProcessVersion(containerId);
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req);
+
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                           .MessageResourceFormatDatas("Cập nhật quy trình sản xuất")
+                           .ObjectId(req.ContainerId)
+                           .ObjectType(EnumObjectType.ProductionProcess)
+                           .JsonData(req)
+                           .CreateLog();
 
                 if(containerTypeId== EnumContainerType.ProductionOrder)
                 {

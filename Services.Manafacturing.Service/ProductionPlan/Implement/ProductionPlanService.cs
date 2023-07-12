@@ -26,13 +26,16 @@ using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
+using VErp.Infrastructure.ServiceCore.Facade;
+using DocumentFormat.OpenXml.EMMA;
+using Verp.Resources.Master.Config.ActionButton;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
     public class ProductionPlanService : IProductionPlanService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -57,7 +60,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IOptions<AppSetting> appSetting)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionPlan);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -196,7 +199,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
                     var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                            .MessageResourceFormatDatas($"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}")
+                            .ObjectId(productionOrderDetail.ProductionOrderId)
+                            .ObjectType(EnumObjectType.ProductionPlan)
+                            .JsonData(data)
+                            .CreateLog();
                 }
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
@@ -242,7 +250,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                 _manufacturingDBContext.ProductionWeekPlan.RemoveRange(currentProductionWeekPlans);
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderId, $"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", currentProductionWeekPlans);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas($"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}")
+                   .ObjectId(productionOrderId)
+                   .ObjectType(EnumObjectType.ProductionPlan)
+                   .JsonData(currentProductionWeekPlans)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)

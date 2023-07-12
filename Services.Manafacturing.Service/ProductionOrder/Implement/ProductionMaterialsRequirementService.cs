@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -20,6 +22,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
@@ -29,7 +32,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
     public class ProductionMaterialsRequirementService : IProductionMaterialsRequirementService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -49,7 +52,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , IInventoryRequirementHelperService inventoryRequirementHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionMaterialsRequirement);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -134,8 +137,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         resultId = await AddInventoryRequirement(model);
 
                     await trans.CommitAsync();
-
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Thêm mới yêu cầu vật tư thêm", requirement);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                          .MessageResourceFormatDatas("Thêm mới yêu cầu vật tư thêm")
+                          .ObjectId(requirement.ProductionMaterialsRequirementId)
+                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
+                          .JsonData(requirement)
+                          .CreateLog();
 
                     return resultId;
                 }
@@ -168,7 +175,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Xóa yêu cầu vật tư thêm", requirement);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                          .MessageResourceFormatDatas("Xóa yêu cầu vật tư thêm")
+                          .ObjectId(requirement.ProductionMaterialsRequirementId)
+                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
+                          .JsonData(requirement)
+                          .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -322,7 +334,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionMaterialsRequirement, requirement.ProductionMaterialsRequirementId, "Cập nhật yêu cầu vật tư thêm", requirement);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                          .MessageResourceFormatDatas("Cập nhật yêu cầu vật tư thêm")
+                          .ObjectId(requirement.ProductionMaterialsRequirementId)
+                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
+                          .JsonData(requirement)
+                          .CreateLog();
 
                 return true;
             }

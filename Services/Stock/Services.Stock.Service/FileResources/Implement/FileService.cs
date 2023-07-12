@@ -1,4 +1,5 @@
-﻿using ImageMagick;
+﻿using DocumentFormat.OpenXml.EMMA;
+using ImageMagick;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -20,6 +22,7 @@ using VErp.Commons.Library.Model;
 using VErp.Commons.ObjectExtensions.Extensions;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.FileResources;
 using FileEnity = VErp.Infrastructure.EF.StockDB.File;
@@ -32,7 +35,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
         private readonly StockDBContext _stockContext;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly IAsyncRunnerService _asyncRunnerService;
 
         private readonly IDataProtectionProvider _dataProtectionProvider;
@@ -106,7 +109,7 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             _stockContext = stockContext;
             _appSetting = appSetting.Value;
             _logger = logger;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.File);
             _dataProtectionProvider = dataProtectionProvider;
             _asyncRunnerService = asyncRunnerService;
         }
@@ -215,7 +218,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 File.Delete(GetPhysicalFilePath(fileInfo.LargeThumb));
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.File, fileId, $"Xóa file " + Path.GetFileName(fileInfo.FilePath), beforeJson);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas($"Xóa file " + Path.GetFileName(fileInfo.FilePath))
+                   .ObjectId(fileId)
+                   .ObjectType(EnumObjectType.File)
+                   .JsonData(beforeJson)
+                   .CreateLog();
             return true;
         }
 
@@ -414,7 +422,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.File, fileInfo.FileId, $"Cập nhật file {objectTypeId}", fileInfo);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                              .MessageResourceFormatDatas($"Cập nhật file {objectTypeId}")
+                              .ObjectId(fileInfo.FileId)
+                              .ObjectType(EnumObjectType.File)
+                              .JsonData(fileInfo)
+                              .CreateLog();
 
                     _asyncRunnerService.RunAsync<IFileService>(s => s.GenerateThumbnail(fileInfo.FileId));
 
@@ -565,7 +578,12 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _activityLogService.CreateLog(EnumObjectType.File, fileRes.FileId, $"Upload file {simpleFileInfo.FileName}", fileRes);
+                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                              .MessageResourceFormatDatas($"Upload file {simpleFileInfo.FileName}")
+                              .ObjectId(fileRes.FileId)
+                              .ObjectType(EnumObjectType.File)
+                              .JsonData(fileRes)
+                              .CreateLog();
 
                     return fileRes.FileId;
                 }

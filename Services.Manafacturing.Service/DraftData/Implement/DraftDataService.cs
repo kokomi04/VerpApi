@@ -4,9 +4,11 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.DraftData;
 using DraftDataEntity = VErp.Infrastructure.EF.ManufacturingDB.DraftData;
@@ -15,7 +17,7 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
     public class DraftDataService : IDraftDataService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         public DraftDataService(ManufacturingDBContext manufacturingDB
@@ -24,7 +26,7 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DraftData);
             _logger = logger;
             _mapper = mapper;
         }
@@ -47,7 +49,12 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DraftData, draftData.ObjectId, $"Cập nhật kế dữ liệu nháp", data);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                   .MessageResourceFormatDatas($"Cập nhật kế dữ liệu nháp")
+                   .ObjectId(draftData.ObjectId)
+                   .ObjectType(EnumObjectType.DraftData)
+                   .JsonData(data)
+                   .CreateLog();
 
                 return data;
             }
@@ -82,7 +89,12 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
 
                 _manufacturingDBContext.DraftData.Remove(draftData);
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.DraftData, objectId, $"Xóa dữ liệu nháp", draftData);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas($"Xóa dữ liệu nháp")
+                   .ObjectId(objectId)
+                   .ObjectType(EnumObjectType.DraftData)
+                   .JsonData(draftData)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)

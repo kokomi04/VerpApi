@@ -1,14 +1,17 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionPlan;
 
@@ -17,7 +20,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
     public class ProductionPlanExtraInfoService : IProductionPlanExtraInfoService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         public ProductionPlanExtraInfoService(ManufacturingDBContext manufacturingDB
@@ -26,7 +29,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionPlanExtraInfo);
             _logger = logger;
             _mapper = mapper;
         }
@@ -50,7 +53,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlanExtraInfo, monthPlanId, $"Cập nhật thông tin thêm kế hoạch", data);
+
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                   .MessageResourceFormatDatas($"Cập nhật thông tin thêm kế hoạch")
+                   .ObjectId(monthPlanId)
+                   .ObjectType(EnumObjectType.ProductionPlanExtraInfo)
+                   .JsonData(data)
+                   .CreateLog();
 
                 return data;
             }

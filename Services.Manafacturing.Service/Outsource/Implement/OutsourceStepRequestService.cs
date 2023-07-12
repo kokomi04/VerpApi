@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -18,6 +20,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Outsource.RequestStep;
@@ -32,7 +35,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
     public class OutsourceStepRequestService : IOutsourceStepRequestService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -50,7 +53,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsourceRequest);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -326,9 +329,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, request.OutsourceStepRequestId);
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
-                    $"Cập nhật yêu cầu gia công công đoạn", requestModel);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                   .MessageResourceFormatDatas($"Cập nhật yêu cầu gia công công đoạn")
+                   .ObjectId(request.OutsourceStepRequestId)
+                   .ObjectType(EnumObjectType.OutsourceRequest)
+                   .JsonData(requestModel)
+                   .CreateLog();
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
 
@@ -423,9 +429,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, request.OutsourceStepRequestId,
-                    $"Xóa yêu cầu gia công công đoạn", request);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas($"Xóa yêu cầu gia công công đoạn")
+                   .ObjectId(request.OutsourceStepRequestId)
+                   .ObjectType(EnumObjectType.OutsourceRequest)
+                   .JsonData(request)
+                   .CreateLog();
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(request.ProductionOrderId);
 
@@ -724,9 +733,12 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, entityRequest.OutsourceStepRequestId,
-                    $"Thêm mới yêu cầu gia công công đoạn", requestModel);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                   .MessageResourceFormatDatas($"Thêm mới yêu cầu gia công công đoạn")
+                   .ObjectId(entityRequest.OutsourceStepRequestId)
+                   .ObjectType(EnumObjectType.OutsourceRequest)
+                   .JsonData(requestModel)
+                   .CreateLog();
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(entityRequest.ProductionOrderId);
 

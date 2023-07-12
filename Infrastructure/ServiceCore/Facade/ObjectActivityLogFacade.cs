@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -24,14 +25,14 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, data, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
+            return _activityLogService.CreateActivityLog(objectTypeId.Value, objectId, message, data, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
         }
 
         public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, object data, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, data, action, ignoreBatch, messageResourceFormatData, billTypeId);
+            return _activityLogService.CreateActivityLog(objectTypeId.Value, objectId, messageResourceName, data, action, ignoreBatch, messageResourceFormatData, billTypeId);
         }
 
         public ActivityLogBatchs BeginBatchLog()
@@ -47,6 +48,7 @@ namespace VErp.Infrastructure.ServiceCore.Facade
 
     public class ObjectActivityLogModelBuilder<T>
     {
+        public const int JSON_ACTIVITY_LOG_MAX_DEPTH = 3;
         private long objectId;
         private Expression<Func<T>> messageResourceName;
         private object[] messageResourceFormatData;
@@ -99,9 +101,9 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             this.messageResourceFormatData = datas;
             return this;
         }
-        public ObjectActivityLogModelBuilder<T> JsonData(string jsonData)
+        public ObjectActivityLogModelBuilder<T> JsonData(object data)
         {
-            this.jsonData = jsonData;
+            this.jsonData = JsonSerialize(data);
             return this;
         }
         public ObjectActivityLogModelBuilder<T> Action(EnumActionType? action)
@@ -119,7 +121,23 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         {
             await facade.CreateLog<T>(objectId, messageResourceName, messageResourceFormatData, jsonData, action, ignoreBatch, objectTypeId, billTypeId);
         }
+        private string JsonSerialize(object obj)
+        {
+            if (obj != null)
+            {
+                if (obj is string)
+                {
+                    if (JsonUtils.IsValidJson(obj.ToString()))
+                    {
+                        return obj.ToString();
+                    }
+                }
 
+                return JsonUtils.GetJobjectNoneLoopDeep(obj, new Stack<object>(), 1, JSON_ACTIVITY_LOG_MAX_DEPTH).JsonSerialize();
+
+            }
+            return null;
+        }
     }
 
 }

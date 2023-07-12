@@ -1,14 +1,18 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductSemi;
 
@@ -17,7 +21,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
     public class ProductSemiConversionService : IProductSemiConversionService
     {
         private readonly ManufacturingDBContext _manuDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -27,7 +31,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             , IMapper mapper)
         {
             _manuDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductSemiConversion);
             _logger = logger;
             _mapper = mapper;
         }
@@ -38,7 +42,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _manuDBContext.ProductSemiConversion.Add(entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Tạo mới bán thành phẩm chuyển đổi", entity);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                   .MessageResourceFormatDatas("Tạo mới bán thành phẩm chuyển đổi")
+                   .ObjectId(entity.ProductSemiConversionId)
+                   .ObjectType(EnumObjectType.ProductSemiConversion)
+                   .JsonData(entity)
+                   .CreateLog();
 
             return entity.ProductSemiConversionId;
         }
@@ -52,7 +61,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             entity.IsDeleted = true;
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Xóa bán thành phẩm chuyển đổi", entity);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas("Xóa bán thành phẩm chuyển đổi")
+                   .ObjectId(entity.ProductSemiConversionId)
+                   .ObjectType(EnumObjectType.ProductSemiConversion)
+                   .JsonData(entity)
+                   .CreateLog();
 
             return true;
         }
@@ -83,7 +97,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _mapper.Map(model, entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Cập nhật bán thành phẩm chuyển đổi", entity);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                   .MessageResourceFormatDatas("Cập nhật bán thành phẩm chuyển đổi")
+                   .ObjectId(entity.ProductSemiConversionId)
+                   .ObjectType(EnumObjectType.ProductSemiConversion)
+                   .JsonData(entity)
+                   .CreateLog();
             return true;
         }
     }

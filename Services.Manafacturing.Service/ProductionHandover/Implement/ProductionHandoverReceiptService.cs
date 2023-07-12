@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -20,6 +21,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
@@ -35,7 +37,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private const int STOCK_DEPARTMENT_ID = -1;
@@ -49,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionHandoverReceipt);
             _logger = logger;
             _mapper = mapper;
             _currentContextService = currentContextService;
@@ -172,7 +174,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var productionOrders = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId))
                 .Select(o => new { o.ProductionOrderCode, o.ProductionOrderId }).ToListAsync();
 
-            using (var batchLog = _activityLogService.BeginBatchLog())
+            using (var batchLog = _objActivityLogFacade.BeginBatchLog())
             {
                 try
                 {
@@ -200,8 +202,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                 await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                             }
                         }
-
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận phiếu thống kê sản xuất", info);
+                        await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Confirm)
+                              .MessageResourceFormatDatas($"Xác nhận phiếu thống kê sản xuất")
+                              .ObjectId(info.ProductionHandoverReceiptId)
+                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
+                              .JsonData(info)
+                              .CreateLog();
 
                     }
 
@@ -249,7 +255,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}", info);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Confirm)
+                              .MessageResourceFormatDatas($"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}")
+                              .ObjectId(receiptId)
+                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
+                              .JsonData(info)
+                              .CreateLog();
 
 
                 foreach (var code in productionOrderCodes)
@@ -414,8 +425,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", data);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
+                              .MessageResourceFormatDatas($"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+                              .ObjectId(receiptInfo.ProductionHandoverReceiptId)
+                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
+                              .JsonData(data)
+                              .CreateLog();
 
                 await ctx.ConfirmCode();
 
@@ -515,7 +530,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
+                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                              .MessageResourceFormatDatas($"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+                              .ObjectId(productionHandoverReceiptId)
+                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
+                              .JsonData(receiptInfo)
+                              .CreateLog();
 
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
@@ -637,7 +657,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await trans.CommitAsync();
 
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
+            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                              .MessageResourceFormatDatas($"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+                              .ObjectId(productionHandoverReceiptId)
+                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
+                              .JsonData(receiptInfo)
+                              .CreateLog();
 
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
