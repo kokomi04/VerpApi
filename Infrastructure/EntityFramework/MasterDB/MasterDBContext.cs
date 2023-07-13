@@ -87,7 +87,9 @@ public partial class MasterDBContext : DbContext
 
     public virtual DbSet<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; }
 
-    public virtual DbSet<PrintConfigHeader> PrintConfigHeader { get; set; }
+    public virtual DbSet<PrintConfigHeaderCustom> PrintConfigHeaderCustom { get; set; }
+
+    public virtual DbSet<PrintConfigHeaderStandard> PrintConfigHeaderStandard { get; set; }
 
     public virtual DbSet<PrintConfigStandard> PrintConfigStandard { get; set; }
 
@@ -570,10 +572,6 @@ public partial class MasterDBContext : DbContext
             entity.Property(e => e.PrintConfigName).HasMaxLength(255);
             entity.Property(e => e.TemplateFileName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(255);
-
-            entity.HasOne(d => d.PrintConfigHeader).WithMany(p => p.PrintConfigCustoms)
-                .HasForeignKey(d => d.PrintConfigHeaderId)
-                .HasConstraintName("FK_PrintConfigCustom_PrintConfigHeader");
         });
 
         modelBuilder.Entity<PrintConfigCustomModuleType>(entity =>
@@ -586,14 +584,15 @@ public partial class MasterDBContext : DbContext
                 .HasConstraintName("FK_PrintConfigCustomModuleType_PrintConfigCustom");
         });
 
-        modelBuilder.Entity<PrintConfigHeader>(entity =>
+        modelBuilder.Entity<PrintConfigHeaderCustom>(entity =>
         {
-            entity.HasKey(e => e.PrintConfigHeaderId).HasName("PK__PrintCon__EC5237919588D18D");
+            entity.Property(e => e.PrintConfigHeaderCustomCode).HasMaxLength(255);
+            entity.Property(e => e.Title).HasMaxLength(128);
+        });
 
-            entity.Property(e => e.IsShow)
-                .IsRequired()
-                .HasDefaultValueSql("((1))");
-            entity.Property(e => e.PrintConfigHeaderCode).HasMaxLength(255);
+        modelBuilder.Entity<PrintConfigHeaderStandard>(entity =>
+        {
+            entity.Property(e => e.PrintConfigHeaderStandardCode).HasMaxLength(255);
             entity.Property(e => e.Title).HasMaxLength(128);
         });
 

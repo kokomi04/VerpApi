@@ -9,6 +9,8 @@ public partial class PrintConfigCustom
 
     public int? PrintConfigStandardId { get; set; }
 
+    public int? PrintConfigHeaderCustomId { get; set; }
+
     public string PrintConfigName { get; set; }
 
     public string Title { get; set; }
@@ -59,9 +61,5 @@ public partial class PrintConfigCustom
 
     public int? MinimumTableRows { get; set; }
 
-    public int? PrintConfigHeaderId { get; set; }
-
     public virtual ICollection<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; } = new List<PrintConfigCustomModuleType>();
-
-    public virtual PrintConfigHeader PrintConfigHeader { get; set; }
 }

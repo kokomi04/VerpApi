@@ -293,6 +293,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>ObjectPrintConfigActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Master\Print\PrintConfigHeaderStandardActivityLogMessage.Designer.cs">
+      <DependentUpon>PrintConfigHeaderStandardActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Master\Print\PrintConfigHeaderCustomActivityLogMessage.Designer.cs">
+      <DependentUpon>PrintConfigHeaderCustomActivityLogMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="Master\Print\PrintConfigCustomActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -987,6 +997,14 @@
     <EmbeddedResource Update="Master\Print\ObjectPrintConfigActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>ObjectPrintConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigHeaderStandardActivityLogMessage.resx">
+      <LastGenOutput>PrintConfigHeaderStandardActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Master\Print\PrintConfigHeaderCustomActivityLogMessage.resx">
+      <LastGenOutput>PrintConfigHeaderCustomActivityLogMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Master\Print\PrintConfigCustomActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

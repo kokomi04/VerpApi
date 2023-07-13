@@ -7,6 +7,7 @@ using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
@@ -15,28 +16,39 @@ using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.PrintConfig;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
-    public class PrintConfigHeaderService : IPrintConfigHeaderService
+    public abstract class PrintConfigHeaderServiceAbstract<TEntity, TModel, TViewModel>
+        where TEntity : class, IPrintConfigHeaderEntity
     {
         private readonly MasterDBContext _masterDBContext;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly string _configIdFieldName;
 
-        public PrintConfigHeaderService(MasterDBContext masterDBContext, ILogger<PrintConfigHeaderService> logger, IMapper mapper)
+        public PrintConfigHeaderServiceAbstract(MasterDBContext masterDBContext,
+                    ILogger<PrintConfigHeaderServiceAbstract<TEntity, TModel, TViewModel>> logger,
+                    IMapper mapper,
+                    string configIdFieldName)
         {
             _masterDBContext = masterDBContext;
             _logger = logger;
             _mapper = mapper;
+            _configIdFieldName = configIdFieldName;
         }
 
 
-        public async Task<PageData<PrintConfigHeaderViewModel>> Search(string keyword, int page, int size)
+        protected abstract Task LogAddPrintConfigHeader(TModel model, TEntity entity);
+        protected abstract Task LogUpdatePrintConfigHeader(TModel model, TEntity entity);
+        protected abstract Task LogDeletePrintConfigHeader(TEntity entity);
+
+        public async Task<PageData<TViewModel>> Search(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _masterDBContext.PrintConfigHeader.Where(x => x.IsDeleted == false).AsNoTracking();
+            var query = _masterDBContext.Set<TEntity>().AsNoTracking();
 
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(x => x.Title.Contains(keyword));
@@ -44,37 +56,37 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             var total = await query.CountAsync();
             var lst = await(size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
                 .OrderBy(x=>x.SortOrder)
-                .Include(x => x.PrintConfigCustoms)
-                .ProjectTo<PrintConfigHeaderViewModel>(_mapper.ConfigurationProvider)
+                .ProjectTo<TViewModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
             return (lst, total);
         }
-        public async Task<PrintConfigHeaderModel> GetHeaderById(int headerId)
+        public async Task<TModel> GetHeaderById(int headerId)
         {
-            var header = await _masterDBContext.PrintConfigHeader
-                    .Where(x => x.IsDeleted == false && x.PrintConfigHeaderId == headerId)
-                    .Include(x => x.PrintConfigCustoms)
-                    .ProjectTo<PrintConfigHeaderModel>(_mapper.ConfigurationProvider)
-                    .FirstOrDefaultAsync();
-            if (header == null) throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
+            var header = await _masterDBContext.Set<TEntity>().FindAsync(headerId);
+            if (header == null) 
+                throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
 
-            return header;
+            return _mapper.Map<TModel>(header);
+
         }
-        public async Task<int> CreateHeader(PrintConfigHeaderModel model)
+        public async Task<int> CreateHeader(TModel model)
         {
             await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
 
             try
             {
-                var entity = _mapper.Map<PrintConfigHeader>(model);
+                var entity = _mapper.Map<TEntity>(model);
 
-                await _masterDBContext.PrintConfigHeader.AddAsync(entity);
+                await _masterDBContext.Set<TEntity>().AddAsync(entity);
                 await _masterDBContext.SaveChangesAsync();
-
                 await trans.CommitAsync();
 
-                return entity.PrintConfigHeaderId;
+                var configId = ConfigId().Compile().Invoke(entity);
+
+                await LogAddPrintConfigHeader(model, entity);
+
+                return configId;
             }
             catch (Exception ex)
             {
@@ -82,13 +94,13 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 throw;
             }
         }
-        public async Task<bool> UpdateHeader(int headerId,  PrintConfigHeaderModel model)
+        public async Task<bool> UpdateHeader(int headerId, TModel model)
         {
             await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
 
             try
             {
-                var header = await _masterDBContext.PrintConfigHeader.FindAsync(headerId);
+                var header = await _masterDBContext.Set<TEntity>().FindAsync(headerId);
 
                 if (header == null) 
                     throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
@@ -98,6 +110,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 await _masterDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
+
+                await LogUpdatePrintConfigHeader(model, header);
 
                 return true;
             }
@@ -114,7 +128,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             try
             {
-                var header = await _masterDBContext.PrintConfigHeader.FindAsync(headerId);
+                var header = await _masterDBContext.Set<TEntity>().FindAsync(headerId);
 
                 if (header == null)
                     throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
@@ -125,6 +139,8 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 await trans.CommitAsync();
 
+                await LogDeletePrintConfigHeader(header);
+
                 return true;
             }
             catch (Exception ex)
@@ -134,30 +150,16 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             }
         }
 
-        public async Task<bool> MapToPrintConfigCustom(int printConfigHeaderId, List<int> printConfigIds)
+        private Expression<Func<T, int>> SelectField<T>(string fieldName)
         {
-            await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
+            var entity = Expression.Parameter(typeof(T));
+            var key = Expression.PropertyOrField(entity, fieldName);
+            return Expression.Lambda<Func<T, int>>(key, entity);
+        }
 
-            try
-            {
-                if(await _masterDBContext.PrintConfigHeader.FindAsync(printConfigHeaderId) == null)
-                    throw new BadRequestException("Không tìm thấy cấu hình header phiếu in");
-
-                var printConfigs = _masterDBContext.PrintConfigCustom.Where(x => printConfigIds.Contains(x.PrintConfigCustomId));
-
-                await printConfigs.ForEachAsync(x => x.PrintConfigHeaderId = printConfigHeaderId);
-
-                await _masterDBContext.SaveChangesAsync();
-
-                await trans.CommitAsync();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "MappingPrintConfigHeader");
-                throw;
-            }
+        private Expression<Func<TEntity, int>> ConfigId()
+        {
+            return SelectField<TEntity>(_configIdFieldName);
         }
     }
 }
