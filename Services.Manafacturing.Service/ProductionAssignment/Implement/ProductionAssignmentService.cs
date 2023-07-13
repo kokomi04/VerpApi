@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Assignment;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
@@ -519,8 +520,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     await trans.CommitAsync();
 
                     var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderInfo?.ProductionOrderCode}")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrderInfo?.ProductionOrderCode)
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(data)
@@ -1403,8 +1404,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 
 
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productionOrderId)
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(assignment)

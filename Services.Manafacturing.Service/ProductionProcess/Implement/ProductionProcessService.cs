@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Process;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
@@ -939,8 +940,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                            .MessageResourceFormatDatas($"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateDetail)
+                            .MessageResourceFormatDatas(sProductionStep.ProductionStepId,((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription(),sProductionStep.ContainerId)
                             .ObjectId(sProductionStep.ProductionStepId)
                             .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(req)
@@ -1040,8 +1041,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                            .MessageResourceFormatDatas($"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}")
+            await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Create)
+                            .MessageResourceFormatDatas(req.ProductionStepId,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
                             .ObjectId(stepGroup.ProductionStepId)
                             .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(req)
@@ -1062,8 +1063,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                           .MessageResourceFormatDatas($"Cập nhật vị trí cho các công đoạn")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStep)
                            .ObjectId(req.First().ProductionStepId)
                            .ObjectType(EnumObjectType.ProductionStep)
                            .JsonData(req)
@@ -1137,7 +1137,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcess)
                            .MessageResourceFormatDatas("Cập nhật quy trình sản xuất")
                            .ObjectId(req.ContainerId)
                            .ObjectType(EnumObjectType.ProductionProcess)

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Organization.HrType;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -46,8 +47,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _organizationDBContext.HrTypeGroup.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
                    .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(model)
@@ -66,8 +67,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
                    .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(model)
@@ -85,8 +86,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Xóa nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
                    .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(new { hrTypeGroupId })

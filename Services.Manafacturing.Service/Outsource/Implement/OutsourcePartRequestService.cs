@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.OutsourcePart;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -109,8 +110,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await ctx.ConfirmCode();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}")
+                await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(request.OutsourcePartRequestId)
                    .ObjectId(request.OutsourcePartRequestId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(request)
@@ -224,8 +225,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật yêu cầu gia công chi tiết {model.OutsourcePartRequestId}")
+                await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(model.OutsourcePartRequestId)
                    .ObjectId(model.OutsourcePartRequestId)
                    .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(request)

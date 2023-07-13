@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Organization.HrType;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -144,8 +145,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm vùng thông tin {inputArea.Title} của chứng từ hành chính nhân sự {hrTypeId}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrArea)
+                   .MessageResourceFormatDatas(inputArea.Title,hrTypeId)
                    .ObjectId(inputArea.HrAreaId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -213,8 +214,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Cập nhật vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrArea)
+                   .MessageResourceFormatDatas(hrArea.Title,hrTypeId)
                    .ObjectId(hrArea.HrAreaId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -253,8 +254,8 @@ namespace VErp.Services.Organization.Service.HrConfig
             hrArea.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Xóa vùng thông tin {hrArea.Title} của chứng từ hành chính nhân sự {hrTypeId}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrArea)
+                   .MessageResourceFormatDatas(hrArea.Title, hrTypeId)
                    .ObjectId(hrArea.HrAreaId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(hrArea)
@@ -565,8 +566,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật trường dữ liệu chứng từ {hrTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrField)
+                   .MessageResourceFormatDatas(hrTypeInfo.Title)
                    .ObjectId(hrTypeId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(fields)
@@ -618,8 +619,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrTableType();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm trường dữ liệu {hrField.Title} cho vùng thông tin {hrAreaId}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFieldArea)
+                   .MessageResourceFormatDatas(hrField.Title,hrAreaId)
                    .ObjectId(hrField.HrFieldId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -687,8 +688,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrTableType();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật trường dữ liệu {inputField.Title} cho vùng thông tin {hrAreaId}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFieldArea)
+                   .MessageResourceFormatDatas(inputField.Title, hrAreaId)
                    .ObjectId(inputField.HrFieldId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -744,8 +745,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                 // await UpdateHrTableType();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa trường dữ liệu chung {inputField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrField)
+                   .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.HrFieldId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(inputField)

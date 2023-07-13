@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Step;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -329,8 +330,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, request.OutsourceStepRequestId);
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật yêu cầu gia công công đoạn")
+                await _objActivityLogFacade.LogBuilder(() => StepValidationMessage.Update)
+                   .MessageResourceFormatDatas(request.OutsourceStepRequestId)
                    .ObjectId(request.OutsourceStepRequestId)
                    .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(requestModel)
@@ -429,8 +430,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa yêu cầu gia công công đoạn")
+                await _objActivityLogFacade.LogBuilder(() => StepValidationMessage.Delete)
+                   .MessageResourceFormatDatas(request.OutsourceStepRequestId)
                    .ObjectId(request.OutsourceStepRequestId)
                    .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(request)

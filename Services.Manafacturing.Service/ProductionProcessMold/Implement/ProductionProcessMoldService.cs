@@ -19,6 +19,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionProcessMold;
 using ProductionProcessMoldEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionProcessMold;
+using Verp.Resources.Manafacturing.Production.Process;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 {
@@ -109,8 +110,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.ProductionStepMoldLink.AddRangeAsync(nLinks);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo quy trình mẫu {process.ProductionProcessMoldId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.CreateProcessMold)
+                   .MessageResourceFormatDatas(process.ProductionProcessMoldId)
                    .ObjectId(process.ProductionProcessMoldId)
                    .ObjectType(EnumObjectType.ProductionProcessMold)
                    .JsonData(model)
@@ -182,8 +183,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật quy trình mẫu {productionProcessMoldId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcessMold)
+                   .MessageResourceFormatDatas(productionProcessMoldId)
                    .ObjectId(productionProcessMoldId)
                    .ObjectType(EnumObjectType.ProductionProcessMold)
                    .JsonData(model)
@@ -219,8 +220,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa quy trình sản xuất mẫu {productionProcessMoldId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.DeleteProcessMold)
+                   .MessageResourceFormatDatas(productionProcessMoldId)
                    .ObjectId(productionProcessMoldId)
                    .ObjectType(EnumObjectType.ProductionProcessMold)
                    .JsonData(process)

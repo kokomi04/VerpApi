@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Handover;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -202,12 +203,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                                 await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                             }
                         }
-                        await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Confirm)
-                              .MessageResourceFormatDatas($"Xác nhận phiếu thống kê sản xuất")
+                        await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
+                              .MessageResourceFormatDatas(info.ProductionHandoverReceiptCode)
                               .ObjectId(info.ProductionHandoverReceiptId)
                               .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(info)
                               .CreateLog();
+
+                        //Xác nhận nút chức năng Xác nhận phiếu thống kê sản xuất
 
                     }
 
@@ -255,8 +258,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Confirm)
-                              .MessageResourceFormatDatas($"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CheckBatch)
+                              .MessageResourceFormatDatas((status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối") , info.ProductionHandoverReceiptCode)
                               .ObjectId(receiptId)
                               .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(info)
@@ -425,8 +428,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                              .MessageResourceFormatDatas($"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CreateBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(receiptInfo.ProductionHandoverReceiptId)
                               .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(data)
@@ -530,8 +533,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                              .MessageResourceFormatDatas($"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(productionHandoverReceiptId)
                               .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(receiptInfo)
@@ -657,8 +660,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await trans.CommitAsync();
 
             }
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                              .MessageResourceFormatDatas($"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}")
+            await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.UpdateBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(productionHandoverReceiptId)
                               .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(receiptInfo)

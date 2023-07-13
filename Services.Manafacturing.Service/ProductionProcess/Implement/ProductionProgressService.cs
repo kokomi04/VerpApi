@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Progress;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -212,8 +213,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (oldStatus != productionOrder.ProductionOrderStatus)
                 {
                     _manufacturingDBContext.SaveChanges();
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                              .MessageResourceFormatDatas($"Cập nhật trạng thái lệnh sản xuất, {data.Description}")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionProgressActivityLogMessage.Update)
+                              .MessageResourceFormatDatas(data.Description)
                               .ObjectId(productionOrder.ProductionOrderId)
                               .ObjectType(EnumObjectType.ProductionOrder)
                               .JsonData(new { productionOrder, data, isManual = false })

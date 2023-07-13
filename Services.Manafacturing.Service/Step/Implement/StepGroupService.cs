@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Step;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -42,8 +43,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             _manufacturingDBContext.StepGroup.Add(_mapper.Map<StepGroup>(entity));
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo nhóm danh mục công đoạn '{entity.StepGroupName}'")
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStepGroup)
+                   .MessageResourceFormatDatas(entity.StepGroupName)
                    .ObjectId(entity.StepGroupId)
                    .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(entity)
@@ -62,8 +63,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             groupStep.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa nhóm danh mục công đoạn '{groupStep.StepGroupName}'")
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStepGroup)
+                   .MessageResourceFormatDatas(groupStep.StepGroupName)
                    .ObjectId(groupStep.StepGroupId)
                    .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(groupStep)
@@ -102,8 +103,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật nhóm danh mục công đoạn '{destInfo.StepGroupName}'")
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
+                   .MessageResourceFormatDatas(destInfo.StepGroupName)
                    .ObjectId(destInfo.StepGroupId)
                    .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(destInfo)

@@ -10,6 +10,7 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Accountancy.InputConfig;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
@@ -274,8 +275,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                    .MessageResourceFormatDatas($"Thêm chứng từ {inputType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
                     .ObjectId(inputType.InputTypeId)
                     .ObjectType(EnumObjectType.InputType)
                     .JsonData(inputType)
@@ -406,8 +407,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
                 //}
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                    .MessageResourceFormatDatas($"Thêm chứng từ {cloneType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                    .MessageResourceFormatDatas(cloneType.Title)
                     .ObjectId(cloneType.InputTypeId)
                     .ObjectType(EnumObjectType.InputType)
                     .JsonData(cloneType)
@@ -471,8 +472,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                    .MessageResourceFormatDatas($"Cập nhật chứng từ {inputType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
                     .ObjectType(EnumObjectType.InputType)
                     .ObjectId(inputType.InputTypeId)
                     .JsonData(inputType)
@@ -508,8 +509,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({inputTypeId})");
             }
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                    .MessageResourceFormatDatas($"Xóa chứng từ {inputType.Title}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
                     .ObjectType(EnumObjectType.InputType)
                     .ObjectId(inputType.InputTypeId)
                     .JsonData(inputType)
@@ -548,8 +549,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                    .MessageResourceFormatDatas($"Cập nhật cấu hình chung chứng từ kế toán")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateGeneral)
                     .ObjectType(EnumObjectType.InputType)
                     .ObjectId(0)
                     .JsonData(data)
@@ -654,8 +654,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                    .MessageResourceFormatDatas($"Tạo bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
                     .ObjectType(EnumObjectType.InputType)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
@@ -696,8 +696,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                    .MessageResourceFormatDatas($"Cập nhật bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
                     .ObjectType(EnumObjectType.InputType)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
@@ -728,8 +728,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                    .MessageResourceFormatDatas($"Xóa bộ lọc {info.InputTypeViewName} chứng từ  {inputTypeInfo.Title}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
                     .ObjectId(info.InputTypeViewId)
                     .ObjectType(EnumObjectType.InputTypeView)
                     .JsonData(new { inputTypeViewId })
@@ -746,8 +746,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var info = _mapper.Map<InputTypeGroup>(model);
             await _accountancyDBContext.InputTypeGroup.AddAsync(info);
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                    .MessageResourceFormatDatas($"Thêm nhóm chứng từ {info.InputTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataGroup)
+                    .MessageResourceFormatDatas(info.InputTypeGroupName)
                     .ObjectId(info.InputTypeGroupId)
                     .ObjectType(EnumObjectType.InputTypeGroup)
                     .JsonData(model)
@@ -765,8 +765,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper.Map(model, info);
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật nhóm chứng từ {info.InputTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataGroup)
+                   .MessageResourceFormatDatas(info.InputTypeGroupName)
                    .ObjectId(info.InputTypeGroupId)
                    .ObjectType(EnumObjectType.InputTypeGroup)
                    .JsonData(model)
@@ -784,8 +784,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             info.IsDeleted = true;
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa nhóm chứng từ {info.InputTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataGroup)
+                   .MessageResourceFormatDatas(info.InputTypeGroupName)
                    .ObjectId(info.InputTypeGroupId)
                    .ObjectType(EnumObjectType.InputTypeGroup)
                    .JsonData(new { inputTypeGroupId })
@@ -908,8 +908,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm vùng thông tin {inputArea.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
@@ -969,8 +969,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật vùng dữ liệu {inputArea.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
@@ -1002,8 +1002,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputArea.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Xóa vùng chứng từ {inputArea.Title}")
+            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(inputArea)
@@ -1300,8 +1300,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                   .MessageResourceFormatDatas(inputTypeInfo.Title)
                    .ObjectId(inputTypeId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(fields)
@@ -1337,8 +1337,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm trường dữ liệu chung {inputField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
@@ -1377,8 +1377,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật trường dữ liệu chung {inputField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
@@ -1420,8 +1420,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa trường dữ liệu chung {inputField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(inputField)

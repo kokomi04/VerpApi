@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Report.DashboardConfig;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -137,8 +138,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardFilter)
+                   .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
                    .ObjectId(info.DashboardTypeViewId)
                    .ObjectType(EnumObjectType.DashboardTypeView)
                    .JsonData(model)
@@ -175,8 +176,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardFilter)
+                   .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
                    .ObjectId(info.DashboardTypeViewId)
                    .ObjectType(EnumObjectType.DashboardTypeView)
                    .JsonData(model)
@@ -214,8 +215,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.DashboardTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
                    .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(model)
@@ -234,8 +235,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
                    .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(model)
@@ -257,8 +258,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
                    .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(new { dashboardTypeGroupId })
@@ -330,8 +331,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm biểu đồ báo cáo {dashboard.DashboardTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
                    .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(data)
@@ -375,8 +376,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật biểu đồ báo cáo {dashboard.DashboardTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
                    .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(data)
@@ -409,8 +410,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa biểu đồ báo cáo {dashboard.DashboardTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
                    .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(dashboard)

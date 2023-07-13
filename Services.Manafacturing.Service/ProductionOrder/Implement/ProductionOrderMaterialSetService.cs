@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.OrderMaterialSet;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -148,8 +149,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             await trans.CommitAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật bảng tính nhu cầu vật tư {productionOrder.ProductionOrderCode}")
+            await _objActivityLogFacade.LogBuilder(() => ProductionOrderMaterialSetActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(model)

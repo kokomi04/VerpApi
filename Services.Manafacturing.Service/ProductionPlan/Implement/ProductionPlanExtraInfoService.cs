@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.PlanExtraInfo;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Library;
@@ -54,8 +55,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật thông tin thêm kế hoạch")
+                await _objActivityLogFacade.LogBuilder(() => ProductionPlanExtraInfoActivityLogMessage.Update)
+                   .MessageResourceFormatDatas()
                    .ObjectId(monthPlanId)
                    .ObjectType(EnumObjectType.ProductionPlanExtraInfo)
                    .JsonData(data)

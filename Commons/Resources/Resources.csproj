@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Update="Accountancy\InputConfig\InputConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Accountancy\InputData\AccountancyBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -173,10 +178,105 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
     </Compile>
+    <Compile Update="Manafacturing\DraftData\DraftDataActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DraftDataActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Handover\ProductionHandoverReceiptActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionHandoverReceiptActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\MonthPlan\MonthPlanActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>MonthPlanActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.Designer.cs">
       <DependentUpon>OutsourceMaterialActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Manafacturing\OutsourcePart\OutsourcePartRequestActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OutsourcePartRequestActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\Assignment\ProductionAssignmentActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionAssignmentActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\ConsumMaterial\ProductionConsumMaterialActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionConsumMaterialActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\HumanResource\ProductionHumanResourceActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionHumanResourceActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\MaterialAllocation\MaterialAllocationActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>MaterialAllocationActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\MaterialsRequirement\ProductionMaterialsRequirementActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionMaterialsRequirementActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\OrderMaterialSet\ProductionOrderMaterialSetActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionOrderMaterialSetActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\PlanExtraInfo\ProductionPlanExtraInfoActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionPlanExtraInfoActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\Plan\ProductionPlanActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionPlanActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\Process\ProductionProcessActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionProcessActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\ProductionAssignmentActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionAssignmentActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\ProductionConsumMaterialActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionConsumMaterialActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\ProductionOrderActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionOrderActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\Progress\ProductionProgressActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductionProgressActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\SemiConversion\ProductSemiConversionActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ProductSemiConversionActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Manafacturing\Production\Step\StepActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>StepActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Manafacturing\Step\StepValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -408,6 +508,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>HrDataValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\HrType\HrTypeActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HrTypeActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\Leave\LeaveActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -598,10 +703,25 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>VoucherBillActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="PurchaseOrder\Voucher\VoucherConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VoucherConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>VoucherDataValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Report\DashboardConfig\DashboardConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>DashboardConfigActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Report\ReportConfig\ReportConfigActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>ReportConfigActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Report\ReportTypeViewActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -627,6 +747,11 @@
       <DependentUpon>ProductTypeActivityMessage.resx</DependentUpon>
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Stock\File\FileActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>FileActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Stock\InventoryProcess\CensoredInventoryInputUpdateContextTitle.Designer.cs">
       <DependentUpon>CensoredInventoryInputUpdateContextTitle.resx</DependentUpon>
@@ -756,6 +881,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Update="Accountancy\InputConfig\InputConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>InputConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Accountancy\InputData\AccountancyBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AccountancyBillActivityLogMessage.Designer.cs</LastGenOutput>
@@ -888,9 +1017,85 @@
       <LastGenOutput>DateTimeFormaterFormat.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\DraftData\DraftDataActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DraftDataActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Handover\ProductionHandoverReceiptActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionHandoverReceiptActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\MonthPlan\MonthPlanActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>MonthPlanActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\OutsourceMaterial\OutsourceMaterialActivityMessage.resx">
       <LastGenOutput>OutsourceMaterialActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\OutsourcePart\OutsourcePartRequestActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>OutsourcePartRequestActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\Assignment\ProductionAssignmentActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionAssignmentActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\ConsumMaterial\ProductionConsumMaterialActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionConsumMaterialActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\HumanResource\ProductionHumanResourceActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionHumanResourceActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\MaterialAllocation\MaterialAllocationActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>MaterialAllocationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\MaterialsRequirement\ProductionMaterialsRequirementActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionMaterialsRequirementActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\OrderMaterialSet\ProductionOrderMaterialSetActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionOrderMaterialSetActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\PlanExtraInfo\ProductionPlanExtraInfoActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionPlanExtraInfoActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\Plan\ProductionPlanActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionPlanActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\Process\ProductionProcessActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionProcessActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\ProductionAssignmentActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionAssignmentActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\ProductionConsumMaterialActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionConsumMaterialActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\ProductionOrderActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionOrderActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\Progress\ProductionProgressActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductionProgressActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\SemiConversion\ProductSemiConversionActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ProductSemiConversionActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Production\Step\StepActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>StepActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.en-US.resx">
       <LastGenOutput>StepValidationMessage.en-US.Designer.cs</LastGenOutput>
@@ -1084,6 +1289,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>HrDataValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\HrType\HrTypeActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HrTypeActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\Leave\LeaveActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>LeaveActivityLogMessage.Designer.cs</LastGenOutput>
@@ -1248,9 +1457,21 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>VoucherBillActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>VoucherConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherDataValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>VoucherDataValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\DashboardConfig\DashboardConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>DashboardConfigActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Report\ReportConfig\ReportConfigActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>ReportConfigActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Report\ReportTypeViewActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1271,6 +1492,10 @@
     <EmbeddedResource Update="Stock\Dictionary\ProductTypeActivityMessage.resx">
       <LastGenOutput>ProductTypeActivityMessage.Designer.cs</LastGenOutput>
       <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Stock\File\FileActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>FileActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Stock\InventoryProcess\CensoredInventoryInputUpdateContextTitle.resx">
       <LastGenOutput>CensoredInventoryInputUpdateContextTitle.Designer.cs</LastGenOutput>

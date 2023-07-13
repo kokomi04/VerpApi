@@ -12,6 +12,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Master.Role;
+using Verp.Resources.Stock.File;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.Enums.StockEnum;
@@ -218,8 +220,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                 File.Delete(GetPhysicalFilePath(fileInfo.LargeThumb));
             }
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa file " + Path.GetFileName(fileInfo.FilePath))
+            await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.DeleteFile)
+                   .MessageResourceFormatDatas(Path.GetFileName(fileInfo.FilePath))
                    .ObjectId(fileId)
                    .ObjectType(EnumObjectType.File)
                    .JsonData(beforeJson)
@@ -422,8 +424,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                              .MessageResourceFormatDatas($"Cập nhật file {objectTypeId}")
+                    await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.UpdateFile)
+                              .MessageResourceFormatDatas(objectTypeId)
                               .ObjectId(fileInfo.FileId)
                               .ObjectType(EnumObjectType.File)
                               .JsonData(fileInfo)
@@ -578,8 +580,8 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _stockContext.SaveChangesAsync();
                     trans.Commit();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                              .MessageResourceFormatDatas($"Upload file {simpleFileInfo.FileName}")
+                    await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.UploadFile)
+                              .MessageResourceFormatDatas(simpleFileInfo.FileName)
                               .ObjectId(fileRes.FileId)
                               .ObjectType(EnumObjectType.File)
                               .JsonData(fileRes)

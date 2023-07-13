@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.SemiConversion;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -61,8 +62,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo mới bán thành phẩm {productSemiEntity.ProductSemiId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(model)
@@ -96,8 +97,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa bán thành phẩm {productSemiEntity.ProductSemiId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.DeleteSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(productSemiEntity)
@@ -171,8 +172,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật thành phẩm {productSemiEntity.ProductSemiId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(productSemiEntity)
@@ -215,8 +216,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo mới bán thành phẩm {results}")
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
+                   .MessageResourceFormatDatas(results)
                    .ObjectId(0)
                    .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(results)
@@ -264,8 +265,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhập bán thành phẩm {models.Select(x => x.ProductSemiId)}")
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
+                   .MessageResourceFormatDatas(models.Select(x => x.ProductSemiId))
                    .ObjectId(0)
                    .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(models.Select(x => x.ProductSemiId))

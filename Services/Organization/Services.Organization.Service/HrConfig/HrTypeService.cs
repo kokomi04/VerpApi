@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Organization.HrType;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -245,8 +246,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm chứng từ {hrType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrType)
+                   .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -411,8 +412,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm chứng từ hành chính nhân sự {cloneType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(cloneType.Title)
                    .ObjectId(cloneType.HrTypeId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(cloneType)
@@ -486,8 +487,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật chứng từ hành chính nhân sự {hrType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
@@ -526,8 +527,8 @@ namespace VErp.Services.Organization.Service.HrConfig
                 _logger.LogError(ex, $"HrTypeService: DeleteHrType({hrTypeId})");
             }
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa chứng từ hành chính nhân sự {hrType.Title}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
                    .ObjectType(EnumObjectType.HrType)
                    .JsonData(hrType)
@@ -567,8 +568,7 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Cập nhật cấu hình chung chứng từ hành chính nhân sự")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrConfig)
                    .ObjectId(0)
                    .ObjectType(EnumObjectType.HrTypeGlobalSetting)
                    .JsonData(data)
@@ -678,8 +678,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo bộ lọc {info.HrTypeViewName} cho chứng từ  {hrTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName,hrTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
                    .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(model)
@@ -721,8 +721,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật bộ lọc {info.HrTypeViewName} cho chứng từ hành chính nhân sự  {inputTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName,inputTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
                    .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(model)
@@ -753,8 +753,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa bộ lọc {info.HrTypeViewName} chứng từ hành chính nhân sự  {inputTypeInfo.Title}")
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName, inputTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
                    .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(new { hrTypeViewId })

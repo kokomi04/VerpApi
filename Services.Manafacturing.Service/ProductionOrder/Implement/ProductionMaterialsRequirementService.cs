@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.MaterialsRequirement;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
@@ -137,8 +138,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         resultId = await AddInventoryRequirement(model);
 
                     await trans.CommitAsync();
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                          .MessageResourceFormatDatas("Thêm mới yêu cầu vật tư thêm")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Create)
+                          .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
                           .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)
@@ -175,8 +176,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                          .MessageResourceFormatDatas("Xóa yêu cầu vật tư thêm")
+                await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Delete)
+                          .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
                           .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)
@@ -334,8 +335,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                          .MessageResourceFormatDatas("Cập nhật yêu cầu vật tư thêm")
+                await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Update)
+                          .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
                           .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)

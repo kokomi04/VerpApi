@@ -14,6 +14,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.PurchaseOrder.Voucher;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -101,8 +102,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật cấu hình chung chứng từ bán hàng")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherConfig)
                    .ObjectId(0)
                    .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
@@ -301,8 +301,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
                 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm chứng từ {voucherType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
+                   .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
                    .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(data)
@@ -419,8 +419,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm chứng từ {cloneType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
+                   .MessageResourceFormatDatas(cloneType.Title)
                    .ObjectId(cloneType.VoucherTypeId)
                    .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(cloneType)
@@ -491,8 +491,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật loại chứng từ bán hàng {voucherType.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucher)
+                   .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
                    .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(data)
@@ -532,8 +532,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({voucherTypeId})");
             }
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa loại chứng từ bán hàng {voucherType.Title}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucher)
+                   .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
                    .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(voucherType)
@@ -634,8 +634,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherFilter)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(model)
@@ -677,8 +677,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherFilter)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(model)
@@ -710,8 +710,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa bộ lọc {info.VoucherTypeViewName} chứng từ  {voucherTypeInfo.Title}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherFilter)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(new { voucherTypeViewId })
@@ -729,8 +729,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             await _purchaseOrderDBContext.VoucherTypeGroup.AddAsync(info);
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm nhóm chứng từ {info.VoucherTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherGroup)
+                   .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                    .ObjectId(info.VoucherTypeGroupId)
                    .ObjectType(EnumObjectType.VoucherTypeGroup)
                    .JsonData(model)
@@ -749,8 +749,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật nhóm chứng từ {info.VoucherTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherGroup)
+                   .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                    .ObjectId(info.VoucherTypeGroupId)
                    .ObjectType(EnumObjectType.VoucherTypeGroup)
                    .JsonData(model)
@@ -769,8 +769,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                  .MessageResourceFormatDatas($"Xóa nhóm chứng từ {info.VoucherTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherGroup)
+                  .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                   .ObjectId(info.VoucherTypeGroupId)
                   .ObjectType(EnumObjectType.VoucherTypeGroup)
                   .JsonData(new { voucherTypeGroupId })
@@ -893,8 +893,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                  .MessageResourceFormatDatas($"Thêm vùng thông tin {voucherArea.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherArea)
+                  .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
@@ -949,8 +949,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                  .MessageResourceFormatDatas($"Cập nhật vùng dữ liệu {voucherArea.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucerArea)
+                  .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
@@ -982,8 +982,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             voucherArea.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                  .MessageResourceFormatDatas($"Xóa vùng chứng từ {voucherArea.Title}")
+            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherArea)
+                  .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(voucherArea)
@@ -1293,8 +1293,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                  .MessageResourceFormatDatas($"Cập nhật trường dữ liệu chứng từ {voucherTypeInfo.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherInfo)
+                  .MessageResourceFormatDatas(voucherTypeInfo.Title)
                   .ObjectId(voucherTypeId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(fields)
@@ -1330,8 +1330,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await UpdateVoucherTableType();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                  .MessageResourceFormatDatas($"Thêm trường dữ liệu chung {voucherField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherInfo)
+                  .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
@@ -1373,8 +1373,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                  .MessageResourceFormatDatas($"Cập nhật trường dữ liệu chung {voucherField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherField)
+                  .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
@@ -1418,8 +1418,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                  .MessageResourceFormatDatas($"Xóa trường dữ liệu chung {voucherField.Title}")
+                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherField)
+                  .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
                   .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(voucherField)

@@ -12,6 +12,9 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.DraftData;
 using DraftDataEntity = VErp.Infrastructure.EF.ManufacturingDB.DraftData;
+using Verp.Resources.Manafacturing.Handover;
+using Verp.Resources.Manafacturing.DraftData;
+
 namespace VErp.Services.Manafacturing.Service.DraftData.Implement
 {
     public class DraftDataService : IDraftDataService
@@ -49,8 +52,8 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật kế dữ liệu nháp")
+                await _objActivityLogFacade.LogBuilder(() => DraftDataActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(draftData.ObjectId)
                    .ObjectId(draftData.ObjectId)
                    .ObjectType(EnumObjectType.DraftData)
                    .JsonData(data)
@@ -89,8 +92,8 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
 
                 _manufacturingDBContext.DraftData.Remove(draftData);
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa dữ liệu nháp")
+                await _objActivityLogFacade.LogBuilder(() => DraftDataActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(objectId)
                    .ObjectId(objectId)
                    .ObjectType(EnumObjectType.DraftData)
                    .JsonData(draftData)

@@ -6,6 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production;
+using Verp.Resources.Manafacturing.Production.ConsumMaterial;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -76,8 +78,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.ProductionConsumMaterialDetail.AddRangeAsync(details);
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Khai báo tiêu hao vật tư từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Declare)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"),consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
                    .ObjectId(consumMaterial.ProductionConsumMaterialId)
                    .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
@@ -168,8 +170,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật khai báo vật tư tiêu hao từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"),consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
                    .ObjectId(productionConsumMaterialId)
                    .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
@@ -212,8 +214,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa khai báo vật tư tiêu hao từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"), consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
                    .ObjectId(productionConsumMaterialId)
                    .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
@@ -240,8 +242,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             foreach (var consumMaterialDetail in consumMaterialDetails)
             {
                 consumMaterialDetail.IsDeleted = true;
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa khai báo vật tư tiêu hao")
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.DeleteConsumMaterial)
+                   .MessageResourceFormatDatas(objectId)
                    .ObjectId(objectId)
                    .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new

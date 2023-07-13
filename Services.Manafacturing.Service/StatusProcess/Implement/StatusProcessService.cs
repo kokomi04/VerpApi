@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Process;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -805,8 +806,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderCode}, {description}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas( productionOrderCode, description)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(updateAssignments)
@@ -857,8 +858,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 productionAssignment.IsManualFinish = false;
                 _manufacturingDBContext.SaveChanges();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productionOrderId)
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
@@ -977,8 +978,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     isManual = false
                 };
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhập trạng thái lệnh sản xuất khởi tạo")
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(logObj)

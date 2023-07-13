@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.HumanResource;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -47,8 +48,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHumanResource.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo thống kê nhân công sản xuất")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(data.ProductionStepTitle)
                    .ObjectId(productionHumanResource.ProductionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
@@ -76,8 +77,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 data.ProductionOrderId = productionOrderId;
 
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật thống kê nhân công sản xuất")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(data.ProductionStepTitle)
                    .ObjectId(productionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
@@ -103,8 +104,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại thống kê nhân công");
                 productionHumanResource.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xoá thống kê nhân công")
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(productionHumanResourceId)
                    .ObjectId(productionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(productionHumanResource)
@@ -156,8 +157,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo thống kê nhân công")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(item.ProductionHumanResourceId)
                    .ObjectId(item.ProductionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
@@ -345,8 +346,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo thống kê nhân công")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(item.ProductionHumanResourceId)
                    .ObjectId(item.ProductionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)

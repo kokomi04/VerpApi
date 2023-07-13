@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.MaterialAllocation;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -103,8 +104,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật phân bổ vật tư sản xuât")
+                await _objActivityLogFacade.LogBuilder(() => MaterialAllocationActivityLogMessage.Update)
+                   .MessageResourceFormatDatas()
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.MaterialAllocation)
                    .JsonData(data)

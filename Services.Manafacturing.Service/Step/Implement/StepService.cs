@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Step;
 using Verp.Resources.Manafacturing.Step;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
@@ -30,7 +31,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
     public class StepService : IStepService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly ObjectActivityLogFacade _actionButtonActivityLog;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -40,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _actionButtonActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Step);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Step);
             _logger = logger;
             _mapper = mapper;
         }
@@ -64,8 +65,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Tạo danh mục công đoạn '{entity.StepName}'")
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStep)
+                   .MessageResourceFormatDatas(entity.StepName)
                    .ObjectId(entity.StepId)
                    .ObjectType(EnumObjectType.Step)
                    .JsonData(entity)
@@ -107,8 +108,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa công đoạn '{step.StepName}'")
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStep)
+                   .MessageResourceFormatDatas(step.StepName)
                    .ObjectId(step.StepId)
                    .ObjectType(EnumObjectType.Step)
                    .JsonData(step)
@@ -194,8 +195,8 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật danh mục công đoạn '{step.StepName}'")
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
+                   .MessageResourceFormatDatas(step.StepName)
                    .ObjectId(step.StepId)
                    .ObjectType(EnumObjectType.Step)
                    .JsonData(step)

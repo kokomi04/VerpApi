@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.SemiConversion;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
@@ -42,8 +43,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _manuDBContext.ProductSemiConversion.Add(entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas("Tạo mới bán thành phẩm chuyển đổi")
+            await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .ObjectType(EnumObjectType.ProductSemiConversion)
                    .JsonData(entity)
@@ -61,8 +62,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             entity.IsDeleted = true;
             await _manuDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas("Xóa bán thành phẩm chuyển đổi")
+            await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .ObjectType(EnumObjectType.ProductSemiConversion)
                    .JsonData(entity)
@@ -97,8 +98,8 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _mapper.Map(model, entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas("Cập nhật bán thành phẩm chuyển đổi")
+            await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .ObjectType(EnumObjectType.ProductSemiConversion)
                    .JsonData(entity)

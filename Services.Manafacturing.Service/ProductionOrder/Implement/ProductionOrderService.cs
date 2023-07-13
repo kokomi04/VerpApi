@@ -14,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Manafacturing.Production;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
@@ -1373,8 +1374,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await generateCodeCtx.ConfirmCode();
                 }
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm mới dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
@@ -1495,8 +1496,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await item.ConfirmCode();
                 }
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm {data.Length} lệnh sản xuất từ kế hoạch")
+                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.CreateMulti)
+                   .MessageResourceFormatDatas(data.Length)
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
@@ -1710,8 +1711,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                   .MessageResourceFormatDatas($"Cập nhật dữ liệu lệnh sản xuất {productionOrder.ProductionOrderCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
@@ -1820,8 +1821,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa lệnh sản xuất {productionOrder.ProductionOrderCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(productionOrder)
@@ -1908,8 +1909,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
 
-                        await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                                .MessageResourceFormatDatas($"Cập nhật trạng thái lệnh sản xuất ")
+                        await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
                                 .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, data, isManual = false })
@@ -1923,8 +1924,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     {
                         productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
 
-                        await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                                .MessageResourceFormatDatas($"Cập nhật trạng thái lệnh sản xuất ")
+                        await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
                                 .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, data, isManual = false })
@@ -1956,8 +1957,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
                     productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                                .MessageResourceFormatDatas($"Cập nhật trạng thái lệnh sản xuất ")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
                                 .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, status, isManual = true })
@@ -2043,8 +2044,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 foreach (var productionOrder in productionOrders)
                 {
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                                .MessageResourceFormatDatas($"Cập nhật thời gian lệch sản xuất từ kế hoạch")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.UpdateDate)
+                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
                                 .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(productionOrder)

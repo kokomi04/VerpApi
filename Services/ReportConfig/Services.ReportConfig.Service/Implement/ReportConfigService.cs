@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Report.ReportConfig;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Report;
@@ -134,8 +135,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                             .MessageResourceFormatDatas($"Cập nhật bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}")
+                    await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .ObjectType(EnumObjectType.ReportTypeView)
                              .JsonData(model)
@@ -166,8 +167,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.ReportTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                             .MessageResourceFormatDatas($"Thêm nhóm báo cáo {info.ReportTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
                              .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(model)
@@ -186,8 +187,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                             .MessageResourceFormatDatas($"Cập nhật nhóm báo cáo {info.ReportTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
                              .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(model)
@@ -206,8 +207,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                             .MessageResourceFormatDatas($"Xóa nhóm báo cáo {info.ReportTypeGroupName}")
+            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
                              .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(new { reportTypeGroupId })
@@ -243,8 +244,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                             .MessageResourceFormatDatas($"Tạo bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .ObjectType(EnumObjectType.ReportTypeView)
                              .JsonData(model)
@@ -384,8 +385,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                             .MessageResourceFormatDatas($"Thêm báo cáo {report.ReportTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReport)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
                              .ObjectType(EnumObjectType.ReportType)
                              .JsonData(data)
@@ -450,8 +451,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                             .MessageResourceFormatDatas($"Cập nhật báo cáo {report.ReportTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReport)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
                              .ObjectType(EnumObjectType.ReportType)
                              .JsonData(data)
@@ -501,8 +502,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                             .MessageResourceFormatDatas(report.ReportTypeId, $"Xóa báo cáo {report.ReportTypeName}")
+                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
+                             .MessageResourceFormatDatas( report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
                              .ObjectType(EnumObjectType.ReportType)
                              .JsonData(report)

@@ -29,6 +29,7 @@ using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionO
 using VErp.Infrastructure.ServiceCore.Facade;
 using DocumentFormat.OpenXml.EMMA;
 using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Manafacturing.Production.Plan;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
@@ -199,8 +200,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
                     var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Update)
-                            .MessageResourceFormatDatas($"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}")
+                    await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Update)
+                            .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                             .ObjectId(productionOrderDetail.ProductionOrderId)
                             .ObjectType(EnumObjectType.ProductionPlan)
                             .JsonData(data)
@@ -250,8 +251,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                 _manufacturingDBContext.ProductionWeekPlan.RemoveRange(currentProductionWeekPlans);
 
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas($"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}")
+                await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrderId)
                    .ObjectType(EnumObjectType.ProductionPlan)
                    .JsonData(currentProductionWeekPlans)
