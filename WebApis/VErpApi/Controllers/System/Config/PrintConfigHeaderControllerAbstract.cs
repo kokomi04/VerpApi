@@ -40,7 +40,6 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpPost]
         [Route("")]
-        [GlobalApi]
         public async Task<int> AddPrintHeaderConfig([FromBody] TModel model)
         {
             return await _printConfigHeaderService.CreateHeader(model);
@@ -48,7 +47,6 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpPut]
         [Route("{printConfigHeaderId}")]
-        [GlobalApi]
         public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigHeaderId, [FromBody] TModel model)
         {
             return await _printConfigHeaderService.UpdateHeader(printConfigHeaderId, model);
@@ -56,7 +54,6 @@ namespace VErpApi.Controllers.System.Config
 
         [HttpDelete]
         [Route("{printConfigHeaderId}")]
-        [GlobalApi]
         public async Task<bool> DeletePrintHeaderConfig([FromRoute] int printConfigHeaderId)
         {
             return await _printConfigHeaderService.DeleteHeader(printConfigHeaderId);
