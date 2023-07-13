@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Model.Guides;
@@ -36,6 +37,7 @@ namespace VErpApi.Controllers.Help
 
         [HttpGet]
         [Route("Token")]
+        [GlobalApi]
         public async Task<GuideTokenResponse> GetTokenViaHelpApi()
         {
             try

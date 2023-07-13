@@ -9,14 +9,13 @@ using VErp.Services.Master.Model.PrintConfig;
 
 namespace VErp.Services.Master.Service.PrintConfig
 {
-    public interface IPrintConfigHeaderService
+    public interface IPrintConfigHeaderService<TModel, TViewModel>
     {
-        Task<PrintConfigHeaderModel> GetHeaderById(int headerId);
-        Task<PageData<PrintConfigHeaderViewModel>> Search(string keyword, int page, int size);
-        Task<int> CreateHeader(PrintConfigHeaderModel model);
-        Task<bool> UpdateHeader(int headerId, PrintConfigHeaderModel model);
+        Task<TModel> GetHeaderById(int headerId);
+        Task<PageData<TViewModel>> Search(string keyword, int page, int size);
+        Task<int> CreateHeader(TModel model);
+        Task<bool> UpdateHeader(int headerId, TModel model);
         Task<bool> DeleteHeader(int headerId);
-        Task<bool> MapToPrintConfigCustom(int printConfigHeaderId, List<int> printConfigIds);
     }
 
 }

@@ -216,6 +216,12 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Cấu hình phiếu in tùy chỉnh")]
         PrintConfigCustom = 50002,
 
+        [Description("Cấu hình header phiếu in mặc định")]
+        PrintConfigHeaderStandard = 50003,
+
+        [Description("Cấu hình header phiếu in tùy chỉnh")]
+        PrintConfigHeaderCustom = 50004,
+
         [Description("CSDL")]
         StorageDabase = 51,
 

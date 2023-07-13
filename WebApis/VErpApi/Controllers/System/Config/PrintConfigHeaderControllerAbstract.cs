@@ -12,12 +12,11 @@ using VErp.Services.Master.Service.PrintConfig;
 
 namespace VErpApi.Controllers.System.Config
 {
-    [Route("api/printConfigHeader")]
-    public class PrintConfigHeaderController : VErpBaseController
+    public abstract class PrintConfigHeaderControllerAbstract<TModel, TViewModel> : VErpBaseController
     {
-        private readonly IPrintConfigHeaderService _printConfigHeaderService;
+        private readonly IPrintConfigHeaderService<TModel, TViewModel> _printConfigHeaderService;
 
-        public PrintConfigHeaderController(IPrintConfigHeaderService printConfigHeaderService)
+        public PrintConfigHeaderControllerAbstract(IPrintConfigHeaderService<TModel, TViewModel> printConfigHeaderService)
         {
             _printConfigHeaderService = printConfigHeaderService;
         }
@@ -26,7 +25,7 @@ namespace VErpApi.Controllers.System.Config
         [Route("search")]
         [VErpAction(EnumActionType.View)]
         [GlobalApi]
-        public async Task<PageData<PrintConfigHeaderViewModel>> Search(string keyword, int page, int size)
+        public async Task<PageData<TViewModel>> Search(string keyword, int page, int size)
         {
             return await _printConfigHeaderService.Search(keyword, page, size);
         }
@@ -34,37 +33,33 @@ namespace VErpApi.Controllers.System.Config
         [HttpGet]
         [Route("{printConfigHeaderId}")]
         [GlobalApi]
-        public async Task<PrintConfigHeaderModel> GetPrintConfigHeader([FromRoute] int printConfigHeaderId)
+        public async Task<TModel> GetPrintConfigHeader([FromRoute] int printConfigHeaderId)
         {
             return await _printConfigHeaderService.GetHeaderById(printConfigHeaderId);
         }
 
         [HttpPost]
         [Route("")]
-        public async Task<int> AddPrintHeaderConfig([FromBody] PrintConfigHeaderModel model)
+        [GlobalApi]
+        public async Task<int> AddPrintHeaderConfig([FromBody] TModel model)
         {
             return await _printConfigHeaderService.CreateHeader(model);
         }
 
         [HttpPut]
         [Route("{printConfigHeaderId}")]
-        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigHeaderId, [FromBody] PrintConfigHeaderModel model)
+        [GlobalApi]
+        public async Task<bool> UpdatePrintConfig([FromRoute] int printConfigHeaderId, [FromBody] TModel model)
         {
             return await _printConfigHeaderService.UpdateHeader(printConfigHeaderId, model);
         }
 
         [HttpDelete]
         [Route("{printConfigHeaderId}")]
+        [GlobalApi]
         public async Task<bool> DeletePrintHeaderConfig([FromRoute] int printConfigHeaderId)
         {
             return await _printConfigHeaderService.DeleteHeader(printConfigHeaderId);
-        }
-
-        [HttpPut]
-        [Route("{printConfigHeaderId}/mapping")]
-        public Task<bool> MapToPrintConfigCustom([FromRoute] int printConfigHeaderId, List<int> printConfigIds)
-        {
-            return _printConfigHeaderService.MapToPrintConfigCustom(printConfigHeaderId, printConfigIds);
         }
     }
 }
