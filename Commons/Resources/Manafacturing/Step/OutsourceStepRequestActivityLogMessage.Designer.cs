@@ -22,14 +22,14 @@ namespace Verp.Resources.Manafacturing.Step {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class StepValidationMessage {
+    public class OutsourceStepRequestActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal StepValidationMessage() {
+        internal OutsourceStepRequestActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Manafacturing.Step {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Manafacturing.Step.StepValidationMessage", typeof(StepValidationMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Manafacturing.Step.OutsourceStepRequestActivityLogMessage", typeof(OutsourceStepRequestActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,11 +61,38 @@ namespace Verp.Resources.Manafacturing.Step {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Không thể xóa công đoạn đang sử dụng.
+        ///   Looks up a localized string similar to Thêm mới yêu cầu gia công công đoạn {0}.
         /// </summary>
-        public static string CanNotDeleteWhichIsInUse {
+        public static string Create {
             get {
-                return ResourceManager.GetString("CanNotDeleteWhichIsInUse", resourceCulture);
+                return ResourceManager.GetString("Create", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Thêm mới yêu cầu gia công công đoạn.
+        /// </summary>
+        public static string CreateRequest {
+            get {
+                return ResourceManager.GetString("CreateRequest", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Xóa yêu cầu gia công công đoạn {0}.
+        /// </summary>
+        public static string Delete {
+            get {
+                return ResourceManager.GetString("Delete", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật yêu cầu gia công công đoạn {0}.
+        /// </summary>
+        public static string Update {
+            get {
+                return ResourceManager.GetString("Update", resourceCulture);
             }
         }
     }

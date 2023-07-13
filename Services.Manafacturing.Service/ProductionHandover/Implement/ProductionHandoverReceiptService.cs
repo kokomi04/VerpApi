@@ -206,7 +206,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
                               .MessageResourceFormatDatas(info.ProductionHandoverReceiptCode)
                               .ObjectId(info.ProductionHandoverReceiptId)
-                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(info)
                               .CreateLog();
 
@@ -261,7 +260,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CheckBatch)
                               .MessageResourceFormatDatas((status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối") , info.ProductionHandoverReceiptCode)
                               .ObjectId(receiptId)
-                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(info)
                               .CreateLog();
 
@@ -431,7 +429,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CreateBatch)
                               .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(receiptInfo.ProductionHandoverReceiptId)
-                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(data)
                               .CreateLog();
 
@@ -536,7 +533,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
                               .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(productionHandoverReceiptId)
-                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(receiptInfo)
                               .CreateLog();
 
@@ -663,7 +659,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.UpdateBatch)
                               .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
                               .ObjectId(productionHandoverReceiptId)
-                              .ObjectType(EnumObjectType.ProductionHandoverReceipt)
                               .JsonData(receiptInfo)
                               .CreateLog();
 

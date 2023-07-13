@@ -33,7 +33,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
     {
         private readonly ReportConfigDBContext _reportConfigContext;
         private readonly AppSetting _appSetting;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportTypeGroup;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IMenuHelperService _menuHelperService;
@@ -50,7 +52,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             )
         {
             _reportConfigContext = reportConfigContext;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportTypeView);
+            _objActivityLogFacadeReportTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportTypeView);
+            _objActivityLogFacadeReportType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportType);
+            _objActivityLogFacadeReportTypeGroup = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportTypeGroup);
             _mapper = mapper;
             _logger = logger;
             _menuHelperService = menuHelperService;
@@ -135,10 +139,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
+                    await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
                              .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
-                             .ObjectType(EnumObjectType.ReportTypeView)
                              .JsonData(model)
                              .CreateLog();
 
@@ -167,10 +170,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.ReportTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportGroup)
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportGroup)
                              .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
-                             .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(model)
                              .CreateLog();
 
@@ -187,10 +189,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportGroup)
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportGroup)
                              .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
-                             .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(model)
                              .CreateLog();
 
@@ -207,10 +208,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReportGroup)
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReportGroup)
                              .MessageResourceFormatDatas(info.ReportTypeGroupName)
                              .ObjectId(info.ReportTypeGroupId)
-                             .ObjectType(EnumObjectType.ReportTypeGroup)
                              .JsonData(new { reportTypeGroupId })
                              .CreateLog();
 
@@ -244,10 +244,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
+                await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
                              .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
-                             .ObjectType(EnumObjectType.ReportTypeView)
                              .JsonData(model)
                              .CreateLog();
 
@@ -385,10 +384,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.CreateReport)
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.CreateReport)
                              .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
-                             .ObjectType(EnumObjectType.ReportType)
                              .JsonData(data)
                              .CreateLog();
 
@@ -451,10 +449,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReport)
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReport)
                              .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
-                             .ObjectType(EnumObjectType.ReportType)
                              .JsonData(data)
                              .CreateLog();
 
@@ -502,10 +499,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
                              .MessageResourceFormatDatas( report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
-                             .ObjectType(EnumObjectType.ReportType)
                              .JsonData(report)
                              .CreateLog();
 

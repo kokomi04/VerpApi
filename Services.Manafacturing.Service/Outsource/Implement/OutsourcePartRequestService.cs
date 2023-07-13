@@ -113,7 +113,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Create)
                    .MessageResourceFormatDatas(request.OutsourcePartRequestId)
                    .ObjectId(request.OutsourcePartRequestId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(request)
                    .CreateLog();
 
@@ -228,7 +227,6 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Update)
                    .MessageResourceFormatDatas(model.OutsourcePartRequestId)
                    .ObjectId(model.OutsourcePartRequestId)
-                   .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(request)
                    .CreateLog();
 

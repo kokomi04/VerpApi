@@ -38,7 +38,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
             _logger = logger;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ActionButton);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeGroup);
         }
 
         public async Task<int> HrTypeGroupCreate(HrTypeGroupModel model)
@@ -50,7 +50,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrGroup)
                    .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
-                   .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -70,7 +69,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrGroup)
                    .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
-                   .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(model)
                    .CreateLog();
             return true;
@@ -89,7 +87,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrGroup)
                    .MessageResourceFormatDatas(info.HrTypeGroupName)
                    .ObjectId(info.HrTypeGroupId)
-                   .ObjectType(EnumObjectType.HrTypeGroup)
                    .JsonData(new { hrTypeGroupId })
                    .CreateLog();
 

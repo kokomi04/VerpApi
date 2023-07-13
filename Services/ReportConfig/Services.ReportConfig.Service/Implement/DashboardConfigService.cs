@@ -47,7 +47,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
     public class DashboardConfigService : IDashboardConfigService
     {
         private readonly ReportConfigDBContext _reportConfigContext;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashTypeGroup;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashType;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IRoleHelperService _roleHelperService;
@@ -63,7 +65,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             , IDataProtectionProvider protectionProvider)
         {
             _reportConfigContext = reportConfigContext;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardTypeView);
+            _objActivityLogFacadeDashTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardTypeView);
+            _objActivityLogFacadeDashType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardType);
+            _objActivityLogFacadeDashTypeGroup = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardTypeGroup);
             _mapper = mapper;
             _logger = logger;
             _roleHelperService = roleHelperService;
@@ -138,10 +142,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardFilter)
+                await _objActivityLogFacadeDashTypeView.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardFilter)
                    .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
                    .ObjectId(info.DashboardTypeViewId)
-                   .ObjectType(EnumObjectType.DashboardTypeView)
                    .JsonData(model)
                    .CreateLog();
 
@@ -176,10 +179,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardFilter)
+                await _objActivityLogFacadeDashTypeView.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardFilter)
                    .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
                    .ObjectId(info.DashboardTypeViewId)
-                   .ObjectType(EnumObjectType.DashboardTypeView)
                    .JsonData(model)
                    .CreateLog();
 
@@ -215,10 +217,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.DashboardTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardGroup)
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardGroup)
                    .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
-                   .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -235,10 +236,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardGroup)
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardGroup)
                    .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
-                   .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -258,10 +258,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoardGroup)
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoardGroup)
                    .MessageResourceFormatDatas(info.DashboardTypeGroupName)
                    .ObjectId(info.DashboardTypeGroupId)
-                   .ObjectType(EnumObjectType.DashboardTypeGroup)
                    .JsonData(new { dashboardTypeGroupId })
                    .CreateLog();
 
@@ -331,10 +330,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoard)
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoard)
                    .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
-                   .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -376,10 +374,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoard)
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoard)
                    .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
-                   .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -410,10 +407,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoard)
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoard)
                    .MessageResourceFormatDatas(dashboard.DashboardTypeName)
                    .ObjectId(dashboard.DashboardTypeId)
-                   .ObjectType(EnumObjectType.DashboardType)
                    .JsonData(dashboard)
                    .CreateLog();
 

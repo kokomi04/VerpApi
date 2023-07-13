@@ -80,11 +80,29 @@ namespace Verp.Resources.Manafacturing.Production.Process {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Tạo mới công đoạn {0} của {1} {2}.
+        /// </summary>
+        public static string CreateStep {
+            get {
+                return ResourceManager.GetString("CreateStep", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Xóa quy trình sản xuất mẫu {0}.
         /// </summary>
         public static string DeleteProcessMold {
             get {
                 return ResourceManager.GetString("DeleteProcessMold", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Xóa công đoạn {0} của {1} {2}.
+        /// </summary>
+        public static string DeleteStep {
+            get {
+                return ResourceManager.GetString("DeleteStep", resourceCulture);
             }
         }
         

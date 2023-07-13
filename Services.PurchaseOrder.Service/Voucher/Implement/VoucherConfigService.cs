@@ -38,7 +38,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private const string VOUCHERVALUEROW_TABLE = PurchaseOrderConstants.VOUCHERVALUEROW_TABLE;
 
         private readonly ILogger _logger;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeGroup;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeVoucherType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeVoucherTypeView;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;        
@@ -61,7 +64,10 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         {
             _purchaseOrderDBContext = purchaseOrderDBContext;
             _logger = logger;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputType);
+            _objActivityLogFacadeInputType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputType);
+            _objActivityLogFacadeInputTypeGroup = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputTypeGroup);
+            _objActivityLogFacadeVoucherType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherType);
+            _objActivityLogFacadeVoucherTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherTypeView);
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;           
             _httpCrossService = httpCrossService;
@@ -102,9 +108,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherConfig)
+                await _objActivityLogFacadeInputType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherConfig)
                    .ObjectId(0)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
                    .CreateLog();
                 return true;
@@ -301,10 +306,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
                 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
                    .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
-                   .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -419,10 +423,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
                    .MessageResourceFormatDatas(cloneType.Title)
                    .ObjectId(cloneType.VoucherTypeId)
-                   .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(cloneType)
                    .CreateLog();
                 return cloneType.VoucherTypeId;
@@ -491,10 +494,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucher)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucher)
                    .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
-                   .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -532,10 +534,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({voucherTypeId})");
             }
 
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucher)
+            await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucher)
                    .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
-                   .ObjectType(EnumObjectType.VoucherType)
                    .JsonData(voucherType)
                    .CreateLog();
 
@@ -634,10 +635,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherFilter)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherFilter)
                    .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
-                   .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(model)
                    .CreateLog();
 
@@ -677,10 +677,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherFilter)
+                await _objActivityLogFacadeVoucherTypeView.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherFilter)
                    .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
-                   .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(model)
                    .CreateLog();
 
@@ -710,10 +709,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherFilter)
+            await _objActivityLogFacadeVoucherTypeView.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherFilter)
                    .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
-                   .ObjectType(EnumObjectType.VoucherTypeView)
                    .JsonData(new { voucherTypeViewId })
                    .CreateLog();
 
@@ -729,10 +727,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             await _purchaseOrderDBContext.VoucherTypeGroup.AddAsync(info);
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherGroup)
                    .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                    .ObjectId(info.VoucherTypeGroupId)
-                   .ObjectType(EnumObjectType.VoucherTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -749,10 +746,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherGroup)
                    .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                    .ObjectId(info.VoucherTypeGroupId)
-                   .ObjectType(EnumObjectType.VoucherTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -769,10 +765,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherGroup)
                   .MessageResourceFormatDatas(info.VoucherTypeGroupName)
                   .ObjectId(info.VoucherTypeGroupId)
-                  .ObjectType(EnumObjectType.VoucherTypeGroup)
                   .JsonData(new { voucherTypeGroupId })
                   .CreateLog();
 
@@ -893,10 +888,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherArea)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherArea)
                   .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
                   .CreateLog();
                 return voucherArea.VoucherAreaId;
@@ -949,10 +943,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucerArea)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucerArea)
                   .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
                   .CreateLog();
                 return true;
@@ -982,10 +975,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             voucherArea.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherArea)
+            await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherArea)
                   .MessageResourceFormatDatas(voucherArea.Title)
                   .ObjectId(voucherArea.VoucherAreaId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(voucherArea)
                   .CreateLog();
             return true;
@@ -1293,10 +1285,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherInfo)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherInfo)
                   .MessageResourceFormatDatas(voucherTypeInfo.Title)
                   .ObjectId(voucherTypeId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(fields)
                   .CreateLog();
 
@@ -1330,10 +1321,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await UpdateVoucherTableType();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherInfo)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherInfo)
                   .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
                   .CreateLog();
 
@@ -1373,10 +1363,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherField)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherField)
                   .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(data)
                   .CreateLog();
 
@@ -1418,10 +1407,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherField)
+                await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherField)
                   .MessageResourceFormatDatas(voucherField.Title)
                   .ObjectId(voucherField.VoucherFieldId)
-                  .ObjectType(EnumObjectType.VoucherType)
                   .JsonData(voucherField)
                   .CreateLog();
 

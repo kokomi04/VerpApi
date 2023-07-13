@@ -1377,7 +1377,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Create)
                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
                    .CreateLog();
 
@@ -1499,7 +1498,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.CreateMulti)
                    .MessageResourceFormatDatas(data.Length)
                    .ObjectId(productionOrderId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
                    .CreateLog();
 
@@ -1714,7 +1712,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(data)
                    .CreateLog();
        
@@ -1824,7 +1821,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(productionOrder)
                    .CreateLog();
                 return true;
@@ -1912,7 +1908,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
-                                .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, data, isManual = false })
                                 .CreateLog();
                     }
@@ -1927,7 +1922,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
-                                .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, data, isManual = false })
                                 .CreateLog();
                     }
@@ -1960,7 +1954,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
-                                .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(new { productionOrder, status, isManual = true })
                                 .CreateLog();
                 }
@@ -2047,7 +2040,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.UpdateDate)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
-                                .ObjectType(EnumObjectType.ProductionOrder)
                                 .JsonData(productionOrder)
                                 .CreateLog();
                 }

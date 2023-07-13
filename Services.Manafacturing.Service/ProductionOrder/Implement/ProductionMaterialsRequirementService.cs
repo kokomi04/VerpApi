@@ -141,7 +141,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Create)
                           .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
-                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)
                           .CreateLog();
 
@@ -179,7 +178,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Delete)
                           .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
-                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)
                           .CreateLog();
                 return true;
@@ -338,7 +336,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionMaterialsRequirementActivityLogMessage.Update)
                           .MessageResourceFormatDatas(requirement.RequirementCode)
                           .ObjectId(requirement.ProductionMaterialsRequirementId)
-                          .ObjectType(EnumObjectType.ProductionMaterialsRequirement)
                           .JsonData(requirement)
                           .CreateLog();
 

@@ -55,7 +55,6 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
                 await _objActivityLogFacade.LogBuilder(() => DraftDataActivityLogMessage.Update)
                    .MessageResourceFormatDatas(draftData.ObjectId)
                    .ObjectId(draftData.ObjectId)
-                   .ObjectType(EnumObjectType.DraftData)
                    .JsonData(data)
                    .CreateLog();
 
@@ -95,7 +94,6 @@ namespace VErp.Services.Manafacturing.Service.DraftData.Implement
                 await _objActivityLogFacade.LogBuilder(() => DraftDataActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(objectId)
                    .ObjectId(objectId)
-                   .ObjectType(EnumObjectType.DraftData)
                    .JsonData(draftData)
                    .CreateLog();
                 return true;

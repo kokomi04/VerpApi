@@ -68,7 +68,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStep)
                    .MessageResourceFormatDatas(entity.StepName)
                    .ObjectId(entity.StepId)
-                   .ObjectType(EnumObjectType.Step)
                    .JsonData(entity)
                    .CreateLog();
                 await trans.CommitAsync();
@@ -111,7 +110,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStep)
                    .MessageResourceFormatDatas(step.StepName)
                    .ObjectId(step.StepId)
-                   .ObjectType(EnumObjectType.Step)
                    .JsonData(step)
                    .CreateLog();
                 await trans.CommitAsync();
@@ -198,7 +196,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
                 await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
                    .MessageResourceFormatDatas(step.StepName)
                    .ObjectId(step.StepId)
-                   .ObjectType(EnumObjectType.Step)
                    .JsonData(step)
                    .CreateLog();
                 await trans.CommitAsync();

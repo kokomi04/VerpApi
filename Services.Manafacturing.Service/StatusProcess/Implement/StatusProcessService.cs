@@ -809,7 +809,6 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
                    .MessageResourceFormatDatas( productionOrderCode, description)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(updateAssignments)
                    .CreateLog();
 
@@ -861,7 +860,6 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
                    .MessageResourceFormatDatas(productionOrderId)
                    .ObjectId(productionOrderId)
-                   .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
                    .CreateLog();
 
@@ -980,7 +978,6 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionAssignment)
                    .JsonData(logObj)
                    .CreateLog();
             }

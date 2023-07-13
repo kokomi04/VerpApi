@@ -152,7 +152,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             await _objActivityLogFacade.LogBuilder(() => ProductionOrderMaterialSetActivityLogMessage.Update)
                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
-                   .ObjectType(EnumObjectType.ProductionOrder)
                    .JsonData(model)
                    .CreateLog();
 

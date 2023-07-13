@@ -46,7 +46,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStepGroup)
                    .MessageResourceFormatDatas(entity.StepGroupName)
                    .ObjectId(entity.StepGroupId)
-                   .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(entity)
                    .CreateLog();
             return entity.StepGroupId;
@@ -66,7 +65,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStepGroup)
                    .MessageResourceFormatDatas(groupStep.StepGroupName)
                    .ObjectId(groupStep.StepGroupId)
-                   .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(groupStep)
                    .CreateLog();
             return true;
@@ -106,7 +104,6 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
                    .MessageResourceFormatDatas(destInfo.StepGroupName)
                    .ObjectId(destInfo.StepGroupId)
-                   .ObjectType(EnumObjectType.StepGroup)
                    .JsonData(destInfo)
                    .CreateLog();
             return true;

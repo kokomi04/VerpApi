@@ -93,7 +93,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 await _objActivityLogFacade.LogBuilder(() => MonthPlanActivityLogMessage.Create)
                    .MessageResourceFormatDatas(monthPlan.MonthPlanName)
                    .ObjectId(monthPlan.MonthPlanId)
-                   .ObjectType(EnumObjectType.ProductionPlan)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -189,7 +188,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 await _objActivityLogFacade.LogBuilder(() => MonthPlanActivityLogMessage.Update)
                    .MessageResourceFormatDatas(monthPlan.MonthPlanName)
                    .ObjectId(monthPlan.MonthPlanId)
-                   .ObjectType(EnumObjectType.ProductionPlan)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -227,7 +225,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 await _objActivityLogFacade.LogBuilder(() => MonthPlanActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(monthPlan.MonthPlanName)
                    .ObjectId(monthPlan.MonthPlanId)
-                   .ObjectType(EnumObjectType.ProductionPlan)
                    .JsonData(monthPlan)
                    .CreateLog();
                 return true;

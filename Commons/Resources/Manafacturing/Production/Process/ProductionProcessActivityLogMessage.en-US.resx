@@ -123,8 +123,14 @@
   <data name="CreateProcessMold" xml:space="preserve">
     <value>Create production process mold {0}</value>
   </data>
+  <data name="CreateStep" xml:space="preserve">
+    <value>Create production step {0} of {1} {2}</value>
+  </data>
   <data name="DeleteProcessMold" xml:space="preserve">
     <value>Delete production process mold {0}</value>
+  </data>
+  <data name="DeleteStep" xml:space="preserve">
+    <value>Delete production step {0} of {1} {2}</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Update the status of the initial production order</value>

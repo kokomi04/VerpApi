@@ -58,7 +58,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionPlanExtraInfoActivityLogMessage.Update)
                    .MessageResourceFormatDatas()
                    .ObjectId(monthPlanId)
-                   .ObjectType(EnumObjectType.ProductionPlanExtraInfo)
                    .JsonData(data)
                    .CreateLog();
 

@@ -123,8 +123,14 @@
   <data name="CreateProcessMold" xml:space="preserve">
     <value>Tạo quy trình mẫu {0}</value>
   </data>
+  <data name="CreateStep" xml:space="preserve">
+    <value>Tạo mới công đoạn {0} của {1} {2}</value>
+  </data>
   <data name="DeleteProcessMold" xml:space="preserve">
     <value>Xóa quy trình sản xuất mẫu {0}</value>
+  </data>
+  <data name="DeleteStep" xml:space="preserve">
+    <value>Xóa công đoạn {0} của {1} {2}</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhập trạng thái lệnh sản xuất khởi tạo</value>

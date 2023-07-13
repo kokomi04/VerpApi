@@ -120,13 +120,4 @@
   <data name="CanNotDeleteWhichIsInUse" xml:space="preserve">
     <value>Không thể xóa công đoạn đang sử dụng</value>
   </data>
-  <data name="Create" xml:space="preserve">
-    <value>Thêm mới yêu cầu gia công công đoạn {0}</value>
-  </data>
-  <data name="Delete" xml:space="preserve">
-    <value>Xóa yêu cầu gia công công đoạn {0}</value>
-  </data>
-  <data name="Update" xml:space="preserve">
-    <value>Cập nhật yêu cầu gia công công đoạn {0}</value>
-  </data>
 </root>

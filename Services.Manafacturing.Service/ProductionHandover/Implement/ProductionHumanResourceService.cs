@@ -51,7 +51,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
                    .MessageResourceFormatDatas(data.ProductionStepTitle)
                    .ObjectId(productionHumanResource.ProductionHumanResourceId)
-                   .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
                    .CreateLog();
                 return _mapper.Map<ProductionHumanResourceModel>(productionHumanResource);
@@ -80,7 +79,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Update)
                    .MessageResourceFormatDatas(data.ProductionStepTitle)
                    .ObjectId(productionHumanResourceId)
-                   .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
                    .CreateLog();
                 return _mapper.Map<ProductionHumanResourceModel>(info);
@@ -107,7 +105,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(productionHumanResourceId)
                    .ObjectId(productionHumanResourceId)
-                   .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(productionHumanResource)
                    .CreateLog();
                 return true;
@@ -160,7 +157,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
                    .MessageResourceFormatDatas(item.ProductionHumanResourceId)
                    .ObjectId(item.ProductionHumanResourceId)
-                   .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
                    .CreateLog();
                 }

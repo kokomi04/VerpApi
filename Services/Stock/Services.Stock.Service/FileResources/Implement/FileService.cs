@@ -223,7 +223,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
             await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.DeleteFile)
                    .MessageResourceFormatDatas(Path.GetFileName(fileInfo.FilePath))
                    .ObjectId(fileId)
-                   .ObjectType(EnumObjectType.File)
                    .JsonData(beforeJson)
                    .CreateLog();
             return true;
@@ -427,7 +426,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.UpdateFile)
                               .MessageResourceFormatDatas(objectTypeId)
                               .ObjectId(fileInfo.FileId)
-                              .ObjectType(EnumObjectType.File)
                               .JsonData(fileInfo)
                               .CreateLog();
 
@@ -583,7 +581,6 @@ namespace VErp.Services.Stock.Service.FileResources.Implement
                     await _objActivityLogFacade.LogBuilder(() => FileActivityLogMessage.UploadFile)
                               .MessageResourceFormatDatas(simpleFileInfo.FileName)
                               .ObjectId(fileRes.FileId)
-                              .ObjectType(EnumObjectType.File)
                               .JsonData(fileRes)
                               .CreateLog();
 

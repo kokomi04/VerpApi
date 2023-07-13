@@ -65,7 +65,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
                    .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
-                   .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(model)
                    .CreateLog();
                 return productSemiEntity.ProductSemiId;
@@ -100,7 +99,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.DeleteSemi)
                    .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
-                   .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(productSemiEntity)
                    .CreateLog();
                 return true;
@@ -175,7 +173,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
                    .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
-                   .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(productSemiEntity)
                    .CreateLog();
                 return true;
@@ -219,7 +216,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
                    .MessageResourceFormatDatas(results)
                    .ObjectId(0)
-                   .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(results)
                    .CreateLog();
                 return results.ToArray();
@@ -268,7 +264,6 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
                    .MessageResourceFormatDatas(models.Select(x => x.ProductSemiId))
                    .ObjectId(0)
-                   .ObjectType(EnumObjectType.ProductSemi)
                    .JsonData(models.Select(x => x.ProductSemiId))
                    .CreateLog();
                 return true;

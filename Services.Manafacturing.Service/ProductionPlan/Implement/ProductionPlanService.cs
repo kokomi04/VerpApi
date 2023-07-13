@@ -203,7 +203,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Update)
                             .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                             .ObjectId(productionOrderDetail.ProductionOrderId)
-                            .ObjectType(EnumObjectType.ProductionPlan)
                             .JsonData(data)
                             .CreateLog();
                 }
@@ -254,7 +253,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrderId)
-                   .ObjectType(EnumObjectType.ProductionPlan)
                    .JsonData(currentProductionWeekPlans)
                    .CreateLog();
                 return true;

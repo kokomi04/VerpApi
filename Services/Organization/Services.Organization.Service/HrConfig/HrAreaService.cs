@@ -66,7 +66,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             _logger = logger;
             _mapper = mapper;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ActionButton);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrType);
             _organizationDBContext = organizationDBContext;
             _categoryHelperService = categoryHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -148,7 +148,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrArea)
                    .MessageResourceFormatDatas(inputArea.Title,hrTypeId)
                    .ObjectId(inputArea.HrAreaId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
                 return inputArea.HrAreaId;
@@ -217,7 +216,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrArea)
                    .MessageResourceFormatDatas(hrArea.Title,hrTypeId)
                    .ObjectId(hrArea.HrAreaId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
                 return true;
@@ -257,7 +255,6 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrArea)
                    .MessageResourceFormatDatas(hrArea.Title, hrTypeId)
                    .ObjectId(hrArea.HrAreaId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(hrArea)
                    .CreateLog();
             return true;
@@ -569,7 +566,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrField)
                    .MessageResourceFormatDatas(hrTypeInfo.Title)
                    .ObjectId(hrTypeId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(fields)
                    .CreateLog();
 
@@ -622,7 +618,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFieldArea)
                    .MessageResourceFormatDatas(hrField.Title,hrAreaId)
                    .ObjectId(hrField.HrFieldId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -691,7 +686,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFieldArea)
                    .MessageResourceFormatDatas(inputField.Title, hrAreaId)
                    .ObjectId(inputField.HrFieldId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -748,7 +742,6 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrField)
                    .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.HrFieldId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(inputField)
                    .CreateLog();
                 return true;

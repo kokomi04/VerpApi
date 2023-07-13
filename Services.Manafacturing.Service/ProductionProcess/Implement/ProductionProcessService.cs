@@ -40,7 +40,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
     public class ProductionProcessService : IProductionProcessService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeStep;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeProcess;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -58,7 +59,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             , IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionStep);
+            _objActivityLogFacadeStep = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionStep);
+            _objActivityLogFacadeProcess = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionProcess);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -83,10 +85,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                            .MessageResourceFormatDatas($"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}")
+                    await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.CreateStep)
+                            .MessageResourceFormatDatas(req.ProductionStepId,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
                             .ObjectId(step.ProductionStepId)
-                            .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(req)
                             .CreateLog();
                     return step.ProductionStepId;
@@ -129,10 +130,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                            .MessageResourceFormatDatas($"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}")
+                    await _objActivityLogFacadeStep.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                            .MessageResourceFormatDatas(productionStep.ProductionStepId,((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription(),productionStep.ContainerId)
                             .ObjectId(productionStep.ProductionStepId)
-                            .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(productionStep)
                             .CreateLog();
                     return true;
@@ -940,10 +940,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateDetail)
+                    await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateDetail)
                             .MessageResourceFormatDatas(sProductionStep.ProductionStepId,((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription(),sProductionStep.ContainerId)
                             .ObjectId(sProductionStep.ProductionStepId)
-                            .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(req)
                             .CreateLog();
                     return true;
@@ -1041,10 +1040,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Create)
+            await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.Create)
                             .MessageResourceFormatDatas(req.ProductionStepId,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
                             .ObjectId(stepGroup.ProductionStepId)
-                            .ObjectType(EnumObjectType.ProductionStep)
                             .JsonData(req)
                             .CreateLog();
             return stepGroup.ProductionStepId;
@@ -1063,9 +1061,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStep)
+                await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStep)
                            .ObjectId(req.First().ProductionStepId)
-                           .ObjectType(EnumObjectType.ProductionStep)
                            .JsonData(req)
                            .CreateLog();
                 return true;
@@ -1137,10 +1134,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcess)
-                           .MessageResourceFormatDatas("Cập nhật quy trình sản xuất")
+                await _objActivityLogFacadeProcess.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcess)
                            .ObjectId(req.ContainerId)
-                           .ObjectType(EnumObjectType.ProductionProcess)
                            .JsonData(req)
                            .CreateLog();
 

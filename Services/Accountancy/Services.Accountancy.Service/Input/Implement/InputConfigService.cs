@@ -82,7 +82,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 
         private readonly ILogger _logger;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeGroup;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeView;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -99,7 +101,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = inputConfigDependService.Logger;
-            _objActivityLogFacade = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputType);
+            _objActivityLogFacadeInputType = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputType);
+            _objActivityLogFacadeInputTypeGroup = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputTypeGroup);
+            _objActivityLogFacadeInputTypeView = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputTypeView);
             _mapper = inputConfigDependService.Mapper;
             _customGenCodeHelperService = inputConfigDependService.CustomGenCodeHelperService;
             _httpCategoryHelperService = inputConfigDependService.HttpCategoryHelperService;
@@ -275,10 +279,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
                     .MessageResourceFormatDatas(inputType.Title)
                     .ObjectId(inputType.InputTypeId)
-                    .ObjectType(EnumObjectType.InputType)
                     .JsonData(inputType)
                     .CreateLog();
 
@@ -407,10 +410,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
                 //}
 
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
                     .MessageResourceFormatDatas(cloneType.Title)
                     .ObjectId(cloneType.InputTypeId)
-                    .ObjectType(EnumObjectType.InputType)
                     .JsonData(cloneType)
                     .CreateLog();
                 return cloneType.InputTypeId;
@@ -472,9 +474,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputData)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputData)
                     .MessageResourceFormatDatas(inputType.Title)
-                    .ObjectType(EnumObjectType.InputType)
                     .ObjectId(inputType.InputTypeId)
                     .JsonData(inputType)
                     .CreateLog();//.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Cập nhật chứng từ {inputType.Title}", data);
@@ -509,9 +510,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({inputTypeId})");
             }
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputData)
+            await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputData)
                     .MessageResourceFormatDatas(inputType.Title)
-                    .ObjectType(EnumObjectType.InputType)
                     .ObjectId(inputType.InputTypeId)
                     .JsonData(inputType)
                     .CreateLog();
@@ -549,8 +549,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateGeneral)
-                    .ObjectType(EnumObjectType.InputType)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateGeneral)
                     .ObjectId(0)
                     .JsonData(data)
                     .CreateLog();
@@ -654,9 +653,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataFilter)
+                await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataFilter)
                     .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
-                    .ObjectType(EnumObjectType.InputType)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
                     .CreateLog();
@@ -696,9 +694,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataFilter)
+                await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataFilter)
                     .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
-                    .ObjectType(EnumObjectType.InputType)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
                     .CreateLog();
@@ -728,10 +725,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataFilter)
+            await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataFilter)
                     .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
                     .ObjectId(info.InputTypeViewId)
-                    .ObjectType(EnumObjectType.InputTypeView)
                     .JsonData(new { inputTypeViewId })
                     .CreateLog();
 
@@ -746,10 +742,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var info = _mapper.Map<InputTypeGroup>(model);
             await _accountancyDBContext.InputTypeGroup.AddAsync(info);
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataGroup)
                     .MessageResourceFormatDatas(info.InputTypeGroupName)
                     .ObjectId(info.InputTypeGroupId)
-                    .ObjectType(EnumObjectType.InputTypeGroup)
                     .JsonData(model)
                     .CreateLog();
 
@@ -765,10 +760,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper.Map(model, info);
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataGroup)
                    .MessageResourceFormatDatas(info.InputTypeGroupName)
                    .ObjectId(info.InputTypeGroupId)
-                   .ObjectType(EnumObjectType.InputTypeGroup)
                    .JsonData(model)
                    .CreateLog();
 
@@ -784,10 +778,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             info.IsDeleted = true;
 
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataGroup)
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataGroup)
                    .MessageResourceFormatDatas(info.InputTypeGroupName)
                    .ObjectId(info.InputTypeGroupId)
-                   .ObjectType(EnumObjectType.InputTypeGroup)
                    .JsonData(new { inputTypeGroupId })
                    .CreateLog();
 
@@ -908,10 +901,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputArea)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputArea)
                    .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
                    .CreateLog();
                 return inputArea.InputAreaId;
@@ -969,10 +961,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputArea)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputArea)
                    .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
                    .CreateLog();
                 return true;
@@ -1002,10 +993,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputArea.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
-            await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputArea)
+            await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputArea)
                    .MessageResourceFormatDatas(inputArea.Title)
                    .ObjectId(inputArea.InputAreaId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(inputArea)
                    .CreateLog();
             return true;
@@ -1300,10 +1290,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
                    .MessageResourceFormatDatas(inputTypeInfo.Title)
                    .ObjectId(inputTypeId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(fields)
                    .CreateLog();
 
@@ -1337,10 +1326,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.CreateInputField)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputField)
                    .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -1377,10 +1365,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
                    .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(data)
                    .CreateLog();
                 return data;
@@ -1420,10 +1407,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _objActivityLogFacade.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputField)
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputField)
                    .MessageResourceFormatDatas(inputField.Title)
                    .ObjectId(inputField.InputFieldId)
-                   .ObjectType(EnumObjectType.InputType)
                    .JsonData(inputField)
                    .CreateLog();
                 return true;

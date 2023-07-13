@@ -278,6 +278,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>StepActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Manafacturing\Step\OutsourceStepRequestActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>OutsourceStepRequestActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Manafacturing\Step\StepValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -1096,6 +1101,10 @@
     <EmbeddedResource Update="Manafacturing\Production\Step\StepActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>StepActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Manafacturing\Step\OutsourceStepRequestActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>OutsourceStepRequestActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.en-US.resx">
       <LastGenOutput>StepValidationMessage.en-US.Designer.cs</LastGenOutput>

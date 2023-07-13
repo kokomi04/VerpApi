@@ -79,9 +79,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Declare)
-                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"),consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate,consumMaterial?.ToDate)
                    .ObjectId(consumMaterial.ProductionConsumMaterialId)
-                   .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
                    {
                        departmentId,
@@ -171,9 +170,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Update)
-                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"),consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate,consumMaterial?.ToDate)
                    .ObjectId(productionConsumMaterialId)
-                   .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
                    {
                        productionConsumMaterialId,
@@ -215,9 +213,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas(consumMaterial?.FromDate?.ToString("dd/MM/yyyy"), consumMaterial?.ToDate?.ToString("dd/MM/yyyy"))
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate, consumMaterial?.ToDate)
                    .ObjectId(productionConsumMaterialId)
-                   .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
                    {
                        productionConsumMaterialId,
@@ -245,7 +242,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.DeleteConsumMaterial)
                    .MessageResourceFormatDatas(objectId)
                    .ObjectId(objectId)
-                   .ObjectType(EnumObjectType.ProductionConsumMaterial)
                    .JsonData(new
                    {
                        departmentId,

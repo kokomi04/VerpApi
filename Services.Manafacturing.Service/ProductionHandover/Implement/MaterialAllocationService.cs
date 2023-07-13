@@ -107,7 +107,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await _objActivityLogFacade.LogBuilder(() => MaterialAllocationActivityLogMessage.Update)
                    .MessageResourceFormatDatas()
                    .ObjectId(productionOrderId)
-                   .ObjectType(EnumObjectType.MaterialAllocation)
                    .JsonData(data)
                    .CreateLog();
 

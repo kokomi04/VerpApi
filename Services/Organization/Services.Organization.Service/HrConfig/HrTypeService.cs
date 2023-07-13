@@ -55,7 +55,9 @@ namespace VErp.Services.Organization.Service.HrConfig
         private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
 
         private readonly ILogger _logger;
-        private readonly ObjectActivityLogFacade _objActivityLogFacade;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrGlobalSetting;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IHrActionConfigService _hrActionConfigService;
@@ -74,7 +76,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             _organizationDBContext = organizationDBContext;
             _hrActionConfigService = hrActionConfigService;
             _logger = logger;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ActionButton);
+            _objActivityLogFacadeHrType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrType);
+            _objActivityLogFacadeHrGlobalSetting = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeGlobalSetting);
+            _objActivityLogFacadeHrTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeView);
             _roleHelperService = roleHelperService;
         }
 
@@ -246,10 +250,9 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrType)
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.CreateHrType)
                    .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -412,10 +415,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Create)
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Create)
                    .MessageResourceFormatDatas(cloneType.Title)
                    .ObjectId(cloneType.HrTypeId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(cloneType)
                    .CreateLog();
 
@@ -487,10 +489,9 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Update)
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Update)
                    .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(data)
                    .CreateLog();
 
@@ -527,10 +528,9 @@ namespace VErp.Services.Organization.Service.HrConfig
                 _logger.LogError(ex, $"HrTypeService: DeleteHrType({hrTypeId})");
             }
 
-            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.Delete)
+            await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(hrType.Title)
                    .ObjectId(hrType.HrTypeId)
-                   .ObjectType(EnumObjectType.HrType)
                    .JsonData(hrType)
                    .CreateLog();
             return true;
@@ -568,9 +568,8 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrConfig)
+                await _objActivityLogFacadeHrGlobalSetting.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrConfig)
                    .ObjectId(0)
-                   .ObjectType(EnumObjectType.HrTypeGlobalSetting)
                    .JsonData(data)
                    .CreateLog();
 
@@ -678,10 +677,9 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFilter)
+                await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFilter)
                    .MessageResourceFormatDatas(info.HrTypeViewName,hrTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
-                   .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(model)
                    .CreateLog();
 
@@ -721,10 +719,9 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFilter)
+                await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFilter)
                    .MessageResourceFormatDatas(info.HrTypeViewName,inputTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
-                   .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(model)
                    .CreateLog();
                 return true;
@@ -753,10 +750,9 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrFilter)
+            await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrFilter)
                    .MessageResourceFormatDatas(info.HrTypeViewName, inputTypeInfo.Title)
                    .ObjectId(info.HrTypeViewId)
-                   .ObjectType(EnumObjectType.HrTypeView)
                    .JsonData(new { hrTypeViewId })
                    .CreateLog();
 

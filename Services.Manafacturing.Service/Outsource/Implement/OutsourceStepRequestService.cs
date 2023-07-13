@@ -330,10 +330,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await SyncInfoForProductionProcess(requestModel.ProductionProcessOutsource, request.OutsourceStepRequestId);
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => StepValidationMessage.Update)
+                await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.Update)
                    .MessageResourceFormatDatas(request.OutsourceStepRequestId)
                    .ObjectId(request.OutsourceStepRequestId)
-                   .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(requestModel)
                    .CreateLog();
 
@@ -430,10 +429,9 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => StepValidationMessage.Delete)
+                await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(request.OutsourceStepRequestId)
                    .ObjectId(request.OutsourceStepRequestId)
-                   .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(request)
                    .CreateLog();
 
@@ -734,10 +732,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => ActionButtonActivityLogMessage.Create)
-                   .MessageResourceFormatDatas($"Thêm mới yêu cầu gia công công đoạn")
+                await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.CreateRequest)
                    .ObjectId(entityRequest.OutsourceStepRequestId)
-                   .ObjectType(EnumObjectType.OutsourceRequest)
                    .JsonData(requestModel)
                    .CreateLog();
 
