@@ -859,7 +859,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 _manufacturingDBContext.SaveChanges();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
-                   .MessageResourceFormatDatas(productOrder.ProductionOrderCode)
+                   .MessageResourceFormatDatas(productOrder?.ProductionOrderCode)
                    .ObjectId(productionOrderId)
                    .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
                    .CreateLog();
@@ -978,7 +978,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 };
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
-                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+                    .MessageResourceFormatDatas(productionOrder?.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .JsonData(logObj)
                    .CreateLog();

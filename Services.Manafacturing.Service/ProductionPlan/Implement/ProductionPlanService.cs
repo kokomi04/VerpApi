@@ -201,7 +201,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
                     var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
                     await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Update)
-                            .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+                            .MessageResourceFormatDatas(productionOrder?.ProductionOrderCode)
                             .ObjectId(productionOrderDetail.ProductionOrderId)
                             .JsonData(data)
                             .CreateLog();
