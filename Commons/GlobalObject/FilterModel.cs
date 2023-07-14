@@ -80,14 +80,14 @@ namespace VErp.Commons.GlobalObject
                 {
                     var fieldName = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.FieldName).ToLower())?.Value?.ToString();
                     var ope = props.First(c => c.Name.ToLower() == nameof(SingleClause.Operator).ToLower()).Value.ToString();
-                    var value = props.First(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower()).Value;
+                    var value = props.FirstOrDefault(c => c.Name.ToLower() == nameof(SingleClause.Value).ToLower())?.Value;
                     var dataType = props.First(c => c.Name.ToLower() == nameof(SingleClause.DataType).ToLower()).Value.ToString();
                     resultClause = new SingleClause
                     {
                         DataType = (EnumDataType)int.Parse(dataType),
                         FieldName = fieldName,
                         Operator = (EnumOperator)int.Parse(ope),
-                        Value = value.ToObject<object>()
+                        Value = value?.ToObject<object>()
                     };
                 }
                 else if (isArray)
