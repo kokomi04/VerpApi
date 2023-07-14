@@ -214,9 +214,9 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
-                               .MessageResourceFormatDatas(models.Select(x=>x.ProductSemiId))
+                               .MessageResourceFormatDatas(results)
                                .ObjectId(0)
-                               .JsonData(models.Select(x => x.ProductSemiId))
+                               .JsonData(results)
                                .CreateLog();
                 return results.ToArray();
 
