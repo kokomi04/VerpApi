@@ -430,6 +430,15 @@ namespace VErp.Services.Master.Service.Config.Implement
                         targetObjectName: hrType.Title,
                         fieldName: areaField.HrAreaFieldTitle)
                     );
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.Organization,
+                        targeObjectTypeId: EnumObjectType.HrTypeRow,
+                        configObjectTypeId: EnumObjectType.HrArea,
+                        configObjectId: areaField.HrAreaId,
+                        targetObjectName: hrType.Title,
+                        fieldName: areaField.HrAreaTitle)
+                    );
                 }
             }
 

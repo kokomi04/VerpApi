@@ -66,7 +66,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         {
             _logger = logger;
             _mapper = mapper;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrAreaField);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrArea);
             _organizationDBContext = organizationDBContext;
             _categoryHelperService = categoryHelperService;
             _customGenCodeHelperService = customGenCodeHelperService;

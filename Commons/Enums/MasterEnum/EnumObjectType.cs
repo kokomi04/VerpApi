@@ -388,7 +388,7 @@ namespace VErp.Commons.Enums.MasterEnum
         HrTypeGlobalSetting = 1038,
         [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
         HrAreaField = 1039,
-
+        
         [Description("Dòng chứng từ hành chính nhân sự")]
         HrTypeRow = 1040,
 
@@ -398,6 +398,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ hành chính nhân sự")]
         HrBill = 1042,
 
+        [Description("Vùng thông tin chứng từ hành chính nhân sự")]
+        HrArea = 1043,
 
         [Description("Cấu hình liên kết bảng lương")]
         SalaryRefTable = 10004200,

@@ -63,7 +63,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
-                   .MessageResourceFormatDatas(productSemiEntity.Title)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .JsonData(model)
                    .CreateLog();
@@ -97,7 +97,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.DeleteSemi)
-                   .MessageResourceFormatDatas(productSemiEntity.Title)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .JsonData(productSemiEntity)
                    .CreateLog();
@@ -171,7 +171,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
-                   .MessageResourceFormatDatas(productSemiEntity.Title)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
                    .ObjectId(productSemiEntity.ProductSemiId)
                    .JsonData(productSemiEntity)
                    .CreateLog();
@@ -206,18 +206,18 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                         }
 
                         var lsConversionEntity = _mapper.Map<ICollection<ProductSemiConversion>>(model.ProductSemiConversions);
-                        await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
-                               .MessageResourceFormatDatas(model.Title)
-                               .ObjectId(0)
-                               .JsonData(model)
-                               .CreateLog();
+                        
                         await _manuDBContext.ProductSemiConversion.AddRangeAsync(lsConversionEntity);
                         await _manuDBContext.SaveChangesAsync();
                     }
                 }
 
                 await trans.CommitAsync();
-
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
+                               .MessageResourceFormatDatas(models.Select(x=>x.ProductSemiId))
+                               .ObjectId(0)
+                               .JsonData(models.Select(x => x.ProductSemiId))
+                               .CreateLog();
                 return results.ToArray();
 
             }
@@ -250,11 +250,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                                 _mapper.Map(modify, conversion);
                             else conversion.IsDeleted = true;
                         }
-                        await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
-                                .MessageResourceFormatDatas(model.Title)
-                                .ObjectId(0)
-                                .JsonData(model)
-                                .CreateLog();
+                        
                         var newConventionEntity = _mapper.Map<IList<ProductSemiConversion>>(model.ProductSemiConversions.Where(x => x.ProductSemiConversionId == 0));
                         await _manuDBContext.ProductSemiConversion.AddRangeAsync(newConventionEntity);
                     }
@@ -264,8 +260,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
+                                .MessageResourceFormatDatas(models.Select(x=> x.ProductSemiId))
+                                .ObjectId(0)
+                                .JsonData(models.Select(x => x.ProductSemiId))
+                                .CreateLog();
 
-                
                 return true;
             }
             catch (Exception ex)

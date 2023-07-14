@@ -60,7 +60,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             _accountancyDBContext = accountancyDBContext;
             _currentContextService = currentContextService;
-            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(inputTypeObjectTypeId);
+            _inputDataActivityLog = activityLogService.CreateObjectTypeActivityLog(InputBillObjectTypeId);
         }
 
         public override async Task<List<NonCamelCaseDictionary>> ExecActionButton(int actionButtonId, int billTypeObjectId, long billId, BillInfoModel data)
