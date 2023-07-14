@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Manafacturing.Step {
+namespace Verp.Resources.Organization.Salary {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Manafacturing.Step {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class OutsourceStepRequestActivityLogMessage {
+    public class SalaryRefTableActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal OutsourceStepRequestActivityLogMessage() {
+        internal SalaryRefTableActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Manafacturing.Step {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Manafacturing.Step.OutsourceStepRequestActivityLogMessage", typeof(OutsourceStepRequestActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Organization.Salary.SalaryRefTableActivityLogMessage", typeof(SalaryRefTableActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,7 +61,7 @@ namespace Verp.Resources.Manafacturing.Step {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới yêu cầu gia công công đoạn {0}.
+        ///   Looks up a localized string similar to Thêm mới bảng liên kết {0} vào bảng lương.
         /// </summary>
         public static string Create {
             get {
@@ -70,7 +70,7 @@ namespace Verp.Resources.Manafacturing.Step {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa yêu cầu gia công công đoạn {0}.
+        ///   Looks up a localized string similar to Xóa bảng liên kết {0} khỏi bảng lương.
         /// </summary>
         public static string Delete {
             get {
@@ -79,7 +79,7 @@ namespace Verp.Resources.Manafacturing.Step {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật yêu cầu gia công công đoạn {0}.
+        ///   Looks up a localized string similar to Cập nhật bảng liên kết {0} vào bảng lương.
         /// </summary>
         public static string Update {
             get {

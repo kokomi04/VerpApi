@@ -105,7 +105,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
                 await _objActivityLogFacade.LogBuilder(() => MaterialAllocationActivityLogMessage.Update)
-                   .MessageResourceFormatDatas()
+                   .MessageResourceFormatDatas(productionOrderCode)
                    .ObjectId(productionOrderId)
                    .JsonData(data)
                    .CreateLog();

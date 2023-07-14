@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.Salary;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -42,7 +43,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             await _organizationDBContext.SalaryRefTable.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Thêm mới bảng liên kết {model.RefTableCode} vào bảng lương", model.JsonSerialize());
+            await _salaryRefTableActivityLog.LogBuilder(() => SalaryRefTableActivityLogMessage.Create)
+                .MessageResourceFormatDatas(model.RefTableCode)
+                .ObjectId(info.SalaryRefTableId)
+                .JsonData(info)
+                .CreateLog();
             return info.SalaryRefTableId;
         }
 
@@ -60,7 +65,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             _organizationDBContext.SalaryRefTable.Remove(info);
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Xóa bảng liên kết {info.RefTableCode} khỏi bảng lương", info);
+            await _salaryRefTableActivityLog.LogBuilder(() => SalaryRefTableActivityLogMessage.Delete)
+                .MessageResourceFormatDatas(info.RefTableCode)
+                .ObjectId(info.SalaryRefTableId)
+                .JsonData(info)
+                .CreateLog();
             return true;
         }
 
@@ -86,7 +95,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             _mapper.Map(model, info);
             info.SalaryRefTableId = salaryRefTableId;
             await _organizationDBContext.SaveChangesAsync();
-            await _salaryRefTableActivityLog.CreateLog(info.SalaryRefTableId, $"Cập nhật bảng liên kết {model.RefTableCode} vào bảng lương", model);
+            await _salaryRefTableActivityLog.LogBuilder(() => SalaryRefTableActivityLogMessage.Update)
+                .MessageResourceFormatDatas(model.RefTableCode)
+                .ObjectId(info.SalaryRefTableId)
+                .JsonData(model)
+                .CreateLog();
             return true;
         }
 

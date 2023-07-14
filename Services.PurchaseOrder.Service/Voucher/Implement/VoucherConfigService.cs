@@ -109,7 +109,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 trans.Commit();
 
                 await _objActivityLogFacadeInputType.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherConfig)
-                   .ObjectId(0)
+                    .ObjectId(0)
                    .JsonData(data)
                    .CreateLog();
                 return true;

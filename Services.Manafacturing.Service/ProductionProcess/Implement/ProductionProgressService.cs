@@ -51,7 +51,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             _materialAllocationService = materialAllocationService;
             _productionOrderService = productionOrderService;
             _manufacturingDBContext = manufacturingDBContext;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionProcess);
             _mapper = mapper;
             _logger = logger;
             _productionAssignmentService = productionAssignmentService;

@@ -18,6 +18,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>AccountancyBillActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Accountancy\InputData\InputActionExecActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>InputActionExecActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Accountancy\InputData\InputDataValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -503,6 +508,11 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>DepartmentCalendarValidationMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\HrAction\HrActionExecActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>HrActionExecActivityLogMessage.resx</DependentUpon>
+    </Compile>
     <Compile Update="Organization\HrBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -557,6 +567,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>SalaryPeriodAdditionTypeActivityLogMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="Organization\Salary\SalaryRefTableActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SalaryRefTableActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="Organization\Salary\Validation\SalaryFieldValidationMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -702,6 +717,11 @@
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
       <DependentUpon>PurchasingSuggestValidationMessage.resx</DependentUpon>
+    </Compile>
+    <Compile Update="PurchaseOrder\Voucher\VoucherActionExecActivityLogMessage.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>VoucherActionExecActivityLogMessage.resx</DependentUpon>
     </Compile>
     <Compile Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
@@ -893,6 +913,10 @@
     <EmbeddedResource Update="Accountancy\InputData\AccountancyBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>AccountancyBillActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Accountancy\InputData\InputActionExecActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>InputActionExecActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Accountancy\InputData\InputDataValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1106,10 +1130,6 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>OutsourceStepRequestActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.en-US.resx">
-      <LastGenOutput>StepValidationMessage.en-US.Designer.cs</LastGenOutput>
-      <Generator>PublicResXFileCodeGenerator</Generator>
-    </EmbeddedResource>
     <EmbeddedResource Update="Manafacturing\Step\StepValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>StepValidationMessage.Designer.cs</LastGenOutput>
@@ -1286,6 +1306,10 @@
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>DepartmentCalendarValidationMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Update="Organization\HrAction\HrActionExecActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>HrActionExecActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Update="Organization\HrBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>HrBillActivityLogMessage.Designer.cs</LastGenOutput>
@@ -1333,6 +1357,10 @@
     <EmbeddedResource Update="Organization\Salary\SalaryPeriodAdditionTypeActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>SalaryPeriodAdditionTypeActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\Salary\SalaryRefTableActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>SalaryRefTableActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\Salary\Validation\SalaryFieldValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
@@ -1461,6 +1489,10 @@
     <EmbeddedResource Update="PurchaseOrder\Suggest\PurchasingSuggestValidationMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>PurchasingSuggestValidationMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherActionExecActivityLogMessage.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>VoucherActionExecActivityLogMessage.Designer.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Update="PurchaseOrder\Voucher\VoucherBillActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>

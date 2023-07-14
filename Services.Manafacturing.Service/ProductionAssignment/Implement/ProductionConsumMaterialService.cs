@@ -236,11 +236,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                          && sd.ObjectId == objectId
                                          select sd).ToList();
 
+            var productOders = _manufacturingDBContext.ProductionOrder.FirstOrDefault(s => s.ProductionOrderId == productionOrderId);
             foreach (var consumMaterialDetail in consumMaterialDetails)
             {
                 consumMaterialDetail.IsDeleted = true;
                 await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.DeleteConsumMaterial)
-                   .MessageResourceFormatDatas(objectId)
+                   .MessageResourceFormatDatas(productOders?.ProductionOrderCode)
                    .ObjectId(objectId)
                    .JsonData(new
                    {

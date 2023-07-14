@@ -111,7 +111,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.CreateProcessMold)
-                   .MessageResourceFormatDatas(process.ProductionProcessMoldId)
+                   .MessageResourceFormatDatas(process.Title)
                    .ObjectId(process.ProductionProcessMoldId)
                    .JsonData(model)
                    .CreateLog();
@@ -183,7 +183,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcessMold)
-                   .MessageResourceFormatDatas(productionProcessMoldId)
+                   .MessageResourceFormatDatas(model.Title)
                    .ObjectId(productionProcessMoldId)
                    .JsonData(model)
                    .CreateLog();
@@ -219,7 +219,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.DeleteProcessMold)
-                   .MessageResourceFormatDatas(productionProcessMoldId)
+                   .MessageResourceFormatDatas(process.Title)
                    .ObjectId(productionProcessMoldId)
                    .JsonData(process)
                    .CreateLog();

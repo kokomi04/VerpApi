@@ -637,9 +637,16 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.Add(
              GetObjectGenCodeMappingTypeModel(
              moduleTypeId: EnumModuleType.Manufacturing,
-             targeObjectTypeId: EnumObjectType.OutsourceRequest,
-             fieldName: "Mã yêu cầu gia công")
+             targeObjectTypeId: EnumObjectType.OutsourceRequestPart,
+             fieldName: "Mã yêu cầu gia công chi tiết")
             );
+
+            result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Manufacturing,
+               targeObjectTypeId: EnumObjectType.OutsourceRequestStep,
+               fieldName: "Mã yêu cầu gia công công đoạn")
+              );
 
             result.Add(
                GetObjectGenCodeMappingTypeModel(

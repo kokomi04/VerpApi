@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Organization.HrAction;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -85,8 +86,11 @@ namespace VErp.Services.Organization.Service.HrConfig
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
 
-            await _hrDataActivityLog.CreateLog(billId, logMessage, data, (EnumActionType)action.ActionTypeId, false, null, null, null, hrTypeId);
-
+            await _hrDataActivityLog.LogBuilder(() => HrActionExecActivityLogMessage.ExecActionButton)
+                .MessageResourceFormatDatas(action.Title, billCode)
+                .ObjectId(billId)
+                .JsonData(data)
+                .CreateLog();
             return result;
         }
 

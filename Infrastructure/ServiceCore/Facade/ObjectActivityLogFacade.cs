@@ -21,7 +21,7 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         }
 
 
-        public Task<bool> CreateLog(long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null, int? billTypeId = null)
+        public Task<bool> CreateLogV1(long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");

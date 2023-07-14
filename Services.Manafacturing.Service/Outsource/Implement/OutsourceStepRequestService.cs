@@ -54,7 +54,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsourceRequest);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsourceRequestStep);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -331,7 +331,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.Update)
-                   .MessageResourceFormatDatas(request.OutsourceStepRequestId)
+                   .MessageResourceFormatDatas(request.OutsourceStepRequestCode)
                    .ObjectId(request.OutsourceStepRequestId)
                    .JsonData(requestModel)
                    .CreateLog();
@@ -430,7 +430,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas(request.OutsourceStepRequestId)
+                   .MessageResourceFormatDatas(request.OutsourceStepRequestCode)
                    .ObjectId(request.OutsourceStepRequestId)
                    .JsonData(request)
                    .CreateLog();
@@ -655,7 +655,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 CustomGenCodeOutputModel currentConfig = null;
                 string outsourceStepRequestCode = string.Empty;
 
-                currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequest, EnumObjectType.OutsourceRequest, 0, null, outsourceStepRequestCode, DateTime.UtcNow.GetUnix());
+                currentConfig = await _customGenCodeHelperService.CurrentConfig(EnumObjectType.OutsourceRequestStep, EnumObjectType.OutsourceRequestStep, 0, null, outsourceStepRequestCode, DateTime.UtcNow.GetUnix());
                 if (currentConfig == null)
                 {
                     throw new BadRequestException(GeneralCode.ItemNotFound, "Chưa thiết định cấu hình sinh mã");
@@ -732,7 +732,8 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _customGenCodeHelperService.ConfirmCode(currentConfig.CurrentLastValue);
 
                 await trans.CommitAsync();
-                await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.CreateRequest)
+                await _objActivityLogFacade.LogBuilder(() => OutsourceStepRequestActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(entityRequest.OutsourceStepRequestCode)
                    .ObjectId(entityRequest.OutsourceStepRequestId)
                    .JsonData(requestModel)
                    .CreateLog();

@@ -103,7 +103,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHumanResource.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
                 await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas(productionHumanResourceId)
+                   .MessageResourceFormatDatas(productionHumanResource.ProductionStep.Title)
                    .ObjectId(productionHumanResourceId)
                    .JsonData(productionHumanResource)
                    .CreateLog();
@@ -155,7 +155,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 foreach (var item in insertData)
                 {
                     await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(item.ProductionHumanResourceId)
+                   .MessageResourceFormatDatas(item.ProductionStep.Title)
                    .ObjectId(item.ProductionHumanResourceId)
                    .JsonData(data)
                    .CreateLog();
@@ -343,7 +343,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 foreach (var item in insertData)
                 {
                     await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(item.ProductionHumanResourceId)
+                   .MessageResourceFormatDatas(item.ProductionStep.Title)
                    .ObjectId(item.ProductionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)

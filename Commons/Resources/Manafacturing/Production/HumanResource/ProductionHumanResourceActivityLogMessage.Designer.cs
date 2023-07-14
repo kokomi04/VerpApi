@@ -62,7 +62,7 @@ namespace Verp.Resources.Manafacturing.Production.HumanResource {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Tạo thống kê nhân công sản xuất {0}.
+        ///   Looks up a localized string similar to Tạo thống kê nhân công sản xuất cho {0}.
         /// </summary>
         public static string Create {
             get {
@@ -71,7 +71,7 @@ namespace Verp.Resources.Manafacturing.Production.HumanResource {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xoá thống kê nhân công {0}.
+        ///   Looks up a localized string similar to Xoá thống kê nhân công của {0}.
         /// </summary>
         public static string Delete {
             get {
@@ -80,7 +80,7 @@ namespace Verp.Resources.Manafacturing.Production.HumanResource {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật thống kê nhân công sản xuất {0}.
+        ///   Looks up a localized string similar to Cập nhật thống kê nhân công sản xuất cho {0}.
         /// </summary>
         public static string Update {
             get {

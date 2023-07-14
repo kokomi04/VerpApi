@@ -1403,16 +1403,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 
 
                 _manufacturingDBContext.SaveChanges();
-                await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.UpdateStatus)
-                   .MessageResourceFormatDatas(productionOrderId)
-                   .ObjectId(productionOrderId)
-                   .JsonData(assignment)
-                   .CreateLog();
+                
 
                 var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
                 var step = await _manufacturingDBContext.ProductionStep.FirstOrDefaultAsync(s => s.ProductionStepId == assignment.ProductionStepId);
 
                 await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật trạng thái công đoạn {step?.Title}");
+                await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productionOrderInfo?.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(assignment)
+                   .CreateLog();
 
                 return true;
             }

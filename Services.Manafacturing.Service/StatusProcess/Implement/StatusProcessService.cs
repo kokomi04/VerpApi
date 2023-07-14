@@ -828,6 +828,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                    && a.ProductionStepId == productionStepId
                    && a.DepartmentId == departmentId)
                    .FirstOrDefault();
+            var productOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(p => p.ProductionOrderId == productionOrderId);
             if (productionAssignment == null) return false;
 
             if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) return true;
@@ -858,7 +859,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 _manufacturingDBContext.SaveChanges();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
-                   .MessageResourceFormatDatas(productionOrderId)
+                   .MessageResourceFormatDatas(productOrder.ProductionOrderCode)
                    .ObjectId(productionOrderId)
                    .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
                    .CreateLog();
@@ -977,6 +978,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 };
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
+                    .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .JsonData(logObj)
                    .CreateLog();

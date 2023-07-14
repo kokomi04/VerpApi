@@ -133,7 +133,7 @@
     <value>Xóa công đoạn {0} của {1} {2}</value>
   </data>
   <data name="Update" xml:space="preserve">
-    <value>Cập nhập trạng thái lệnh sản xuất khởi tạo</value>
+    <value>Cập nhập trạng thái cho lệnh sản xuất {0}</value>
   </data>
   <data name="UpdateDetail" xml:space="preserve">
     <value>Cập nhật công đoạn {0} của {1} {2}</value>
@@ -145,7 +145,7 @@
     <value>Cập nhật quy trình mẫu {0}</value>
   </data>
   <data name="UpdateStatus" xml:space="preserve">
-    <value>Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất</value>
+    <value>Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất {0}</value>
   </data>
   <data name="UpdateStep" xml:space="preserve">
     <value>Cập nhật vị trí cho các công đoạn</value>

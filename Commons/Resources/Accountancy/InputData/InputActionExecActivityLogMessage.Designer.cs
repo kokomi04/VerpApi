@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Verp.Resources.Manafacturing.Step {
+namespace Verp.Resources.Accountancy.InputData {
     using System;
     
     
@@ -22,14 +22,14 @@ namespace Verp.Resources.Manafacturing.Step {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    public class OutsourceStepRequestActivityLogMessage {
+    public class InputActionExecActivityLogMessage {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal OutsourceStepRequestActivityLogMessage() {
+        internal InputActionExecActivityLogMessage() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace Verp.Resources.Manafacturing.Step {
         public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Manafacturing.Step.OutsourceStepRequestActivityLogMessage", typeof(OutsourceStepRequestActivityLogMessage).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Verp.Resources.Accountancy.InputData.InputActionExecActivityLogMessage", typeof(InputActionExecActivityLogMessage).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,29 +61,11 @@ namespace Verp.Resources.Manafacturing.Step {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Thêm mới yêu cầu gia công công đoạn {0}.
+        ///   Looks up a localized string similar to {0} {1}..
         /// </summary>
-        public static string Create {
+        public static string ExecActionButton {
             get {
-                return ResourceManager.GetString("Create", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Xóa yêu cầu gia công công đoạn {0}.
-        /// </summary>
-        public static string Delete {
-            get {
-                return ResourceManager.GetString("Delete", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Cập nhật yêu cầu gia công công đoạn {0}.
-        /// </summary>
-        public static string Update {
-            get {
-                return ResourceManager.GetString("Update", resourceCulture);
+                return ResourceManager.GetString("ExecActionButton", resourceCulture);
             }
         }
     }

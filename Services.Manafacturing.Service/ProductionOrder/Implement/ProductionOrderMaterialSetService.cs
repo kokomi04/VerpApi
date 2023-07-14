@@ -43,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.MaterialCalc);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;

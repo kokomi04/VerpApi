@@ -124,7 +124,7 @@
     <value>Xóa khai báo vật tư tiêu hao từ ngày {0} đến ngày {1}</value>
   </data>
   <data name="DeleteConsumMaterial" xml:space="preserve">
-    <value>Xóa khai báo vật tư tiêu hao</value>
+    <value>Xóa khai báo vật tư tiêu hao {0}</value>
   </data>
   <data name="Update" xml:space="preserve">
     <value>Cập nhật khai báo vật tư tiêu hao từ ngày {0} đến ngày {1}</value>

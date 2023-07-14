@@ -86,7 +86,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.CreateStep)
-                            .MessageResourceFormatDatas(req.ProductionStepId,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
+                            .MessageResourceFormatDatas(req.ProductionStepCode,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
                             .ObjectId(step.ProductionStepId)
                             .JsonData(req)
                             .CreateLog();
@@ -131,7 +131,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _objActivityLogFacadeStep.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
-                            .MessageResourceFormatDatas(productionStep.ProductionStepId,((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription(),productionStep.ContainerId)
+                            .MessageResourceFormatDatas(productionStep.ProductionStepCode,((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription(),productionStep.ContainerId)
                             .ObjectId(productionStep.ProductionStepId)
                             .JsonData(productionStep)
                             .CreateLog();
@@ -941,7 +941,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await trans.CommitAsync();
 
                     await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateDetail)
-                            .MessageResourceFormatDatas(sProductionStep.ProductionStepId,((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription(),sProductionStep.ContainerId)
+                            .MessageResourceFormatDatas(sProductionStep.ProductionStepCode,((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription(),sProductionStep.ContainerId)
                             .ObjectId(sProductionStep.ProductionStepId)
                             .JsonData(req)
                             .CreateLog();
@@ -1041,7 +1041,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
 
             await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.Create)
-                            .MessageResourceFormatDatas(req.ProductionStepId,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
+                            .MessageResourceFormatDatas(req.ProductionStepCode,req.ContainerTypeId.GetEnumDescription(),req.ContainerId)
                             .ObjectId(stepGroup.ProductionStepId)
                             .JsonData(req)
                             .CreateLog();

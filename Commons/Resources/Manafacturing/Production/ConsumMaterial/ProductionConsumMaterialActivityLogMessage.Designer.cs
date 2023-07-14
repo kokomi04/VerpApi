@@ -80,7 +80,7 @@ namespace Verp.Resources.Manafacturing.Production.ConsumMaterial {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Xóa khai báo vật tư tiêu hao.
+        ///   Looks up a localized string similar to Xóa khai báo vật tư tiêu hao {0}.
         /// </summary>
         public static string DeleteConsumMaterial {
             get {

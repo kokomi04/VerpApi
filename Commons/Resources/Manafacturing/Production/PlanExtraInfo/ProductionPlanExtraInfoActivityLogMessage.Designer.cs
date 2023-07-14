@@ -62,7 +62,7 @@ namespace Verp.Resources.Manafacturing.Production.PlanExtraInfo {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật thông tin thêm kế hoạch.
+        ///   Looks up a localized string similar to Cập nhật thông tin thêm {0} kế hoạch.
         /// </summary>
         public static string Update {
             get {

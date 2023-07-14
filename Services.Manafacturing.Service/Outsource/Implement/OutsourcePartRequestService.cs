@@ -50,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , IProductBomHelperService productBomHelperService, IPurchaseOrderHelperService purchaseOrderHelperService, IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsourceRequestPart);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -111,7 +111,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 trans.Commit();
                 await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(request.OutsourcePartRequestId)
+                   .MessageResourceFormatDatas(request.OutsourcePartRequestCode)
                    .ObjectId(request.OutsourcePartRequestId)
                    .JsonData(request)
                    .CreateLog();
@@ -225,7 +225,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
 
                 trans.Commit();
                 await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Update)
-                   .MessageResourceFormatDatas(model.OutsourcePartRequestId)
+                   .MessageResourceFormatDatas(model.OutsourcePartRequestCode)
                    .ObjectId(model.OutsourcePartRequestId)
                    .JsonData(request)
                    .CreateLog();
@@ -625,7 +625,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
-                .SetConfig(EnumObjectType.OutsourceRequest)
+                .SetConfig(EnumObjectType.OutsourceRequestPart)
                 .SetConfigData(outsourcePartRequestId ?? 0, DateTime.UtcNow.GetUnix())
                 .TryValidateAndGenerateCode(_manufacturingDBContext.OutsourcePartRequest, model.OutsourcePartRequestCode, (s, code) => s.OutsourcePartRequestId != outsourcePartRequestId && s.OutsourcePartRequestCode == code);
 

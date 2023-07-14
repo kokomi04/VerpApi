@@ -56,7 +56,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 trans.Commit();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionPlanExtraInfoActivityLogMessage.Update)
-                   .MessageResourceFormatDatas()
+                   .MessageResourceFormatDatas(data?.Count)
                    .ObjectId(monthPlanId)
                    .JsonData(data)
                    .CreateLog();

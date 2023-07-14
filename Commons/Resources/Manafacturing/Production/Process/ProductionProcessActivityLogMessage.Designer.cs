@@ -107,7 +107,7 @@ namespace Verp.Resources.Manafacturing.Production.Process {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhập trạng thái lệnh sản xuất khởi tạo.
+        ///   Looks up a localized string similar to Cập nhập trạng thái cho lệnh sản xuất {0}.
         /// </summary>
         public static string Update {
             get {
@@ -143,7 +143,7 @@ namespace Verp.Resources.Manafacturing.Production.Process {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất.
+        ///   Looks up a localized string similar to Cập nhập trạng thái phân công sản xuất cho lệnh sản xuất {0}.
         /// </summary>
         public static string UpdateStatus {
             get {
