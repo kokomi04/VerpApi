@@ -10,19 +10,22 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Accountancy.InputConfig;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Accountancy.Model.Input;
+using static NPOI.HSSF.UserModel.HeaderFooter;
 
 namespace VErp.Services.Accountancy.Service.Input.Implement
 {
@@ -79,7 +82,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private const string INPUTVALUEROW_TABLE = AccountantConstants.INPUTVALUEROW_TABLE;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeGroup;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeView;
         private readonly IMapper _mapper;
         private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -96,7 +101,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             _accountancyDBContext = accountancyDBContext;
             _logger = inputConfigDependService.Logger;
-            _activityLogService = inputConfigDependService.ActivityLogService;
+            _objActivityLogFacadeInputType = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputType);
+            _objActivityLogFacadeInputTypeGroup = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputTypeGroup);
+            _objActivityLogFacadeInputTypeView = inputConfigDependService.ActivityLogService.CreateObjectTypeActivityLog(EnumObjectType.InputTypeView);
             _mapper = inputConfigDependService.Mapper;
             _customGenCodeHelperService = inputConfigDependService.CustomGenCodeHelperService;
             _httpCategoryHelperService = inputConfigDependService.HttpCategoryHelperService;
@@ -272,7 +279,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Thêm chứng từ {inputType.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
+                    .ObjectId(inputType.InputTypeId)
+                    .JsonData(inputType)
+                    .CreateLog();
 
                 //if (data.MenuStyle != null)
                 //{
@@ -399,7 +410,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 //    await _menuHelperService.CreateMenu(menuStyle.ParentId, false, menuStyle.ModuleId, menuStyle.MenuName, url, param, menuStyle.Icon, menuStyle.SortOrder, menuStyle.IsDisabled);
                 //}
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, cloneType.InputTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputData)
+                    .MessageResourceFormatDatas(cloneType.Title)
+                    .ObjectId(cloneType.InputTypeId)
+                    .JsonData(cloneType)
+                    .CreateLog();
                 return cloneType.InputTypeId;
             }
             catch (Exception ex)
@@ -459,7 +474,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Cập nhật chứng từ {inputType.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
+                    .ObjectId(inputType.InputTypeId)
+                    .JsonData(inputType)
+                    .CreateLog();//.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Cập nhật chứng từ {inputType.Title}", data);
                 return true;
             }
             catch (Exception ex)
@@ -491,7 +510,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             {
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({inputTypeId})");
             }
-            await _activityLogService.CreateLog(EnumObjectType.InputType, inputType.InputTypeId, $"Xóa chứng từ {inputType.Title}", inputType);
+            await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputData)
+                    .MessageResourceFormatDatas(inputType.Title)
+                    .ObjectId(inputType.InputTypeId)
+                    .JsonData(inputType)
+                    .CreateLog();
             return true;
         }
 
@@ -526,8 +549,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ kế toán", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateGeneral)
+                    .ObjectId(0)
+                    .JsonData(data)
+                    .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -628,8 +653,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Tạo bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}", model);
+                await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .ObjectId(info.InputTypeViewId)
+                    .JsonData(model)
+                    .CreateLog();
 
                 return info.InputTypeViewId;
             }
@@ -666,8 +694,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Cập nhật bộ lọc {info.InputTypeViewName} cho chứng từ  {inputTypeInfo.Title}", model);
+                await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .ObjectId(info.InputTypeViewId)
+                    .JsonData(model)
+                    .CreateLog();
 
                 return true;
             }
@@ -694,8 +725,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
             await _accountancyDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputTypeView, info.InputTypeViewId, $"Xóa bộ lọc {info.InputTypeViewName} chứng từ  {inputTypeInfo.Title}", new { inputTypeViewId });
+            await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataFilter)
+                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .ObjectId(info.InputTypeViewId)
+                    .JsonData(new { inputTypeViewId })
+                    .CreateLog();
 
             return true;
 
@@ -708,8 +742,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var info = _mapper.Map<InputTypeGroup>(model);
             await _accountancyDBContext.InputTypeGroup.AddAsync(info);
             await _accountancyDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Thêm nhóm chứng từ {info.InputTypeGroupName}", model);
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataGroup)
+                    .MessageResourceFormatDatas(info.InputTypeGroupName)
+                    .ObjectId(info.InputTypeGroupId)
+                    .JsonData(model)
+                    .CreateLog();
 
             return info.InputTypeGroupId;
         }
@@ -723,8 +760,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             _mapper.Map(model, info);
 
             await _accountancyDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Cập nhật nhóm chứng từ {info.InputTypeGroupName}", model);
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataGroup)
+                   .MessageResourceFormatDatas(info.InputTypeGroupName)
+                   .ObjectId(info.InputTypeGroupId)
+                   .JsonData(model)
+                   .CreateLog();
 
             return true;
         }
@@ -738,8 +778,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             info.IsDeleted = true;
 
             await _accountancyDBContext.SaveChangesAsync();
-
-            await _activityLogService.CreateLog(EnumObjectType.InputTypeGroup, info.InputTypeGroupId, $"Xóa nhóm chứng từ {info.InputTypeGroupName}", new { inputTypeGroupId });
+            await _objActivityLogFacadeInputTypeGroup.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataGroup)
+                   .MessageResourceFormatDatas(info.InputTypeGroupName)
+                   .ObjectId(info.InputTypeGroupId)
+                   .JsonData(new { inputTypeGroupId })
+                   .CreateLog();
 
             return true;
         }
@@ -858,8 +901,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Thêm vùng thông tin {inputArea.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
+                   .ObjectId(inputArea.InputAreaId)
+                   .JsonData(data)
+                   .CreateLog();
                 return inputArea.InputAreaId;
             }
             catch (Exception ex)
@@ -915,8 +961,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputAreaId, $"Cập nhật vùng dữ liệu {inputArea.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
+                   .ObjectId(inputArea.InputAreaId)
+                   .JsonData(data)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -944,7 +993,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             inputArea.IsDeleted = true;
             await _accountancyDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.InputType, inputArea.InputTypeId, $"Xóa vùng chứng từ {inputArea.Title}", inputArea);
+            await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputArea)
+                   .MessageResourceFormatDatas(inputArea.Title)
+                   .ObjectId(inputArea.InputAreaId)
+                   .JsonData(inputArea)
+                   .CreateLog();
             return true;
         }
 
@@ -1237,8 +1290,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputTypeId, $"Cập nhật trường dữ liệu chứng từ {inputTypeInfo.Title}", fields);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                   .MessageResourceFormatDatas(inputTypeInfo.Title)
+                   .ObjectId(inputTypeId)
+                   .JsonData(fields)
+                   .CreateLog();
 
                 return true;
             }
@@ -1270,8 +1326,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Thêm trường dữ liệu chung {inputField.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.CreateInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
+                   .ObjectId(inputField.InputFieldId)
+                   .JsonData(data)
+                   .CreateLog();
                 return data;
             }
             catch (Exception ex)
@@ -1306,8 +1365,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Cập nhật trường dữ liệu chung {inputField.Title}", data);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
+                   .ObjectId(inputField.InputFieldId)
+                   .JsonData(data)
+                   .CreateLog();
                 return data;
             }
             catch (Exception ex)
@@ -1345,7 +1407,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 await UpdateInputValueView();
                 await UpdateInputTableType();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.InputType, inputField.InputFieldId, $"Xóa trường dữ liệu chung {inputField.Title}", inputField);
+                await _objActivityLogFacadeInputType.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputField)
+                   .MessageResourceFormatDatas(inputField.Title)
+                   .ObjectId(inputField.InputFieldId)
+                   .JsonData(inputField)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)

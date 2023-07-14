@@ -1,5 +1,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Report.DashboardConfig;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -18,6 +21,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ReportConfigDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -43,7 +47,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
     public class DashboardConfigService : IDashboardConfigService
     {
         private readonly ReportConfigDBContext _reportConfigContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashTypeGroup;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeDashType;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IRoleHelperService _roleHelperService;
@@ -59,7 +65,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             , IDataProtectionProvider protectionProvider)
         {
             _reportConfigContext = reportConfigContext;
-            _activityLogService = activityLogService;
+            _objActivityLogFacadeDashTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardTypeView);
+            _objActivityLogFacadeDashType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardType);
+            _objActivityLogFacadeDashTypeGroup = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.DashboardTypeGroup);
             _mapper = mapper;
             _logger = logger;
             _roleHelperService = roleHelperService;
@@ -134,7 +142,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Cập nhật bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model);
+                await _objActivityLogFacadeDashTypeView.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardFilter)
+                   .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
+                   .ObjectId(info.DashboardTypeViewId)
+                   .JsonData(model)
+                   .CreateLog();
 
                 return true;
             }
@@ -167,7 +179,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardTypeView, info.DashboardTypeViewId, $"Tạo bộ lọc {info.DashboardTypeViewName} cho biểu đồ báo cáo  {dashboardTypeInfo.DashboardTypeName}", model);
+                await _objActivityLogFacadeDashTypeView.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardFilter)
+                   .MessageResourceFormatDatas(info.DashboardTypeViewName,dashboardTypeInfo.DashboardTypeName)
+                   .ObjectId(info.DashboardTypeViewId)
+                   .JsonData(model)
+                   .CreateLog();
 
                 return true;
             }
@@ -201,7 +217,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.DashboardTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Thêm nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model);
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
+                   .ObjectId(info.DashboardTypeGroupId)
+                   .JsonData(model)
+                   .CreateLog();
 
             return info.DashboardTypeGroupId;
         }
@@ -216,7 +236,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Cập nhật nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", model);
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
+                   .ObjectId(info.DashboardTypeGroupId)
+                   .JsonData(model)
+                   .CreateLog();
 
             return true;
         }
@@ -234,7 +258,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.DashboardTypeGroup, info.DashboardTypeGroupId, $"Xóa nhóm biểu đồ báo cáo {info.DashboardTypeGroupName}", new { dashboardTypeGroupId });
+            await _objActivityLogFacadeDashTypeGroup.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoardGroup)
+                   .MessageResourceFormatDatas(info.DashboardTypeGroupName)
+                   .ObjectId(info.DashboardTypeGroupId)
+                   .JsonData(new { dashboardTypeGroupId })
+                   .CreateLog();
 
             return true;
         }
@@ -302,7 +330,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Thêm biểu đồ báo cáo {dashboard.DashboardTypeName}", data);
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.CreateDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
+                   .ObjectId(dashboard.DashboardTypeId)
+                   .JsonData(data)
+                   .CreateLog();
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.DashboardView, EnumObjectType.DashboardType, dashboard.DashboardTypeId);
 
@@ -341,7 +373,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Cập nhật biểu đồ báo cáo {dashboard.DashboardTypeName}", data);
+
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.UpdateDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
+                   .ObjectId(dashboard.DashboardTypeId)
+                   .JsonData(data)
+                   .CreateLog();
 
                 return true;
             }
@@ -369,7 +406,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.DashboardType, dashboard.DashboardTypeId, $"Xóa biểu đồ báo cáo {dashboard.DashboardTypeName}", dashboard);
+
+                await _objActivityLogFacadeDashType.LogBuilder(() => DashboardConfigActivityLogMessage.DeleteDashBoard)
+                   .MessageResourceFormatDatas(dashboard.DashboardTypeName)
+                   .ObjectId(dashboard.DashboardTypeId)
+                   .JsonData(dashboard)
+                   .CreateLog();
 
                 return true;
             }

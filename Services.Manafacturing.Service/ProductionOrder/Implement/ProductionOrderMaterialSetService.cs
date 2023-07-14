@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.OrderMaterialSet;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -16,6 +19,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -25,7 +29,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
     public class ProductionOrderMaterialSetService : IProductionOrderMaterialSetService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -39,7 +43,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             , IProductHelperService productHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.MaterialCalc);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -145,7 +149,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
             await trans.CommitAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật bảng tính nhu cầu vật tư {productionOrder.ProductionOrderCode}", model);
+            await _objActivityLogFacade.LogBuilder(() => ProductionOrderMaterialSetActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+                   .ObjectId(productionOrder.ProductionOrderId)
+                   .JsonData(model)
+                   .CreateLog();
 
             return true;
         }

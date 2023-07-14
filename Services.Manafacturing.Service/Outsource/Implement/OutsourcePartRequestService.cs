@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.OutsourcePart;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
@@ -16,6 +19,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 //using VErp.Services.Manafacturing.Model.Outsource.Order;
@@ -30,7 +34,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
     public class OutsourcePartRequestService : IOutsourcePartRequestService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
@@ -46,7 +50,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             , IProductBomHelperService productBomHelperService, IPurchaseOrderHelperService purchaseOrderHelperService, IProductionProcessService productionProcessService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.OutsourceRequestPart);
             _logger = logger;
             _mapper = mapper;
             _customGenCodeHelperService = customGenCodeHelperService;
@@ -106,8 +110,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await ctx.ConfirmCode();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, request.OutsourcePartRequestId, $"Thêm mới yêu cầu gia công chi tiết {request.OutsourcePartRequestId}", request);
+                await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(request.OutsourcePartRequestCode)
+                   .ObjectId(request.OutsourcePartRequestId)
+                   .JsonData(request)
+                   .CreateLog();
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
 
@@ -217,8 +224,11 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.OutsourceRequest, model.OutsourcePartRequestId, $"Cập nhật yêu cầu gia công chi tiết {model.OutsourcePartRequestId}", model);
+                await _objActivityLogFacade.LogBuilder(() => OutsourcePartRequestActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(model.OutsourcePartRequestCode)
+                   .ObjectId(model.OutsourcePartRequestId)
+                   .JsonData(request)
+                   .CreateLog();
 
                 await _productionProcessService.UpdateProductionOrderProcessStatus(model.ProductionOrderId.GetValueOrDefault());
                 return true;
@@ -615,7 +625,7 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             var ctx = _customGenCodeHelperService.CreateGenerateCodeContext();
 
             var code = await ctx
-                .SetConfig(EnumObjectType.OutsourceRequest)
+                .SetConfig(EnumObjectType.OutsourceRequestPart)
                 .SetConfigData(outsourcePartRequestId ?? 0, DateTime.UtcNow.GetUnix())
                 .TryValidateAndGenerateCode(_manufacturingDBContext.OutsourcePartRequest, model.OutsourcePartRequestCode, (s, code) => s.OutsourcePartRequestId != outsourcePartRequestId && s.OutsourcePartRequestCode == code);
 

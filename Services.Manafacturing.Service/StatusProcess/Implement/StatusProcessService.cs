@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Process;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -17,6 +20,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
@@ -29,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
     public abstract class StatusProcessService : IStatusProcessService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         public StatusProcessService(ManufacturingDBContext manufacturingDB
@@ -38,7 +42,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionAssignment);
             _logger = logger;
             _mapper = mapper;
         }
@@ -802,7 +806,11 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrder.ProductionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderCode}, {description}", updateAssignments);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas( productionOrderCode, description)
+                   .ObjectId(productionOrder.ProductionOrderId)
+                   .JsonData(updateAssignments)
+                   .CreateLog();
 
             }
             catch (Exception ex)
@@ -820,6 +828,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                    && a.ProductionStepId == productionStepId
                    && a.DepartmentId == departmentId)
                    .FirstOrDefault();
+            var productOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(p => p.ProductionOrderId == productionOrderId);
             if (productionAssignment == null) return false;
 
             if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) return true;
@@ -848,7 +857,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 productionAssignment.AssignedProgressStatus = (int)status;
                 productionAssignment.IsManualFinish = false;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", _mapper.Map<ProductionAssignmentModel>(productionAssignment));
+
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productOrder?.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -962,7 +977,11 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     isManual = false
                 };
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất khởi tạo", logObj);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
+                    .MessageResourceFormatDatas(productionOrder?.ProductionOrderCode)
+                   .ObjectId(productionOrder.ProductionOrderId)
+                   .JsonData(logObj)
+                   .CreateLog();
             }
 
             // Đổi trạng thái phân công

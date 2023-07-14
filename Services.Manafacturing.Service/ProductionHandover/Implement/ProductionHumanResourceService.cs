@@ -1,17 +1,21 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.HumanResource;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 
@@ -20,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
     public class ProductionHumanResourceService : IProductionHumanResourceService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -30,7 +34,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionHumanResource);
             _logger = logger;
             _mapper = mapper;
         }
@@ -44,8 +48,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHumanResource.ProductionOrderId = productionOrderId;
                 _manufacturingDBContext.ProductionHumanResource.Add(productionHumanResource);
                 _manufacturingDBContext.SaveChanges();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResource.ProductionHumanResourceId, $"Tạo thống kê nhân công sản xuất", data);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(data.ProductionStepTitle)
+                   .ObjectId(productionHumanResource.ProductionHumanResourceId)
+                   .JsonData(data)
+                   .CreateLog();
                 return _mapper.Map<ProductionHumanResourceModel>(productionHumanResource);
             }
             catch (Exception ex)
@@ -69,8 +76,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 data.ProductionOrderId = productionOrderId;
 
                 _manufacturingDBContext.SaveChanges();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Cập nhật thống kê nhân công sản xuất", data);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(data.ProductionStepTitle)
+                   .ObjectId(productionHumanResourceId)
+                   .JsonData(data)
+                   .CreateLog();
                 return _mapper.Map<ProductionHumanResourceModel>(info);
             }
             catch (Exception ex)
@@ -92,7 +102,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     throw new BadRequestException(GeneralCode.InvalidParams, "Không tồn tại thống kê nhân công");
                 productionHumanResource.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, productionHumanResourceId, $"Xoá thống kê nhân công", productionHumanResource);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(productionHumanResource.ProductionStep.Title)
+                   .ObjectId(productionHumanResourceId)
+                   .JsonData(productionHumanResource)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -140,7 +154,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data);
+                    await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(item.ProductionStep.Title)
+                   .ObjectId(item.ProductionHumanResourceId)
+                   .JsonData(data)
+                   .CreateLog();
                 }
 
                 trans.Commit();
@@ -324,7 +342,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var item in insertData)
                 {
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionHumanResource, item.ProductionHumanResourceId, $"Tạo thống kê nhân công", data);
+                    await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(item.ProductionStep.Title)
+                   .ObjectId(item.ProductionHumanResourceId)
+                   .ObjectType(EnumObjectType.ProductionHumanResource)
+                   .JsonData(data)
+                   .CreateLog();
                 }
 
                 trans.Commit();

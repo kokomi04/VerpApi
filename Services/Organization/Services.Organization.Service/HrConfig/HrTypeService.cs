@@ -1,5 +1,6 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,8 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Organization.HrType;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -18,6 +21,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -51,7 +55,9 @@ namespace VErp.Services.Organization.Service.HrConfig
         private const string HR_TABLE_NAME_PREFIX = OrganizationConstants.HR_TABLE_NAME_PREFIX;
 
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeHrGlobalSetting;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IHrActionConfigService _hrActionConfigService;
@@ -70,7 +76,9 @@ namespace VErp.Services.Organization.Service.HrConfig
             _organizationDBContext = organizationDBContext;
             _hrActionConfigService = hrActionConfigService;
             _logger = logger;
-            _activityLogService = activityLogService;
+            _objActivityLogFacadeHrType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrType);
+            _objActivityLogFacadeHrGlobalSetting = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeGlobalSetting);
+            _objActivityLogFacadeHrTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeView);
             _roleHelperService = roleHelperService;
         }
 
@@ -242,7 +250,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Thêm chứng từ {hrType.Title}", data);
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.CreateHrType)
+                   .MessageResourceFormatDatas(hrType.Title)
+                   .ObjectId(hrType.HrTypeId)
+                   .JsonData(data)
+                   .CreateLog();
 
                 return hrType.HrTypeId;
             }
@@ -403,7 +415,12 @@ namespace VErp.Services.Organization.Service.HrConfig
                 await _organizationDBContext.SaveChangesAsync();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, cloneType.HrTypeId, $"Thêm chứng từ hành chính nhân sự {cloneType.Title}", cloneType);
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Create)
+                   .MessageResourceFormatDatas(cloneType.Title)
+                   .ObjectId(cloneType.HrTypeId)
+                   .JsonData(cloneType)
+                   .CreateLog();
+
                 return cloneType.HrTypeId;
             }
             catch (Exception ex)
@@ -472,7 +489,12 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Cập nhật chứng từ hành chính nhân sự {hrType.Title}", data);
+                await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(hrType.Title)
+                   .ObjectId(hrType.HrTypeId)
+                   .JsonData(data)
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -505,7 +527,12 @@ namespace VErp.Services.Organization.Service.HrConfig
             {
                 _logger.LogError(ex, $"HrTypeService: DeleteHrType({hrTypeId})");
             }
-            await _activityLogService.CreateLog(EnumObjectType.HrType, hrType.HrTypeId, $"Xóa chứng từ hành chính nhân sự {hrType.Title}", hrType);
+
+            await _objActivityLogFacadeHrType.LogBuilder(() => HrTypeActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(hrType.Title)
+                   .ObjectId(hrType.HrTypeId)
+                   .JsonData(hrType)
+                   .CreateLog();
             return true;
         }
 
@@ -541,7 +568,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeGlobalSetting, 0, $"Cập nhật cấu hình chung chứng từ hành chính nhân sự", data);
+                await _objActivityLogFacadeHrGlobalSetting.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrConfig)
+                   .ObjectId(0)
+                   .JsonData(data)
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -646,7 +677,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Tạo bộ lọc {info.HrTypeViewName} cho chứng từ  {hrTypeInfo.Title}", model);
+                await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.CreateHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName,hrTypeInfo.Title)
+                   .ObjectId(info.HrTypeViewId)
+                   .JsonData(model)
+                   .CreateLog();
 
                 return info.HrTypeViewId;
             }
@@ -684,8 +719,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Cập nhật bộ lọc {info.HrTypeViewName} cho chứng từ hành chính nhân sự  {inputTypeInfo.Title}", model);
-
+                await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName,inputTypeInfo.Title)
+                   .ObjectId(info.HrTypeViewId)
+                   .JsonData(model)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -712,7 +750,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeView, info.HrTypeViewId, $"Xóa bộ lọc {info.HrTypeViewName} chứng từ hành chính nhân sự  {inputTypeInfo.Title}", new { hrTypeViewId });
+            await _objActivityLogFacadeHrTypeView.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrFilter)
+                   .MessageResourceFormatDatas(info.HrTypeViewName, inputTypeInfo.Title)
+                   .ObjectId(info.HrTypeViewId)
+                   .JsonData(new { hrTypeViewId })
+                   .CreateLog();
 
             return true;
 

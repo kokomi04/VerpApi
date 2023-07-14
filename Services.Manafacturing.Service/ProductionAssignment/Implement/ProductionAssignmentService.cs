@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,8 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Assignment;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
@@ -18,6 +21,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
@@ -35,7 +39,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
     public class ProductionAssignmentService : StatusProcessService, IProductionAssignmentService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IOrganizationHelperService _organizationHelperService;
@@ -51,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             , IOrganizationHelperService organizationHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService, IProductHelperService productHelperService, IProductionOrderService productionOrderService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionAssignment);
             _logger = logger;
             _mapper = mapper;
             _organizationHelperService = organizationHelperService;
@@ -516,8 +520,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     await trans.CommitAsync();
 
                     var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
-
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderInfo?.ProductionOrderCode}", data);
+                    await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrderInfo?.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(data)
+                   .CreateLog();
 
                     await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
 
@@ -1396,12 +1403,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 
 
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment);
+                
 
                 var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
                 var step = await _manufacturingDBContext.ProductionStep.FirstOrDefaultAsync(s => s.ProductionStepId == assignment.ProductionStepId);
 
                 await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật trạng thái công đoạn {step?.Title}");
+                await _objActivityLogFacade.LogBuilder(() => ProductionAssignmentActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productionOrderInfo?.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(assignment)
+                   .CreateLog();
 
                 return true;
             }

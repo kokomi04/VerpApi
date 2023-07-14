@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.MaterialAllocation;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
@@ -16,6 +19,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
@@ -26,7 +30,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
     public class MaterialAllocationService : IMaterialAllocationService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -40,7 +44,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , IProductHelperService productHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.MaterialAllocation);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;            
@@ -100,8 +104,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 _manufacturingDBContext.SaveChanges();
                 trans.Commit();
-
-                await _activityLogService.CreateLog(EnumObjectType.MaterialAllocation, productionOrderId, $"Cập nhật phân bổ vật tư sản xuât", data);
+                await _objActivityLogFacade.LogBuilder(() => MaterialAllocationActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(productionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(data)
+                   .CreateLog();
 
                 data.MaterialAllocations = await _manufacturingDBContext.MaterialAllocation
                     .Where(ma => ma.ProductionOrderId == productionOrderId)

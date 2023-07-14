@@ -1,15 +1,20 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.SemiConversion;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductSemi;
 using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
@@ -19,7 +24,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
     public class ProductSemiService : IProductSemiService
     {
         private readonly ManufacturingDBContext _manuDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -29,7 +34,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             , IMapper mapper)
         {
             _manuDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi);
             _logger = logger;
             _mapper = mapper;
         }
@@ -56,7 +61,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Tạo mới bán thành phẩm {productSemiEntity.ProductSemiId}", model);
+
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
+                   .ObjectId(productSemiEntity.ProductSemiId)
+                   .JsonData(model)
+                   .CreateLog();
                 return productSemiEntity.ProductSemiId;
 
             }
@@ -85,7 +95,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _manuDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Xóa bán thành phẩm {productSemiEntity.ProductSemiId}", productSemiEntity);
+
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.DeleteSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
+                   .ObjectId(productSemiEntity.ProductSemiId)
+                   .JsonData(productSemiEntity)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -154,7 +169,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 await _manuDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, productSemiEntity.ProductSemiId, $"Cập nhật bán thành phẩm {productSemiEntity.ProductSemiId}", model);
+
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
+                   .MessageResourceFormatDatas(productSemiEntity.ProductSemiId)
+                   .ObjectId(productSemiEntity.ProductSemiId)
+                   .JsonData(productSemiEntity)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -186,13 +206,18 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                         }
 
                         var lsConversionEntity = _mapper.Map<ICollection<ProductSemiConversion>>(model.ProductSemiConversions);
+                        
                         await _manuDBContext.ProductSemiConversion.AddRangeAsync(lsConversionEntity);
                         await _manuDBContext.SaveChangesAsync();
                     }
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Tạo mới bán thành phẩm {results}", results);
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.CreateSemi)
+                               .MessageResourceFormatDatas(results)
+                               .ObjectId(0)
+                               .JsonData(results)
+                               .CreateLog();
                 return results.ToArray();
 
             }
@@ -225,7 +250,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                                 _mapper.Map(modify, conversion);
                             else conversion.IsDeleted = true;
                         }
-
+                        
                         var newConventionEntity = _mapper.Map<IList<ProductSemiConversion>>(model.ProductSemiConversions.Where(x => x.ProductSemiConversionId == 0));
                         await _manuDBContext.ProductSemiConversion.AddRangeAsync(newConventionEntity);
                     }
@@ -235,7 +260,12 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
                 }
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemi, 0, $"Cập nhật bán thành phẩm {models.Select(x => x.ProductSemiId)}", models.Select(x => x.ProductSemiId));
+                await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.UpdateSemi)
+                                .MessageResourceFormatDatas(models.Select(x=> x.ProductSemiId))
+                                .ObjectId(0)
+                                .JsonData(models.Select(x => x.ProductSemiId))
+                                .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
