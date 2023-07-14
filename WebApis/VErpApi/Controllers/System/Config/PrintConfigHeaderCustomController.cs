@@ -18,7 +18,7 @@ namespace VErpApi.Controllers.System.Config
         }
 
         [HttpPut]
-        [Route("{printConfigHeaderId}/rollback")]
+        [Route("{printConfigHeaderCustomId}/rollback")]
         public async Task<bool> RollbackPrintConfigHeaderCustom(int printConfigHeaderCustomId)
         {
             return await _printConfigHeaderCustomService.RollbackPrintConfigHeaderCustom(printConfigHeaderCustomId);
