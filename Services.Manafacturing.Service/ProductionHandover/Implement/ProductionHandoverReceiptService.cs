@@ -87,12 +87,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
 
-            if (fromDate > 0 && toDate > 0)
+            if (fromDate > 0)
             {
                 if (whereCondition.Length > 0)
                     whereCondition.Append(" AND ");
-                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                whereCondition.Append(" v.Date >= @FromDate ");
                 parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+            }
+
+            if (toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" v.Date <= @ToDate ");
                 parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
             }
 
