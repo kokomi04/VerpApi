@@ -293,10 +293,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         {
             IList<ProductionProcessWarningMessage> lsWarning = new List<ProductionProcessWarningMessage>();
 
-            var productionSteps = productionProcess.ProductionSteps.Where(x => x.IsGroup == true && x.IsFinish == false).ToList();
+            var productionStepGroups = productionProcess.ProductionSteps.Where(x => x.IsGroup == true && x.IsFinish == false).ToList();
             var productionStepInOuts = productionProcess.ProductionSteps.Where(x => x.IsGroup == false).ToList();
 
-            if (productionSteps.Count() > 0 && productionSteps.Any(x => !x.StepId.HasValue))
+            if (productionStepGroups.Count() > 0 && productionStepGroups.Any(x => !x.StepId.HasValue))
             {
 
                 lsWarning.Add(new ProductionProcessWarningMessage
@@ -307,7 +307,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 });
             }
 
-            productionSteps.Where(x => x.StepId.HasValue).Join(productionStepInOuts, x => x.ProductionStepId, y => y.ParentId, (x, y) => new
+            productionStepGroups.Where(x => x.StepId.HasValue).Join(productionStepInOuts, x => x.ProductionStepId, y => y.ParentId, (x, y) => new
             {
                 ProductionStep = x,
                 ProductionStepInOutId = y?.ProductionStepId
@@ -324,6 +324,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
             });
 
+            productionStepGroups.ForEach(x =>
+            {
+                if (!productionStepInOuts.Any(t => t.ParentId == x.ProductionStepId))
+                    lsWarning.Add(new ProductionProcessWarningMessage
+                    {
+                        Message = $"Công đoạn \"{x.Title}\" không có công đoạn con nào",
+                        GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
+                        WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
+                    });
+            });
 
             var groupRole = productionProcess.ProductionStepLinkDataRoles.GroupBy(x => x.ProductionStepCode);
 
@@ -331,7 +341,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var p in productionStepInOutNoRoles)
             {
-                var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == p.ParentId);
+                var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepId == p.ParentId);
                 if (step == null || step.IsFinish)
                 {
                     continue;
@@ -339,7 +349,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 lsWarning.Add(new ProductionProcessWarningMessage
                 {
-                    Message = $"Công đoạn {step.Title} có nhóm (đầu ra đầu vào) không có đầu ra đầu vào",
+                    Message = $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra đầu vào",
                     GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
                     WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
                 });
@@ -353,7 +363,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     continue;
                 }
 
-                var step = productionSteps.FirstOrDefault(x => x.ProductionStepId == inOutOfStep.ParentId);
+                var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepId == inOutOfStep.ParentId);
                 if (step == null || step.IsFinish)
                 {
                     continue;
@@ -378,7 +388,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"Công đoạn \"{step.Title}\" có nhóm (đầu ra đầu vào) không có đầu vào",
+                        Message = $"$\"Công đoạn \\\"{{p.Title}}\\\" trong nhóm công đoạn \\\"{{step.Title}}\\\" không có đầu vào",
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
@@ -389,7 +399,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"Công đoạn \"{step.Title}\" có nhóm (đầu ra đầu vào) không có đầu ra",
+                        Message = $"$\"Công đoạn \\\"{{p.Title}}\\\" trong nhóm công đoạn \\\"{{step.Title}}\\\" không có đầu ra",
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
