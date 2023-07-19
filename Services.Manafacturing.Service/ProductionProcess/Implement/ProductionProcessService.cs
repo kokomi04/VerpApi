@@ -1210,6 +1210,44 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 req.ProductionStepLinkDatas.Remove(d);
             }
 
+            var productionStepGroups = req.ProductionSteps.Where(x => x.IsGroup == true).ToList();
+            var productionStepsInGroup = req.ProductionSteps.Where(x => x.IsGroup != true && !x.IsFinish).ToList();
+
+            productionStepGroups.Where(x => x.IsGroup == true).ToList().ForEach(x =>
+            {
+                if (!productionStepsInGroup.Any(t => t.ParentCode == x.ProductionStepCode))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{x.Title}\" không có công đoạn con nào");
+            });
+
+            var groupRolesByStepCode = req.ProductionStepLinkDataRoles.GroupBy(r => r.ProductionStepCode).ToDictionary(r=>r.Key,r=>r.ToList());
+           
+
+            foreach (var p in productionStepsInGroup)
+            {
+                var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepCode == p.ParentCode);
+                if (step == null)
+                {
+                    throw $"Công đoạn cha của công đoạn {p.Title} không tồn tại".BadRequest();
+                }
+
+                if (!groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
+                {
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra đầu vào");
+                }
+                if (groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
+                {
+                    if (!groupRolesByStepCode[p.ProductionStepCode].Any(r=>r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
+                    {
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu vào");
+                    }
+
+                    if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output))
+                    {
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra");
+                    }
+                }
+
+            }
 
             if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
                 throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
