@@ -388,7 +388,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"$\"Công đoạn \\\"{{p.Title}}\\\" trong nhóm công đoạn \\\"{{step.Title}}\\\" không có đầu vào",
+                        Message = $"Công đoạn \"{inOutOfStep.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu vào",
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
@@ -399,7 +399,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 {
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"$\"Công đoạn \\\"{{p.Title}}\\\" trong nhóm công đoạn \\\"{{step.Title}}\\\" không có đầu ra",
+                        Message = $"Công đoạn \"{inOutOfStep.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra",
                         ObjectCode = step.ProductionStepCode,
                         ObjectId = step.ProductionStepId,
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
