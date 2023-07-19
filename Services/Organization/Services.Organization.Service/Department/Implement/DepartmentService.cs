@@ -173,7 +173,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, Clause filters = null)
+        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc,  Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
@@ -195,6 +195,9 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 query = query.Where(d => d.DepartmentCode.Contains(keyword) || d.DepartmentName.Contains(keyword) || d.Description.Contains(keyword));
             }
             query = query.InternalFilter(filters);
+
+            query = query.InternalOrderBy(orderByFieldName, asc);
+
             var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
             {
                 DepartmentId = d.DepartmentId,
