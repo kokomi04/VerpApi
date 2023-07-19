@@ -28,9 +28,17 @@ namespace VErpApi.Controllers.Organization
         [HttpGet]
         [Route("")]
         [GlobalApi]
-        public async Task<PageData<DepartmentModel>> Get([FromQuery] string keyword, [FromQuery] IList<int> departmentIds, [FromQuery] bool? isProduction, [FromQuery] bool? isActived, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<DepartmentModel>> Get(
+            [FromQuery] string keyword, 
+            [FromQuery] IList<int> departmentIds, 
+            [FromQuery] bool? isProduction, 
+            [FromQuery] bool? isActived, 
+            [FromQuery] int page, 
+            [FromQuery] int size,
+            [FromQuery] string orderByFieldName = nameof(DepartmentModel.DepartmentCode),
+            [FromQuery] bool asc = true)
         {
-            return await _departmentService.GetList(keyword, departmentIds, isProduction, isActived, page, size);
+            return await _departmentService.GetList(keyword, departmentIds, isProduction, isActived, page, size, orderByFieldName, asc);
         }
 
 
