@@ -160,9 +160,6 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(50);
-            entity.Property(e => e.TypeSymbolCode)
-                .IsRequired()
-                .HasMaxLength(50);
             entity.Property(e => e.TypeSymbolDescription)
                 .IsRequired()
                 .HasMaxLength(256);
