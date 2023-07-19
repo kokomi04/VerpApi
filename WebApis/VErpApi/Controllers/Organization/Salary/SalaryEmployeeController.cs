@@ -5,6 +5,8 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Organization.Model.Employee;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.Salary;
 
@@ -53,6 +55,14 @@ namespace VErpApi.Controllers.Organization.Salary
         public async Task<bool> Update([FromRoute] int salaryPeriodId, [FromRoute] int salaryGroupId, [FromBody] GroupSalaryEmployeeModel req)
         {
             return await _salaryEmployeeService.Update(salaryPeriodId, salaryGroupId, req);
+        }
+
+        [HttpPost("group/employees")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<NonCamelCaseDictionary>> GetEmployeeInfoFromGroupSalary([FromBody] EmployeeFilterModel req)
+        {
+
+            return await _salaryEmployeeService.GetEmployeeGroupInfo(req.Filters, req.Page, req.Size);
         }
     }
 }
