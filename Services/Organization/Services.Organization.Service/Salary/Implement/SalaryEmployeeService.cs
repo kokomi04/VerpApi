@@ -24,6 +24,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
@@ -52,6 +53,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private const string ADDITION_ALIAS = "pc_va_khau_tru$";
 
+        private const string EMPLOYEE_SALARY_FIELD_NAME = "ho_ten";
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
             ICurrentContextService currentContextService,
             IMapper mapper,
@@ -85,7 +87,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var groups = await _salaryGroupService.GetList();
 
             var (allEmployees, _) = await FilterEmployee(null, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
-
+            
             var employeeGroups = allEmployees
                 .ToDictionary(e =>
                 {
@@ -127,7 +129,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 DuplicatedSalayGroupEmployees = employeeGroups.Values.Where(e => e.SalaryGroupIds.Count > 1).ToList(),
             };
         }
+        public async Task<PageData<NonCamelCaseDictionary>> GetEmployeeGroupInfo(Clause filter, int page, int size)
+        {
+            
+            var(employeesOfGroup, _) = await FilterEmployee(filter, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+            
+            if (employeesOfGroup.Count == 0)
+                throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy nhân viên trong bảng lương");
 
+            var lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).Skip((page - 1) * size).Take(size).ToList();
+
+            return (lstEmployees, employeesOfGroup.Count);
+        }
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> EvalSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel req)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
@@ -1060,6 +1073,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
-
+        
     }
 }
