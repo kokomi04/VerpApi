@@ -44,7 +44,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             await _manuDBContext.SaveChangesAsync();
 
             await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
+                   .MessageResourceFormatDatas(entity.ProductSemi?.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .JsonData(entity)
                    .CreateLog();
@@ -62,7 +62,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             await _manuDBContext.SaveChangesAsync();
 
             await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
+                   .MessageResourceFormatDatas(entity.ProductSemi?.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .ObjectType(EnumObjectType.ProductSemiConversion)
                    .JsonData(entity)
@@ -98,7 +98,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             await _manuDBContext.SaveChangesAsync();
 
             await _objActivityLogFacade.LogBuilder(() => ProductSemiConversionActivityLogMessage.Update)
-                   .MessageResourceFormatDatas(entity.ProductSemi.Title)
+                   .MessageResourceFormatDatas(entity.ProductSemi?.Title)
                    .ObjectId(entity.ProductSemiConversionId)
                    .JsonData(entity)
                    .CreateLog();
