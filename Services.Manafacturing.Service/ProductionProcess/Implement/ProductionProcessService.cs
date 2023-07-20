@@ -1894,7 +1894,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
             var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
-
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
 
             try
@@ -1914,6 +1913,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 //remove outsource link
                 process.ProductionStepLinkDatas = process.ProductionStepLinkDatas.Where(d => d.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.None).ToList();
+
+                // change id and unitId of last step
+                if (process.ContainerTypeId == EnumContainerType.Product)
+                {
+                    var currentProductInfo = await _productHelperService.GetProduct((int)toContainerId);
+                    process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId && p.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product).ToList().ForEach(x =>
+                    {
+                        x.LinkDataObjectId = toContainerId;
+                        x.UnitId = currentProductInfo.UnitId;
+                    });
+                }
 
                 //remove outsource step and outsource data from roles
                 process.ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles
