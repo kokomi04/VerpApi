@@ -79,17 +79,21 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var query = _organizationDBContext.AbsenceTypeSymbol.AsNoTracking();
 
-            return query.AsEnumerable().Select((x, index) => new AbsenceTypeSymbolModel
-            {
-                AbsenceTypeSymbolId = x.AbsenceTypeSymbolId,
-                NumericalOrder = index,
-                SymbolCode = x.SymbolCode,
-                TypeSymbolDescription = x.TypeSymbolDescription,
-                MaxOfDaysOffPerMonth = x.MaxOfDaysOffPerMonth,
-                IsUsed = x.IsUsed,
-                IsCounted = x.IsCounted,
-                SalaryRate = x.SalaryRate,
-            }).ToList();
+            return query.AsEnumerable()
+                .OrderByDescending(o => o.IsDefaultSystem == true)
+                .ThenBy(o => o.UpdatedDatetimeUtc)
+                .Select((x, index) => new AbsenceTypeSymbolModel
+                {
+                    AbsenceTypeSymbolId = x.AbsenceTypeSymbolId,
+                    NumericalOrder = index,
+                    SymbolCode = x.SymbolCode,
+                    TypeSymbolDescription = x.TypeSymbolDescription,
+                    MaxOfDaysOffPerMonth = x.MaxOfDaysOffPerMonth,
+                    IsUsed = x.IsUsed,
+                    IsCounted = x.IsCounted,
+                    SalaryRate = x.SalaryRate,
+                    IsDefaultSystem = x.IsDefaultSystem,
+                }).ToList();
         }
     }
 }
