@@ -1914,14 +1914,24 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 //remove outsource link
                 process.ProductionStepLinkDatas = process.ProductionStepLinkDatas.Where(d => d.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.None).ToList();
-                
+
                 // change id and unitId of last step
-                var lastStepLinkDataId = process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId).Max(x => x.ProductionStepLinkDataId);
-                process.ProductionStepLinkDatas.Where(p=> p.ProductionStepLinkDataId == lastStepLinkDataId).ToList().ForEach(x =>
+                if (process.ContainerTypeId == EnumContainerType.Product)
                 {
-                    x.LinkDataObjectId = toContainerId;
-                    x.UnitId = thisProduct.UnitId;
-                });
+                    var lastProductStepId = new List<long>();
+                    foreach (var dataRole in process.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).ToList())
+                    {
+                        if (!process.ProductionStepLinkDataRoles.Any(x => x.ProductionStepLinkDataId == dataRole.ProductionStepLinkDataId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
+                        {
+                            lastProductStepId.Add(dataRole.ProductionStepLinkDataId);
+                        }
+                    }
+                    process.ProductionStepLinkDatas.Where(p => lastProductStepId.Contains( p.ProductionStepLinkDataId) && p.LinkDataObjectId == fromContainerId ).ToList().ForEach(x =>
+                    {
+                        x.LinkDataObjectId = toContainerId;
+                        x.UnitId = thisProduct.UnitId;
+                    });
+                }
 
                 //remove outsource step and outsource data from roles
                 process.ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles
