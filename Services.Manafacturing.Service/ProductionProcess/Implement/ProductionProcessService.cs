@@ -1184,7 +1184,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 req.ProductionStepLinkDatas.Remove(d);
             }
 
-            var productionStepGroups = req.ProductionSteps.Where(x => x.IsGroup == true).ToList();
+            var productionStepGroups = req.ProductionSteps.Where(x => x.IsGroup == true && !x.IsFinish).ToList();
             var productionStepsInGroup = req.ProductionSteps.Where(x => x.IsGroup != true && !x.IsFinish).ToList();
 
             productionStepGroups.Where(x => x.IsGroup == true).ToList().ForEach(x =>
