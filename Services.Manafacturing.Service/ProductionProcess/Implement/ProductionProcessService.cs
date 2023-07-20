@@ -1918,15 +1918,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 // change id and unitId of last step
                 if (process.ContainerTypeId == EnumContainerType.Product)
                 {
-                    var lastProductStepId = new List<long>();
-                    foreach (var dataRole in process.ProductionStepLinkDataRoles.Where(x => x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output).ToList())
-                    {
-                        if (!process.ProductionStepLinkDataRoles.Any(x => x.ProductionStepLinkDataId == dataRole.ProductionStepLinkDataId && x.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
-                        {
-                            lastProductStepId.Add(dataRole.ProductionStepLinkDataId);
-                        }
-                    }
-                    process.ProductionStepLinkDatas.Where(p => lastProductStepId.Contains( p.ProductionStepLinkDataId) && p.LinkDataObjectId == fromContainerId ).ToList().ForEach(x =>
+                    process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId ).ToList().ForEach(x =>
                     {
                         x.LinkDataObjectId = toContainerId;
                         x.UnitId = thisProduct.UnitId;
