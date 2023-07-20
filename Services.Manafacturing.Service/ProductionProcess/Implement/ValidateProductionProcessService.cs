@@ -329,7 +329,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 if (!productionStepInOuts.Any(t => t.ParentId == x.ProductionStepId))
                     lsWarning.Add(new ProductionProcessWarningMessage
                     {
-                        Message = $"Công đoạn \"{x.Title}\" không có công đoạn con nào",
+                        Message = $"Công đoạn \"{x.Title}\" chưa được thiết lập chi tiết công đoạn",
                         GroupName = EnumProductionProcessWarningCode.WarningProductionStep.GetEnumDescription(),
                         WarningCode = EnumProductionProcessWarningCode.WarningProductionStep,
                     });

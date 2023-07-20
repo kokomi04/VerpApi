@@ -1216,7 +1216,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             productionStepGroups.Where(x => x.IsGroup == true).ToList().ForEach(x =>
             {
                 if (!productionStepsInGroup.Any(t => t.ParentCode == x.ProductionStepCode))
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{x.Title}\" không có công đoạn con nào");
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{x.Title}\" chưa được thiết lập chi tiết công đoạn");
             });
 
             var groupRolesByStepCode = req.ProductionStepLinkDataRoles.GroupBy(r => r.ProductionStepCode).ToDictionary(r=>r.Key,r=>r.ToList());
