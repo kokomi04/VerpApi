@@ -1894,7 +1894,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
         {
             var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
-            var thisProduct = await _productHelperService.GetProduct((int)toContainerId);
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
 
             try
@@ -1918,10 +1917,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 // change id and unitId of last step
                 if (process.ContainerTypeId == EnumContainerType.Product)
                 {
-                    process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId ).ToList().ForEach(x =>
+                    var currentProductInfo = await _productHelperService.GetProduct((int)toContainerId);
+                    process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId && p.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product).ToList().ForEach(x =>
                     {
                         x.LinkDataObjectId = toContainerId;
-                        x.UnitId = thisProduct.UnitId;
+                        x.UnitId = currentProductInfo.UnitId;
                     });
                 }
 
