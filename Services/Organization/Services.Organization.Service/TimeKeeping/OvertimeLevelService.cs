@@ -32,9 +32,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddOvertimeLevel(OvertimeLevelModel model)
         {
-            if (_organizationDBContext.OvertimeLevel.Any(x => x.OrdinalNumber == model.OrdinalNumber))
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Đã có mức tăng ca {model.OrdinalNumber} trong hệ thống");
-
             var entity = _mapper.Map<OvertimeLevel>(model);
 
             await _organizationDBContext.OvertimeLevel.AddAsync(entity);
@@ -48,9 +45,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
             if (countedSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
-
-            if (countedSymbol.OrdinalNumber != model.OrdinalNumber && _organizationDBContext.OvertimeLevel.Any(x => x.OrdinalNumber == model.OrdinalNumber))
-                throw new BadRequestException(GeneralCode.InvalidParams, $"Đã có mức tăng ca {model.OrdinalNumber} trong hệ thống");
 
             model.OvertimeLevelId = countedSymbolId;
             _mapper.Map(model, countedSymbol);
@@ -85,14 +79,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var query = _organizationDBContext.OvertimeLevel.AsNoTracking();
 
-            return await query.Select(x => new OvertimeLevelModel
-            {
-                OvertimeLevelId = x.OvertimeLevelId,
-                OrdinalNumber = x.OrdinalNumber,
-                OvertimeRate = x.OvertimeRate,
-                Note = x.Note,
-                Title = x.Title
-            }).ToListAsync();
+            return query.AsEnumerable()
+                .Select((x, index) => new OvertimeLevelModel
+                {
+                    OvertimeLevelId = x.OvertimeLevelId,
+                    NumericalOrder = index + 1,
+                    OvertimeCode = x.OvertimeCode,
+                    Description = x.Description,
+                    OvertimeRate = x.OvertimeRate,
+                    OvertimePriority = x.OvertimePriority,
+                }).ToList();
         }
     }
 }

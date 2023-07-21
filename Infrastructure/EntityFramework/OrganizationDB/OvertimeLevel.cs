@@ -7,13 +7,13 @@ public partial class OvertimeLevel
 {
     public int OvertimeLevelId { get; set; }
 
-    public int OrdinalNumber { get; set; }
-
     public decimal OvertimeRate { get; set; }
 
-    public string Title { get; set; }
+    public string OvertimeCode { get; set; }
 
-    public string Note { get; set; }
+    public string Description { get; set; }
+
+    public int OvertimePriority { get; set; }
 
     public int UpdatedByUserId { get; set; }
 

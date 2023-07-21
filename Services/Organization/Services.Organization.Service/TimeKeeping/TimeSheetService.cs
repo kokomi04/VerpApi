@@ -345,8 +345,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var fieldsOvertimeLevel = (_organizationDBContext.OvertimeLevel.ToList()).Select(x => new CategoryFieldNameModel
             {
-                FieldName = $"Overtime{x.OrdinalNumber}",
-                FieldTitle = $"Tổng thời gian(giờ) làm tăng ca {x.OrdinalNumber}",
+                FieldName = $"Overtime_{x.OvertimeCode}",
+                FieldTitle = $"Tổng thời gian(giờ) làm tăng ca {x.OvertimeCode}",
                 GroupName = "Tăng ca(giờ)",
             });
 
@@ -566,10 +566,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     };
                 }).Where(x => x.CountedDayOff > 0).ToList();
 
-                var timeSheetOvertimeForPerson = overtimeLevels.Where(overtimeLevel => mapping.MappingFields.Any(x => x.FieldName == $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}"))
+                var timeSheetOvertimeForPerson = overtimeLevels.Where(overtimeLevel => mapping.MappingFields.Any(x => x.FieldName == $"{timeKeepingOvertimePropPrefix}_{overtimeLevel.OvertimeCode}"))
                 .Select(overtimeLevel =>
                 {
-                    var timeKeepingOvertimeProp = $"{timeKeepingOvertimePropPrefix}{overtimeLevel.OrdinalNumber}";
+                    var timeKeepingOvertimeProp = $"{timeKeepingOvertimePropPrefix}_{overtimeLevel.OvertimeCode}";
                     var mappingField = mapping.MappingFields.FirstOrDefault(x => x.FieldName == timeKeepingOvertimeProp);
                     if (mappingField == null)
                         throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy trường dữ liệu {timeKeepingOvertimeProp}");

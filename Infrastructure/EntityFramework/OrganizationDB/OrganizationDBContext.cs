@@ -696,9 +696,14 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<OvertimeLevel>(entity =>
         {
-            entity.Property(e => e.Note).HasMaxLength(1024);
-            entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
-            entity.Property(e => e.Title).HasMaxLength(1024);
+            entity.Property(e => e.Description)
+                .IsRequired()
+                .HasMaxLength(256);
+            entity.Property(e => e.OvertimeCode)
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.OvertimePriority).HasDefaultValueSql("((2))");
+            entity.Property(e => e.OvertimeRate).HasColumnType("decimal(5, 2)");
         });
 
         modelBuilder.Entity<SalaryEmployee>(entity =>
