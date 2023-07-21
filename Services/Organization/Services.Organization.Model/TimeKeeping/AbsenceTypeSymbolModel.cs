@@ -10,6 +10,7 @@ namespace Services.Organization.Model.TimeKeeping
         public int AbsenceTypeSymbolId { get; set; }
         public int NumericalOrder { get; set; }
 
+        [Required(ErrorMessage = "Vui lòng nhập mô tả loại vắng")]
         [MaxLength(200, ErrorMessage = "Mô tả không được vượt quá 200 ký tự")]
         public string TypeSymbolDescription { get; set; }
 
