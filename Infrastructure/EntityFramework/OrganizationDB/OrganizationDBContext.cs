@@ -157,8 +157,6 @@ public partial class OrganizationDBContext : DbContext
     {
         modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
         {
-            entity.HasIndex(e => e.SymbolCode, "UC_SymbolCode").IsUnique();
-
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(20);

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -9,13 +10,15 @@ using System.Threading.Tasks;
 
 namespace VErp.Commons.GlobalObject.Attributes
 {
-    public class UniqueAttribute<TContext, TEntity> : ValidationAttribute 
+    public class UniqueOnPostAttribute<TContext, TEntity> : ValidationAttribute 
         where TContext : DbContext
         where TEntity : class
     {
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            if (value == null)
+            var httpContext = validationContext.GetService<IHttpContextAccessor>().HttpContext;
+
+            if (value == null || httpContext.Request.Method != HttpMethods.Post)
                 return ValidationResult.Success;
 
             var dbContext = (TContext)validationContext.GetService(typeof(TContext));
