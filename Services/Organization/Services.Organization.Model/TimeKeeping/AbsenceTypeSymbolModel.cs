@@ -22,7 +22,6 @@ namespace Services.Organization.Model.TimeKeeping
 
         [Required(ErrorMessage = "Vui lòng nhập ký hiệu loại vắng")]
         [MaxLength(20, ErrorMessage = "Ký hiệu loại vắng quá dài")]
-        [UniqueOnPost<OrganizationDBContext, AbsenceTypeSymbol>(ErrorMessage = "Ký hiệu loại vắng đã tồn tại")]
         public string SymbolCode { get; set; }
         public bool IsUsed { get; set; }
         public bool IsCounted { get; set; }

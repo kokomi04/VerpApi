@@ -16,7 +16,6 @@ namespace Services.Organization.Model.TimeKeeping
 
         [Required(ErrorMessage = "Vui lòng nhập ký hiệu mức tăng ca")]
         [MaxLength(20, ErrorMessage = "Ký hiệu mức tăng ca quá dài")]
-        [UniqueOnPost<OrganizationDBContext, OvertimeLevel>(ErrorMessage = "Ký hiệu mức tăng ca đã tồn tại")]
         public string OvertimeCode { get; set; }
 
         [MaxLength(200, ErrorMessage = "Mô tả không được vượt quá 200 ký tự")]
