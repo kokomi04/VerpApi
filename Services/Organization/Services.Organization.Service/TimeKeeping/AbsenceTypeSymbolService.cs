@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
@@ -32,6 +32,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddAbsenceTypeSymbol(AbsenceTypeSymbolModel model)
         {
+            if (await _organizationDBContext.AbsenceTypeSymbol.AnyAsync(a => a.SymbolCode == model.SymbolCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu loại vắng đã tồn tại");
+
             var entity = _mapper.Map<AbsenceTypeSymbol>(model);
 
             await _organizationDBContext.AbsenceTypeSymbol.AddAsync(entity);
@@ -42,9 +45,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<bool> UpdateAbsenceTypeSymbol(int absenceTypeSymbolId, AbsenceTypeSymbolModel model)
         {
+
             var absenceTypeSymbol = await _organizationDBContext.AbsenceTypeSymbol.FirstOrDefaultAsync(x => x.AbsenceTypeSymbolId == absenceTypeSymbolId);
             if (absenceTypeSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            if (absenceTypeSymbol.SymbolCode != model.SymbolCode && await _organizationDBContext.AbsenceTypeSymbol.AnyAsync(a => a.SymbolCode == model.SymbolCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu loại vắng đã tồn tại");
 
             model.AbsenceTypeSymbolId = absenceTypeSymbolId;
             _mapper.Map(model, absenceTypeSymbol);

@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
@@ -32,6 +32,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddOvertimeLevel(OvertimeLevelModel model)
         {
+            if (await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
+
             var entity = _mapper.Map<OvertimeLevel>(model);
 
             await _organizationDBContext.OvertimeLevel.AddAsync(entity);
@@ -45,6 +48,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
             if (countedSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            if (countedSymbol.OvertimeCode != model.OvertimeCode && await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
             model.OvertimeLevelId = countedSymbolId;
             _mapper.Map(model, countedSymbol);
