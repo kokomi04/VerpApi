@@ -140,8 +140,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             
             if (employeesOfGroup.Count == 0)
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy nhân viên trong bảng lương");
-
-            var lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).Skip((page - 1) * size).Take(size).ToList();
+            IList<NonCamelCaseDictionary> lstEmployees = null;
+            if (page == 0 && size ==0) 
+                lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).ToList();
+            else
+                lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).Skip((page - 1) * size).Take(size).ToList();
 
             return (lstEmployees, employeesOfGroup.Count);
         }
