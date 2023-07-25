@@ -36,9 +36,9 @@ namespace VErp.Services.Organization.Model.Employee
         public int SalaryGroupId { get; set; }
         public string GroupField { get; set; }
     }
-    public class EmployeeGroupRequestModel : EmplyeeRequestFilterModel
+    public class EmployeeGroupRequestExportModel : EmplyeeRequestFilterModel
     {
-        public EmployeeGroupRequestModel(Clause filters) : base(filters)
+        public EmployeeGroupRequestExportModel(Clause filters) : base(filters)
         {
 
         }

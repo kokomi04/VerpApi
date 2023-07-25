@@ -67,7 +67,7 @@ namespace VErpApi.Controllers.Organization.Salary
             return await _salaryEmployeeService.GetEmployeeGroupInfo(req.Filters, req.Page, req.Size);
         }
         [HttpPost("group/export")]
-        public async Task<IActionResult> ExportGroup([FromBody] EmployeeGroupRequestModel req)
+        public async Task<IActionResult> ExportGroup([FromBody] EmployeeGroupRequestExportModel req)
         {
             if (req == null)
             {
