@@ -82,12 +82,28 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             if (!printConfig.PrintConfigStandardId.HasValue || printConfig.PrintConfigStandardId.Value <= 0)
                 throw PrintConfigStandardEmpty.BadRequest(GeneralCode.InternalError);
 
-            var source = await _masterDBContext.PrintConfigStandard
+            var printConfigStandard = await _masterDBContext.PrintConfigStandard
                 .Where(x => x.PrintConfigStandardId == printConfig.PrintConfigStandardId)
-                .ProjectTo<PrintConfigRollbackModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync();
+
+            var source = _mapper.Map<PrintConfigRollbackModel>(printConfigStandard);
+
             if (source == null)
                 throw PrintConfigStandardNotFound.BadRequest(GeneralCode.InternalError);
+
+            var printConfigHeaderStandard = new PrintConfigHeaderStandard();
+
+            if (printConfigStandard.PrintConfigHeaderStandardId.HasValue)
+            {
+                printConfigHeaderStandard = await _masterDBContext.PrintConfigHeaderStandard
+                    .FindAsync(printConfigStandard.PrintConfigHeaderStandardId);
+            }
+
+            var printConfigHeaderCustom = await _masterDBContext.PrintConfigHeaderCustom
+                .FirstOrDefaultAsync( c => c.PrintConfigHeaderStandardId == printConfigHeaderStandard.PrintConfigHeaderStandardId);
+
+            if (printConfigHeaderCustom != null)
+                printConfig.PrintConfigHeaderCustomId = printConfigHeaderCustom.PrintConfigHeaderCustomId;
 
             var destProperties = printConfig.GetType().GetProperties();
             foreach (var destProperty in destProperties)
