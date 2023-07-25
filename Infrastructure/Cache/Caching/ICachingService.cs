@@ -11,5 +11,7 @@ namespace Verp.Cache.Caching
         void TrySet<T>(string tag, string key, T value, TimeSpan ttl, TimeSpan? sliding = null);
 
         void TryRemoveByTag(string tag);
+
+        void TryRemove(string key);
     }
 }

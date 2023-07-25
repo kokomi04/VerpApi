@@ -263,7 +263,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 })
                 .ToList();
 
-            var groupIds = productionAssignemts.Select(a => a.ProductionStepId).Union(handoverSteps.Select(h => h.FromProductionStepId)).Distinct().ToList();
+            var groupIds = productionAssignemts.Select(a => (long?)a.ProductionStepId).Union(handoverSteps.Select(h => h.FromProductionStepId)).Distinct().ToList();
             var productionStepIds = _manufacturingDBContext.ProductionStep
                .Where(ps => groupIds.Contains(ps.ProductionStepId) && ps.ParentId.HasValue)
                .Select(ps => ps.ParentId)

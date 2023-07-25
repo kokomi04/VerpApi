@@ -213,7 +213,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
 
-            var productionStepIds = groups.Select(g => g.ProductionStepId).ToList();
+            var productionStepIds = groups.Select(g => (long?)g.ProductionStepId).ToList();
             // Lấy thông tin vật tư yêu cầu thêm
             var allMaterialRequirements = _manufacturingDBContext.ProductionMaterialsRequirementDetail
                  .Include(mrd => mrd.ProductionMaterialsRequirement)
@@ -225,13 +225,15 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                  .ToList();
 
             // Lấy thông tin phân bổ thủ công
-            var allMaterialAllocations = _manufacturingDBContext.MaterialAllocation
-                .Where(ma => ma.ProductionOrderId == productionOrderId && productionStepIds.Contains(ma.ProductionStepId) && departmentIds.Contains(ma.DepartmentId))
+            var allMaterialAllocations = _manufacturingDBContext.ProductionHandover
+                .Where(ma => ma.ProductionOrderId == productionOrderId && !ma.IsAuto && (productionStepIds.Contains(ma.FromProductionStepId) || productionStepIds.Contains(ma.ToProductionStepId))
+                && (departmentIds.Contains(ma.FromDepartmentId) || departmentIds.Contains(ma.ToDepartmentId)))
                 .ToList();
 
             // Lấy thông tin bàn giao
             var allHandovers = _manufacturingDBContext.ProductionHandover.Include(h => h.ProductionHandoverReceipt)
                     .Where(h => h.ProductionOrderId == productionOrderId
+                    && !h.IsAuto
                     && ((departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
                     || (departmentIds.Contains(h.ToDepartmentId) && productionStepIds.Contains(h.ToProductionStepId))))
                     .Select(h => new ProductionHandoverModel()
@@ -250,13 +252,20 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         ObjectId = h.ObjectId,
                         ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
                         FromDepartmentId = h.FromDepartmentId,
-                        FromProductionStepId = h.FromProductionStepId,
+                        FromProductionStepId = h.FromProductionStepId ?? 0,
                         ToDepartmentId = h.ToDepartmentId,
-                        ToProductionStepId = h.ToProductionStepId,
+                        ToProductionStepId = h.ToProductionStepId ?? 0,
                         HandoverDatetime = h.HandoverDatetime.GetUnix(),
                         Note = h.Note,
 
-                        ProductionOrderId = h.ProductionOrderId
+                        ProductionOrderId = h.ProductionOrderId,
+                        IsAuto = h.IsAuto,
+                        InventoryCode = h.InventoryCode,
+                        InventoryDetailId = h.InventoryDetailId,
+                        InventoryId = h.InventoryId,
+                        InventoryProductId = h.InventoryProductId,
+                        InventoryQuantity = h.InventoryQuantity,
+                        InventoryRequirementDetailId = h.InventoryRequirementDetailId
                     })
                     .ToList();
 
@@ -552,27 +561,26 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 
                             // Xử lý phiếu xuất kho phân bổ thủ công
                             var materialAllocations = allMaterialAllocations
-                                .Where(ma => ma.SourceProductId.HasValue
-                                && ma.SourceProductId.Value == inputLinkData.LinkDataObjectId
-                                && ma.ProductionStepId == inOutGroup.ProductionStepId
-                                && ma.DepartmentId == productionAssignment.DepartmentId)
+                                .Where(ma => ma.ObjectId == inputLinkData.LinkDataObjectId
+                                && (ma.FromProductionStepId == inOutGroup.ProductionStepId || ma.ToProductionStepId == inOutGroup.ProductionStepId)
+                                && (ma.FromDepartmentId == productionAssignment.DepartmentId || ma.ToDepartmentId == productionAssignment.DepartmentId))
                                 .ToList();
 
                             foreach (var materialAllocation in materialAllocations)
                             {
                                 var inv = inventoryRequirements
-                                    .FirstOrDefault(inv => inv.InventoryCode == materialAllocation.InventoryCode && inv.ProductId == materialAllocation.ProductId);
+                                    .FirstOrDefault(inv => inv.InventoryCode == materialAllocation.InventoryCode && inv.ProductId == materialAllocation.ObjectId);
                                 if (inv == null) continue;
                                 var history = JsonConvert.DeserializeObject<ProductionInventoryRequirementModel>(JsonConvert.SerializeObject(inv));
 
-                                if (!materialAllocation.SourceProductId.HasValue && inv.ProductId == inputLinkData.LinkDataObjectId)
+                                if (materialAllocation.ObjectId <= 0 && inv.ProductId == inputLinkData.LinkDataObjectId)
                                 {
-                                    history.ActualQuantity = materialAllocation.AllocationQuantity;
+                                    history.ActualQuantity = materialAllocation.InventoryQuantity ?? 0;
                                 }
                                 else
                                 {
-                                    history.ActualQuantity = materialAllocation.SourceQuantity.GetValueOrDefault();
-                                    history.ProductId = materialAllocation.SourceProductId.GetValueOrDefault();
+                                    history.ActualQuantity = materialAllocation.HandoverQuantity;
+                                    history.ProductId = (int)materialAllocation.ObjectId;
                                 }
 
                                 item.InventoryRequirementHistories.Add(history);
@@ -874,7 +882,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
         }
 
 
-        public async Task UpdateProductionOrderAssignmentStatus(IList<long> productionOrderIds)
+
+        public async Task UpdateProductionOrderAssignmentStatusBak(IList<long> productionOrderIds)
         {
             var steps = await _manufacturingDBContext.ProductionStep
              .Include(s => s.ProductionStepLinkDataRole.Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output))
@@ -931,7 +940,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
         }
 
-
+        /*
         public async Task<bool> UpdateFullAssignedProgressStatus(long productionOrderId)
         {
             await UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
@@ -991,6 +1000,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             }
             return true;
         }
+        */
 
         private class StepLinkDataInfo
         {

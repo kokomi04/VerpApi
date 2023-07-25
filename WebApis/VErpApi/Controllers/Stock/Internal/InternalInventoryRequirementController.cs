@@ -22,7 +22,7 @@ namespace VErpApi.Controllers.Stock.Internal
         [Route("{inventoryType}")]
         public async Task<long> AddInventoryRequirementWithConfirm([FromRoute] EnumInventoryType inventoryType, [FromBody] InventoryRequirementInputModel req)
         {
-            return await _inventoryRequirementService.AddInventoryRequirement(inventoryType, req);
+            return await _inventoryRequirementService.Create(inventoryType, req);
         }
     }
 }

@@ -62,11 +62,11 @@ namespace Verp.Resources.Manafacturing.Production.Progress {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật trạng thái lệnh sản xuất, {0}.
+        ///   Looks up a localized string similar to Trạng thái lệnh sản xuất được cập nhật, {0}.
         /// </summary>
-        public static string Update {
+        public static string UpdateProductionOrderStatus {
             get {
-                return ResourceManager.GetString("Update", resourceCulture);
+                return ResourceManager.GetString("UpdateProductionOrderStatus", resourceCulture);
             }
         }
     }

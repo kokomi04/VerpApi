@@ -41,21 +41,7 @@ public partial class InventoryRequirement
 
     public int CensorStatus { get; set; }
 
-    public long? ProductionOrderId { get; set; }
-
-    public long? ProductionStepId { get; set; }
-
-    public string Shipper { get; set; }
-
     public int? CustomerId { get; set; }
-
-    public string BillForm { get; set; }
-
-    public string BillCode { get; set; }
-
-    public string BillSerial { get; set; }
-
-    public DateTime? BillDate { get; set; }
 
     public int ModuleTypeId { get; set; }
 

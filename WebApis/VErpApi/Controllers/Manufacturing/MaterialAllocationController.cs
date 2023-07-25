@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Service.ProductionHandover;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -12,10 +13,12 @@ namespace VErpApi.Controllers.Manufacturing
     public class MaterialAllocationController : VErpBaseController
     {
         private readonly IMaterialAllocationService _materialAllocationService;
+        private readonly IProductionProgressService _productionProgressService;
 
-        public MaterialAllocationController(IMaterialAllocationService materialAllocationService)
+        public MaterialAllocationController(IMaterialAllocationService materialAllocationService, IProductionProgressService productionProgressService)
         {
             _materialAllocationService = materialAllocationService;
+            _productionProgressService = productionProgressService;
         }
 
         [HttpGet]
@@ -44,6 +47,14 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<ConflictHandoverModel> GetConflictHandovers([FromRoute] long productionOrderId)
         {
             return await _materialAllocationService.GetConflictHandovers(productionOrderId);
+        }
+
+
+        [HttpGet]
+        [Route("{productionOrderId}/ConflictInventories")]
+        public async Task<IList<ProductionOrderInventoryConflictModel>> GetConflictInventories([FromRoute] long productionOrderId)
+        {
+            return await _productionProgressService.GetConflictInventories(productionOrderId);
         }
     }
 }

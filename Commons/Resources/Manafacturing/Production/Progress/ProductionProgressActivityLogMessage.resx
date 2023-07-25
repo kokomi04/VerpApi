@@ -117,7 +117,7 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="Update" xml:space="preserve">
-    <value>Cập nhật trạng thái lệnh sản xuất, {0}</value>
+  <data name="UpdateProductionOrderStatus" xml:space="preserve">
+    <value>Trạng thái lệnh sản xuất được cập nhật, {0}</value>
   </data>
 </root>
