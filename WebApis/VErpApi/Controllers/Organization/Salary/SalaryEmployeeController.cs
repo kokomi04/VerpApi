@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -9,6 +10,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Employee;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.Salary;
+using VErp.Services.Organization.Service.Salary.Implement;
 
 namespace VErpApi.Controllers.Organization.Salary
 {
@@ -63,6 +65,36 @@ namespace VErpApi.Controllers.Organization.Salary
         {
 
             return await _salaryEmployeeService.GetEmployeeGroupInfo(req.Filters, req.Page, req.Size);
+        }
+        [HttpPost("group/export")]
+        public async Task<IActionResult> ExportGroup([FromBody] EmployeeGroupRequestExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var data = await _salaryEmployeeService.GetInfoEmployeeByGroupSalary(req.SalaryGroupId);
+            if (data == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupField ,data);
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
+        [HttpPost("period/export")]
+        public async Task<IActionResult> ExportPeriod([FromBody] EmployeePeriodGroupRequestExportModel req)
+        {
+            if (req == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var data = await _salaryEmployeeService.GetSalaryEmployeeByGroup(req.SalaryPeriodId,req.SalaryGroupId);
+            if (data == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupField, data);
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }
 }

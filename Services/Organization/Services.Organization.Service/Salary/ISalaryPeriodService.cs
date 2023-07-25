@@ -11,6 +11,8 @@ namespace VErp.Services.Organization.Service.Salary
     {
         Task<PageData<SalaryPeriodInfo>> GetList(int page, int size);
 
+        Task<IList<SalaryPeriodInfo>> GetAllList();
+
         Task<SalaryPeriodInfo> GetInfo(int year, int month);
 
         Task<SalaryPeriodInfo> GetInfo(int salaryPeriodId);

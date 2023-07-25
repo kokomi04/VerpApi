@@ -288,5 +288,10 @@ namespace VErp.Services.Organization.Service.Salary
 
             return true;
         }
+
+        public async Task<IList<SalaryPeriodInfo>> GetAllList()
+        {
+            return await _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider).OrderByDescending(x=> x.Year).ThenByDescending(x=>x.Month).ToListAsync();
+        }
     }
 }
