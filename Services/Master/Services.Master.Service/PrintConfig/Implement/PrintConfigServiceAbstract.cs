@@ -89,7 +89,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         protected abstract Task LogDeletePrintConfig(TEntity entity);
 
         
-        public async Task<int> AddPrintConfig(TModel model, IFormFile template, IFormFile background)
+        public virtual async Task<int> AddPrintConfig(TModel model, IFormFile template, IFormFile background)
         {
             if (long.TryParse(model.Background, out var v))
             {

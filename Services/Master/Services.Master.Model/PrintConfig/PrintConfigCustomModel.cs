@@ -9,5 +9,6 @@ namespace VErp.Services.Master.Model.PrintConfig
         public int? PrintConfigStandardId { get; set; }
         public int SubsidiaryId { get; set; }
         public int? PrintConfigHeaderCustomId { get; set; }
+        public int? PrintConfigHeaderStandardId { get; set; }
     }
 }
