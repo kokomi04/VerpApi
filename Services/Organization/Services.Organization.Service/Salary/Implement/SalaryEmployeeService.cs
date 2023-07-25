@@ -6,8 +6,10 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -26,9 +28,11 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Organization.Model.Employee;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Services.Organization.Service.HrConfig;
 using VErp.Services.Organization.Service.Salary.Implement.Abstract;
+using VErp.Services.Organization.Service.Salary.Implement.Facade;
 using static VErp.Services.Organization.Service.Salary.Implement.Facade.SalaryPeriodAdditionBillFieldAbstract;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
@@ -87,7 +91,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var groups = await _salaryGroupService.GetList();
 
             var (allEmployees, _) = await FilterEmployee(null, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
-            
+
             var employeeGroups = allEmployees
                 .ToDictionary(e =>
                 {
@@ -398,6 +402,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return result;
         }
 
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetInfoEmployeeByGroupSalary(int salaryGroupId)
+        {
+            var salaryPeriod = (await _salaryPeriodService.GetAllList()).FirstOrDefault();
+            if (salaryPeriod == null)
+            {
+                throw new BadRequestException("Không tìm thấy kỳ lương mới nhất!");
+            }
+            return await GetSalaryEmployeeByGroup(salaryPeriod.SalaryPeriodId, salaryGroupId);
+        }
+
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
         {
             var period = await _salaryPeriodService.GetInfo(salaryPeriodId);
@@ -454,12 +468,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             var clause = new SingleClause()
-            {
-                Value = resultByEmployee.Keys.ToArray(),
-                DataType = EnumDataType.BigInt,
-                FieldName = OrganizationConstants.HR_TABLE_F_IDENTITY,
-                Operator = EnumOperator.InList
-            };
+                {
+                    Value = resultByEmployee.Keys.ToArray(),
+                    DataType = EnumDataType.BigInt,
+                    FieldName = OrganizationConstants.HR_TABLE_F_IDENTITY,
+                    Operator = EnumOperator.InList
+                };
 
             var (employees, columns) = await FilterEmployee(clause, period.Year, period.Month, fromDate, toDate);
 
@@ -1073,6 +1087,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
-        
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames,string groupField ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
+        {
+            var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService);
+            return await salaryEmployeeExport.Export(data, groupField);
+        }
     }
 }

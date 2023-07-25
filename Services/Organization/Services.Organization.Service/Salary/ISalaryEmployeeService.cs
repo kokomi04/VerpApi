@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
@@ -21,10 +22,13 @@ namespace VErp.Services.Organization.Service.Salary
 
         Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId);
 
+        Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetInfoEmployeeByGroupSalary(int salaryGroupId);
+
         Task<IList<GroupSalaryEmployeeEvalData>> GetSalaryEmployeeAll(int salaryPeriodId);
 
         Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);
 
         Task<PageData<NonCamelCaseDictionary>> GetEmployeeGroupInfo(Clause filter, int page, int size);
+        Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, string groupField, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data);
     }
 }

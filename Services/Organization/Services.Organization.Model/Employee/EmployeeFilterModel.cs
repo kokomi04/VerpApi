@@ -7,10 +7,44 @@ using VErp.Commons.GlobalObject;
 
 namespace VErp.Services.Organization.Model.Employee
 {
-    public class EmployeeFilterModel
+
+    public class EmplyeeRequestFilterModel
     {
         public Clause Filters { get; set; }
+        public EmplyeeRequestFilterModel(Clause filters) {
+            Filters = filters;
+        }
+    }
+    public class EmployeeFilterModel : EmplyeeRequestFilterModel
+    {
+        public EmployeeFilterModel(Clause filters): base(filters)
+        {
+
+        }
         public int Page { get; set; }
         public int Size { get; set; }
     }
+
+    public class EmployeePeriodGroupRequestExportModel : EmplyeeRequestFilterModel
+    {
+        public EmployeePeriodGroupRequestExportModel(Clause filters): base(filters)
+        {
+
+        }
+        public IList<string> FieldNames { get; set; }
+        public int SalaryPeriodId { get; set; }
+        public int SalaryGroupId { get; set; }
+        public string GroupField { get; set; }
+    }
+    public class EmployeeGroupRequestModel : EmplyeeRequestFilterModel
+    {
+        public EmployeeGroupRequestModel(Clause filters) : base(filters)
+        {
+
+        }
+        public IList<string> FieldNames { get; set; }
+        public int SalaryGroupId { get; set; }
+        public string GroupField { get; set; }
+    }
+
 }
