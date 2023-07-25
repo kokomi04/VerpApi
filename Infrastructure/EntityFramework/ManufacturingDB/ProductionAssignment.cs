@@ -27,6 +27,8 @@ public partial class ProductionAssignment
 
     public long ProductionOrderId { get; set; }
 
+    public int AssignedInputStatus { get; set; }
+
     public int AssignedProgressStatus { get; set; }
 
     public bool IsManualFinish { get; set; }

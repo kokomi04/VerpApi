@@ -19,7 +19,9 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
+using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionHandover;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {
@@ -30,7 +32,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
-        private const int STOCK_DEPARTMENT_ID = -1;
         private readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
 
         public MaterialAllocationService(ManufacturingDBContext manufacturingDB
@@ -43,45 +44,85 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             _activityLogService = activityLogService;
             _logger = logger;
             _mapper = mapper;
-            _productHelperService = productHelperService;            
+            _productHelperService = productHelperService;
             _productionOrderQueueHelperService = productionOrderQueueHelperService;
         }
 
         public async Task<IList<MaterialAllocationModel>> GetMaterialAllocations(long productionOrderId)
         {
-            var materialAllocations = await _manufacturingDBContext.MaterialAllocation
-                .Where(ma => ma.ProductionOrderId == productionOrderId)
-                .ProjectTo<MaterialAllocationModel>(_mapper.ConfigurationProvider)
+            var allows = await _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ProductionOrderId == productionOrderId && (h.FromDepartmentId == 0 || h.ToDepartmentId == 0) && !h.IsAuto)
                 .ToListAsync();
-            return materialAllocations;
+            var lst = new List<MaterialAllocationModel>();
+            foreach (var item in allows)
+            {
+                var allowItem = ProductionHandoverToAllowcationModel(item);
+                lst.Add(allowItem);
+            }
+            return lst;
+        }
+
+        private MaterialAllocationModel ProductionHandoverToAllowcationModel(ProductionHandoverEntity item)
+        {
+            return new MaterialAllocationModel
+            {
+                MaterialAllocationId = item.ProductionHandoverId,
+                ProductionOrderId = item.ProductionOrderId,
+                InventoryId = item.InventoryId ?? 0,
+                InventoryCode = item.InventoryCode,
+                ProductId = (int)item.ObjectId,
+                DepartmentId = item.FromDepartmentId > 0 ? item.FromDepartmentId : item.ToDepartmentId,
+                ProductionStepId = item.FromProductionStepId > 0 ? item.FromProductionStepId.Value : item.ToProductionStepId.Value,
+                AllocationQuantity = item.HandoverQuantity,
+                SourceProductId = item.InventoryProductId,
+                SourceQuantity = item.InventoryQuantity,
+                InventoryDetailId = item.InventoryDetailId,
+            };
+        }
+
+        private ProductionHandoverEntity AllowcationModelToProductionHandover(MaterialAllocationModel item, bool isInvOut)
+        {
+            return new ProductionHandoverEntity
+            {
+                ProductionHandoverId = item.MaterialAllocationId,
+                ProductionOrderId = item.ProductionOrderId,
+                InventoryId = item.InventoryId,
+                InventoryCode = item.InventoryCode,
+                ObjectId = item.SourceProductId ?? 0,
+                ObjectTypeId = (int)EnumProductionStepLinkDataObjectType.Product,
+                FromDepartmentId = isInvOut ? 0 : item.DepartmentId,
+                ToDepartmentId = isInvOut ? item.DepartmentId : 0,
+                FromProductionStepId = isInvOut ? null : item.ProductionStepId,
+                ToProductionStepId = isInvOut ? item.ProductionStepId : null,
+                HandoverQuantity = item.SourceQuantity ?? 0,
+                InventoryProductId = item.ProductId,
+                InventoryQuantity = item.AllocationQuantity,
+                InventoryDetailId = item.InventoryDetailId,
+            };
         }
 
         public async Task<AllocationModel> UpdateMaterialAllocation(long productionOrderId, AllocationModel data)
         {
             var productionOrderCode = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderId == o.ProductionOrderId).Select(o => o.ProductionOrderCode).FirstOrDefaultAsync();
-
+            var inventoryIds = data.MaterialAllocations.Select(a => a.InventoryId).ToList();
+            var invs = await _manufacturingDBContext.RefInventory.Where(inv => inventoryIds.Contains(inv.InventoryId)).ToListAsync();
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
-                var currentMaterialAllocations = _manufacturingDBContext.MaterialAllocation.Where(ma => ma.ProductionOrderId == productionOrderId).ToList();
+                var currentMaterialAllocations = await _manufacturingDBContext.ProductionHandover
+                .Where(h => h.ProductionOrderId == productionOrderId && (h.FromDepartmentId == 0 || h.ToDepartmentId == 0) && !h.IsAuto)
+                .ToListAsync();
+                _manufacturingDBContext.ProductionHandover.RemoveRange(currentMaterialAllocations);
 
                 foreach (var item in data.MaterialAllocations)
                 {
-                    var currentMaterialAllocation = currentMaterialAllocations.FirstOrDefault(ma => ma.MaterialAllocationId == item.MaterialAllocationId);
+                    var currentMaterialAllocation = currentMaterialAllocations.FirstOrDefault(ma => ma.ProductionHandoverId == item.MaterialAllocationId);
+                    var invInfo = invs.FirstOrDefault(inv => inv.InventoryId == item.InventoryId);
 
-                    if (currentMaterialAllocation == null)
-                    {
-                        currentMaterialAllocation = _mapper.Map<MaterialAllocation>(item);
-                        _manufacturingDBContext.MaterialAllocation.Add(currentMaterialAllocation);
-                    }
-                    else
-                    {
-                        currentMaterialAllocations.Remove(currentMaterialAllocation);
-                        _mapper.Map(item, currentMaterialAllocation);
-                    }
+                    currentMaterialAllocation = AllowcationModelToProductionHandover(item, invInfo?.InventoryTypeId == (int)EnumInventoryType.Output);
+                    _manufacturingDBContext.ProductionHandover.Add(currentMaterialAllocation);
                 }
 
-                _manufacturingDBContext.MaterialAllocation.RemoveRange(currentMaterialAllocations);
 
                 _manufacturingDBContext.SaveChanges();
 
@@ -103,10 +144,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 await _activityLogService.CreateLog(EnumObjectType.MaterialAllocation, productionOrderId, $"Cập nhật phân bổ vật tư sản xuât", data);
 
-                data.MaterialAllocations = await _manufacturingDBContext.MaterialAllocation
-                    .Where(ma => ma.ProductionOrderId == productionOrderId)
-                    .ProjectTo<MaterialAllocationModel>(_mapper.ConfigurationProvider)
-                    .ToListAsync();
+                data.MaterialAllocations = (await _manufacturingDBContext.ProductionHandover
+                    .Where(h => h.ProductionOrderId == productionOrderId && (h.FromDepartmentId == 0 || h.ToDepartmentId == 0) && !h.IsAuto)
+                    .ToListAsync()
+                    ).Select(h => ProductionHandoverToAllowcationModel(h))
+                    .ToList();
 
                 data.IgnoreAllocations = await _manufacturingDBContext.IgnoreAllocation
                     .Where(ma => ma.ProductionOrderId == productionOrderId)
@@ -334,6 +376,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             return materialsConsumptionIds;
         }
 
+        /*
         public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes, bool ignoreEnqueueUpdateProductionOrderStatus = false)
         {
             var productionOrderIds = _manufacturingDBContext.ProductionOrder
@@ -476,9 +519,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     .Where(ma => ma.ProductionOrderId == productionOrderId)
                     .ToList();
 
-                var materialAllocations = await _manufacturingDBContext.MaterialAllocation
-                    .Where(ma => ma.ProductionOrderId == productionOrderId)
-                    .ToListAsync();
+                var materialAllocations = (await _manufacturingDBContext.ProductionHandover
+                    .Where(h => h.ProductionOrderId == productionOrderId && (h.FromDepartmentId == 0 || h.ToDepartmentId == 0) && !h.IsAuto)
+                    .ToListAsync()
+                    ).Select(h => ProductionHandoverToAllowcationModel(h))
+                    .ToList();
 
 
 
@@ -509,6 +554,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
             return true;
-        }
+        }*/
     }
 }

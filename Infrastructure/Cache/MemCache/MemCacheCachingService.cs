@@ -10,7 +10,7 @@ namespace Verp.Cache.MemCache
 {
     public class MemCacheCachingService : ICachingService
     {
-        private IMemoryCache _cache;
+        private readonly IMemoryCache _cache;
 
         public MemCacheCachingService(IMemoryCache memoryCache)
         {
@@ -97,6 +97,17 @@ namespace Verp.Cache.MemCache
             return $"TAG_CACHE_{tag}";
         }
 
-
+        public void TryRemove(string key)
+        {
+            try
+            {
+                _cache.Remove(key);
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+           
+        }
     }
 }

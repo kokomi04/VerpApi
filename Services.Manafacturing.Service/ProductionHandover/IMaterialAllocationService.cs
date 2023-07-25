@@ -15,6 +15,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<AllocationModel> UpdateMaterialAllocation(long productionOrderId, AllocationModel data);
 
 
-        Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes, bool ignoreEnqueueUpdateProductionOrderStatus = false);
+        //Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes, bool ignoreEnqueueUpdateProductionOrderStatus = false);
     }
 }

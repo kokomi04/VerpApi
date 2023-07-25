@@ -11,6 +11,7 @@ using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Services.Manafacturing.Service.ProductionOrder.Implement;
+using VErp.Services.Manafacturing.Service.ProductionProcess;
 
 namespace VErpApi.Controllers.Manufacturing
 {
@@ -22,13 +23,15 @@ namespace VErpApi.Controllers.Manufacturing
         private readonly IProductionOrderMaterialsService _productionOrderMaterialsService;
         private readonly IProductionOrderMaterialSetService _productionOrderMaterialSetService;
         private readonly IValidateProductionOrderService _validateProductionOrderService;
+        private readonly IProductionProgressService _productionProgressService;
 
-        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IProductionOrderMaterialSetService productionOrderMaterialSetService, IValidateProductionOrderService validateProductionOrderService)
+        public ProductOrderController(IProductionOrderService productionOrderService, IProductionOrderMaterialsService productionOrderMaterialsService, IProductionOrderMaterialSetService productionOrderMaterialSetService, IValidateProductionOrderService validateProductionOrderService, IProductionProgressService productionProgressService)
         {
             _productionOrderService = productionOrderService;
             _productionOrderMaterialsService = productionOrderMaterialsService;
             _productionOrderMaterialSetService = productionOrderMaterialSetService;
             _validateProductionOrderService = validateProductionOrderService;
+            _productionProgressService = productionProgressService;
         }
 
         [HttpPost]
@@ -195,14 +198,14 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("{productionOrderId}/materials-sets")]
-        public async Task<bool> UpdateProductionOrderMaterials([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialSetModel> sets)
+        public async Task<bool> UpdateAll([FromRoute] long productionOrderId, [FromBody] IList<ProductionOrderMaterialSetModel> sets)
         {
             return await _productionOrderMaterialSetService.UpdateAll(productionOrderId, sets);
         }
 
         [HttpGet]
         [Route("{productionOrderId}/materials-calc")]
-        public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterials([FromRoute] int productionOrderId)
+        public async Task<ProductionOrderMaterialsModel> GetProductionOrderMaterialsCalc([FromRoute] int productionOrderId)
         {
             return await _productionOrderMaterialsService.GetProductionOrderMaterialsCalc(productionOrderId);
         }
@@ -258,7 +261,7 @@ namespace VErpApi.Controllers.Manufacturing
         {
             return await _productionOrderService.ListWorkLoadsByMultipleProductionOrders(productionOrderIds);
         }
-        
+
 
         [HttpGet]
         [Route("configuration")]
@@ -279,6 +282,13 @@ namespace VErpApi.Controllers.Manufacturing
         public async Task<bool> UpdateProductionProcessVersion([FromRoute] long productionOrderId, [FromQuery] int productId)
         {
             return await _productionOrderService.UpdateProductionProcessVersion(productionOrderId, productId);
+        }
+
+        [HttpGet]
+        [Route("IsPendingCalcStatus")]
+        public bool IsPendingCalcStatus([FromQuery] string productionOrderCode)
+        {
+            return _productionProgressService.IsPendingCalcStatus(productionOrderCode);
         }
     }
 }

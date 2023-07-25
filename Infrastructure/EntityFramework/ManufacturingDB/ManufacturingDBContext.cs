@@ -15,7 +15,7 @@ public partial class ManufacturingDBContext : DbContext
 
     public virtual DbSet<IgnoreAllocation> IgnoreAllocation { get; set; }
 
-    public virtual DbSet<MaterialAllocation> MaterialAllocation { get; set; }
+    //public virtual DbSet<MaterialAllocation> MaterialAllocation { get; set; }
 
     public virtual DbSet<MonthPlan> MonthPlan { get; set; }
 
@@ -101,6 +101,8 @@ public partial class ManufacturingDBContext : DbContext
 
     public virtual DbSet<RefCustomer> RefCustomer { get; set; }
 
+    public virtual DbSet<RefInventory> RefInventory { get; set; }
+
     public virtual DbSet<RefOutsourcePartOrder> RefOutsourcePartOrder { get; set; }
 
     public virtual DbSet<RefOutsourcePartTrack> RefOutsourcePartTrack { get; set; }
@@ -139,18 +141,18 @@ public partial class ManufacturingDBContext : DbContext
             entity.Property(e => e.InventoryCode).HasMaxLength(128);
         });
 
-        modelBuilder.Entity<MaterialAllocation>(entity =>
-        {
-            entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 12)");
-            entity.Property(e => e.InventoryCode)
-                .IsRequired()
-                .HasMaxLength(128);
-            entity.Property(e => e.ProductId).HasComment("Product id in inventory detail");
-            entity.Property(e => e.SourceProductId).HasComment("Product id in production process");
-            entity.Property(e => e.SourceQuantity)
-                .HasComment("Product quantity output in production process")
-                .HasColumnType("decimal(32, 12)");
-        });
+        //modelBuilder.Entity<MaterialAllocation>(entity =>
+        //{
+        //    entity.Property(e => e.AllocationQuantity).HasColumnType("decimal(32, 12)");
+        //    entity.Property(e => e.InventoryCode)
+        //        .IsRequired()
+        //        .HasMaxLength(128);
+        //    entity.Property(e => e.ProductId).HasComment("Product id in inventory detail");
+        //    entity.Property(e => e.SourceProductId).HasComment("Product id in production process");
+        //    entity.Property(e => e.SourceQuantity)
+        //        .HasComment("Product quantity output in production process")
+        //        .HasColumnType("decimal(32, 12)");
+        //});
 
         modelBuilder.Entity<MonthPlan>(entity =>
         {
@@ -360,11 +362,12 @@ public partial class ManufacturingDBContext : DbContext
             entity.HasIndex(e => new { e.ProductionOrderId, e.FromDepartmentId, e.ObjectId, e.ObjectTypeId, e.Status, e.FromProductionStepId, e.ToDepartmentId, e.ToProductionStepId, e.HandoverDatetime }, "IDX_ProductionHandover_Search");
 
             entity.Property(e => e.HandoverQuantity).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.InventoryCode).HasMaxLength(128);
             entity.Property(e => e.InventoryProductId).HasComment("Product id in production process");
+            entity.Property(e => e.InventoryQuantity).HasColumnType("decimal(32, 12)");
 
             entity.HasOne(d => d.FromProductionStep).WithMany(p => p.ProductionHandoverFromProductionStep)
                 .HasForeignKey(d => d.FromProductionStepId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_FromProductionStep");
 
             entity.HasOne(d => d.ProductionHandoverReceipt).WithMany(p => p.ProductionHandover)
@@ -378,7 +381,6 @@ public partial class ManufacturingDBContext : DbContext
 
             entity.HasOne(d => d.ToProductionStep).WithMany(p => p.ProductionHandoverToProductionStep)
                 .HasForeignKey(d => d.ToProductionStepId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_ToProductionStep");
         });
 
@@ -531,6 +533,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.HasKey(e => new { e.ProductionOrderId, e.InventoryDetailId });
 
             entity.Property(e => e.Content).HasMaxLength(512);
+            entity.Property(e => e.HandoverInventoryQuantitySum).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.InventoryCode)
                 .IsRequired()
                 .HasMaxLength(128);
@@ -834,6 +837,18 @@ public partial class ManufacturingDBContext : DbContext
             entity.Property(e => e.PhoneNumber).HasMaxLength(32);
             entity.Property(e => e.TaxIdNo).HasMaxLength(64);
             entity.Property(e => e.Website).HasMaxLength(128);
+        });
+
+        modelBuilder.Entity<RefInventory>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("RefInventory");
+
+            entity.Property(e => e.InventoryCode)
+                .IsRequired()
+                .HasMaxLength(128);
+            entity.Property(e => e.InventoryId).ValueGeneratedOnAdd();
         });
 
         modelBuilder.Entity<RefOutsourcePartOrder>(entity =>

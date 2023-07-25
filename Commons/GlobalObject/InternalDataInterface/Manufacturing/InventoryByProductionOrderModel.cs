@@ -8,24 +8,32 @@ using VErp.Commons.Enums.MasterEnum;
 
 namespace VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing
 {
-    public class InventoryByProductionOrderModel
+   
+
+    public sealed class InventoryRequireDetailByProductionOrderModel
     {
-        public required long? InventoryRequirementDetailId { get; set; }
-        public required long? InventoryRequirementId { get; set; }
-        public required string? InventoryRequirementCode { get; set; }
-        public required long? ProductionStepId { get; set; }
-        public required int? DepartmentId { get; set; }
-        public required EnumInventoryType InventoryTypeId { get; set; }
-        public required int ProductId { get; set; }
-        public required decimal? RequireQuantity { get; set; }
+        public int? DepartmentId { get; set; }
+        public long InventoryRequirementDetailId { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public long? ProductionStepId { get; set; }
+        public EnumInventoryType InventoryTypeId { get; set; }
+        public long InventoryRequirementId { get; set; }
+        public string InventoryRequirementCode { get; set; }
+        public DateTime Date { get; set; }
+        public int ProductId { get; set; }
+    }
 
-        public required DateTime InventoryDate {  get; set; }        
-        public required long InventoryDetailId { get; set; }
-        public required long InventoryId { get; set; }
-        public required string InventoryCode { get; set; }
-        
-        public required decimal InventoryQuantity { get; set; }
-
-        public required string Content { get; set; }
+    public sealed class InventoryDetailByProductionOrderModel
+    {
+        public DateTime Date { get; set; }
+        public long InventoryId { get; set; }
+        public string InventoryCode { get; set; }
+        public long InventoryDetailId { get; set; }
+        public int? DepartmentId { get; set; }
+        public EnumInventoryType InventoryTypeId { get; set; }
+        public long? InventoryRequirementDetailId { get; set; }
+        public decimal PrimaryQuantity { get; set; }
+        public int ProductId { get; set; }
+        public string Description { get; set; }
     }
 }

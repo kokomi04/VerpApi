@@ -29,6 +29,7 @@ using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFacade;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
+using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 {
@@ -245,7 +246,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             if (productionOderDetails.Count == 0) throw new BadRequestException(GeneralCode.InvalidParams, "Lệnh sản xuất không tồn tại");
 
-            var productionOrderDetailIds = productionOderDetails.Select(s => s.ProductionOrderDetailId).ToList();
+            //var productionOrderDetailIds = productionOderDetails.Select(s => s.ProductionOrderDetailId).ToList();
 
             var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
                    .Include(a => a.ProductionAssignmentDetail)
@@ -263,9 +264,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    .Where(r => r.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
             //    .ToList();
 
-            var handovers = _manufacturingDBContext.ProductionHandover
-                .Where(h => h.ProductionOrderId == productionOrderId)
-                .ToList();
+            //var handovers = _manufacturingDBContext.ProductionHandover
+            //    .Where(h => h.ProductionOrderId == productionOrderId)
+            //    .ToList();
 
             var mapData = new Dictionary<long,
                 (
@@ -323,8 +324,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                 // Lấy thông tin outsource
                 var outSource = step.ProductionStepLinkDataRole
-                    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue)
-                    .FirstOrDefault();
+                    .FirstOrDefault(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue);
+                //.FirstOrDefault();
 
                 foreach (var linkData in linkDatas)
                 {
@@ -425,8 +426,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 try
                 {
                     // Thêm thông tin thời gian biểu làm việc
-                    var startDate = productionOderDetails[0].StartDate;
-                    var endDate = productionOderDetails[0].EndDate;
+                    //var startDate = productionOderDetails[0].StartDate;
+                    //var endDate = productionOderDetails[0].EndDate;
 
                     //// Xử lý thông tin làm việc của tổ theo từng ngày
                     //var departmentIds = data.DepartmentTimeTable.Select(d => d.DepartmentId).ToList();
@@ -508,10 +509,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     // Update reset process status
                     productionOrder.IsResetProductionProcess = true;
 
+
                     _manufacturingDBContext.SaveChanges();
 
+
+                    await SetProductionAssignmentInfo(productionOrder, steps);
+
                     // Cập nhật trạng thái cho lệnh và phân công
-                    await UpdateFullAssignedProgressStatus(productionOrderId);
+                    //await UpdateFullAssignedProgressStatus(productionOrderId);
 
                     await trans.CommitAsync();
 
@@ -519,7 +524,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
                     await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật phân công sản xuất cho lệnh sản xuất {productionOrderInfo?.ProductionOrderCode}", data);
 
-                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
+                    await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật phân công");
 
                     return true;
                 }
@@ -531,6 +536,71 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
         }
 
+        private async Task SetProductionAssignmentInfos(IList<long> productionOrderIds)
+        {
+            var infos = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).ToListAsync();
+            var steps = await _manufacturingDBContext.ProductionStep
+            .Where(s => s.ContainerTypeId == (int)EnumContainerType.ProductionOrder && productionOrderIds.Contains(s.ContainerId))
+            .ToListAsync();
+
+            foreach (var po in infos)
+            {
+                await SetProductionAssignmentInfo(po, steps.Where(s => s.ContainerId == po.ProductionOrderId).ToList());
+            }
+
+        }
+
+
+        private async Task SetProductionAssignmentInfo(ProductionOrderEntity productionOrder, IList<ProductionStep> productionSteps)
+        {
+
+            var productionAssignments = await _manufacturingDBContext.ProductionAssignment
+                  .Include(a => a.ProductionAssignmentDetail)
+                  .Include(a => a.ProductionStepLinkData)
+                  .Where(s => s.ProductionOrderId == productionOrder.ProductionOrderId)
+                  .ToListAsync();
+
+            var productionOrderAssignmentStatusId = productionSteps.Count == 0 ? EnumProductionOrderAssignmentStatus.NoAssignment : EnumProductionOrderAssignmentStatus.Completed;
+
+            foreach (var s in productionSteps.Where(s => s.IsGroup != true && !s.IsFinish))
+            {
+                s.ProductionStepAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.NoAssignment;
+                var linkData = productionAssignments.FirstOrDefault(d => d.ProductionStepId == s.ProductionStepId)?.ProductionStepLinkData;
+                if (linkData != null)
+                {
+                    var total = linkData.Quantity + (linkData.ExportOutsourceQuantity ?? 0);
+
+                    var stepAssignments = productionAssignments.Where(a => a.ProductionStepLinkDataId == linkData.ProductionStepLinkDataId);
+
+                    var assignmentQuantity = stepAssignments.Sum(a => a.AssignmentQuantity);
+
+                    var isInvalidAssignment = stepAssignments.Any(s => !s.StartDate.HasValue || !s.EndDate.HasValue || !s.ProductionAssignmentDetail.Any());
+
+                    if (assignmentQuantity > 0)
+                    {
+                        s.ProductionStepAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.AssignProcessing;
+                    }
+
+                    if (assignmentQuantity >= total && !isInvalidAssignment)
+                    {
+                        s.ProductionStepAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.Completed;
+                    }
+                    else
+                    {
+                        productionOrderAssignmentStatusId = EnumProductionOrderAssignmentStatus.AssignProcessing;
+                    }
+
+                }
+                else
+                {
+                    productionOrderAssignmentStatusId = EnumProductionOrderAssignmentStatus.AssignProcessing;
+                }
+            }
+
+            productionOrder.ProductionOrderAssignmentStatusId = (int)productionOrderAssignmentStatusId;
+
+            _manufacturingDBContext.SaveChanges();
+        }
 
         public async Task DeleteAssignmentRef(long productionOrderId, IList<ProductionAssignmentEntity> deletedProductionStepAssignments)
         {
@@ -896,7 +966,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.ProductionAssignmentDetail.AddRangeAsync(addingDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await UpdateProductionOrderAssignmentStatus(productionOrderIds);
+                //await UpdateProductionOrderAssignmentStatus(productionOrderIds);
+                await SetProductionAssignmentInfos(productionOrderIds);
 
                 await trans.CommitAsync();
                 return true;
@@ -1380,7 +1451,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (assignment == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công việc không tồn tại");
             try
             {
-                assignment.AssignedProgressStatus = (int)status;
+               
                 if (status != EnumAssignedProgressStatus.Finish)
                 {
                     assignment.IsManualFinish = false;
@@ -1393,7 +1464,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     }
 
                 }
-                
+
+                assignment.AssignedProgressStatus = (int)status;
+
+                if (assignment.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)
+                {
+                    assignment.AssignedInputStatus = (int)EnumAssignedProgressStatus.Finish;
+                }
 
                 _manufacturingDBContext.SaveChanges();
                 await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", assignment);

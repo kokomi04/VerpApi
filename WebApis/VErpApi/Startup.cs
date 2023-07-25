@@ -127,10 +127,10 @@ namespace VErp.WebApis.VErpApi
                 await _inventoryService.ProductionOrderInventory(msg.Data);
             });
 
-            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusMessage>(PRODUCTION_CALC_STATUS, async (_productionOrderService, msg, calcelToken) =>
-            {
-                await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
-            });
+            //services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusMessage>(PRODUCTION_CALC_STATUS, async (_productionOrderService, msg, calcelToken) =>
+            //{
+            //    await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
+            //});
 
             services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusV2Message>(PRODUCTION_CALC_STATUS_V2, async (_productionOrderService, msg, calcelToken) =>
             {

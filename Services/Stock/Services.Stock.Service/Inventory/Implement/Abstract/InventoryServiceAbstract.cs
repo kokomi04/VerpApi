@@ -23,6 +23,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
@@ -258,12 +259,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task ProductionOrderInventory(ProductionOrderStatusInventorySumaryMessage msg)
         {
-            var inventories = await InventoryStatiticsByProductionOrder(msg);
+            var (invRequireDetails, invDetails) = await InventoryStatiticsByProductionOrder(msg);
 
             var data = new ProductionOrderCalcStatusV2Message
             {
                 ProductionOrderCode = msg.ProductionOrderCode,
-                Inventories = inventories,
+                InvRequireDetails = invRequireDetails,
+                InvDetails = invDetails,
                 Description = msg.Description
             };
 
@@ -299,21 +301,22 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         }
 
 
-        private async Task<IList<InventoryByProductionOrderModel>> InventoryStatiticsByProductionOrder(ProductionOrderStatusInventorySumaryMessage msg)
+        private async Task<(IList<InventoryRequireDetailByProductionOrderModel> invRequireDetails, IList<InventoryDetailByProductionOrderModel> invDetails)> InventoryStatiticsByProductionOrder(ProductionOrderStatusInventorySumaryMessage msg)
         {
             var requiredDetails = await (from rd in _stockDbContext.InventoryRequirementDetail
                                          join r in _stockDbContext.InventoryRequirement on rd.InventoryRequirementId equals r.InventoryRequirementId
-                                         where r.CensorStatus == (int)EnumCensorStatus.Approved && rd.ProductionOrderCode == msg.ProductionOrderCode
-                                         select new
+                                         where r.CensorStatus == (int)EnumCensorStatus.Approved &&
+                                         rd.ProductionOrderCode == msg.ProductionOrderCode
+                                         select new InventoryRequireDetailByProductionOrderModel
                                          {
-                                             rd.DepartmentId,
-                                             rd.InventoryRequirementDetailId,
-                                             rd.PrimaryQuantity,
-                                             rd.ProductionStepId,
-                                             r.InventoryTypeId,
-                                             r.InventoryRequirementId,
-                                             r.InventoryRequirementCode,
-                                             rd.ProductId
+                                             DepartmentId = rd.DepartmentId,
+                                             InventoryRequirementDetailId = rd.InventoryRequirementDetailId,
+                                             PrimaryQuantity = rd.PrimaryQuantity,
+                                             ProductionStepId = rd.ProductionStepId,
+                                             InventoryTypeId = (EnumInventoryType)r.InventoryTypeId,
+                                             InventoryRequirementId = r.InventoryRequirementId,
+                                             InventoryRequirementCode = r.InventoryRequirementCode,
+                                             ProductId = rd.ProductId
                                          }).ToListAsync();
 
             var requiredDetailIds = requiredDetails.Select(d => (long?)d.InventoryRequirementDetailId).ToList();
@@ -321,75 +324,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var invDetails = await (from d in _stockDbContext.InventoryDetail
                                     join inv in _stockDbContext.Inventory on d.InventoryId equals inv.InventoryId
                                     where inv.IsApproved && (d.ProductionOrderCode == msg.ProductionOrderCode || requiredDetailIds.Contains(d.InventoryRequirementDetailId))
-                                    select new
+                                    select new InventoryDetailByProductionOrderModel
                                     {
-                                        inv.Date,
-                                        inv.InventoryId,
-                                        inv.InventoryCode,
-                                        d.InventoryDetailId,
-                                        inv.DepartmentId,
-                                        inv.InventoryTypeId,
-                                        d.InventoryRequirementDetailId,
-                                        d.PrimaryQuantity,
-                                        d.ProductId
+                                        Date = inv.Date,
+                                        InventoryId = inv.InventoryId,
+                                        InventoryCode = inv.InventoryCode,
+                                        InventoryDetailId = d.InventoryDetailId,
+                                        DepartmentId = inv.DepartmentId,
+                                        InventoryTypeId = (EnumInventoryType)inv.InventoryTypeId,
+                                        InventoryRequirementDetailId = d.InventoryRequirementDetailId,
+                                        PrimaryQuantity = d.PrimaryQuantity,
+                                        ProductId = d.ProductId,
+                                        Description = d.Description
                                     }).ToListAsync();
+            return (requiredDetails, invDetails);
 
-            var result = new List<InventoryByProductionOrderModel>();
-            foreach (var requireDetail in requiredDetails)
-            {
-                var invDetailByRequirement = invDetails
-                    .Where(d => d.InventoryRequirementDetailId == requireDetail.InventoryRequirementDetailId && d.ProductId == requireDetail.ProductId)
-                    .ToList();
-
-                var createItem = (long inventoryId, string inventoryCode, DateTime date, long inventoryDetailId, decimal inventoryQuantity) => new InventoryByProductionOrderModel()
-                {
-                    InventoryDate = date,
-                    InventoryRequirementDetailId = requireDetail.InventoryRequirementDetailId,
-                    InventoryRequirementId = requireDetail.InventoryRequirementId,
-                    InventoryRequirementCode = requireDetail.InventoryRequirementCode,
-                    RequireQuantity = requireDetail.PrimaryQuantity,
-                    ProductId = requireDetail.ProductId,
-                    DepartmentId = requireDetail.DepartmentId,
-                    ProductionStepId = requireDetail.ProductionStepId,
-                    InventoryTypeId = (EnumInventoryType)requireDetail.InventoryTypeId,
-                    InventoryDetailId = inventoryDetailId,
-                    InventoryId = inventoryId,
-                    InventoryCode = inventoryCode,
-                    InventoryQuantity = inventoryQuantity
-                };
-
-                if (invDetailByRequirement.Any())
-                {
-                    foreach (var inv in invDetailByRequirement)
-                    {
-                        result.Add(createItem(inv.InventoryId, inv.InventoryCode, inv.Date, inv.InventoryDetailId, inv.PrimaryQuantity));
-
-                        invDetails.Remove(inv);
-                    }
-                }
-            }
-
-            foreach (var inv in invDetails)
-            {
-                var item = new InventoryByProductionOrderModel()
-                {
-                    InventoryDate = inv.Date,
-                    InventoryRequirementDetailId = null,
-                    InventoryRequirementId = null,
-                    InventoryRequirementCode = null,
-                    RequireQuantity = null,
-                    ProductId = inv.ProductId,
-                    DepartmentId = inv.DepartmentId,
-                    ProductionStepId = null,
-                    InventoryTypeId = (EnumInventoryType)inv.InventoryTypeId,
-                    InventoryDetailId = inv.InventoryDetailId,
-                    InventoryId = inv.InventoryId,
-                    InventoryCode = inv.InventoryCode,
-                    InventoryQuantity = inv.PrimaryQuantity
-                };
-                result.Add(item);
-            }
-            return result;
         }
 
 
@@ -422,6 +371,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (stockProduct.ProductUnitConversionRemaining < 0) throw new Exception("Stock Negative ProductUnitConversionRemaining! " + stockProduct.StockProductId);
 
         }
+
+
+      
 
 
 

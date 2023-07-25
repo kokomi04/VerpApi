@@ -30,4 +30,8 @@ public partial class ProductionOrderInventoryConflict
     public string InventoryRequirementCode { get; set; }
 
     public string Content { get; set; }
+
+    public decimal HandoverInventoryQuantitySum { get; set; }
+
+    public int ConflictAllowcationStatusId { get; set; }
 }

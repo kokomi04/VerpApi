@@ -1,15 +1,9 @@
-﻿using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum;
+using Verp.Cache.Caching;
+using VErp.Commons.Constants.Caching;
 using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.GlobalObject.QueueName;
-using VErp.Commons.Library;
-using VErp.Infrastructure.AppSettings.Model;
-using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
 {
@@ -18,7 +12,8 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
     public interface IProductionOrderQueueHelperService
     {
         Task<bool> ProductionOrderStatiticChanges(string productionOrderCode, string description);
-        Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg);
+        
+        //Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg);
 
         Task<bool> CalcProductionOrderStatusV2(ProductionOrderCalcStatusV2Message msg);
     }
@@ -27,13 +22,16 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
     public class ProductionOrderQueueHelperService : IProductionOrderQueueHelperService
     {
         private readonly IQueueProcessHelperService _queueProcessHelperService;
-        public ProductionOrderQueueHelperService(IQueueProcessHelperService queueProcessHelperService)
+        private readonly ICachingService _cachingService;
+        public ProductionOrderQueueHelperService(IQueueProcessHelperService queueProcessHelperService, ICachingService cachingService)
         {
             _queueProcessHelperService = queueProcessHelperService;
+            _cachingService = cachingService;
         }
 
         public async Task<bool> ProductionOrderStatiticChanges(string productionOrderCode, string description)
         {
+            _cachingService.TrySet(ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS, ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode), true, TimeSpan.FromMinutes(5));
 
             return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_INVENTORY_STATITICS, new ProductionOrderStatusInventorySumaryMessage()
             {
@@ -42,10 +40,10 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
             });
         }
 
-        public async Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg)
-        {
-            return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_CALC_STATUS, msg);
-        }
+        //public async Task<bool> CalcProductionOrderStatus(ProductionOrderCalcStatusMessage msg)
+        //{
+        //    return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_CALC_STATUS, msg);
+        //}
 
         public async Task<bool> CalcProductionOrderStatusV2(ProductionOrderCalcStatusV2Message msg)
         {
