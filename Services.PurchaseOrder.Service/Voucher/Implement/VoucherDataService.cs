@@ -2604,7 +2604,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         }
                     }
                 }
-                rows.Add(mapRow);
+                if (mapRow.Count > 0)
+                    rows.Add(mapRow);
             }
             var billInfo = new BillInfoModel
             {
