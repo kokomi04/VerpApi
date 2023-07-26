@@ -960,7 +960,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                            ProductionOrderId = s.ContainerId,
                                            StepId = p.StepId.Value,
                                            ProductionStepLinkDataId = ld.ProductionStepLinkDataId,
-                                           Quantity = ld.Quantity + (ld.ExportOutsourceQuantity ?? 0),
+                                           Quantity = ld.Quantity,// + (ld.ExportOutsourceQuantity ?? 0),
                                            OutsourceQuantity = (ld.OutsourcePartQuantity ?? 0) + (ld.OutsourceQuantity ?? 0),
                                            ObjectId = ld.LinkDataObjectId,
                                            ObjectTypeId = (EnumProductionStepLinkDataObjectType)ld.LinkDataObjectTypeId,
