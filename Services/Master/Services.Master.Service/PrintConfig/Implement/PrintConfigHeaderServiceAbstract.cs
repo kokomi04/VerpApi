@@ -70,7 +70,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             return _mapper.Map<TModel>(header);
 
         }
-        public async Task<int> CreateHeader(TModel model)
+        public virtual async Task<int> CreateHeader(TModel model)
         {
             await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
 

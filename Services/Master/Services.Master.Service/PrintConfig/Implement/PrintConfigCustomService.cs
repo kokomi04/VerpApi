@@ -70,7 +70,20 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                  .CreateLog();
         }
 
+        public override async Task<int> AddPrintConfig(PrintConfigCustomModel model, IFormFile template, IFormFile background)
+        {
+            if (model.PrintConfigHeaderStandardId != null)
+            {
+                var printConfigHeaderCustom = await _masterDBContext.PrintConfigHeaderCustom
+                    .FirstOrDefaultAsync(c => c.PrintConfigHeaderStandardId == model.PrintConfigHeaderStandardId);
+                if (printConfigHeaderCustom == null)
+                    throw new BadRequestException("Đầu trang phiếu in đang chọn chưa được thêm vào đầu phiếu hiện hành");
 
+                model.PrintConfigHeaderCustomId = printConfigHeaderCustom.PrintConfigHeaderCustomId;
+            }
+
+            return await base.AddPrintConfig(model, template, background);
+        }
         public async Task<bool> RollbackPrintConfigCustom(int printConfigId)
         {
             var printConfig = await _masterDBContext.PrintConfigCustom

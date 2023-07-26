@@ -17,8 +17,8 @@ using VErp.Services.Master.Model.PrintConfig;
 
 namespace VErp.Services.Master.Service.PrintConfig.Implement
 {
-    public class PrintConfigHeaderCustomService : 
-            PrintConfigHeaderServiceAbstract<PrintConfigHeaderCustom, PrintConfigHeaderCustomModel, PrintConfigHeaderCustomViewModel>, 
+    public class PrintConfigHeaderCustomService :
+            PrintConfigHeaderServiceAbstract<PrintConfigHeaderCustom, PrintConfigHeaderCustomModel, PrintConfigHeaderCustomViewModel>,
             IPrintConfigHeaderCustomService
 
     {
@@ -26,16 +26,26 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDBContext;
         private readonly ObjectActivityLogFacade _printConfigHeaderCustomActivityLog;
-        public PrintConfigHeaderCustomService(MasterDBContext masterDBContext, 
-            ILogger<PrintConfigHeaderServiceAbstract<PrintConfigHeaderCustom, PrintConfigHeaderCustomModel, PrintConfigHeaderCustomViewModel>> logger, 
+        public PrintConfigHeaderCustomService(MasterDBContext masterDBContext,
+            ILogger<PrintConfigHeaderServiceAbstract<PrintConfigHeaderCustom, PrintConfigHeaderCustomModel, PrintConfigHeaderCustomViewModel>> logger,
             IMapper mapper,
-            IActivityLogService activityLogService) 
+            IActivityLogService activityLogService)
                 : base(masterDBContext, logger, mapper, nameof(PrintConfigHeaderCustom.PrintConfigHeaderCustomId))
         {
             _logger = logger;
             _mapper = mapper;
             _masterDBContext = masterDBContext;
             _printConfigHeaderCustomActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PrintConfigHeaderCustom);
+        }
+
+        public override async Task<int> CreateHeader(PrintConfigHeaderCustomModel model)
+        {
+            if (model.PrintConfigHeaderStandardId != null && await _masterDBContext.PrintConfigHeaderCustom.AnyAsync(c => c.PrintConfigHeaderStandardId == model.PrintConfigHeaderStandardId))
+            {
+                throw new BadRequestException("Header phiếu in hiện hành đã được tạo trước đó");
+            }
+
+            return await base.CreateHeader(model);
         }
 
         public async Task<bool> RollbackPrintConfigHeaderCustom(int printConfigHeaderCustomId)
