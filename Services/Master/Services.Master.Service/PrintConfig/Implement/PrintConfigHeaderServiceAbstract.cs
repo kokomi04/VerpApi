@@ -122,7 +122,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             }
         }
 
-        public async Task<bool> DeleteHeader(int headerId)
+        public virtual async Task<bool> DeleteHeader(int headerId)
         {
             await using var trans = await _masterDBContext.Database.BeginTransactionAsync();
 

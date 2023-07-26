@@ -47,6 +47,20 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
             return await base.CreateHeader(model);
         }
+        public override async Task<bool> DeleteHeader(int headerId)
+        {
+            var printConfigCustomNames = await _masterDBContext.PrintConfigCustom
+                .Where(s => s.PrintConfigHeaderCustomId == headerId)
+                .Select(s => s.Title)
+                .ToListAsync();
+
+            string result = string.Join(", ", printConfigCustomNames.ConvertAll(x => $"\"{x}\""));
+
+            if (await _masterDBContext.PrintConfigCustom.AnyAsync(c => c.PrintConfigHeaderCustomId == headerId))
+                throw new BadRequestException($"Header đang được sử dụng tại phiếu in {result}");
+
+            return await base.DeleteHeader(headerId);
+        }    
 
         public async Task<bool> RollbackPrintConfigHeaderCustom(int printConfigHeaderCustomId)
         {
