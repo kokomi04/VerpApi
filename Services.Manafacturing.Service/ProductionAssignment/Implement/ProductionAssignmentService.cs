@@ -287,144 +287,101 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    .ToList();
 
             // Danh sách phân công của các công đoạn bị xóa
-            var productionStepIds = data.ProductionStepAssignment
+            var assignedProductionStepIds = data.ProductionStepAssignment
                 .Select(a => a.ProductionStepId)
                 .ToList();
 
             var deletedProductionStepAssignments = oldProductionAssignments
-                    .Where(s => !productionStepIds.Contains(s.ProductionStepId))
+                    .Where(s => !assignedProductionStepIds.Contains(s.ProductionStepId))
                     .ToList();
 
-            foreach (var pStepAssignment in data.ProductionStepAssignment)
+            // Lấy thông tin outsource
+            //var outSource = step.ProductionStepLinkDataRole
+            //   .FirstOrDefault(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue);
+            //.FirstOrDefault();
+
+            var duplicatePStep = data.ProductionStepAssignment
+                .GroupBy(a => a.ProductionStepId)
+                .FirstOrDefault(a => a.Count() > 1);
+
+            if (duplicatePStep != null)
             {
-                var step = steps.FirstOrDefault(s => s.ProductionStepId == pStepAssignment.ProductionStepId);
-                if (pStepAssignment.ProductionAssignments.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != pStepAssignment.ProductionStepId))
+                var step = steps.FirstOrDefault(s => s.ProductionStepId == duplicatePStep.Key);
+                throw new BadRequestException(GeneralCode.InvalidParams, "Tồn tại nhiều hơn 1 phân công công đoạn " + step?.Title);
+            }
+
+            foreach (var assignmentStep in data.ProductionStepAssignment)
+            {
+                if (assignmentStep.ProductionAssignments.Any(a => a.ProductionOrderId != productionOrderId || a.ProductionStepId != assignmentStep.ProductionStepId))
                     throw new BadRequestException(GeneralCode.InvalidParams, "Thông tin kế công đoạn sản xuất giữa các tổ không khớp");
+
+
+                var step = steps.FirstOrDefault(s => s.ProductionStepId == assignmentStep.ProductionStepId);
                 if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
-                var linkDatas = step.ProductionStepLinkDataRole
-                .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
-                .ToDictionary(r => r.ProductionStepLinkDataId,
-                r =>
+                var duplicateLink = assignmentStep.ProductionAssignments.GroupBy(a => a.ProductionStepLinkDataId).FirstOrDefault(a => a.Count() > 1);
+                if (duplicateLink != null)
                 {
-                    return Math.Round(
-                        r.ProductionStepLinkData.Quantity
-                        + r.ProductionStepLinkData.ExportOutsourceQuantity.GetValueOrDefault()
-                        , 5);
-                });
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Cần đồng nhất phân công 1 đầu ra, công đoạn " + step?.Title);
+                }
 
-                foreach (var d in pStepAssignment.ProductionAssignments)
+                var linkData = step.ProductionStepLinkDataRole.FirstOrDefault(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                && r.ProductionStepLinkDataId == assignmentStep.ProductionAssignments.First().ProductionStepLinkDataId
+                )?.ProductionStepLinkData;
+                if (linkData == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Đầu ra không tồn tại, công đoạn " + step?.Title);
+                }
+
+                var totalAssignQuantity = assignmentStep.ProductionAssignments.Sum(a => a.AssignmentQuantity);
+                if (totalAssignQuantity.SubProductionDecimal(linkData.Quantity) > 0)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phân công lớn hơn số lượng trong kế hoạch sản xuất, {step.Title}");
+                }
+
+
+                var oldProductionStepAssignments = oldProductionAssignments
+                   .Where(s => s.ProductionStepId == assignmentStep.ProductionStepId)
+                   .ToList();
+
+
+                var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
+                var newAssignments = new List<ProductionAssignmentModel>();
+
+                foreach (var d in assignmentStep.ProductionAssignments)
                 {
                     var sumByDays = (d.ProductionAssignmentDetail?.Sum(d => d.QuantityPerDay) ?? 0);
                     if (d.AssignmentQuantity.SubDecimal(sumByDays) != 0)
                     {
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Tổng số lượng phân công từng ngày phải bằng số lượng phân công!");
-                    }
-                }
-
-
-                if (pStepAssignment.ProductionAssignments.Any(d => d.AssignmentQuantity <= 0))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công phải lớn hơn 0");
-
-                // Lấy thông tin outsource
-                var outSource = step.ProductionStepLinkDataRole
-                    .FirstOrDefault(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.OutsourceQuantity.HasValue);
-                //.FirstOrDefault();
-
-                foreach (var linkData in linkDatas)
-                {
-                    decimal totalAssignmentQuantity = 0;
-
-                    if (outSource != null && outSource.ProductionStepLinkData.Quantity > 0)
-                    {
-                        totalAssignmentQuantity += linkData.Value * outSource.ProductionStepLinkData.OutsourceQuantity.GetValueOrDefault() / outSource.ProductionStepLinkData.Quantity;
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Tổng số lượng phân công từng ngày phải bằng số lượng phân công, {step.Title}");
                     }
 
-                    foreach (var assignment in pStepAssignment.ProductionAssignments)
-                    {
-                        var sourceData = linkDatas[assignment.ProductionStepLinkDataId];
-                        totalAssignmentQuantity += sourceData > 0 ? assignment.AssignmentQuantity * linkData.Value / sourceData : 0;
-                    }
+                    if (d.AssignmentQuantity <= 0)
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phân công phải lớn hơn 0, {step.Title}");
 
-                    if (totalAssignmentQuantity.SubProductionDecimal(linkData.Value) > 0)
-                        throw new BadRequestException(GeneralCode.InvalidParams, "Số lượng phân công lớn hơn số lượng trong kế hoạch sản xuất");
-                }
 
-                var oldProductionStepAssignments = oldProductionAssignments
-                    .Where(s => s.ProductionStepId == pStepAssignment.ProductionStepId)
-                    .ToList();
-
-                var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
-                var newAssignments = new List<ProductionAssignmentModel>();
-                foreach (var item in pStepAssignment.ProductionAssignments)
-                {
-                    var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == item.DepartmentId);
+                    var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == d.DepartmentId);
                     if (entity == null)
                     {
-                        newAssignments.Add(item);
+                        newAssignments.Add(d);
                     }
                     else
                     {
-                        if (item.IsChange(entity))
+                        if (d.IsChange(entity))
                         {
-                            updateAssignments.Add((entity, item));
+                            updateAssignments.Add((entity, d));
                         }
                         oldProductionStepAssignments.Remove(entity);
                     }
                 }
 
-                // Validate khai báo chi phí
-                //var deleteAssignDepartmentIds = oldProductionStepAssignments.Select(a => a.DepartmentId).ToList();
-                //if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(s.DepartmentId)))
-                //{
-                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
-                //}
-
-                // Validate vật tư tiêu hao
-                //if (scheduleTurnShifts.Any(m => m.ProductionStepId == productionStepAssignments.ProductionStepId && deleteAssignDepartmentIds.Contains(m.DepartmentId)))
-                //{
-                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
-                //}
-
-                // Validate xóa tổ đã tham gia sản xuất
-                //var productIds = step.ProductionStepLinkDataRole
-                //    .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && r.ProductionStepLinkData.ObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product)
-                //    .Select(r => r.ProductionStepLinkData.ObjectId)
-                //    .ToList();
-
-                //if (inputInventorys.Any(r => productIds.Contains(r.ProductId) && r.DepartmentId.HasValue && deleteAssignDepartmentIds.Contains(r.DepartmentId.Value))
-                //    || handovers.Any(h => deleteAssignDepartmentIds.Contains(h.FromDepartmentId) || deleteAssignDepartmentIds.Contains(h.ToDepartmentId)))
-                //{
-                //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-                //}
-
-                mapData.Add(pStepAssignment.ProductionStepId, (updateAssignments, newAssignments));
+                mapData.Add(assignmentStep.ProductionStepId, (updateAssignments, newAssignments));
 
                 deletedProductionStepAssignments.AddRange(oldProductionStepAssignments);
             }
 
 
 
-            //foreach (var item in deletedProductionStepAssignments)
-            //{
-            //    // Validate khai báo chi phí
-            //    if (productionScheduleTurnShifts.Any(s => s.ProductionOrderId == productionOrderId && s.ProductionStepId == item.ProductionStepId && s.DepartmentId == item.DepartmentId))
-            //    {
-            //        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo chi phí");
-            //    }
-
-            //    // Validate vật tư tiêu hao
-            //    if (scheduleTurnShifts.Any(m => m.ProductionStepId == item.ProductionStepId && m.DepartmentId == item.DepartmentId))
-            //    {
-            //        throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã khai báo vật tư tiêu hao");
-            //    }
-
-            //    //Validate xóa tổ đã tham gia sản xuất
-            //    //if (inputInventorys.Any(r => handovers.Any(h => (h.FromProductionStepId == item.ProductionStepId || h.ToProductionStepId == item.ProductionStepId) && (h.FromDepartmentId == item.DepartmentId || h.ToDepartmentId == item.DepartmentId))))
-            //    //{
-            //    //    throw new BadRequestException(GeneralCode.InvalidParams, "Không thể xóa phân công cho tổ đã tham gia sản xuất");
-            //    //}
-            //}
 
             using (var trans = await _manufacturingDBContext.Database.BeginTransactionAsync())
                 try
@@ -448,7 +405,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     //}
 
 
-                    var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => productionStepIds.Contains(w.ProductionStepId)).ToList();
+                    var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => assignedProductionStepIds.Contains(w.ProductionStepId)).ToList();
                     // Xóa phân công có công đoạn bị xóa khỏi quy trình
 
                     await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
@@ -1458,7 +1415,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             if (assignment == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công việc không tồn tại");
             try
             {
-               
+
                 if (status != EnumAssignedProgressStatus.Finish)
                 {
                     assignment.IsManualFinish = false;
