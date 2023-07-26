@@ -285,7 +285,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 foreach (var f in salaryFields)
                 {
                     var fieldVariableName = SALARY_FIELD_PREFIX + f.SalaryFieldName;
-
+                    
                     var isFieldInGroup = groupFields.TryGetValue(f.SalaryFieldId, out var groupField);
 
                     object fieldValue = null;
@@ -322,7 +322,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     else
                     {
-                        if (GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue))
+                        if ((f.DataTypeId != EnumDataType.Text || f.DataTypeId != EnumDataType.PhoneNumber) && GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue)  )
                         {
                             fieldValue = decimalValue;
                         }
@@ -443,7 +443,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeePeriodByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group, SalaryGroupInfo groupInfo, SortedSalaryFields sortedSalaryFields)
         {
-
+            
             var salaryData = await _organizationDBContext.SalaryEmployee
                 .Include(s => s.SalaryEmployeeValue)
                 .ThenInclude(v => v.SalaryField)
