@@ -32,17 +32,20 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
     public class PrintConfigCustomService : PrintConfigServiceAbstract<PrintConfigCustom, PrintConfigCustomModel, PrintConfigCustomModuleType>, IPrintConfigCustomService
     {
         private readonly ObjectActivityLogFacade _printConfigCustomActivityLog;
+        private readonly IPrintConfigHeaderCustomService _printConfigHeaderCustomService;
 
         public PrintConfigCustomService(MasterDBContext masterDBContext
             , IOptions<AppSetting> appSetting
             , ILogger<PrintConfigCustomService> logger
             , IActivityLogService activityLogService
             , IMapper mapper
-            , IDocOpenXmlService docOpenXmlService) :
+            , IDocOpenXmlService docOpenXmlService
+            , IPrintConfigHeaderCustomService printConfigHeaderCustomService) :
             base(masterDBContext, appSetting, logger, mapper, docOpenXmlService, EnumObjectType.PrintConfigCustom, nameof(PrintConfigCustom.PrintConfigCustomId))
         {
 
             _printConfigCustomActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.PrintConfigCustom);
+            _printConfigHeaderCustomService = printConfigHeaderCustomService;
         }
 
         protected override async Task LogAddPrintConfig(PrintConfigCustomModel model, PrintConfigCustom entity)
@@ -72,31 +75,29 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
         public override async Task<int> AddPrintConfig(PrintConfigCustomModel model, IFormFile template, IFormFile background)
         {
-            if (model.PrintConfigHeaderStandardId != null)
+            if (!model.PrintConfigHeaderCustomId.HasValue && model.PrintConfigHeaderStandardId.HasValue)
             {
-                var printConfigHeaderCustom = await _masterDBContext.PrintConfigHeaderCustom
-                    .FirstOrDefaultAsync(c => c.PrintConfigHeaderStandardId == model.PrintConfigHeaderStandardId);
-                if (printConfigHeaderCustom == null)
-                    throw new BadRequestException("Đầu trang phiếu in đang chọn chưa được thêm vào đầu phiếu hiện hành");
+                var printConfigStandard = await _masterDBContext.PrintConfigStandard.FindAsync(model.PrintConfigStandardId);
 
-                model.PrintConfigHeaderCustomId = printConfigHeaderCustom.PrintConfigHeaderCustomId;
+                model.PrintConfigHeaderCustomId = await GetOrCreateHeaderCustom(printConfigStandard);
             }
-
+               
             return await base.AddPrintConfig(model, template, background);
         }
-        public async Task<bool> RollbackPrintConfigCustom(int printConfigId)
+       
+        public async Task<bool> RollbackPrintConfigCustom(int printConfigCustomId)
         {
-            var printConfig = await _masterDBContext.PrintConfigCustom
-                .Where(p => p.PrintConfigCustomId == printConfigId)
+            var printConfigCustom = await _masterDBContext.PrintConfigCustom
+                .Where(p => p.PrintConfigCustomId == printConfigCustomId)
                 .FirstOrDefaultAsync();
 
-            if (printConfig == null)
+            if (printConfigCustom == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
-            if (!printConfig.PrintConfigStandardId.HasValue || printConfig.PrintConfigStandardId.Value <= 0)
+            if (!printConfigCustom.PrintConfigStandardId.HasValue || printConfigCustom.PrintConfigStandardId.Value <= 0)
                 throw PrintConfigStandardEmpty.BadRequest(GeneralCode.InternalError);
 
             var printConfigStandard = await _masterDBContext.PrintConfigStandard
-                .Where(x => x.PrintConfigStandardId == printConfig.PrintConfigStandardId)
+                .Where(x => x.PrintConfigStandardId == printConfigCustom.PrintConfigStandardId)
                 .FirstOrDefaultAsync();
 
             var source = _mapper.Map<PrintConfigRollbackModel>(printConfigStandard);
@@ -104,49 +105,67 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             if (source == null)
                 throw PrintConfigStandardNotFound.BadRequest(GeneralCode.InternalError);
 
-            var printConfigHeaderStandard = new PrintConfigHeaderStandard();
+            printConfigCustom.PrintConfigHeaderCustomId = await GetOrCreateHeaderCustom(printConfigStandard);
 
-            if (printConfigStandard.PrintConfigHeaderStandardId.HasValue)
-            {
-                printConfigHeaderStandard = await _masterDBContext.PrintConfigHeaderStandard
-                    .FindAsync(printConfigStandard.PrintConfigHeaderStandardId);
-            }
-
-            var printConfigHeaderCustom = await _masterDBContext.PrintConfigHeaderCustom
-                .FirstOrDefaultAsync( c => c.PrintConfigHeaderStandardId == printConfigHeaderStandard.PrintConfigHeaderStandardId);
-
-            if (printConfigHeaderCustom != null)
-                printConfig.PrintConfigHeaderCustomId = printConfigHeaderCustom.PrintConfigHeaderCustomId;
-
-            var destProperties = printConfig.GetType().GetProperties();
+            var destProperties = printConfigCustom.GetType().GetProperties();
             foreach (var destProperty in destProperties)
             {
                 var sourceProperty = source.GetType().GetProperty(destProperty.Name, BindingFlags.Public | BindingFlags.Instance);
                 if (sourceProperty != null && destProperty.PropertyType.IsAssignableFrom(sourceProperty.PropertyType))
                 {
-                    destProperty.SetValue(printConfig, sourceProperty.GetValue(source, new object[] { }), new object[] { });
+                    destProperty.SetValue(printConfigCustom, sourceProperty.GetValue(source, new object[] { }), new object[] { });
                 }
             }
 
             var moduleTypeIds = await _masterDBContext.PrintConfigStandardModuleType
-                .Where(m => m.PrintConfigStandardId == printConfig.PrintConfigStandardId)
+                .Where(m => m.PrintConfigStandardId == printConfigCustom.PrintConfigStandardId)
                 .Select(m => m.ModuleTypeId)
                 .ToListAsync();
 
-            await UpdateMappingModuleTypes(moduleTypeIds, printConfigId);
+            await UpdateMappingModuleTypes(moduleTypeIds, printConfigCustomId);
 
             await _masterDBContext.SaveChangesAsync();
 
             await _printConfigCustomActivityLog.LogBuilder(() => PrintConfigCustomActivityLogMessage.Delete)
-            .MessageResourceFormatDatas(printConfig.PrintConfigName)
-            .ObjectId(printConfig.PrintConfigCustomId)
-            .JsonData(printConfig.JsonSerialize())
+            .MessageResourceFormatDatas(printConfigCustom.PrintConfigName)
+            .ObjectId(printConfigCustom.PrintConfigCustomId)
+            .JsonData(printConfigCustom.JsonSerialize())
             .CreateLog();
 
             return true;
         }
 
+        private async Task<int?> GetOrCreateHeaderCustom(PrintConfigStandard printConfigStandard)
+        {
+            if (printConfigStandard != null && printConfigStandard.PrintConfigHeaderStandardId.HasValue)
+            {
+                var printConfigHeaderCustom = await _masterDBContext.PrintConfigHeaderCustom
+                    .FirstOrDefaultAsync(c => c.PrintConfigHeaderStandardId == printConfigStandard.PrintConfigHeaderStandardId);
+
+                if (printConfigHeaderCustom == null)
+                {
+                    var headerStandard = await _masterDBContext.PrintConfigHeaderStandard.FindAsync(printConfigStandard.PrintConfigHeaderStandardId);
+
+                    var headerCustomModel = new PrintConfigHeaderCustomModel()
+                    {
+                        PrintConfigHeaderStandardId = headerStandard.PrintConfigHeaderStandardId,
+                        PrintConfigHeaderCustomCode = headerStandard.PrintConfigHeaderStandardCode,
+                        SortOrder = headerStandard.SortOrder,
+                        IsShow = headerStandard.IsShow,
+                        JsAction = headerStandard.JsAction,
+                        Title = headerStandard.Title,
+                    };
+
+                    return await _printConfigHeaderCustomService.CreateHeader(headerCustomModel);
+                }
+                else
+                {
+                    return printConfigHeaderCustom.PrintConfigHeaderCustomId;
+                }
+            }
+
+            return null;
+        }
+
     }
-
-
 }
