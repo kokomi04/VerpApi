@@ -93,6 +93,12 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.ManufacturingDatabase);
             }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<UnAuthorizeManufacturingDBContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.ManufacturingDatabase);
+            }, ServiceLifetime.Transient);
+            
         }
 
         public static void ConfigAccountancyContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)

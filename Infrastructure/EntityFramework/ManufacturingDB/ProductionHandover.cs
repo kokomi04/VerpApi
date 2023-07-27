@@ -23,11 +23,11 @@ public partial class ProductionHandover
 
     public int FromDepartmentId { get; set; }
 
-    public long? FromProductionStepId { get; set; }
+    public long FromProductionStepId { get; set; }
 
     public int ToDepartmentId { get; set; }
 
-    public long? ToProductionStepId { get; set; }
+    public long ToProductionStepId { get; set; }
 
     public decimal HandoverQuantity { get; set; }
 

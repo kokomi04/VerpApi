@@ -207,8 +207,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             foreach (var h in info.ProductionHandover)
                             {
-                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId ?? 0, h.FromDepartmentId, null, null);
-                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId ?? 0, h.ToDepartmentId, null, null);
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId, null, null);
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId, null, null);
                             }
                         }
                         await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
@@ -261,12 +261,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 {
                     foreach (var h in info.ProductionHandover)
                     {
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId ?? 0, h.FromDepartmentId);
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId ?? 0, h.ToDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CheckBatch)
-                              .MessageResourceFormatDatas((status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối") , info.ProductionHandoverReceiptCode)
+                              .MessageResourceFormatDatas((status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối"), info.ProductionHandoverReceiptCode)
                               .ObjectId(receiptId)
                               .JsonData(info)
                               .CreateLog();
@@ -430,8 +430,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 {
                     if (h.Status == (int)EnumHandoverStatus.Accepted && h.FromDepartmentId != STOCK_DEPARTMENT_ID && h.ToDepartmentId != STOCK_DEPARTMENT_ID)
                     {
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId ?? 0, h.FromDepartmentId);
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId ?? 0, h.ToDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CreateBatch)
@@ -534,8 +534,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 {
                     foreach (var h in receiptInfo.ProductionHandover)
                     {
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId ?? 0, h.ToDepartmentId);
-                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId ?? 0, h.FromDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                        await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
                 await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
@@ -657,8 +657,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
                 foreach (var h in changedHandovers)
                 {
-                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId ?? 0, h.ToDepartmentId);
-                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId ?? 0, h.FromDepartmentId);
+                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                    await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                 }
 
                 await trans.CommitAsync();
@@ -854,9 +854,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                               ObjectId = h.ObjectId,
                               ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
                               FromDepartmentId = h.FromDepartmentId,
-                              FromProductionStepId = h.FromProductionStepId ?? 0,
+                              FromProductionStepId = h.FromProductionStepId,
                               ToDepartmentId = h.ToDepartmentId,
-                              ToProductionStepId = h.ToProductionStepId ?? 0,
+                              ToProductionStepId = h.ToProductionStepId,
                               HandoverDatetime = h.HandoverDatetime.GetUnix(),
                               Note = h.Note,
                               ProductionOrderId = h.ProductionOrderId,

@@ -252,9 +252,9 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         ObjectId = h.ObjectId,
                         ObjectTypeId = (EnumProductionStepLinkDataObjectType)h.ObjectTypeId,
                         FromDepartmentId = h.FromDepartmentId,
-                        FromProductionStepId = h.FromProductionStepId ?? 0,
+                        FromProductionStepId = h.FromProductionStepId,
                         ToDepartmentId = h.ToDepartmentId,
-                        ToProductionStepId = h.ToProductionStepId ?? 0,
+                        ToProductionStepId = h.ToProductionStepId,
                         HandoverDatetime = h.HandoverDatetime.GetUnix(),
                         Note = h.Note,
 

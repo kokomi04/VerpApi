@@ -480,7 +480,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var manualAllowcations = await ResetInventoryHandovers(productionOrderId, data);
 
-            var productAssignmentsWithStocks = (await GetAssignRequirements(productionOrderId)).Where(ra => ra.RefProductionStepId == 0).ToList();
+            var productAssignmentsWithStocks = (await GetAssignRequirements(productionOrderId)).Where(ra => ra.RefProductionStepId == 0 || ra.IsOutsourceStep).ToList();
 
             var newConflicts = new List<ProductionOrderInventoryConflict>();
 
@@ -747,6 +747,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         return new StepDepartmentAssignment
                         {
                             RefProductionStepId = refProductionStepId,
+                            IsOutsourceStep = assignLinkData.ExportOutsourceQuantity > 0 || pStep.OutsourceStepRequestId > 0,
                             ProductionStepLinkDataRoleTypeId = productionStepLinkDataRoleTypeId,
                             DataLinkId = linkData.ProductionStepLinkDataId,
                             AssignDataLinkId = a.ProductionStepLinkDataId,
@@ -787,10 +788,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                         outputAssignments.Add(createAssignmentLinkQuantity(EnumProductionStepLinkDataRoleType.Output, requireImport, refProductionStepId));
 
-                        //if (requireImport.outs > 0)
-                        //{
-
-                        //}
                     }
                 }
             }
@@ -813,7 +810,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 if (assignRemaning == 0) continue;
 
-                var assignQuantity = 0M;
+                decimal assignQuantity;
                 if (isAssignRemaingForLast && i == productAssignments.Count - 1)
                 {
                     assignQuantity = assignRemaning;
@@ -841,9 +838,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ObjectId = inv.ProductId,
                     ObjectTypeId = (int)EnumProductionStepLinkDataObjectType.Product,
                     FromDepartmentId = inv.InventoryTypeId == EnumInventoryType.Output ? 0 : departmentId,
-                    FromProductionStepId = inv.InventoryTypeId == EnumInventoryType.Output ? null : productionStepId,
+                    FromProductionStepId = inv.InventoryTypeId == EnumInventoryType.Output ? 0 : productionStepId,
                     ToDepartmentId = inv.InventoryTypeId == EnumInventoryType.Output ? departmentId : 0,
-                    ToProductionStepId = inv.InventoryTypeId == EnumInventoryType.Output ? productionStepId : null,
+                    ToProductionStepId = inv.InventoryTypeId == EnumInventoryType.Output ? productionStepId : 0,
                     HandoverQuantity = assignQuantity,
                     Status = (int)EnumHandoverStatus.Accepted,
                     InventoryRequirementDetailId = inventoryRequirementDetailId,
@@ -865,6 +862,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         private sealed class StepDepartmentAssignment
         {
             public required long RefProductionStepId { get; set; }
+            public required bool IsOutsourceStep { get; set; }
             public required long DataLinkId { get; set; }
             public required long AssignDataLinkId { get; set; }
             public EnumProductionStepLinkDataRoleType ProductionStepLinkDataRoleTypeId { get; set; }
