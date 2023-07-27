@@ -54,7 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Create)
                  .MessageResourceFormatDatas(req.PropertyCode)
                  .ObjectId(propertyEntity.PropertyId)
-                 .JsonData(req.JsonSerialize())
+                 .JsonData(req)
                  .CreateLog();
 
                 return propertyEntity.PropertyId;
@@ -88,7 +88,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Delete)
                  .MessageResourceFormatDatas(propertyEntity.PropertyCode)
                  .ObjectId(propertyEntity.PropertyId)
-                 .JsonData(propertyEntity.JsonSerialize())
+                 .JsonData(propertyEntity)
                  .CreateLog();
                 return true;
             }
@@ -142,7 +142,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _propertyActivityLog.LogBuilder(() => PropertyActivityLogMessage.Update)
                  .MessageResourceFormatDatas(propertyEntity.PropertyCode)
                  .ObjectId(propertyEntity.PropertyId)
-                 .JsonData(req.JsonSerialize())
+                 .JsonData(req)
                  .CreateLog();
 
                 return propertyId;

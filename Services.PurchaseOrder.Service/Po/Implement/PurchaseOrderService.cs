@@ -760,7 +760,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
                 .MessageResourceFormatDatas(po.PurchaseOrderCode)
                 .ObjectId(po.PurchaseOrderId)
-                .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                 .CreateLog();
 
                 return po.PurchaseOrderId;
@@ -1212,7 +1212,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                   .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                    .CreateLog();
 
 
@@ -1252,7 +1252,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info }).JsonSerialize())
+                   .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info })
                    .CreateLog();
 
 
@@ -1354,7 +1354,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData((new { purchaseOrderId }))
                    .CreateLog();
 
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
@@ -1404,7 +1404,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckReject)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
 
@@ -1450,7 +1450,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData((new { purchaseOrderId }))
                    .CreateLog();
 
 
@@ -1497,7 +1497,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorReject)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
 
@@ -1541,7 +1541,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
@@ -1574,7 +1574,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoProcessStatus)
                  .MessageResourceFormatDatas(poProcessStatusId, info.PurchaseOrderCode)
                  .ObjectId(info.PurchaseOrderId)
-                 .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
+                 .JsonData((new { purchaseOrderId, poProcessStatusId }))
                  .CreateLog();
 
 

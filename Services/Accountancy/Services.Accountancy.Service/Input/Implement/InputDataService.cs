@@ -659,7 +659,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                 .BillTypeId(inputTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
 
@@ -1437,7 +1437,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                   .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                   .BillTypeId(inputTypeId)
                   .ObjectId(billInfo.FId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 return true;
@@ -1664,7 +1664,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             .MessageResourceFormatDatas(inputTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
                             .BillTypeId(inputTypeId)
                             .ObjectId(bill.FId)
-                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, billIds }.JsonSerialize().JsonSerialize())
+                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, billIds })
                             .CreateLog();
 
                         // Update last bill version
@@ -1798,7 +1798,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                            .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                            .BillTypeId(inputTypeId)
                            .ObjectId(billInfo.FId)
-                           .JsonData(data.JsonSerialize().JsonSerialize())
+                           .JsonData(data)
                            .CreateLog();
 
                 return true;
@@ -2619,7 +2619,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                   .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                                   .BillTypeId(inputTypeId)
                                   .ObjectId(billInfo.FId)
-                                  .JsonData(bill.JsonSerialize())
+                                  .JsonData(bill)
                                   .CreateLog();
 
                                 longTask.IncProcessedRows();
@@ -2768,7 +2768,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                    .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                                    .BillTypeId(inputTypeId)
                                    .ObjectId(billInfo.FId)
-                                   .JsonData(newBillInfo.JsonSerialize())
+                                   .JsonData(newBillInfo)
                                    .CreateLog();
 
                                 longTask.IncProcessedRows();

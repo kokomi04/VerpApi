@@ -301,7 +301,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportConsumption)
                      .MessageResourceFormatDatas(p.ProductCode)
                      .ObjectId(p.ProductId)
-                     .JsonData(new { _mapping, consumps }.JsonSerialize())
+                     .JsonData(new { _mapping, consumps })
                      .CreateLog();
                 }
 

@@ -455,7 +455,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await CreatedLogBuilder(objectType)
                    .MessageResourceFormatDatas(req.InventoryRequirementCode)
                    .ObjectId(inventoryRequirement.InventoryRequirementId)
-                   .JsonData(req.JsonSerialize())
+                   .JsonData(req)
                    .CreateLog();
 
 
@@ -577,7 +577,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await UpdatedLogBuilder(objectType)
                  .MessageResourceFormatDatas(req.InventoryRequirementCode)
                  .ObjectId(inventoryRequirement.InventoryRequirementId)
-                 .JsonData(req.JsonSerialize())
+                 .JsonData(req)
                  .CreateLog();
 
                 return inventoryRequirementId;
@@ -630,7 +630,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await DeletedLogBuilder(objectType)
                  .MessageResourceFormatDatas(inventoryRequirement.InventoryRequirementCode)
                  .ObjectId(inventoryRequirement.InventoryRequirementId)
-                 .JsonData(inventoryRequirement.JsonSerialize())
+                 .JsonData(inventoryRequirement)
                  .CreateLog();
 
 

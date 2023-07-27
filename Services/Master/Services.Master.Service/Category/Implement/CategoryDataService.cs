@@ -237,7 +237,7 @@ namespace VErp.Services.Accountancy.Service.Category
               .MessageResourceFormatDatas(id)
               .BillTypeId(category.CategoryId)
               .ObjectId(id)
-              .JsonData(data.JsonSerialize())
+              .JsonData(data)
               .CreateLog();
 
             return (int)id;
@@ -392,7 +392,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(data.JsonSerialize())
+             .JsonData(data)
              .CreateLog();
 
             return numberChange;
@@ -536,7 +536,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(categoryRow.JsonSerialize())
+             .JsonData(categoryRow)
              .CreateLog();
 
             return numberChange;

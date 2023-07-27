@@ -219,7 +219,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
                 await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
                     .MessageResourceFormatDatas(entity.MaterialCalcCode)
                     .ObjectId(entity.MaterialCalcId)
-                    .JsonData(req.JsonSerialize())
+                    .JsonData(req)
                     .CreateLog();
 
                 return entity.MaterialCalcId;
@@ -274,7 +274,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Update)
                 .MessageResourceFormatDatas(entity.MaterialCalcCode)
                 .ObjectId(entity.MaterialCalcId)
-                .JsonData(req.JsonSerialize())
+                .JsonData(req)
                 .CreateLog();
 
             return true;
@@ -292,7 +292,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Delete)
                .MessageResourceFormatDatas(entity.MaterialCalcCode)
                .ObjectId(entity.MaterialCalcId)
-               .JsonData(entity.JsonSerialize())
+               .JsonData(entity)
                .CreateLog();
 
             return true;

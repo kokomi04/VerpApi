@@ -53,7 +53,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.CreateWorkSchedule)
                           .MessageResourceFormatDatas(entity.WorkScheduleTitle)
                           .ObjectId(entity.WorkScheduleId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
 
                 await trans.CommitAsync();
@@ -149,7 +149,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _workScheduleActivityLog.LogBuilder(() => WorkScheduleActivityLogMessage.UpdateWorkSchedule)
                          .MessageResourceFormatDatas(workSchedule.WorkScheduleTitle)
                          .ObjectId(workSchedule.WorkScheduleId)
-                         .JsonData(model.JsonSerialize())
+                         .JsonData(model)
                          .CreateLog();
 
                 await trans.CommitAsync();

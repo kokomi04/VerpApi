@@ -105,7 +105,7 @@
 //                    await _objectActivityLog.LogBuilder(() => OutsourceMaterialActivityMessage.Create)
 //                        .MessageResourceFormatDatas(req.OutsourceOrderCode)
 //                        .ObjectId(order.OutsourceOrderId)
-//                        .JsonData(req.JsonSerialize())
+//                        .JsonData(req)
 //                        .CreateLog();
 
 //                    return order.OutsourceOrderId;
@@ -368,7 +368,7 @@
 //                await _objectActivityLog.LogBuilder(() => OutsourceMaterialActivityMessage.Update)
 //                     .MessageResourceFormatDatas(req.OutsourceOrderCode)
 //                     .ObjectId(outsourceOrderId)
-//                     .JsonData(req.JsonSerialize())
+//                     .JsonData(req)
 //                     .CreateLog();
 
 //                return true;
@@ -410,7 +410,7 @@
 //                await _objectActivityLog.LogBuilder(() => OutsourceMaterialActivityMessage.Delete)
 //                     .MessageResourceFormatDatas(order.OutsourceOrderCode)
 //                     .ObjectId(outsourceOrderId)
-//                     .JsonData(order.JsonSerialize())
+//                     .JsonData(order)
 //                     .CreateLog();
 
 

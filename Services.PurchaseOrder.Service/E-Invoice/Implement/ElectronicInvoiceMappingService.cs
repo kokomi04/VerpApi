@@ -59,7 +59,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             await _objectActivityLog.LogBuilder(() => ElectronicInvoiceMappingActivityLogMessage.Add)
                .MessageResourceFormatDatas(entity.ElectronicInvoiceMappingId)
                .ObjectId(entity.ElectronicInvoiceMappingId)
-               .JsonData(model.JsonSerialize())
+               .JsonData(model)
                .CreateLog();
             return entity.ElectronicInvoiceMappingId;
         }
@@ -78,7 +78,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             await _objectActivityLog.LogBuilder(() => ElectronicInvoiceMappingActivityLogMessage.Update)
                .MessageResourceFormatDatas(electronicInvoiceMappingId)
                .ObjectId(electronicInvoiceMappingId)
-               .JsonData(model.JsonSerialize())
+               .JsonData(model)
                .CreateLog();
             return true;
         }
@@ -97,7 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             await _objectActivityLog.LogBuilder(() => ElectronicInvoiceMappingActivityLogMessage.Delete)
                .MessageResourceFormatDatas(electronicInvoiceMappingId)
                .ObjectId(electronicInvoiceMappingId)
-               .JsonData(existsEntity.JsonSerialize())
+               .JsonData(existsEntity)
                .CreateLog();
 
             return true;

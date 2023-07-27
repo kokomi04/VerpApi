@@ -282,7 +282,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
                       .ObjectId(userId)
-                      .JsonData(userInfo.JsonSerialize())
+                      .JsonData(userInfo)
                       .CreateLog();
 
                 }
@@ -515,7 +515,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Update)
                        .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
                        .ObjectId(userId)
-                       .JsonData(req.JsonSerialize())
+                       .JsonData(req)
                        .CreateLog();
 
                 }
@@ -857,7 +857,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Create)
                       .MessageResourceFormatDatas(info.userInfo.EmployeeCode)
                       .ObjectId(info.userId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
 

@@ -42,7 +42,7 @@ namespace VErp.Services.Master.Service.Guide.Implement
             await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Create)
              .MessageResourceFormatDatas(model.Title)
              .ObjectId(entity.GuideId)
-             .JsonData(model.JsonSerialize())
+             .JsonData(model)
              .CreateLog();
 
             return entity.GuideId;
@@ -60,7 +60,7 @@ namespace VErp.Services.Master.Service.Guide.Implement
             await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Delete)
             .MessageResourceFormatDatas(g.Title)
             .ObjectId(g.GuideId)
-            .JsonData(g.JsonSerialize())
+            .JsonData(g)
             .CreateLog();
             return true;
         }
@@ -129,7 +129,7 @@ namespace VErp.Services.Master.Service.Guide.Implement
             await _guideActivityLog.LogBuilder(() => GuideActivityLogMessage.Update)
             .MessageResourceFormatDatas(model.Title)
             .ObjectId(guideId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
             return true;

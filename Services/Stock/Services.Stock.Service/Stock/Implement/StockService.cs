@@ -79,7 +79,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Create)
                       .MessageResourceFormatDatas(req.StockCode)
                       .ObjectId(stockInfo.StockId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
                     await _roleHelperService.GrantDataForAllRoles(EnumObjectType.Stock, stockInfo.StockId);
@@ -161,7 +161,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Update)
                       .MessageResourceFormatDatas(req.StockCode)
                       .ObjectId(stockInfo.StockId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
                     return true;
@@ -199,7 +199,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _stockActivityLog.LogBuilder(() => StockActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(stockInfo.StockCode)
                       .ObjectId(stockInfo.StockId)
-                      .JsonData(stockInfo.JsonSerialize())
+                      .JsonData(stockInfo)
                       .CreateLog();
 
                     return true;

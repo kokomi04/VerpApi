@@ -73,7 +73,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Create)
                         .MessageResourceFormatDatas(locationInfo.Name)
                         .ObjectId(locationInfo.LocationId)
-                        .JsonData(req.JsonSerialize())
+                        .JsonData(req)
                         .CreateLog();
 
                     return locationInfo.LocationId;
@@ -111,7 +111,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(locationInfo.Name)
                       .ObjectId(locationInfo.LocationId)
-                      .JsonData(locationInfo.JsonSerialize())
+                      .JsonData(locationInfo)
                       .CreateLog();
 
                     return true;
@@ -232,7 +232,7 @@ namespace VErp.Services.Stock.Service.Location.Implement
                     await _locationActivityLog.LogBuilder(() => LocationActivityLogMessage.Update)
                      .MessageResourceFormatDatas(locationInfo.Name)
                      .ObjectId(locationInfo.LocationId)
-                     .JsonData(req.JsonSerialize())
+                     .JsonData(req)
                      .CreateLog();
 
                     return true;

@@ -781,7 +781,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                                 await _inventoryBillInputService.ImportedLogBuilder()
                                    .MessageResourceFormatDatas(entity.InventoryCode)
                                    .ObjectId(entity.InventoryId)
-                                   .JsonData(inventoryData.JsonSerialize())
+                                   .JsonData(inventoryData)
                                    .CreateLog();
 
                                 longTask.IncProcessedRows();
@@ -838,7 +838,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             await _inventoryBillOutputService.ImportedLogBuilder()
                                 .MessageResourceFormatDatas(inventoryData.InventoryCode)
                                 .ObjectId(entity.InventoryId)
-                                .JsonData(inventoryData.JsonSerialize())
+                                .JsonData(inventoryData)
                                 .CreateLog();
 
                         }

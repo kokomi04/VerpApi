@@ -60,7 +60,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Create)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryGroupId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return info.SalaryGroupId;
         }
@@ -84,7 +84,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Delete)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.SalaryGroupId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
             return true;
         }
@@ -185,7 +185,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _salaryGroupActivityLog.LogBuilder(() => SalaryGroupActivityLogMessage.Update)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryGroupId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
         }

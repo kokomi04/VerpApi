@@ -100,7 +100,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                         await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Import)
                           .MessageResourceFormatDatas(entity.PurchaseOrderCode)
                           .ObjectId(entity.PurchaseOrderId)
-                          .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                          .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                           .CreateLog();
                     }
 

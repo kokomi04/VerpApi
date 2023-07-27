@@ -61,7 +61,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _timeSortActivityLog.LogBuilder(() => TimeSortConfigurationActivityLogMessage.CreateTimeSortConfiguration)
                       .MessageResourceFormatDatas(entity.TimeSortCode)
                       .ObjectId(entity.TimeSortConfigurationId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
             return entity.TimeSortConfigurationId;
@@ -100,7 +100,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _timeSortActivityLog.LogBuilder(() => TimeSortConfigurationActivityLogMessage.UpdateTimeSortConfiguration)
                      .MessageResourceFormatDatas(timeSortConfiguration.TimeSortCode)
                      .ObjectId(timeSortConfiguration.TimeSortConfigurationId)
-                     .JsonData(model.JsonSerialize())
+                     .JsonData(model)
                      .CreateLog();
 
             return true;

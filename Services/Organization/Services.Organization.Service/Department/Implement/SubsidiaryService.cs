@@ -112,7 +112,7 @@ namespace Services.Organization.Service.Department.Implement
             await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.SubsidiaryCode)
                 .ObjectId(info.SubsidiaryId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
             return info.SubsidiaryId;
@@ -168,7 +168,7 @@ namespace Services.Organization.Service.Department.Implement
             await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Update)
               .MessageResourceFormatDatas(info.SubsidiaryCode)
               .ObjectId(info.SubsidiaryId)
-              .JsonData(data.JsonSerialize())
+              .JsonData(data)
               .CreateLog();
 
             return true;
@@ -211,7 +211,7 @@ namespace Services.Organization.Service.Department.Implement
             await _subsidiaryActivityLog.LogBuilder(() => SubsidiaryActivityLogMessage.Delete)
               .MessageResourceFormatDatas(info.SubsidiaryCode)
               .ObjectId(info.SubsidiaryId)
-              .JsonData(info.JsonSerialize())
+              .JsonData(info)
               .CreateLog();
 
             return true;

@@ -125,7 +125,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
                       .MessageResourceFormatDatas(req.ProductCode)
                       .ObjectId(productId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
                 return productId;
@@ -213,7 +213,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CreateProductPart)
                       .MessageResourceFormatDatas(req.ProductCode)
                       .ObjectId(productInfo.ProductId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
                 return req;
             }
@@ -586,7 +586,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Update)
                           .MessageResourceFormatDatas(req.ProductCode)
                           .ObjectId(productInfo.ProductId)
-                          .JsonData(req.JsonSerialize())
+                          .JsonData(req)
                           .CreateLog();
                 }
                 catch (Exception)
@@ -787,7 +787,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Delete)
                           .MessageResourceFormatDatas(productInfo.ProductCode)
                           .ObjectId(productInfo.ProductId)
-                          .JsonData(productInfo.JsonSerialize())
+                          .JsonData(productInfo)
                           .CreateLog();
                     return true;
                 }
@@ -1282,7 +1282,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
                           .MessageResourceFormatDatas(req.ProductCode)
                           .ObjectId(productId)
-                          .JsonData(req.JsonSerialize())
+                          .JsonData(req)
                           .CreateLog();
 
                     await _manufacturingHelperService.CopyProductionProcess(EnumContainerType.Product, sourceProductId, productId);
@@ -1330,7 +1330,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyBom)
                         .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
                         .ObjectId(destProductId)
-                        .JsonData(bom.JsonSerialize())
+                        .JsonData(bom)
                         .CreateLog();
 
                     return destProductId;
@@ -1376,7 +1376,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyConsumption)
                         .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
                         .ObjectId(destProductId)
-                        .JsonData(consum.JsonSerialize())
+                        .JsonData(consum)
                         .CreateLog();
 
                     return destProductId;
@@ -1443,7 +1443,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
                   .MessageResourceFormatDatas(productInfo.ProductCode)
                   .ObjectId(processStatus.ProductId)
-                  .JsonData(productInfo.JsonSerialize())
+                  .JsonData(productInfo)
                   .CreateLog();
 
                 return true;

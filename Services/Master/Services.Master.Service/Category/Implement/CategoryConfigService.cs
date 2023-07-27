@@ -195,7 +195,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Create)
                   .MessageResourceFormatDatas(category.Title)
                   .ObjectId(category.CategoryId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 return category.CategoryId;
@@ -383,7 +383,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
                   .MessageResourceFormatDatas(category.Title)
                   .ObjectId(category.CategoryId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
 
@@ -446,7 +446,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.Update)
                   .MessageResourceFormatDatas(category.Title)
                   .ObjectId(category.CategoryId)
-                  .JsonData(category.JsonSerialize())
+                  .JsonData(category)
                   .CreateLog();
 
                 return true;
@@ -755,7 +755,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFileds)
                   .MessageResourceFormatDatas(category.Title)
                   .ObjectId(category.CategoryId)
-                  .JsonData(fields.JsonSerialize())
+                  .JsonData(fields)
                   .CreateLog();
 
 
@@ -812,7 +812,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.DeleteField)
                   .MessageResourceFormatDatas(categoryField.Title, category.Title)
                   .ObjectId(category.CategoryId)
-                  .JsonData(categoryField.JsonSerialize())
+                  .JsonData(categoryField)
                   .CreateLog();
 
                 return true;
@@ -1182,7 +1182,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.UpdateFilter)
                   .MessageResourceFormatDatas(info.CategoryViewName, CategoryInfo.Title)
                   .ObjectId(categoryId)
-                  .JsonData(model.JsonSerialize())
+                  .JsonData(model)
                   .CreateLog();
 
                 return true;
@@ -1220,7 +1220,7 @@ namespace VErp.Services.Master.Service.Category
                 await _categoryConfigActivityLog.LogBuilder(() => CategoryConfigActivityLogMessage.CreateFilter)
                   .MessageResourceFormatDatas(info.CategoryViewName, categoryInfo.Title)
                   .ObjectId(categoryId)
-                  .JsonData(model.JsonSerialize())
+                  .JsonData(model)
                   .CreateLog();
 
                 return true;

@@ -135,7 +135,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             await _objectActivityLog.LogBuilder(() => ProductPriceConfigActivityLogMessage.Created)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(cfg.ProductPriceConfigId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return cfg.ProductPriceConfigId;
@@ -166,7 +166,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             await _objectActivityLog.LogBuilder(() => ProductPriceConfigActivityLogMessage.Updated)
               .MessageResourceFormatDatas(model.Title)
               .ObjectId(productPriceConfigId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
             return info.ProductPriceConfigId;
@@ -208,7 +208,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             await _objectActivityLog.LogBuilder(() => ProductPriceConfigActivityLogMessage.Deleted)
              .MessageResourceFormatDatas(lastestVersionInfo.Title)
              .ObjectId(productPriceConfigId)
-             .JsonData(lastestVersionInfo.JsonSerialize())
+             .JsonData(lastestVersionInfo)
              .CreateLog();
             return true;
         }

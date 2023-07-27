@@ -305,7 +305,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateMaterialConsumption)
                  .MessageResourceFormatDatas(product.ProductCode)
                  .ObjectId(productId)
-                 .JsonData(model.JsonSerialize())
+                 .JsonData(model)
                  .CreateLog();
 
 
@@ -348,7 +348,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateDetailMaterialConsumption)
            .MessageResourceFormatDatas(materialProducInfo.ProductCode, product.ProductCode)
            .ObjectId(productId)
-           .JsonData(model.JsonSerialize())
+           .JsonData(model)
            .CreateLog();
 
             return true;

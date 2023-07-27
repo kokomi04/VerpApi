@@ -40,7 +40,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Delete)
                .MessageResourceFormatDatas(info.CustomerCateCode)
                .ObjectId(info.CustomerCateId)
-               .JsonData(info.JsonSerialize())
+               .JsonData(info)
                .CreateLog();
 
             return true;
@@ -76,7 +76,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Update)
               .MessageResourceFormatDatas(info.CustomerCateCode)
               .ObjectId(info.CustomerCateId)
-              .JsonData(customerCate.JsonSerialize())
+              .JsonData(customerCate)
               .CreateLog();
 
             return true;
@@ -91,7 +91,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerCateActivityLogMessageLog.Create)
               .MessageResourceFormatDatas(info.CustomerCateCode)
               .ObjectId(info.CustomerCateId)
-              .JsonData(customerCate.JsonSerialize())
+              .JsonData(customerCate)
               .CreateLog();
 
             return info.CustomerCateId;

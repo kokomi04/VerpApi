@@ -324,7 +324,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportBom)
                         .MessageResourceFormatDatas(rootProductInfo.ProductCode)
                         .ObjectId(rootProductInfo.ProductId)
-                        .JsonData(new { _mapping, productBoms, productMaterials }.JsonSerialize())
+                        .JsonData(new { _mapping, productBoms, productMaterials })
                         .CreateLog();
                 }
                 else

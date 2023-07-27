@@ -74,7 +74,7 @@ namespace VErp.Services.Organization.Service.Salary
             await logBuilder
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                 .ObjectId(info.SalaryPeriodGroupId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -109,7 +109,7 @@ namespace VErp.Services.Organization.Service.Salary
             await logBuilder
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                 .ObjectId(info.SalaryPeriodGroupId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -163,7 +163,7 @@ namespace VErp.Services.Organization.Service.Salary
             await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Create)
                 .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                 .ObjectId(info.SalaryPeriodGroupId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return info.SalaryPeriodGroupId;
         }
@@ -194,7 +194,7 @@ namespace VErp.Services.Organization.Service.Salary
                 await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                     .ObjectId(info.SalaryPeriodGroupId)
-                    .JsonData(info.JsonSerialize())
+                    .JsonData(info)
                     .CreateLog();
 
                 return true;
@@ -220,7 +220,7 @@ namespace VErp.Services.Organization.Service.Salary
             await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.Update)
                .MessageResourceFormatDatas(period.Month, period.Year, groupInfo.Title)
                .ObjectId(info.SalaryPeriodGroupId)
-               .JsonData(info.JsonSerialize())
+               .JsonData(info)
                .CreateLog();
 
             return true;

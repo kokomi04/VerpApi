@@ -122,7 +122,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                 await _objectProcessActivityLog.LogBuilder(() => ObjectProcessActivityLogMessage.Create)
                     .MessageResourceFormatDatas($"{info.ObjectProcessStepName} {objectProcessTypeId.GetEnumDescription()}")
                     .ObjectId(info.ObjectProcessStepId)
-                    .JsonData(info.JsonSerialize())
+                    .JsonData(info)
                     .CreateLog();
 
                 return info.ObjectProcessStepId;
@@ -181,7 +181,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                 await _objectProcessActivityLog.LogBuilder(() => ObjectProcessActivityLogMessage.Update)
                     .MessageResourceFormatDatas($"{info.ObjectProcessStepName} {objectProcessTypeId.GetEnumDescription()}")
                     .ObjectId(info.ObjectProcessStepId)
-                    .JsonData(info.JsonSerialize())
+                    .JsonData(info)
                     .CreateLog();
                 return true;
             }
@@ -214,7 +214,7 @@ namespace Services.Organization.Service.BusinessInfo.Implement
                 await _objectProcessActivityLog.LogBuilder(() => ObjectProcessActivityLogMessage.Delete)
                     .MessageResourceFormatDatas($"{info.ObjectProcessStepName} {objectProcessTypeId.GetEnumDescription()}")
                     .ObjectId(info.ObjectProcessStepId)
-                    .JsonData(info.JsonSerialize())
+                    .JsonData(info)
                     .CreateLog();
 
                 return true;

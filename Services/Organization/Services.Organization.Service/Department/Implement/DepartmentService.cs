@@ -89,7 +89,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Create)
                  .MessageResourceFormatDatas(department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
             return department.DepartmentId;
@@ -144,7 +144,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Delete)
                  .MessageResourceFormatDatas(department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(department.JsonSerialize())
+                 .JsonData(department)
                  .CreateLog();
 
             return true;
@@ -361,7 +361,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.Update)
                  .MessageResourceFormatDatas(department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
             return true;
         }

@@ -58,7 +58,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 // await _workScheduleActivityLog.LogBuilder(() => WorkScheduleMarkActivityLogMessage.UpdateWorkScheduleMark)
                 //         .MessageResourceFormatDatas(workScheduleMark.WorkScheduleMarkTitle)
                 //         .ObjectId(workScheduleMark.WorkScheduleMarkId)
-                //         .JsonData(model.JsonSerialize())
+                //         .JsonData(model)
                 //         .CreateLog();
 
                 return entity.WorkScheduleMarkId;
@@ -89,7 +89,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 // await _workScheduleActivityLog.LogBuilder(() => WorkScheduleMarkActivityLogMessage.UpdateWorkScheduleMark)
                 //          .MessageResourceFormatDatas(workScheduleMark.WorkScheduleMarkTitle)
                 //          .ObjectId(workScheduleMark.WorkScheduleMarkId)
-                //          .JsonData(model.JsonSerialize())
+                //          .JsonData(model)
                 //          .CreateLog();
 
                 await trans.CommitAsync();

@@ -57,7 +57,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _dataConfigActivityLog.LogBuilder(() => DataConfigActivityLogMessage.Update)
                .ObjectId(info.SubsidiaryId)
-               .JsonData(req.JsonSerialize())
+               .JsonData(req)
                .CreateLog();
 
             return true;

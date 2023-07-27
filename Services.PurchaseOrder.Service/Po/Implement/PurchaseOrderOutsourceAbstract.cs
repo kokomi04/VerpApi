@@ -218,7 +218,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
                     .MessageResourceFormatDatas(po.PurchaseOrderCode)
                     .ObjectId(po.PurchaseOrderId)
-                    .JsonData((new { purchaseOrderType, model }).JsonSerialize())
+                    .JsonData((new { purchaseOrderType, model }))
                     .CreateLog();
 
                     return po.PurchaseOrderId;
@@ -511,7 +511,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                       .MessageResourceFormatDatas(info.PurchaseOrderCode)
                       .ObjectId(info.PurchaseOrderId)
-                      .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model }).JsonSerialize())
+                      .JsonData(new { purchaseOrderType = info.PurchaseOrderType, model })
                       .CreateLog();
 
                     return true;
@@ -575,7 +575,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
                         .MessageResourceFormatDatas(info.PurchaseOrderCode)
                         .ObjectId(info.PurchaseOrderId)
-                        .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model = info }).JsonSerialize())
+                        .JsonData(new { purchaseOrderType = info.PurchaseOrderType, model = info })
                         .CreateLog();
 
                     return true;

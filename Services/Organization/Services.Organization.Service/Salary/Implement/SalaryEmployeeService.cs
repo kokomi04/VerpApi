@@ -656,7 +656,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 await _salaryPeriodGroupActivityLog.LogBuilder(() => SalaryPeriodGroupActivityLogMessage.UpdateSalaryEmployee)
                    .MessageResourceFormatDatas(groupInfo.Title, period.Month, period.Year)
                    .ObjectId(salaryPeriodGroupId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
 
                 return true;

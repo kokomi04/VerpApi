@@ -56,7 +56,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePurchaseOrderExcess)
              .MessageResourceFormatDatas(product, poInfo.PurchaseOrderCode)
              .ObjectId(poInfo.PurchaseOrderId)
-             .JsonData((new { purchaseOrderExcessId, model }).JsonSerialize())
+             .JsonData((new { purchaseOrderExcessId, model }))
              .CreateLog();
 
             return true;

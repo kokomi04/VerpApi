@@ -123,7 +123,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await _reportTypeViewActivityLog.LogBuilder(() => ReportTypeViewActivityLogMessage.UpdateSetting)
                   .MessageResourceFormatDatas(reportTypeInfo.ReportTypeName)
                   .ObjectId(reportTypeId)
-                  .JsonData(fieldValues.JsonSerialize())
+                  .JsonData(fieldValues)
                   .CreateLog();
 
                 return true;
