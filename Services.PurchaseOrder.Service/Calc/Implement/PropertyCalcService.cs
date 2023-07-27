@@ -53,7 +53,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         join p in _purchaseOrderDBContext.RefProduct on d.ProductId equals p.ProductId
                         join o in _purchaseOrderDBContext.PropertyCalcProductOrderGroup on d.PropertyCalcProductId equals o.PropertyCalcProductId into os
                         from o in os.DefaultIfEmpty()
-                        join r in _purchaseOrderDBContext.PurchasingRequest on c.PropertyCalcId equals r.PropertyCalcId into rs
+                        join r in _purchaseOrderDBContext.PurchaseOrder on c.PropertyCalcId equals r.PropertyCalcId into rs
                         from r in rs.DefaultIfEmpty()
                         select new
                         {
@@ -67,8 +67,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             p.ProductName,
                             TotalOrderProductQuantity = o == null ? null : o.TotalOrderProductQuantity,
                             OrderCodes = o == null ? null : o.OrderCodes,
-                            PurchasingRequestId = r == null ? (long?)null : r.PurchasingRequestId,
-                            PurchasingRequestCode = r == null ? null : r.PurchasingRequestCode
+                            PurchaseOrderId = r == null ? (long?)null : r.PurchaseOrderId,
+                            IsPurchaseOrderIdCreated = r != null
+                            //  PurchasingRequestCode = r == null ? null : r.PurchasingRequestCode
                         };
             if (!string.IsNullOrWhiteSpace(keyword))
                 query = query.Where(c => c.PropertyCalcCode.Contains(keyword)
@@ -98,9 +99,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductName = d.ProductName,
                     OrderCodes = d.OrderCodes,
                     TotalOrderProductQuantity = d.TotalOrderProductQuantity,
-                    IsPurchasingRequestCreated = d.PurchasingRequestId > 0,
-                    PurchasingRequestId = d.PurchasingRequestId,
-                    PurchasingRequestCode = d.PurchasingRequestCode
+                    IsPurchaseOrderIdCreated = d.IsPurchaseOrderIdCreated,
+                    PurchaseOrderId = d.PurchaseOrderId,
+                    //PurchasingRequestCode = d.PurchasingRequestCode
                 }).ToList();
             return (paged, total);
         }
@@ -172,7 +173,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (entity == null)
                 throw PropertyCalcNotFound.BadRequest();
 
-            var requestInfo = await _purchaseOrderDBContext.PurchasingRequest.FirstOrDefaultAsync(r => r.PropertyCalcId == propertyCalcId);
+            var poInfo = await _purchaseOrderDBContext.PurchaseOrder.FirstOrDefaultAsync(r => r.PropertyCalcId == propertyCalcId);
 
             var info = _mapper.Map<PropertyCalcModel>(entity);
 
@@ -189,8 +190,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
             }
 
-            info.PurchasingRequestId = requestInfo?.PurchasingRequestId;
-            info.PurchasingRequestCode = requestInfo?.PurchasingRequestCode;
+            info.PurchaseOrderId = poInfo?.PurchaseOrderId;
             return info;
         }
 

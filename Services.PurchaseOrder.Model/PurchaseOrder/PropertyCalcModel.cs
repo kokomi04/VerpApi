@@ -13,6 +13,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string Description { get; set; }
         public int CreatedByUserId { get; set; }
         public long CreatedDatetimeUtc { get; set; }
+        public long? PurchaseOrderId { get; set; }
     }
 
     public class PropertyCalcListModel : PropertyCalcBasicModel
@@ -23,14 +24,13 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
 
-        public bool IsPurchasingRequestCreated { get; set; }
-        public long? PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
+        public bool IsPurchaseOrderIdCreated { get; set; }
+      
+        //public string PurchasingRequestCode { get; set; }
     }
     public class PropertyCalcModel : PropertyCalcBasicModel, IMapFrom<PropertyCalc>
     {
-        public long? PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
+        //public long? PurchasingRequestId { get; set; }
 
         public IList<PropertyCalcPropertyModel> Properties { get; set; }
         public IList<PropertyCalcProductModel> Products { get; set; }
