@@ -38,13 +38,13 @@ SELECT
     NULL,          -- HandoverDatetime - datetime2(7)
     a.ProductionOrderId,             -- ProductionOrderId - bigint
     NULL,          -- ProductionStepLinkDataId - bigint
-    ISNULL(a.SourceProductId,0),             -- ObjectId - bigint
+    ISNULL(a.SourceProductId,d.ProductId),             -- ObjectId - bigint
     1,             -- ObjectTypeId - int-- 1: Product, 2: Semi
     CASE WHEN iv.InventoryTypeId = 1 THEN a.DepartmentId ELSE 0 END,             -- FromDepartmentId - int
     CASE WHEN iv.InventoryTypeId = 1 THEN a.ProductionStepId ELSE 0 END,          -- FromProductionStepId - bigint
     CASE WHEN iv.InventoryTypeId = 2 THEN a.DepartmentId ELSE 0 END,             -- ToDepartmentId - int
     CASE WHEN iv.InventoryTypeId = 2 THEN a.ProductionStepId ELSE 0 END,          -- ToProductionStepId - bigint
-    ISNULL(a.SourceQuantity,0),          -- HandoverQuantity - decimal(32, 12)
+    ISNULL(a.SourceQuantity,d.PrimaryQuantity),          -- HandoverQuantity - decimal(32, 12)
     'migrate',          -- Note - nvarchar(max)
     1,             -- Status - int
     rd.InventoryRequirementDetailId,          -- InventoryRequirementDetailId - bigint
