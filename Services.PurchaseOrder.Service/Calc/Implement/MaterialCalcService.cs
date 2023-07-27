@@ -73,6 +73,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
          o.TotalOrderProductQuantity,
          o.OrderCodes,
          r.PurchasingRequestId,
+         CONVERT(BIT, CASE WHEN r.PurchasingRequestId>0 THEN 1 ELSE 0 END) IsPurchasingRequestCreated,
          r.PurchasingRequestCode
     FROM dbo.MaterialCalc c
         JOIN dbo.MaterialCalcProduct d ON c.MaterialCalcId = d.MaterialCalcId
@@ -237,7 +238,6 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             var info = _mapper.Map<MaterialCalcModel>(entity);
             info.PurchasingRequestId = requestInfo?.PurchasingRequestId;
-            info.PurchasingRequestCode = requestInfo?.PurchasingRequestCode;
             return info;
         }
 
