@@ -322,7 +322,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     else
                     {
-                        if ((f.DataTypeId != EnumDataType.Text || f.DataTypeId != EnumDataType.PhoneNumber) && GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue)  )
+                        if (f.DataTypeId != EnumDataType.Text && f.DataTypeId != EnumDataType.PhoneNumber && GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue)  )
                         {
                             fieldValue = decimalValue;
                         }
