@@ -823,7 +823,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@Page", page),
             };
 
-            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDate", parammeters.ToArray());
+            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDateV2", parammeters.ToArray());
 
             var totalRecord = 0;
             if (dataTable.Rows.Count > 0)
