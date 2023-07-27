@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using VErp.Infrastructure.AppSettings;
+using VErpApi.Seeds;
 
 namespace VErp.WebApis.VErpApi
 {
@@ -9,7 +10,9 @@ namespace VErp.WebApis.VErpApi
     {
         public static void Main(string[] args)
         {
-            CreateWebHostBuilder(args).Build().Run();
+            var host = CreateWebHostBuilder(args).Build();
+            DBSeeder.Seed(host);
+            host.Run();
         }
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args)
