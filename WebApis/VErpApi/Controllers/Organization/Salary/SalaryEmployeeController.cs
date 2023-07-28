@@ -84,7 +84,7 @@ namespace VErpApi.Controllers.Organization.Salary
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupFields, data);
+            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupFields,req.SalaryPeriodId, req.SalaryGroupId ,data);
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }

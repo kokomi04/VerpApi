@@ -36,6 +36,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         private IList<int> columnMaxLineLength = new List<int>();
         private const string EMPLOYEE_F_ID = "F_Id";
         private const string EMPLOYEE_FIELD_NAME = "ho_ten";
+        private IList<string> groups;
 
         public SalaryGroupEmployeeExportFacade(IList<string> fieldsName, ISalaryFieldService salaryFieldService, ISalaryEmployeeService salaryEmployeeService)
         {
@@ -44,7 +45,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryEmployeeService = salaryEmployeeService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName)
         {
 
             var xssfwb = new XSSFWorkbook();
@@ -71,7 +72,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = StringUtils.RemoveDiacritics($"group salary employee {DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
+            var fileName = StringUtils.RemoveDiacritics($"{titleName} {DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
 
             return (stream, fileName, contentType);
         }
@@ -94,7 +95,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             if (groupSalaryEmployees.Count == 0)
                 throw new BadRequestException("Không tìm thấy nhân sự trong bảng lương");
             currentRow = 1;
-            var groups = _salaryFields.Select(g => g.GroupName).Distinct().ToList();
+            groups = _salaryFields.Select(g =>  g.GroupName).Distinct().ToList();
             var fRow = currentRow;
             var sRow = currentRow;
 
@@ -184,36 +185,41 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         {
             var sColIndex = 1;
             sheet.EnsureCell(currentRow, 0, intStyle).SetCellValue(stt);
-            foreach (var f in _salaryFields)
+            foreach (var g in groups)
             {
-                p.TryGetValue(f.FieldName, out var value);
-                switch (f.DataTypeId)
+                var groupCols = _salaryFields.Where(f => f.GroupName == g);
+                foreach (var f in groupCols)
                 {
-                    case EnumDataType.BigInt:
-                    case EnumDataType.Int:
-                        if (!value.IsNullOrEmptyObject())
-                            sheet.EnsureCell(currentRow, sColIndex, intStyle)
-                                .SetCellFormula(value?.Value?.ToString());
-                        else
-                            sheet.EnsureCell(currentRow, sColIndex, intStyle);
-                        break;
-                    case EnumDataType.Decimal:
-                        if (!value.IsNullOrEmptyObject())
-                            sheet.EnsureCell(currentRow, sColIndex, decimalStyle)
-                                .SetCellFormula(value?.Value?.ToString());
-                        else
-                            sheet.EnsureCell(currentRow, sColIndex, decimalStyle);
-                        break;
-                    default:
-                        sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(value?.Value?.ToString());
-                        break;
+                    p.TryGetValue(f.FieldName, out var value);
+                    switch (f.DataTypeId)
+                    {
+                        case EnumDataType.BigInt:
+                        case EnumDataType.Int:
+                            if (!value.IsNullOrEmptyObject())
+                                sheet.EnsureCell(currentRow, sColIndex, intStyle)
+                                    .SetCellFormula(value?.Value?.ToString());
+                            else
+                                sheet.EnsureCell(currentRow, sColIndex, intStyle);
+                            break;
+                        case EnumDataType.Decimal:
+                            if (!value.IsNullOrEmptyObject())
+                                sheet.EnsureCell(currentRow, sColIndex, decimalStyle)
+                                    .SetCellFormula(value?.Value?.ToString());
+                            else
+                                sheet.EnsureCell(currentRow, sColIndex, decimalStyle);
+                            break;
+                        default:
+                            sheet.EnsureCell(currentRow, sColIndex, textStyle).SetCellValue(value?.Value?.ToString());
+                            break;
+                    }
+                    if (value?.Value?.ToString()?.Length > columnMaxLineLength[sColIndex])
+                    {
+                        columnMaxLineLength[sColIndex] = value.Value?.ToString()?.Length ?? 10;
+                    }
+                    sColIndex++;
                 }
-                if (value?.Value?.ToString()?.Length > columnMaxLineLength[sColIndex])
-                {
-                    columnMaxLineLength[sColIndex] = value.Value?.ToString()?.Length ?? 10;
-                }
-                sColIndex++;
             }
+
             column = sColIndex;
             currentRow++;
             stt++;

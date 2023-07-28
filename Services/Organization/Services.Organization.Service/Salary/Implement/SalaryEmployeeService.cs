@@ -1091,10 +1091,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames,IList<string> groupField ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
             var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this);
-            return await salaryEmployeeExport.Export(data, groupField);
+            var nameGroup = (await _salaryGroupService.GetInfo(salaryGroupId)).Title;
+            var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
+            string titleName = $"Kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}- {nameGroup}";
+            return await salaryEmployeeExport.Export(data, groupField, titleName);
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping()
@@ -1108,7 +1111,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     DataTypeId = field.DataTypeId,
                     FieldName = field.SalaryFieldName,
                     FieldTitle = field.Title,
-                    GroupName = field.GroupName,
+                    GroupName = !string.IsNullOrEmpty( field.GroupName) ? field.GroupName : "",
                     SortOrder = field.SortOrder,
                 });
             }
