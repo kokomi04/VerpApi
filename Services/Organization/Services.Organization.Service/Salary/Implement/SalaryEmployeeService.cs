@@ -1093,7 +1093,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames,IList<string> groupField ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
-            var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService);
+            var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this);
             return await salaryEmployeeExport.Export(data, groupField);
         }
 
