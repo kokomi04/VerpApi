@@ -1203,6 +1203,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải bằng số lượng ban đầu trừ các số lượng đi gia công!");
                     }
+
+                    if (d.Quantity.SubProductionDecimal(d.ExportOutsourceQuantity) < 0)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải lớn hơn số lượng xuất đi gia công!");
+                    }
                 }
             }
             foreach (var d in toRemoveLinkDatas)
