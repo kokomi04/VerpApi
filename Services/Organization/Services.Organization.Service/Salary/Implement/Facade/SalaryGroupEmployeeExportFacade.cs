@@ -19,6 +19,7 @@ using OpenXmlPowerTools;
 using VErp.Infrastructure.EF.OrganizationDB;
 using System.Linq.Expressions;
 using System.Dynamic;
+using NPOI.SS.Formula.Functions;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -103,6 +104,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             {
                 sRow = fRow + 1;
             }
+
+            MergedSheet(fRow, sRow, 0, 0);
             sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
             sheet.SetHeaderCellStyle(fRow, 0);
             columnMaxLineLength = new List<int>(_salaryFields.Count + 1);
@@ -118,12 +121,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 {
                     if (groupCols.Count() > 1)
                     {
-                        var region = new CellRangeAddress(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
-                        sheet.AddMergedRegion(region);
-                        RegionUtil.SetBorderBottom(1, region, sheet);
-                        RegionUtil.SetBorderLeft(1, region, sheet);
-                        RegionUtil.SetBorderRight(1, region, sheet);
-                        RegionUtil.SetBorderTop(1, region, sheet);
+                        MergedSheet(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
                     }
                 }
                     
@@ -133,12 +131,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 {
                     if (string.IsNullOrEmpty(g))
                     {
-                        var region = new CellRangeAddress(fRow, sRow, sColIndex, sColIndex);
-                        sheet.AddMergedRegion(region);
-                        RegionUtil.SetBorderBottom(1, region, sheet);
-                        RegionUtil.SetBorderLeft(1, region, sheet);
-                        RegionUtil.SetBorderRight(1, region, sheet);
-                        RegionUtil.SetBorderTop(1, region, sheet);
+                        MergedSheet(fRow, sRow, sColIndex, sColIndex);
                         sheet.EnsureCell(fRow, sColIndex).SetCellValue(f.FieldTitle);
                         sheet.SetHeaderCellStyle(fRow, sColIndex);
                     }
@@ -158,6 +151,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             currentRow = sRow + 1;
 
             return WriteTableDetailData(groupSalaryEmployees, groupFields);
+        }
+        private void MergedSheet(int startRow, int lastRow, int startColmn, int lastColumn)
+        {
+            var region = new CellRangeAddress(startRow, lastRow, startColmn, lastColumn);
+            sheet.AddMergedRegion(region);
+            RegionUtil.SetBorderBottom(1, region, sheet);
+            RegionUtil.SetBorderLeft(1, region, sheet);
+            RegionUtil.SetBorderRight(1, region, sheet);
+            RegionUtil.SetBorderTop(1, region, sheet);
         }
         private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
