@@ -7,6 +7,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Employee;
@@ -29,6 +30,8 @@ namespace VErp.Services.Organization.Service.Salary
         Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);
 
         Task<PageData<NonCamelCaseDictionary>> GetEmployeeGroupInfo(Clause filter, int page, int size);
-        Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, string groupField, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data);
+        Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data);
+
+        Task<CategoryNameModel> GetFieldDataForMapping();
     }
 }

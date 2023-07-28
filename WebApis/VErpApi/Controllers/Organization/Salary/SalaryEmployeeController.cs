@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -66,22 +67,12 @@ namespace VErpApi.Controllers.Organization.Salary
 
             return await _salaryEmployeeService.GetEmployeeGroupInfo(req.Filters, req.Page, req.Size);
         }
-        [HttpPost("group/export")]
-        public async Task<IActionResult> ExportGroup([FromBody] EmployeeGroupRequestExportModel req)
+        [HttpGet("fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataFromMapping()
         {
-            if (req == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            var data = await _salaryEmployeeService.GetInfoEmployeeByGroupSalary(req.SalaryGroupId);
-            if (data == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupField ,data);
-            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+            return await _salaryEmployeeService.GetFieldDataForMapping();
         }
-        [HttpPost("period/export")]
+        [HttpPost("periods/export")]
         public async Task<IActionResult> ExportPeriod([FromBody] EmployeePeriodGroupRequestExportModel req)
         {
             if (req == null)
@@ -93,7 +84,7 @@ namespace VErpApi.Controllers.Organization.Salary
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupField, data);
+            var (stream, fileName, contentType) = await _salaryEmployeeService.Export(req.FieldNames, req.GroupFields, data);
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
     }

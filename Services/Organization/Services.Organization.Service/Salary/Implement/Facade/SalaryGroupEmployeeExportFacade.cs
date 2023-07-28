@@ -17,6 +17,8 @@ using VErp.Commons.Library.Model;
 using VErp.Services.Organization.Model.Employee;
 using OpenXmlPowerTools;
 using VErp.Infrastructure.EF.OrganizationDB;
+using System.Linq.Expressions;
+using System.Dynamic;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -30,7 +32,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         private IList<SalaryFieldModel> _salaryFields;
         private IList<int> columnMaxLineLength = new List<int>();
         private const string EMPLOYEE_F_ID = "F_Id";
-        private const string EMPLOYEE_FIELD_NAME= "ho_ten";
+        private const string EMPLOYEE_FIELD_NAME = "ho_ten";
 
         public SalaryGroupEmployeeExportFacade(IList<string> fieldsName, ISalaryFieldService salaryFieldService)
         {
@@ -38,14 +40,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryFieldService = salaryFieldService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, string groupField)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
             await GetSalaryField();
 
-            var employees =  WriteTable(groupSalaryEmployees,groupField);
+            var employees = WriteTable(groupSalaryEmployees, groupFields);
             var stream = new MemoryStream();
             xssfwb.Write(stream, true);
             stream.Seek(0, SeekOrigin.Begin);
@@ -69,7 +71,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     _salaryFields.Add(salaryField);
             }
         }
-        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, string groupField)
+        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
 
             if (groupSalaryEmployees.Count == 0)
@@ -95,25 +97,27 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
             currentRow = sRow + 1;
 
-            return WriteTableDetailData(groupSalaryEmployees, groupField);
+            return WriteTableDetailData(groupSalaryEmployees, groupFields);
         }
-        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, string groupField)
+        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
             var stt = 1;
             var textStyle = sheet.GetCellStyle(isBorder: true);
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
             int column = 0;
-            if (!string.IsNullOrEmpty(groupField) && !groupSalaryEmployees.Any(x => x.ContainsKey(groupField)))
-            {
-                throw new BadRequestException($"Không tìm thấy trường dữ liệu {groupField} để thực hiện gom nhóm");
-            }
-            if (!string.IsNullOrEmpty(groupField))
-            {
-                var groups = from f in groupSalaryEmployees
-                         group f by f[groupField].Value into g
-                         select g;
 
+            if (groupFields!=null && groupFields.Count > 0)
+            {
+                if (!groupSalaryEmployees.Any(x => groupFields.Any(g => x.ContainsKey(g))))
+                {
+                    throw new BadRequestException($"Không tìm thấy trường dữ liệu {groupFields} để thực hiện gom nhóm");
+                }
+
+                var groups = from f in groupSalaryEmployees
+                             group f by groupFields.Select(x=>  f[x].Value).JsonSerialize()
+                             into g
+                             select g;
                 foreach (var g in groups)
                 {
                     var group = g.OrderBy(x => x[EMPLOYEE_FIELD_NAME].Value.ToString().Split(' ').Last());
@@ -134,7 +138,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             {
                 sheet.AutoSizeColumn(i);
             }
-            return  "";
+            return "";
         }
         private void WriteDataInCell(ICellStyle textStyle, ICellStyle intStyle, ICellStyle decimalStyle, ref int stt, ref int column, NonCamelCaseDictionary<SalaryEmployeeValueModel> p)
         {
