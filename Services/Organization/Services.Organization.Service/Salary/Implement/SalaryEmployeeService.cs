@@ -22,6 +22,7 @@ using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
@@ -1090,10 +1091,33 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames,string groupField ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames,IList<string> groupField ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
             var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService);
             return await salaryEmployeeExport.Export(data, groupField);
+        }
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        {
+            var fieldData = await _salaryFieldService.GetList();
+            IList<CategoryFieldNameModel> categoryNameModels = new List<CategoryFieldNameModel>();
+            foreach (var field in fieldData)
+            {
+                categoryNameModels.Add(new CategoryFieldNameModel()
+                {
+                    DataTypeId = field.DataTypeId,
+                    FieldName = field.SalaryFieldName,
+                    FieldTitle = field.Title,
+                    GroupName = field.GroupName,
+                    SortOrder = field.SortOrder,
+                });
+            }
+            return new CategoryNameModel()
+            {
+                CategoryCode = "Salary",
+                CategoryTitle = "Bảng lương",
+                Fields = categoryNameModels,
+            };
         }
     }
 }

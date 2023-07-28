@@ -34,17 +34,7 @@ namespace VErp.Services.Organization.Model.Employee
         public IList<string> FieldNames { get; set; }
         public int SalaryPeriodId { get; set; }
         public int SalaryGroupId { get; set; }
-        public string GroupField { get; set; }
-    }
-    public class EmployeeGroupRequestExportModel : EmplyeeRequestFilterModel
-    {
-        public EmployeeGroupRequestExportModel(Clause filters) : base(filters)
-        {
-
-        }
-        public IList<string> FieldNames { get; set; }
-        public int SalaryGroupId { get; set; }
-        public string GroupField { get; set; }
+        public IList<string> GroupFields { get; set; }
     }
 
 }
