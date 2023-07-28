@@ -30,7 +30,7 @@ namespace VErp.Services.Organization.Service.Salary
         Task<bool> Update(int salaryPeriodId, int salaryGroupId, GroupSalaryEmployeeModel model);
 
         Task<PageData<NonCamelCaseDictionary>> GetEmployeeGroupInfo(Clause filter, int page, int size);
-        Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data);
+        Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField,int salaryPeriodId, int salaryGroupId, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data);
 
         Task<CategoryNameModel> GetFieldDataForMapping();
     }
