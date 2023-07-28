@@ -20,6 +20,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using System.Linq.Expressions;
 using System.Dynamic;
 using NPOI.SS.Formula.Functions;
+using DocumentFormat.OpenXml.Drawing;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -50,7 +51,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             sheet = xssfwb.CreateSheet();
             await GetSalaryField();
 
-            var employees =  WriteTable(groupSalaryEmployees, groupFields);
+            var employees = WriteTable(groupSalaryEmployees, groupFields);
             if (sheet.LastRowNum < 100)
             {
                 for (var i = 0; i < _salaryFields.Count + 1; i++)
@@ -68,7 +69,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var stream = new MemoryStream();
             xssfwb.Write(stream, true);
             stream.Seek(0, SeekOrigin.Begin);
-            
+
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
             var fileName = StringUtils.RemoveDiacritics($"group salary employee {DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
 
@@ -88,16 +89,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     _salaryFields.Add(salaryField);
             }
         }
-        private  string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
+        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
             if (groupSalaryEmployees.Count == 0)
                 throw new BadRequestException("Không tìm thấy nhân sự trong bảng lương");
             currentRow = 1;
-            var groups = _salaryFields.Select(g=> g.GroupName).Distinct().ToList();
+            var groups = _salaryFields.Select(g => g.GroupName).Distinct().ToList();
             var fRow = currentRow;
             var sRow = currentRow;
 
-           
+
 
             var sColIndex = 1;
             if (groups.Count > 0)
@@ -105,8 +106,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sRow = fRow + 1;
             }
 
-            MergedSheet(fRow, sRow, 0, 0);
-            sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
+            sheet.EnsureCell(sRow, 0).SetCellValue($"STT");
             sheet.SetHeaderCellStyle(fRow, 0);
             columnMaxLineLength = new List<int>(_salaryFields.Count + 1);
             columnMaxLineLength.Add(5);
@@ -117,49 +117,30 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sheet.EnsureCell(fRow, sColIndex).SetCellValue(g);
                 sheet.SetHeaderCellStyle(fRow, sColIndex);
 
-                if (!string.IsNullOrEmpty(g))
+                if (groupCols.Count() > 1)
                 {
-                    if (groupCols.Count() > 1)
-                    {
-                        MergedSheet(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
-                    }
+                    var region = new CellRangeAddress(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
+                    sheet.AddMergedRegion(region);
+                    RegionUtil.SetBorderBottom(1, region, sheet);
+                    RegionUtil.SetBorderLeft(1, region, sheet);
+                    RegionUtil.SetBorderRight(1, region, sheet);
+                    RegionUtil.SetBorderTop(1, region, sheet);
                 }
-                    
-               
-               
+
+
                 foreach (var f in groupCols)
                 {
-                    if (string.IsNullOrEmpty(g))
-                    {
-                        MergedSheet(fRow, sRow, sColIndex, sColIndex);
-                        sheet.EnsureCell(fRow, sColIndex).SetCellValue(f.FieldTitle);
-                        sheet.SetHeaderCellStyle(fRow, sColIndex);
-                    }
-                    else
-                    {
-                        sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.FieldTitle);
-                        sheet.SetHeaderCellStyle(sRow, sColIndex);
-                    }
-                        
+
+                    sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.FieldTitle);
+                    sheet.SetHeaderCellStyle(sRow, sColIndex);
+
                     columnMaxLineLength.Add(f.FieldTitle?.Length ?? 10);
                     sColIndex++;
                 }
             }
-
-          
-
             currentRow = sRow + 1;
 
             return WriteTableDetailData(groupSalaryEmployees, groupFields);
-        }
-        private void MergedSheet(int startRow, int lastRow, int startColmn, int lastColumn)
-        {
-            var region = new CellRangeAddress(startRow, lastRow, startColmn, lastColumn);
-            sheet.AddMergedRegion(region);
-            RegionUtil.SetBorderBottom(1, region, sheet);
-            RegionUtil.SetBorderLeft(1, region, sheet);
-            RegionUtil.SetBorderRight(1, region, sheet);
-            RegionUtil.SetBorderTop(1, region, sheet);
         }
         private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
@@ -169,7 +150,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
             int column = 0;
 
-            if (groupFields!=null && groupFields.Count > 0)
+            if (groupFields != null && groupFields.Count > 0)
             {
                 if (!groupSalaryEmployees.Any(x => groupFields.Any(g => x.ContainsKey(g))))
                 {
@@ -177,7 +158,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 }
 
                 var groups = from f in groupSalaryEmployees
-                             group f by groupFields.Select(x=>  f[x].Value).JsonSerialize()
+                             group f by groupFields.Select(x => f[x].Value).JsonSerialize()
                              into g
                              select g;
                 foreach (var g in groups)
@@ -189,7 +170,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     }
 
                 }
-            } else
+            }
+            else
             {
                 foreach (var p in groupSalaryEmployees)
                 {
