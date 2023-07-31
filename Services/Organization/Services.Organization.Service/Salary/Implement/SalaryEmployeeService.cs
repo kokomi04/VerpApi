@@ -59,6 +59,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private const string ADDITION_ALIAS = "pc_va_khau_tru$";
 
         private const string EMPLOYEE_SALARY_FIELD_NAME = "ho_ten";
+
+        private const string EMPLOYEE_SALARY_GROUP_ID_FIELD = "salaryGroupId";
+
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
             ICurrentContextService currentContextService,
             IMapper mapper,
@@ -386,7 +389,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var groups = await _salaryPeriodGroupService.GetList(salaryPeriodId);
 
             var result = new List<GroupSalaryEmployeeEvalData>();
-
             var salaryFields = await _salaryFieldService.GetList();
             var sortedSalaryFields = new SortedSalaryFields(salaryFields);
             foreach (var group in groups)
@@ -406,14 +408,24 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return result;
         }
 
-        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetInfoEmployeeByGroupSalary(int salaryGroupId)
+        public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetInfoEmployeeByGroupSalary(int salaryPeriodId, int salaryGroupId)
         {
-            var salaryPeriod = (await _salaryPeriodService.GetAllList()).FirstOrDefault();
-            if (salaryPeriod == null)
+            if (salaryGroupId ==0)
             {
-                throw new BadRequestException("Không tìm thấy kỳ lương mới nhất!");
+                var result = await GetSalaryEmployeeAll(salaryPeriodId);
+                var data = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
+                foreach (var salaryGroup in result)
+                {
+                    var salaryGroupTitle = await _salaryGroupService.GetInfo(salaryGroup.SalaryGroupId);
+                    foreach (var item in salaryGroup.Salaries)
+                    {
+                        item.Add(EMPLOYEE_SALARY_GROUP_ID_FIELD, new SalaryEmployeeValueModel() { Value = salaryGroupTitle.Title });
+                    }
+                    data.AddRange(salaryGroup.Salaries);
+                }
+                return data;
             }
-            return await GetSalaryEmployeeByGroup(salaryPeriod.SalaryPeriodId, salaryGroupId);
+            return await GetSalaryEmployeeByGroup(salaryPeriodId, salaryGroupId);
         }
 
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeeByGroup(int salaryPeriodId, int salaryGroupId)
@@ -1094,10 +1106,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
             var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this);
-            var nameGroup = (await _salaryGroupService.GetInfo(salaryGroupId)).Title;
-            var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
-            string titleName = $"Kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}- {nameGroup}";
-            return await salaryEmployeeExport.Export(data, groupField, titleName);
+            string titleName = string.Empty;
+            if (salaryGroupId !=0)
+            {
+                var nameGroup = (await _salaryGroupService.GetInfo(salaryGroupId)).Title;
+                var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
+                titleName = $"Kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}- {nameGroup}";
+            }
+            else
+            {
+                titleName = "Tổng quan về lương";
+            }
+           
+            return await salaryEmployeeExport.Export(data, groupField, titleName, salaryGroupId ==0);
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping()
