@@ -424,7 +424,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestCreate)
                      .MessageResourceFormatData(new[] { purchasingRequest.PurchasingRequestCode })
                      .ObjectId(purchasingRequest.PurchasingRequestId)
-                     .JsonData(model.JsonSerialize())
+                     .JsonData(model)
                      .CreateLog();
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequest.PurchasingRequestId, $"Thêm mới phiếu yêu cầu VTHH  {purchasingRequest.PurchasingRequestCode}", model.JsonSerialize());
@@ -542,7 +542,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                       .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestUpdate)
                       .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
                       .ObjectId(purchasingRequestId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
                     //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", model.JsonSerialize());
@@ -604,7 +604,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestDelete)
                   .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
                   .ObjectId(purchasingRequestId)
-                  .JsonData(info.JsonSerialize())
+                  .JsonData(info)
                   .CreateLog();
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Xóa phiếu yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
@@ -662,7 +662,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestSentToCensor)
                   .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
                   .ObjectId(purchasingRequestId)
-                  .JsonData(info.JsonSerialize())
+                  .JsonData(info)
                   .CreateLog();
 
 
@@ -700,7 +700,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                    .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestApproved)
                    .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
                    .ObjectId(purchasingRequestId)
-                   .JsonData(info.JsonSerialize())
+                   .JsonData(info)
                    .CreateLog();
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Duyệt yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
@@ -738,7 +738,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestRejected)
                   .MessageResourceFormatData(new[] { info.PurchasingRequestCode })
                   .ObjectId(purchasingRequestId)
-                  .JsonData(info.JsonSerialize())
+                  .JsonData(info)
                   .CreateLog();
 
                 // await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Từ chối yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());
@@ -764,7 +764,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                  .LogBuilder(() => PurchasingRequestActivityLogMessage.PurchasingRequestUpdatedProgress)
                  .MessageResourceFormatData(new[] { info.PurchasingRequestCode, poProcessStatusId.GetEnumDescription() })
                  .ObjectId(purchasingRequestId)
-                 .JsonData(info.JsonSerialize())
+                 .JsonData(info)
                  .CreateLog();
 
                 //await _activityLogService.CreateLog(EnumObjectType.PurchasingRequest, purchasingRequestId, $"Cập nhật tiến trình PO yêu cầu VTHH  {info.PurchasingRequestCode}", info.JsonSerialize());

@@ -101,7 +101,7 @@ namespace VErp.Services.Organization.Service.BusinessInfo.Implement
             await _bussinessInfoActivityLog.LogBuilder(() => BussinessActivityLogMessage.Update)
                 .MessageResourceFormatDatas(businessInfo.CompanyName)
                 .ObjectId(businessInfo.BusinessInfoId)
-                .JsonData(businessInfo.JsonSerialize())
+                .JsonData(businessInfo)
                 .CreateLog();
 
             return true;

@@ -63,7 +63,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Create)
                .MessageResourceFormatDatas(unit.UnitName)
                .ObjectId(unit.UnitId)
-               .JsonData(data.JsonSerialize())
+               .JsonData(data)
                .CreateLog();
 
             return unit.UnitId;
@@ -147,7 +147,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Update)
             .MessageResourceFormatDatas(unitInfo.UnitName)
             .ObjectId(unitInfo.UnitId)
-            .JsonData(data.JsonSerialize())
+            .JsonData(data)
             .CreateLog();
 
             return true;
@@ -181,7 +181,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Delete)
             .MessageResourceFormatDatas(unitInfo.UnitName)
             .ObjectId(unitInfo.UnitId)
-            .JsonData(unitInfo.JsonSerialize())
+            .JsonData(unitInfo)
             .CreateLog();
 
             return true;

@@ -122,7 +122,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.CreateBackup)
                      .MessageResourceFormatDatas(backupStorage.Title)
                      .ObjectId(backupPoint)
-                     .JsonData(lsBackupStorage.JsonSerialize())
+                     .JsonData(lsBackupStorage)
                      .CreateLog();
                 }
                 catch (Exception ex)
@@ -168,7 +168,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreDatabase)
                   .MessageResourceFormatDatas(string.Join(", ", backups.Select(b => b.Title).Distinct().ToArray()))
                   .ObjectId(backupPoint)
-                  .JsonData(backups.JsonSerialize())
+                  .JsonData(backups)
                   .CreateLog();
 
             return true;
@@ -197,7 +197,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
             await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreDatabaseModule)
                 .MessageResourceFormatDatas((EnumModuleType)moduleTypeId, backup.Title)
                 .ObjectId(backupPoint)
-                .JsonData(backup.JsonSerialize())
+                .JsonData(backup)
                 .CreateLog();
 
             return true;
@@ -219,7 +219,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreStarted)
                     .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
                     .ObjectId(backup.BackupPoint)
-                    .JsonData(backup.JsonSerialize())
+                    .JsonData(backup)
                     .CreateLog();
 
                 DbContext dbContext = _activityLogDBContext;
@@ -235,7 +235,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                     await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreFail)
                       .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
                       .ObjectId(backup.BackupPoint)
-                      .JsonData(backup.JsonSerialize())
+                      .JsonData(backup)
                       .CreateLog();
 
                     throw;
@@ -248,7 +248,7 @@ namespace VErp.Services.Master.Service.StorageDatabase.Implement
                 await _storageDatabaseActivityLog.LogBuilder(() => StorageDatabaseActivityLogMessage.RestoreSuccess)
                     .MessageResourceFormatDatas(db, (EnumModuleType)backup.ModuleTypeId, backup.Title)
                     .ObjectId(backup.BackupPoint)
-                    .JsonData(backup.JsonSerialize())
+                    .JsonData(backup)
                     .CreateLog();
             }
         }

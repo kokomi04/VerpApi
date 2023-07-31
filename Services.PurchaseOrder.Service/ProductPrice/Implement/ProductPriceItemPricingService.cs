@@ -106,7 +106,7 @@ namespace VErp.Services.PurchaseOrder.Service.ProductPrice.Implement
             await _objectActivityLog.LogBuilder(() => ProductPriceConfigActivityLogMessage.UpdatedItemsPricing)
                 .MessageResourceFormatDatas(versionInfo.Title)
                 .ObjectId(productPriceConfigId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
 

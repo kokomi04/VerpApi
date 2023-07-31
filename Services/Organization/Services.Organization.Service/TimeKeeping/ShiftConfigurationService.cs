@@ -57,7 +57,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _shiftActivityLog.LogBuilder(() => ShiftConfigurationActivityLogMessage.CreateShiftConfiguration)
                       .MessageResourceFormatDatas(entity.ShiftCode)
                       .ObjectId(entity.ShiftConfigurationId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
             return entity.ShiftConfigurationId;
@@ -86,7 +86,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _shiftActivityLog.LogBuilder(() => ShiftConfigurationActivityLogMessage.UpdateShiftConfiguration)
                       .MessageResourceFormatDatas(shiftConfiguration.ShiftCode)
                       .ObjectId(shiftConfiguration.ShiftConfigurationId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
             return true;

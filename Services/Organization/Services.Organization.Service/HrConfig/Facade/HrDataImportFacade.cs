@@ -660,7 +660,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                   .MessageResourceFormatDatas(_hrType.Title, billInfo.BillCode)
                   .BillTypeId(_hrType.HrTypeId)
                   .ObjectId(billInfo.FId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 longTask.IncProcessedRows();
@@ -746,7 +746,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 .MessageResourceFormatDatas(_hrType.Title, billInfo.BillCode)
                 .BillTypeId(_hrType.HrTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
                 longTask.IncProcessedRows();

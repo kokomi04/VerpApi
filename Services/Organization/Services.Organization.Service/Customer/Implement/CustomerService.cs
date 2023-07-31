@@ -222,7 +222,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Create)
                   .MessageResourceFormatDatas(c.Key.CustomerCode)
                   .ObjectId(c.Key.CustomerId)
-                  .JsonData(c.Value.JsonSerialize())
+                  .JsonData(c.Value)
                   .CreateLog();
             }
 
@@ -291,7 +291,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Delete)
             .MessageResourceFormatDatas(customerInfo.CustomerCode)
             .ObjectId(customerInfo.CustomerId)
-            .JsonData(customerInfo.JsonSerialize())
+            .JsonData(customerInfo)
             .CreateLog();
             return true;
         }
@@ -681,7 +681,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Update)
                   .MessageResourceFormatDatas(customerInfo.CustomerCode)
                   .ObjectId(customerInfo.CustomerId)
-                  .JsonData(customerInfo.JsonSerialize())
+                  .JsonData(customerInfo)
                   .CreateLog();
 
             return customerInfo;

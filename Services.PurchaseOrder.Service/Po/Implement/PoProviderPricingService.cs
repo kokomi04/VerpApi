@@ -515,7 +515,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.Create)
                   .MessageResourceFormatDatas(po.PoProviderPricingCode)
                   .ObjectId(po.PoProviderPricingId)
-                  .JsonData(model.JsonSerialize())
+                  .JsonData(model)
                   .CreateLog();
                 return po.PoProviderPricingId;
             }
@@ -641,7 +641,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.Update)
                    .MessageResourceFormatDatas(info.PoProviderPricingCode)
                    .ObjectId(info.PoProviderPricingId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
                 return true;
             }
@@ -675,7 +675,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(info.PoProviderPricingCode)
                    .ObjectId(info.PoProviderPricingId)
-                   .JsonData(info.JsonSerialize())
+                   .JsonData(info)
                    .CreateLog();
 
                 return true;
@@ -713,7 +713,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CheckApprove)
                    .MessageResourceFormatDatas(info.PoProviderPricingCode)
                    .ObjectId(info.PoProviderPricingId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData(new { purchaseOrderId })
                    .CreateLog();
 
                 return true;
@@ -752,7 +752,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CheckReject)
                   .MessageResourceFormatDatas(info.PoProviderPricingCode)
                   .ObjectId(info.PoProviderPricingId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData(new { purchaseOrderId })
                   .CreateLog();
                 return true;
             }
@@ -795,7 +795,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CensorApprove)
                    .MessageResourceFormatDatas(info.PoProviderPricingCode)
                    .ObjectId(info.PoProviderPricingId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData(new { purchaseOrderId })
                    .CreateLog();
 
                 return true;
@@ -840,7 +840,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.CensorReject)
                   .MessageResourceFormatDatas(info.PoProviderPricingCode)
                   .ObjectId(info.PoProviderPricingId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData(new { purchaseOrderId })
                   .CreateLog();
                 return true;
             }
@@ -872,7 +872,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.SendToCensor)
                   .MessageResourceFormatDatas(info.PoProviderPricingCode)
                   .ObjectId(info.PoProviderPricingId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData(new { purchaseOrderId })
                   .CreateLog();
                 return true;
             }
@@ -895,7 +895,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                 await _poActivityLog.LogBuilder(() => PoProviderPricingActivityLogMessage.UpdatePoProcessStatus)
                  .MessageResourceFormatDatas(poProcessStatusId, info.PoProviderPricingCode)
                  .ObjectId(info.PoProviderPricingId)
-                 .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
+                 .JsonData((new { purchaseOrderId, poProcessStatusId }))
                  .CreateLog();
 
                 return true;

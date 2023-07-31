@@ -100,7 +100,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateAttachment)
                 .MessageResourceFormatDatas(product.ProductCode)
                 .ObjectId(productId)
-                .JsonData(req.JsonSerialize())
+                .JsonData(req)
                 .CreateLog();
 
             return true;

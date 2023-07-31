@@ -155,7 +155,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateBom)
              .MessageResourceFormatDatas(product.ProductCode)
              .ObjectId(productId)
-             .JsonData(bomInfo.JsonSerialize())
+             .JsonData(bomInfo)
              .CreateLog();
 
             return true;

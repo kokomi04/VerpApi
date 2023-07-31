@@ -64,7 +64,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CreatePoTrack)
                    .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, req.Description)
                    .ObjectId(purchaseOrderId)
-                   .JsonData(req.JsonSerialize())
+                   .JsonData(req)
                    .CreateLog();
 
                 return entity.PurchaseOrderTrackedId;
@@ -99,7 +99,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrack)
                   .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, req.Description)
                   .ObjectId(purchaseOrderId)
-                  .JsonData(req.JsonSerialize())
+                  .JsonData(req)
                   .CreateLog();
                 return true;
             }
@@ -133,7 +133,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrack)
                 .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, track.Description)
                 .ObjectId(purchaseOrderId)
-                .JsonData(track.JsonSerialize())
+                .JsonData(track)
                 .CreateLog();
                 return true;
             }
@@ -191,7 +191,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoTrackMulti)
                   .MessageResourceFormatDatas(poInfo.PurchaseOrderCode, string.Join(",", req?.Select(t => t.Description)?.ToArray()))
                   .ObjectId(purchaseOrderId)
-                  .JsonData(req.JsonSerialize())
+                  .JsonData(req)
                   .CreateLog();
                 return true;
             }

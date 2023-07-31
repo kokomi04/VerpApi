@@ -316,7 +316,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
                                   .MessageResourceFormatDatas(row.ProductCode)
                                   .ObjectId(productsMap[row].ProductId)
-                                  .JsonData(row.JsonSerialize())
+                                  .JsonData(row)
                                   .CreateLog();
 
                         }
@@ -329,7 +329,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
                                       .MessageResourceFormatDatas(row.ProductCode)
                                       .ObjectId(productsMap[row].ProductId)
-                                      .JsonData(row.JsonSerialize())
+                                      .JsonData(row)
                                       .CreateLog();
 
                             }

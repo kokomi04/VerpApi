@@ -279,7 +279,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.CreateFromExcel)
                                  .MessageResourceFormatDatas(info.BillCode, typeInfo.Title)
                                  .ObjectId(info.SalaryPeriodAdditionBillId)
-                                 .JsonData(model.JsonSerialize())
+                                 .JsonData(model)
                                  .CreateLog();
 
                             longTask.IncProcessedRows();
@@ -327,7 +327,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.UpdateFromExcel)
                                .MessageResourceFormatDatas(model.Key.BillCode, typeInfo.Title)
                                .ObjectId(entity.SalaryPeriodAdditionBillId)
-                               .JsonData(model.Key.JsonSerialize())
+                               .JsonData(model.Key)
                                .CreateLog();
 
                             longTask.IncProcessedRows();

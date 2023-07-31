@@ -256,7 +256,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Create)
                .MessageResourceFormatDatas(roleInfo.RoleName)
                .ObjectId(roleInfo.RoleId)
-               .JsonData(roleInfo.JsonSerialize())
+               .JsonData(roleInfo)
                .CreateLog();
 
             return roleInfo.RoleId;
@@ -392,7 +392,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Update)
             .MessageResourceFormatDatas(roleInfo.RoleName)
             .ObjectId(roleInfo.RoleId)
-            .JsonData(roleInfo.JsonSerialize())
+            .JsonData(roleInfo)
             .CreateLog();
 
             return true;
@@ -433,7 +433,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Delete)
               .MessageResourceFormatDatas(roleInfo.RoleName)
               .ObjectId(roleInfo.RoleId)
-              .JsonData(roleInfo.JsonSerialize())
+              .JsonData(roleInfo)
               .CreateLog();
 
             return true;
@@ -492,7 +492,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRolePermission)
                     .MessageResourceFormatDatas(roleInfo.RoleName)
                     .ObjectId(roleInfo.RoleId)
-                    .JsonData(permissions.JsonSerialize())
+                    .JsonData(permissions)
                     .CreateLog();
 
                 RemoveAuthCache();
@@ -570,7 +570,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
 
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleStockPermission)
-                .JsonData(req.JsonSerialize())
+                .JsonData(req)
                 .CreateLog();
 
             RemoveAuthCache();
@@ -664,7 +664,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
 
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleCategoryPermission)
-              .JsonData(req.JsonSerialize())
+              .JsonData(req)
               .CreateLog();
 
             RemoveAuthCache();

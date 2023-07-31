@@ -59,7 +59,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _reuseContentActivityLog.LogBuilder(() => ReuseContentActivityMessage.Create)
                 .MessageResourceFormatDatas(entity.Key, entity.Content)
                 .ObjectId(entity.ReuseContentId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return entity.ReuseContentId;
@@ -87,7 +87,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _reuseContentActivityLog.LogBuilder(() => ReuseContentActivityMessage.Update)
                 .MessageResourceFormatDatas(entity.Key, entity.Content)
                 .ObjectId(entity.ReuseContentId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return true;
@@ -104,7 +104,7 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             await _reuseContentActivityLog.LogBuilder(() => ReuseContentActivityMessage.Delete)
                 .MessageResourceFormatDatas(entity.Key, entity.Content)
                 .ObjectId(entity.ReuseContentId)
-                .JsonData(entity.JsonSerialize())
+                .JsonData(entity)
                 .CreateLog();
 
             return true;

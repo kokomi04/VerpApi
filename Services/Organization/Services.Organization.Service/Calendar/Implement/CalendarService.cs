@@ -99,7 +99,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Create)
                 .MessageResourceFormatDatas(calendar.CalendarCode)
                 .ObjectId(calendar.CalendarId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
             return data;
@@ -133,7 +133,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
             await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Update)
                 .MessageResourceFormatDatas(calendar.CalendarCode)
                 .ObjectId(calendar.CalendarId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
             return data;
@@ -178,7 +178,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(calendar.CalendarCode)
                     .ObjectId(calendar.CalendarId)
-                    .JsonData(calendar.JsonSerialize())
+                    .JsonData(calendar)
                     .CreateLog();
 
                 return true;
@@ -280,7 +280,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.Create)
                  .MessageResourceFormatDatas(cloneCalendar.CalendarCode, sourceCalendar.CalendarCode)
                  .ObjectId(cloneCalendar.CalendarId)
-                 .JsonData(cloneCalendarModel.JsonSerialize())
+                 .JsonData(cloneCalendarModel)
                  .CreateLog();
 
 
@@ -501,7 +501,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.UpdateDayOff)
                  .MessageResourceFormatDatas(data.Day.UnixToDateTime(), data.Content, calendar.CalendarCode)
                  .ObjectId(calendar.CalendarId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
                 return data;
@@ -528,7 +528,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.DeleteDayOff)
                 .MessageResourceFormatDatas(time, dayOff.Content, calendar.CalendarCode)
                 .ObjectId(calendar.CalendarId)
-                .JsonData(dayOff.JsonSerialize())
+                .JsonData(dayOff)
                 .CreateLog();
 
                 return true;
@@ -571,7 +571,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarDelete)
                  .MessageResourceFormatDatas(time, calendar.CalendarCode)
                  .ObjectId(calendar.CalendarId)
-                 .JsonData(workingWeeks.JsonSerialize())
+                 .JsonData(workingWeeks)
                  .CreateLog();
 
                 return true;
@@ -639,7 +639,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarCreate)
                   .MessageResourceFormatDatas(time, calendar.CalendarCode)
                   .ObjectId(calendar.CalendarId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
 
@@ -726,7 +726,7 @@ namespace VErp.Services.Organization.Service.Calendar.Implement
                 await _calendarActivityLog.LogBuilder(() => CalendarActivityLogMessage.WeekCalendarUpdate)
                    .MessageResourceFormatDatas(time, calendar.CalendarCode)
                    .ObjectId(calendar.CalendarId)
-                   .JsonData(data.JsonSerialize())
+                   .JsonData(data)
                    .CreateLog();
 
                 return await GetCurrentCalendar(calendarId);

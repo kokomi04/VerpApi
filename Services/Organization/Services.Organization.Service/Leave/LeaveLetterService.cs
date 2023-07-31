@@ -150,7 +150,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return info.LeaveId;
@@ -171,7 +171,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -352,7 +352,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Update)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return true;
@@ -398,7 +398,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Check)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -442,7 +442,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.CheckReject)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -487,7 +487,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Approve)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -531,7 +531,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveActivityLogMessage.Reject)
                 .MessageResourceFormatDatas(info.DateStart, userInfo.EmployeeCode + " " + userInfo.FullName + " - " + info.Title)
                 .ObjectId(info.LeaveId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;

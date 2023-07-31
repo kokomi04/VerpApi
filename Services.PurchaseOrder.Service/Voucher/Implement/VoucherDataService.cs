@@ -560,7 +560,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                  .BillTypeId(voucherTypeId)
                  .ObjectId(billInfo.FId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
                 return billInfo.FId;
@@ -1284,7 +1284,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                 .BillTypeId(voucherTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
                 return true;
@@ -1506,7 +1506,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                          .MessageResourceFormatDatas(voucherTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
                          .BillTypeId(voucherTypeId)
                          .ObjectId(bill.FId)
-                         .JsonData(new { voucherTypeId, fieldName, oldValue, newValue, billIds }.JsonSerialize().JsonSerialize())
+                         .JsonData(new { voucherTypeId, fieldName, oldValue, newValue, billIds })
                          .CreateLog();
 
                         // Update last bill version
@@ -1652,7 +1652,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                         .BillTypeId(voucherTypeId)
                         .ObjectId(billInfo.FId)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data)
                         .CreateLog();
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.VoucherBill, billInfo.FId);

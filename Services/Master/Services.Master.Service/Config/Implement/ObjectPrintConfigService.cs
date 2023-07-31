@@ -83,7 +83,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _objectPrintConfigActivityLog.LogBuilder(() => ObjectPrintConfigActivityLogMessage.MapingObjectPrintConfigs)
                  .ObjectType(mapping.ObjectTypeId)
                  .ObjectId(mapping.ObjectId)
-                 .JsonData(mapping.JsonSerialize())
+                 .JsonData(mapping)
                  .CreateLog();
 
                 return true;

@@ -196,7 +196,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.Create)
             .MessageResourceFormatDatas(info.BillCode, typeInfo.Title)
             .ObjectId(info.SalaryPeriodAdditionBillId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
             await ctx.ConfirmCode();
@@ -278,7 +278,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.Update)
             .MessageResourceFormatDatas(model.BillCode, typeInfo.Title)
             .ObjectId(salaryPeriodAdditionBillId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
 
@@ -377,7 +377,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.Delete)
             .MessageResourceFormatDatas(info.BillCode, typeInfo.Title)
             .ObjectId(info.SalaryPeriodAdditionBillId)
-            .JsonData(info.JsonSerialize())
+            .JsonData(info)
             .CreateLog();
 
             return true;

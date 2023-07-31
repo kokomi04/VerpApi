@@ -380,13 +380,13 @@ namespace VErp.Services.Stock.Service.Inventory.Implement.InventoryProcess
             await outActivityLogFacade.LogBuilder(messageResourceName)
                    .MessageResourceFormatDatas(outputObj.InventoryCode, inputObj.InventoryCode)
                           .ObjectId(outputObj.InventoryId)
-                          .JsonData(outputObj.JsonSerialize())
+                          .JsonData(outputObj)
                           .CreateLog();
 
             await invActivityLogFacade.LogBuilder(messageResourceName)
                  .MessageResourceFormatDatas(outputObj.InventoryCode, inputObj.InventoryCode)
                .ObjectId(inputObj.InventoryId)
-               .JsonData(inputObj.JsonSerialize())
+               .JsonData(inputObj)
                .CreateLog();
         }
 

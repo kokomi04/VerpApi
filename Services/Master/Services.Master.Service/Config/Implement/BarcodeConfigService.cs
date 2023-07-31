@@ -75,7 +75,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Create)
               .MessageResourceFormatDatas(model.Name)
               .ObjectId(model.BarcodeConfigId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
 
@@ -98,7 +98,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Delete)
               .MessageResourceFormatDatas(model.Name)
               .ObjectId(model.BarcodeConfigId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
             return true;
@@ -243,7 +243,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _barcodeConfigActivityLog.LogBuilder(() => BarcodeConfigActivityLogMessage.Update)
             .MessageResourceFormatDatas(model.Name)
             .ObjectId(model.BarcodeConfigId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
 

@@ -60,7 +60,7 @@ namespace VErp.Services.PurchaseOrder.Service.E_Invoice.Implement
             await _objectActivityLog.LogBuilder(() => ElectronicInvoiceProviderActivityLogMessage.Update)
                 .MessageResourceFormatDatas(electronicInvoiceProviderId.ToString())
                 .ObjectId((int)electronicInvoiceProviderId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
         }

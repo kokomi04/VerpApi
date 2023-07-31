@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Create)
                         .MessageResourceFormatDatas(model.FunctionName)
                          .ObjectId(functionInfo.OutsideImportMappingFunctionId)
-                         .JsonData(model.JsonSerialize())
+                         .JsonData(model)
                          .CreateLog();
 
                     return functionInfo.OutsideImportMappingFunctionId;
@@ -171,7 +171,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Update)
                       .MessageResourceFormatDatas(model.FunctionName)
                       .ObjectId(outsideImportMappingFunctionId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
                     return true;
@@ -209,7 +209,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(functionInfo.FunctionName)
                       .ObjectId(outsideImportMappingFunctionId)
-                      .JsonData(functionInfo.JsonSerialize())
+                      .JsonData(functionInfo)
                       .CreateLog();
 
                     return true;
@@ -266,7 +266,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                       objectId,
                       billObjectTypeId,
                       billFId
-                  }.JsonSerialize())
+                  })
                   .CreateLog();
 
             return true;

@@ -153,7 +153,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCode)
              .MessageResourceFormatDatas(config.CustomGenCodeName)
              .ObjectId(obj.ObjectCustomGenCodeMappingId)
-             .JsonData(model.JsonSerialize())
+             .JsonData(model)
              .CreateLog();
 
 
@@ -210,7 +210,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCodeMulti)
                  .MessageResourceFormatDatas(item.Value.CustomGenCodeName)
                  .ObjectId(item.Key.ObjectCustomGenCodeMappingId)
-                 .JsonData(item.Key.JsonSerialize())
+                 .JsonData(item.Key)
                  .CreateLog();
 
             }
@@ -235,7 +235,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.DeleteMapObjectGenCode)
               .MessageResourceFormatDatas(objectName, info.ConfigObjectId > 0 ? (long?)info.ConfigObjectId : null)
               .ObjectId(objectCustomGenCodeMappingId)
-              .JsonData(info.JsonSerialize())
+              .JsonData(info)
               .CreateLog();
 
             return true;
