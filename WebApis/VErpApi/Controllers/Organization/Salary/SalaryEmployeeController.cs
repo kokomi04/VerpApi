@@ -79,7 +79,7 @@ namespace VErpApi.Controllers.Organization.Salary
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            var data = await _salaryEmployeeService.GetSalaryEmployeeByGroup(req.SalaryPeriodId,req.SalaryGroupId);
+            var data = await _salaryEmployeeService.GetInfoEmployeeByGroupSalary(req.SalaryPeriodId,req.SalaryGroupId);
             if (data == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);

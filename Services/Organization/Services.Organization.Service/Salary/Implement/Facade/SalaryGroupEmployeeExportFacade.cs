@@ -45,14 +45,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryEmployeeService = salaryEmployeeService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName, bool isShowGroup)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
             await GetSalaryField();
 
-            var employees = WriteTable(groupSalaryEmployees, groupFields);
+            var employees = WriteTable(groupSalaryEmployees, groupFields, isShowGroup);
             if (sheet.LastRowNum < 100)
             {
                 for (var i = 0; i < _salaryFields.Count + 1; i++)
@@ -90,7 +90,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     _salaryFields.Add(salaryField);
             }
         }
-        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
+        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, bool isShowGroup)
         {
             if (groupSalaryEmployees.Count == 0)
                 throw new BadRequestException("Không tìm thấy nhân sự trong bảng lương");
@@ -141,9 +141,9 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             }
             currentRow = sRow + 1;
 
-            return WriteTableDetailData(groupSalaryEmployees, groupFields);
+            return WriteTableDetailData(groupSalaryEmployees, groupFields, isShowGroup);
         }
-        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
+        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, bool isShowGroup)
         {
             var stt = 1;
             var textStyle = sheet.GetCellStyle(isBorder: true);
@@ -165,6 +165,17 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 foreach (var g in groups)
                 {
                     var group = g.OrderBy(x => x[EMPLOYEE_FIELD_NAME].Value.ToString().Split(' ').Last());
+                    if (isShowGroup)
+                    {
+                        var region = new CellRangeAddress(currentRow, currentRow, 0, groupSalaryEmployees.FirstOrDefault()?.Count ?? 0);
+                        sheet.AddMergedRegion(region);
+                        RegionUtil.SetBorderBottom(1, region, sheet);
+                        RegionUtil.SetBorderLeft(1, region, sheet);
+                        RegionUtil.SetBorderRight(1, region, sheet);
+                        RegionUtil.SetBorderTop(1, region, sheet);
+                        sheet.EnsureCell(currentRow, 0).SetCellValue(g.Key);
+                        currentRow++;
+                    }
                     foreach (var p in group)
                     {
                         WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p);
