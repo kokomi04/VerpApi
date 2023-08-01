@@ -314,8 +314,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var step = steps.FirstOrDefault(s => s.ProductionStepId == assignmentStep.ProductionStepId);
                 if (step == null) throw new BadRequestException(GeneralCode.InvalidParams, "Công đoạn sản xuất không tồn tại");
 
-                var duplicateLink = assignmentStep.ProductionAssignments.GroupBy(a => a.ProductionStepLinkDataId).FirstOrDefault(a => a.Count() > 1);
-                if (duplicateLink != null)
+                var isDuplicateLink = assignmentStep.ProductionAssignments.GroupBy(a => a.ProductionStepLinkDataId).Count() > 1;
+                if (isDuplicateLink)
                 {
                     throw new BadRequestException(GeneralCode.InvalidParams, "Cần đồng nhất phân công 1 đầu ra, công đoạn " + step?.Title);
                 }
