@@ -5,6 +5,7 @@ using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -367,16 +368,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 switch (propertyName)
                 {
                     case nameof(ProductImportModel.ProductionProcessStatusId):
-                        foreach (var fieldEnum in Enum.GetValues(typeof(EnumProductionProcessStatus)))
-                        {
-                            var enumInfo = typeof(EnumProductionProcessStatus).GetField(fieldEnum.ToString());
-                            if (value == enumInfo.GetCustomAttribute<DescriptionAttribute>().Description)
-                            {
-                                entity.ProductionProcessStatusId = (int)Enum.Parse(typeof(EnumProductionProcessStatus), enumInfo.Name);
-                                break;
-                            }
-                        }
-                        return true;
+                        var title = typeof(ProductImportModel).GetProperty(nameof(ProductImportModel.ProductionProcessStatusId))
+                        .GetCustomAttribute<DisplayAttribute>()?.Name ?? "";
+                        throw new BadRequestException($" là thuộc tính mặc định.Vui lòng không chọn thay đổi {title}");
                     case nameof(ProductImportModel.TargetProductivityCode):
                         if (!string.IsNullOrWhiteSpace(value))
                         {
@@ -628,7 +622,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.PackingLong, row.PackingLong);
             product.UpdateIfAvaiable(p => p.PackingWidth, row.PackingWidth);
             product.UpdateIfAvaiable(p => p.TargetProductivityId, row.TargetProductivityId);
-            product.UpdateIfAvaiable(p => p.ProductionProcessStatusId, row.ProductionProcessStatusId);
 
             if (product.ProductId == 0)
             {
