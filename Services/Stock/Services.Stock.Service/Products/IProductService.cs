@@ -32,7 +32,7 @@ namespace VErp.Services.Stock.Service.Products
         Task<bool> DeleteProduct(int productId);
 
         Task<bool> ValidateProductUnitConversions(Dictionary<int, int> productUnitConvertsionProduct);
-        CategoryNameModel GetFieldMappings();
+        CategoryNameModel GetFieldMappings(bool isExport);
         Task<bool> ImportProductFromMapping(ImportExcelMapping mapping, Stream stream);
 
         Task<bool> UpdateProductCoefficientManual(int productId, decimal coefficient);

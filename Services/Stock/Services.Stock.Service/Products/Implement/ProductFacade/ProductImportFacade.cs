@@ -367,8 +367,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
-                    case nameof(ProductImportModel.ProductionProcessStatusId):
-                        throw new BadRequestException($" là thuộc tính mặc định.Vui lòng không chọn cập nhập.");
                     case nameof(ProductImportModel.TargetProductivityCode):
                         if (!string.IsNullOrWhiteSpace(value))
                         {

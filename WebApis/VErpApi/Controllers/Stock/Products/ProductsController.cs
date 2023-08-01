@@ -84,9 +84,9 @@ namespace VErpApi.Controllers.Stock.Products
 
         [HttpGet]
         [Route("fields")]
-        public CategoryNameModel GetFieldMappings()
+        public CategoryNameModel GetFieldMappings([FromQuery] bool isExport)
         {
-            return _productService.GetFieldMappings();
+            return _productService.GetFieldMappings(isExport);
         }
 
         [HttpPost]
