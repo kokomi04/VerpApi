@@ -62,7 +62,12 @@ namespace VErp.Commons.Library.Model
         {
         }
     }
-
+    public class FieldDataIgnoreImportAttribute : Attribute
+    {
+        public FieldDataIgnoreImportAttribute()
+        {
+        }
+    }
     /// <summary>
     /// Mark object as flat fields, nested object (not ref object)
     /// </summary>

@@ -1184,7 +1184,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public CategoryNameModel GetFieldMappings()
+        public CategoryNameModel GetFieldMappings(bool isExport)
         {
             var result = new CategoryNameModel()
             {
@@ -1195,7 +1195,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>(null,isExport);
             result.Fields = fields;
             return result;
         }

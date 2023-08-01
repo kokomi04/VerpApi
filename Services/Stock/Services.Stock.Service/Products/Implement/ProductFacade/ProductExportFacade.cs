@@ -234,9 +234,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Decimal, product.LoadAbility);
                 case nameof(ProductImportModel.StockOutputRuleId):
                     return (EnumDataType.Text, product.StockOutputRuleId?.GetEnumDescription());
-                    //return (EnumDataType.Decimal, product.LoadAbility);
-                //case nameof(ProductImportModel.ProductionProcessStatusId):
-                //    return (EnumDataType.Text, product.ProductionProcessStatusId?.GetEnumDescription());
+                //return (EnumDataType.Decimal, product.LoadAbility);
+                case nameof(ProductImportModel.ProductionProcessStatusId):
+                    return (EnumDataType.Text, product.ProductionProcessStatusId.GetEnumDescription());
                 case nameof(ProductImportModel.DescriptionToStock):
                     return (EnumDataType.Text, product.DescriptionToStock);
                 case nameof(ProductImportModel.AmountWarningMin):

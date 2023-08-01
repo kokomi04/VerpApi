@@ -50,7 +50,9 @@ namespace VErp.Services.Stock.Model.Product
         public string TargetProductivityCode { get; set; }
         [FieldDataIgnore]
         public int? TargetProductivityId { get; set; }
-
+        [FieldDataIgnoreImport]
+        [Display(Name = "Trạng thái QTSX", GroupName = "Thông tin chung")]
+        public int? ProductionProcessStatusId { get; set; }
 
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
