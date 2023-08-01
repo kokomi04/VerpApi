@@ -368,9 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 switch (propertyName)
                 {
                     case nameof(ProductImportModel.ProductionProcessStatusId):
-                        var title = typeof(ProductImportModel).GetProperty(nameof(ProductImportModel.ProductionProcessStatusId))
-                        .GetCustomAttribute<DisplayAttribute>()?.Name ?? "";
-                        throw new BadRequestException($" là thuộc tính mặc định.Vui lòng không chọn thay đổi {title}");
+                        throw new BadRequestException($" là thuộc tính mặc định.Vui lòng không chọn cập nhập.");
                     case nameof(ProductImportModel.TargetProductivityCode):
                         if (!string.IsNullOrWhiteSpace(value))
                         {
