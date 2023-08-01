@@ -1118,7 +1118,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 titleName = "Tổng quan về lương";
             }
            
-            return await salaryEmployeeExport.Export(data, groupField, titleName, salaryGroupId ==0);
+            return await salaryEmployeeExport.Export(data, groupField, titleName);
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping()

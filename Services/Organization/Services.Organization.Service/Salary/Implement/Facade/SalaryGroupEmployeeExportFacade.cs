@@ -45,14 +45,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryEmployeeService = salaryEmployeeService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName, bool isShowGroup)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
             await GetSalaryField();
 
-            var employees = WriteTable(groupSalaryEmployees, groupFields, isShowGroup);
+            var employees = WriteTable(groupSalaryEmployees, groupFields);
             if (sheet.LastRowNum < 100)
             {
                 for (var i = 0; i < _salaryFields.Count + 1; i++)
@@ -90,12 +90,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     _salaryFields.Add(salaryField);
             }
         }
-        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, bool isShowGroup)
+        private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
             if (groupSalaryEmployees.Count == 0)
                 throw new BadRequestException("Không tìm thấy nhân sự trong bảng lương");
             currentRow = 1;
-            groups = _salaryFields.Select(g =>  g.GroupName).Distinct().ToList();
+            groups = _salaryFields.Select(g => g.GroupName).Distinct().ToList();
             var fRow = currentRow;
             var sRow = currentRow;
 
@@ -141,11 +141,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             }
             currentRow = sRow + 1;
 
-            return WriteTableDetailData(groupSalaryEmployees, groupFields, isShowGroup);
+            return WriteTableDetailData(groupSalaryEmployees, groupFields);
         }
-        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, bool isShowGroup)
+        private string WriteTableDetailData(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
         {
-            var stt = 1;
+           
             var textStyle = sheet.GetCellStyle(isBorder: true);
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
@@ -159,38 +159,68 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 }
 
                 var groups = from f in groupSalaryEmployees
-                             group f by groupFields.Select(x => f[x].Value).JsonSerialize()
+                             group f by IListToString( groupFields.Select(x => f[x].Value?.ToString() ?? "").ToList())
                              into g
                              select g;
                 foreach (var g in groups)
                 {
+                    var stt = 1;
                     var group = g.OrderBy(x => x[EMPLOYEE_FIELD_NAME].Value.ToString().Split(' ').Last());
-                    if (isShowGroup)
-                    {
-                        var region = new CellRangeAddress(currentRow, currentRow, 0, groupSalaryEmployees.FirstOrDefault()?.Count ?? 0);
-                        sheet.AddMergedRegion(region);
-                        RegionUtil.SetBorderBottom(1, region, sheet);
-                        RegionUtil.SetBorderLeft(1, region, sheet);
-                        RegionUtil.SetBorderRight(1, region, sheet);
-                        RegionUtil.SetBorderTop(1, region, sheet);
-                        sheet.EnsureCell(currentRow, 0).SetCellValue(g.Key);
-                        currentRow++;
-                    }
+                    var region = new CellRangeAddress(currentRow, currentRow, 0, _salaryFields.Count);
+                    sheet.AddMergedRegion(region);
+                    RegionUtil.SetBorderBottom(1, region, sheet);
+                    RegionUtil.SetBorderLeft(1, region, sheet);
+                    RegionUtil.SetBorderRight(1, region, sheet);
+                    RegionUtil.SetBorderTop(1, region, sheet);
+                    sheet.EnsureCell(currentRow, 0).SetCellValue(g.Key);
+                    currentRow++;
+                    var startGroupRow = currentRow;
+                    int endGroupRow = startGroupRow + group.Count()-1;
                     foreach (var p in group)
                     {
                         WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p);
                     }
-
+                    SumGroup(startGroupRow, endGroupRow, intStyle);
                 }
             }
             else
             {
+                var stt = 1;
+                var startRow = currentRow;
                 foreach (var p in groupSalaryEmployees)
                 {
                     WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p);
                 }
+                var endRow = currentRow -1;
+                SumGroup(startRow, endRow, intStyle);
             }
             return "";
+        }
+        private string IListToString(IList<string> strs)
+        {
+            var str = new StringBuilder();
+            for (int i = 0; i < strs.Count; i++)
+            {
+                if (!string.IsNullOrEmpty(strs[i]))
+                    str.Append(str.Length == 0 ? strs[i] : $", {strs[i]}");
+
+            }
+            return str.ToString();
+        }
+        private void SumGroup(int startRow,int endRow, ICellStyle intStyle)
+        {
+            for (int i = 1; i <= _salaryFields.Count; i++)
+            {
+                var cell = sheet.EnsureCell(currentRow, i, intStyle);
+                if (_salaryFields[i - 1].DataTypeId == EnumDataType.Int ||
+                    _salaryFields[i - 1].DataTypeId == EnumDataType.Decimal ||
+                    _salaryFields[i - 1].DataTypeId == EnumDataType.BigInt)
+                {
+                    cell.SetCellFormula($"SUM({sheet.EnsureCell(startRow, i).Address}:{sheet.EnsureCell(endRow, i).Address})");
+                }
+
+            }
+            currentRow++;
         }
         private void WriteDataInCell(ICellStyle textStyle, ICellStyle intStyle, ICellStyle decimalStyle, ref int stt, ref int column, NonCamelCaseDictionary<SalaryEmployeeValueModel> p)
         {
