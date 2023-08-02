@@ -33,6 +33,9 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public string Comment { get; set; }
 
         public EnumAssignedProgressStatus? AssignedProgressStatus { get; set; }
+
+        public EnumAssignedProgressStatus? AssignedInputStatus { get; set; }
+
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
         public ProductionAssignmentModel()
