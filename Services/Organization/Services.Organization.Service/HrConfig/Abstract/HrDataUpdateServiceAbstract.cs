@@ -11,7 +11,6 @@ using System.Threading.Tasks;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -22,6 +21,7 @@ using Newtonsoft.Json;
 using Microsoft.EntityFrameworkCore;
 using OpenXmlPowerTools;
 using DocumentFormat.OpenXml.Math;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 
 namespace VErp.Services.Organization.Service.HrConfig.Abstract
 {

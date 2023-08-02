@@ -81,7 +81,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                          productionOrderId,
                          productionStepId,
                          model
-                     }.JsonSerialize());
+                     });
                 return consumMaterial.ProductionConsumMaterialId;
             }
         }
@@ -168,7 +168,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      {
                          productionConsumMaterialId,
                          model
-                     }.JsonSerialize());
+                     });
                 return true;
             }
         }
@@ -208,7 +208,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                      new
                      {
                          productionConsumMaterialId,
-                     }.JsonSerialize());
+                     });
                 return true;
             }
         }
@@ -236,7 +236,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         productionStepId,
                         objectTypeId,
                         objectId
-                    }.JsonSerialize());
+                    });
             }
 
             await _manufacturingDBContext.SaveChangesAsync();

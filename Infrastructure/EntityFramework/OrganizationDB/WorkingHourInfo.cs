@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.OrganizationDB;
 
-namespace VErp.Infrastructure.EF.OrganizationDB
+public partial class WorkingHourInfo
 {
-    public partial class WorkingHourInfo
-    {
-        public DateTime StartDate { get; set; }
-        public int SubsidiaryId { get; set; }
-        public double WorkingHourPerDay { get; set; }
-        public int CalendarId { get; set; }
-    }
+    public DateTime StartDate { get; set; }
+
+    public int SubsidiaryId { get; set; }
+
+    public double WorkingHourPerDay { get; set; }
+
+    public int CalendarId { get; set; }
 }

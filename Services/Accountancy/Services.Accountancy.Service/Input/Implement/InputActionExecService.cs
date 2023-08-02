@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -107,7 +107,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
 
-            await _inputDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
+            await _inputDataActivityLog.CreateLog(billId, logMessage, data, (EnumActionType)action.ActionTypeId, false, null, null, null, inputTypeId);
 
             return result;
         }

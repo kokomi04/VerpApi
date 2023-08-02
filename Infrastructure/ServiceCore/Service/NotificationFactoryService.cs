@@ -1,5 +1,5 @@
 using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {

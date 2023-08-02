@@ -34,6 +34,7 @@ using DocumentFormat.OpenXml.Office2010.Excel;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using DocumentFormat.OpenXml.InkML;
 using Verp.Resources.Enums.ErrorCodes.PO;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -606,7 +607,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     AttachmentBill = item.AttachmentBill,
                 });
             }
-            return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
+            return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult?.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
         }
 
 

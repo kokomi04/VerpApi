@@ -273,8 +273,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         var productTopUsed = await _productService.GetProductTopInUsed(listProductIds, true);
                         if (productTopUsed.Count > 0)
                         {
-                            var usedProductCode = existsProduct.Where(g => g.ProductId == productTopUsed.First().ProductId).Select(p => p.ProductCode).FirstOrDefault();
-                            throw ProductErrorCode.ProductInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + productTopUsed.First().Description);
+                            var usedProductCode = existsProduct.Where(g => g.ProductId == productTopUsed.First().Id).Select(p => p.ProductCode).FirstOrDefault();
+                            throw GeneralCode.ItemInUsed.BadRequestFormatWithData(productTopUsed, CanNotUpdateUnitProductWhichInUsed, usedProductCode + " " + productTopUsed.First().Description);
                         }
                     }
                 }

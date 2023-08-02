@@ -1,24 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.PurchaseOrderDB;
 
-namespace VErp.Infrastructure.EF.PurchaseOrderDB
+public partial class MaterialCalcProduct
 {
-    public partial class MaterialCalcProduct
-    {
-        public MaterialCalcProduct()
-        {
-            MaterialCalcProductDetail = new HashSet<MaterialCalcProductDetail>();
-            MaterialCalcProductOrder = new HashSet<MaterialCalcProductOrder>();
-        }
+    public long MaterialCalcProductId { get; set; }
 
-        public long MaterialCalcProductId { get; set; }
-        public long MaterialCalcId { get; set; }
-        public int ProductId { get; set; }
+    public long MaterialCalcId { get; set; }
 
-        public virtual MaterialCalc MaterialCalc { get; set; }
-        public virtual ICollection<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; }
-        public virtual ICollection<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; }
-    }
+    public int ProductId { get; set; }
+
+    public virtual MaterialCalc MaterialCalc { get; set; }
+
+    public virtual ICollection<MaterialCalcProductDetail> MaterialCalcProductDetail { get; set; } = new List<MaterialCalcProductDetail>();
+
+    public virtual ICollection<MaterialCalcProductOrder> MaterialCalcProductOrder { get; set; } = new List<MaterialCalcProductOrder>();
 }

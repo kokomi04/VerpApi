@@ -1,4 +1,4 @@
-﻿using VErp.Commons.GlobalObject.InternalDataInterface;
+﻿using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 
 namespace VErp.Services.Stock.Model.Stock
 {

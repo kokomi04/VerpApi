@@ -160,8 +160,7 @@ namespace VErp.Infrastructure.ApiCore.Extensions
         {
             app.UseEndpoints(opt =>
             {
-                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>
-                {
+                AddSignalRHub(opt, assembly, "SignalRHub", (options) =>  {
                 });
             });
 

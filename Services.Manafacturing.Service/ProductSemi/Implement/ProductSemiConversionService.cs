@@ -38,7 +38,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _manuDBContext.ProductSemiConversion.Add(entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Tạo mới bán thành phẩm chuyển đổi", entity.JsonSerialize());
+            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Tạo mới bán thành phẩm chuyển đổi", entity);
 
             return entity.ProductSemiConversionId;
         }
@@ -52,7 +52,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             entity.IsDeleted = true;
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Xóa bán thành phẩm chuyển đổi", entity.JsonSerialize());
+            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Xóa bán thành phẩm chuyển đổi", entity);
 
             return true;
         }
@@ -83,7 +83,7 @@ namespace VErp.Services.Manafacturing.Service.ProductSemi.Implement
             _mapper.Map(model, entity);
             await _manuDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Cập nhật bán thành phẩm chuyển đổi", entity.JsonSerialize());
+            await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductSemiConversion, entity.ProductSemiConversionId, "Cập nhật bán thành phẩm chuyển đổi", entity);
             return true;
         }
     }

@@ -3,7 +3,7 @@ using AutoMapper;
 using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Input

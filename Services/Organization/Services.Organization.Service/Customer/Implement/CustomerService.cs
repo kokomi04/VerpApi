@@ -12,7 +12,8 @@ using Verp.Resources.Organization.Customer;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -256,7 +257,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var customerTopUsed = await GetCustomerTopInUsed(new[] { customerId }, true);
             if (customerTopUsed.Count > 0)
             {
-                throw CustomerErrorCode.CustomerInUsed.BadRequestFormatWithData(customerTopUsed, $"{CanNotDeleteCustomerWhichIsInUse} {customerInfo.CustomerCode} {customerTopUsed.First().Description}");
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(customerTopUsed, $"{CanNotDeleteCustomerWhichIsInUse} {customerInfo.CustomerCode} {customerTopUsed.First().Description}");
             }
 
 
@@ -493,9 +494,13 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 throw new BadRequestException(CustomerErrorCode.CustomerNotFound);
             }
 
-            var checkExisted = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
-            if (checkExisted)
+            var checkExistedCode = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerCode == data.CustomerCode);
+            if (checkExistedCode)
                 throw new BadRequestException(CustomerErrorCode.CustomerCodeAlreadyExisted);
+
+            var checkExistedName = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerName == data.CustomerName);
+            if (checkExistedName)
+                throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", data.CustomerName));
 
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
@@ -544,7 +549,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             customerInfo.LoanBeginningTypeId = (int)data.LoanBeginningTypeId;
             if (!igDeleteRef || data.LoanManagerUserId.HasValue)
                 customerInfo.LoanManagerUserId = data.LoanManagerUserId;
-            if(!igDeleteRef || data.PayConditionsId.HasValue)
+            if (!igDeleteRef || data.PayConditionsId.HasValue)
                 customerInfo.PayConditionsId = data.PayConditionsId;
             if (!igDeleteRef || data.DeliveryConditionsId.HasValue)
                 customerInfo.DeliveryConditionsId = data.DeliveryConditionsId;
@@ -583,8 +588,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 }
             }
 
-
-            var newContacts = data.Contacts.Where(c => !(c.CustomerContactId > 0)).Select(c => new CustomerContact()
+            var lstContacts = igDeleteRef ? data.Contacts.Where(c => !dbContacts.Any(dc => c.FullName == dc.FullName)).ToList()
+                : data.Contacts.Where(c => !(c.CustomerContactId > 0)).ToList();
+            var newContacts = lstContacts.Select(c => new CustomerContact()
             {
                 CustomerId = customerInfo.CustomerId,
                 FullName = c.FullName,
@@ -600,7 +606,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             foreach (var c in dbContacts)
             {
-                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId);
+                var reqContact = data.Contacts.FirstOrDefault(s => s.CustomerContactId == c.CustomerContactId || s.FullName == c.FullName);
                 if (reqContact != null)
                 {
                     c.FullName = reqContact.FullName;
@@ -624,14 +630,18 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             }
 
 
-            var newBankAccounts = data.BankAccounts
-                .Where(ba => ba.BankAccountId <= 0)
+
+            var newBankAccounts = (igDeleteRef ? data.BankAccounts
+                .Where(ba => !dbBankAccounts.Any(da => da.AccountName == ba.AccountName))
+                : data.BankAccounts
+                .Where(ba => ba.BankAccountId <= 0))
                 .Select(ba => TransformBankAccEntity(customerId, ba));
+
             await _organizationContext.CustomerBankAccount.AddRangeAsync(newBankAccounts);
 
             foreach (var ba in dbBankAccounts)
             {
-                var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId);
+                var reqBankAccount = data.BankAccounts.FirstOrDefault(s => s.BankAccountId == ba.CustomerBankAccountId || s.AccountName == ba.AccountName);
                 if (reqBankAccount != null)
                 {
                     ba.AccountNumber = reqBankAccount.AccountNumber;
@@ -688,14 +698,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null,false,false,"",0, _httpCategoryHelperService);
+            var fields = ExcelUtils.GetFieldNameModels<BaseCustomerImportModel>(null, false, false, "", 0, _httpCategoryHelperService);
             result.Fields = fields;
             return result;
         }
 
         public async Task<bool> ImportCustomerFromMapping(ImportExcelMapping mapping, Stream stream)
         {
-            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext);
+            var importFacade = new CustomerImportFacade(this, _customerActivityLog, _mapper, _httpCategoryHelperService, _organizationContext, _userHelperService);
 
             var customerModels = await importFacade.ParseCustomerFromMapping(longTaskResourceLockService, mapping, stream);
 
@@ -893,14 +903,14 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
         }
 
-        public async Task<IList<CustomerInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly)
+        public async Task<IList<ObjectBillInUsedInfo>> GetCustomerTopInUsed(IList<int> customerIds, bool isCheckExistOnly)
         {
             var checkParams = new[]
             {
                 customerIds.ToSqlParameter("@CustomerIds"),
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
-            return await _organizationContext.QueryListProc<CustomerInUsedInfo>("asp_Customer_GetTopUsed_ByList", checkParams);
+            return await _organizationContext.QueryListProc<ObjectBillInUsedInfo>("asp_Customer_GetTopUsed_ByList", checkParams);
         }
     }
 }

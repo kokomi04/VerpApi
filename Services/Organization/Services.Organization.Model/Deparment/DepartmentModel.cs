@@ -1,4 +1,4 @@
-﻿using VErp.Commons.GlobalObject.InternalDataInterface;
+﻿using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 
 namespace VErp.Services.Organization.Model.Department
 {

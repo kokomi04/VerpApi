@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -82,7 +82,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
 
-            await _voucherDataActivityLog.CreateLog(billId, logMessage, data.JsonSerialize(), (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
+            await _voucherDataActivityLog.CreateLog(billId, logMessage, data, (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
 
             return result;
         }

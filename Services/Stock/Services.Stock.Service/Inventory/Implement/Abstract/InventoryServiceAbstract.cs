@@ -11,7 +11,7 @@ using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Formaters;

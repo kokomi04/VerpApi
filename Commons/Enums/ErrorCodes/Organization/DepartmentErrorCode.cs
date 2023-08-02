@@ -18,5 +18,7 @@ namespace VErp.Commons.Enums.StandardEnum
         DepartmentActived = 8,
         DepartmentParentInActived = 9,
         DepartmentInActived = 10,
+
+        DepartmentInUsed = 11,
     }
 }

@@ -1,18 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.ManufacturingDB;
 
-namespace VErp.Infrastructure.EF.ManufacturingDB
+/// <summary>
+/// Quy trình thường gặp
+/// </summary>
+public partial class ProductionStepCollection
 {
-    public partial class ProductionStepCollection
-    {
-        public long ProductionStepCollectionId { get; set; }
-        public string Title { get; set; }
-        public int Frequence { get; set; }
-        public string Collections { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public int UpdatedByUserId { get; set; }
-        public bool IsDeleted { get; set; }
-    }
+    public long ProductionStepCollectionId { get; set; }
+
+    public string Title { get; set; }
+
+    public int Frequence { get; set; }
+
+    public string Collections { get; set; }
+
+    public DateTime UpdatedDatetimeUtc { get; set; }
+
+    public int UpdatedByUserId { get; set; }
+
+    public bool IsDeleted { get; set; }
 }

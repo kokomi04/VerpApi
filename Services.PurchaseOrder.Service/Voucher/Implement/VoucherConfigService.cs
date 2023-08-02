@@ -16,7 +16,7 @@ using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -97,7 +97,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ bán hàng", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.InputType, 0, $"Cập nhật cấu hình chung chứng từ bán hàng", data);
                 return true;
             }
             catch (Exception ex)
@@ -292,7 +292,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
                 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Thêm chứng từ {voucherType.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Thêm chứng từ {voucherType.Title}", data);
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.SalesBill, EnumObjectType.VoucherType, voucherType.VoucherTypeId);
                 return voucherType.VoucherTypeId;
@@ -405,7 +405,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, cloneType.VoucherTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, cloneType.VoucherTypeId, $"Thêm chứng từ {cloneType.Title}", cloneType);
                 return cloneType.VoucherTypeId;
             }
             catch (Exception ex)
@@ -472,7 +472,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Cập nhật loại chứng từ bán hàng {voucherType.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Cập nhật loại chứng từ bán hàng {voucherType.Title}", data);
                 return true;
             }
             catch (Exception ex)
@@ -507,7 +507,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 _logger.LogError(ex, $"DeleteActionButtonsByType ({voucherTypeId})");
             }
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa loại chứng từ bán hàng {voucherType.Title}", voucherType.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherType.VoucherTypeId, $"Xóa loại chứng từ bán hàng {voucherType.Title}", voucherType);
             return true;
         }
 
@@ -603,7 +603,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Tạo bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Tạo bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}", model);
 
                 return info.VoucherTypeViewId;
             }
@@ -641,7 +641,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Cập nhật bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}", model.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Cập nhật bộ lọc {info.VoucherTypeViewName} cho chứng từ  {voucherTypeInfo.Title}", model);
 
                 return true;
             }
@@ -669,7 +669,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Xóa bộ lọc {info.VoucherTypeViewName} chứng từ  {voucherTypeInfo.Title}", new { voucherTypeViewId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeView, info.VoucherTypeViewId, $"Xóa bộ lọc {info.VoucherTypeViewName} chứng từ  {voucherTypeInfo.Title}", new { voucherTypeViewId });
 
             return true;
 
@@ -683,7 +683,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             await _purchaseOrderDBContext.VoucherTypeGroup.AddAsync(info);
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Thêm nhóm chứng từ {info.VoucherTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Thêm nhóm chứng từ {info.VoucherTypeGroupName}", model);
 
             return info.VoucherTypeGroupId;
         }
@@ -698,7 +698,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Cập nhật nhóm chứng từ {info.VoucherTypeGroupName}", model.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Cập nhật nhóm chứng từ {info.VoucherTypeGroupName}", model);
 
             return true;
         }
@@ -713,7 +713,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             await _purchaseOrderDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Xóa nhóm chứng từ {info.VoucherTypeGroupName}", new { voucherTypeGroupId }.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherTypeGroup, info.VoucherTypeGroupId, $"Xóa nhóm chứng từ {info.VoucherTypeGroupName}", new { voucherTypeGroupId });
 
             return true;
         }
@@ -832,7 +832,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherAreaId, $"Thêm vùng thông tin {voucherArea.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherAreaId, $"Thêm vùng thông tin {voucherArea.Title}", data);
                 return voucherArea.VoucherAreaId;
             }
             catch (Exception ex)
@@ -883,7 +883,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherTypeId, $"Cập nhật vùng dữ liệu {voucherArea.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherTypeId, $"Cập nhật vùng dữ liệu {voucherArea.Title}", data);
                 return true;
             }
             catch (Exception ex)
@@ -911,7 +911,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
             voucherArea.IsDeleted = true;
             await _purchaseOrderDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherTypeId, $"Xóa vùng chứng từ {voucherArea.Title}", voucherArea.JsonSerialize());
+            await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherArea.VoucherTypeId, $"Xóa vùng chứng từ {voucherArea.Title}", voucherArea);
             return true;
         }
 
@@ -1215,7 +1215,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherTypeId, $"Cập nhật trường dữ liệu chứng từ {voucherTypeInfo.Title}", fields.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherTypeId, $"Cập nhật trường dữ liệu chứng từ {voucherTypeInfo.Title}", fields);
 
                 return true;
             }
@@ -1247,7 +1247,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await UpdateVoucherTableType();
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Thêm trường dữ liệu chung {voucherField.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Thêm trường dữ liệu chung {voucherField.Title}", data);
                 return data;
             }
             catch (Exception ex)
@@ -1284,7 +1284,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
 
                 trans.Commit();
 
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Cập nhật trường dữ liệu chung {voucherField.Title}", data.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Cập nhật trường dữ liệu chung {voucherField.Title}", data);
                 return data;
             }
             catch (Exception ex)
@@ -1322,7 +1322,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await UpdateVoucherTableType();
 
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Xóa trường dữ liệu chung {voucherField.Title}", voucherField.JsonSerialize());
+                await _activityLogService.CreateLog(EnumObjectType.VoucherType, voucherField.VoucherFieldId, $"Xóa trường dữ liệu chung {voucherField.Title}", voucherField);
                 return true;
             }
             catch (Exception ex)

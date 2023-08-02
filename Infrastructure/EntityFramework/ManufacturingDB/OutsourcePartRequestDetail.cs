@@ -1,32 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 
-#nullable disable
+namespace VErp.Infrastructure.EF.ManufacturingDB;
 
-namespace VErp.Infrastructure.EF.ManufacturingDB
+public partial class OutsourcePartRequestDetail
 {
-    public partial class OutsourcePartRequestDetail
-    {
-        public OutsourcePartRequestDetail()
-        {
-            ProductionStepLinkData = new HashSet<ProductionStepLinkData>();
-        }
+    public long OutsourcePartRequestDetailId { get; set; }
 
-        public long OutsourcePartRequestDetailId { get; set; }
-        public long OutsourcePartRequestId { get; set; }
-        public int ProductId { get; set; }
-        public string PathProductIdInBom { get; set; }
-        public decimal Quantity { get; set; }
-        public DateTime CreatedDatetimeUtc { get; set; }
-        public int CreatedByUserId { get; set; }
-        public bool IsDeleted { get; set; }
-        public DateTime UpdatedDatetimeUtc { get; set; }
-        public int UpdatedByUserId { get; set; }
-        public DateTime? DeletedDatetimeUtc { get; set; }
-        public int SubsidiaryId { get; set; }
-        public DateTime? OutsourcePartRequestDetailFinishDate { get; set; }
+    public long OutsourcePartRequestId { get; set; }
 
-        public virtual OutsourcePartRequest OutsourcePartRequest { get; set; }
-        public virtual ICollection<ProductionStepLinkData> ProductionStepLinkData { get; set; }
-    }
+    public int ProductId { get; set; }
+
+    public string PathProductIdInBom { get; set; }
+
+    public decimal Quantity { get; set; }
+
+    public DateTime CreatedDatetimeUtc { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime UpdatedDatetimeUtc { get; set; }
+
+    public int UpdatedByUserId { get; set; }
+
+    public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public int SubsidiaryId { get; set; }
+
+    public DateTime? OutsourcePartRequestDetailFinishDate { get; set; }
+
+    public virtual OutsourcePartRequest OutsourcePartRequest { get; set; }
+
+    public virtual ICollection<ProductionStepLinkData> ProductionStepLinkData { get; set; } = new List<ProductionStepLinkData>();
 }

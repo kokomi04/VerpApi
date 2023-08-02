@@ -155,8 +155,8 @@ namespace VErp.Commons.Library
             byte r = (byte)HexadecimalToDecimal(hex.Substring(0, 2));
             byte g = (byte)HexadecimalToDecimal(hex.Substring(2, 2));
             byte b = (byte)HexadecimalToDecimal(hex.Substring(4, 2));
-            var cl = Color.FromArgb(r, g, b);
-            var a = new XSSFColor(cl);
+            
+            var a = new XSSFColor(new[] {r,g,b});
 
             return a.ARGB;
         }

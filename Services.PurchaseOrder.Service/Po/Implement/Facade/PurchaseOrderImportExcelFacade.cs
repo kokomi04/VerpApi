@@ -25,8 +25,9 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.MasterEnum.PO;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.GlobalObject.Org;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
@@ -39,7 +40,7 @@ using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderParseExcelValidationMessage;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 using PurchaseOrderEntity = VErp.Infrastructure.EF.PurchaseOrderDB.PurchaseOrder;
 
 

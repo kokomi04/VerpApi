@@ -1,10 +1,11 @@
-﻿#nullable disable
+﻿using System;
+using System.Collections.Generic;
 
-namespace ActivityLogDB
+namespace ActivityLogDB;
+
+public partial class UserActivityLogChange
 {
-    public partial class UserActivityLogChange
-    {
-        public long UserActivityLogId { get; set; }
-        public string ObjectChange { get; set; }
-    }
+    public long UserActivityLogId { get; set; }
+
+    public string ObjectChange { get; set; }
 }

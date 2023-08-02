@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.Config;
 

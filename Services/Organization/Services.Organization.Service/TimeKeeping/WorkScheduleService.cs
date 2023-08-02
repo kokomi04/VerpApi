@@ -61,10 +61,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 return entity.WorkScheduleId;
 
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -129,8 +129,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 var arrOldArrangeShifts = await _organizationDBContext.ArrangeShift.Where(x => x.WorkScheduleId == workSchedule.WorkScheduleId).ToListAsync();
-                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == false).ToListAsync();
-                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == true).ToListAsync();
+                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && !i.ParentArrangeShiftItemId.HasValue).ToListAsync();
+                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && !i.ParentArrangeShiftItemId.HasValue).ToListAsync();
 
                 _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldInnerArrangeShiftItems);
                 _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldArrangeShiftItems);
@@ -155,10 +155,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await trans.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
         }
 
@@ -172,8 +172,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     throw new BadRequestException(GeneralCode.ItemNotFound);
 
                 var arrOldArrangeShifts = await _organizationDBContext.ArrangeShift.Where(x => x.WorkScheduleId == workSchedule.WorkScheduleId).ToListAsync();
-                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == false).ToListAsync();
-                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue == true).ToListAsync();
+                var arrOldArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && !i.ParentArrangeShiftItemId.HasValue).ToListAsync();
+                var arrOldInnerArrangeShiftItems = await _organizationDBContext.ArrangeShiftItem.Where(i => arrOldArrangeShifts.Select(x => x.ArrangeShiftId).Contains(i.ArrangeShiftId) && i.ParentArrangeShiftItemId.HasValue).ToListAsync();
 
                 _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldInnerArrangeShiftItems);
                 _organizationDBContext.ArrangeShiftItem.RemoveRange(arrOldArrangeShiftItems);
@@ -193,10 +193,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await trans.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 await trans.RollbackAsync();
-                throw ex;
+                throw;
             }
 
         }
@@ -212,7 +212,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             foreach (var shift in arrangeShifts)
             {
-                var items = arrangeShiftItems.Where(x => x.ArrangeShiftId == shift.ArrangeShiftId && x.ParentArrangeShiftItemId.HasValue == false)
+                var items = arrangeShiftItems.Where(x => x.ArrangeShiftId == shift.ArrangeShiftId && !x.ParentArrangeShiftItemId.HasValue)
                                              .AsQueryable()
                                              .ProjectTo<ArrangeShiftItemModel>(_mapper.ConfigurationProvider)
                                              .ToList();

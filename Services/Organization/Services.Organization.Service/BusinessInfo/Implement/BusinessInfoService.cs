@@ -5,7 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.BussinessInfo;
 using VErp.Commons.Enums.MasterEnum;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.OrganizationDB;

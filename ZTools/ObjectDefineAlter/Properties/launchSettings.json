@@ -2,7 +2,7 @@
   "profiles": {
     "ObjectDefineAlter": {
       "commandName": "Project",
-      "commandLineArgs": "/sv1:\"C:\\usr\\verp\\config\\config.Development.json\""
+      "commandLineArgs": "/sv1:\"D:\\usr\\verp\\config\\config.Development.json\""
     }
   }
 }

@@ -1,7 +1,7 @@
 
 
 using System.Collections.Generic;
-using VErp.Commons.GlobalObject.InternalDataInterface;
+using VErp.Commons.GlobalObject.InternalDataInterface.PurchaseOrder;
 
 namespace VErp.Services.Manafacturing.Model.Outsource.RequestPart
 {

@@ -10,12 +10,14 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
+using VErp.Services.Organization.Model.Customer;
 using VErp.Services.Organization.Model.Department;
 using DepartmentEntity = VErp.Infrastructure.EF.OrganizationDB.Department;
 
@@ -109,20 +111,27 @@ namespace VErp.Services.Organization.Service.Department.Implement
             {
                 throw new BadRequestException(DepartmentErrorCode.DepartmentChildAlreadyExisted);
             }
-            var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
-            var checkParams = new[]
-            {
-                    new SqlParameter("@DepartmentId",departmentId),
-                    new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.All),
-                    isInUsed
-                };
+            //var isInUsed = new SqlParameter("@IsUsed", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            //var checkParams = new[]
+            //{
+            //        new SqlParameter("@DepartmentId",departmentId),
+            //        new SqlParameter("@TypeCheck",EnumTypeDepartmentCheckUsed.All),
+            //        isInUsed
+            //    };
 
-            await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
+            //await _organizationContext.ExecuteStoreProcedure("asp_Department_CheckUsed", checkParams);
 
-            if (isInUsed.Value as bool? == true)
+            //if (isInUsed.Value as bool? == true)
+            //{
+            //    throw new BadRequestException("Bộ phận đã được sử dụng, không được phép xóa");
+            //}
+
+            var departmentTopUsed = await GetDepartmentTopInUsed(new[] { departmentId }, true);
+            if (departmentTopUsed.Count > 0)
             {
-                throw new BadRequestException("Bộ phận đã được sử dụng, không được phép xóa");
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(departmentTopUsed, DepartmentErrorCode.DepartmentInUsed.GetEnumDescription(), $"{department.DepartmentCode} {departmentTopUsed.First().Description}");
             }
+
             department.IsDeleted = true;
             await _organizationContext.SaveChangesAsync();
 
@@ -352,6 +361,16 @@ namespace VErp.Services.Organization.Service.Department.Implement
                  .JsonData(data.JsonSerialize())
                  .CreateLog();
             return true;
+        }
+
+        public async Task<IList<ObjectBillInUsedInfo>> GetDepartmentTopInUsed(IList<int> departmentIds, bool isCheckExistOnly)
+        {
+            var checkParams = new[]
+            {
+                departmentIds.Select(d=>(long)d).ToList().ToSqlParameter("@DepartmentIds"),
+                new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
+            };
+            return await _organizationContext.QueryListProc<ObjectBillInUsedInfo>("asp_Department_GetTopUsed_ByList", checkParams);
         }
     }
 }

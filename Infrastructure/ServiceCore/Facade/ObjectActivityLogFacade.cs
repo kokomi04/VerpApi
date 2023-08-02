@@ -2,6 +2,7 @@
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 using static VErp.Infrastructure.ServiceCore.Service.ActivityLogService;
 
@@ -19,18 +20,18 @@ namespace VErp.Infrastructure.ServiceCore.Facade
         }
 
 
-        public Task<bool> CreateLog(long objectId, string message, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null, int? billTypeId = null)
+        public Task<bool> CreateLog(long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, jsonData, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, message, data, action, ignoreBatch, messageResourceName, messageResourceFormatData, billTypeId);
         }
 
-        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, string jsonData, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null, int? billTypeId = null)
+        public Task<bool> CreateLog<T>(long objectId, Expression<Func<T>> messageResourceName, object[] messageResourceFormatData, object data, EnumActionType? action = null, bool ignoreBatch = false, EnumObjectType? objectTypeId = null, int? billTypeId = null)
         {
             objectTypeId = objectTypeId ?? _objectTypeId;
             if (!objectTypeId.HasValue) throw new Exception("Invalid activity log object type");
-            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, jsonData, action, ignoreBatch, messageResourceFormatData, billTypeId);
+            return _activityLogService.CreateLog(objectTypeId.Value, objectId, messageResourceName, data, action, ignoreBatch, messageResourceFormatData, billTypeId);
         }
 
         public ActivityLogBatchs BeginBatchLog()
@@ -98,8 +99,6 @@ namespace VErp.Infrastructure.ServiceCore.Facade
             this.messageResourceFormatData = datas;
             return this;
         }
-
-
         public ObjectActivityLogModelBuilder<T> JsonData(string jsonData)
         {
             this.jsonData = jsonData;

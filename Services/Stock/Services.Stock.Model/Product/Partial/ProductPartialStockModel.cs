@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
-using static VErp.Commons.GlobalObject.InternalDataInterface.ProductModel;
+using static VErp.Commons.GlobalObject.InternalDataInterface.Stock.ProductModel;
 
 namespace VErp.Services.Stock.Model.Product.Partial
 {
