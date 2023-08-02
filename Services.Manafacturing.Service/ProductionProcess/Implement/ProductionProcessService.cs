@@ -2471,6 +2471,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return arrayNode;
         }
 
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateStatusProductionProcess(IList<int> productIds)
+        {
+            var lstWaring = new List<ProductionProcessWarningMessage>();
+            var products = await _productHelperService.GetListProducts(productIds);
+            foreach ( var product in products )
+            {
+                if (product.ProductionProcessStatusId != EnumProductionProcessStatus.Created)
+                {
+                    lstWaring.Add(new ProductionProcessWarningMessage()
+                    {
+                        WarningCode = EnumProductionProcessWarningCode.WarningProduct,
+                        Message = $"Mặt hàng {product.ProductCode} {product.ProductionProcessStatusId.GetEnumDescription()} QTSX",
+                        GroupName = EnumProductionProcessWarningCode.WarningProduct.GetEnumDescription()
+                    });
+                }
+                
+            }
+            return lstWaring;
+        }
+
         public class AllProductInProductionProcessNode
         {
             public List<long> ArrayProductionStepLinkData { get; set; }
