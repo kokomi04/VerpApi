@@ -50,12 +50,14 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.GetUnix()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.MapFrom(m => m.CreatedDatetimeUtc.GetUnix()))
                 .ForMember(s => s.AssignedProgressStatus, d => d.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedProgressStatus))
+                .ForMember(s => s.AssignedInputStatus, d => d.MapFrom(m => (EnumAssignedProgressStatus)m.AssignedInputStatus))
                 .ReverseMapCustom()
                 .ForMember(s => s.StartDate, d => d.MapFrom(m => m.StartDate.UnixToDateTime()))
                 .ForMember(s => s.EndDate, d => d.MapFrom(m => m.EndDate.UnixToDateTime()))
                 .ForMember(s => s.CreatedDatetimeUtc, d => d.Ignore())
                 .ForMember(s => s.IsManualFinish, d => d.Ignore())
-                .ForMember(s => s.AssignedProgressStatus, d => d.Ignore());
+                .ForMember(s => s.AssignedProgressStatus, d => d.Ignore())
+                .ForMember(s => s.AssignedInputStatus, d => d.Ignore());
         }
 
         public bool IsChange(ProductionAssignmentEntity _entity)
