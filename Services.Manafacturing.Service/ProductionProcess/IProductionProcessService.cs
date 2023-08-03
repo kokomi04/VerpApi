@@ -58,5 +58,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId);
 
         Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId);
+
+        Task<IList<ProductionProcessWarningMessage>> ValidateStatusProductionProcess(IList<int> productIds);
     }
 }

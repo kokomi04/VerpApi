@@ -38,6 +38,13 @@ namespace VErpApi.Controllers.Manufacturing
             return await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productionProcess);
         }
 
+        [HttpPost]
+        [Route("warning/productStatus")]
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateStatusProductionProcess([FromBody] IList<int> productIds)
+        {
+            return await _productionProcessService.ValidateStatusProductionProcess(productIds);
+        }
+
         [HttpGet]
         [Route("validateOutsourceStepRequest")]
         public async Task<bool> ValidateOutsourceStepRequest([FromQuery] long containerId, [FromQuery] long outsourceStepRequestId)
