@@ -30,7 +30,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
         private readonly ICachingService _cachingService;
-
+        private const string i18nCacheTag = "i18n";
         public I18nLanguageService(MasterDBContext masterDbContext, IMapper mapper, IActivityLogService activityLogService, ICachingService cachingService)
         {
             _masterDbContext = masterDbContext;
@@ -56,7 +56,7 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<NonCamelCaseDictionary> GetI18nByLanguage(string language)
         {
-            return await _cachingService.TryGetSet("i18n", "languge_" + language, TimeSpan.FromDays(7), async () =>
+            return await _cachingService.TryGetSet(i18nCacheTag, "languge_" + language, TimeSpan.FromDays(7), async () =>
             {
                 return (await _masterDbContext.I18nLanguage.ToListAsync())
                     .GroupBy(x => x.Key)
@@ -93,7 +93,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                 //En = $"{key} (En)"
             };
 
-            return await AddI18n(model);
+            var r = await AddI18n(model);
+            _cachingService.TryRemoveByTag(i18nCacheTag);
+            return r;
         }
 
         public async Task<long> AddI18n(I18nLanguageModel model)
@@ -107,6 +109,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext.I18nLanguage.Add(entity);
 
             await _masterDbContext.SaveChangesAsync();
+
+            _cachingService.TryRemoveByTag(i18nCacheTag);
 
             return entity.I18nLanguageId;
         }
@@ -130,6 +134,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterDbContext.SaveChangesAsync();
 
+            _cachingService.TryRemoveByTag(i18nCacheTag);
+
             return true;
         }
 
@@ -142,6 +148,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             existsI18n.IsDeleted = true;
 
             await _masterDbContext.SaveChangesAsync();
+
+            _cachingService.TryRemoveByTag(i18nCacheTag);
 
             return true;
         }
