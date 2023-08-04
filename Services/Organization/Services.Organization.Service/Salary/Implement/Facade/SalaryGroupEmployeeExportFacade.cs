@@ -32,7 +32,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
         private ISheet sheet = null;
         private int currentRow = 0;
-        private IList<CategoryFieldNameModel> _salaryFields;
+        private IList<SalaryFieldModel> _salaryFields;
         private IList<int> columnMaxLineLength = new List<int>();
         private const string EMPLOYEE_F_ID = "F_Id";
         private const string EMPLOYEE_FIELD_NAME = "ho_ten";
@@ -79,11 +79,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
         private async Task GetSalaryField()
         {
-            var salaryFields = await _salaryEmployeeService.GetFieldDataForMapping();
-            _salaryFields = new List<CategoryFieldNameModel>();
+            var salaryFields = await _salaryFieldService.GetList();
+            foreach (var field in salaryFields)
+            {
+                if (string.IsNullOrEmpty(field.GroupName))
+                {
+                    field.GroupName = string.Empty;
+                }
+            }
+            _salaryFields = new List<SalaryFieldModel>();
             foreach (var field in _fieldsName)
             {
-                var salaryField = salaryFields.Fields.FirstOrDefault(x => x.FieldName == field);
+                var salaryField = salaryFields.FirstOrDefault(x => x.SalaryFieldName == field);
                 if (salaryField == null)
                     throw new BadRequestException($"Không tìm thấy trường {field} trong bảng lương");
                 else
@@ -132,10 +139,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 foreach (var f in groupCols)
                 {
 
-                    sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.FieldTitle);
+                    sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.Title);
                     sheet.SetHeaderCellStyle(sRow, sColIndex);
 
-                    columnMaxLineLength.Add(f.FieldTitle?.Length ?? 10);
+                    columnMaxLineLength.Add(f.Title?.Length ?? 10);
                     sColIndex++;
                 }
             }
@@ -150,7 +157,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
             int column = 0;
-
+            var sumColumns = new Dictionary<int, SalaryFieldModel>();
             if (groupFields != null && groupFields.Count > 0)
             {
                 if (!groupSalaryEmployees.Any(x => groupFields.Any(g => x.ContainsKey(g))))
@@ -175,24 +182,49 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     sheet.EnsureCell(currentRow, 0).SetCellValue(g.Key);
                     currentRow++;
                     var startGroupRow = currentRow;
-                    int endGroupRow = startGroupRow + group.Count()-1;
                     foreach (var p in group)
                     {
-                        WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p);
+                        WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p,sumColumns);
                     }
-                    SumGroup(startGroupRow, endGroupRow, intStyle);
+                    var fields = group.Select(s => s).FirstOrDefault();
+
+                    for (int i = 0; i <= sumColumns.Count; i++)
+                    {
+                        sheet.EnsureCell(currentRow, i, textStyle);
+                        if (sumColumns.ContainsKey(i))
+                        {
+                            if (sumColumns[i].IsCalcSum)
+                            {
+                                var cell = sheet.EnsureCell(currentRow, i, sumColumns[i].DataTypeId == EnumDataType.Decimal ? decimalStyle : intStyle);
+                                cell.SetCellFormula($"SUM({sheet.EnsureCell(startGroupRow, i).Address}:{sheet.EnsureCell(currentRow -1, i).Address})");
+                            }
+                        }
+                    }
+                    currentRow++;
                 }
             }
             else
             {
                 var stt = 1;
-                var startRow = currentRow;
+                var startGroupRow = currentRow;
                 foreach (var p in groupSalaryEmployees)
                 {
-                    WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p);
+                    WriteDataInCell(textStyle, intStyle, decimalStyle, ref stt, ref column, p, sumColumns);
                 }
-                var endRow = currentRow -1;
-                SumGroup(startRow, endRow, intStyle);
+                for (int i = 0; i <= sumColumns.Count; i++)
+                {
+                    sheet.EnsureCell(currentRow, i, textStyle);
+                    if (sumColumns.ContainsKey(i))
+                    {
+                        if (sumColumns[i].IsCalcSum)
+                        {
+                            var cell = sheet.EnsureCell(currentRow, i, sumColumns[i].DataTypeId == EnumDataType.Decimal ? decimalStyle : intStyle);
+                            cell.SetCellFormula($"SUM({sheet.EnsureCell(startGroupRow, i).Address}:{sheet.EnsureCell(currentRow -1, i).Address})");
+                        }
+                    }
+                }
+               
+                currentRow++;
             }
             return "";
         }
@@ -207,45 +239,31 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             }
             return str.ToString();
         }
-        private void SumGroup(int startRow,int endRow, ICellStyle intStyle)
-        {
-            for (int i = 1; i <= _salaryFields.Count; i++)
-            {
-                var cell = sheet.EnsureCell(currentRow, i, intStyle);
-                if (_salaryFields[i - 1].DataTypeId == EnumDataType.Int ||
-                    _salaryFields[i - 1].DataTypeId == EnumDataType.Decimal ||
-                    _salaryFields[i - 1].DataTypeId == EnumDataType.BigInt)
-                {
-                    cell.SetCellFormula($"SUM({sheet.EnsureCell(startRow, i).Address}:{sheet.EnsureCell(endRow, i).Address})");
-                }
-
-            }
-            currentRow++;
-        }
-        private void WriteDataInCell(ICellStyle textStyle, ICellStyle intStyle, ICellStyle decimalStyle, ref int stt, ref int column, NonCamelCaseDictionary<SalaryEmployeeValueModel> p)
+        private void WriteDataInCell(ICellStyle textStyle, ICellStyle intStyle, ICellStyle decimalStyle, ref int stt, ref int column, NonCamelCaseDictionary<SalaryEmployeeValueModel> p, Dictionary<int, SalaryFieldModel> sumColumns)
         {
             var sColIndex = 1;
             sheet.EnsureCell(currentRow, 0, intStyle).SetCellValue(stt);
             foreach (var g in groups)
             {
                 var groupCols = _salaryFields.Where(f => f.GroupName == g);
+                
                 foreach (var f in groupCols)
                 {
-                    p.TryGetValue(f.FieldName, out var value);
+                    p.TryGetValue(f.SalaryFieldName, out var value);
                     switch (f.DataTypeId)
                     {
                         case EnumDataType.BigInt:
                         case EnumDataType.Int:
                             if (!value.IsNullOrEmptyObject())
                                 sheet.EnsureCell(currentRow, sColIndex, intStyle)
-                                    .SetCellFormula(value?.Value?.ToString());
+                                    .SetCellFormula(value.Value?.ToString());
                             else
                                 sheet.EnsureCell(currentRow, sColIndex, intStyle);
                             break;
                         case EnumDataType.Decimal:
                             if (!value.IsNullOrEmptyObject())
                                 sheet.EnsureCell(currentRow, sColIndex, decimalStyle)
-                                    .SetCellFormula(value?.Value?.ToString());
+                                    .SetCellFormula(value.Value?.ToString());
                             else
                                 sheet.EnsureCell(currentRow, sColIndex, decimalStyle);
                             break;
@@ -257,6 +275,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     {
                         columnMaxLineLength[sColIndex] = value.Value?.ToString()?.Length ?? 10;
                     }
+                    if (!sumColumns.ContainsKey(sColIndex))
+                        sumColumns.Add(sColIndex, f);
                     sColIndex++;
                 }
             }

@@ -67,10 +67,10 @@ namespace VErpApi.Controllers.Organization.Salary
 
             return await _salaryEmployeeService.GetEmployeeGroupInfo(req.Filters, req.Page, req.Size);
         }
-        [HttpGet("fieldDataForMapping")]
-        public async Task<CategoryNameModel> GetFieldDataFromMapping()
+        [HttpGet("fieldDataForMapping/{salaryGroupId}")]
+        public async Task<CategoryNameModel> GetFieldDataFromMapping([FromRoute] int salaryGroupId)
         {
-            return await _salaryEmployeeService.GetFieldDataForMapping();
+            return await _salaryEmployeeService.GetFieldDataForMapping(salaryGroupId);
         }
         [HttpPost("periods/export")]
         public async Task<IActionResult> ExportPeriod([FromBody] EmployeePeriodGroupRequestExportModel req)
