@@ -102,6 +102,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public PurchaseOrderInputDetail()
         {
             OutsourceMappings = new List<PurchaseOrderOutsourceMappingModel>();
+            OrderMappings = new List<PurchaseOrderOrderMappingModel>();
+
         }
         public long? PurchaseOrderDetailId { get; set; }
         public long? PurchasingSuggestDetailId { get; set; }
@@ -139,6 +141,7 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public IList<PurchaseOrderDetailSubCalculationModel> SubCalculations { get; set; }
         public IList<PurchaseOrderOutsourceMappingModel> OutsourceMappings { get; set; }
+        public IList<PurchaseOrderOrderMappingModel> OrderMappings { get; set; }
 
     }
 
