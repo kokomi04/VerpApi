@@ -139,13 +139,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
         public async Task<PageData<NonCamelCaseDictionary>> GetEmployeeGroupInfo(Clause filter, int page, int size)
         {
-            
-            var(employeesOfGroup, _) = await FilterEmployee(filter, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
-            
+
+            var (employeesOfGroup, _) = await FilterEmployee(filter, DateTime.Now.Year, DateTime.Now.Month, DateTime.UtcNow.GetUnix(), DateTime.UtcNow.GetUnix());
+
             if (employeesOfGroup.Count == 0)
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy nhân viên trong bảng lương");
             IList<NonCamelCaseDictionary> lstEmployees = null;
-            if (page == 0 && size ==0) 
+            if (page == 0 && size == 0)
                 lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).ToList();
             else
                 lstEmployees = employeesOfGroup.OrderBy(x => x.ContainsKey(EMPLOYEE_SALARY_FIELD_NAME) ? x[EMPLOYEE_SALARY_FIELD_NAME].ToString().Split(' ').Last() : null).Skip((page - 1) * size).Take(size).ToList();
@@ -289,7 +289,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 foreach (var f in salaryFields)
                 {
                     var fieldVariableName = SALARY_FIELD_PREFIX + f.SalaryFieldName;
-                    
+
                     var isFieldInGroup = groupFields.TryGetValue(f.SalaryFieldId, out var groupField);
 
                     object fieldValue = null;
@@ -326,7 +326,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     else
                     {
-                        if (f.DataTypeId != EnumDataType.Text && f.DataTypeId != EnumDataType.PhoneNumber && GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue)  )
+                        if (f.DataTypeId != EnumDataType.Text && f.DataTypeId != EnumDataType.PhoneNumber && GetDecimal(fieldValue, f.DecimalPlace, out var decimalValue))
                         {
                             fieldValue = decimalValue;
                         }
@@ -410,7 +410,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetInfoEmployeeByGroupSalary(int salaryPeriodId, int salaryGroupId)
         {
-            if (salaryGroupId ==0)
+            if (salaryGroupId == 0)
             {
                 var result = await GetSalaryEmployeeAll(salaryPeriodId);
                 var data = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
@@ -456,7 +456,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeePeriodByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group, SalaryGroupInfo groupInfo, SortedSalaryFields sortedSalaryFields)
         {
-            
+
             var salaryData = await _organizationDBContext.SalaryEmployee
                 .Include(s => s.SalaryEmployeeValue)
                 .ThenInclude(v => v.SalaryField)
@@ -484,12 +484,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }
 
             var clause = new SingleClause()
-                {
-                    Value = resultByEmployee.Keys.ToArray(),
-                    DataType = EnumDataType.BigInt,
-                    FieldName = OrganizationConstants.HR_TABLE_F_IDENTITY,
-                    Operator = EnumOperator.InList
-                };
+            {
+                Value = resultByEmployee.Keys.ToArray(),
+                DataType = EnumDataType.BigInt,
+                FieldName = OrganizationConstants.HR_TABLE_F_IDENTITY,
+                Operator = EnumOperator.InList
+            };
 
             var (employees, columns) = await FilterEmployee(clause, period.Year, period.Month, fromDate, toDate);
 
@@ -1103,11 +1103,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId ,IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
             var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this);
             string titleName = string.Empty;
-            if (salaryGroupId !=0)
+            if (salaryGroupId != 0)
             {
                 var nameGroup = (await _salaryGroupService.GetInfo(salaryGroupId)).Title;
                 var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
@@ -1117,23 +1117,29 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 titleName = "Tổng quan về lương";
             }
-           
+
             return await salaryEmployeeExport.Export(data, groupField, titleName);
         }
 
-        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        public async Task<CategoryNameModel> GetFieldDataForMapping(int salaryGroupId)
         {
             var fieldData = await _salaryFieldService.GetList();
             IList<CategoryFieldNameModel> categoryNameModels = new List<CategoryFieldNameModel>();
+            if (salaryGroupId != 0)
+            {
+                var groupFieldData = await _salaryGroupService.GetInfo(salaryGroupId);
+                var salaryFieldIds = groupFieldData.TableFields.Select(g => g.SalaryFieldId).ToList();
+                fieldData = fieldData.Where(x => salaryFieldIds.Contains(x.SalaryFieldId)).ToList();
+            }
             foreach (var field in fieldData)
             {
                 categoryNameModels.Add(new CategoryFieldNameModel()
                 {
-                    DataTypeId = field.DataTypeId,
-                    FieldName = field.SalaryFieldName,
-                    FieldTitle = field.Title,
-                    GroupName = !string.IsNullOrEmpty( field.GroupName) ? field.GroupName : "",
-                    SortOrder = field.SortOrder,
+                    DataTypeId = field?.DataTypeId,
+                    FieldName = field?.SalaryFieldName,
+                    FieldTitle = field?.Title,
+                    GroupName = !string.IsNullOrEmpty(field?.GroupName) ? field.GroupName : "",
+                    SortOrder = field?.SortOrder,
                 });
             }
             return new CategoryNameModel()
