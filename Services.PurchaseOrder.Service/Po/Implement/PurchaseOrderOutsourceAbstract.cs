@@ -301,7 +301,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 var allocateQuantity = (await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync()).Sum(x => x.Quantity);
 
                                 if (item.PrimaryQuantity < allocateQuantity)
-                                    throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
+                                    throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByProductionOrder);
 
                                 detail.ProductId = item.ProductId;
                                 detail.ProviderProductName = item.ProviderProductName;
@@ -354,7 +354,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             var allocateQuantity = item.OutsourceMappings.Sum(x => x.Quantity);
 
                             if (item.PrimaryQuantity < allocateQuantity)
-                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
+                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByProductionOrder);
 
                             var eDetail = new PurchaseOrderDetail()
                             {
