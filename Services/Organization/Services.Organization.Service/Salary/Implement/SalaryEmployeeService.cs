@@ -1106,19 +1106,22 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
             var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this,_salaryGroupService);
+            string titleFile = string.Empty;
             string titleName = string.Empty;
+            var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
             if (salaryGroupId != 0)
             {
                 var nameGroup = (await _salaryGroupService.GetInfo(salaryGroupId)).Title;
-                var periodInfo = await _salaryPeriodService.GetInfo(salaryPeriodId);
+                titleFile = $"Kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}- {nameGroup}";
                 titleName = $"Kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}- {nameGroup}";
             }
             else
             {
-                titleName = "Tổng quan về lương";
+                titleFile = "Tổng quan về lương";
+                titleName = $"Tổng quan về lương cho kỳ lương tháng {periodInfo.Month}/{periodInfo.Year}";
             }
 
-            return await salaryEmployeeExport.Export(data, groupField, titleName, salaryGroupId);
+            return await salaryEmployeeExport.Export(data, groupField, titleFile, titleName, salaryGroupId);
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int salaryGroupId)
