@@ -21,6 +21,7 @@ using System.Linq.Expressions;
 using System.Dynamic;
 using NPOI.SS.Formula.Functions;
 using DocumentFormat.OpenXml.Drawing;
+using Google.Protobuf.WellKnownTypes;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -28,6 +29,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
     {
         private readonly ISalaryFieldService _salaryFieldService;
         private readonly ISalaryEmployeeService _salaryEmployeeService;
+        private readonly ISalaryGroupService _salaryGroupService;
         private readonly IList<string> _fieldsName;
 
         private ISheet sheet = null;
@@ -38,19 +40,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         private const string EMPLOYEE_FIELD_NAME = "ho_ten";
         private IList<string> groups;
 
-        public SalaryGroupEmployeeExportFacade(IList<string> fieldsName, ISalaryFieldService salaryFieldService, ISalaryEmployeeService salaryEmployeeService)
+        public SalaryGroupEmployeeExportFacade(IList<string> fieldsName, ISalaryFieldService salaryFieldService, ISalaryEmployeeService salaryEmployeeService, ISalaryGroupService salaryGroupService)
         {
             _fieldsName = fieldsName;
             _salaryFieldService = salaryFieldService;
             _salaryEmployeeService = salaryEmployeeService;
+            _salaryGroupService = salaryGroupService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName, int salaryGroupId)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
-            await GetSalaryField();
+            await GetSalaryField(salaryGroupId);
 
             var employees = WriteTable(groupSalaryEmployees, groupFields);
             if (sheet.LastRowNum < 100)
@@ -77,10 +80,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             return (stream, fileName, contentType);
         }
 
-        private async Task GetSalaryField()
+        private async Task GetSalaryField(int salaryGroupId)
         {
-            var salaryFields = await _salaryFieldService.GetList();
-            foreach (var field in salaryFields)
+            var fieldsGroup = salaryGroupId !=0 ? await _salaryGroupService.GetInfo(salaryGroupId) : null;
+            var fieldsData = await _salaryFieldService.GetList();
+            foreach (var field in fieldsData)
             {
                 if (string.IsNullOrEmpty(field.GroupName))
                 {
@@ -90,11 +94,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryFields = new List<SalaryFieldModel>();
             foreach (var field in _fieldsName)
             {
-                var salaryField = salaryFields.FirstOrDefault(x => x.SalaryFieldName == field);
+                var salaryField = fieldsData.FirstOrDefault(x => x.SalaryFieldName == field);
                 if (salaryField == null)
                     throw new BadRequestException($"Không tìm thấy trường {field} trong bảng lương");
                 else
+                {
+                    if (fieldsGroup != null)
+                    {
+                        var fieldGroup = fieldsGroup.TableFields.FirstOrDefault(x => x.SalaryFieldId == salaryField.SalaryFieldId);
+                        salaryField.GroupName = string.IsNullOrEmpty( fieldGroup.GroupName ) ? "" : fieldGroup.GroupName;
+                        salaryField.SortOrder = fieldGroup.SortOrder;
+                    }
                     _salaryFields.Add(salaryField);
+                }
+                    
             }
         }
         private string WriteTable(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields)
@@ -105,7 +118,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             groups = _salaryFields.Select(g => g.GroupName).Distinct().ToList();
             var fRow = currentRow;
             var sRow = currentRow;
-
+            _salaryFields = _salaryFields.OrderBy(x=> x.SortOrder).ToList();
 
 
             var sColIndex = 1;
@@ -126,18 +139,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sheet.SetHeaderCellStyle(fRow, sColIndex);
 
                 if (groupCols.Count() > 1)
-                {
+                            {
                     var region = new CellRangeAddress(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
-                    sheet.AddMergedRegion(region);
-                    RegionUtil.SetBorderBottom(1, region, sheet);
-                    RegionUtil.SetBorderLeft(1, region, sheet);
-                    RegionUtil.SetBorderRight(1, region, sheet);
-                    RegionUtil.SetBorderTop(1, region, sheet);
-                }
-
+                                sheet.AddMergedRegion(region);
+                                RegionUtil.SetBorderBottom(1, region, sheet);
+                                RegionUtil.SetBorderLeft(1, region, sheet);
+                                RegionUtil.SetBorderRight(1, region, sheet);
+                                RegionUtil.SetBorderTop(1, region, sheet);
+                            }
+                       
 
                 foreach (var f in groupCols)
-                {
+                    {
 
                     sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.Title);
                     sheet.SetHeaderCellStyle(sRow, sColIndex);
@@ -246,7 +259,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             foreach (var g in groups)
             {
                 var groupCols = _salaryFields.Where(f => f.GroupName == g);
-                
+
                 foreach (var f in groupCols)
                 {
                     p.TryGetValue(f.SalaryFieldName, out var value);

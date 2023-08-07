@@ -1105,7 +1105,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<(Stream stream, string fileName, string contentType)> Export(IList<string> fieldNames, IList<string> groupField, int salaryPeriodId, int salaryGroupId, IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> data)
         {
-            var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this);
+            var salaryEmployeeExport = new SalaryGroupEmployeeExportFacade(fieldNames, _salaryFieldService, this,_salaryGroupService);
             string titleName = string.Empty;
             if (salaryGroupId != 0)
             {
@@ -1118,29 +1118,43 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 titleName = "Tổng quan về lương";
             }
 
-            return await salaryEmployeeExport.Export(data, groupField, titleName);
+            return await salaryEmployeeExport.Export(data, groupField, titleName, salaryGroupId);
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping(int salaryGroupId)
         {
-            var fieldData = await _salaryFieldService.GetList();
+            var fieldDatas = await _salaryFieldService.GetList();
             IList<CategoryFieldNameModel> categoryNameModels = new List<CategoryFieldNameModel>();
             if (salaryGroupId != 0)
             {
                 var groupFieldData = await _salaryGroupService.GetInfo(salaryGroupId);
-                var salaryFieldIds = groupFieldData.TableFields.Select(g => g.SalaryFieldId).ToList();
-                fieldData = fieldData.Where(x => salaryFieldIds.Contains(x.SalaryFieldId)).ToList();
-            }
-            foreach (var field in fieldData)
-            {
-                categoryNameModels.Add(new CategoryFieldNameModel()
+                foreach (var field in groupFieldData.TableFields)
                 {
-                    DataTypeId = field?.DataTypeId,
-                    FieldName = field?.SalaryFieldName,
-                    FieldTitle = field?.Title,
-                    GroupName = !string.IsNullOrEmpty(field?.GroupName) ? field.GroupName : "",
-                    SortOrder = field?.SortOrder,
-                });
+                    if (field.IsHidden) continue;
+                    var fieldData = fieldDatas.FirstOrDefault(x=>x.SalaryFieldId == field.SalaryFieldId);
+                    categoryNameModels.Add(new CategoryFieldNameModel()
+                    {
+                        DataTypeId = fieldData?.DataTypeId,
+                        FieldName = fieldData?.SalaryFieldName,
+                        FieldTitle = fieldData?.Title,
+                        GroupName = !string.IsNullOrEmpty(field?.GroupName) ? field.GroupName : "",
+                        SortOrder = field?.SortOrder,
+                    });
+                }
+            }
+            else
+            {
+                foreach (var field in fieldDatas)
+                {
+                    categoryNameModels.Add(new CategoryFieldNameModel()
+                    {
+                        DataTypeId = field?.DataTypeId,
+                        FieldName = field?.SalaryFieldName,
+                        FieldTitle = field?.Title,
+                        GroupName = !string.IsNullOrEmpty(field?.GroupName) ? field.GroupName : "",
+                        SortOrder = field?.SortOrder,
+                    });
+                }
             }
             return new CategoryNameModel()
             {
