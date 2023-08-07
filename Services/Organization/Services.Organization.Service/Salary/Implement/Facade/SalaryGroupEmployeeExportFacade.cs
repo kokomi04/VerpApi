@@ -48,13 +48,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             _salaryGroupService = salaryGroupService;
         }
 
-        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleName, int salaryGroupId)
+        public async Task<(Stream stream, string fileName, string contentType)> Export(IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>> groupSalaryEmployees, IList<string> groupFields, string titleFile, string titleName, int salaryGroupId)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
             await GetSalaryField(salaryGroupId);
-
+            currentRow =1;
+            var currentColumnTitle = 0;
+            var titleStyle = sheet.GetCellStyle(fontSize : 14, isBold : true, vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Left);
+            var region = new CellRangeAddress(currentRow,currentRow, currentColumnTitle, _fieldsName.Count);
+            sheet.AddMergedRegion(region);
+            sheet.EnsureCell(currentRow, currentColumnTitle, titleStyle).SetCellValue(titleName);
+            currentRow++;
             var employees = WriteTable(groupSalaryEmployees, groupFields);
             if (sheet.LastRowNum < 100)
             {
@@ -75,7 +81,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             stream.Seek(0, SeekOrigin.Begin);
 
             var contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            var fileName = StringUtils.RemoveDiacritics($"{titleName} {DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
+            var fileName = StringUtils.RemoveDiacritics($"{titleFile} {DateTime.Now.ToString("yyyyMMddHHmmss")}.xlsx").Replace(" ", "#");
 
             return (stream, fileName, contentType);
         }
@@ -114,7 +120,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
         {
             if (groupSalaryEmployees.Count == 0)
                 throw new BadRequestException("Không tìm thấy nhân sự trong bảng lương");
-            currentRow = 1;
             groups = _salaryFields.Select(g => g.GroupName).Distinct().ToList();
             var fRow = currentRow;
             var sRow = currentRow;
@@ -147,7 +152,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     RegionUtil.SetBorderRight(1, region, sheet);
                     RegionUtil.SetBorderTop(1, region, sheet);
                 }
-
+               
 
                 foreach (var f in groupCols)
                 {
@@ -169,6 +174,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
             var textStyle = sheet.GetCellStyle(isBorder: true);
             var intStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,###");
             var decimalStyle = sheet.GetCellStyle(isBorder: true, hAlign: HorizontalAlignment.Right, dataFormat: "#,##0.00###");
+            var groupStyle = sheet.GetCellStyle(isBold: true, isBorder: true);
             int column = 0;
             var sumColumns = new Dictionary<int, SalaryFieldModel>();
             if (groupFields != null && groupFields.Count > 0)
@@ -192,7 +198,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                     RegionUtil.SetBorderLeft(1, region, sheet);
                     RegionUtil.SetBorderRight(1, region, sheet);
                     RegionUtil.SetBorderTop(1, region, sheet);
-                    sheet.EnsureCell(currentRow, 0).SetCellValue(g.Key);
+                    sheet.EnsureCell(currentRow, 0, groupStyle).SetCellValue(g.Key);
                     currentRow++;
                     var startGroupRow = currentRow;
                     foreach (var p in group)
