@@ -45,6 +45,14 @@ public partial class InputType
 
     public bool IsHide { get; set; }
 
+    public bool IsParentAllowcation { get; set; }
+
+    public string DataAllowcationInputTypeIds { get; set; }
+
+    public int? ResultAllowcationInputTypeId { get; set; }
+
+    public string CalcResultAllowcationSqlQuery { get; set; }
+
     public virtual ICollection<InputArea> InputArea { get; set; } = new List<InputArea>();
 
     public virtual ICollection<InputAreaField> InputAreaField { get; set; } = new List<InputAreaField>();
@@ -54,4 +62,8 @@ public partial class InputType
     public virtual InputTypeGroup InputTypeGroup { get; set; }
 
     public virtual ICollection<InputTypeView> InputTypeView { get; set; } = new List<InputTypeView>();
+
+    public virtual ICollection<InputType> InverseResultAllowcationInputType { get; set; } = new List<InputType>();
+
+    public virtual InputType ResultAllowcationInputType { get; set; }
 }

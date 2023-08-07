@@ -1554,7 +1554,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.AsNoTracking().FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw VoucherTypeNotFound.BadRequest();
             var info = _mapper.Map<VoucherTypeExecData>(voucherTypeInfo);
-            info.GlobalSetting = global;
+            info.SetGlobalSetting(global);
             return info;
         }
 

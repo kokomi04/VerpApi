@@ -27,5 +27,13 @@ public partial class InputBill
 
     public string BillCode { get; set; }
 
+    public long? ParentInputBillFId { get; set; }
+
+    public virtual ICollection<InputBillAllocation> InputBillAllocation { get; set; } = new List<InputBillAllocation>();
+
     public virtual InputType InputType { get; set; }
+
+    public virtual ICollection<InputBill> InverseParentInputBillF { get; set; } = new List<InputBill>();
+
+    public virtual InputBill ParentInputBillF { get; set; }
 }

@@ -89,6 +89,12 @@ public partial class InputAreaField
 
     public string MouseLeave { get; set; }
 
+    public bool IsPivotAllowcation { get; set; }
+
+    public bool IsReadOnly { get; set; }
+
+    public bool IsPivotValue { get; set; }
+
     public virtual InputArea InputArea { get; set; }
 
     public virtual InputField InputField { get; set; }
