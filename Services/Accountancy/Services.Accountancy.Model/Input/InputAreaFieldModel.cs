@@ -88,6 +88,9 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsCalcSum { get; set; }
+        public bool IsPivotAllowcation { get; set; }
+        public bool IsPivotValue { get;set; }
+        public bool IsReadOnly { get; set; }
         public string RegularExpression { get; set; }
         public string FiltersName { get; set; }
         public string Filters { get; set; }
@@ -128,6 +131,9 @@ namespace VErp.Services.Accountancy.Model.Input
                 IsUnique == curField.IsUnique &&
                 IsHidden == curField.IsHidden &&
                 IsCalcSum == curField.IsCalcSum &&
+                IsReadOnly == curField.IsReadOnly &&
+                IsPivotAllowcation == curField.IsPivotAllowcation &&
+                IsPivotValue == curField.IsPivotValue &&
                 RegularExpression == curField.RegularExpression &&
                 DefaultValue == curField.DefaultValue &&
                 FiltersName == curField.FiltersName &&

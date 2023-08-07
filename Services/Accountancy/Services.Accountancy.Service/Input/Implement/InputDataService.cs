@@ -489,6 +489,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
+        public async Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId)
+        {
+            var type = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == parentInputTypeId);
+            if (type == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+            var data = await _accountancyDBContext.QueryDataTableRaw(type.CalcResultAllowcationSqlQuery, new[]
+            {
+                new SqlParameter("@ParentInputTypeId", parentInputTypeId),
+                new SqlParameter("@ParentFId", parentFId),
+            });
+
+            return data.ConvertData();
+        }
+
         public async Task<InputType> GetTypeInfo(int inputTypeId)
         {
             return await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
@@ -498,6 +512,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             return (await GetBillInfos(inputTypeId, new[] { fId })).First().Value;
+        }
+
+        public async Task<BillInfoModel> GetBillInfoByParent(int inputTypeId, long parentFId)
+        {
+            var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.ParentInputBillFId == parentFId);
+            if (billInfo == null) return new BillInfoModel();
+            return await GetBillInfo(inputTypeId, billInfo.FId);
+        }
+
+        public async Task<IList<string>> GetAllocationDataBillCodes(int inputTypeId, long fId)
+        {
+            return (await _accountancyDBContext.InputBillAllocation.Where(a => a.ParentInputBillFId == fId).Select(a => a.DataAllowcationBillCode).ToListAsync());
+        }
+
+        public async Task<bool> UpdateAllocationDataBillCodes(int inputTypeId, long fId, IList<string> dataAllowcationBillCodes)
+        {
+            var lst = await _accountancyDBContext.InputBillAllocation.Where(a => a.ParentInputBillFId == fId).ToListAsync();
+            _accountancyDBContext.InputBillAllocation.RemoveRange(lst);
+            await _accountancyDBContext.SaveChangesAsync();
+            await _accountancyDBContext.InputBillAllocation.AddRangeAsync(
+                dataAllowcationBillCodes.Select(c => c?.ToUpper()).Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct()
+                .Select(c => new InputBillAllocation()
+                {
+                    ParentInputBillFId = fId,
+                    DataAllowcationBillCode = c
+                }));
+            await _accountancyDBContext.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IDictionary<long, BillInfoModel>> GetBillInfos(int inputTypeId, IList<long> fIds)
@@ -539,9 +582,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var billEntryInfos = (await _accountancyDBContext.QueryDataTableRaw(billEntryInfoSql, new[] { fIds.ToSqlParameter("@FIds") })).ConvertData();
             var lst = new Dictionary<long, BillInfoModel>();
+
+            var billInfos = await _accountancyDBContext.InputBill.Where(b => fIds.Contains(b.FId)).ToListAsync();
             foreach (var fId in fIds)
             {
-                var result = new BillInfoModel();
+                var result = new BillInfoModel()
+                {
+                    ParentId = billInfos?.FirstOrDefault(b => b.FId == fId)?.ParentInputBillFId
+                };
 
                 var rows = data.Where(r => (long)r["InputBill_F_Id"] == fId).ToList();
 
@@ -633,7 +681,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     LatestBillVersion = 1,
                     SubsidiaryId = _currentContextService.SubsidiaryId,
                     BillCode = Guid.NewGuid().ToString(),
-                    IsDeleted = false
+                    IsDeleted = false,
+                    ParentInputBillFId = data.ParentId
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
@@ -979,14 +1028,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         Clause filterClause = filters[field.FieldName];
                         if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, null)))
                         {
-                                continue;
+                            continue;
                         }
                     }
 
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, 
+                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter,
                             new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
@@ -1006,14 +1055,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                             if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, inputAreaFields, sfValues, rowIndx - 1)))
                             {
-                                    continue;
+                                continue;
                             }
                         }
 
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter, 
+                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter,
                                 new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
@@ -1247,7 +1296,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, 
+                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter,
                         new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value, field.FiltersName });
                 }
             }
@@ -1311,8 +1360,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
+        public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data, bool isDeleteAllowcationBill)
         {
+            await CheckAndDeleteAllocationBill(inputTypeId, inputValueBillId, isDeleteAllowcationBill);
+
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             // Validate multiRow existed
@@ -1450,9 +1501,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds)
+        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds, bool isDeleteAllowcationBill)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
+            foreach (var billId in billIds)
+            {
+                await CheckAndDeleteAllocationBill(inputTypeId, billId, isDeleteAllowcationBill);
+            }
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -1714,15 +1770,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw InputTypeNotFound.BadRequest();
             var info = _mapper.Map<InputTypeExecData>(inputTypeInfo);
-            info.GlobalSetting = global;
+            info.SetGlobalSetting(global);
             return info;
         }
 
-        public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id)
+        public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id, bool isDeleteAllowcationBill)
         {
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
+            await CheckAndDeleteAllocationBill(inputTypeId, inputBill_F_Id, isDeleteAllowcationBill);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -2318,7 +2376,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
 
-        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream, bool isDeleteAllowcationBill)
         {
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -2605,7 +2663,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     BillCode = billCode?.ToUpper(),
                                     IsDeleted = false
                                 };
-                                 
+
                                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
                                 await _accountancyDBContext.SaveChangesAsync();
@@ -2631,6 +2689,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             // Cập nhật chứng từ
                             foreach (var bill in updateBills)
                             {
+                                await CheckAndDeleteAllocationBill(inputTypeId, bill.Key, isDeleteAllowcationBill);
 
                                 var oldBillInfo = infos[bill.Key];
 
@@ -2983,7 +3042,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, 
+                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter,
                                     new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
@@ -3135,7 +3194,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
 
             var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true, bill.Info);
-            
+
             billInfo.Info = bill.Info;
 
             foreach (var row in billInfo.Rows)
@@ -3453,6 +3512,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             return field.CategoryFieldTitle;
         }
+
+        private async Task CheckAndDeleteAllocationBill(int inputTypeId, long fId, bool isDelete)
+        {
+            var lst = await _accountancyDBContext.QueryListProc<InputBill>("asp_InputBill_CheckAndDeleteAllocationBill", new[]
+            {
+                new SqlParameter("BillTypeId",inputTypeId),
+                new SqlParameter("BillId",fId),
+                new SqlParameter("IsDelete",isDelete),
+            });
+            if (!isDelete && lst.Count > 0)
+            {
+                throw InputErrorCode.AllocationBillExisted.BadRequestFormatWithData(lst, $"Tồn tại chứng từ phân bổ {lst.First().BillCode}");
+            }
+        }
+
 
         protected class DataEqualityComparer : IEqualityComparer<object>
         {

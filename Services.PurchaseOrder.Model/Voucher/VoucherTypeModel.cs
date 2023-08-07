@@ -45,20 +45,25 @@ namespace VErp.Services.PurchaseOrder.Model.Voucher
 
     public class VoucherTypeExecData : VoucherTypeModel, ITypeExecData
     {
-        public VoucherTypeGlobalSettingModel GlobalSetting { get; set; }
+        private VoucherTypeGlobalSettingModel globalSetting { get; set; }
         private ExecCodeCombine<ITypeData> execCodeCombine;
         public VoucherTypeExecData()
         {
             execCodeCombine = new ExecCodeCombine<ITypeData>(this);
         }
 
-        public string PreLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PreLoadAction), GlobalSetting);
-        public string PostLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PostLoadAction), GlobalSetting);
-        public string AfterLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterLoadAction), GlobalSetting);
-        public string BeforeSubmitActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSubmitAction), GlobalSetting);
-        public string BeforeSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSaveAction), GlobalSetting);
-        public string AfterSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterSaveAction), GlobalSetting);
-        public string AfterUpdateRowsJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterUpdateRowsJsAction), GlobalSetting);
+        public void SetGlobalSetting(VoucherTypeGlobalSettingModel globalSetting)
+        {
+            this.globalSetting = globalSetting;
+        }
+
+        public string PreLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PreLoadAction), globalSetting);
+        public string PostLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.PostLoadAction), globalSetting);
+        public string AfterLoadActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterLoadAction), globalSetting);
+        public string BeforeSubmitActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSubmitAction), globalSetting);
+        public string BeforeSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.BeforeSaveAction), globalSetting);
+        public string AfterSaveActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterSaveAction), globalSetting);
+        public string AfterUpdateRowsJsActionExec => execCodeCombine.GetExecCode(nameof(ITypeData.AfterUpdateRowsJsAction), globalSetting);
 
     }
 }

@@ -68,5 +68,7 @@ namespace VErp.Commons.Enums.StandardEnum
 
         InputActionCodeAlreadyExisted = 40,
         InputFieldDataSizeInValid = 48,
+
+        AllocationBillExisted = 100,
     }
 }

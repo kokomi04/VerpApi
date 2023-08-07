@@ -1014,7 +1014,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         {
                             found = true;
 
-                            var allocateQuantity = (await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync()).Sum(x => x.Quantity);
+                            var prodDetails = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync();
+                            var allocateQuantity = prodDetails.Sum(x => x.Quantity);
 
                             if (item.PrimaryQuantity < allocateQuantity)
                                 throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
@@ -1069,14 +1070,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             await _purchaseOrderDBContext.SaveChangesAsync();
 
 
-                            var arrAllocate = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
-                            foreach (var allocate in arrAllocate)
+                            foreach (var allocate in prodDetails)
                             {
                                 var mAllocate = item.OutsourceMappings.FirstOrDefault(x => x.PurchaseOrderOutsourceMappingId == allocate.PurchaseOrderOutsourceMappingId);
                                 if (mAllocate != null)
                                     _mapper.Map(mAllocate, allocate);
                                 else allocate.IsDeleted = true;
                             }
+
+
                             var arrNewEntityAllocate = item.OutsourceMappings.Where(x => x.PurchaseOrderOutsourceMappingId <= 0)
                             .Select(x => new PurchaseOrderOutsourceMapping
                             {

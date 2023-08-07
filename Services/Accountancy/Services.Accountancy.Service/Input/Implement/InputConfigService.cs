@@ -142,7 +142,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 item.InputAreaFields = item.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
             }
 
-            inputType.GlobalSetting = globalSetting;
+            inputType.SetGlobalSetting(globalSetting);
             return inputType;
         }
 
@@ -171,7 +171,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     a.InputAreaFields = a.InputAreaFields.OrderBy(f => f.SortOrder).ToList();
                 }
 
-                item.GlobalSetting = globalSetting;
+                item.SetGlobalSetting(globalSetting);
             }
             return lst;
         }
@@ -343,7 +343,11 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     BeforeSaveAction = sourceInput.BeforeSaveAction,
                     AfterSaveAction = sourceInput.AfterSaveAction,
                     AfterUpdateRowsJsAction = sourceInput.AfterUpdateRowsJsAction,
-                    IsOpenning = sourceInput.IsOpenning
+                    CalcResultAllowcationSqlQuery = sourceInput.CalcResultAllowcationSqlQuery,
+                    IsOpenning = sourceInput.IsOpenning,
+                    IsParentAllowcation = sourceInput.IsParentAllowcation,
+                    DataAllowcationInputTypeIds = sourceInput.DataAllowcationInputTypeIds,
+                    ResultAllowcationInputTypeId = sourceInput.ResultAllowcationInputTypeId,
                 };
                 await _accountancyDBContext.InputType.AddAsync(cloneType);
                 await _accountancyDBContext.SaveChangesAsync();
@@ -378,6 +382,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             IsRequire = field.IsRequire,
                             IsUnique = field.IsUnique,
                             IsHidden = field.IsHidden,
+                            IsCalcSum = field.IsCalcSum,
+                            IsBatchSelect = field.IsBatchSelect,
+                            IsPivotAllowcation = field.IsPivotAllowcation,
+                            IsReadOnly = field.IsReadOnly,
                             RegularExpression = field.RegularExpression,
                             DefaultValue = field.DefaultValue,
                             Filters = field.Filters,
@@ -468,8 +476,12 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 inputType.BeforeSaveAction = data.BeforeSaveAction;
                 inputType.AfterSaveAction = data.AfterSaveAction;
                 inputType.AfterUpdateRowsJsAction = data.AfterUpdateRowsJsAction;
+                inputType.CalcResultAllowcationSqlQuery = data.CalcResultAllowcationSqlQuery;
                 inputType.IsOpenning = data.IsOpenning;
                 inputType.IsHide = data.IsHide;
+                inputType.IsParentAllowcation = data.IsParentAllowcation;
+                inputType.DataAllowcationInputTypeIds = data.DataAllowcationBillTypeIds.JsonSerialize();
+                inputType.ResultAllowcationInputTypeId = data.ResultAllowcationBillTypeId;
                 await _accountancyDBContext.SaveChangesAsync();
 
                 trans.Commit();
@@ -654,7 +666,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.CreateInputDataFilter)
-                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .MessageResourceFormatDatas(info.InputTypeViewName, inputTypeInfo.Title)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
                     .CreateLog();
@@ -695,7 +707,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                 await trans.CommitAsync();
                 await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.UpdateInputDataFilter)
-                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .MessageResourceFormatDatas(info.InputTypeViewName, inputTypeInfo.Title)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(model)
                     .CreateLog();
@@ -726,7 +738,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             await _accountancyDBContext.SaveChangesAsync();
             await _objActivityLogFacadeInputTypeView.LogBuilder(() => InputConfigActivityLogMessage.DeleteInputDataFilter)
-                    .MessageResourceFormatDatas(info.InputTypeViewName,inputTypeInfo.Title)
+                    .MessageResourceFormatDatas(info.InputTypeViewName, inputTypeInfo.Title)
                     .ObjectId(info.InputTypeViewId)
                     .JsonData(new { inputTypeViewId })
                     .CreateLog();
@@ -1237,6 +1249,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         curField.IsUnique = field.IsUnique;
                         curField.IsHidden = field.IsHidden;
                         curField.IsCalcSum = field.IsCalcSum;
+                        curField.IsPivotAllowcation = field.IsPivotAllowcation;
+                        curField.IsPivotValue = field.IsPivotValue;
+                        curField.IsReadOnly = field.IsReadOnly;
                         curField.RegularExpression = field.RegularExpression;
                         curField.DefaultValue = field.DefaultValue;
                         curField.FiltersName = field.FiltersName;

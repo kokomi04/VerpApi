@@ -44,7 +44,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
         private readonly ObjectActivityLogFacade _objActivityLogFacadeVoucherTypeView;
         private readonly IMapper _mapper;
         private readonly PurchaseOrderDBContext _purchaseOrderDBContext;
-        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;        
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly IHttpCrossService _httpCrossService;
         private readonly IRoleHelperService _roleHelperService;
         private readonly IVoucherActionConfigService _voucherActionConfigService;
@@ -69,7 +69,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             _objActivityLogFacadeVoucherType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherType);
             _objActivityLogFacadeVoucherTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.VoucherTypeView);
             _mapper = mapper;
-            _customGenCodeHelperService = customGenCodeHelperService;           
+            _customGenCodeHelperService = customGenCodeHelperService;
             _httpCrossService = httpCrossService;
             _roleHelperService = roleHelperService;
             _voucherActionConfigService = voucherActionConfigService;
@@ -149,7 +149,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
             }
 
-            voucherType.GlobalSetting = globalSetting;
+            voucherType.SetGlobalSetting(globalSetting);
 
             return voucherType;
         }
@@ -176,7 +176,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     item.VoucherAreaFields = item.VoucherAreaFields.OrderBy(f => f.SortOrder).ToList();
                 }
 
-                voucherType.GlobalSetting = globalSetting;
+                voucherType.SetGlobalSetting(globalSetting);
             }
 
             return voucherTypes;
@@ -208,7 +208,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             }
 
 
-            voucherType.GlobalSetting = globalSetting;
+            voucherType.SetGlobalSetting(globalSetting);
 
             return voucherType;
         }
@@ -305,7 +305,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await UpdateVoucherTableView(voucherType.VoucherTypeId, voucherType.VoucherTypeCode);
 
                 trans.Commit();
-                
+
                 await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucher)
                    .MessageResourceFormatDatas(voucherType.Title)
                    .ObjectId(voucherType.VoucherTypeId)
@@ -636,7 +636,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacadeVoucherType.LogBuilder(() => VoucherConfigActivityLogMessage.CreateVoucherFilter)
-                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName, voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .JsonData(model)
                    .CreateLog();
@@ -678,7 +678,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacadeVoucherTypeView.LogBuilder(() => VoucherConfigActivityLogMessage.UpdateVoucherFilter)
-                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName, voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .JsonData(model)
                    .CreateLog();
@@ -710,7 +710,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             await _purchaseOrderDBContext.SaveChangesAsync();
 
             await _objActivityLogFacadeVoucherTypeView.LogBuilder(() => VoucherConfigActivityLogMessage.DeleteVoucherFilter)
-                   .MessageResourceFormatDatas(info.VoucherTypeViewName,voucherTypeInfo.Title)
+                   .MessageResourceFormatDatas(info.VoucherTypeViewName, voucherTypeInfo.Title)
                    .ObjectId(info.VoucherTypeViewId)
                    .JsonData(new { voucherTypeViewId })
                    .CreateLog();
