@@ -1199,12 +1199,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 else
                 {
                     var remaingQuantity = d.QuantityOrigin - d.OutsourceQuantity - (d.OutsourcePartQuantity ?? 0);// - d.ExportOutsourceQuantity;
-                    if (d.Quantity.SubProductionDecimal(remaingQuantity) != 0)
+                    if (d.Quantity.SubProductionDecimal(remaingQuantity) != 0 && !isFromCopy)
                     {
                         throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải bằng số lượng ban đầu trừ các số lượng đi gia công!");
                     }
 
-                    if (d.Quantity.SubProductionDecimal(d.ExportOutsourceQuantity) < 0)
+                    if (d.Quantity.SubProductionDecimal(d.ExportOutsourceQuantity) < 0 && !isFromCopy)
                     {
                         throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải lớn hơn số lượng xuất đi gia công!");
                     }
@@ -1220,58 +1220,59 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             productionStepGroups.Where(x => x.IsGroup == true).ToList().ForEach(x =>
             {
-                if (!productionStepsInGroup.Any(t => t.ParentCode == x.ProductionStepCode))
+                if (!productionStepsInGroup.Any(t => t.ParentCode == x.ProductionStepCode) && !isFromCopy)
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{x.Title}\" chưa được thiết lập chi tiết công đoạn");
             });
 
             var groupRolesByStepCode = req.ProductionStepLinkDataRoles.GroupBy(r => r.ProductionStepCode).ToDictionary(r=>r.Key,r=>r.ToList());
-           
 
-            foreach (var p in productionStepsInGroup)
+            if (!isFromCopy)
             {
-                var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepCode == p.ParentCode);
-                if (step == null)
+                foreach (var p in productionStepsInGroup)
                 {
-                    throw $"Công đoạn cha của công đoạn {p.Title} không tồn tại".BadRequest();
-                }
-
-                if (!groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
-                {
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra đầu vào");
-                }
-                if (groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
-                {
-                    if (!groupRolesByStepCode[p.ProductionStepCode].Any(r=>r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
+                    var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepCode == p.ParentCode);
+                    if (step == null)
                     {
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu vào");
+                        throw $"Công đoạn cha của công đoạn {p.Title} không tồn tại".BadRequest();
                     }
 
-                    if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output))
+                    if (!groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
                     {
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra");
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra đầu vào");
                     }
+                    if (groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
+                    {
+                        if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
+                        {
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu vào");
+                        }
+
+                        if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output))
+                        {
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra");
+                        }
+                    }
+
                 }
+                if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
 
-            }
+                if (req.ProductionStepLinkDataRoles.GroupBy(x => new { x.ProductionStepCode, x.ProductionStepLinkDataCode, x.ProductionStepLinkDataRoleTypeId })
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkDataRole, "Xuất hiện role trùng nhau");
 
-            if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
+                if (req.ProductionSteps.GroupBy(x => x.ProductionStepCode)
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Xuất hiện công đoạn trùng nhau mã code");
 
-            if (req.ProductionStepLinkDataRoles.GroupBy(x => new { x.ProductionStepCode, x.ProductionStepLinkDataCode, x.ProductionStepLinkDataRoleTypeId })
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkDataRole, "Xuất hiện role trùng nhau");
+                if (req.ProductionStepLinkDatas.GroupBy(x => x.ProductionStepLinkDataCode)
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
-            if (req.ProductionSteps.GroupBy(x => x.ProductionStepCode)
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Xuất hiện công đoạn trùng nhau mã code");
-
-            if (req.ProductionStepLinkDatas.GroupBy(x => x.ProductionStepLinkDataCode)
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
-
-            if (req.ProductionOutsourcePartMappings == null)
-            {
-                req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
+                if (req.ProductionOutsourcePartMappings == null)
+                {
+                    req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
+                }
             }
 
             if (containerTypeId == EnumContainerType.ProductionOrder)
