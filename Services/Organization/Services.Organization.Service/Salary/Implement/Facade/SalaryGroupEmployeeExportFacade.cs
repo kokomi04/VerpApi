@@ -139,18 +139,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                 sheet.SetHeaderCellStyle(fRow, sColIndex);
 
                 if (groupCols.Count() > 1)
-                            {
+                {
                     var region = new CellRangeAddress(fRow, fRow, sColIndex, sColIndex + groupCols.Count() - 1);
-                                sheet.AddMergedRegion(region);
-                                RegionUtil.SetBorderBottom(1, region, sheet);
-                                RegionUtil.SetBorderLeft(1, region, sheet);
-                                RegionUtil.SetBorderRight(1, region, sheet);
-                                RegionUtil.SetBorderTop(1, region, sheet);
-                            }
-                       
+                    sheet.AddMergedRegion(region);
+                    RegionUtil.SetBorderBottom(1, region, sheet);
+                    RegionUtil.SetBorderLeft(1, region, sheet);
+                    RegionUtil.SetBorderRight(1, region, sheet);
+                    RegionUtil.SetBorderTop(1, region, sheet);
+                }
+
 
                 foreach (var f in groupCols)
-                    {
+                {
 
                     sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.Title);
                     sheet.SetHeaderCellStyle(sRow, sColIndex);
