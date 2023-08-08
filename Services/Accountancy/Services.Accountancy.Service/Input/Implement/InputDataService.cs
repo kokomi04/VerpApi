@@ -55,10 +55,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         }
 
-        public override Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId)
-        {
-            return base.CalcResultAllowcation(parentInputTypeId, parentFId, false);
-        }
     }
 
     public class InputDataPublicService : InputDataServiceBase, IInputDataPublicService
@@ -75,11 +71,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             : base(accountancyDBContext, inputDataDependService, inputConfigService, objectTypes, InputValueRowViewName.Public)
         {
 
-        }
-
-        public override Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId)
-        {
-            return base.CalcResultAllowcation(parentInputTypeId, parentFId, true);
         }
 
     }
@@ -500,16 +491,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
-        public abstract Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId);
-
-        protected async Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId, bool isPublic)
+        public async Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId)
         {
             var type = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == parentInputTypeId);
             if (type == null) throw GeneralCode.ItemNotFound.BadRequest();
 
             var data = await _accountancyDBContext.QueryDataTableRaw(type.CalcResultAllowcationSqlQuery, new[]
             {
-                new SqlParameter("@IsPublic", isPublic),
                 new SqlParameter("@ParentInputTypeId", parentInputTypeId),
                 new SqlParameter("@ParentFId", parentFId),
             });
@@ -2707,7 +2695,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             // Cập nhật chứng từ
                             foreach (var bill in updateBills)
                             {
-                               
+
                                 var oldBillInfo = infos[bill.Key];
 
                                 var newBillInfo = new BillInfoModel

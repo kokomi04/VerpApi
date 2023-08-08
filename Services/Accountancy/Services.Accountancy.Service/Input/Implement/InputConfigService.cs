@@ -44,6 +44,22 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
 
         }
+
+        public async Task ReplacePublicRefTableCode()
+        {
+            var fields = await _accountancyDBContext.InputField.Where(f => f.RefTableCode == "_Input_Row").ToListAsync();
+            foreach (var f in fields)
+            {
+                f.RefTableCode = "_InputPublic_Row";
+            }
+            var types = await _accountancyDBContext.InputType.ToListAsync();
+            foreach (var t in types)
+            {
+                t.CalcResultAllowcationSqlQuery = t.CalcResultAllowcationSqlQuery?.Replace("[_Input_Row]", "[_InputPublic_Row]");
+            }
+
+            await _accountancyDBContext.SaveChangesAsync();
+        }
     }
 
     public interface IInputConfigDependService
@@ -86,7 +102,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeGroup;
         private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeView;
         private readonly IMapper _mapper;
-        private readonly AccountancyDBContext _accountancyDBContext;
+        protected readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;

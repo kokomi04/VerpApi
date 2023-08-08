@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using VErp.Services.Accountancy.Service.Input;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 
 namespace VErpApi.Seeds
@@ -21,5 +22,18 @@ namespace VErpApi.Seeds
 
             }
         }
+
+        public static void NormalizeData(IWebHost host)
+        {
+            using (var scope = host.Services.CreateScope())
+            {
+                var services = scope.ServiceProvider;
+
+                var inputPublicConfigService = services.GetRequiredService<IInputPublicConfigService>();
+                inputPublicConfigService.ReplacePublicRefTableCode().Wait();
+
+            }
+        }
+        
     }
 }

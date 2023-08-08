@@ -65,6 +65,6 @@ namespace VErp.Services.Accountancy.Service.Input
 
     public interface IInputPublicConfigService : IInputConfigServiceBase
     {
-
+        Task ReplacePublicRefTableCode();
     }
 }
