@@ -45,6 +45,8 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public int? ObjectApprovalStepTypeId { get; set; }
 
+        public string SqlValue { get; set; }
+
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
             profile.CreateMapCustom<InputField, T>()

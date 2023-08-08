@@ -73,5 +73,7 @@ public partial class InputField
 
     public int? ObjectApprovalStepTypeId { get; set; }
 
+    public string SqlValue { get; set; }
+
     public virtual ICollection<InputAreaField> InputAreaField { get; set; } = new List<InputAreaField>();
 }
