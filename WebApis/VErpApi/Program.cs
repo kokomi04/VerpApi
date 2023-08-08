@@ -12,6 +12,8 @@ namespace VErp.WebApis.VErpApi
         {
             var host = CreateWebHostBuilder(args).Build();
             DBSeeder.Seed(host);
+            DBSeeder.NormalizeData(host);
+            
             host.Run();
         }
 
