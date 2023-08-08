@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NPOI.POIFS.Properties;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -633,8 +634,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
+        public async Task<long> CreateBill(int inputTypeId, BillInfoModel data, bool isDeleteAllowcationBill)
         {
+            await CheckAndDeleteAllocationBill(inputTypeId, 0, isDeleteAllowcationBill, data.ParentId);
+
             await ValidateAccountantConfig(data?.Info, null);
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
@@ -1375,7 +1378,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
         public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data, bool isDeleteAllowcationBill)
         {
-            await CheckAndDeleteAllocationBill(inputTypeId, inputValueBillId, isDeleteAllowcationBill);
+            await CheckAndDeleteAllocationBill(inputTypeId, inputValueBillId, isDeleteAllowcationBill, data.ParentId);
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -1518,9 +1521,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
+            var billInfos = await _accountancyDBContext.InputBill.Where(b => billIds.Contains(b.FId)).ToListAsync();
             foreach (var billId in billIds)
             {
-                await CheckAndDeleteAllocationBill(inputTypeId, billId, isDeleteAllowcationBill);
+                await CheckAndDeleteAllocationBill(inputTypeId, billId, isDeleteAllowcationBill, billInfos.FirstOrDefault(b => b.FId == billId)?.ParentInputBillFId);
             }
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
@@ -1793,7 +1797,6 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
 
-            await CheckAndDeleteAllocationBill(inputTypeId, inputBill_F_Id, isDeleteAllowcationBill);
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1801,6 +1804,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw BillNotFound.BadRequest();
+
+                await CheckAndDeleteAllocationBill(inputTypeId, inputBill_F_Id, isDeleteAllowcationBill, billInfo.ParentInputBillFId);
 
                 var inputAreaFields = new List<ValidateField>();
 
@@ -3526,17 +3531,19 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return field.CategoryFieldTitle;
         }
 
-        private async Task CheckAndDeleteAllocationBill(int inputTypeId, long fId, bool isDelete)
+        private async Task CheckAndDeleteAllocationBill(int inputTypeId, long fId, bool isDelete, long? parentId)
         {
-            var lst = await _accountancyDBContext.QueryListProc<InputBill>("asp_InputBill_CheckAndDeleteAllocationBill", new[]
+            var lst = await _accountancyDBContext.QueryListProc<ObjectBillInUsedInfo>("asp_InputBill_CheckAndDeleteAllocationBillV2", new[]
             {
-                new SqlParameter("BillTypeId",inputTypeId),
-                new SqlParameter("BillId",fId),
-                new SqlParameter("IsDelete",isDelete),
+                new SqlParameter("@BillTypeId",inputTypeId),
+                new SqlParameter("@BillId",fId),
+                new SqlParameter("@ObjectTypeId",(int)_inputBillObjectType),
+                new SqlParameter("@IsDelete",isDelete),
+                new SqlParameter("@ParentId",parentId),
             });
             if (!isDelete && lst.Count > 0)
             {
-                throw InputErrorCode.AllocationBillExisted.BadRequestFormatWithData(lst, $"Tồn tại chứng từ phân bổ {lst.First().BillCode}");
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(lst, $"Tồn tại chứng từ phân bổ {lst.First().BillCode}");
             }
         }
 
