@@ -2707,8 +2707,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             // Cập nhật chứng từ
                             foreach (var bill in updateBills)
                             {
-                                await CheckAndDeleteAllocationBill(inputTypeId, bill.Key, isDeleteAllowcationBill);
-
+                               
                                 var oldBillInfo = infos[bill.Key];
 
                                 var newBillInfo = new BillInfoModel
@@ -2817,6 +2816,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
                                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.InputTypeId == inputTypeId && b.FId == bill.Key && b.SubsidiaryId == _currentContextService.SubsidiaryId);
                                 if (billInfo == null) throw BillNotFound.BadRequest();
+
+                                await CheckAndDeleteAllocationBill(inputTypeId, billInfo.FId, isDeleteAllowcationBill, billInfo.ParentInputBillFId);
+
 
                                 // Before saving action (SQL)
                                 var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, newBillInfo, inputFields, EnumActionType.Update, billInfo.FId);
