@@ -112,6 +112,13 @@ namespace VErp.Infrastructure.ApiCore.Extensions
             {
                 option.UseSqlServer(databaseConnections.AccountancyPublicDatabase);
             }, ServiceLifetime.Scoped);
+
+            services.AddDbContext<UnAuthorizeAccountancyDBPublicContext, UnAuthorizeAccountancyDBPublicContext>((option) =>
+            {
+                option.UseSqlServer(databaseConnections.AccountancyPublicDatabase);
+            }, ServiceLifetime.Scoped);
+
+            
         }
 
         public static void ConfigReportConfigDBContextContext(this IServiceCollection services, DatabaseConnectionSetting databaseConnections)
