@@ -605,7 +605,7 @@ public partial class PurchaseOrderDBContext : DbContext
 
         modelBuilder.Entity<PurchaseOrderOrderMapping>(entity =>
         {
-            entity.HasKey(e => e.PurchaseOrderOrderMappingId).HasName("PK__Purchase__4C758D26F8743E76");
+            entity.HasKey(e => e.PurchaseOrderOrderMappingId).HasName("PK__Purchase__4C758D26C723F4E8");
 
             entity.Property(e => e.Note).HasMaxLength(256);
             entity.Property(e => e.OrderCode)
@@ -613,6 +613,10 @@ public partial class PurchaseOrderDBContext : DbContext
                 .HasMaxLength(128);
             entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.PuQuantity).HasColumnType("decimal(32, 12)");
+
+            entity.HasOne(d => d.PurchaseOrderDetail).WithMany(p => p.PurchaseOrderOrderMapping)
+                .HasForeignKey(d => d.PurchaseOrderDetailId)
+                .HasConstraintName("FK__PurchaseO__Purch__38BA319D");
         });
 
         modelBuilder.Entity<PurchaseOrderOutsourceMapping>(entity =>
