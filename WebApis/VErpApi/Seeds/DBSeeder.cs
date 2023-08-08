@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using VErp.Services.Accountancy.Service.Input;
+using VErp.Services.Accountancy.Service.Input.Implement;
 using VErp.Services.Manafacturing.Service.ProductionProcess;
 
 namespace VErpApi.Seeds
@@ -29,7 +30,7 @@ namespace VErpApi.Seeds
             {
                 var services = scope.ServiceProvider;
 
-                var inputPublicConfigService = services.GetRequiredService<IInputPublicConfigService>();
+                var inputPublicConfigService = services.GetRequiredService<IInputPublicConfigSeedService>();
                 inputPublicConfigService.ReplacePublicRefTableCode().Wait();
 
             }

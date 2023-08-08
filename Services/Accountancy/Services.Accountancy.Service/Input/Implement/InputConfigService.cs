@@ -39,29 +39,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
     public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
     {
-        private readonly UnAuthorizeAccountancyDBPublicContext _unAuthorizeAccountancyDBPublicContext;
 
-        public InputPublicConfigService(UnAuthorizeAccountancyDBPublicContext unAuthorizeAccountancyDBPublicContext, AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService)
+        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService)
             : base(accountancyDBContext, inputConfigDependService, inputActionConfigService, AccountantConstants.IsPublicDataExtraColumns)
         {
-            _unAuthorizeAccountancyDBPublicContext = unAuthorizeAccountancyDBPublicContext;
+            
         }
 
-        public async Task ReplacePublicRefTableCode()
-        {
-            var fields = await _unAuthorizeAccountancyDBPublicContext.InputField.Where(f => f.RefTableCode == "_Input_Row").ToListAsync();
-            foreach (var f in fields)
-            {
-                f.RefTableCode = "_InputPublic_Row";
-            }
-            var types = await _unAuthorizeAccountancyDBPublicContext.InputType.ToListAsync();
-            foreach (var t in types)
-            {
-                t.CalcResultAllowcationSqlQuery = t.CalcResultAllowcationSqlQuery?.Replace("_Input_Row", "_InputPublic_Row");
-            }
-
-            await _unAuthorizeAccountancyDBPublicContext.SaveChangesAsync();
-        }
+       
     }
 
     public interface IInputConfigDependService
