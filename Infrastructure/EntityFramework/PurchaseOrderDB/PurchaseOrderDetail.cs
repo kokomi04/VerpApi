@@ -35,7 +35,11 @@ public partial class PurchaseOrderDetail
 
     public string Description { get; set; }
 
+    public int CreatedByUserId { get; set; }
+
     public DateTime CreatedDatetimeUtc { get; set; }
+
+    public int UpdatedByUserId { get; set; }
 
     public DateTime UpdatedDatetimeUtc { get; set; }
 
@@ -64,4 +68,6 @@ public partial class PurchaseOrderDetail
     public virtual ICollection<PurchaseOrderDetailSubCalculation> PurchaseOrderDetailSubCalculation { get; set; } = new List<PurchaseOrderDetailSubCalculation>();
 
     public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
+
+    public virtual ICollection<PurchaseOrderOrderMapping> PurchaseOrderOrderMapping { get; set; } = new List<PurchaseOrderOrderMapping>();
 }

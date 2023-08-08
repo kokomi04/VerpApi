@@ -28,4 +28,6 @@ public partial class PurchaseOrderOrderMapping
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public virtual PurchaseOrderDetail PurchaseOrderDetail { get; set; }
 }
