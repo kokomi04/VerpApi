@@ -60,4 +60,21 @@ namespace VErp.Infrastructure.EF.AccountancyDB
         {
         }
     }
+  
+
+    public sealed class UnAuthorizeAccountancyDBPublicContext : AccountancyDBContext
+    {
+        public UnAuthorizeAccountancyDBPublicContext(DbContextOptions<UnAuthorizeAccountancyDBPublicContext> options
+           , ILoggerFactory loggerFactory)
+           : base(options.ChangeOptionsType<AccountancyDBContext>(loggerFactory))
+        {
+
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
+        }
+    }
 }

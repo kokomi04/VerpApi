@@ -39,26 +39,28 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
     public class InputPublicConfigService : InputConfigServiceBase, IInputPublicConfigService
     {
-        public InputPublicConfigService(AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService)
+        private readonly UnAuthorizeAccountancyDBPublicContext _unAuthorizeAccountancyDBPublicContext;
+
+        public InputPublicConfigService(UnAuthorizeAccountancyDBPublicContext unAuthorizeAccountancyDBPublicContext, AccountancyDBPublicContext accountancyDBContext, IInputConfigDependService inputConfigDependService, IInputPublicActionConfigService inputActionConfigService)
             : base(accountancyDBContext, inputConfigDependService, inputActionConfigService, AccountantConstants.IsPublicDataExtraColumns)
         {
-
+            _unAuthorizeAccountancyDBPublicContext = unAuthorizeAccountancyDBPublicContext;
         }
 
         public async Task ReplacePublicRefTableCode()
         {
-            var fields = await _accountancyDBContext.InputField.Where(f => f.RefTableCode == "_Input_Row").ToListAsync();
+            var fields = await _unAuthorizeAccountancyDBPublicContext.InputField.Where(f => f.RefTableCode == "_Input_Row").ToListAsync();
             foreach (var f in fields)
             {
                 f.RefTableCode = "_InputPublic_Row";
             }
-            var types = await _accountancyDBContext.InputType.ToListAsync();
+            var types = await _unAuthorizeAccountancyDBPublicContext.InputType.ToListAsync();
             foreach (var t in types)
             {
-                t.CalcResultAllowcationSqlQuery = t.CalcResultAllowcationSqlQuery?.Replace("[_Input_Row]", "[_InputPublic_Row]");
+                t.CalcResultAllowcationSqlQuery = t.CalcResultAllowcationSqlQuery?.Replace("_Input_Row", "_InputPublic_Row");
             }
 
-            await _accountancyDBContext.SaveChangesAsync();
+            await _unAuthorizeAccountancyDBPublicContext.SaveChangesAsync();
         }
     }
 
@@ -102,7 +104,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeGroup;
         private readonly ObjectActivityLogFacade _objActivityLogFacadeInputTypeView;
         private readonly IMapper _mapper;
-        protected readonly AccountancyDBContext _accountancyDBContext;
+        private readonly AccountancyDBContext _accountancyDBContext;
         private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
         private readonly ICategoryHelperService _httpCategoryHelperService;
         private readonly IRoleHelperService _roleHelperService;
