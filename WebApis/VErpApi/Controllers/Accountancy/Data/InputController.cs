@@ -140,11 +140,11 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [Route("{inputTypeId}")]
-        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data)
+        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data, [FromQuery] bool isDeleteAllowcationBill)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.CreateBill(inputTypeId, data).ConfigureAwait(true);
+            return await _inputDataService.CreateBill(inputTypeId, data, isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
         [HttpPut]

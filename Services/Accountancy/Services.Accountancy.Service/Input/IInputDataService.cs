@@ -42,7 +42,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<bool> UpdateAllocationDataBillCodes(int inputTypeId, long fId, IList<string> dataAllowcationBillCodes);
 
-        Task<long> CreateBill(int inputTypeId, BillInfoModel data);
+        Task<long> CreateBill(int inputTypeId, BillInfoModel data, bool isDeleteAllowcationBill);
 
         Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data, bool isDeleteAllowcationBill);
 
