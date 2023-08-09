@@ -3,11 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using Microsoft.SqlServer.Management.SqlParser.Parser;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -15,6 +17,7 @@ using Verp.Cache.Caching;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 
 namespace VErp.Infrastructure.EF.EFExtensions
@@ -124,7 +127,52 @@ namespace VErp.Infrastructure.EF.EFExtensions
             await dbConnection.ChangeDatabaseAsync(dbName);
         }
 
-       
+        public static NCalc.EvaluateFunctionHandler EvaluateFunctionHandlerSql(this DbContext db, IList<ProgramingFunctionBaseModel> functionsDefined)
+        {
+            var fns = functionsDefined.GroupBy(f => f.ProgramingFunctionName?.ToLower())
+                   .ToDictionary(g => g.Key, g => g.First());
+
+            NCalc.EvaluateFunctionHandler handler = (string name, NCalc.FunctionArgs args) =>
+            {
+                if (fns.TryGetValue(name?.ToLower(), out var fn))
+                {
+                    ExecDefineFn(db, fn.Params?.ParamsList?.Select(p => p.Name)?.ToArray(), fn.FunctionBody, args);
+                }
+            };
+
+
+            return handler;
+        }
+
+
+        private static void ExecDefineFn(this DbContext db, string[] paramsName, string body, NCalc.FunctionArgs args)
+        {
+            if (paramsName == null) paramsName = new string[0];
+
+            var result = new SqlParameter("@Result", DBNull.Value) { Direction = ParameterDirection.Output, Size = 512 };
+            var sqlParams = new List<SqlParameter>();
+            var idx = 0;
+            foreach (var a in args.EvaluateParameters())
+            {
+                var name = paramsName.Length > idx ? paramsName[idx] : "Param" + idx;
+                sqlParams.Add(new SqlParameter($"@{name}", a) { Size = 512 });
+                idx++;
+            }
+
+            if (paramsName.Length > sqlParams.Count)
+            {
+                for (idx = sqlParams.Count; idx <= paramsName.Length; idx++)
+                {
+                    var name = paramsName[idx - 1];
+                    sqlParams.Add(new SqlParameter($"@{name}", DBNull.Value) { Size = 512 });
+                }
+
+            }
+
+            sqlParams.Add(result);
+            var table = db.QueryDataTable(body, sqlParams).Result;
+            args.Result = table.Rows.Count > 0 ? table.Rows[0][0] : null;
+        }
 
         public static async Task<IList<T>> QueryListProc<T>(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
         {

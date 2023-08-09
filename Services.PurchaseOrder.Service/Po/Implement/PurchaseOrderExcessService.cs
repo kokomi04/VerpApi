@@ -8,7 +8,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;

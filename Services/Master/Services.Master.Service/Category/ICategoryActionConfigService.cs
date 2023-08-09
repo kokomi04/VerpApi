@@ -1,4 +1,4 @@
-﻿using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+﻿using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 
 namespace VErp.Services.Master.Service.Category
 {

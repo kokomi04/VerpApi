@@ -21,7 +21,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;

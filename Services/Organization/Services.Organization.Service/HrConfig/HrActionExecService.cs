@@ -13,7 +13,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 

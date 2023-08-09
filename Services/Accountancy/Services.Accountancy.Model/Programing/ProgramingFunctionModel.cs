@@ -1,22 +1,28 @@
-﻿using VErp.Commons.Enums.MasterEnum;
+﻿using AutoMapper;
+using NPOI.SS.Formula.Functions;
+using System.Collections.Generic;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
+using VErp.Commons.Library;
 using VErp.Infrastructure.EF.AccountancyDB;
 
 namespace VErp.Services.Accountancy.Model.Programing
 {
-    public class ProgramingFunctionModel : IMapFrom<ProgramingFunction>
+    public class ProgramingFunctionModel : ProgramingFunctionBaseModel, IMapFrom<ProgramingFunction>
     {
-        public string ProgramingFunctionName { get; set; }
-        public string FunctionBody { get; set; }
-        public int ProgramingLangId { get; set; }
-        public int ProgramingLevelId { get; set; }
-
-        public string Description { get; set; }
-        public string Params { get; set; }
+        protected void MappingBase<T>(Profile profile) where T : ProgramingFunctionBaseModel
+            => profile.CreateMapCustom<T, ProgramingFunction>()
+            .ForMember(d => d.Params, s => s.MapFrom(f => f.Params == null ? null : f.Params.JsonSerialize()))
+            .ReverseMapCustom()
+            .ForMember(d => d.Params, s => s.MapFrom(f => f.Params == null ? null : f.Params.JsonDeserialize<FunctionProgramParamType>()));
+        public virtual void Mapping(Profile profile) => MappingBase<ProgramingFunctionModel>(profile);
     }
+
     public class ProgramingFunctionOutputList : ProgramingFunctionModel
     {
         public int ProgramingFunctionId { get; set; }
+        public override void Mapping(Profile profile) => MappingBase<ProgramingFunctionOutputList>(profile);
     }
 
     public class FuncParameter
@@ -24,4 +30,5 @@ namespace VErp.Services.Accountancy.Model.Programing
         public EnumDataType DataType { get; set; }
         public object Value { get; set; }
     }
+
 }

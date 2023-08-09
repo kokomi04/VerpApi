@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.General
 {
     public interface IActionButtonConfigHelper
     {

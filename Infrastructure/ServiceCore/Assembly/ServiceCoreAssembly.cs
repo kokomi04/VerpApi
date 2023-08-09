@@ -3,7 +3,13 @@ using System.Reflection;
 using Verp.Cache.Caching;
 using Verp.Cache.MemCache;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Inv;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Infrastructure.ServiceCore.SignalR;
 

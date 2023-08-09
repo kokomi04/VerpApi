@@ -24,7 +24,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;

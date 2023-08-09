@@ -33,7 +33,8 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -730,7 +731,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join} WHERE bill.IsDeleted = 0 AND bill.HrTypeId = " + hrTypeInfo.HrTypeId, fieldNames);
+            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join} WHERE bill.SubsidiaryId = " + _currentContextService.SubsidiaryId + " AND bill.IsDeleted = 0 AND bill.HrTypeId = " + hrTypeInfo.HrTypeId, fieldNames);
         }
 
 

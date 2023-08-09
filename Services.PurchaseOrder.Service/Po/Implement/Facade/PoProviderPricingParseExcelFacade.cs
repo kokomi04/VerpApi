@@ -6,7 +6,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Services.PurchaseOrder.Model.PoProviderPricing;
 using static Verp.Resources.PurchaseOrder.Po.PurchaseOrderParseExcelValidationMessage;
 

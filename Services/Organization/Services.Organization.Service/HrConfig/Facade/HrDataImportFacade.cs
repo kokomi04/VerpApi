@@ -22,7 +22,6 @@ using Newtonsoft.Json;
 using System.Text;
 using VErp.Infrastructure.EF.EFExtensions;
 using static VErp.Commons.Library.EvalUtils;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Organization.Service.HrConfig.Abstract;
 using Microsoft.EntityFrameworkCore;
 using Verp.Cache.RedisCache;
@@ -31,6 +30,8 @@ using DocumentFormat.OpenXml.InkML;
 using System.Drawing.Drawing2D;
 using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 
 namespace VErp.Services.Organization.Service.HrConfig.Facade
 {

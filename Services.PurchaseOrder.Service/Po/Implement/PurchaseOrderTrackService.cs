@@ -15,7 +15,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;

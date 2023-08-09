@@ -4,11 +4,11 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture
 {
     //public interface IProductionHandoverHelperService
     //{
-      
+
 
     //    Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes);
     //}
@@ -20,7 +20,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
     //    {
     //        _httpCrossService = httpCrossService;
     //    }
-      
+
 
 
     //    public async Task<bool> UpdateIgnoreAllocation(string[] productionOrderCodes)

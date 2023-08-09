@@ -7,7 +7,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture
 {
     public interface IManufacturingHelperService
     {

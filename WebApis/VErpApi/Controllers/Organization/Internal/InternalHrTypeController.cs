@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Services.Organization.Service.HrConfig;
 
 namespace VErpApi.Controllers.Organization.Internal

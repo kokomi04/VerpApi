@@ -17,7 +17,6 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
@@ -30,6 +29,9 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using DocumentFormat.OpenXml.EMMA;
 using Verp.Resources.Master.Config.ActionButton;
 using Verp.Resources.Manafacturing.Production.Plan;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {

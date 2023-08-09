@@ -11,7 +11,6 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using VErp.Services.Stock.Model.Package;
@@ -24,6 +23,7 @@ using Verp.Cache.RedisCache;
 using DocumentFormat.OpenXml.InkML;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
 {

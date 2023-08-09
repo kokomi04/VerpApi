@@ -12,7 +12,8 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
 

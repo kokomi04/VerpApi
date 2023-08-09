@@ -6,7 +6,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Services.Accountancy.Service.Input;
 
 namespace VErpApi.Controllers.Accountancy.Action

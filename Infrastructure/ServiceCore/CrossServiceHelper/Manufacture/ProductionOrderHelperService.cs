@@ -5,7 +5,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture
 {
     //public interface IProductionOrderHelperService
     //{

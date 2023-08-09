@@ -8,7 +8,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
 using VErp.Services.Stock.Model.Product;
 
 namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsumptionFacade

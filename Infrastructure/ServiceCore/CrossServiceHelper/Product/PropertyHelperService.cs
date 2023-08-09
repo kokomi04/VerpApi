@@ -6,7 +6,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product
 {
     public interface IPropertyHelperService
     {
@@ -20,9 +20,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         private readonly IHttpCrossService _httpCrossService;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly VErp.Grpc.Protos.Product.ProductClient _productClient;
+        private readonly Grpc.Protos.Product.ProductClient _productClient;
 
-        public PropertyHelperService(IHttpCrossService httpCrossService, IOptions<AppSetting> appSetting, ILogger<ProductHelperService> logger, VErp.Grpc.Protos.Product.ProductClient productClient)
+        public PropertyHelperService(IHttpCrossService httpCrossService, IOptions<AppSetting> appSetting, ILogger<ProductHelperService> logger, Grpc.Protos.Product.ProductClient productClient)
         {
             _httpCrossService = httpCrossService;
             _appSetting = appSetting.Value;
