@@ -4,15 +4,17 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.General
 {
     public interface ICategoryHelperService : IDynamicCategoryHelper
     {
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames = null, NonCamelCaseDictionary categoryRow = null);
-        
+
         Task<PageData<NonCamelCaseDictionary>> GetDataRows(string categoryCode, CategoryFilterModel request);
 
         Task<IList<CategoryListModel>> GetDynamicCates();

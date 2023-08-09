@@ -6,9 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using TargetProductivityEntity = VErp.Infrastructure.EF.ManufacturingDB.TargetProductivity;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 
 namespace VErp.Services.Manafacturing.Service.Facade
 {

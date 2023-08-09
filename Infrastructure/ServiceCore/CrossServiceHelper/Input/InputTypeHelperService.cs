@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input
 {
     public interface IInputTypeHelperServiceBase
     {
@@ -13,9 +13,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         Task<IList<ObjectBillSimpleInfoModel>> GetBillNotChekedYet(int inputTypeId);
     }
 
-    public interface IInputPrivateTypeHelperService: IInputTypeHelperServiceBase
+    public interface IInputPrivateTypeHelperService : IInputTypeHelperServiceBase
     {
-       
+
     }
 
     public interface IInputPublicTypeHelperService : IInputTypeHelperServiceBase

@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product
 {
     public interface IProductBomHelperService
     {

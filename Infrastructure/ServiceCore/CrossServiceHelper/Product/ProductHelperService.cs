@@ -12,7 +12,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product
 {
     public interface IProductHelperService
     {
@@ -38,9 +38,9 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         private readonly IHttpCrossService _httpCrossService;
         private readonly AppSetting _appSetting;
         private readonly ILogger _logger;
-        private readonly VErp.Grpc.Protos.Product.ProductClient _productClient;
+        private readonly Grpc.Protos.Product.ProductClient _productClient;
 
-        public ProductHelperService(IHttpCrossService httpCrossService, IOptions<AppSetting> appSetting, ILogger<ProductHelperService> logger, VErp.Grpc.Protos.Product.ProductClient productClient)
+        public ProductHelperService(IHttpCrossService httpCrossService, IOptions<AppSetting> appSetting, ILogger<ProductHelperService> logger, Grpc.Protos.Product.ProductClient productClient)
         {
             _httpCrossService = httpCrossService;
             _appSetting = appSetting.Value;
@@ -220,7 +220,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
             return await _httpCrossService.Get<long>($"api/internal/InternalProduct/{productId}/productionProcessVersion");
         }
 
-        public Task<bool> UpdateProductionProcessStatus( InternalProductProcessStatus productProcessStatus, bool isSaveLog)
+        public Task<bool> UpdateProductionProcessStatus(InternalProductProcessStatus productProcessStatus, bool isSaveLog)
         {
             return _httpCrossService.Put<bool>(QueryHelpers.AddQueryString($"api/internal/InternalProduct/productProcessStatus", "isSaveLog", isSaveLog.ToString()), productProcessStatus);
         }

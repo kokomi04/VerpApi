@@ -6,7 +6,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Services.PurchaseOrder.Model;
 using VErp.Services.PurchaseOrder.Model.PurchaseOrder;
 using VErp.Services.PurchaseOrder.Model.Request;

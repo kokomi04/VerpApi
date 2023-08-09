@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.HrConfig;
 

@@ -4,9 +4,9 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.GlobalObject.InternalDataInterface.Hr.Salary;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr
 {
-   
+
     public interface ISalaryPeriodAdditionBillTypeHelperService
     {
         Task<IEnumerable<ISalaryPeriodAddtionTypeBase>> ListTypes();
@@ -26,6 +26,6 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
         {
 
             return await _httpCrossService.Get<List<SalaryPeriodAddtionTypeBase>>($"api/internal/InternalSalaryPeriodAdditionType");
-        }       
+        }
     }
 }

@@ -12,7 +12,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Formaters;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Model.Inventory.OpeningBalance;
 using static Verp.Resources.Stock.Inventory.InventoryFileData.InventoryImportFacadeMessage;

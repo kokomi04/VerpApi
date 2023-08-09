@@ -17,10 +17,11 @@ using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Service;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.System
 {
     public interface ICustomGenCodeHelperService
     {
@@ -274,7 +275,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     {
         if (!string.IsNullOrEmpty(currentCode))
         {
-            if ((await checkExisted.Invoke(currentCode)))
+            if (await checkExisted.Invoke(currentCode))
                 throw new BadRequestException(GeneralCode.ItemCodeExisted);
             return currentCode;
         }
@@ -332,7 +333,7 @@ internal class GenerateCodeContext : IGenerateCodeContext, IGenerateCodeConfig, 
     {
         if (checkExisted == null) return null;
 
-      
+
 
         var entityParameter = Expression.Parameter(typeof(TSource), "p");
 

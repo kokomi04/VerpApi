@@ -4,6 +4,7 @@ using Verp.Cache.Caching;
 using VErp.Commons.Constants.Caching;
 using VErp.Commons.GlobalObject.QueueMessage;
 using VErp.Commons.GlobalObject.QueueName;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 
 namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
 {

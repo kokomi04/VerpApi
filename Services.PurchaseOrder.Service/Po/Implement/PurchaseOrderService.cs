@@ -18,7 +18,6 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -35,6 +34,11 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using DocumentFormat.OpenXml.InkML;
 using Verp.Resources.Enums.ErrorCodes.PO;
 using VErp.Commons.GlobalObject.InternalDataInterface.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {

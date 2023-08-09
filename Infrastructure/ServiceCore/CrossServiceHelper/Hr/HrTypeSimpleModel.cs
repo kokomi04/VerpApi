@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum;
 
-namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper
+namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr
 {
     public class HrTypeSimpleModel
     {

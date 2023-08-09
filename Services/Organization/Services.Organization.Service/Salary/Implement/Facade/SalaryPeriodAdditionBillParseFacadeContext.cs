@@ -10,12 +10,12 @@ using VErp.Commons.Library;
 using Verp.Resources.Organization;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Microsoft.EntityFrameworkCore;
 using VErp.Commons.Constants;
 using VErp.Services.Organization.Model.Salary;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
