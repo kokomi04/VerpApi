@@ -571,11 +571,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                                 assignQuantity = remaining;
                                 isAssignRemaingForLast = true;
                             }
+
+                            (requirementHandovers, assignRemaning) = AssignInvToProductAssignment(productionOrderId, matchByRequirements, inv, requireDetail.InventoryRequirementDetailId, assignQuantity, isAssignRemaingForLast);
+
+                            remaining -= (assignQuantity - assignRemaning);
                         }
 
-
-                        (requirementHandovers, assignRemaning) = AssignInvToProductAssignment(productionOrderId, matchByRequirements, inv, requireDetail.InventoryRequirementDetailId, assignQuantity, isAssignRemaingForLast);
-                        remaining -= (assignQuantity - assignRemaning);
+                        
+                        
 
                         requireQuantity -= assignQuantity;
                         requiredDetailRemaining[requireDetail.InventoryRequirementDetailId] = requireQuantity;
