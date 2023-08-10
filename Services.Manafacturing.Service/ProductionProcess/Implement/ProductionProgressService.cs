@@ -820,7 +820,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
                 else
                 {
-                    if (productAssignment.RemainQuantity >= assignRemaning)
+                    if (productAssignment.RemainQuantity >= assignRemaning || inventoryRequirementDetailId > 0)//assign all for inv requirement
                     {
                         assignQuantity = assignRemaning;
                     }
