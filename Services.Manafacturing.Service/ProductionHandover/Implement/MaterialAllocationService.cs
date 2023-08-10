@@ -12,6 +12,8 @@ using Verp.Resources.Manafacturing.Production.MaterialAllocation;
 using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
@@ -108,8 +110,28 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         public async Task<AllocationModel> UpdateMaterialAllocation(long productionOrderId, AllocationModel data)
         {
             var productionOrderCode = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderId == o.ProductionOrderId).Select(o => o.ProductionOrderCode).FirstOrDefaultAsync();
-            var inventoryIds = data.MaterialAllocations.Select(a => a.InventoryId).ToList();
-            var invs = await _manufacturingDBContext.RefInventory.Where(inv => inventoryIds.Contains(inv.InventoryId)).ToListAsync();
+
+            var invDetailIds = data.MaterialAllocations.Select(a => a.InventoryDetailId).ToList();
+
+            var invs = await _manufacturingDBContext.ProductionOrderInventoryConflict.Where(inv => invDetailIds.Contains(inv.InventoryDetailId)).ToListAsync();
+
+            var sumAllowcations = data.MaterialAllocations.GroupBy(a => a.InventoryDetailId)
+                    .Select(g => new { InventoryDetailId = g.Key, TotalAllocationQuantity = g.Sum(d => d.AllocationQuantity))
+                    .ToList();
+
+            foreach (var s in sumAllowcations)
+            {
+                var invDetail = invs.FirstOrDefault(c => c.InventoryDetailId == s.InventoryDetailId);
+                if (invDetail == null)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest("Không tìm thấy phiếu nhập/xuất kho");
+                }
+                if (invDetail.InventoryQuantity.SubDecimal(s.TotalAllocationQuantity) < 0)
+                {
+                    throw GeneralCode.InvalidParams.BadRequest("Số lượng phân bổ vượt quá số lượng phiếu kho " + invDetail.InventoryCode);
+                }
+            }
+
             using var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
@@ -117,6 +139,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 .Where(h => h.ProductionOrderId == productionOrderId && (h.FromDepartmentId == 0 || h.ToDepartmentId == 0) && !h.IsAuto)
                 .ToListAsync();
                 _manufacturingDBContext.ProductionHandover.RemoveRange(currentMaterialAllocations);
+
 
                 foreach (var item in data.MaterialAllocations)
                 {
