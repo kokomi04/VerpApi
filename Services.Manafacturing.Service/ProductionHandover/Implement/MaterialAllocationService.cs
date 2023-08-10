@@ -116,7 +116,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var invs = await _manufacturingDBContext.ProductionOrderInventoryConflict.Where(inv => invDetailIds.Contains(inv.InventoryDetailId)).ToListAsync();
 
             var sumAllowcations = data.MaterialAllocations.GroupBy(a => a.InventoryDetailId)
-                    .Select(g => new { InventoryDetailId = g.Key, TotalAllocationQuantity = g.Sum(d => d.AllocationQuantity))
+                    .Select(g => new { InventoryDetailId = g.Key, TotalAllocationQuantity = g.Sum(d => d.AllocationQuantity) })
                     .ToList();
 
             foreach (var s in sumAllowcations)

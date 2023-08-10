@@ -11,6 +11,7 @@ using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.GlobalObject.QueueMessage;
@@ -305,7 +306,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var requiredDetails = await (from rd in _stockDbContext.InventoryRequirementDetail
                                          join r in _stockDbContext.InventoryRequirement on rd.InventoryRequirementId equals r.InventoryRequirementId
-                                         where r.CensorStatus == (int)EnumCensorStatus.Approved &&
+                                         where r.CensorStatus == (int)EnumInventoryRequirementStatus.Accepted &&
                                          rd.ProductionOrderCode == msg.ProductionOrderCode
                                          select new InventoryRequireDetailByProductionOrderModel
                                          {
