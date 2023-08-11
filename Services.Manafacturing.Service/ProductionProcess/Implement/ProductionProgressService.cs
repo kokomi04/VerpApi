@@ -601,7 +601,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     newHandovers.AddRange(byDepartmentHandovers);
                 }
 
-                if (remaining > 0)
+                if (remaining > 0 || handoverManual.Count > 0)
                 {
                     var sum = handoverManual.Sum(x => x.InventoryQuantity ?? 0);
                     var status = EnumConflictAllowcationStatus.None;
