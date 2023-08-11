@@ -239,13 +239,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     .Select(h => new ProductionHandoverModel()
                     {
 
-                        ProductionHandoverReceiptId = h.ProductionHandoverReceipt.ProductionHandoverReceiptId,
-                        ProductionHandoverReceiptCode = h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
+                        ProductionHandoverReceiptId = h.ProductionHandoverReceipt == null ? 0 : h.ProductionHandoverReceipt.ProductionHandoverReceiptId,
+                        ProductionHandoverReceiptCode = h.ProductionHandoverReceipt == null ? "" : h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
 
                         ProductionHandoverId = h.ProductionHandoverId,
-                        HandoverStatusId = (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
-                        CreatedByUserId = h.ProductionHandoverReceipt.CreatedByUserId,
-                        AcceptByUserId = h.ProductionHandoverReceipt.AcceptByUserId,
+                        HandoverStatusId = h.ProductionHandoverReceipt == null ? (EnumHandoverStatus)h.Status : (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
+                        CreatedByUserId = h.ProductionHandoverReceipt == null ? h.CreatedByUserId : h.ProductionHandoverReceipt.CreatedByUserId,
+                        AcceptByUserId = h.ProductionHandoverReceipt == null ? h.AcceptByUserId : h.ProductionHandoverReceipt.AcceptByUserId,
 
 
                         HandoverQuantity = h.HandoverQuantity,
@@ -815,7 +815,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 _manufacturingDBContext.SaveChanges();
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
-                   .MessageResourceFormatDatas( productionOrderCode, description)
+                   .MessageResourceFormatDatas(productionOrderCode, description)
                    .ObjectId(productionOrder.ProductionOrderId)
                    .JsonData(updateAssignments)
                    .CreateLog();
