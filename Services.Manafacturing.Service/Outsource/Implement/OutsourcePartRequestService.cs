@@ -292,9 +292,14 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
             if (productionOrderId.HasValue)
                 query = query.Where(x => x.ProductionOrderId == productionOrderId);
 
-            if (fromDate > 0 && toDate > 0)
+            if (fromDate > 0)
             {
-                query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime() && x.CreatedDatetimeUtc < toDate.UnixToDateTime().Value.AddDays(1));
+                query = query.Where(x => x.CreatedDatetimeUtc >= fromDate.UnixToDateTime());
+            }
+
+            if (toDate > 0)
+            {
+                query = query.Where(x => x.CreatedDatetimeUtc < toDate.UnixToDateTime().Value.AddDays(1));
             }
 
             if (filters != null)

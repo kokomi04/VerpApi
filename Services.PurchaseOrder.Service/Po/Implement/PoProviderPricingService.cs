@@ -184,7 +184,7 @@ namespace VErp.Services.PoProviderPricing.Service.Implement
                                         {
                                             SumTotalMoney = g.Sum(x => x.TotalMoney),
                                         }).FirstOrDefaultAsync();
-            var pagedData = await poQuery.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
+            var pagedData = await poQueryDistinct.SortByFieldName(sortBy, asc).Skip((page - 1) * size).Take(size).ToListAsync();
             var result = _mapper.Map<List<PoProviderPricingOutputList>>(pagedData);
 
             return (result, total, additionResult);
