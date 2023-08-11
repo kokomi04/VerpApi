@@ -357,9 +357,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             var assignRequirements = await GetAssignRequirements(productionOrderId);
 
-            var handovers = await _manufacturingDBContext.ProductionHandover
-                                  .Where(h => h.ProductionOrderId == productionOrderId && h.Status == (int)EnumHandoverStatus.Accepted)
-                                  .ToListAsync();
+            var handovers = await (from h in _manufacturingDBContext.ProductionHandover
+                                   join r in _manufacturingDBContext.ProductionHandoverReceipt on h.ProductionHandoverReceiptId equals r.ProductionHandoverReceiptId into rs
+                                   from r in rs.DefaultIfEmpty()
+                                   where (h.ProductionOrderId == productionOrderId &&
+                                   (h.Status == (int)EnumHandoverStatus.Accepted || r != null && r.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
+                                   )
+                                   select h
+                                  ).ToListAsync();
+
 
             foreach (var assign in assignments)
             {
@@ -367,7 +373,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(r => r.ProductionStepId == assign.ProductionStepId
                         && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                     ).ToList();
-
+              
                 assign.AssignedProgressStatus = (int)CaclAssignOutputStatus(assign, requireOuts, handovers);
             }
 
@@ -399,7 +405,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var totalHandover = handovers.Where(h => h.FromDepartmentId == requireOut.DepartmentId
                                         && h.FromProductionStepId == requireOut.ProductionStepId
-                                        && h.ToProductionStepId == requireOut.RefProductionStepId
+                                        //&& h.ToProductionStepId == requireOut.RefProductionStepId
                                         && h.ObjectTypeId == (int)requireOut.LinkDataObjectTypeId
                                         && h.ObjectId == (int)requireOut.LinkDataObjectId
                                         )
@@ -577,8 +583,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             remaining -= (assignQuantity - assignRemaning);
                         }
 
-                        
-                        
+
+
 
                         requireQuantity -= assignQuantity;
                         requiredDetailRemaining[requireDetail.InventoryRequirementDetailId] = requireQuantity;
