@@ -47,7 +47,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , IProductHelperService productHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.MaterialAllocation);
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -86,13 +86,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             };
         }
 
-        private ProductionHandoverEntity AllowcationModelToProductionHandover(MaterialAllocationModel item, bool isInvOut)
+        private ProductionHandoverEntity AllowcationModelToProductionHandover(long inventoryId, MaterialAllocationModel item, bool isInvOut)
         {
             return new ProductionHandoverEntity
             {
                 ProductionHandoverId = item.MaterialAllocationId,
                 ProductionOrderId = item.ProductionOrderId,
-                InventoryId = item.InventoryId,
+                InventoryId = inventoryId,
                 InventoryCode = item.InventoryCode,
                 ObjectId = item.SourceProductId ?? 0,
                 ObjectTypeId = (int)EnumProductionStepLinkDataObjectType.Product,
@@ -144,9 +144,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 foreach (var item in data.MaterialAllocations)
                 {
                     var currentMaterialAllocation = currentMaterialAllocations.FirstOrDefault(ma => ma.ProductionHandoverId == item.MaterialAllocationId);
-                    var invInfo = invs.FirstOrDefault(inv => inv.InventoryId == item.InventoryId);
+                    var invInfo = invs.FirstOrDefault(inv => inv.InventoryDetailId == item.InventoryDetailId);
 
-                    currentMaterialAllocation = AllowcationModelToProductionHandover(item, invInfo?.InventoryTypeId == (int)EnumInventoryType.Output);
+                    currentMaterialAllocation = AllowcationModelToProductionHandover(invInfo.InventoryId, item, invInfo?.InventoryTypeId == (int)EnumInventoryType.Output);
                     _manufacturingDBContext.ProductionHandover.Add(currentMaterialAllocation);
                 }
 
