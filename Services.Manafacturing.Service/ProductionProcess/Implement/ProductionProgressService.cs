@@ -589,16 +589,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 }
 
-                if (remaining == 0) continue;
-
-
-                var matchAllAssignments = avaiableAssignmentsForProducts.Where(a => a.DepartmentId == inv.DepartmentId).ToList();
-
-
-                if (matchAllAssignments.Count > 0)
+                if (remaining > 0)
                 {
-                    (var byDepartmentHandovers, remaining) = AssignInvToProductAssignment(productionOrderId, matchAllAssignments, inv, null, remaining, true);
-                    newHandovers.AddRange(byDepartmentHandovers);
+
+                    var matchAllAssignments = avaiableAssignmentsForProducts.Where(a => a.DepartmentId == inv.DepartmentId).ToList();
+
+
+                    if (matchAllAssignments.Count > 0)
+                    {
+                        (var byDepartmentHandovers, remaining) = AssignInvToProductAssignment(productionOrderId, matchAllAssignments, inv, null, remaining, true);
+                        newHandovers.AddRange(byDepartmentHandovers);
+                    }
                 }
 
                 if (remaining > 0 || handoverManual.Count > 0)
