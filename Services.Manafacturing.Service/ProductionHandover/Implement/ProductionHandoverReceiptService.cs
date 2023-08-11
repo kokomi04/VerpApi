@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.EMMA;
+using Grpc.Core;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -198,9 +199,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
                         }
-                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
+                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
                         info.HandoverStatusId = (int)EnumHandoverStatus.Accepted;
                         info.AcceptByUserId = _currentContextService.UserId;
+
+                        foreach (var h in info.ProductionHandover)
+                        {
+                            h.Status = (int)EnumHandoverStatus.Accepted;
+                        }
 
                         _manufacturingDBContext.SaveChanges();
 
@@ -256,6 +262,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 if (status == EnumHandoverStatus.Accepted)
                     info.AcceptByUserId = _currentContextService.UserId;
 
+                foreach (var h in info.ProductionHandover)
+                {
+                    h.Status = (int)status;
+                }
                 _manufacturingDBContext.SaveChanges();
 
                 if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
