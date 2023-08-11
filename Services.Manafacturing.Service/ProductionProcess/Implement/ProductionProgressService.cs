@@ -624,7 +624,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         InventoryId = inv.InventoryId,
                         InventoryDate = inv.Date,
                         InventoryCode = inv.InventoryCode,
-                        InventoryQuantity = remaining,
+                        InventoryQuantity = inv.PrimaryQuantity,
                         InventoryRequirementDetailId = inv.InventoryRequirementDetailId,
                         InventoryRequirementId = null,
                         RequireQuantity = invRequiredDetal?.PrimaryQuantity,
@@ -672,7 +672,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var invDetails = data.InvDetails.Where(inv => inv.InventoryDetailId == a.InventoryDetailId).ToList();
                 if (!invDetails.Any()) return true;
-                if (invDetails.Any(d => d.ProductId != a.ObjectId)) return true;
+                if (invDetails.Any(d => d.ProductId != a.InventoryProductId)) return true;
                 return false;
             }).ToList();
             foreach (var invalidHandover in invalidManualAllocations)
