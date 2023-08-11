@@ -36,8 +36,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public string InventoryRequirementCode { get; set; }
 
         public string Content { get; set; }
-
-        public EnumConflictAllowcationStatus conflictAllowcationStatusId { get; set; }
+        public decimal? HandoverInventoryQuantitySum { get; set; }
+        public EnumConflictAllowcationStatus ConflictAllowcationStatusId { get; set; }
     }
 
 }
