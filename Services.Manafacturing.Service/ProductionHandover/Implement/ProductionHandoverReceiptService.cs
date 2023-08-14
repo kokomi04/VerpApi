@@ -199,7 +199,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
                         }
-                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
+                        if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
                         info.HandoverStatusId = (int)EnumHandoverStatus.Accepted;
                         info.AcceptByUserId = _currentContextService.UserId;
 
@@ -250,7 +250,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             var info = _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
             if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
-            if (info.HandoverStatusId != (int)EnumHandoverStatus.Accepted && status == EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
+            if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted && status == EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
 
             var productionOrderIds = info.ProductionHandover.Select(h => h.ProductionOrderId).Distinct().ToList();
             var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
