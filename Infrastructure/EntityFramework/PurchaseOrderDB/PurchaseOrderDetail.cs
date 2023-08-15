@@ -68,6 +68,4 @@ public partial class PurchaseOrderDetail
     public virtual ICollection<PurchaseOrderDetailSubCalculation> PurchaseOrderDetailSubCalculation { get; set; } = new List<PurchaseOrderDetailSubCalculation>();
 
     public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
-
-    public virtual ICollection<PurchaseOrderOrderMapping> PurchaseOrderOrderMapping { get; set; } = new List<PurchaseOrderOrderMapping>();
 }

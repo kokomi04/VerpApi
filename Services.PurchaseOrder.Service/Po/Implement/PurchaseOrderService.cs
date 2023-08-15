@@ -651,9 +651,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var excess = await _purchaseOrderDBContext.PurchaseOrderExcess.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderExcessModel>(_mapper.ConfigurationProvider).ToListAsync();
             var materials = await _purchaseOrderDBContext.PurchaseOrderMaterials.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ProjectTo<PurchaseOrderMaterialsModel>(_mapper.ConfigurationProvider).ToListAsync();
 
-            var allocatesByProductionOrder = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
+            var allocates = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
 
-            var allocatesByOrder = await _purchaseOrderDBContext.PurchaseOrderOrderMapping.Where(x => purchaseOrderDetailIds.Contains(x.PurchaseOrderDetailId)).ToListAsync();
 
             return new PurchaseOrderOutput()
             {
@@ -746,25 +745,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             UnitConversionId = s.UnitConversionId
                         }).ToList(),
                         IsSubCalculation = d.IsSubCalculation,
-                        OutsourceMappings = allocatesByProductionOrder.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOutsourceMappingModel
+                        OutsourceMappings = allocates.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOutsourceMappingModel
                         {
                             OrderCode = x.OrderCode,
-                            Quantity = x.Quantity,
                             OutsourcePartRequestId = x.OutsourcePartRequestId,
                             ProductId = x.ProductId,
                             ProductionOrderCode = x.ProductionOrderCode,
                             ProductionStepLinkDataId = x.ProductionStepLinkDataId,
                             PurchaseOrderOutsourceMappingId = x.PurchaseOrderOutsourceMappingId,
                             PurchaseOrderDetailId = x.PurchaseOrderDetailId,
-                        }).ToList(),
-                        OrderMappings = allocatesByOrder.Where(x => x.PurchaseOrderDetailId == d.PurchaseOrderDetailId).Select(x => new PurchaseOrderOrderMappingModel
-                        {
-                            OrderCode = x.OrderCode,
-                            PrimaryQuantity = x.PrimaryQuantity,
-                            PuQuantity = x.PuQuantity,
-                            PurchaseOrderOrderMappingId = x.PurchaseOrderOrderMappingId,
-                            PurchaseOrderDetailId = x.PurchaseOrderDetailId,
-                            Note = x.Note
                         }).ToList(),
                     };
                 }).ToList(),
@@ -931,20 +920,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.SaveChangesAsync();
                 }
 
-                if (item.OrderMappings.Count > 0)
-                {
-                    var eOrderMappings = item.OrderMappings.Select(x => new PurchaseOrderOrderMapping
-                    {
-                        OrderCode = x.OrderCode,
-                        PrimaryQuantity = x.PrimaryQuantity,
-                        PuQuantity = x.PuQuantity,
-                        Note = x.Note,
-                        PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId,
-                    });
-                    await _purchaseOrderDBContext.PurchaseOrderOrderMapping.AddRangeAsync(eOrderMappings);
-                    await _purchaseOrderDBContext.SaveChangesAsync();
-                }
-
                 sortOrder++;
             }
 
@@ -1061,18 +1036,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                         if (item.PurchaseOrderDetailId == detail.PurchaseOrderDetailId)
                         {
                             found = true;
-                            var arrAllocateByProductionOrder = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync();
-                            var arrAllocateByOrder = await _purchaseOrderDBContext.PurchaseOrderOrderMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync();
 
-                            var allocateQuantityByProductionOrder = arrAllocateByProductionOrder.Sum(x => x.Quantity);
+                            var allocateQuantity = (await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToListAsync()).Sum(x => x.Quantity);
 
-                            if (item.PrimaryQuantity < allocateQuantityByProductionOrder)
-                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByProductionOrder);
-
-                            var allocateQuantityByOrder = arrAllocateByOrder.Sum(x => x.PrimaryQuantity);
-
-                            if (item.PrimaryQuantity < allocateQuantityByOrder)
-                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByOrder);
+                            if (item.PrimaryQuantity < allocateQuantity)
+                                throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
 
                             detail.PurchasingSuggestDetailId = item.PurchasingSuggestDetailId.HasValue ?
                                                         item.PurchasingSuggestDetailId :
@@ -1123,23 +1091,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.AddRangeAsync(arrNewEntitySubCalculation);
                             await _purchaseOrderDBContext.SaveChangesAsync();
 
-                            foreach (var allocate in arrAllocateByProductionOrder)
+
+                            var arrAllocate = _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == detail.PurchaseOrderDetailId).ToList();
+                            foreach (var allocate in arrAllocate)
                             {
                                 var mAllocate = item.OutsourceMappings.FirstOrDefault(x => x.PurchaseOrderOutsourceMappingId == allocate.PurchaseOrderOutsourceMappingId);
                                 if (mAllocate != null)
                                     _mapper.Map(mAllocate, allocate);
                                 else allocate.IsDeleted = true;
                             }
-
-                            foreach (var allocate in arrAllocateByOrder)
-                            {
-                                var mAllocate = item.OrderMappings.FirstOrDefault(x => x.PurchaseOrderOrderMappingId == allocate.PurchaseOrderOrderMappingId);
-                                if (mAllocate != null)
-                                    _mapper.Map(mAllocate, allocate);
-                                else allocate.IsDeleted = true;
-                            }
-
-                            var arrNewEntityAllocateByProductionOrder = item.OutsourceMappings.Where(x => x.PurchaseOrderOutsourceMappingId <= 0)
+                            var arrNewEntityAllocate = item.OutsourceMappings.Where(x => x.PurchaseOrderOutsourceMappingId <= 0)
                             .Select(x => new PurchaseOrderOutsourceMapping
                             {
                                 OrderCode = x.OrderCode,
@@ -1149,19 +1110,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 ProductionOrderCode = x.ProductionOrderCode,
                                 PurchaseOrderDetailId = detail.PurchaseOrderDetailId
                             });
-                            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(arrNewEntityAllocateByProductionOrder);
-
-                            var arrNewEntityAllocateByOrder = item.OrderMappings.Where(x => x.PurchaseOrderOrderMappingId <= 0)
-                            .Select(x => new PurchaseOrderOrderMapping
-                            {
-                                OrderCode = x.OrderCode,
-                                PrimaryQuantity = x.PrimaryQuantity,
-                                PurchaseOrderDetailId = detail.PurchaseOrderDetailId,
-                                PuQuantity = x.PuQuantity,
-                                Note = x.Note
-                            });
-                            await _purchaseOrderDBContext.PurchaseOrderOrderMapping.AddRangeAsync(arrNewEntityAllocateByOrder);
-
+                            await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(arrNewEntityAllocate);
                             await _purchaseOrderDBContext.SaveChangesAsync();
                             break;
                         }
@@ -1169,15 +1118,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (!found)
                     {
-                        var allocateQuantityByProductionOrder = item.OutsourceMappings.Sum(x => x.Quantity);
+                        var allocateQuantity = item.OutsourceMappings.Sum(x => x.Quantity);
 
-                        if (item.PrimaryQuantity < allocateQuantityByProductionOrder)
-                            throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByProductionOrder);
-
-                        var allocateQuantityByOrder = item.OrderMappings.Sum(x => x.PrimaryQuantity);
-
-                        if (item.PrimaryQuantity < allocateQuantityByOrder)
-                            throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantityByOrder);
+                        if (item.PrimaryQuantity < allocateQuantity)
+                            throw new BadRequestException(PurchaseOrderErrorCode.PrimaryQuantityLessThanAllocateQuantity);
 
                         var eDetail = new PurchaseOrderDetail()
                         {
@@ -1237,20 +1181,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                                 PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
                             });
                             await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.AddRangeAsync(eOutsourceMappings);
-                            await _purchaseOrderDBContext.SaveChangesAsync();
-                        }
-
-                        if (item.OrderMappings.Count > 0)
-                        {
-                            var eOrderMappings = item.OrderMappings.Select(x => new PurchaseOrderOrderMapping
-                            {
-                                OrderCode = x.OrderCode,
-                                PrimaryQuantity = x.PrimaryQuantity,
-                                PuQuantity = x.PuQuantity,
-                                Note = x.Note,
-                                PurchaseOrderDetailId = eDetail.PurchaseOrderDetailId
-                            });
-                            await _purchaseOrderDBContext.PurchaseOrderOrderMapping.AddRangeAsync(eOrderMappings);
                             await _purchaseOrderDBContext.SaveChangesAsync();
                         }
                     }
@@ -1335,24 +1265,6 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     var SubCalculations = await _purchaseOrderDBContext.PurchaseOrderDetailSubCalculation.Where(d => d.PurchaseOrderDetailId == item.PurchaseOrderDetailId).ToListAsync();
                     SubCalculations.ForEach(x => x.IsDeleted = true);
-
-                    var arrAllocateByProductionOrder = await _purchaseOrderDBContext.PurchaseOrderOutsourceMapping.Where(x => x.PurchaseOrderDetailId == item.PurchaseOrderDetailId).ToListAsync();
-                    if (arrAllocateByProductionOrder != null)
-                    {
-                        foreach (var allocation in arrAllocateByProductionOrder)
-                        {
-                            allocation.IsDeleted = true;
-                        }
-                    }
-
-                    var arrAllocateByOrder = await _purchaseOrderDBContext.PurchaseOrderOrderMapping.Where(x => x.PurchaseOrderDetailId == item.PurchaseOrderDetailId).ToListAsync();
-                    if (arrAllocateByOrder != null)
-                    {
-                        foreach (var allocation in arrAllocateByOrder)
-                        {
-                            allocation.IsDeleted = true;
-                        }
-                    }
                 }
 
                 await _purchaseOrderDBContext.SaveChangesAsync();

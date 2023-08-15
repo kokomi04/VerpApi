@@ -138,10 +138,7 @@
   <data name="PrimaryQuanityGreaterThanQuantityRequirment" xml:space="preserve">
     <value>Số lượng mặt hàng lớn hơn số lượng yêu cầu của gia công</value>
   </data>
-  <data name="PrimaryQuantityLessThanAllocateQuantityByOrder" xml:space="preserve">
-    <value>Số lượng mặt hàng nhỏ hơn số lượng phân bổ theo đơn hàng</value>
-  </data>
-  <data name="PrimaryQuantityLessThanAllocateQuantityByProductionOrder" xml:space="preserve">
+  <data name="PrimaryQuantityLessThanAllocateQuantity" xml:space="preserve">
     <value>Số lượng mặt hàng nhỏ hơn số lượng phân bổ theo lệnh sản xuất</value>
   </data>
 </root>
