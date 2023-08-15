@@ -237,7 +237,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && ((f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || _specialViewOnlyColumns.Contains(f.FieldName))
+                // && f.FormTypeId != (int)EnumFormType.SqlSelect
+                where af.InputTypeId == inputTypeId && ((f.FormTypeId != (int)EnumFormType.ViewOnly) || _specialViewOnlyColumns.Contains(f.FieldName))
                 select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
