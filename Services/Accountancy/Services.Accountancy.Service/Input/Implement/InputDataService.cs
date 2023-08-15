@@ -1864,7 +1864,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     var parentInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(p => p.FId == billInfo.ParentInputBillFId);
                     if (parentInfo != null)
                     {
-                        parentInfo.HasChildren = await _accountancyDBContext.InputBill.AnyAsync(b => b.ParentInputBillFId == billInfo.ParentInputBillFId);
+                        parentInfo.HasChildren = await _accountancyDBContext.InputBill.AnyAsync(b => b.FId != billInfo.FId && b.ParentInputBillFId == billInfo.ParentInputBillFId);
                     }
                 }
 
