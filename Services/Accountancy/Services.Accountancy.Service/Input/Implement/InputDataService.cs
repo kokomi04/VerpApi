@@ -690,6 +690,13 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
+                if (data.ParentId > 0)
+                {
+                    var parentInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(p => p.FId == data.ParentId);
+                    if (parentInfo == null) throw GeneralCode.ItemNotFound.BadRequest("Parent was not found!");
+                    parentInfo.HasChildren = true;
+                }
+
                 await _accountancyDBContext.SaveChangesAsync();
 
                 var listGenerateCodeCtx = new List<IGenerateCodeContext>();
@@ -1848,6 +1855,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 billInfo.IsDeleted = true;
                 billInfo.DeletedDatetimeUtc = DateTime.UtcNow;
                 billInfo.UpdatedByUserId = _currentContextService.UserId;
+
+
+                if (billInfo.ParentInputBillFId > 0)
+                {
+                    var parentInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(p => p.FId == billInfo.ParentInputBillFId);
+                    if (parentInfo != null)
+                    {
+                        parentInfo.HasChildren = await _accountancyDBContext.InputBill.AnyAsync(b => b.ParentInputBillFId == billInfo.ParentInputBillFId);
+                    }
+                }
 
                 await _accountancyDBContext.SaveChangesAsync();
 

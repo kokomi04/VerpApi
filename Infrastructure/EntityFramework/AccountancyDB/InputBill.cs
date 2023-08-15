@@ -29,6 +29,8 @@ public partial class InputBill
 
     public long? ParentInputBillFId { get; set; }
 
+    public bool HasChildren { get; set; }
+
     public virtual ICollection<InputBillAllocation> InputBillAllocation { get; set; } = new List<InputBillAllocation>();
 
     public virtual InputType InputType { get; set; }
