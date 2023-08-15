@@ -381,7 +381,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             bool conditionResult;
             try
             {
-                conditionResult = EvalClause(filter, paramsData);
+                conditionResult = EvalClause(filter, paramsData, functionHandler);
             }
             catch (Exception e)
             {
@@ -896,7 +896,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             return expression;
         }
 
-        private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues = null)
+        private bool EvalClause(Clause clause, NonCamelCaseDictionary refValues, NCalc.EvaluateFunctionHandler functionHandler)
         {
             if (clause != null)
             {
@@ -911,10 +911,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         value = Regex.Replace(singleClause.Value?.ToString(), "\\{(?<ex>[^\\}]*)\\}", delegate (Match match)
                         {
                             var expression = match.Groups["ex"].Value;
-                            return EvalUtils.EvalObject(expression, refValues)?.ToString();
+                            return EvalUtils.EvalObject(expression, refValues, functionHandler)?.ToString();
                         });
 
-                        value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues);
+                        value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues, functionHandler);
 
                     }
 
@@ -935,7 +935,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     var res = new List<bool>();
                     for (int indx = 0; indx < arrClause.Rules.Count; indx++)
                     {
-                        res.Add(EvalClause(arrClause.Rules.ElementAt(indx), refValues));
+                        res.Add(EvalClause(arrClause.Rules.ElementAt(indx), refValues, functionHandler));
                     }
 
                     var r = arrClause.Condition == EnumLogicOperator.Or ? res.Any(v => v) : res.All(v => v);
