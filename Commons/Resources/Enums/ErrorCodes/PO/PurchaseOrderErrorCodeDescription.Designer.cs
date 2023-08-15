@@ -124,20 +124,11 @@ namespace Verp.Resources.Enums.ErrorCodes.PO {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Số lượng mặt hàng nhỏ hơn số lượng phân bổ theo đơn hàng.
-        /// </summary>
-        public static string PrimaryQuantityLessThanAllocateQuantityByOrder {
-            get {
-                return ResourceManager.GetString("PrimaryQuantityLessThanAllocateQuantityByOrder", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Số lượng mặt hàng nhỏ hơn số lượng phân bổ theo lệnh sản xuất.
         /// </summary>
-        public static string PrimaryQuantityLessThanAllocateQuantityByProductionOrder {
+        public static string PrimaryQuantityLessThanAllocateQuantity {
             get {
-                return ResourceManager.GetString("PrimaryQuantityLessThanAllocateQuantityByProductionOrder", resourceCulture);
+                return ResourceManager.GetString("PrimaryQuantityLessThanAllocateQuantity", resourceCulture);
             }
         }
     }
