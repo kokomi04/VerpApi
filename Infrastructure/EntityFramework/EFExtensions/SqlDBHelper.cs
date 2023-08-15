@@ -171,7 +171,15 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
             sqlParams.Add(result);
             var table = db.QueryDataTable(body, sqlParams).Result;
-            args.Result = table.Rows.Count > 0 ? table.Rows[0][0] : null;
+            args.Result = null;
+            if (table.Rows.Count > 0)
+            {
+                var val = table.Rows[0][0];
+                if (val != DBNull.Value)
+                {
+                    args.Result = val;
+                }
+            }
         }
 
         public static async Task<IList<T>> QueryListProc<T>(this DbContext dbContext, string procedureName, IList<SqlParameter> parameters, TimeSpan? timeout = null)
