@@ -104,6 +104,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 InventoryProductId = conflict.ProductId,
                 InventoryQuantity = item.AllocationQuantity,
                 InventoryDetailId = item.InventoryDetailId,
+                Status = (int)EnumHandoverStatus.Accepted
             };
         }
 
