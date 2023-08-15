@@ -179,6 +179,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.DeliveryMethod,
                             po.PaymentMethod,
                             po.AttachmentBill,
+                            po.InputTypeSelectedState,
+                            po.InputUnitTypeSelectedState,
 
                         };
 
@@ -301,6 +303,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeliveryMethod = info.DeliveryMethod,
                     PaymentMethod = info.DeliveryMethod,
                     AttachmentBill = info.AttachmentBill,
+
+                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
                 });
             }
 
@@ -426,6 +431,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.DeliveryMethod,
                             po.PaymentMethod,
                             po.AttachmentBill,
+
+                            po.InputTypeSelectedState,
+                            po.InputUnitTypeSelectedState,
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -609,6 +617,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeliveryMethod = item.DeliveryMethod,
                     PaymentMethod = item.DeliveryMethod,
                     AttachmentBill = item.AttachmentBill,
+
+                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)item.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)item.InputUnitTypeSelectedState : null,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult?.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
@@ -687,6 +698,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeliveryMethod = info.DeliveryMethod,
                 PaymentMethod = info.PaymentMethod,
                 AttachmentBill = info.AttachmentBill,
+
+                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder)
@@ -828,6 +842,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeliveryMethod = model.DeliveryMethod,
                 PaymentMethod = model.PaymentMethod,
                 AttachmentBill = model.AttachmentBill,
+                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault,
+                InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null,
+
             };
 
             if (po.DeliveryDestination?.Length > 1024)
@@ -1021,6 +1038,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.DeliveryMethod = model.DeliveryMethod;
                 info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
+                info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
+                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : null;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
