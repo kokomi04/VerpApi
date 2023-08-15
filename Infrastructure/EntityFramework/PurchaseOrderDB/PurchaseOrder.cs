@@ -89,6 +89,10 @@ public partial class PurchaseOrder
 
     public string OtherPolicy { get; set; }
 
+    public int? InputTypeSelectedState { get; set; }
+
+    public int? InputUnitTypeSelectedState { get; set; }
+
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; } = new List<PurchaseOrderDetail>();
 
     public virtual ICollection<PurchaseOrderExcess> PurchaseOrderExcess { get; set; } = new List<PurchaseOrderExcess>();
