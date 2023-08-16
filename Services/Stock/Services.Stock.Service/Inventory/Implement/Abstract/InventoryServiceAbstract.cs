@@ -306,7 +306,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         {
             var requiredDetails = await (from rd in _stockDbContext.InventoryRequirementDetail
                                          join r in _stockDbContext.InventoryRequirement on rd.InventoryRequirementId equals r.InventoryRequirementId
-                                         where r.CensorStatus == (int)EnumInventoryRequirementStatus.Accepted &&
+                                         where r.CensorStatus != (int)EnumInventoryRequirementStatus.Rejected &&
                                          rd.ProductionOrderCode == msg.ProductionOrderCode
                                          select new InventoryRequireDetailByProductionOrderModel
                                          {

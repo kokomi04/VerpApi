@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,19 +11,12 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.GlobalObject.QueueMessage;
-using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Services.Manafacturing.Model.ProductionOrder;
-using VErp.Services.Manafacturing.Service.ProductionAssignment;
-using VErp.Services.Manafacturing.Service.ProductionHandover;
-using VErp.Services.Manafacturing.Service.ProductionOrder;
 using VErp.Services.Manafacturing.Service.StatusProcess.Implement;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using ProductionHandoverEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionHandover;
 using ProductionAssignmentEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionAssignment;
-using Newtonsoft.Json;
-using Microsoft.AspNetCore.Mvc;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Commons.Constants;
 using Verp.Cache.Caching;
@@ -373,7 +365,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Where(r => r.ProductionStepId == assign.ProductionStepId
                         && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
                     ).ToList();
-              
+
                 assign.AssignedProgressStatus = (int)CaclAssignOutputStatus(assign, requireOuts, handovers);
             }
 
@@ -774,27 +766,48 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     foreach (var requireExport in toCurrentStep)
                     {
-                        var refProductionStepId = linkDataOutputs.FirstOrDefault(linkDataId => linkDataId == requireExport.ProductionStepLinkDataId);
+                        var refProductionStepId =
+                            productionSteps.FirstOrDefault(s =>
+                            s.ProductionStepLinkDataRole.Any(d => d.ProductionStepLinkDataId == requireExport.ProductionStepLinkDataId && d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output)
+                            )?.ProductionStepId ?? 0;
 
-                        if (requireExport.LinkDataObjectTypeId != (int)EnumProductionStepLinkDataObjectType.Product)
-                        {
-                            refProductionStepId = 0;//stock
-                        }
+                        //if (requireExport.LinkDataObjectTypeId != (int)EnumProductionStepLinkDataObjectType.Product)
+                        //{
+                        //    refProductionStepId = 0;//stock
+                        //}
 
 
                         inputAssignments.Add(createAssignmentLinkQuantity(EnumProductionStepLinkDataRoleType.Input, requireExport, refProductionStepId));
+
+                        if (requireExport.OutsourceQuantity > 0)
+                        {
+                            var requireQuantity = requireExport.OutsourceQuantity;
+                            inputAssignments.Add(new StepDepartmentAssignment
+                            {
+                                RefProductionStepId = 0,
+                                IsOutsourceStep = true,
+                                ProductionStepLinkDataRoleTypeId = EnumProductionStepLinkDataRoleType.Input,
+                                DataLinkId = requireExport.ProductionStepLinkDataId,
+                                AssignDataLinkId = a.ProductionStepLinkDataId,
+                                ProductionStepId = pStep.ProductionStepId,
+                                LinkDataObjectTypeId = (EnumProductionStepLinkDataObjectType)requireExport.LinkDataObjectTypeId,
+                                LinkDataObjectId = requireExport.LinkDataObjectId,
+                                DepartmentId = a.DepartmentId,
+                                RequiredQuantity = requireQuantity ?? 0,
+                                HandoverQuantity = 0,
+                                RemainQuantity = requireQuantity ?? 0
+                            });
+                        }
                     }
 
 
                     foreach (var requireImport in fromCurrentStep)
                     {
 
-                        var refProductionStepId = linkDataInputs.FirstOrDefault(linkDataId => linkDataId == requireImport.ProductionStepLinkDataId);
-
-                        if (requireImport.LinkDataObjectTypeId != (int)EnumProductionStepLinkDataObjectType.Product)
-                        {
-                            refProductionStepId = 0;//stock
-                        }
+                        var refProductionStepId =
+                            productionSteps.FirstOrDefault(s =>
+                            s.ProductionStepLinkDataRole.Any(d => d.ProductionStepLinkDataId == requireImport.ProductionStepLinkDataId && d.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+                            )?.ProductionStepId ?? 0;
 
                         outputAssignments.Add(createAssignmentLinkQuantity(EnumProductionStepLinkDataRoleType.Output, requireImport, refProductionStepId));
 
