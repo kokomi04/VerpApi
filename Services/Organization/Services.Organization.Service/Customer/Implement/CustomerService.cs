@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -503,7 +504,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var checkExistedName = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerName == data.CustomerName);
             if (checkExistedName)
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", data.CustomerName));
-
+            var checkExisTaxId = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.TaxIdNo == data.TaxIdNo);
+            if (checkExisTaxId)
+                throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", data.TaxIdNo));
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
             var dbCustomerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
@@ -737,7 +740,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var customerNames = customers.Select(c => c.CustomerName).ToList();
 
-            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName)).ToListAsync();
+            var customerTaxIds = customers.Select(c => c.TaxIdNo).ToList(); 
+
+            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName) || customerTaxIds.Contains(s.TaxIdNo)).ToListAsync();
 
             if (existedCustomers != null && existedCustomers.Count > 0)
             {
@@ -748,7 +753,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                 }
-
+                var exisTaxIds = existedCustomers.Select(c => c.TaxIdNo).ToList();
+                var existingTaxIds = exisTaxIds.Intersect(customerTaxIds, StringComparer.OrdinalIgnoreCase);
+                if (existingTaxIds.Count() > 0)
+                {
+                    throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", existingTaxIds));
+                }
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
             }
 
