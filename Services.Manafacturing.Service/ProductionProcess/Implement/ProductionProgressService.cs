@@ -271,13 +271,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         private async Task<EnumProductionStatus> CalcProductionOrderStatus(long productionOrderId, DateTime endDate, IList<InventoryDetailByProductionOrderModel> invDetails)
         {
-            var steps = await _manufacturingDBContext.ProductionStep.Where(s => !s.IsFinish && s.ContainerId == productionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToListAsync();
+            var steps = await _manufacturingDBContext.ProductionStep
+                .Where(s => !s.IsFinish && s.ContainerId == productionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder)
+                .Include(s => s.ProductionStepLinkDataRole)
+                .ThenInclude(r => r.ProductionStepLinkData)
+                .ToListAsync();
 
             var assignments = await _manufacturingDBContext.ProductionAssignment.Where(s => s.ProductionOrderId == productionOrderId).ToListAsync();
 
             var hasHandOver = await _manufacturingDBContext.ProductionHandover.AnyAsync(s => s.ProductionOrderId == productionOrderId);
 
             EnumProductionStatus status;
+
+            Func<long, bool> isNotOutput = (long inputProductionStepLinkDataId) =>
+            {
+                return !steps.Any(os => os.ProductionStepLinkDataRole.Any(ro => ro.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output && ro.ProductionStepLinkDataId == inputProductionStepLinkDataId));
+            };
+
+            var beginProductionStepIds = steps.Where(s =>
+            !s.IsFinish && !(s.IsGroup ?? false)
+            && s.ProductionStepLinkDataRole
+            .Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Input)
+            .Select(r => r.ProductionStepLinkDataId)
+            .All(inputProductionStepLinkDataId => isNotOutput(inputProductionStepLinkDataId))
+            ).Select(s => s.ProductionStepId)
+             .ToList();
+
 
             if (!hasHandOver)
             {
@@ -288,10 +307,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             else
             {
-                if (assignments.All(a => a.AssignedInputStatus == (int)EnumAssignedProgressStatus.Finish))
-                    status = EnumProductionStatus.ProcessingFullStarted;
-                else
-                    status = EnumProductionStatus.ProcessingLessStarted;
+                status = EnumProductionStatus.ProcessingFullStarted;
+
+                foreach (var beginPStepId in beginProductionStepIds)
+                {
+                    var assignmentsForStep = assignments.Where(a => a.ProductionStepId == beginPStepId).ToList();
+                    if (!assignmentsForStep.Any() || assignmentsForStep.Any(a => a.AssignedInputStatus != (int)EnumAssignedProgressStatus.Finish))
+                    {
+                        status = EnumProductionStatus.ProcessingLessStarted;
+                    }
+                }
             }
 
             var prodDetails = await _manufacturingDBContext.ProductionOrderDetail.Where(d => d.ProductionOrderId == productionOrderId).ToListAsync();
