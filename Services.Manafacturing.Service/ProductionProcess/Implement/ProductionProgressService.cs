@@ -443,7 +443,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             {
                 var totalHandover = handovers.Where(h => h.ToDepartmentId == requireIn.DepartmentId
                                         && h.ToProductionStepId == requireIn.ProductionStepId
-                                        && h.FromProductionStepId == requireIn.RefProductionStepId
+                                        //&& h.FromProductionStepId == requireIn.RefProductionStepId
                                         && h.ObjectTypeId == (int)requireIn.LinkDataObjectTypeId
                                         && h.ObjectId == (int)requireIn.LinkDataObjectId
                                         )
