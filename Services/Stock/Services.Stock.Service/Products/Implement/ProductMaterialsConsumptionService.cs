@@ -434,14 +434,14 @@ namespace VErp.Services.Stock.Service.Products.Implement
         }
         public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds)
         {
-            var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => productIds.Contains( p.ProductId));
-            if (product == null)
+            var products = await _stockDbContext.Product.AsNoTracking().Where(p => productIds.Contains( p.ProductId)).ToListAsync();
+            if (products.Count == 0)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var materialsConsums = await GetProductMaterialsConsumptions(await GetTopMostProductMaterialsConsumptionIds(productIds));
             var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsums, _organizationHelperService, _manufacturingHelperService);
 
-            return await exportFacade.Export(product.ProductCode);
+            return await exportFacade.Export("Vật tư tiêu hao");
         }
         private async Task<List<int>> GetTopMostProductMaterialsConsumptionIds(IList<int> productIds)
         {
