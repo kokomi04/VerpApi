@@ -788,7 +788,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await UpdateStatusValidForProductionOrder(EnumContainerType.ProductionOrder, productionOrderId, (await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId)));
+                await UpdateStatusValidForProductionOrder(productionOrderId);
 
                 await trans.CommitAsync();
 
@@ -1410,12 +1410,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
-                await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
                 await ValidOutsourcePartRequest(containerId);
                 await ValidOutsourceStepRequest(containerId);
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
+
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                await UpdateStatusValidForProductionOrder(containerId);
+            }
 
             // Xóa thông tin phân công, bàn giao, khai báo nhân công khi thay đổi quy trình
             if (containerTypeId == EnumContainerType.ProductionOrder)
@@ -1477,11 +1481,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
         }
 
-        private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
+        private async Task UpdateStatusValidForProductionOrder(long productionOrderId)
         {
-            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == containerId);
+            var process = await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId);
+
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == productionOrderId);
             productionOrder.IsResetProductionProcess = true;
-            productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, process)).Count() > 0;
+            productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(EnumContainerType.ProductionOrder, productionOrderId, process)).Count() > 0;
 
             await _manufacturingDBContext.SaveChangesAsync();
         }
