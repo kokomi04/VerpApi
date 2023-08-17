@@ -1013,8 +1013,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.DeliveryMethod = model.DeliveryMethod;
                 info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
-                info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
-                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : null;
+                info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null;
+                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
