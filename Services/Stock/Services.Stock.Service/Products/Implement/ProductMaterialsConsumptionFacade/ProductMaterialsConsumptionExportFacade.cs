@@ -21,13 +21,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private int currentRow = 0;
         private int maxColumnIndex = 14;
 
-        private IEnumerable<ProductMaterialsConsumptionOutput> materialsConsumps;
+        private IList<IEnumerable<ProductMaterialsConsumptionOutput>> materialsConsumps;
 
         private readonly IOrganizationHelperService _organizationHelperService;
         private readonly IManufacturingHelperService _manufacturingHelperService;
 
         public ProductMaterialsConsumptionExportFacade(StockDBContext stockDbContext
-            , IEnumerable<ProductMaterialsConsumptionOutput> materials
+            , IList<IEnumerable<ProductMaterialsConsumptionOutput>> materials
             , IOrganizationHelperService organizationHelperService
             , IManufacturingHelperService manufacturingHelperService)
         {
@@ -135,96 +135,98 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         private async Task<bool> WriteTableDetailData()
         {
-            var groupsConsump = (await _stockDbContext.ProductMaterialsConsumptionGroup
+            var index = 1;
+            foreach (var materialsConsump in materialsConsumps)
+            {
+                var productId = materialsConsump.FirstOrDefault()?.ProductId ??0;
+
+                var groupsConsump = (await _stockDbContext.ProductMaterialsConsumptionGroup
                 .AsNoTracking()
-                .Where(m => materialsConsumps.Select(x => x.ProductMaterialsConsumptionGroupId).Contains(m.ProductMaterialsConsumptionGroupId))
+                .Where(m => materialsConsump.Select(x => x.ProductMaterialsConsumptionGroupId).Contains(m.ProductMaterialsConsumptionGroupId))
                 .ToListAsync())
                 .ToDictionary(k => k.ProductMaterialsConsumptionGroupId, v => v.Title);
 
-            var stepInfos = (await _manufacturingHelperService.GetStepByArrayId(materialsConsumps.Select(x => x.StepId.GetValueOrDefault()).ToArray()))
-                .ToDictionary(k => k.StepId, v => v.StepName);
-            var departmentInfos = (await _organizationHelperService.GetDepartmentSimples(materialsConsumps.Select(x => x.DepartmentId.GetValueOrDefault()).ToArray()))
-                .ToDictionary(k => k.DepartmentId, v => new { v.DepartmentCode, v.DepartmentName }); ;
+                var stepInfos = (await _manufacturingHelperService.GetStepByArrayId(materialsConsump.Select(x => x.StepId.GetValueOrDefault()).ToArray()))
+                    .ToDictionary(k => k.StepId, v => v.StepName);
+                var departmentInfos = (await _organizationHelperService.GetDepartmentSimples(materialsConsump.Select(x => x.DepartmentId.GetValueOrDefault()).ToArray()))
+                    .ToDictionary(k => k.DepartmentId, v => new { v.DepartmentCode, v.DepartmentName }); ;
 
-            var productInfos = (await (
-                from p in _stockDbContext.Product
-                join t in _stockDbContext.ProductType on p.ProductTypeId equals t.ProductTypeId into lt
-                from t in lt.DefaultIfEmpty()
-                join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId into lc
-                from c in lc.DefaultIfEmpty()
-                join d in _stockDbContext.ProductExtraInfo on p.ProductId equals d.ProductId
-                join u in _stockDbContext.ProductUnitConversion.Where(pu => pu.IsDefault) on p.ProductId equals u.ProductId
-                select new
+                var productInfos = (await (
+                    from p in _stockDbContext.Product
+                    join t in _stockDbContext.ProductType on p.ProductTypeId equals t.ProductTypeId into lt
+                    from t in lt.DefaultIfEmpty()
+                    join c in _stockDbContext.ProductCate on p.ProductCateId equals c.ProductCateId into lc
+                    from c in lc.DefaultIfEmpty()
+                    join d in _stockDbContext.ProductExtraInfo on p.ProductId equals d.ProductId
+                    join u in _stockDbContext.ProductUnitConversion.Where(pu => pu.IsDefault) on p.ProductId equals u.ProductId
+                    select new
+                    {
+                        p.ProductId,
+                        p.ProductCode,
+                        p.ProductName,
+                        u.ProductUnitConversionName,
+                        d.Specification,
+                        c.ProductCateName,
+                        t.ProductTypeName
+                    }).ToListAsync()
+                    ).GroupBy(p => p.ProductId)
+                    .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+
+                var styleNumber = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: false, dataFormat: "#,##0.00");
+                var styleText = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: false);
+
+                var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsump).Where(x => x.Quantity > 0)
+                    .GroupBy(x => new { x.MaterialsConsumptionId, x.ProductId })
+                    .SelectMany(x => x.Take(1))
+                    .OrderBy(x => x.ProductMaterialsConsumptionGroupId);
+                foreach (var m in materialConsumptionSlice)
                 {
-                    p.ProductId,
-                    p.ProductCode,
-                    p.ProductName,
-                    u.ProductUnitConversionName,
-                    d.Specification,
-                    c.ProductCateName,
-                    t.ProductTypeName
-                }).ToListAsync()
-                ).GroupBy(p => p.ProductId)
-                .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+                    productInfos.TryGetValue(m.MaterialsConsumptionId, out var materialConsumptionInfo);
+                    productInfos.TryGetValue(m.ProductId, out var productInfo);
 
-            var styleNumber = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: false, dataFormat: "#,##0.00");
-            var styleText = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: false);
+                    sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(index);
 
-            var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsumps).Where(x => x.Quantity > 0)
-                .GroupBy(x => new { x.MaterialsConsumptionId, x.ProductId })
-                .SelectMany(x => x.Take(1))
-                .OrderBy(x => x.ProductMaterialsConsumptionGroupId);
+                    if (groupsConsump.ContainsKey(m.ProductMaterialsConsumptionGroupId))
+                        sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
 
-            var index = 1;
-            foreach (var m in materialConsumptionSlice)
-            {
-                productInfos.TryGetValue(m.MaterialsConsumptionId, out var materialConsumptionInfo);
-                productInfos.TryGetValue(m.ProductId, out var productInfo);
+                    if (materialConsumptionInfo != null)
+                    {
+                        sheet.EnsureCell(currentRow, 1, styleText).SetCellValue(materialConsumptionInfo.ProductCode);
+                        sheet.EnsureCell(currentRow, 2, styleText).SetCellValue(materialConsumptionInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 3, styleText).SetCellValue(materialConsumptionInfo.ProductUnitConversionName);
+                        // sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.ProductTypeName);
+                        sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.Specification);
+                        // sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(materialConsumptionInfo.ProductCateName);
+                    }
 
-                sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(index);
+                    if (productInfo != null)
+                    {
+                        sheet.EnsureCell(currentRow, 5, styleText).SetCellValue(productInfo.ProductCode);
+                        sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(productInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 7, styleText).SetCellValue(productInfo.ProductUnitConversionName);
+                        // sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(productInfo.ProductTypeName);
+                        sheet.EnsureCell(currentRow, 8, styleText).SetCellValue(productInfo.Specification);
+                        // sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(productInfo.ProductCateName);
+                    }
 
-                if (groupsConsump.ContainsKey(m.ProductMaterialsConsumptionGroupId))
-                    sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
+                    sheet.EnsureCell(currentRow, 9, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity));
 
-                if (materialConsumptionInfo != null)
-                {
-                    sheet.EnsureCell(currentRow, 1, styleText).SetCellValue(materialConsumptionInfo.ProductCode);
-                    sheet.EnsureCell(currentRow, 2, styleText).SetCellValue(materialConsumptionInfo.ProductName);
-                    sheet.EnsureCell(currentRow, 3, styleText).SetCellValue(materialConsumptionInfo.ProductUnitConversionName);
-                    // sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.ProductTypeName);
-                    sheet.EnsureCell(currentRow, 4, styleText).SetCellValue(materialConsumptionInfo.Specification);
-                    // sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(materialConsumptionInfo.ProductCateName);
+                    if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
+                        sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(stepInfos[(int)m.StepId]);
+
+                    if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
+                    {
+                        var department = departmentInfos[(int)m.DepartmentId];
+                        sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(department.DepartmentCode);
+                        sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(department.DepartmentName);
+                    }
+
+                    sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(m.Description);
+
+                    currentRow++;
+                    index++;
                 }
-
-                if (productInfo != null)
-                {
-                    sheet.EnsureCell(currentRow, 5, styleText).SetCellValue(productInfo.ProductCode);
-                    sheet.EnsureCell(currentRow, 6, styleText).SetCellValue(productInfo.ProductName);
-                    sheet.EnsureCell(currentRow, 7, styleText).SetCellValue(productInfo.ProductUnitConversionName);
-                    // sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(productInfo.ProductTypeName);
-                    sheet.EnsureCell(currentRow, 8, styleText).SetCellValue(productInfo.Specification);
-                    // sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(productInfo.ProductCateName);
-                }
-
-                sheet.EnsureCell(currentRow, 9, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity));
-
-                if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
-                    sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(stepInfos[(int)m.StepId]);
-
-                if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
-                {
-                    var department = departmentInfos[(int)m.DepartmentId];
-                    sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(department.DepartmentCode);
-                    sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(department.DepartmentName);
-                }
-
-                sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(m.Description);
-
-                currentRow++;
-                index++;
             }
-
-
             return true;
         }
 

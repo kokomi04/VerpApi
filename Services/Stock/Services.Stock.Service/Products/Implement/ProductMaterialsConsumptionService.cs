@@ -15,6 +15,7 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
@@ -120,7 +121,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return materialsConsumption;
         }
-
+        public async Task<IList<IEnumerable<ProductMaterialsConsumptionOutput>>> GetProductMaterialsConsumptions(IList<int> productIds)
+        {
+            var materialsConsumptions = new List<IEnumerable<ProductMaterialsConsumptionOutput>> ();
+            foreach (var productId in productIds)
+            {
+                materialsConsumptions.Add(await GetProductMaterialsConsumption(productId));
+            }
+            return materialsConsumptions;
+        }
         private IList<ProductMaterialsConsumptionOutput> LoopGetMaterialConsumInheri(List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri
             , IEnumerable<ProductBomOutput> productBom
             , IEnumerable<ProductBomOutput> boms
@@ -419,11 +428,35 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var materialsConsum = await GetProductMaterialsConsumption(productId);
-            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsum, _organizationHelperService, _manufacturingHelperService);
+            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, new List<IEnumerable<ProductMaterialsConsumptionOutput>>() { materialsConsum }, _organizationHelperService, _manufacturingHelperService);
 
             return await exportFacade.Export(product.ProductCode);
         }
+        public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds)
+        {
+            var product = _stockDbContext.Product.AsNoTracking().FirstOrDefault(p => productIds.Contains( p.ProductId));
+            if (product == null)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
+            var materialsConsums = await GetProductMaterialsConsumptions(await GetTopMostProductMaterialsConsumptionIds(productIds));
+            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsums, _organizationHelperService, _manufacturingHelperService);
+
+            return await exportFacade.Export(product.ProductCode);
+        }
+        private async Task<List<int>> GetTopMostProductMaterialsConsumptionIds(IList<int> productIds)
+        {
+            var topMostProductIds = new List<int>();
+            var checkParams = new[]
+               {
+                     productIds.ToSqlParameter("@InputProductIds")
+                };
+            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostMaterialConsumption", checkParams)).ConvertData();
+            foreach (var p in productParentIds)
+            {
+                topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+            }
+            return topMostProductIds;
+        }
         private ProductMaterialsConsumptionImportFacade InitializationFacade(bool isPreview)
         {
             return new ProductMaterialsConsumptionImportFacade(isPreview)
