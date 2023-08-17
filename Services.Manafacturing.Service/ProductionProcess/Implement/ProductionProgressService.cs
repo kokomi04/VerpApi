@@ -724,7 +724,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 .Where(s => s.ContainerId == productionOrderId && s.ContainerTypeId == (int)EnumContainerType.ProductionOrder && !s.IsFinish && s.IsGroup != true)
                 .ToListAsync();
 
-            productionSteps = productionSteps.OrderBy(s => s.Step.SortOrder).ThenBy(s => s.SortOrder).ToList();
+            productionSteps = productionSteps.OrderBy(s => s.Step?.SortOrder).ThenBy(s => s.SortOrder).ToList();
 
             var linkDataInputs = productionSteps.SelectMany(s =>
                 s.ProductionStepLinkDataRole
