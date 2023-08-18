@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 
 namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
@@ -14,9 +15,10 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
         public int DepartmentId { get; set; }
         public long ProductionStepId { get; set; }
         public decimal AllocationQuantity { get; set; }
-        public int? SourceProductId { get; set; }
-        public decimal? SourceQuantity { get; set; }
-        public long? InventoryDetailId { get; set; }
+        public long SourceObjectId { get; set; }
+        public EnumProductionStepLinkDataObjectType SourceObjectTypeId { get; set; }
+        public decimal SourceQuantity { get; set; }
+        public long InventoryDetailId { get; set; }
     }
 
     public class AllocationModel
