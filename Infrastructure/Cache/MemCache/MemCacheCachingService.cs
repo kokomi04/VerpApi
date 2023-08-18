@@ -24,6 +24,22 @@ namespace Verp.Cache.MemCache
             return default(T);
         }
 
+        public T TryGetSet<T>(string tag, string key, TimeSpan ttl, Func<T, T> queryData, TimeSpan? sliding = null)
+        {
+            return _cache.GetOrCreate<T>(key, (v) =>
+            {
+                v.AbsoluteExpirationRelativeToNow = ttl;
+                v.AddExpirationToken(TagToken(tag, ttl));
+                if (sliding != null)
+                {
+                    v.SlidingExpiration = sliding;
+                }
+                var oldValue = default(T);
+                if (v.Value != null)
+                    oldValue = (T)v.Value;
+                return queryData.Invoke(oldValue);
+            });
+        }
 
         public T TryGetSet<T>(string tag, string key, TimeSpan ttl, Func<T> queryData, TimeSpan? sliding = null)
         {

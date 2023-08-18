@@ -253,14 +253,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             .CreateLog();
             }
 
-            _cachingService.TryRemove(ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrder.ProductionOrderCode));
+            var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
+            var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrder.ProductionOrderCode);
+
+            _cachingService.TryGetSet<int>(tag, key, TimeSpan.FromMinutes(5), (currentQueue) =>
+            {
+                return --currentQueue;
+            });
 
             return true;
         }
 
-        public bool IsPendingCalcStatus(string producionOrderCode)
+        public bool IsPendingCalcStatus(string productionOrderCode)
         {
-            return _cachingService.TryGet<bool>(ProductionOrderCacheKeys.CalcProductionOrderStatusPending(producionOrderCode));
+            var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode);
+
+            return _cachingService.TryGet<int>(key) > 0;
         }
 
         public async Task<IList<ProductionOrderInventoryConflictModel>> GetConflictInventories(long productionOrderId)

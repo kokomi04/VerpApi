@@ -32,7 +32,13 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
 
         public async Task<bool> ProductionOrderStatiticChanges(string productionOrderCode, string description)
         {
-            _cachingService.TrySet(ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS, ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode), true, TimeSpan.FromMinutes(5));
+            var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
+            var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode);
+
+            _cachingService.TryGetSet<int>(tag, key, TimeSpan.FromMinutes(5), (currentCount) =>
+            {
+                return ++currentCount;
+            });
 
             return await _queueProcessHelperService.EnqueueAsync(ManufacturingQueueNameConstants.PRODUCTION_INVENTORY_STATITICS, new ProductionOrderStatusInventorySumaryMessage()
             {
