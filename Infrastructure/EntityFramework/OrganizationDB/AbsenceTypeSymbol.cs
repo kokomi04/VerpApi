@@ -19,7 +19,11 @@ public partial class AbsenceTypeSymbol
 
     public double SalaryRate { get; set; }
 
-    public bool IsDefaultSystem { get; set; }
+    public bool IsAnnualLeave { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public DateTime CreatedDatetimeUtc { get; set; }
 
     public int UpdatedByUserId { get; set; }
 
