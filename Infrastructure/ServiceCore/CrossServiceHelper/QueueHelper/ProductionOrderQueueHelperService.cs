@@ -35,7 +35,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper
             var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
             var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode);
 
-            _cachingService.TryGetSet<int>(tag, key, TimeSpan.FromMinutes(5), (currentCount) =>
+            _cachingService.TryUpdate<int>(tag, key, TimeSpan.FromMinutes(5), (currentCount) =>
             {
                 return ++currentCount;
             });
