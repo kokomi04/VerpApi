@@ -256,7 +256,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
             var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrder.ProductionOrderCode);
 
-            _cachingService.TryGetSet<int>(tag, key, TimeSpan.FromMinutes(5), (currentQueue) =>
+            _cachingService.TryUpdate<int>(tag, key, TimeSpan.FromMinutes(5), (currentQueue) =>
             {
                 return --currentQueue;
             });
@@ -267,8 +267,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         public bool IsPendingCalcStatus(string productionOrderCode)
         {
             var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrderCode);
-
-            return _cachingService.TryGet<int>(key) > 0;
+            var queue = _cachingService.TryGet<int>(key);
+            return queue > 0;
         }
 
         public async Task<IList<ProductionOrderInventoryConflictModel>> GetConflictInventories(long productionOrderId)
