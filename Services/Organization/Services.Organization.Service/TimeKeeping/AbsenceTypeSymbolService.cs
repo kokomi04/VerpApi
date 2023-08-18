@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
@@ -84,23 +85,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<IList<AbsenceTypeSymbolModel>> GetListAbsenceTypeSymbol()
         {
-            var query = _organizationDBContext.AbsenceTypeSymbol.AsNoTracking();
-
-            return query.AsEnumerable()
-                .OrderByDescending(o => o.IsDefaultSystem == true)
-                .ThenBy(o => o.UpdatedDatetimeUtc)
-                .Select((x, index) => new AbsenceTypeSymbolModel
-                {
-                    AbsenceTypeSymbolId = x.AbsenceTypeSymbolId,
-                    NumericalOrder = index,
-                    SymbolCode = x.SymbolCode,
-                    TypeSymbolDescription = x.TypeSymbolDescription,
-                    MaxOfDaysOffPerMonth = x.MaxOfDaysOffPerMonth,
-                    IsUsed = x.IsUsed,
-                    IsCounted = x.IsCounted,
-                    SalaryRate = x.SalaryRate,
-                    IsDefaultSystem = x.IsDefaultSystem,
-                }).ToList();
+            return await _organizationDBContext.AbsenceTypeSymbol
+                .OrderBy(o => !o.IsAnnualLeave)
+                .ThenBy(o => o.CreatedDatetimeUtc)
+                .ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
         }
     }
 }

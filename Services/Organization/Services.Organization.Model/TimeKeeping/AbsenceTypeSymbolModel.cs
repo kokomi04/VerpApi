@@ -10,7 +10,6 @@ namespace Services.Organization.Model.TimeKeeping
     public class AbsenceTypeSymbolModel : IMapFrom<AbsenceTypeSymbol>
     {
         public int AbsenceTypeSymbolId { get; set; }
-        public int NumericalOrder { get; set; }
 
         [Required(ErrorMessage = "Vui lòng nhập mô tả loại vắng")]
         [MaxLength(200, ErrorMessage = "Mô tả không được vượt quá 200 ký tự")]
@@ -28,6 +27,6 @@ namespace Services.Organization.Model.TimeKeeping
 
         [Range(0.0, 1.0, ErrorMessage = "Tỷ lệ hưởng lương phải nằm trong khoảng từ 0 đến 1")]
         public double SalaryRate { get; set; }
-        public bool IsDefaultSystem { get; set; }
+        public bool IsAnnualLeave { get; set; }
     }
 }
