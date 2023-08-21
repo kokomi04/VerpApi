@@ -9,7 +9,6 @@ namespace Services.Organization.Model.TimeKeeping
     public class OvertimeLevelModel : IMapFrom<OvertimeLevel>
     {
         public int OvertimeLevelId { get; set; }
-        public int NumericalOrder { get; set; }
 
         [Min(1.0, ErrorMessage = "Tỷ lệ hưởng lương phải lớn hơn hoặc bằng 1")]
         public decimal OvertimeRate { get; set; }
@@ -23,5 +22,6 @@ namespace Services.Organization.Model.TimeKeeping
         public string Description { get; set; }
         [Min(0, ErrorMessage = "Thứ tự ưu tiên phải lớn hơn hoặc bằng 0")]
         public int OvertimePriority { get; set; }
+        public int SortOrder { get; set; }
     }
 }

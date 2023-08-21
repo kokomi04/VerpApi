@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,6 +19,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<IList<OvertimeLevelModel>> GetListOvertimeLevel();
         Task<OvertimeLevelModel> GetOvertimeLevel(long countedSymbolId);
         Task<bool> UpdateOvertimeLevel(int countedSymbolId, OvertimeLevelModel model);
+        Task<bool> UpdateOvertimeLevelSortOrder(IList<OvertimeLevelModel> model);
     }
 
     public class OvertimeLevelService : IOvertimeLevelService
@@ -83,18 +86,31 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<IList<OvertimeLevelModel>> GetListOvertimeLevel()
         {
-            var query = _organizationDBContext.OvertimeLevel.AsNoTracking();
+            return await _organizationDBContext.OvertimeLevel
+                .OrderBy(o => o.SortOrder)
+                .ProjectTo<OvertimeLevelModel>(_mapper.ConfigurationProvider)
+                .ToArrayAsync();
+        }
 
-            return query.AsEnumerable()
-                .Select((x, index) => new OvertimeLevelModel
+        public async Task<bool> UpdateOvertimeLevelSortOrder(IList<OvertimeLevelModel> model)
+        {
+            var overtimeLevelIds = model.Select(model => model.OvertimeLevelId).ToList();
+
+            var entities = await _organizationDBContext.OvertimeLevel.Where(x => overtimeLevelIds.Contains(x.OvertimeLevelId)).ToListAsync();
+            if(!entities.Any())
+                throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            foreach (var ov in model)
+            {
+                entities.ForEach(e =>
                 {
-                    OvertimeLevelId = x.OvertimeLevelId,
-                    NumericalOrder = index + 1,
-                    OvertimeCode = x.OvertimeCode,
-                    Description = x.Description,
-                    OvertimeRate = x.OvertimeRate,
-                    OvertimePriority = x.OvertimePriority,
-                }).ToList();
+                    if(e.OvertimeLevelId == ov.OvertimeLevelId)
+                        e.SortOrder = ov.SortOrder;
+                });
+            }
+
+            await _organizationDBContext.SaveChangesAsync();
+            return true;
         }
     }
 }
