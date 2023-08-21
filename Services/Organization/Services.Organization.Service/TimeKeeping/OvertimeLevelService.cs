@@ -38,6 +38,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
+            var maxSortOrder = await _organizationDBContext.OvertimeLevel.MaxAsync(m => m.SortOrder);
+
+            await UpdateSortOrder(maxSortOrder + 1, model.SortOrder);
+
             var entity = _mapper.Map<OvertimeLevel>(model);
 
             await _organizationDBContext.OvertimeLevel.AddAsync(entity);
@@ -55,6 +59,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (countedSymbol.OvertimeCode != model.OvertimeCode && await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
+            await UpdateSortOrder(countedSymbol.SortOrder, model.SortOrder);
+
             model.OvertimeLevelId = countedSymbolId;
             _mapper.Map(model, countedSymbol);
 
@@ -68,6 +74,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
             if (countedSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            await UpdateSortOrder(countedSymbol.SortOrder, null);
 
             countedSymbol.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
@@ -111,6 +119,30 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             await _organizationDBContext.SaveChangesAsync();
             return true;
+        }
+
+        private async Task UpdateSortOrder(int entitySortOrder, int? modelSortOrder)
+        {
+            if (entitySortOrder > modelSortOrder)
+            {
+                var behindOvertimeLevels = await _organizationDBContext.OvertimeLevel.Where(x => x.SortOrder >= modelSortOrder && x.SortOrder < entitySortOrder).ToListAsync();
+                if (behindOvertimeLevels.Any())
+                    behindOvertimeLevels.ForEach(x => x.SortOrder++);
+            }
+
+            if (entitySortOrder < modelSortOrder)
+            {
+                var behindOvertimeLevels = await _organizationDBContext.OvertimeLevel.Where(x => x.SortOrder <= modelSortOrder && x.SortOrder > entitySortOrder).ToListAsync();
+                if (behindOvertimeLevels.Any())
+                    behindOvertimeLevels.ForEach(x => x.SortOrder--);
+            }
+
+            if (!modelSortOrder.HasValue)
+            {
+                var behindOvertimeLevels = await _organizationDBContext.OvertimeLevel.Where(x => x.SortOrder > entitySortOrder).ToListAsync();
+                if (behindOvertimeLevels.Any())
+                    behindOvertimeLevels.ForEach(x => x.SortOrder--);
+            }
         }
     }
 }
