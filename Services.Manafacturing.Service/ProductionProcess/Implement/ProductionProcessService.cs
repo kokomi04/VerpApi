@@ -1908,6 +1908,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
 
+            if (process != null && process.ProductionStepLinkDataRoles.Count == 0)
+                throw new BadRequestException($"Không thể copy vì mặt hàng chưa được thiết lập QTSX");
             try
             {
                 var semiIds = process.ProductionStepLinkDatas
