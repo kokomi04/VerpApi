@@ -177,7 +177,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                 var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsump).Where(x => x.Quantity > 0)
                     .GroupBy(x => new { x.MaterialsConsumptionId, x.ProductId })
-                    .SelectMany(x => x.Take(1))
+                    .SelectMany(x => x.Take(x.Count()))
                     .OrderBy(x => x.ProductMaterialsConsumptionGroupId);
                 foreach (var m in materialConsumptionSlice)
                 {
