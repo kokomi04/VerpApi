@@ -15,6 +15,8 @@ public partial class OvertimeLevel
 
     public int OvertimePriority { get; set; }
 
+    public int SortOrder { get; set; }
+
     public int UpdatedByUserId { get; set; }
 
     public DateTime UpdatedDatetimeUtc { get; set; }
