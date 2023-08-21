@@ -1269,6 +1269,43 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Any(x => x.Count() > 1))
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
+
+                foreach(var pStep in req.ProductionSteps)
+                {
+                    var outs = req.ProductionStepLinkDataRoles.Where(r =>
+                    r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
+                    && r.ProductionStepCode == pStep.ProductionStepCode
+                    ).Select(o=> new
+                    {
+                        o.ProductionStepLinkDataCode,
+                        LinkData=req.ProductionStepLinkDatas.FirstOrDefault(d=>d.ProductionStepLinkDataCode==o.ProductionStepLinkDataCode),
+                        ToProductionStepCode = req.ProductionStepLinkDataRoles
+                        .FirstOrDefault(r=> r.ProductionStepLinkDataRoleTypeId== EnumProductionStepLinkDataRoleType.Input 
+                                && r.ProductionStepLinkDataCode== o.ProductionStepLinkDataCode
+                                )?.ProductionStepCode
+                    }).ToList();
+
+
+                    var duplicateLink = outs.GroupBy(o => new
+                    {
+                        o.LinkData.LinkDataObjectTypeId,
+                        o.LinkData.LinkDataObjectId,
+                        o.ToProductionStepCode
+                    }).FirstOrDefault(o => o.Count() > 1);
+
+                    if(duplicateLink != null)
+                    {
+                        var toProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.ToProductionStepCode);
+
+                        var toProductionStepTitle = "Kho";
+                        if (toProductionStep != null)
+                            toProductionStepTitle = toProductionStep.Title;
+
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Bàn giao giữa {pStep.Title} và {toProductionStepTitle} có mặt hàng trùng nhau");
+                    }
+
+                }
+
                 if (req.ProductionOutsourcePartMappings == null)
                 {
                     req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
