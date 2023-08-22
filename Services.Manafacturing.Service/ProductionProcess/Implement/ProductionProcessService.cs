@@ -1940,13 +1940,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
         }
 
-        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId, bool isValidateSourceProductionProcessExists = true)
         {
             var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-
-            if (process != null && process.ProductionStepLinkDataRoles.Count == 0)
-                throw new BadRequestException($"Không thể copy vì mặt hàng chưa được thiết lập QTSX");
+            if (isValidateSourceProductionProcessExists && containerTypeId == EnumContainerType.Product)
+            {
+                if (process != null && process.ProductionStepLinkDataRoles.Count == 0)
+                    throw new BadRequestException($"Không thể copy vì mặt hàng chưa được thiết lập QTSX");
+            }
             try
             {
                 var semiIds = process.ProductionStepLinkDatas
