@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> CheckHasAssignment(long productionOrderId);
         Task<bool> DismissUpdateQuantity(long productionOrderId);
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
-        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId, bool isOnlyCopyProcess);
+        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId, bool isValidateSourceProductionProcessExists);
 
         Task<ProductionProcessInfo> GetProductionProcessByProductionOrder(long productionOrderId);
         Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);
