@@ -438,24 +438,46 @@ namespace VErp.Services.Stock.Service.Products.Implement
             if (products.Count == 0)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
-            var materialsConsums = await GetProductMaterialsConsumptions(await GetTopMostProductMaterialsConsumptionIds(productIds));
+            var materialsConsums = await GetProductMaterialsConsumptions(await GetTopIdsFromProductIds(productIds));
             var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsums, _organizationHelperService, _manufacturingHelperService);
 
             return await exportFacade.Export("Vật tư tiêu hao");
         }
-        private async Task<List<int>> GetTopMostProductMaterialsConsumptionIds(IList<int> productIds)
+        private async Task<List<int>> GetTopIdsFromProductIds(IList<int> productIds)
         {
-            var topMostProductIds = new List<int>();
+            var lstProductIds = new List<int>();
+            var parentChildProductIds = new Dictionary<int, int>();
             var checkParams = new[]
                {
                      productIds.ToSqlParameter("@InputProductIds")
-                };
-            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostMaterialConsumption", checkParams)).ConvertData();
+               };
+            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetParentBomProductIds", checkParams)).ConvertData();
             foreach (var p in productParentIds)
             {
-                topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+                parentChildProductIds.Add(Convert.ToInt32(p["ParentId"]), Convert.ToInt32(p["ChildId"]));
             }
-            return topMostProductIds;
+            foreach (var productId in productIds)
+            {
+                var parentProductIds = new List<int>();
+                GetParentIds(productId, productIds, parentChildProductIds, ref parentProductIds);
+                if (parentProductIds.Count == 0)
+                {
+                    lstProductIds.Add(productId);
+                }
+            }
+            return lstProductIds;
+        }
+        private List<int> GetParentIds(int checkProductId, IList<int> productIds, Dictionary<int, int> parentChildProductIds, ref List<int> productIdsOutput)
+        {
+            var lstParentIds = parentChildProductIds.Where(x => checkProductId ==x.Value).Select(x => x.Key).ToList();
+
+            foreach (var parentId in lstParentIds)
+            {
+                GetParentIds(parentId, productIds, parentChildProductIds, ref productIdsOutput);
+            }
+            productIdsOutput.AddRange( lstParentIds.Where(x => productIds.Contains(x)).ToList());
+            
+            return productIdsOutput;
         }
         private ProductMaterialsConsumptionImportFacade InitializationFacade(bool isPreview)
         {
