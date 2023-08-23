@@ -46,13 +46,16 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var total = await query.CountAsync();
             IList<OutsideImportMappingFunction> pagedData = null;
+
+            query = query.OrderBy(q => q.SourceObjectTypeId).ThenBy(q => q.SourceInputTypeId);
+
             if (size > 0)
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).Skip((page - 1) * size).Take(size).ToListAsync();
+                pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
             }
             else
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).ToListAsync();
+                pagedData = await query.ToListAsync();
             }
 
             return (_mapper.Map<IList<OutsideMappingModelList>>(pagedData), total);

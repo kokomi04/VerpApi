@@ -79,7 +79,9 @@ public partial class StockDBContext : DbContext
 
     public virtual DbSet<RefCustomerBasic> RefCustomerBasic { get; set; }
 
-    public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
+    //public virtual DbSet<RefInputBillBasic> RefInputBillBasic { get; set; }
+
+    public virtual DbSet<RefInputBillSourceBillCode> RefInputBillSourceBillCode { get; set; }
 
     public virtual DbSet<RefTargetProductivity> RefTargetProductivity { get; set; }
 
@@ -764,6 +766,24 @@ public partial class StockDBContext : DbContext
             entity.Property(e => e.SoCt)
                 .HasMaxLength(512)
                 .HasColumnName("so_ct");
+        });
+
+        modelBuilder.Entity<RefInputBillSourceBillCode>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("RefInputBillSourceBillCode");
+
+            entity.Property(e => e.InputBillFId).HasColumnName("InputBill_F_Id");
+            entity.Property(e => e.InputTypeTitle)
+                .HasMaxLength(128)
+                .HasColumnName("InputType_Title");
+            entity.Property(e => e.SoCt)
+                .HasMaxLength(512)
+                .HasColumnName("so_ct");
+            entity.Property(e => e.SourceBillCode)
+                .IsRequired()
+                .HasMaxLength(128);
         });
 
         modelBuilder.Entity<RefTargetProductivity>(entity =>

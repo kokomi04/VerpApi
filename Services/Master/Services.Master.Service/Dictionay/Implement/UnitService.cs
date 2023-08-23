@@ -144,6 +144,13 @@ namespace VErp.Services.Master.Service.Dictionay.Implement
             unitInfo.DecimalPlace = data.DecimalPlace;
             await _masterContext.SaveChangesAsync();
 
+            var updateParams = new[]
+            {
+                        new[]{unitId}.ToSqlParameter("@UnitIds"),
+             };
+            await _masterContext.ExecuteStoreProcedure("asp_Unit_Updated", updateParams);
+
+
             await _unitActivityLog.LogBuilder(() => UnitActivityLogMessage.Update)
             .MessageResourceFormatDatas(unitInfo.UnitName)
             .ObjectId(unitInfo.UnitId)
