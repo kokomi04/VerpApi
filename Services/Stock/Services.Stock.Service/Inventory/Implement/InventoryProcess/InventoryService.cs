@@ -185,7 +185,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
-            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.Select(c => new { c.SourceBillCode }).Distinct();
+            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.GroupBy(c => new { c.SourceBillCode }).Select(c => c.Key); ;
 
 
             var query = from q in inventoryQuery
@@ -221,7 +221,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             q.UpdatedDatetimeUtc,
                             q.IsApproved,
                             q.DepartmentId,
-                            IsInputBillCreated = b != null,
+                            IsInputBillCreated = b.SourceBillCode != null,
+                            b.SourceBillCode,
                             q.CensorByUserId,
                             q.InventoryActionId,
                             q.InventoryStatusId,
@@ -384,7 +385,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 inventoryQuery = inventoryQuery.Where(q => q.CustomerId == customerId);
             }
 
-            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.Select(c => new { c.SourceBillCode }).Distinct();
+            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.GroupBy(c => new { c.SourceBillCode }).Select(c => c.Key); ;
 
             var query = from q in inventoryQuery
                         join d in inventoryDetails on q.InventoryId equals d.InventoryId
@@ -449,7 +450,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             pu.ProductUnitConversionName,
 
 
-                            IsInputBillCreated = accountantRefBillCode != null
+                            IsInputBillCreated = accountantRefBillCode.SourceBillCode != null
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
