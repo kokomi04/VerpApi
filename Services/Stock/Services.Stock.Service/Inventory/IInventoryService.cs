@@ -15,7 +15,11 @@ namespace VErp.Services.Stock.Service.Stock
     {
         Task<PageData<InventoryListOutput>> GetList(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isInputBillCreated = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null);
 
+        Task<PageData<InventoryListProductOutput>> GetListByProduct(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isInputBillCreated = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null);
+
         Task<InventoryOutput> InventoryInfo(long inventoryId);
+
+        Task<IList<InventoryOutput>> GetInfosByIds(IList<long> inventoryIds, EnumInventoryType? inventoryTypeId);
 
         Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId);
 

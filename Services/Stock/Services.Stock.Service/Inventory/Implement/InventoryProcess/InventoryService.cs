@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -183,11 +185,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
 
 
-            IQueryable<RefInputBillBasic> billQuery = _stockDbContext.RefInputBillBasic.AsQueryable();
+            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.Select(c => new { c.SourceBillCode }).Distinct();
 
-#pragma warning disable CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
+
             var query = from q in inventoryQuery
-                        join b in billQuery on q.InventoryCode equals b.SoCt into bs
+                        join b in sourceBillCodes on q.InventoryCode equals b.SourceBillCode into bs
                         from b in bs.DefaultIfEmpty()
                         select new
                         {
@@ -219,7 +221,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             q.UpdatedDatetimeUtc,
                             q.IsApproved,
                             q.DepartmentId,
-                            IsInputBillCreated = b.InputBillFId != null,
+                            IsInputBillCreated = b != null,
                             q.CensorByUserId,
                             q.InventoryActionId,
                             q.InventoryStatusId,
@@ -228,7 +230,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             RefInventoryCode = q != null ? q.RefInventory.InventoryCode : null,
                             RefStockId = q != null ? (int?)q.RefInventory.StockId : null,
                         };
-#pragma warning restore CS0472 // The result of the expression is always the same since a value of this type is never equal to 'null'
+
             if (isInputBillCreated != null)
             {
                 if (isInputBillCreated.Value)
@@ -256,11 +258,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             var inventoryCodes = inventoryDataList.Select(iv => iv.InventoryCode).ToList();
 
 
-            var inputObjects = new List<RefInputBillBasic>();
-            if (billQuery != null)
-            {
-                inputObjects = await billQuery.Where(m => inventoryCodes.Contains(m.SoCt)).ToListAsync();
-            }
+            var inputObjects = await _stockDbContext.RefInputBillSourceBillCode.Where(m => inventoryCodes.Contains(m.SourceBillCode)).ToListAsync();
+
 
             var pagedData = new List<InventoryListOutput>();
             foreach (var item in inventoryDataList)
@@ -313,9 +312,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                     //    }).ToList()
                     InputBills = inputObjects
-                        .Where(m => m.SoCt.ToLower() == item.InventoryCode.ToLower())
+                        .Where(m => m.SourceBillCode.ToLower() == item.InventoryCode.ToLower())
                         .Select(m => new MappingInputBillModel()
                         {
+                            SourceBillCode = m.SourceBillCode,
+                            SoCt = m.SoCt,
                             //MappingFunctionKey = null,
                             InputTypeId = m.InputTypeId,
                             //SourceId = item.InventoryId.ToString(),
@@ -331,197 +332,479 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             }
             return (pagedData, total);
         }
-        public async Task<InventoryOutput> InventoryInfo(long inventoryId)
 
+        public async Task<PageData<InventoryListProductOutput>> GetListByProduct(string keyword, int? customerId, IList<int> productIds, int stockId = 0, int? inventoryStatusId = null, EnumInventoryType? type = null, long? beginTime = 0, long? endTime = 0, bool? isInputBillCreated = null, string sortBy = "date", bool asc = false, int page = 1, int size = 10, int? inventoryActionId = null, Clause filters = null)
         {
-            try
+            keyword = keyword?.Trim();
+
+            var inventoryQuery = _stockDbContext.Inventory.Include(iv => iv.RefInventory).AsNoTracking().AsQueryable();
+
+            if (stockId > 0)
             {
-                var inventoryObj = _stockDbContext.Inventory.AsNoTracking().FirstOrDefault(q => q.InventoryId == inventoryId);
-                if (inventoryObj == null)
-                {
-                    throw new BadRequestException(GeneralCode.InvalidParams);
-                }
+                inventoryQuery = inventoryQuery.Where(q => q.StockId == stockId);
+            }
+
+            if (type > 0)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryTypeId == (int)type);
+            }
+
+            if (beginTime > 0)
+            {
+                var startDate = beginTime?.UnixToDateTime();
+                inventoryQuery = inventoryQuery.Where(q => q.Date >= startDate);
+            }
+
+            if (endTime > 0)
+            {
+                var endDate = endTime?.UnixToDateTime();
+                inventoryQuery = inventoryQuery.Where(q => q.Date <= endDate);
+            }
+
+            if (inventoryActionId.HasValue)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryActionId == inventoryActionId);
+            }
+
+            var inventoryDetails = _stockDbContext.InventoryDetail.AsQueryable();
+            if (productIds != null && productIds.Count > 0)
+            {
+                inventoryDetails = inventoryDetails.Where(d => productIds.Contains(d.ProductId));
+
+            }
 
 
-                #region Get inventory details
-                var inventoryDetails = await _stockDbContext.InventoryDetail.Where(q => q.InventoryId == inventoryObj.InventoryId).AsNoTracking().OrderBy(s => s.SortOrder).ThenBy(s => s.CreatedDatetimeUtc).ToListAsync();
+            if (inventoryStatusId.HasValue)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.InventoryStatusId == inventoryStatusId.Value);
+            }
 
-                var productIds = inventoryDetails.Select(d => d.ProductId).ToList();
+            if (customerId.HasValue)
+            {
+                inventoryQuery = inventoryQuery.Where(q => q.CustomerId == customerId);
+            }
 
-                var productInfos = (await _stockDbContext.Product.AsNoTracking()
-                    .Where(p => productIds.Contains(p.ProductId))
-                    .ToListAsync())
-                    .ToDictionary(p => p.ProductId, p => p);
+            var sourceBillCodes = _stockDbContext.RefInputBillSourceBillCode.Select(c => new { c.SourceBillCode }).Distinct();
 
-                var productUnitConversionIds = inventoryDetails.Select(d => d.ProductUnitConversionId).ToList();
-
-                var productUnitConversions = (await _stockDbContext.ProductUnitConversion.AsNoTracking()
-                    .Where(pu => productUnitConversionIds.Contains(pu.ProductUnitConversionId))
-                    .ToListAsync())
-                    .ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
-
-                var packetIds = inventoryDetails.SelectMany(d => new[] { d.FromPackageId, d.ToPackageId }).Where(d => d.HasValue).Select(d => d.Value).Distinct().ToList();
-                var packgeInfos = (await _stockDbContext.Package.AsNoTracking()
-                    .Where(p => packetIds.Contains(p.PackageId))
-                    .ToListAsync())
-                    .ToDictionary(p => p.PackageId, p => p);
-
-                var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
-
-                //var inventoryRequirementCodes = inventoryDetails
-                //    .Where(d => !string.IsNullOrEmpty(d.InventoryRequirementCode))
-                //    .Select(d => d.InventoryRequirementCode)
-                //    .ToList();
-
-                //var inventoryRequirementMap = _stockDbContext.InventoryRequirementDetail
-                //    .Include(id => id.InventoryRequirement)
-                //    .Where(id => inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId))
-                //    .Select(id => new
-                //    {
-                //        id.InventoryRequirementDetailId,
-                //        id.InventoryRequirement.InventoryRequirementCode,
-                //        id.InventoryRequirement.InventoryRequirementId
-                //    })
-                //    .ToList()
-                //    .GroupBy(id => id.InventoryRequirementDetailId)
-                //    .ToDictionary(g => g.Key, g => g.Select(id => new InventoryRequirementSimpleInfo
-                //    {
-                //        InventoryRequirementId = id.InventoryRequirementId,
-                //        InventoryRequirementCode = id.InventoryRequirementCode
-                //    }).ToList());
-
-                var requirementInventoryDetailIds = inventoryDetails.Select(id => id.InventoryRequirementDetailId).ToList();
-                var requirementInventoryCodeMap = (from ird in _stockDbContext.InventoryRequirementDetail
-                                                   join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
-                                                   where requirementInventoryDetailIds.Contains(ird.InventoryRequirementDetailId)
-                                                   select new
-                                                   {
-                                                       ird.InventoryRequirementDetailId,
-                                                       ir.InventoryRequirementCode
-                                                   })
-                                                   .ToDictionary(ird => ird.InventoryRequirementDetailId, ird => ird.InventoryRequirementCode);
-
-                foreach (var detail in inventoryDetails)
-                {
-                    ProductListOutput productOutput = null;
-
-                    PackageEntity packageInfo = null;
-
-                    if (detail.FromPackageId > 0)
-                    {
-                        packgeInfos.TryGetValue(detail.FromPackageId.Value, out packageInfo);
-                    }
-
-                    if (detail.ToPackageId > 0)
-                    {
-                        packgeInfos.TryGetValue(detail.ToPackageId.Value, out packageInfo);
-                    }
-
-                    if (productInfos.TryGetValue(detail.ProductId, out var productInfo))
-                    {
-                        productOutput = new ProductListOutput
+            var query = from q in inventoryQuery
+                        join d in inventoryDetails on q.InventoryId equals d.InventoryId
+                        join p in _stockDbContext.Product on d.ProductId equals p.ProductId
+                        join c in _stockDbContext.RefCustomerBasic on q.CustomerId equals c.CustomerId into cs
+                        from c in cs.DefaultIfEmpty()
+                        join pu in _stockDbContext.ProductUnitConversion on d.ProductUnitConversionId equals pu.ProductUnitConversionId into pus
+                        from pu in pus.DefaultIfEmpty()
+                        join puDefault in _stockDbContext.ProductUnitConversion.Where(u => u.IsDefault) on d.ProductId equals puDefault.ProductId into puDefaults
+                        from puDefault in puDefaults.DefaultIfEmpty()
+                        join accountantRefBillCode in sourceBillCodes on q.InventoryCode equals accountantRefBillCode.SourceBillCode into accountantRefBillCodes
+                        from accountantRefBillCode in accountantRefBillCodes.DefaultIfEmpty()
+                        select new
                         {
-                            ProductId = productInfo.ProductId,
-                            ProductCode = productInfo.ProductCode,
-                            ProductName = productInfo.ProductName,
-                            MainImageFileId = productInfo.MainImageFileId,
-                            ProductTypeId = productInfo.ProductTypeId,
-                            ProductTypeName = string.Empty,
-                            ProductCateId = productInfo.ProductCateId,
-                            ProductCateName = string.Empty,
-                            Barcode = productInfo.Barcode,
-                            Specification = string.Empty,
-                            UnitId = productInfo.UnitId,
-                            UnitName = string.Empty,
+
+                            q.InventoryId,
+                            q.InventoryCode,
+                            q.Date,
+                            q.InventoryTypeId,
+                            q.InventoryStatusId,
+                            q.InventoryActionId,
+                            q.Content,
+                            q.BillCode,
+                            q.BillDate,
+                            q.BillForm,
+                            q.BillSerial,
+                            q.StockId,
+                            q.CustomerId,
+                            c.CustomerCode,
+                            c.CustomerName,
+                            q.DepartmentId,
+                            q.Shipper,
+                            q.StockKeeperUserId,
+                            q.Department,
+
+                            q.RefInventoryId,
+                            RefInventoryCode = q != null ? q.RefInventory.InventoryCode : null,
+                            RefStockId = q != null ? (int?)q.RefInventory.StockId : null,
+                            q.TotalMoney,
+                            q.IsApproved,
+                            q.CreatedByUserId,
+                            q.UpdatedByUserId,
+                            q.CensorByUserId,
+                            q.UpdatedDatetimeUtc,
+                            q.CreatedDatetimeUtc,
+                            q.CensorDatetimeUtc,
+
+                            d.InventoryDetailId,
+                            d.ProductId,
+                            p.ProductCode,
+                            p.ProductName,
+                            p.ProductNameEng,
+                            p.UnitId,
+                            UnitName = puDefault != null ? puDefault.ProductUnitConversionName : null,
+                            d.OrderCode,
+                            d.ProductionOrderCode,
+                            d.Pocode,
+                            d.Description,
+                            d.PrimaryQuantity,
+                            d.ProductUnitConversionId,
+                            d.ProductUnitConversionQuantity,
+                            pu.ProductUnitConversionName,
+
+
+                            IsInputBillCreated = accountantRefBillCode != null
                         };
-                    }
 
-                    productUnitConversions.TryGetValue(detail.ProductUnitConversionId, out var productUnitConversionInfo);
-                    var inventoryRequirementCode = detail.InventoryRequirementDetailId.HasValue && requirementInventoryCodeMap.ContainsKey(detail.InventoryRequirementDetailId.Value) ? requirementInventoryCodeMap[detail.InventoryRequirementDetailId.Value] : null;
-                    var detailModel = new InventoryDetailOutput
-                    {
-                        InventoryId = detail.InventoryId,
-                        InventoryDetailId = detail.InventoryDetailId,
-                        ProductId = detail.ProductId,
-                        PrimaryUnitId = productInfo?.UnitId,
-                        RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(),
-                        PrimaryQuantity = detail.PrimaryQuantity.RoundBy(),
-                        UnitPrice = detail.UnitPrice,
-                        ProductUnitConversionId = detail.ProductUnitConversionId,
-                        RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
-                        ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
-                        ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
-                        Money = detail.Money,
-                        FromPackageId = detail.FromPackageId,
-                        ToPackageId = detail.ToPackageId,
-                        ToPackageCode = packageInfo?.PackageCode,
-                        ToPackageInfo = detail.ToPackageInfo?.JsonDeserialize<PackageInputModel>(),
-                        FromPackageCode = packageInfo?.PackageCode,
-                        PackageOptionId = detail.PackageOptionId,
+            if (!string.IsNullOrWhiteSpace(keyword))
+            {
+                query = from q in query
+                        where q.InventoryCode.Contains(keyword)
+                           || q.Shipper.Contains(keyword)
+                           || q.Content.Contains(keyword)
+                           //|| q.Department.Contains(keyword)
+                           || q.BillForm.Contains(keyword)
+                           || q.BillCode.Contains(keyword)
+                           || q.BillSerial.Contains(keyword)
+                           || q.CustomerCode.Contains(keyword)
+                           || q.CustomerName.Contains(keyword)
 
-                        RefObjectTypeId = detail.RefObjectTypeId,
-                        RefObjectId = detail.RefObjectId,
-                        RefObjectCode = detail.RefObjectCode,
-                        OrderCode = detail.OrderCode,
-                        POCode = detail.Pocode,
-                        ProductionOrderCode = detail.ProductionOrderCode,
 
-                        ProductOutput = productOutput,
-                        ProductUnitConversion = productUnitConversionInfo ?? null,
-                        SortOrder = detail.SortOrder,
-                        Description = detail.Description,
-                        //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
-                        InventoryRequirementCode = inventoryRequirementCode,
-                        InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
-                        IsSubCalculation = detail.IsSubCalculation
-                    };
+                           || q.ProductCode.Contains(keyword)
+                              || q.ProductName.Contains(keyword)
+                              || q.ProductNameEng.Contains(keyword)
+                              || q.OrderCode.Contains(keyword)
+                              || q.ProductionOrderCode.Contains(keyword)
+                              || q.Pocode.Contains(keyword)
+                              || q.Description.Contains(keyword)
+                        // || q.RefObjectCode.Contains(keyword)
 
-                    //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
-                    //{
-                    //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
-                    //}
+                        select q;
+            }
 
-                    var subs = await _stockDbContext.InventoryDetailSubCalculation.Where(x => x.InventoryDetailId == detailModel.InventoryDetailId).
-                    Select(x => new InventoryDetailSubCalculationModel
-                    {
-                        InventoryDetailId = x.InventoryDetailId,
-                        InventoryDetailSubCalculationId = x.InventoryDetailSubCalculationId,
-                        ProductBomId = x.ProductBomId,
-                        UnitConversionId = x.UnitConversionId,
-                        PrimaryUnitPrice = x.PrimaryUnitPrice,
-                        PrimaryQuantity = x.PrimaryQuantity
-                    }).ToListAsync();
 
-                    detailModel.InventoryDetailSubCalculations = subs;
 
-                    listInventoryDetailsOutput.Add(detailModel);
-                }
-                #endregion
 
-                #region Get Attached files 
 
-                var fileIds = await _stockDbContext.InventoryFile.Where(q => q.InventoryId == inventoryObj.InventoryId).Select(q => q.FileId).ToListAsync();
-                var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
-                if (attachedFiles == null)
+            if (isInputBillCreated != null)
+            {
+                if (isInputBillCreated.Value)
                 {
-                    attachedFiles = new List<FileToDownloadInfo>();
+                    query = query.Where(q => q.IsInputBillCreated);
                 }
-                #endregion
+                else
+                {
+                    query = query.Where(q => !q.IsInputBillCreated);
+                }
+            }
 
-                var stockInfo = _stockDbContext.Stock.AsNoTracking().FirstOrDefault(q => q.StockId == inventoryObj.StockId);
+            query = query.InternalFilter(filters);
 
-                var mappingObjects = _stockDbContext.RefInputBillBasic.Where(b => b.SoCt == inventoryObj.InventoryCode)
-                     .Select(m => new MappingInputBillModel()
-                     {
-                         //MappingFunctionKey = m.MappingFunctionKey,
-                         InputTypeId = m.InputTypeId,
-                         //SourceId = inventoryObj.InventoryId.ToString(),
-                         InputBillFId = m.InputBillFId,
-                         InputType_Title = m.InputTypeTitle
-                     }).ToList();
+            var total = await query.CountAsync();
+
+            var inventoryDataList = await query.SortByFieldName(sortBy, asc).AsNoTracking().Skip((page - 1) * size).Take(size).ToListAsync();
+
+            //enrich data
+            var stockIds = inventoryDataList.Select(iv => iv.StockId).ToList();
+
+            var stockInfos = (await _stockDbContext.Stock.AsNoTracking().Where(s => stockIds.Contains(s.StockId)).ToListAsync()).ToDictionary(s => s.StockId, s => s);
+
+            var inventoryIds = inventoryDataList.Select(iv => iv.InventoryId.ToString()).ToList();
+            var inventoryCodes = inventoryDataList.Select(iv => iv.InventoryCode).ToList();
 
 
+            var inputObjects = await _stockDbContext.RefInputBillSourceBillCode.Where(m => inventoryCodes.Contains(m.SourceBillCode)).ToListAsync();
 
+            var pagedData = new List<InventoryListProductOutput>();
+            foreach (var item in inventoryDataList)
+            {
+                stockInfos.TryGetValue(item.StockId, out var stockInfo);
+
+                pagedData.Add(new InventoryListProductOutput()
+                {
+                    InventoryId = item.InventoryId,
+                    StockId = item.StockId,
+                    InventoryCode = item.InventoryCode,
+                    InventoryTypeId = item.InventoryTypeId,
+                    Shipper = item.Shipper,
+                    Content = item.Content,
+                    Date = item.Date.GetUnix(),
+                    CustomerId = item.CustomerId,
+                    Department = item.Department,
+                    StockKeeperUserId = item.StockKeeperUserId,
+                    BillForm = item.BillForm,
+                    BillCode = item.BillCode,
+                    BillSerial = item.BillSerial,
+                    BillDate = item.BillDate.HasValue ? item.BillDate.Value.GetUnix() : (long?)null,
+                    TotalMoney = item.TotalMoney,
+                    IsApproved = item.IsApproved,
+                    IsInputBillCreated = item.IsInputBillCreated,
+                    CreatedByUserId = item.CreatedByUserId,
+                    UpdatedByUserId = item.UpdatedByUserId,
+                    UpdatedDatetimeUtc = item.UpdatedDatetimeUtc.GetUnix(),
+                    CreatedDatetimeUtc = item.CreatedDatetimeUtc.GetUnix(),
+                    DepartmentId = item.DepartmentId,
+                    StockOutput = stockInfo == null ? null : new StockOutput
+                    {
+                        StockId = stockInfo.StockId,
+                        StockName = stockInfo.StockName,
+                        StockKeeperName = stockInfo.StockKeeperName,
+                        StockKeeperId = stockInfo.StockKeeperId
+                    },
+                    InputBills = inputObjects
+                        .Where(m => m.SourceBillCode.ToLower() == item.InventoryCode.ToLower())
+                        .Select(m => new MappingInputBillModel()
+                        {
+                            SourceBillCode = m.SourceBillCode,
+                            SoCt = m.SoCt,
+                            //MappingFunctionKey = null,
+                            InputTypeId = m.InputTypeId,
+                            //SourceId = item.InventoryId.ToString(),
+                            InputBillFId = m.InputBillFId,
+                            BillObjectTypeId = EnumObjectType.InputBill,
+                            InputType_Title = m.InputTypeTitle
+
+                        }).ToList(),
+                    InventoryActionId = (EnumInventoryAction)item.InventoryActionId,
+                    InventoryStatusId = item.InventoryStatusId,
+
+
+                    InventoryDetailId = item.InventoryDetailId,
+                    ProductId = item.ProductId,
+                    ProductCode = item.ProductCode,
+                    ProductName = item.ProductName,
+                    UnitId = item.UnitId,
+                    UnitName = item.UnitName,
+                    ProductUnitConversionId = item.ProductUnitConversionId,
+                    ProductUnitConversionName = item.ProductUnitConversionName,
+                    PrimaryQuantity = item.PrimaryQuantity,
+                    ProductUnitConversionQuantity = item.ProductUnitConversionQuantity,
+                    PoCode = item.Pocode,
+                    OrderCode = item.OrderCode,
+                    ProductionOrderCode = item.ProductionOrderCode,
+                });
+
+            }
+            return (pagedData, total);
+        }
+
+        public async Task<InventoryOutput> InventoryInfo(long inventoryId)
+        {
+            var invs = await GetInfosByIds(new[] { inventoryId }, null);
+            var inventoryObj = invs.FirstOrDefault(q => q.InventoryId == inventoryId);
+            if (inventoryObj == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+
+            return inventoryObj;
+        }
+
+
+        public async Task<IList<InventoryOutput>> GetInfosByIds(IList<long> inventoryIds, EnumInventoryType? inventoryTypeId)
+        {
+
+            var inventoryObjs = await _stockDbContext.Inventory.Include(q => q.RefInventory).AsNoTracking()
+                .Where(q => inventoryIds.Contains(q.InventoryId)).ToListAsync();
+            if (inventoryTypeId.HasValue)
+            {
+                inventoryObjs = inventoryObjs.Where(q => q.InventoryTypeId == (int)inventoryTypeId.Value).ToList();
+            }
+
+
+            #region Get inventory details
+            var inventoryDetails = await _stockDbContext.InventoryDetail
+                .Where(q => inventoryIds.Contains(q.InventoryId))
+                .AsNoTracking()
+                .OrderBy(s => s.SortOrder)
+                .ThenBy(s => s.CreatedDatetimeUtc)
+                .ToListAsync();
+
+            var productIds = inventoryDetails.Select(d => d.ProductId).ToList();
+
+            var productInfos = (await _stockDbContext.Product.AsNoTracking()
+                .Where(p => productIds.Contains(p.ProductId))
+                .ToListAsync())
+                .ToDictionary(p => p.ProductId, p => p);
+
+            var productUnitConversionIds = inventoryDetails.Select(d => d.ProductUnitConversionId).ToList();
+
+            var productUnitConversions = (await _stockDbContext.ProductUnitConversion.AsNoTracking()
+                .Where(pu => productUnitConversionIds.Contains(pu.ProductUnitConversionId))
+                .ToListAsync())
+                .ToDictionary(pu => pu.ProductUnitConversionId, pu => pu);
+
+            var packetIds = inventoryDetails.SelectMany(d => new[] { d.FromPackageId, d.ToPackageId }).Where(d => d.HasValue).Select(d => d.Value).Distinct().ToList();
+            var packgeInfos = (await _stockDbContext.Package.AsNoTracking()
+                .Where(p => packetIds.Contains(p.PackageId))
+                .ToListAsync())
+                .ToDictionary(p => p.PackageId, p => p);
+
+            var listInventoryDetailsOutput = new List<InventoryDetailOutput>(inventoryDetails.Count);
+
+            //var inventoryRequirementCodes = inventoryDetails
+            //    .Where(d => !string.IsNullOrEmpty(d.InventoryRequirementCode))
+            //    .Select(d => d.InventoryRequirementCode)
+            //    .ToList();
+
+            //var inventoryRequirementMap = _stockDbContext.InventoryRequirementDetail
+            //    .Include(id => id.InventoryRequirement)
+            //    .Where(id => inventoryRequirementDetailIds.Contains(id.InventoryRequirementDetailId))
+            //    .Select(id => new
+            //    {
+            //        id.InventoryRequirementDetailId,
+            //        id.InventoryRequirement.InventoryRequirementCode,
+            //        id.InventoryRequirement.InventoryRequirementId
+            //    })
+            //    .ToList()
+            //    .GroupBy(id => id.InventoryRequirementDetailId)
+            //    .ToDictionary(g => g.Key, g => g.Select(id => new InventoryRequirementSimpleInfo
+            //    {
+            //        InventoryRequirementId = id.InventoryRequirementId,
+            //        InventoryRequirementCode = id.InventoryRequirementCode
+            //    }).ToList());
+
+            var requirementInventoryDetailIds = inventoryDetails.Select(id => id.InventoryRequirementDetailId).ToList();
+            var requirementInventoryCodeMap = (from ird in _stockDbContext.InventoryRequirementDetail
+                                               join ir in _stockDbContext.InventoryRequirement on ird.InventoryRequirementId equals ir.InventoryRequirementId
+                                               where requirementInventoryDetailIds.Contains(ird.InventoryRequirementDetailId)
+                                               select new
+                                               {
+                                                   ird.InventoryRequirementDetailId,
+                                                   ir.InventoryRequirementCode
+                                               })
+                                               .ToDictionary(ird => ird.InventoryRequirementDetailId, ird => ird.InventoryRequirementCode);
+
+            foreach (var detail in inventoryDetails)
+            {
+                ProductListOutput productOutput = null;
+
+                PackageEntity packageInfo = null;
+
+                if (detail.FromPackageId > 0)
+                {
+                    packgeInfos.TryGetValue(detail.FromPackageId.Value, out packageInfo);
+                }
+
+                if (detail.ToPackageId > 0)
+                {
+                    packgeInfos.TryGetValue(detail.ToPackageId.Value, out packageInfo);
+                }
+
+                if (productInfos.TryGetValue(detail.ProductId, out var productInfo))
+                {
+                    productOutput = new ProductListOutput
+                    {
+                        ProductId = productInfo.ProductId,
+                        ProductCode = productInfo.ProductCode,
+                        ProductName = productInfo.ProductName,
+                        MainImageFileId = productInfo.MainImageFileId,
+                        ProductTypeId = productInfo.ProductTypeId,
+                        ProductTypeName = string.Empty,
+                        ProductCateId = productInfo.ProductCateId,
+                        ProductCateName = string.Empty,
+                        Barcode = productInfo.Barcode,
+                        Specification = string.Empty,
+                        UnitId = productInfo.UnitId,
+                        UnitName = string.Empty,
+                    };
+                }
+
+                productUnitConversions.TryGetValue(detail.ProductUnitConversionId, out var productUnitConversionInfo);
+                var inventoryRequirementCode = detail.InventoryRequirementDetailId.HasValue && requirementInventoryCodeMap.ContainsKey(detail.InventoryRequirementDetailId.Value) ? requirementInventoryCodeMap[detail.InventoryRequirementDetailId.Value] : null;
+                var detailModel = new InventoryDetailOutput
+                {
+                    InventoryId = detail.InventoryId,
+                    InventoryDetailId = detail.InventoryDetailId,
+                    ProductId = detail.ProductId,
+                    PrimaryUnitId = productInfo?.UnitId,
+                    RequestPrimaryQuantity = detail.RequestPrimaryQuantity?.RoundBy(),
+                    PrimaryQuantity = detail.PrimaryQuantity.RoundBy(),
+                    UnitPrice = detail.UnitPrice,
+                    ProductUnitConversionId = detail.ProductUnitConversionId,
+                    RequestProductUnitConversionQuantity = detail.RequestProductUnitConversionQuantity?.RoundBy(),
+                    ProductUnitConversionQuantity = detail.ProductUnitConversionQuantity.RoundBy(),
+                    ProductUnitConversionPrice = detail.ProductUnitConversionPrice,
+                    Money = detail.Money,
+                    FromPackageId = detail.FromPackageId,
+                    ToPackageId = detail.ToPackageId,
+                    ToPackageCode = packageInfo?.PackageCode,
+                    ToPackageInfo = detail.ToPackageInfo?.JsonDeserialize<PackageInputModel>(),
+                    FromPackageCode = packageInfo?.PackageCode,
+                    PackageOptionId = detail.PackageOptionId,
+
+                    RefObjectTypeId = detail.RefObjectTypeId,
+                    RefObjectId = detail.RefObjectId,
+                    RefObjectCode = detail.RefObjectCode,
+                    OrderCode = detail.OrderCode,
+                    POCode = detail.Pocode,
+                    ProductionOrderCode = detail.ProductionOrderCode,
+
+                    ProductOutput = productOutput,
+                    ProductUnitConversion = productUnitConversionInfo ?? null,
+                    SortOrder = detail.SortOrder,
+                    Description = detail.Description,
+                    //AccountancyAccountNumberDu = details.AccountancyAccountNumberDu,
+                    InventoryRequirementCode = inventoryRequirementCode,
+                    InventoryRequirementDetailId = detail.InventoryRequirementDetailId,
+                    IsSubCalculation = detail.IsSubCalculation
+                };
+
+                //if (!string.IsNullOrEmpty(detail.InventoryRequirementCode) && inventoryRequirementMap.ContainsKey(detail.InventoryRequirementDetailId.Value))
+                //{
+                //    detail.InventoryRequirementInfo = inventoryRequirementMap[detail.InventoryRequirementDetailId.Value];
+                //}
+
+                var subs = await _stockDbContext.InventoryDetailSubCalculation.Where(x => x.InventoryDetailId == detailModel.InventoryDetailId).
+                Select(x => new InventoryDetailSubCalculationModel
+                {
+                    InventoryDetailId = x.InventoryDetailId,
+                    InventoryDetailSubCalculationId = x.InventoryDetailSubCalculationId,
+                    ProductBomId = x.ProductBomId,
+                    UnitConversionId = x.UnitConversionId,
+                    PrimaryUnitPrice = x.PrimaryUnitPrice,
+                    PrimaryQuantity = x.PrimaryQuantity
+                }).ToListAsync();
+
+                detailModel.InventoryDetailSubCalculations = subs;
+
+                listInventoryDetailsOutput.Add(detailModel);
+            }
+            #endregion
+
+            #region Get Attached files 
+
+            var files = await _stockDbContext.InventoryFile.Where(q => inventoryIds.Contains(q.InventoryId)).ToListAsync();
+            var fileIds = files.Select(q => q.FileId).ToList();
+
+            var attachedFiles = await _fileService.GetListFileUrl(fileIds, EnumThumbnailSize.Large);
+            if (attachedFiles == null)
+            {
+                attachedFiles = new List<FileToDownloadInfo>();
+            }
+            #endregion
+
+            var stockInfos = await _stockDbContext.Stock.AsNoTracking().Where(q => inventoryObjs.Select(v => v.StockId).Contains(q.StockId)).ToListAsync();
+
+            var invCodes = inventoryObjs.Select(v => v.InventoryCode).ToList();
+
+            var mappingObjects = _stockDbContext.RefInputBillSourceBillCode.Where(b => invCodes.Contains(b.SourceBillCode))
+                 .Select(m => new MappingInputBillModel()
+                 {
+                     SourceBillCode = m.SourceBillCode,
+                     SoCt = m.SoCt,
+                     //MappingFunctionKey = m.MappingFunctionKey,
+                     InputTypeId = m.InputTypeId,
+                     //SourceId = inventoryObj.InventoryId.ToString(),
+                     InputBillFId = m.InputBillFId,
+                     InputType_Title = m.InputTypeTitle
+                 }).ToList();
+
+
+            var lst = new List<InventoryOutput>();
+
+            foreach (var inventoryObj in inventoryObjs)
+            {
+                var invFileIds = files.Where(f => f.InventoryId == inventoryObj.InventoryId).Select(q => q.FileId).ToList();
+                var stockInfo = stockInfos.FirstOrDefault(s => s.StockId == inventoryObj.StockId);
+
+                var invMappingObjs = mappingObjects.Where(m => m.SourceBillCode?.ToLower() == inventoryObj.InventoryCode?.ToLower()).ToList();
 
                 var inventoryOutput = new InventoryOutput()
                 {
@@ -553,32 +836,27 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         StockKeeperName = stockInfo.StockKeeperName,
                         StockKeeperId = stockInfo.StockKeeperId
                     },
-                    InventoryDetailOutputList = listInventoryDetailsOutput,
-                    FileList = attachedFiles,
-                    IsInputBillCreated = mappingObjects.Count() > 0,
-                    InputBills = mappingObjects,
+                    InventoryDetailOutputList = listInventoryDetailsOutput.Where(d => d.InventoryId == inventoryObj.InventoryId).ToList(),
+                    FileList = attachedFiles.Where(f => invFileIds.Contains(f.FileId ?? 0)).ToList(),
+                    IsInputBillCreated = invMappingObjs.Count() > 0,
+                    InputBills = invMappingObjs,
                     InventoryStatusId = inventoryObj.InventoryStatusId,
                     InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId,
                     UpdatedDatetimeUtc = inventoryObj.UpdatedDatetimeUtc.GetUnix(),
                 };
 
-                if (inventoryObj.RefInventoryId.HasValue)
+                if (inventoryObj.RefInventory != null)
                 {
-                    var refInfo = _stockDbContext.Inventory.AsNoTracking().FirstOrDefault(q => q.InventoryId == inventoryObj.RefInventoryId);
-                    inventoryOutput.RefInventoryId = refInfo?.InventoryId;
-                    inventoryOutput.RefInventoryCode = refInfo?.InventoryCode;
-                    inventoryOutput.RefStockId = refInfo?.StockId;
+                    inventoryOutput.RefInventoryId = inventoryObj.RefInventory?.InventoryId;
+                    inventoryOutput.RefInventoryCode = inventoryObj.RefInventory?.InventoryCode;
+                    inventoryOutput.RefStockId = inventoryObj.RefInventory?.StockId;
                 }
 
-
-
-                return inventoryOutput;
+                lst.Add(inventoryOutput);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "GetInventory");
-                throw;
-            }
+
+            return lst;
+
         }
 
         public async Task<(Stream stream, string fileName, string contentType)> InventoryInfoExport(long inventoryId)
@@ -592,7 +870,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             return await inventoryExport.InventoryInfoExport(inventoryId);
         }
 
-  
+
 
         public CategoryNameModel OutFieldsForParse()
         {
