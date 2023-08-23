@@ -5,6 +5,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.PurchaseOrder.Model.Voucher;
 using VErp.Services.PurchaseOrder.Service.Voucher;
@@ -127,6 +128,7 @@ namespace VErpApi.Controllers.PurchaseOrder.Config
         }
 
         [HttpGet]
+        [GlobalApi]
         [Route("{voucherTypeId}")]
         public async Task<VoucherTypeFullModel> GetVoucherTypeById([FromRoute] int voucherTypeId)
         {
