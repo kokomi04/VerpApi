@@ -94,4 +94,6 @@ public partial class HrAreaField
     public virtual HrField HrField { get; set; }
 
     public virtual HrType HrType { get; set; }
+
+    public bool? IsRequireUpdateField { get; set; }
 }
