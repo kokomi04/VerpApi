@@ -172,7 +172,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     ).GroupBy(p => p.ProductId)
                     .ToDictionary(p => p.Key, p => p.FirstOrDefault());
 
-                var styleNumber = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: false, dataFormat: "#,##0.00");
+                var styleNumber = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, isWrap: true, isBorder: false);
                 var styleText = sheet.GetCellStyle(vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Left, isWrap: true, isBorder: false);
 
                 var materialConsumptionSlice = GetMaterialConsumptionSlices(materialsConsump).Where(x => x.Quantity > 0)
