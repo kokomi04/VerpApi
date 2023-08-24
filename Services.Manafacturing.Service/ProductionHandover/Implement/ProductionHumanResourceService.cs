@@ -255,7 +255,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
 
             var productionOrders = _manufacturingDBContext.ProductionOrder
-                .Where(po => productionOrderIds.Contains(po.ProductionOrderId) && po.ProductionOrderStatus != (int)EnumProductionStatus.Finished)
+                .Where(po => productionOrderIds.Contains(po.ProductionOrderId) && !po.IsFinished)
                 .Select(po => new
                 {
                     po.ProductionOrderId,
