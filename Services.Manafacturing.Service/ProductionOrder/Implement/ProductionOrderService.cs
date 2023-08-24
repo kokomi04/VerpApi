@@ -1398,6 +1398,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             productionOrder.IsResetProductionProcess = false;
             productionOrder.IsInvalid = true;
             productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+            productionOrder.IsFinished = false;
             productionOrder.ProductionOrderAssignmentStatusId = (int)EnumProductionOrderAssignmentStatus.NoAssignment;
 
             _manufacturingDBContext.ProductionOrder.Add(productionOrder);
@@ -1610,6 +1611,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (includeProductIds.Count > 0)
                 {
                     productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+                    productionOrder.IsFinished = false;
                 }
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
@@ -1727,6 +1729,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "UpdateProductOrder");
                 throw;
             }
+        }
+
+        public async Task SetProductionOrderIsFinish(ProductionOrderEntity productionOrder)
+        {
+            productionOrder.IsFinished = productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Completed || productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished;
+            await _manufacturingDBContext.SaveChangesAsync();
         }
 
         public async Task<bool> DeleteProductionOrder(long productionOrderId)
@@ -1928,6 +1936,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 .CreateLog();
                     }
                 }
+
+
+                await SetProductionOrderIsFinish(productionOrder);
+
                 _manufacturingDBContext.SaveChanges();
                 return true;
             }
@@ -1952,13 +1964,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
                 {
                     productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
-
+                  
                     await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
                                 .JsonData(new { productionOrder, status, isManual = true })
                                 .CreateLog();
                 }
+
+                await SetProductionOrderIsFinish(productionOrder);
+
                 _manufacturingDBContext.SaveChanges();
                 return true;
             }

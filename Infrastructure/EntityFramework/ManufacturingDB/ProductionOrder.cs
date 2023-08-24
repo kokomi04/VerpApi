@@ -61,6 +61,8 @@ public partial class ProductionOrder
 
     public bool IsManualFinish { get; set; }
 
+    public bool IsFinished { get; set; }
+
     public virtual WeekPlan FromWeekPlan { get; set; }
 
     public virtual MonthPlan MonthPlan { get; set; }

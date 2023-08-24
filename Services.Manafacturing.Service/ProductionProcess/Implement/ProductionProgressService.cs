@@ -23,6 +23,7 @@ using Verp.Cache.Caching;
 using VErp.Commons.Constants.Caching;
 using Verp.Resources.Manafacturing.Production.Progress;
 using VErp.Infrastructure.ServiceCore.Facade;
+using VErp.Services.Manafacturing.Service.ProductionOrder;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 {
@@ -37,17 +38,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         //private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICachingService _cachingService;
+        private readonly IProductionOrderService _productionOrderService;
 
         public ProductionProgressService(ManufacturingDBContext manufacturingDBContext,
             IActivityLogService activityLogService,
              IMapper mapper,
             ILogger<ProductionProgressService> logger,
-            ICachingService cachingService) : base(manufacturingDBContext, activityLogService, logger, mapper)
+            ICachingService cachingService,
+            IProductionOrderService productionOrderService) : base(manufacturingDBContext, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDBContext;
             _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionOrder);
             _mapper = mapper;
             _cachingService = cachingService;
+            _productionOrderService = productionOrderService;
             //  _logger = logger;
         }
 
@@ -240,7 +244,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             productionOrder.ProductionOrderStatus = (int)await CalcProductionOrderStatus(productionOrder.ProductionOrderId, productionOrder.EndDate, data.InvDetails);
 
-
+           
             if (oldStatus != productionOrder.ProductionOrderStatus)
             {
                 _manufacturingDBContext.SaveChanges();
@@ -252,6 +256,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             .JsonData(new { productionOrder, data, isManual = false })
                             .CreateLog();
             }
+
+            await _productionOrderService.SetProductionOrderIsFinish(productionOrder);
+
 
             var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
             var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrder.ProductionOrderCode);
