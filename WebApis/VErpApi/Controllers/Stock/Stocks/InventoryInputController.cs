@@ -36,7 +36,7 @@ namespace VErpApi.Controllers.Stock.Inventory
 
         [HttpPost]
         [VErpAction(EnumActionType.View)]
-        [Route("")]
+        [Route("GetListDetails")]
         public async Task<PageData<InventoryListProductOutput>> Get([FromQuery] string keyword,
             [FromQuery] int? customerId,
             [FromQuery] IList<int> productIds,
@@ -55,7 +55,7 @@ namespace VErpApi.Controllers.Stock.Inventory
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "date";
 
-            return await _inventoryService.GetListByProduct(keyword, customerId, productIds, stockId, inventoryStatusId, EnumInventoryType.Input, beginTime, endTime, isInputBillCreated, sortBy, asc, page, size, inventoryActionId, filters).ConfigureAwait(true);
+            return await _inventoryService.GetListDetails(keyword, customerId, productIds, stockId, inventoryStatusId, EnumInventoryType.Input, beginTime, endTime, isInputBillCreated, sortBy, asc, page, size, inventoryActionId, filters).ConfigureAwait(true);
         }
 
 
