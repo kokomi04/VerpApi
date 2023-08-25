@@ -891,7 +891,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _packageActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.UpdatedCauseByRefInvInput)
                      .MessageResourceFormatDatas(packageInfo.PackageCode, req.Inventory.InventoryCode)
                      .ObjectId(packageInfo.PackageId)
-                     .JsonData(packageInfo)
+                     .JsonData(req)
                      .CreateLog();
                 }
 
@@ -938,7 +938,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await builder
                        .MessageResourceFormatDatas(inv.InventoryCode, req.Inventory.InventoryCode)
                        .ObjectId(inv.InventoryId)
-                       .JsonData(invDetails)
+                       .JsonData(req)
                        .CreateLog();
                 }
 
