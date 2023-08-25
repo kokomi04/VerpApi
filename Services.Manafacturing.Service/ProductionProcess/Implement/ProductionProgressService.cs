@@ -401,6 +401,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var assign in assignments)
             {
+                if (assign.IsManualFinish && assign.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)
+                    continue;
+
+                assign.IsManualFinish = false;
+
                 var requireOuts = assignRequirements
                     .Where(r => r.ProductionStepId == assign.ProductionStepId
                         && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output
@@ -411,12 +416,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var assign in assignments)
             {
+                if (assign.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)
+                {
+                    assign.AssignedInputStatus = assign.AssignedProgressStatus;
+                    continue;
+                }
+
                 var requireIns = assignRequirements
                     .Where(r => r.ProductionStepId == assign.ProductionStepId
                         && r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input
                     ).ToList();
 
                 assign.AssignedInputStatus = (int)CalcAssignInputStatus(productionSteps, assignments, assign, requireIns, handovers);
+               
             }
             await _manufacturingDBContext.SaveChangesAsync();
         }
