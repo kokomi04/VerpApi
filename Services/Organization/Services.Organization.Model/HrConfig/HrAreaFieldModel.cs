@@ -84,7 +84,6 @@ namespace Services.Organization.Model.HrConfig
         public int HrTypeId { get; set; }
         public bool IsAutoIncrement { get; set; }
         public bool IsRequire { get; set; }
-        public bool? IsRequireUpdateField { get; set; }
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsCalcSum { get; set; }
