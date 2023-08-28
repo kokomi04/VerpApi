@@ -766,6 +766,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
         {
             IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().OrderBy(col => col.SortOrder).ToList();//.Where(col => !col.IsHidden)
             var repeatAlias = columns.Where(c => c.IsRepeat == true).Select(c => c.Alias).ToList();
+            var repeatGroups = columns.Where(c => c.IsRepeat == true).Select(c => c.ColGroupName).ToList();
 
             Regex regex;
 
@@ -870,7 +871,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     mergeRowIdColumn = column;
                 }
 
-                if (repeatAlias.Contains(column.ColumnName))
+                if (repeatAlias.Contains(column.ColumnName) || repeatGroups.Contains(column.ColumnName))
                 {
                     repeatColumns.Add(column);
                 }
