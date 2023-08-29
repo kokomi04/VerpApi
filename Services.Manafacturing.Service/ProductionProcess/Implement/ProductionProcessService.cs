@@ -1269,6 +1269,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Any(x => x.Count() > 1))
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
+                if (req.ProductionStepLinkDataRoles.Any(x=> req.ProductionStepLinkDatas.FirstOrDefault(d=> d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
+                {
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện role không có chi tiết");
+                }
 
                 var inputRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
                 var outRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
@@ -1285,15 +1289,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             ToProductionStepCode = inputRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode
                         }).ToList();
 
-
                     var duplicateLink = outs.GroupBy(o => new
                     {
-                        o.LinkData.LinkDataObjectTypeId,
-                        o.LinkData.LinkDataObjectId,
+                        o.LinkData?.LinkDataObjectTypeId ,
+                        o.LinkData?.LinkDataObjectId ,
                         o.FromProductionStepCode,
                         o.ToProductionStepCode
                     }).FirstOrDefault(o => o.Count() > 1);
-
                     if (duplicateLink != null)
                     {
                         var fromProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.FromProductionStepCode);
