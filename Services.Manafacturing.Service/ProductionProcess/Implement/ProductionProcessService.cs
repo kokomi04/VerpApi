@@ -1288,12 +1288,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     var duplicateLink = outs.GroupBy(o => new
                     {
-                        o.LinkData.LinkDataObjectTypeId,
-                        o.LinkData.LinkDataObjectId,
+                        o.LinkData?.LinkDataObjectTypeId ,
+                        o.LinkData?.LinkDataObjectId ,
                         o.FromProductionStepCode,
                         o.ToProductionStepCode
-                    }).FirstOrDefault(o => o.Count() > 1);
-
+                    }).FirstOrDefault(o => o.Key.LinkDataObjectTypeId != null && o.Key.LinkDataObjectId != null && o.Count() > 1);
                     if (duplicateLink != null)
                     {
                         var fromProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.FromProductionStepCode);
