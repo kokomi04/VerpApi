@@ -914,8 +914,22 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             return EvalUtils.EvalObject(expression, refValues, functionHandler)?.ToString();
                         });
 
-                        value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues, functionHandler);
+                        var values = singleClause.Operator == EnumOperator.InList ? singleClause.Value.ToString().Split(',') : null;
 
+                        if (values?.Length > 0)
+                        {
+                            var lst = new List<object>();
+                            foreach (var v in values)
+                            {
+                                lst.Add(EvalUtils.EvalObject(v, refValues, functionHandler));
+                            }
+
+                            value = string.Join(",", lst.ToArray());
+                        }
+                        else
+                        {
+                            value = EvalUtils.EvalObject(singleClause.Value?.ToString(), refValues, functionHandler);
+                        }
                     }
 
 
