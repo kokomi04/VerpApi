@@ -4,7 +4,6 @@ using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
