@@ -1284,7 +1284,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             FromProductionStepCode = outRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode,
                             ToProductionStepCode = inputRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode
                         }).ToList();
-
+                    if (outs.Any(x=> x.LinkData == null))
+                    {
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện role không có chi tiết");
+                    }
 
                     var duplicateLink = outs.GroupBy(o => new
                     {
@@ -1292,7 +1295,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         o.LinkData?.LinkDataObjectId ,
                         o.FromProductionStepCode,
                         o.ToProductionStepCode
-                    }).FirstOrDefault(o => o.Key.LinkDataObjectTypeId != null && o.Key.LinkDataObjectId != null && o.Count() > 1);
+                    }).FirstOrDefault(o => o.Count() > 1);
                     if (duplicateLink != null)
                     {
                         var fromProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.FromProductionStepCode);
