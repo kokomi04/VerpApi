@@ -4,6 +4,7 @@ using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -1269,6 +1270,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Any(x => x.Count() > 1))
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
+                if (req.ProductionStepLinkDataRoles.Any(x=> req.ProductionStepLinkDatas.FirstOrDefault(d=> d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
+                {
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện role không có chi tiết");
+                }
 
                 var inputRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
                 var outRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
@@ -1284,10 +1289,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             FromProductionStepCode = outRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode,
                             ToProductionStepCode = inputRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode
                         }).ToList();
-                    if (outs.Any(x=> x.LinkData == null))
-                    {
-                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện role không có chi tiết");
-                    }
 
                     var duplicateLink = outs.GroupBy(o => new
                     {
