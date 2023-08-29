@@ -504,9 +504,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var checkExistedName = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerName == data.CustomerName);
             if (checkExistedName)
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", data.CustomerName));
-            var checkExisTaxId = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.TaxIdNo == data.TaxIdNo);
-            if (checkExisTaxId)
-                throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", data.TaxIdNo));
+            if (!string.IsNullOrEmpty(data.TaxIdNo))
+            {
+                var checkExisTaxId = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.TaxIdNo == data.TaxIdNo);
+                if (checkExisTaxId)
+                    throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", data.TaxIdNo));
+            }
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
             var dbCustomerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
@@ -740,7 +743,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var customerNames = customers.Select(c => c.CustomerName).ToList();
 
-            var customerTaxIds = customers.Select(c => c.TaxIdNo).ToList(); 
+            var customerTaxIds = customers.Select(c => c.TaxIdNo).Where(c=> !string.IsNullOrEmpty(c)).ToList(); 
 
             var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName) || customerTaxIds.Contains(s.TaxIdNo)).ToListAsync();
 
