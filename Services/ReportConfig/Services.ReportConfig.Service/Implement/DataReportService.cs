@@ -774,7 +774,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 foreach (var alias in repeatAlias)
                 {
-                    regex = new Regex(alias+"([a-zA-Z0-9_]*)");
+                    regex = new Regex(alias + "([a-zA-Z0-9_]*)");
                     regex.Replace(filterCondition, alias);
                 }
             }
@@ -797,7 +797,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-           
+
 
 
             var sqlParamReplace = sqlParams.Select(p => p).ToList();
@@ -849,13 +849,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
 
 
-           
+
             DataColumn repeatIdColumn = null;
             DataColumn mergeRowIdColumn = null;
 
             IList<DataColumn> noneRepeatColumns = new List<DataColumn>();
             IList<DataColumn> repeatColumns = new List<DataColumn>();
-           
+
 
             var flatTable = new DataTable();
             for (var i = 0; i < table.Columns.Count; i++)
@@ -890,7 +890,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 for (var i = 0; i < table.Rows.Count; i++)
                 {
                     var repeatValue = table.Rows[i][repeatIdColumn]?.ToString();
-                    if (!repeateValues.Contains(repeatValue))
+                    if (!repeateValues.Contains(repeatValue) && !repeatValue.IsNullOrEmptyObject())
                     {
                         repeateValues.Add(repeatValue);
                     }
