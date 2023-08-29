@@ -139,5 +139,6 @@ namespace VErpApi.Controllers.Report
         {
             return await _fileService.Upload(EnumObjectType.ReportType, EnumFileType.Document, string.Empty, file).ConfigureAwait(true);
         }
+
     }
 }

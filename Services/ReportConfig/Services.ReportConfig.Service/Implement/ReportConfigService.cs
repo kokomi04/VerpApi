@@ -333,12 +333,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportTypeModel> Info(int reportTypeId)
         {
+            var reportCustom = await _reportConfigContext.ReportTypeCustom
+              .Where(r => r.ReportTypeId == reportTypeId && !r.IsDeleted)
+              .FirstOrDefaultAsync();
             var reportType = await _reportConfigContext.ReportType.Include(x => x.ReportTypeGroup)
                 //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
             if (reportType == null)
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
+            if (reportCustom != null)
+            {
+                if (!string.IsNullOrEmpty(reportCustom.HeadSql) || !string.IsNullOrEmpty(reportCustom.BodySql) || !string.IsNullOrEmpty(reportCustom.FooterSql))
+                {
+                    reportType.HeadSql = reportCustom.HeadSql;
+                    reportType.BodySql = reportCustom.BodySql;
+                    reportType.FooterSql = reportCustom.FooterSql;
+                }
             }
             var info = _mapper.Map<ReportTypeModel>(reportType);
             if (info.BscConfig?.Rows != null)
@@ -645,5 +657,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             return null;
         }
+       
     }
 }
