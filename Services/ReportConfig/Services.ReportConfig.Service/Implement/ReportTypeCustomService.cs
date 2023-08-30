@@ -25,17 +25,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly ObjectActivityLogFacade _objLogActivityReportTypeCustom;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
-        private readonly IDataProtectionProvider _protectionProvider;
         private readonly IRoleHelperService _roleHelperService;
-        public ReportTypeCustomService(ReportConfigDBContext reportConfigContext, AppSetting appSetting, ObjectActivityLogFacade objLogActivityReportTypeCustom, IMapper mapper, ILogger logger, IDataProtectionProvider protectionProvider, IRoleHelperService roleHelperService)
+        public ReportTypeCustomService(ReportConfigDBContext reportConfigContext
+            , IOptions<AppSetting> appSetting
+            , ILogger<ReportConfigService> logger
+            , IActivityLogService activityLogService
+            , IMapper mapper, IDataProtectionProvider protectionProvider, IRoleHelperService roleHelperService)
         {
             _reportConfigContext = reportConfigContext;
-            _appSetting = appSetting;
-            _objLogActivityReportTypeCustom = objLogActivityReportTypeCustom;
+            _objLogActivityReportTypeCustom = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportType);
             _mapper = mapper;
             _logger = logger;
-            _protectionProvider = protectionProvider;
             _roleHelperService = roleHelperService;
+            _appSetting = appSetting.Value;
         }
 
         #region Report Type Custom

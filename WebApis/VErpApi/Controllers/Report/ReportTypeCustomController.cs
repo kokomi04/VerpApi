@@ -15,8 +15,8 @@ namespace VErpApi.Controllers.Report
             _reportTypeCustomService = reportTypeCustomService;
         }
 
-        [HttpGet("")]
-        public async Task<ReportTypeCustomModel> GetInfo(int reportTypeId)
+        [HttpGet("{reportTypeId}")]
+        public async Task<ReportTypeCustomModel> GetInfo([FromRoute]int reportTypeId)
         {
             return await _reportTypeCustomService.InfoReportTypeCustom(reportTypeId);
         }
