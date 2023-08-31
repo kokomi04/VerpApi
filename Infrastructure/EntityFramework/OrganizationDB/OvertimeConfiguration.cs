@@ -7,29 +7,51 @@ public partial class OvertimeConfiguration
 {
     public int OvertimeConfigurationId { get; set; }
 
-    public int OvertimeLevel { get; set; }
+    public int? WeekdayLevel { get; set; }
 
-    public bool IsOvertimeLevel { get; set; }
+    public bool IsWeekdayLevel { get; set; }
 
-    public int WeekendLevel { get; set; }
+    public int? WeekendLevel { get; set; }
 
     public bool IsWeekendLevel { get; set; }
 
-    public int HolidayLevel { get; set; }
+    public int? HolidayLevel { get; set; }
 
     public bool IsHolidayLevel { get; set; }
 
-    public long MinsAfterWork { get; set; }
+    public int? WeekdayOvertimeLevel { get; set; }
 
-    public long MinsBeforeWork { get; set; }
+    public bool IsWeekdayOvertimeLevel { get; set; }
 
-    public int TotalHourWillCountShift { get; set; }
+    public int? WeekendOvertimeLevel { get; set; }
 
-    public bool IsMinsAfterWork { get; set; }
+    public bool IsWeekendOvertimeLevel { get; set; }
 
-    public bool IsMinsBeforeWork { get; set; }
+    public int? HolidayOvertimeLevel { get; set; }
 
-    public bool IsTotalHourWillCountShift { get; set; }
+    public bool IsHolidayOvertimeLevel { get; set; }
+
+    public int? RoundMinutes { get; set; }
+
+    public bool IsRoundBack { get; set; }
+
+    public int OvertimeCalculationMode { get; set; }
+
+    public int? OvertimeThresholdMins { get; set; }
+
+    public bool IsOvertimeThresholdMins { get; set; }
+
+    public int? MinThresholdMinutesBeforeWork { get; set; }
+
+    public int? MinThresholdMinutesAfterWork { get; set; }
+
+    public bool IsMinThresholdMinutesBeforeWork { get; set; }
+
+    public bool IsMinThresholdMinutesAfterWork { get; set; }
+
+    public long MinsLimitOvertimeBeforeWork { get; set; }
+
+    public long MinsLimitOvertimeAfterWork { get; set; }
 
     public long MinsReachesBeforeWork { get; set; }
 
@@ -39,22 +61,6 @@ public partial class OvertimeConfiguration
 
     public long MinsBonusWhenMinsReachesAfterWork { get; set; }
 
-    public long MinsLimitOvertime1 { get; set; }
-
-    public long MinsLimitOvertime2 { get; set; }
-
-    public bool IsDayShiftLevel { get; set; }
-
-    public int DayShiftLevel { get; set; }
-
-    public int NightShiftLevel { get; set; }
-
-    public bool IsNightShiftLevel { get; set; }
-
-    public long MinsLimitOvertimeBeforeWork { get; set; }
-
-    public long MinsLimitOvertimeAfterWork { get; set; }
-
     public int UpdatedByUserId { get; set; }
 
     public DateTime UpdatedDatetimeUtc { get; set; }
@@ -62,6 +68,8 @@ public partial class OvertimeConfiguration
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public virtual ICollection<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; } = new List<OvertimeConfigurationMapping>();
 
     public virtual ICollection<ShiftConfiguration> ShiftConfiguration { get; set; } = new List<ShiftConfiguration>();
 }

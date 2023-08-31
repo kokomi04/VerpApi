@@ -17,7 +17,9 @@ public partial class ShiftConfiguration
 
     public TimeSpan ExitTime { get; set; }
 
-    public int NumberOfTransition { get; set; }
+    public bool IsNightShift { get; set; }
+
+    public bool? IsCheckOutDateTimekeeping { get; set; }
 
     public TimeSpan LunchTimeStart { get; set; }
 

@@ -14,7 +14,8 @@ namespace Services.Organization.Model.TimeKeeping
         public string Description { get; set; }
         public double EntryTime { get; set; }
         public double ExitTime { get; set; }
-        public int NumberOfTransition { get; set; }
+        public bool IsNightShift { get; set; }
+        public bool? IsCheckOutDateTimekeeping { get; set; }
         public double LunchTimeStart { get; set; }
         public double LunchTimeFinish { get; set; }
         public long ConvertToMins { get; set; }
@@ -66,7 +67,7 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => m.EndTimeOutRecord.TotalSeconds))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalSeconds))
             .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => m.StartTimeOutRecord.TotalSeconds))
-            .ForMember(m => m.OvertimeConfiguration, v => v.Ignore())
+            .ForMember(m => m.OvertimeConfiguration, v => v.MapFrom(m => m.OvertimeConfiguration))
             .ReverseMapCustom()
             .ForMember(m => m.EntryTime, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EntryTime)))
             .ForMember(m => m.ExitTime, v => v.MapFrom(m => TimeSpan.FromSeconds(m.ExitTime)))
@@ -76,7 +77,7 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOutRecord)))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOnRecord)))
             .ForMember(m => m.StartTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOutRecord)))
-            .ForMember(m => m.OvertimeConfiguration, v => v.Ignore());
+            .ForMember(m => m.OvertimeConfiguration, v => v.MapFrom(m => m.OvertimeConfiguration));
         }
     }
 }

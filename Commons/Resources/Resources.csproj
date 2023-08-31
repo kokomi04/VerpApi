@@ -643,6 +643,16 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>TimeSortConfigurationActivityLogMessage.resx</DependentUpon>
     </Compile>
+    <Compile Update="Organization\TimeKeeping\Validation\OvertimeConfigurationValidationMessage.Designer.cs">
+      <DependentUpon>OvertimeConfigurationValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
+    <Compile Update="Organization\TimeKeeping\Validation\ShiftConfigurationValidationMessage.Designer.cs">
+      <DependentUpon>ShiftConfigurationValidationMessage.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+    </Compile>
     <Compile Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>
@@ -1435,6 +1445,14 @@
     <EmbeddedResource Update="Organization\TimeKeeping\TimeSortConfigurationActivityLogMessage.resx">
       <Generator>PublicResXFileCodeGenerator</Generator>
       <LastGenOutput>TimeSortConfigurationActivityLogMessage.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\Validation\OvertimeConfigurationValidationMessage.resx">
+      <LastGenOutput>OvertimeConfigurationValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
+    </EmbeddedResource>
+    <EmbeddedResource Update="Organization\TimeKeeping\Validation\ShiftConfigurationValidationMessage.resx">
+      <LastGenOutput>ShiftConfigurationValidationMessage.Designer.cs</LastGenOutput>
+      <Generator>PublicResXFileCodeGenerator</Generator>
     </EmbeddedResource>
     <EmbeddedResource Update="Organization\TimeKeeping\WorkScheduleActivityLogMessage.en-Us.resx">
       <LastGenOutput>WorkScheduleActivityLogMessage.Designer.cs</LastGenOutput>
