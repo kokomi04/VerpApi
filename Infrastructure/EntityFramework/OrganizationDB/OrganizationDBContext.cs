@@ -91,6 +91,8 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
 
+    public virtual DbSet<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; }
+
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
     public virtual DbSet<SalaryEmployee> SalaryEmployee { get; set; }
@@ -157,6 +159,15 @@ public partial class OrganizationDBContext : DbContext
     {
         modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
         {
+            entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsCounted)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsUsed)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.MaxOfDaysOffPerMonth).HasDefaultValueSql("((1))");
+            entity.Property(e => e.SalaryRate).HasDefaultValueSql("((1))");
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -690,6 +701,21 @@ public partial class OrganizationDBContext : DbContext
                 .HasForeignKey(d => d.ObjectProcessStepId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ObjectProcessStepUser_ObjectProcessStep");
+        });
+
+        modelBuilder.Entity<OvertimeConfigurationMapping>(entity =>
+        {
+            entity.HasKey(e => new { e.OvertimeConfigurationId, e.OvertimeLevelId }).HasName("PK__Overtime__F94FAF4E88EEADFA");
+
+            entity.HasOne(d => d.OvertimeConfiguration).WithMany(p => p.OvertimeConfigurationMapping)
+                .HasForeignKey(d => d.OvertimeConfigurationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__OvertimeC__Overt__4DB54E83");
+
+            entity.HasOne(d => d.OvertimeLevel).WithMany(p => p.OvertimeConfigurationMapping)
+                .HasForeignKey(d => d.OvertimeLevelId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__OvertimeC__Overt__4EA972BC");
         });
 
         modelBuilder.Entity<OvertimeLevel>(entity =>

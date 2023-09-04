@@ -11,11 +11,15 @@ public partial class ShiftConfiguration
 
     public string ShiftCode { get; set; }
 
-    public TimeSpan BeginDate { get; set; }
+    public string Description { get; set; }
 
-    public TimeSpan EndDate { get; set; }
+    public TimeSpan EntryTime { get; set; }
 
-    public int NumberOfTransition { get; set; }
+    public TimeSpan ExitTime { get; set; }
+
+    public bool IsNightShift { get; set; }
+
+    public bool? IsCheckOutDateTimekeeping { get; set; }
 
     public TimeSpan LunchTimeStart { get; set; }
 
@@ -33,11 +37,17 @@ public partial class ShiftConfiguration
 
     public TimeSpan EndTimeOutRecord { get; set; }
 
-    public long MinsWithoutTimeOn { get; set; }
+    public int WorkScheduleId { get; set; }
 
-    public long MinsWithoutTimeOut { get; set; }
+    public bool IsSkipSaturdayWithShift { get; set; }
 
-    public int PositionOnReport { get; set; }
+    public bool IsSkipSundayWithShift { get; set; }
+
+    public bool IsSkipHolidayWithShift { get; set; }
+
+    public bool IsCountWorkForHoliday { get; set; }
+
+    public int PartialShiftCalculationMode { get; set; }
 
     public bool IsSubtractionForLate { get; set; }
 
@@ -58,6 +68,30 @@ public partial class ShiftConfiguration
     public bool IsRoundBackForLate { get; set; }
 
     public bool IsRoundBackForEarly { get; set; }
+
+    public int? MaxLateMins { get; set; }
+
+    public int? MaxEarlyMins { get; set; }
+
+    public bool IsExceededLateAbsenceType { get; set; }
+
+    public bool IsExceededEarlyAbsenceType { get; set; }
+
+    public int? ExceededLateAbsenceTypeId { get; set; }
+
+    public int? ExceededEarlyAbsenceTypeId { get; set; }
+
+    public int? NoEntryTimeAbsenceTypeId { get; set; }
+
+    public int? NoExitTimeAbsenceTypeId { get; set; }
+
+    public bool IsNoEntryTimeWorkMins { get; set; }
+
+    public bool IsNoExitTimeWorkMins { get; set; }
+
+    public long? NoEntryTimeWorkMins { get; set; }
+
+    public long? NoExitTimeWorkMins { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }
 
