@@ -16,6 +16,8 @@ using Microsoft.Extensions.Logging;
 using Verp.Resources.Report.ReportConfig;
 using VErp.Infrastructure.EF.EFExtensions;
 using Microsoft.EntityFrameworkCore;
+using VErp.Infrastructure.ServiceCore.Service;
+
 namespace Verp.Services.ReportConfig.Service.Implement
 {
     internal class ReportTypeCustomService : IReportTypeCustomService
@@ -27,7 +29,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private readonly ILogger _logger;
         private readonly IRoleHelperService _roleHelperService;
         public ReportTypeCustomService(ReportConfigDBContext reportConfigContext
-            , IOptions<AppSetting> appSetting
             , ILogger<ReportConfigService> logger
             , IActivityLogService activityLogService
             , IMapper mapper, IDataProtectionProvider protectionProvider, IRoleHelperService roleHelperService)
@@ -37,7 +38,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _mapper = mapper;
             _logger = logger;
             _roleHelperService = roleHelperService;
-            _appSetting = appSetting.Value;
         }
 
         #region Report Type Custom
