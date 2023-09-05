@@ -269,7 +269,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("configuration")]
-        public async Task<bool> UpdateProductionOrderConfiguration(ProductionOrderConfigurationModel model)
+        public async Task<bool> UpdateProductionOrderConfiguration([FromBody] ProductionOrderConfigurationModel model)
         {
             return await _productionOrderService.UpdateProductionOrderConfiguration(model);
         }

@@ -41,7 +41,7 @@ namespace VErpApi.Controllers.System
 
         [HttpPut]
         [Route("{guideCateId}")]
-        public async Task<bool> Update([FromRoute] int guideCateId, GuideCateModel model)
+        public async Task<bool> Update([FromRoute] int guideCateId, [FromBody] GuideCateModel model)
         {
             return await _guideCateService.Update(guideCateId, model);
         }

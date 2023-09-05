@@ -67,7 +67,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("searchByListContainerId")]
-        public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId(IList<long> lstContainerId)
+        public async Task<IList<ProductSemiModel>> GetListProductSemiByListContainerId([FromBody] IList<long> lstContainerId)
         {
             return await _productSemiService.GetListProductSemiByListContainerId(lstContainerId);
         }

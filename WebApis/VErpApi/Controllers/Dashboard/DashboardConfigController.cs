@@ -46,14 +46,14 @@ namespace VErpApi.Controllers.Report
 
         [HttpPost]
         [Route("type")]
-        public async Task<int> AddDashboardType(DashboardTypeModel data)
+        public async Task<int> AddDashboardType([FromBody] DashboardTypeModel data)
         {
             return await _dashboardConfigService.AddDashboardType(data);
         }
 
         [HttpPost]
         [Route("group")]
-        public async Task<int> AddDashboardTypeGroup(DashboardTypeGroupModel model)
+        public async Task<int> AddDashboardTypeGroup([FromBody] DashboardTypeGroupModel model)
         {
             return await _dashboardConfigService.AddDashboardTypeGroup(model);
         }
