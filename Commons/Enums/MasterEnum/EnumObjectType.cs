@@ -418,7 +418,7 @@ namespace VErp.Commons.Enums.MasterEnum
         SalaryPeriod = 10004203,
         [Description("Bảng lương theo kỳ")]
         SalaryPeriodGroup = 10004204,
-        [Description("Dữ liệu bảng lương")]
+        [Description("Bảng lương nhân sự")]
         SalaryEmployee = 10004205,
 
 

@@ -311,6 +311,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                      );
             }
 
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Organization,
+                objectTypeId: EnumObjectType.SalaryEmployee,
+                objectTitle: "Bảng lương nhân sự")
+            );
+
             return result;
         }
 
