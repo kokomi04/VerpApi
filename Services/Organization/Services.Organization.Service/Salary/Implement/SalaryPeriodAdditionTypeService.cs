@@ -108,11 +108,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<SalaryPeriodAdditionType> GetFullEntityInfo(int salaryPeriodAdditionTypeId)
         {
-            return await _organizationDBContext.SalaryPeriodAdditionType
+            var info = await _organizationDBContext.SalaryPeriodAdditionType
               .Include(t => t.SalaryPeriodAdditionTypeField)
               .ThenInclude(tf => tf.SalaryPeriodAdditionField)
               .Where(t => t.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId)
               .FirstOrDefaultAsync();
+
+            if (info != null)
+            {
+                info.SalaryPeriodAdditionTypeField = info.SalaryPeriodAdditionTypeField.OrderBy(f => f.SortOrder).ToList();
+            }
+
+            return info;
 
         }
         public async Task<IEnumerable<SalaryPeriodAdditionTypeInfo>> List()
