@@ -2058,7 +2058,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
-            var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
+            var requireFields = fields.Values.Where(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters)).Select(f => f.FieldName).Distinct().ToHashSet();
 
             var ignoreCopyInfoValues = new HashSet<string>();
             //Create rows
