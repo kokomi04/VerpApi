@@ -51,14 +51,14 @@ namespace VErpApi.Controllers.Manufacturing.Outsource
 
         [HttpPost]
         [Route("")]
-        public async Task<OutsourceStepRequestPrivateKey> CreateRequestOutsourceStep(OutsourceStepRequestInput req)
+        public async Task<OutsourceStepRequestPrivateKey> CreateRequestOutsourceStep([FromBody] OutsourceStepRequestInput req)
         {
             return await _outsourceStepRequestService.AddOutsourceStepRequest(req);
         }
 
         [HttpPut]
         [Route("{outsourceStepRequestId}")]
-        public async Task<bool> UpdateRequestOutsourceStep([FromRoute] long outsourceStepRequestId, OutsourceStepRequestInput req)
+        public async Task<bool> UpdateRequestOutsourceStep([FromRoute] long outsourceStepRequestId, [FromBody] OutsourceStepRequestInput req)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequest(outsourceStepRequestId, req);
         }

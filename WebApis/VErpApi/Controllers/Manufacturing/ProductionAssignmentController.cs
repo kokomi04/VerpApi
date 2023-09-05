@@ -80,7 +80,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("productionOrder/{productionOrderId}/productionStep/{productionStepId}/department/{departmentId}/status/{status}")]
-        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId, EnumAssignedProgressStatus status)
+        public async Task<bool> ChangeAssignedProgressStatus([FromRoute] long productionOrderId, [FromRoute] long productionStepId, [FromRoute] int departmentId, [FromRoute] EnumAssignedProgressStatus status)
         {
             return await _productionAssignmentService.ChangeAssignedProgressStatus(productionOrderId, productionStepId, departmentId, status);
         }
@@ -111,7 +111,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPut]
         [Route("departments/{departmentId}/AssignDate")]
-        public async Task<bool> UpdateDepartmentAssignmentDate([FromRoute] int departmentId, IList<DepartmentAssignUpdateDateModel> data)
+        public async Task<bool> UpdateDepartmentAssignmentDate([FromRoute] int departmentId, [FromBody] IList<DepartmentAssignUpdateDateModel> data)
         {
             return await _productionAssignmentService.UpdateDepartmentAssignmentDate(departmentId, data);
         }

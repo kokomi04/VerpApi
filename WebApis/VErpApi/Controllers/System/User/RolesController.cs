@@ -133,7 +133,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("Stocks")]
-        public async Task<bool> Stocks(IList<StockPemissionOutput> req)
+        public async Task<bool> Stocks([FromBody] IList<StockPemissionOutput> req)
         {
             return await _roleService.UpdateStockPermission(req);
         }
@@ -155,7 +155,7 @@ namespace VErpApi.Controllers.System
         /// <returns></returns>
         [HttpPut]
         [Route("Categorys")]
-        public async Task<bool> Categorys(IList<CategoryPermissionModel> req)
+        public async Task<bool> Categorys([FromBody] IList<CategoryPermissionModel> req)
         {
             return await _roleService.UpdateCategoryPermission(req);
         }
@@ -181,7 +181,7 @@ namespace VErpApi.Controllers.System
 
         [HttpGet]
         [Route("ByModuleAndPermission")]
-        public Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission(int moduleId, int premission)
+        public Task<IList<RolePermissionModel>> GetRolesPermissionByModuleAndPermission([FromQuery] int moduleId, [FromQuery] int premission)
         {
             return _roleService.GetRolesPermissionByModuleAndPermission(moduleId, premission);
         }

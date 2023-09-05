@@ -173,7 +173,7 @@ namespace VErpApi.Controllers.Manufacturing
         /// <returns></returns>
         [HttpPost]
         [Route("productionStepLinkDataRole/getInOutOfListProductionStep")]
-        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep(List<long> lsProductionStepId)
+        public async Task<IList<ProductionStepLinkDataRoleModel>> GetListStepLinkDataForOutsourceStep([FromBody] List<long> lsProductionStepId)
         {
             return await _productionProcessService.GetListStepLinkDataForOutsourceStep(lsProductionStepId);
         }
@@ -205,7 +205,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("copy")]
-        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        public async Task<bool> CopyProductionProcess([FromQuery] EnumContainerType containerTypeId,[FromQuery] long fromContainerId,[FromQuery] long toContainerId)
         {
             return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId, true);
         }
