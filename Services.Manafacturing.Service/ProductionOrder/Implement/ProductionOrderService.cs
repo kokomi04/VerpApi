@@ -1718,7 +1718,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                    .ObjectId(productionOrder.ProductionOrderId)
                    .JsonData(data)
                    .CreateLog();
-       
+
+                await SetProductionOrderIsFinish(productionOrder);
+
                 await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrder?.ProductionOrderCode, $"Cập nhật thông tin lệnh");
 
                 return data;
@@ -1964,7 +1966,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
                 {
                     productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
-                  
+
                     await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
                                 .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
                                 .ObjectId(productionOrder.ProductionOrderId)
