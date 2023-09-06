@@ -1168,7 +1168,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 if (childTitles.Count() >0)
                 {
-                    throw new BadRequestException($"Tên {string.Join(",",childTitles.Select(x=>x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault().ParentCode).Title}.");
+                    throw new BadRequestException($"Tên {string.Join(",",childTitles.Select(x=>x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault()?.ParentCode)?.Title}.");
                 }
             }
         }
