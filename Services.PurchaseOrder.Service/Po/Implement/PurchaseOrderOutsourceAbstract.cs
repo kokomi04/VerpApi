@@ -17,7 +17,8 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
@@ -218,7 +219,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
                     .MessageResourceFormatDatas(po.PurchaseOrderCode)
                     .ObjectId(po.PurchaseOrderId)
-                    .JsonData((new { purchaseOrderType, model }).JsonSerialize())
+                    .JsonData((new { purchaseOrderType, model }))
                     .CreateLog();
 
                     return po.PurchaseOrderId;
@@ -511,7 +512,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                       .MessageResourceFormatDatas(info.PurchaseOrderCode)
                       .ObjectId(info.PurchaseOrderId)
-                      .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model }).JsonSerialize())
+                      .JsonData(new { purchaseOrderType = info.PurchaseOrderType, model })
                       .CreateLog();
 
                     return true;
@@ -575,7 +576,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
                         .MessageResourceFormatDatas(info.PurchaseOrderCode)
                         .ObjectId(info.PurchaseOrderId)
-                        .JsonData((new { purchaseOrderType = info.PurchaseOrderType, model = info }).JsonSerialize())
+                        .JsonData(new { purchaseOrderType = info.PurchaseOrderType, model = info })
                         .CreateLog();
 
                     return true;

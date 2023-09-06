@@ -25,13 +25,13 @@ namespace VErpApi.Controllers.Accountancy.Data
     [ObjectDataApi(EnumObjectType.InputType, "inputTypeId")]
     public class InputController : InputControllerBaseAbstract
     {
-     
+
         public InputController(IInputDataPrivateService inputDataService, IInpuDataExportFacadeService inpuDataExportFacadeService)
             : base(inputDataService, inpuDataExportFacadeService)
         {
-            
+
         }
-      
+
     }
 
     [Route("api/accountancy/public/bills")]
@@ -108,37 +108,67 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
 
+        [HttpGet]
+        [Route("{inputTypeId}/infoByParent")]
+        public async Task<BillInfoModel> GetBillInfoByParent([FromRoute] int inputTypeId, [FromQuery] long parentId)
+        {
+            return await _inputDataService.GetBillInfoByParent(inputTypeId, parentId).ConfigureAwait(true);
+        }
+
+
+        [HttpGet]
+        [Route("{inputTypeId}/{fId}/AllocationDataBillCodes")]
+        public async Task<IList<string>> GetAllocationDataBillCodes([FromRoute] int inputTypeId, [FromRoute] long fId)
+        {
+            return await _inputDataService.GetAllocationDataBillCodes(inputTypeId, fId).ConfigureAwait(true);
+        }
+
+        [HttpPut]
+        [Route("{inputTypeId}/{fId}/AllocationDataBillCodes")]
+        public async Task<bool> UpdateAllocationDataBillCodes([FromRoute] int inputTypeId, [FromRoute] long fId, [FromBody] IList<string> dataAllowcationBillCodes)
+        {
+            return await _inputDataService.UpdateAllocationDataBillCodes(inputTypeId, fId, dataAllowcationBillCodes).ConfigureAwait(true);
+        }
+
+        [HttpGet]
+        [Route("{inputTypeId}/{fId}/CalcResultAllowcation")]
+        public async Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int inputTypeId, long fId)
+        {
+            return await _inputDataService.CalcResultAllowcation(inputTypeId, fId);
+        }
+       
+
         [HttpPost]
         [Route("{inputTypeId}")]
-        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data)
+        public async Task<long> CreateBill([FromRoute] int inputTypeId, [FromBody] BillInfoModel data, [FromQuery] bool isDeleteAllowcationBill)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.CreateBill(inputTypeId, data).ConfigureAwait(true);
+            return await _inputDataService.CreateBill(inputTypeId, data, isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/{fId}")]
-        public async Task<bool> UpdateBill([FromRoute] int inputTypeId, [FromRoute] long fId, [FromBody] BillInfoModel data)
+        public async Task<bool> UpdateBill([FromRoute] int inputTypeId, [FromRoute] long fId, [FromBody] BillInfoModel data, [FromQuery] bool isDeleteAllowcationBill)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
 
-            return await _inputDataService.UpdateBill(inputTypeId, fId, data).ConfigureAwait(true);
+            return await _inputDataService.UpdateBill(inputTypeId, fId, data, isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
         [HttpPut]
         [Route("{inputTypeId}/multiple")]
-        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data)
+        public async Task<bool> UpdateMultipleBills([FromRoute] int inputTypeId, [FromBody] UpdateMultipleModel data, [FromQuery] bool isDeleteAllowcationBill)
         {
             if (data == null) throw new BadRequestException(GeneralCode.InvalidParams);
-            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.BillIds, data.DetailIds).ConfigureAwait(true);
+            return await _inputDataService.UpdateMultipleBills(inputTypeId, data.FieldName, data.OldValue, data.NewValue, data.BillIds, data.DetailIds, isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
         [HttpDelete]
         [Route("{inputTypeId}/{fId}")]
-        public async Task<bool> DeleteBill([FromRoute] int inputTypeId, [FromRoute] long fId)
+        public async Task<bool> DeleteBill([FromRoute] int inputTypeId, [FromRoute] long fId, [FromQuery] bool isDeleteAllowcationBill)
         {
-            return await _inputDataService.DeleteBill(inputTypeId, fId).ConfigureAwait(true);
+            return await _inputDataService.DeleteBill(inputTypeId, fId, isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
         [HttpGet]
@@ -150,13 +180,13 @@ namespace VErpApi.Controllers.Accountancy.Data
 
         [HttpPost]
         [Route("{inputTypeId}/importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        public async Task<bool> ImportFromMapping([FromRoute] int inputTypeId, [FromFormString] ImportExcelMapping mapping, IFormFile file, [FromQuery] bool isDeleteAllowcationBill)
         {
             if (file == null)
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream()).ConfigureAwait(true);
+            return await _inputDataService.ImportBillFromMapping(inputTypeId, mapping, file.OpenReadStream(), isDeleteAllowcationBill).ConfigureAwait(true);
         }
 
 

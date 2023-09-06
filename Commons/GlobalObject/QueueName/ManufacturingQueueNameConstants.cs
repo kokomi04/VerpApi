@@ -6,6 +6,8 @@ namespace VErp.Commons.GlobalObject.QueueName
     {
         public const string PRODUCTION_CALC_STATUS = "PRODUCTION_CALC_STATUS";
 
+        public const string PRODUCTION_CALC_STATUS_V2 = "PRODUCTION_CALC_STATUS_V2";
+
         public const string PRODUCTION_INVENTORY_STATITICS = "PRODUCTION_INVENTORY_STATITICS";
 
     }

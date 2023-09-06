@@ -1,16 +1,20 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using DocumentFormat.OpenXml.EMMA;
+using Grpc.Core;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using NPOI.SS.Formula.Functions;
+using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Handover;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -18,8 +22,10 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
@@ -35,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly ICurrentContextService _currentContextService;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private const int STOCK_DEPARTMENT_ID = -1;
@@ -49,7 +55,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             , ICurrentContextService currentContextService, IQueueProcessHelperService queueProcessHelperService, ICustomGenCodeHelperService customGenCodeHelperService, IProductionOrderQueueHelperService productionOrderQueueHelperService) : base(manufacturingDB, activityLogService, logger, mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionHandoverReceipt);
             _logger = logger;
             _mapper = mapper;
             _currentContextService = currentContextService;
@@ -84,12 +90,19 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             }
 
 
-            if (fromDate > 0 && toDate > 0)
+            if (fromDate > 0)
             {
                 if (whereCondition.Length > 0)
                     whereCondition.Append(" AND ");
-                whereCondition.Append(" (v.Date >= @FromDate AND v.Date <= @ToDate ) ");
+                whereCondition.Append(" v.Date >= @FromDate ");
                 parammeters.Add(new SqlParameter("@FromDate", fromDate.UnixToDateTime()));
+            }
+
+            if (toDate > 0)
+            {
+                if (whereCondition.Length > 0)
+                    whereCondition.Append(" AND ");
+                whereCondition.Append(" v.Date <= @ToDate ");
                 parammeters.Add(new SqlParameter("@ToDate", toDate.UnixToDateTime()));
             }
 
@@ -136,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             if (size > 0)
             {
-                sql.Append(@$"ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}
+                sql.Append(@$" ORDER BY {orderByFieldName} {(asc ? "" : "DESC")}
                             OFFSET {(page - 1) * size} ROWS
                             FETCH NEXT {size}
                             ROWS ONLY");
@@ -172,7 +185,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             var productionOrders = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId))
                 .Select(o => new { o.ProductionOrderCode, o.ProductionOrderId }).ToListAsync();
 
-            using (var batchLog = _activityLogService.BeginBatchLog())
+            using (var batchLog = _objActivityLogFacade.BeginBatchLog())
             {
                 try
                 {
@@ -186,9 +199,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
                         }
-                        if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
+                        if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
                         info.HandoverStatusId = (int)EnumHandoverStatus.Accepted;
                         info.AcceptByUserId = _currentContextService.UserId;
+
+                        foreach (var h in info.ProductionHandover)
+                        {
+                            h.Status = (int)EnumHandoverStatus.Accepted;
+                        }
 
                         _manufacturingDBContext.SaveChanges();
 
@@ -196,12 +214,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         {
                             foreach (var h in info.ProductionHandover)
                             {
-                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
-                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId, null, null);
+                                await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId, null, null);
                             }
                         }
+                        await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
+                              .MessageResourceFormatDatas(info.ProductionHandoverReceiptCode)
+                              .ObjectId(info.ProductionHandoverReceiptId)
+                              .JsonData(info)
+                              .CreateLog();
 
-                        await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, info.ProductionHandoverReceiptId, $"Xác nhận phiếu thống kê sản xuất", info);
+                        //Xác nhận nút chức năng Xác nhận phiếu thống kê sản xuất
 
                     }
 
@@ -227,7 +250,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
         {
             var info = _manufacturingDBContext.ProductionHandoverReceipt.Include(r => r.ProductionHandover).FirstOrDefault(ho => ho.ProductionHandoverReceiptId == receiptId);
             if (info == null) throw new BadRequestException(GeneralCode.InvalidParams, "Phiếu thống kê sản xuất không tồn tại");
-            if (info.HandoverStatusId != (int)EnumHandoverStatus.Waiting) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
+            if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted && status == EnumHandoverStatus.Accepted) throw new BadRequestException(GeneralCode.InvalidParams, "Chỉ được phép xác nhận phiếu thống kê sản xuất đang chờ xác nhận");
 
             var productionOrderIds = info.ProductionHandover.Select(h => h.ProductionOrderId).Distinct().ToList();
             var productionOrderCodes = await _manufacturingDBContext.ProductionOrder.Where(o => productionOrderIds.Contains(o.ProductionOrderId)).Select(o => o.ProductionOrderCode).ToListAsync();
@@ -239,6 +262,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 if (status == EnumHandoverStatus.Accepted)
                     info.AcceptByUserId = _currentContextService.UserId;
 
+                foreach (var h in info.ProductionHandover)
+                {
+                    h.Status = (int)status;
+                }
                 _manufacturingDBContext.SaveChanges();
 
                 if (info.HandoverStatusId == (int)EnumHandoverStatus.Accepted)
@@ -249,7 +276,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptId, $"{(status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối")} phiếu thống kê sản xuất {info.ProductionHandoverReceiptCode}", info);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CheckBatch)
+                              .MessageResourceFormatDatas((status == EnumHandoverStatus.Accepted ? "Chấp nhận" : "Từ chối"), info.ProductionHandoverReceiptCode)
+                              .ObjectId(receiptId)
+                              .JsonData(info)
+                              .CreateLog();
 
 
                 foreach (var code in productionOrderCodes)
@@ -317,7 +348,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 _logger.LogError(ex, "CreateProductHandover");
                 throw;
             }
-            
+
         }
 
         private async Task<long> Create(ProductionHandoverReceiptModel data, EnumHandoverStatus status)
@@ -414,8 +445,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.ToProductionStepId, h.ToDepartmentId);
                     }
                 }
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, receiptInfo.ProductionHandoverReceiptId, $"Tạo phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", data);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.CreateBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
+                              .ObjectId(receiptInfo.ProductionHandoverReceiptId)
+                              .JsonData(data)
+                              .CreateLog();
 
                 await ctx.ConfirmCode();
 
@@ -426,7 +460,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                     await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(podCode, $"Tạo phiếu thống kê {receiptInfo.ProductionHandoverReceiptCode}");
                 }
 
-                
+
                 return receiptInfo.ProductionHandoverReceiptId;
             }
             catch (Exception ex)
@@ -515,7 +549,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                         await ChangeAssignedProgressStatus(h.ProductionOrderId, h.FromProductionStepId, h.FromDepartmentId);
                     }
                 }
-                await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Xoá phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
+                await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.AcceptBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
+                              .ObjectId(productionHandoverReceiptId)
+                              .JsonData(receiptInfo)
+                              .CreateLog();
 
                 var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => receiptInfo.ProductionHandover.Select(h => h.ProductionOrderId).Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
                 foreach (var podCode in podCodes)
@@ -637,7 +675,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 await trans.CommitAsync();
 
             }
-            await _activityLogService.CreateLog(EnumObjectType.ProductionHandoverReceipt, productionHandoverReceiptId, $"Cập nhật phiếu thống kê sản xuất {receiptInfo.ProductionHandoverReceiptCode}", receiptInfo);
+            await _objActivityLogFacade.LogBuilder(() => ProductionHandoverReceiptActivityLogMessage.UpdateBatch)
+                              .MessageResourceFormatDatas(receiptInfo.ProductionHandoverReceiptCode)
+                              .ObjectId(productionHandoverReceiptId)
+                              .JsonData(receiptInfo)
+                              .CreateLog();
 
             var podCodes = await _manufacturingDBContext.ProductionOrder.Where(p => productionOrderIds.Contains(p.ProductionOrderId)).Select(p => p.ProductionOrderCode).ToListAsync();
             foreach (var podCode in podCodes)
@@ -792,7 +834,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 new SqlParameter("@Page", page),
             };
 
-            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDate", parammeters.ToArray());
+            var dataTable = await _manufacturingDBContext.ExecuteDataProcedure("asp_ProductionDepartmentHandover_ByDateV2", parammeters.ToArray());
 
             var totalRecord = 0;
             if (dataTable.Rows.Count > 0)
@@ -807,16 +849,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         private async Task<IList<ProductionHandoverModel>> GetProductionHandovers(IQueryable<ProductionHandoverEntity> handovers)
         {
-            return await (from r in _manufacturingDBContext.ProductionHandoverReceipt
-                          join h in handovers on r.ProductionHandoverReceiptId equals h.ProductionHandoverReceiptId
+            return await (from h in handovers
+                          join r in _manufacturingDBContext.ProductionHandoverReceipt on h.ProductionHandoverReceiptId equals r.ProductionHandoverReceiptId into rs
+                          from r in rs.DefaultIfEmpty()
                           select new ProductionHandoverModel
                           {
-                              ProductionHandoverReceiptId = r.ProductionHandoverReceiptId,
-                              ProductionHandoverReceiptCode = r.ProductionHandoverReceiptCode,
+                              ProductionHandoverReceiptId = r == null ? 0 : r.ProductionHandoverReceiptId,
+                              ProductionHandoverReceiptCode = r == null ? null : r.ProductionHandoverReceiptCode,
                               ProductionHandoverId = h.ProductionHandoverId,
-                              HandoverStatusId = (EnumHandoverStatus)r.HandoverStatusId,
-                              CreatedByUserId = r.CreatedByUserId,
-                              AcceptByUserId = r.AcceptByUserId,
+                              HandoverStatusId = r == null ? EnumHandoverStatus.Accepted : (EnumHandoverStatus)r.HandoverStatusId,
+                              CreatedByUserId = r == null ? 0 : r.CreatedByUserId,
+                              AcceptByUserId = r == null ? 0 : r.AcceptByUserId,
 
                               HandoverQuantity = h.HandoverQuantity,
                               ObjectId = h.ObjectId,
@@ -827,7 +870,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                               ToProductionStepId = h.ToProductionStepId,
                               HandoverDatetime = h.HandoverDatetime.GetUnix(),
                               Note = h.Note,
-                              ProductionOrderId = h.ProductionOrderId
+                              ProductionOrderId = h.ProductionOrderId,
+
+                              InventoryRequirementDetailId = h.InventoryRequirementDetailId,
+                              InventoryDetailId = h.InventoryDetailId,
+                              InventoryProductId = h.InventoryProductId,
+                              IsAuto = h.IsAuto,
+                              InventoryId = h.InventoryId,
+                              InventoryCode = h.InventoryCode,
+                              InventoryQuantity = h.InventoryQuantity,
                           }).ToListAsync();
         }
 

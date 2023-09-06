@@ -6,11 +6,14 @@ using Services.Organization.Model.HrConfig;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Organization.HrType;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 
 namespace VErp.Services.Organization.Service.HrConfig
@@ -26,7 +29,7 @@ namespace VErp.Services.Organization.Service.HrConfig
     public class HrTypeGroupService : IHrTypeGroupService
     {
         private readonly ILogger _logger;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly IMapper _mapper;
         private readonly OrganizationDBContext _organizationDBContext;
 
@@ -35,7 +38,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             _mapper = mapper;
             _organizationDBContext = organizationDBContext;
             _logger = logger;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.HrTypeGroup);
         }
 
         public async Task<int> HrTypeGroupCreate(HrTypeGroupModel model)
@@ -44,7 +47,11 @@ namespace VErp.Services.Organization.Service.HrConfig
             await _organizationDBContext.HrTypeGroup.AddAsync(info);
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Thêm nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model);
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.CreateHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
+                   .ObjectId(info.HrTypeGroupId)
+                   .JsonData(model)
+                   .CreateLog();
 
             return info.HrTypeGroupId;
         }
@@ -59,8 +66,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Cập nhật nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", model);
-
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.UpdateHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
+                   .ObjectId(info.HrTypeGroupId)
+                   .JsonData(model)
+                   .CreateLog();
             return true;
         }
 
@@ -74,7 +84,11 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             await _organizationDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.HrTypeGroup, info.HrTypeGroupId, $"Xóa nhóm chứng từ hành chính nhân sự {info.HrTypeGroupName}", new { hrTypeGroupId });
+            await _objActivityLogFacade.LogBuilder(() => HrTypeActivityLogMessage.DeleteHrGroup)
+                   .MessageResourceFormatDatas(info.HrTypeGroupName)
+                   .ObjectId(info.HrTypeGroupId)
+                   .JsonData(new { hrTypeGroupId })
+                   .CreateLog();
 
             return true;
         }

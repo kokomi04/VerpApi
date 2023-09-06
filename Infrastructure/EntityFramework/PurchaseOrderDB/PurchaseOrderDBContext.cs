@@ -879,11 +879,13 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
             entity.Property(e => e.DefaultValue).HasMaxLength(512);
             entity.Property(e => e.Filters).HasMaxLength(512);
+            entity.Property(e => e.FiltersName).HasMaxLength(255);
             entity.Property(e => e.InputStyleJson).HasMaxLength(512);
             entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
             entity.Property(e => e.Placeholder).HasMaxLength(128);
             entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
             entity.Property(e => e.RegularExpression).HasMaxLength(256);
+            entity.Property(e => e.RequireFiltersName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
             entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
 

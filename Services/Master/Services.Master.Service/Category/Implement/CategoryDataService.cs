@@ -26,7 +26,8 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -237,7 +238,7 @@ namespace VErp.Services.Accountancy.Service.Category
               .MessageResourceFormatDatas(id)
               .BillTypeId(category.CategoryId)
               .ObjectId(id)
-              .JsonData(data.JsonSerialize())
+              .JsonData(data)
               .CreateLog();
 
             return (int)id;
@@ -392,7 +393,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(data.JsonSerialize())
+             .JsonData(data)
              .CreateLog();
 
             return numberChange;
@@ -536,7 +537,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(categoryRow.JsonSerialize())
+             .JsonData(categoryRow)
              .CreateLog();
 
             return numberChange;

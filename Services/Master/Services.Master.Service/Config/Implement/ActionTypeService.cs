@@ -64,7 +64,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Create)
             .MessageResourceFormatDatas(model.ActionTypeName)
             .ObjectId(newActionTypeId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
             return newActionTypeId;
@@ -89,7 +89,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Delete)
              .MessageResourceFormatDatas(info.ActionTypeName)
              .ObjectId(actionTypeId)
-             .JsonData(info.JsonSerialize())
+             .JsonData(info)
              .CreateLog();
 
             return true;
@@ -126,7 +126,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _actionTypeActivityLog.LogBuilder(() => ActionTypeActivityLogMessage.Update)
                .MessageResourceFormatDatas(info.ActionTypeName)
                .ObjectId(actionTypeId)
-               .JsonData(info.JsonSerialize())
+               .JsonData(info)
                .CreateLog();
 
             return true;

@@ -35,7 +35,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Create)
                 .MessageResourceFormatDatas(entity.PrintConfigName)
                 .ObjectId(entity.PrintConfigStandardId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
         }
         protected override async Task LogUpdatePrintConfig(PrintConfigStandardModel model, PrintConfigStandard entity)
@@ -43,7 +43,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Update)
                 .MessageResourceFormatDatas(entity.PrintConfigName)
                 .ObjectId(entity.PrintConfigStandardId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
         }
         protected override async Task LogDeletePrintConfig(PrintConfigStandard entity)
@@ -51,7 +51,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             await _printConfigStandardActivityLog.LogBuilder(() => PrintConfigStandardActivityLogMessage.Delete)
                  .MessageResourceFormatDatas(entity.PrintConfigName)
                  .ObjectId(entity.PrintConfigStandardId)
-                 .JsonData(entity.JsonSerialize())
+                 .JsonData(entity)
                  .CreateLog();
         }      
     }

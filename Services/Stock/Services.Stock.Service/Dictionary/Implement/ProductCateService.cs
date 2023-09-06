@@ -80,7 +80,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Create)
               .MessageResourceFormatDatas(productCate.ProductCateName)
               .ObjectId(productCate.ProductCateId)
-              .JsonData(req.JsonSerialize())
+              .JsonData(req)
               .CreateLog();
 
 
@@ -119,7 +119,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Delete)
              .MessageResourceFormatDatas(productCate.ProductCateName)
              .ObjectId(productCate.ProductCateId)
-             .JsonData(productCate.JsonSerialize())
+             .JsonData(productCate)
              .CreateLog();
 
             return true;
@@ -212,7 +212,7 @@ namespace VErp.Services.Stock.Service.Dictionary.Implement
             await _productCateActivityLog.LogBuilder(() => ProductCateActivityMessage.Update)
            .MessageResourceFormatDatas(productCate.ProductCateName)
            .ObjectId(productCate.ProductCateId)
-           .JsonData(req.JsonSerialize())
+           .JsonData(req)
            .CreateLog();
 
             return true;

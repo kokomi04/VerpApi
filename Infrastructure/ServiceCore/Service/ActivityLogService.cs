@@ -27,9 +27,9 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
         ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId);
 
-        Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
+        Task<bool> CreateActivityLog(EnumObjectType objectTypeId, long objectId, string message, object data, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null);
 
-        Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object data, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
+        Task<bool> CreateActivityLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object data, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null);
 
         ActivityLogBatchs BeginBatchLog();
 
@@ -105,7 +105,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
         }
 
-        public async Task<bool> CreateLog(EnumObjectType objectTypeId, long objectId, string message, object objData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
+        public async Task<bool> CreateActivityLog(EnumObjectType objectTypeId, long objectId, string message, object objData, EnumActionType? action = null, bool ignoreBatch = false, string messageResourceName = "", string messageResourceFormatData = "", int? billTypeId = null)
         {
             var jsonData = JsonSerialize(objData);
             if (ignoreBatch)
@@ -160,7 +160,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
         }
 
 
-        public async Task<bool> CreateLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object objData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
+        public async Task<bool> CreateActivityLog<T>(EnumObjectType objectTypeId, long objectId, Expression<Func<T>> messageResourceName, object objData, EnumActionType? action = null, bool ignoreBatch = false, object[] messageResourceFormatData = null, int? billTypeId = null)
         {
             var jsonData = JsonSerialize(objData);
             var propertyInfo = ((MemberExpression)messageResourceName.Body).Member as PropertyInfo;
@@ -201,7 +201,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
 
 
-            return await CreateLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, JsonSerialize(data), billTypeId);
+            return await CreateActivityLog(objectTypeId, objectId, message, jsonData, action, ignoreBatch, type, JsonSerialize(data), billTypeId);
         }
 
         public ObjectActivityLogFacade CreateObjectTypeActivityLog(EnumObjectType? objectTypeId)
@@ -280,6 +280,10 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             return null;
         }
+
+
+
+
         public class ActivityLogBatchs : IDisposable
         {
             private readonly IActivityLogService _activityLogService;
@@ -312,7 +316,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             {
                 foreach (var log in _logs)
                 {
-                    await _activityLogService.CreateLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true, log.MessageResourceName, log.MessageResourceFormatData, log.BillTypeId);
+                    await _activityLogService.CreateActivityLog(log.ObjectTypeId, log.ObjectId, log.Message, log.JsonData, log.Action, true, log.MessageResourceName, log.MessageResourceFormatData, log.BillTypeId);
                 }
                 return true;
             }

@@ -8,7 +8,8 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Services.Organization.Model.BusinessInfo;
 
 namespace Services.Organization.Service.BusinessInfo.Implement

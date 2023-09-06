@@ -33,7 +33,8 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -730,7 +731,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                 }
             }
 
-            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join} WHERE bill.IsDeleted = 0 AND bill.HrTypeId = " + hrTypeInfo.HrTypeId, fieldNames);
+            return ($"SELECT {select.ToString().TrimEnd().TrimEnd(',')} {join} WHERE bill.SubsidiaryId = " + _currentContextService.SubsidiaryId + " AND bill.IsDeleted = 0 AND bill.HrTypeId = " + hrTypeInfo.HrTypeId, fieldNames);
         }
 
 
@@ -747,7 +748,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(HrTypeTitle, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(billInfo.JsonSerialize())
+                        .JsonData(billInfo)
                         .CreateLog();
 
                 return true;
@@ -866,7 +867,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, hrBill_F_Id)
                         .BillTypeId(hrTypeId)
                         .ObjectId(hrBill_F_Id)
-                        .JsonData(data.JsonSerialize())
+                        .JsonData(data)
                         .CreateLog();
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
@@ -936,7 +937,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                         .MessageResourceFormatDatas(hrTypeInfo.Title, billInfo.FId)
                         .BillTypeId(hrTypeId)
                         .ObjectId(billInfo.FId)
-                        .JsonData(data.JsonSerialize())
+                        .JsonData(data)
                         .CreateLog();
 
                 await ConfirmCustomGenCode(generateTypeLastValues);
@@ -1005,6 +1006,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                               IsHidden = af.IsHidden,
                               IsRequire = af.IsRequire,
                               IsUnique = af.IsUnique,
+                              FiltersName = af.FiltersName,
                               Filters = af.Filters,
                               FieldName = f.FieldName,
                               DataTypeId = (EnumDataType)f.DataTypeId,
@@ -1015,6 +1017,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                               RefTableTitle = f.RefTableTitle,
                               RegularExpression = af.RegularExpression,
                               IsMultiRow = a.IsMultiRow,
+                              RequireFiltersName = af.RequireFiltersName,
                               RequireFilters = af.RequireFilters,
                               HrAreaTitle = a.Title,
                               HrAreaId = a.HrAreaId,
@@ -1258,6 +1261,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             public bool IsHidden { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public EnumDataType DataTypeId { get; set; }
@@ -1269,6 +1273,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
             public string HrAreaCode { get; internal set; }
             public int HrAreaId { get; internal set; }

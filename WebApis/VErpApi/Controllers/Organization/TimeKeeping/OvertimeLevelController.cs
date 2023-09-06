@@ -54,5 +54,13 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
             return await _countedSymbolService.UpdateOvertimeLevel(overtimeLevelId, model);
 
         }
+
+        [HttpPut]
+        [Route("sortOrder")]
+        public async Task<bool> UpdateOvertimeLevelSortOrder([FromBody] IList<OvertimeLevelModel> model)
+        {
+            return await _countedSymbolService.UpdateOvertimeLevelSortOrder(model);
+
+        }
     }
 }

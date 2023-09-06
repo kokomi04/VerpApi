@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -18,7 +19,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -222,7 +225,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Create)
                   .MessageResourceFormatDatas(c.Key.CustomerCode)
                   .ObjectId(c.Key.CustomerId)
-                  .JsonData(c.Value.JsonSerialize())
+                  .JsonData(c.Value)
                   .CreateLog();
             }
 
@@ -291,7 +294,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Delete)
             .MessageResourceFormatDatas(customerInfo.CustomerCode)
             .ObjectId(customerInfo.CustomerId)
-            .JsonData(customerInfo.JsonSerialize())
+            .JsonData(customerInfo)
             .CreateLog();
             return true;
         }
@@ -501,7 +504,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             var checkExistedName = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.CustomerName == data.CustomerName);
             if (checkExistedName)
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", data.CustomerName));
-
+            if (!string.IsNullOrEmpty(data.TaxIdNo))
+            {
+                var checkExisTaxId = _organizationContext.Customer.Any(q => q.CustomerId != customerId && q.TaxIdNo == data.TaxIdNo);
+                if (checkExisTaxId)
+                    throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", data.TaxIdNo));
+            }
             var dbContacts = await _organizationContext.CustomerContact.Where(c => c.CustomerId == customerId).ToListAsync();
             var dbBankAccounts = await _organizationContext.CustomerBankAccount.Where(ba => ba.CustomerId == customerId).ToListAsync();
             var dbCustomerAttachments = await _organizationContext.CustomerAttachment.Where(a => a.CustomerId == customerId).ToListAsync();
@@ -681,7 +689,7 @@ namespace VErp.Services.Organization.Service.Customer.Implement
             await _customerActivityLog.LogBuilder(() => CustomerActivityLogMessage.Update)
                   .MessageResourceFormatDatas(customerInfo.CustomerCode)
                   .ObjectId(customerInfo.CustomerId)
-                  .JsonData(customerInfo.JsonSerialize())
+                  .JsonData(customerInfo)
                   .CreateLog();
 
             return customerInfo;
@@ -735,7 +743,9 @@ namespace VErp.Services.Organization.Service.Customer.Implement
 
             var customerNames = customers.Select(c => c.CustomerName).ToList();
 
-            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName)).ToListAsync();
+            var customerTaxIds = customers.Select(c => c.TaxIdNo).Where(c=> !string.IsNullOrEmpty(c)).ToList(); 
+
+            var existedCustomers = await _organizationContext.Customer.Where(s => customerCodes.Contains(s.CustomerCode) || customerNames.Contains(s.CustomerName) || customerTaxIds.Contains(s.TaxIdNo)).ToListAsync();
 
             if (existedCustomers != null && existedCustomers.Count > 0)
             {
@@ -746,7 +756,12 @@ namespace VErp.Services.Organization.Service.Customer.Implement
                 {
                     throw CustomerCodeAlreadyExists.BadRequestFormat(string.Join(", ", existingCodes));
                 }
-
+                var exisTaxIds = existedCustomers.Select(c => c.TaxIdNo).ToList();
+                var existingTaxIds = exisTaxIds.Intersect(customerTaxIds, StringComparer.OrdinalIgnoreCase);
+                if (existingTaxIds.Count() > 0)
+                {
+                    throw CustomerTaxIdAlreadyExists.BadRequestFormat(string.Join(", ", existingTaxIds));
+                }
                 throw CustomerNameAlreadyExists.BadRequestFormat(string.Join(", ", existedCustomers.Select(c => c.CustomerName)));
             }
 

@@ -111,6 +111,7 @@ namespace Verp.Cache.RedisCache
         public string UserFullName { get; }
         public long CreatedDatetimeUtc { get; }
     }
+
     public class LongTaskResponse
     {
         public LongTaskResponse(int httpStatusCode, string responseBody)
@@ -171,7 +172,7 @@ namespace Verp.Cache.RedisCache
         public string CurrentStepName { get; private set; }
 
 
-        private IRedLock distributedLock;
+        private readonly IRedLock distributedLock;
 
         public bool IsDisposed { get; private set; }
         internal LongTaskResourceLock(IRedLock distributedLock, string processTaskName, LongTaskCreationInfo creationInfo, int? totalSteps)
@@ -219,11 +220,16 @@ namespace Verp.Cache.RedisCache
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             IsDisposed = true;
             IsFinished = true;
             distributedLock.Dispose();
         }
-
     }
 
 }

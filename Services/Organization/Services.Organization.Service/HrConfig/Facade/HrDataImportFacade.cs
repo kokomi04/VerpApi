@@ -22,7 +22,6 @@ using Newtonsoft.Json;
 using System.Text;
 using VErp.Infrastructure.EF.EFExtensions;
 using static VErp.Commons.Library.EvalUtils;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Services.Organization.Service.HrConfig.Abstract;
 using Microsoft.EntityFrameworkCore;
 using Verp.Cache.RedisCache;
@@ -31,6 +30,8 @@ using DocumentFormat.OpenXml.InkML;
 using System.Drawing.Drawing2D;
 using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 
 namespace VErp.Services.Organization.Service.HrConfig.Facade
 {
@@ -660,7 +661,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                   .MessageResourceFormatDatas(_hrType.Title, billInfo.BillCode)
                   .BillTypeId(_hrType.HrTypeId)
                   .ObjectId(billInfo.FId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 longTask.IncProcessedRows();
@@ -746,7 +747,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 .MessageResourceFormatDatas(_hrType.Title, billInfo.BillCode)
                 .BillTypeId(_hrType.HrTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
                 longTask.IncProcessedRows();
@@ -906,7 +907,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { excelRow.Index, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, 
+                        new object[] { excelRow.Index, field.Title + ": " + value, field.FiltersName });
                 }
             }
             value = referData.Rows[0][field.RefTableField]?.ToString() ?? string.Empty;

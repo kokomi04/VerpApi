@@ -45,6 +45,8 @@ namespace VErp.Services.Accountancy.Model.Input
 
         public int? ObjectApprovalStepTypeId { get; set; }
 
+        public string SqlValue { get; set; }
+
         protected void MappingBase<T>(Profile profile) where T : InputFieldInputModel
         {
             profile.CreateMapCustom<InputField, T>()
@@ -88,7 +90,11 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsUnique { get; set; }
         public bool IsHidden { get; set; }
         public bool IsCalcSum { get; set; }
+        public bool IsPivotAllowcation { get; set; }
+        public bool IsPivotValue { get;set; }
+        public bool IsReadOnly { get; set; }
         public string RegularExpression { get; set; }
+        public string FiltersName { get; set; }
         public string Filters { get; set; }
         public int Width { get; set; }
         public int Height { get; set; }
@@ -104,6 +110,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public int SortOrder { get; set; }
         public string DefaultValue { get; set; }
         public int? IdGencode { get; set; }
+        public string RequireFiltersName { get; set; }
         public string RequireFilters { get; set; }
         public string ReferenceUrl { get; set; }
         public bool IsBatchSelect { get; set; }
@@ -126,8 +133,12 @@ namespace VErp.Services.Accountancy.Model.Input
                 IsUnique == curField.IsUnique &&
                 IsHidden == curField.IsHidden &&
                 IsCalcSum == curField.IsCalcSum &&
+                IsReadOnly == curField.IsReadOnly &&
+                IsPivotAllowcation == curField.IsPivotAllowcation &&
+                IsPivotValue == curField.IsPivotValue &&
                 RegularExpression == curField.RegularExpression &&
                 DefaultValue == curField.DefaultValue &&
+                FiltersName == curField.FiltersName &&
                 Filters == curField.Filters &&
                 Width == curField.Width &&
                 Height == curField.Height &&
@@ -140,6 +151,7 @@ namespace VErp.Services.Accountancy.Model.Input
                 OnChange == curField.OnChange &&
                 AutoFocus == curField.AutoFocus &&
                 Column == curField.Column &&
+                RequireFiltersName == curField.RequireFiltersName &&
                 RequireFilters == curField.RequireFilters &&
                 ReferenceUrl == curField.ReferenceUrl &&
                 IsBatchSelect == curField.IsBatchSelect &&

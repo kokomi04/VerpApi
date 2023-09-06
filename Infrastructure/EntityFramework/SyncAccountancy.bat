@@ -1,1 +1,1 @@
-Tools\\SynTool.exe Development $.DatabaseConnections.AccountancyDatabase AccountancyDB
+Tools\\SynTool.exe Development $.DatabaseConnections.AccountancyPrivateDatabase AccountancyDB

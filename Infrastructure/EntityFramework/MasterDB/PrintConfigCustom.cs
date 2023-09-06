@@ -9,6 +9,8 @@ public partial class PrintConfigCustom
 
     public int? PrintConfigStandardId { get; set; }
 
+    public int? PrintConfigHeaderCustomId { get; set; }
+
     public string PrintConfigName { get; set; }
 
     public string Title { get; set; }

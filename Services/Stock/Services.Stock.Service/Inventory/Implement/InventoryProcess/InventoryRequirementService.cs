@@ -17,7 +17,8 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -61,7 +62,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             _invRequestActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
         }
 
-        public async Task<PageData<InventoryRequirementListModel>> GetListInventoryRequirements(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null)
+        public async Task<PageData<InventoryRequirementListModel>> GetList(EnumInventoryType inventoryType, string keyword, int page, int size, string orderByFieldName, bool asc, bool? hasInventory, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -100,15 +101,18 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   ProductionStepId = ird.ProductionStepId,
                                                   CreatedByUserId = ir.CreatedByUserId,
                                                   ProductionOrderCode = ird.ProductionOrderCode,
+
+                                                  ird.OutsourceStepRequestId,
+
                                                   ird.OrderCode,
                                                   ird.Pocode,
 
-                                                  Shipper = ir.Shipper,
+                                                  //Shipper = ir.Shipper,
                                                   CustomerId = ir.CustomerId,
-                                                  BillForm = ir.BillForm,
-                                                  BillCode = ir.BillCode,
-                                                  BillSerial = ir.BillSerial,
-                                                  BillDate = ir.BillDate,
+                                                  // BillForm = ir.BillForm,
+                                                  //BillCode = ir.BillCode,
+                                                  //BillSerial = ir.BillSerial,
+                                                  //BillDate = ir.BillDate,
                                                   ModuleTypeId = ir.ModuleTypeId,
                                                   InventoryRequirementId = ir.InventoryRequirementId,
                                                   CensorByUserId = ir.CensorByUserId,
@@ -124,11 +128,13 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                                                   ird.ProductUnitConversionId,
 
 
+
                                                   s.InventoryQuantity,
                                                   PrimaryQuantityRemaining = r == null ? (decimal?)null : r.PrimaryQuantityRemaining,
 
                                                   ir.UpdatedDatetimeUtc
                                               };
+
 
 
 
@@ -157,14 +163,15 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                             ProductionStepId = ir.ProductionStepId,
                             CreatedByUserId = ir.CreatedByUserId,
                             ProductionOrderCode = ir.ProductionOrderCode,
+                            ir.OutsourceStepRequestId,
                             ir.OrderCode,
                             ir.Pocode,
-                            ir.Shipper,
+                            //ir.Shipper,
                             ir.CustomerId,
-                            ir.BillForm,
-                            ir.BillCode,
-                            ir.BillSerial,
-                            ir.BillDate,
+                            //ir.BillForm,
+                            //ir.BillCode,
+                            //ir.BillSerial,
+                            //ir.BillDate,
                             ir.ModuleTypeId,
                             ir.InventoryRequirementId,
                             ir.CensorByUserId,
@@ -197,6 +204,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 );
 
             }
+
+
             query = query.InternalFilter(filters).InternalOrderBy(orderByFieldName, asc);
 
             var total = query.Count();
@@ -210,14 +219,15 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     ProductionStepId = x.ProductionStepId,
                     CreatedByUserId = x.CreatedByUserId,
                     ProductionOrderCode = x.ProductionOrderCode,
+                    OutsourceStepRequestId = x.OutsourceStepRequestId,
                     OrderCode = x.OrderCode,
                     PoCode = x.Pocode,
-                    Shipper = x.Shipper,
+                    //Shipper = x.Shipper,
                     CustomerId = x.CustomerId,
-                    BillForm = x.BillForm,
-                    BillCode = x.BillCode,
-                    BillSerial = x.BillSerial,
-                    BillDate = x.BillDate.GetUnix(),
+                    //BillForm = x.BillForm,
+                    //BillCode = x.BillCode,
+                    //BillSerial = x.BillSerial,
+                    //BillDate = x.BillDate.GetUnix(),
                     ModuleTypeId = x.ModuleTypeId,
                     InventoryRequirementId = x.InventoryRequirementId,
                     CensorByUserId = x.CensorByUserId,
@@ -235,7 +245,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                     PrimaryQuantity = x.PrimaryQuantity,
                     ProductUnitConversionId = x.ProductUnitConversionId,
                     ProductUnitConversionQuantity = x.ProductUnitConversionQuantity,
-                    UpdatedDatetimeUtc= x.UpdatedDatetimeUtc.GetUnix(),
+                    UpdatedDatetimeUtc = x.UpdatedDatetimeUtc.GetUnix(),
 
                 }).ToList();
 
@@ -271,21 +281,21 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             return (lst, total);
         }
 
-        public async Task<long> GetInventoryRequirementId(EnumInventoryType inventoryType, string inventoryRequirementCode)
+        public async Task<long> GetIdByCode(EnumInventoryType inventoryType, string inventoryRequirementCode)
         {
             var entity = await _stockDbContext.InventoryRequirement
                 .FirstOrDefaultAsync(r => r.InventoryTypeId == (int)inventoryType && r.InventoryRequirementCode == inventoryRequirementCode);
             return entity?.InventoryRequirementId ?? 0;
         }
 
-        public async Task<InventoryRequirementOutputModel> GetInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId)
+        public async Task<InventoryRequirementOutputModel> Info(EnumInventoryType inventoryType, long inventoryRequirementId)
         {
-            var entity = await GetRequirements(inventoryType, new[] { inventoryRequirementId });
+            var entity = await GetByIds(inventoryType, new[] { inventoryRequirementId });
             if (entity.Count == 0) throw InvRequestNotFound.BadRequest();
             return entity.First();
         }
 
-        public async Task<IList<InventoryRequirementOutputModel>> GetRequirements(EnumInventoryType inventoryType, IList<long> inventoryRequirementIds)
+        public async Task<IList<InventoryRequirementOutputModel>> GetByIds(EnumInventoryType inventoryType, IList<long> inventoryRequirementIds)
         {
             var entity = await _stockDbContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
@@ -368,7 +378,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             return lst;
         }
 
-        public async Task<long> AddInventoryRequirement(EnumInventoryType inventoryType, InventoryRequirementInputModel req)
+        public async Task<long> Create(EnumInventoryType inventoryType, InventoryRequirementInputModel req)
         {
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
@@ -446,7 +456,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await CreatedLogBuilder(objectType)
                    .MessageResourceFormatDatas(req.InventoryRequirementCode)
                    .ObjectId(inventoryRequirement.InventoryRequirementId)
-                   .JsonData(req.JsonSerialize())
+                   .JsonData(req)
                    .CreateLog();
 
 
@@ -480,7 +490,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             return ctx;
         }
 
-        public async Task<long> UpdateInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req)
+        public async Task<long> Update(EnumInventoryType inventoryType, long inventoryRequirementId, InventoryRequirementInputModel req)
         {
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
@@ -568,7 +578,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await UpdatedLogBuilder(objectType)
                  .MessageResourceFormatDatas(req.InventoryRequirementCode)
                  .ObjectId(inventoryRequirement.InventoryRequirementId)
-                 .JsonData(req.JsonSerialize())
+                 .JsonData(req)
                  .CreateLog();
 
                 return inventoryRequirementId;
@@ -581,7 +591,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             }
         }
 
-        public async Task<bool> DeleteInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId)
+        public async Task<bool> Delete(EnumInventoryType inventoryType, long inventoryRequirementId)
         {
             using var trans = await _stockDbContext.Database.BeginTransactionAsync();
             try
@@ -621,7 +631,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 await DeletedLogBuilder(objectType)
                  .MessageResourceFormatDatas(inventoryRequirement.InventoryRequirementCode)
                  .ObjectId(inventoryRequirement.InventoryRequirementId)
-                 .JsonData(inventoryRequirement.JsonSerialize())
+                 .JsonData(inventoryRequirement)
                  .CreateLog();
 
 
@@ -637,7 +647,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             }
         }
 
-        public async Task<bool> ConfirmInventoryRequirement(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null)
+        public async Task<bool> Confirm(EnumInventoryType inventoryType, long inventoryRequirementId, EnumInventoryRequirementStatus status, Dictionary<long, int> assignStocks = null)
         {
             var objectType = inventoryType == EnumInventoryType.Input ? EnumObjectType.RequestInventoryInput : EnumObjectType.RequestInventoryOutput;
 
@@ -682,7 +692,7 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
             await ValidateDateOfBill(billDate, oldDate);
         }
 
-        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType requirementType, int? productMaterialsConsumptionGroupId, long? productionOrderMaterialSetId)
+        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder(EnumInventoryType inventoryType, string productionOrderCode, EnumInventoryRequirementType? requirementType, int? productMaterialsConsumptionGroupId, long? productionOrderMaterialSetId)
         {
             var query = _stockDbContext.InventoryRequirement
                 .Include(r => r.InventoryRequirementFile)
@@ -690,7 +700,8 @@ namespace VErp.Services.Manafacturing.Service.Stock.Implement
                 .ThenInclude(d => d.ProductUnitConversion)
                 .Where(r => r.InventoryTypeId == (int)inventoryType
                     && r.InventoryRequirementDetail.Any(rd => rd.ProductionOrderCode == productionOrderCode)
-                    && r.InventoryRequirementTypeId == (int)EnumInventoryRequirementType.Complete);
+                    && (!requirementType.HasValue || r.InventoryRequirementTypeId == (int)requirementType.Value)
+                    );
 
             if (productMaterialsConsumptionGroupId.HasValue)
             {

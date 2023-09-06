@@ -6,9 +6,9 @@ using VErp.Commons.Library;
 using Verp.Resources.Organization;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Commons.Constants;
 using VErp.Services.Organization.Model.Salary;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {

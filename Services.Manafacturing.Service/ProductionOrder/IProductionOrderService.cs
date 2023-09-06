@@ -22,6 +22,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<IList<OrderProductInfo>> GetOrderProductInfo(IList<long> productionOderIds);
 
         Task<ProductionOrderInputModel> UpdateProductionOrder(long productionOrderId, ProductionOrderInputModel data);
+        Task SetProductionOrderIsFinish(ProductionOrderEntity productionOrder);
+
         Task<ProductionOrderInputModel> CreateProductionOrder(ProductionOrderInputModel data);
         Task<int> CreateMultipleProductionOrder(int monthPlanId, ProductionOrderInputModel[] data);
         Task<bool> DeleteProductionOrder(long productionOrderId);

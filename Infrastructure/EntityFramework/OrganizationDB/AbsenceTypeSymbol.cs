@@ -7,15 +7,23 @@ public partial class AbsenceTypeSymbol
 {
     public int AbsenceTypeSymbolId { get; set; }
 
-    public string TypeSymbolCode { get; set; }
+    public string SymbolCode { get; set; }
 
     public string TypeSymbolDescription { get; set; }
 
-    public string SymbolCode { get; set; }
+    public int MaxOfDaysOffPerMonth { get; set; }
 
     public bool IsUsed { get; set; }
 
     public bool IsCounted { get; set; }
+
+    public double SalaryRate { get; set; }
+
+    public bool IsAnnualLeave { get; set; }
+
+    public int CreatedByUserId { get; set; }
+
+    public DateTime CreatedDatetimeUtc { get; set; }
 
     public int UpdatedByUserId { get; set; }
 

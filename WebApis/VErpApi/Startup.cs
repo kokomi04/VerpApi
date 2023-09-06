@@ -127,9 +127,14 @@ namespace VErp.WebApis.VErpApi
                 await _inventoryService.ProductionOrderInventory(msg.Data);
             });
 
-            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusMessage>(PRODUCTION_CALC_STATUS, async (_productionOrderService, msg, calcelToken) =>
+            //services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusMessage>(PRODUCTION_CALC_STATUS, async (_productionOrderService, msg, calcelToken) =>
+            //{
+            //    await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
+            //});
+
+            services.AddInProcessBackgroundConsummer<IProductionProgressService, ProductionOrderCalcStatusV2Message>(PRODUCTION_CALC_STATUS_V2, async (_productionOrderService, msg, calcelToken) =>
             {
-                await _productionOrderService.CalcAndUpdateProductionOrderStatus(msg.Data);
+                await _productionOrderService.CalcAndUpdateProductionOrderStatusV2(msg.Data);
             });
         }
 
@@ -198,6 +203,8 @@ namespace VErp.WebApis.VErpApi
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/report/swagger.json", "REPORT.API V1");
 
                   c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/manufacturing/swagger.json", "MANUFACTURING.API V1");
+
+                  c.SwaggerEndpoint($"{(!string.IsNullOrEmpty(pathBase) ? pathBase : string.Empty)}swagger/help/swagger.json", "HELP.API V1");
 
                   c.OAuthClientId("web");
                   c.OAuthClientSecret("secretWeb");
@@ -273,6 +280,12 @@ namespace VErp.WebApis.VErpApi
                     Title = "VERP Manufacturing HTTP API",
                     Version = "v1",
                     Description = "The Manufacturing Service HTTP API"
+                });
+                options.SwaggerDoc("help", new OpenApiInfo
+                {
+                    Title = "VERP Help HTTP API",
+                    Version = "v1",
+                    Description = "The Help Service HTTP API"
                 });
 
 

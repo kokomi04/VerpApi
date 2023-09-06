@@ -1,14 +1,18 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Step;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Step;
@@ -18,7 +22,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
     public class StepGroupService : IStepGroupService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -28,7 +32,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.StepGroup);
             _logger = logger;
             _mapper = mapper;
         }
@@ -38,7 +42,12 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             var entity = _mapper.Map<StepGroup>(req);
             _manufacturingDBContext.StepGroup.Add(_mapper.Map<StepGroup>(entity));
             await _manufacturingDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.StepGroup, entity.StepGroupId, $"Tạo nhóm danh mục công đoạn '{entity.StepGroupName}'", entity);
+
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStepGroup)
+                   .MessageResourceFormatDatas(entity.StepGroupName)
+                   .ObjectId(entity.StepGroupId)
+                   .JsonData(entity)
+                   .CreateLog();
             return entity.StepGroupId;
         }
 
@@ -53,7 +62,11 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             groupStep.IsDeleted = true;
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.StepGroup, groupStep.StepGroupId, $"Xóa nhóm danh mục công đoạn '{groupStep.StepGroupName}'", groupStep);
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStepGroup)
+                   .MessageResourceFormatDatas(groupStep.StepGroupName)
+                   .ObjectId(groupStep.StepGroupId)
+                   .JsonData(groupStep)
+                   .CreateLog();
             return true;
         }
 
@@ -87,7 +100,12 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             _mapper.Map(req, destInfo);
 
             await _manufacturingDBContext.SaveChangesAsync();
-            await _activityLogService.CreateLog(EnumObjectType.StepGroup, destInfo.StepGroupId, $"Cập nhật nhóm danh mục công đoạn '{destInfo.StepGroupName}'", destInfo);
+
+            await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
+                   .MessageResourceFormatDatas(destInfo.StepGroupName)
+                   .ObjectId(destInfo.StepGroupId)
+                   .JsonData(destInfo)
+                   .CreateLog();
             return true;
         }
     }

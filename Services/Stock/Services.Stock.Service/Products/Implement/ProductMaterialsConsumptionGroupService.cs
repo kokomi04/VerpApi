@@ -44,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Create)
                .MessageResourceFormatDatas(model.ProductMaterialsConsumptionGroupCode)
                .ObjectId(entity.ProductMaterialsConsumptionGroupId)
-               .JsonData(model.JsonSerialize())
+               .JsonData(model)
                .CreateLog();
 
             return entity.ProductMaterialsConsumptionGroupId;
@@ -71,7 +71,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Update)
                 .MessageResourceFormatDatas(model.ProductMaterialsConsumptionGroupCode)
                 .ObjectId(group.ProductMaterialsConsumptionGroupId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
         }
@@ -92,7 +92,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _consumptionGroupActivityLog.LogBuilder(() => ConsumptionGroupActivityLogMessage.Delete)
               .MessageResourceFormatDatas(group.ProductMaterialsConsumptionGroupCode)
               .ObjectId(group.ProductMaterialsConsumptionGroupId)
-              .JsonData(group.JsonSerialize())
+              .JsonData(group)
               .CreateLog();
             return true;
         }

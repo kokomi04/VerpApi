@@ -117,6 +117,7 @@ namespace VErp.Commons.Library
 
                 if (forExport && prop.GetCustomAttribute<FieldDataIgnoreExportAttribute>() != null) continue;
 
+                if (!forExport && prop.GetCustomAttribute<FieldDataIgnoreImportAttribute>() != null) continue;
 
                 var isRequired = prop.GetCustomAttribute<RequiredAttribute>();
 

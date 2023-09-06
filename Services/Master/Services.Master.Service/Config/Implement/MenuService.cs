@@ -119,7 +119,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
               .MessageResourceFormatDatas(obj.MenuName)
               .ObjectId(menuId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
             return true;
@@ -143,7 +143,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Update)
             .MessageResourceFormatDatas(obj.MenuName)
             .ObjectId(menuId)
-            .JsonData(obj.JsonSerialize())
+            .JsonData(obj)
             .CreateLog();
 
             return true;
@@ -181,7 +181,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _menuActivityLog.LogBuilder(() => MenuActivityLogMessage.Create)
             .MessageResourceFormatDatas(entity.MenuName)
             .ObjectId(entity.MenuId)
-            .JsonData(model.JsonSerialize())
+            .JsonData(model)
             .CreateLog();
 
 

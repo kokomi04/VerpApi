@@ -11,6 +11,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
+using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Report.ReportConfig;
 using Verp.Services.ReportConfig.Model;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Report;
@@ -20,7 +22,8 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ReportConfigDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -30,7 +33,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
     {
         private readonly ReportConfigDBContext _reportConfigContext;
         private readonly AppSetting _appSetting;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportTypeView;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportType;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeReportTypeGroup;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;
         private readonly IMenuHelperService _menuHelperService;
@@ -47,7 +52,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             )
         {
             _reportConfigContext = reportConfigContext;
-            _activityLogService = activityLogService;
+            _objActivityLogFacadeReportTypeView = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportTypeView);
+            _objActivityLogFacadeReportType = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportType);
+            _objActivityLogFacadeReportTypeGroup = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ReportTypeGroup);
             _mapper = mapper;
             _logger = logger;
             _menuHelperService = menuHelperService;
@@ -132,7 +139,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ReportTypeView, info.ReportTypeViewId, $"Cập nhật bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}", model);
+                    await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .ObjectId(info.ReportTypeViewId)
+                             .JsonData(model)
+                             .CreateLog();
 
                 }
                 catch (Exception ex)
@@ -159,7 +170,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             await _reportConfigContext.ReportTypeGroup.AddAsync(info);
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Thêm nhóm báo cáo {info.ReportTypeGroupName}", model);
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
+                             .ObjectId(info.ReportTypeGroupId)
+                             .JsonData(model)
+                             .CreateLog();
 
             return info.ReportTypeGroupId;
         }
@@ -174,7 +189,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Cập nhật nhóm báo cáo {info.ReportTypeGroupName}", model);
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
+                             .ObjectId(info.ReportTypeGroupId)
+                             .JsonData(model)
+                             .CreateLog();
 
             return true;
         }
@@ -189,7 +208,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             await _reportConfigContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ReportTypeGroup, info.ReportTypeGroupId, $"Xóa nhóm báo cáo {info.ReportTypeGroupName}", new { reportTypeGroupId });
+            await _objActivityLogFacadeReportTypeGroup.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReportGroup)
+                             .MessageResourceFormatDatas(info.ReportTypeGroupName)
+                             .ObjectId(info.ReportTypeGroupId)
+                             .JsonData(new { reportTypeGroupId })
+                             .CreateLog();
 
             return true;
         }
@@ -221,7 +244,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await trans.CommitAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.ReportTypeView, info.ReportTypeViewId, $"Tạo bộ lọc {info.ReportTypeViewName} cho báo cáo  {reportTypeInfo.ReportTypeName}", model);
+                await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .ObjectId(info.ReportTypeViewId)
+                             .JsonData(model)
+                             .CreateLog();
 
                 return true;
             }
@@ -306,12 +333,24 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportTypeModel> Info(int reportTypeId)
         {
+            var reportCustom = await _reportConfigContext.ReportTypeCustom
+              .Where(r => r.ReportTypeId == reportTypeId && !r.IsDeleted)
+              .FirstOrDefaultAsync();
             var reportType = await _reportConfigContext.ReportType.Include(x => x.ReportTypeGroup)
                 //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
             if (reportType == null)
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
+            }
+            if (reportCustom != null)
+            {
+                if (!string.IsNullOrEmpty(reportCustom.HeadSql) || !string.IsNullOrEmpty(reportCustom.BodySql) || !string.IsNullOrEmpty(reportCustom.FooterSql))
+                {
+                    reportType.HeadSql = reportCustom.HeadSql;
+                    reportType.BodySql = reportCustom.BodySql;
+                    reportType.FooterSql = reportCustom.FooterSql;
+                }
             }
             var info = _mapper.Map<ReportTypeModel>(reportType);
             if (info.BscConfig?.Rows != null)
@@ -357,7 +396,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
 
-                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Thêm báo cáo {report.ReportTypeName}", data);
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.CreateReport)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
+                             .ObjectId(report.ReportTypeId)
+                             .JsonData(data)
+                             .CreateLog();
 
                 await _roleHelperService.GrantPermissionForAllRoles(EnumModule.ReportView, EnumObjectType.ReportType, report.ReportTypeId);
 
@@ -418,7 +461,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Cập nhật báo cáo {report.ReportTypeName}", data);
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReport)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
+                             .ObjectId(report.ReportTypeId)
+                             .JsonData(data)
+                             .CreateLog();
 
             }
             catch (Exception ex)
@@ -463,7 +510,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
                 await _reportConfigContext.SaveChangesAsync();
                 trans.Commit();
-                await _activityLogService.CreateLog(EnumObjectType.ReportType, report.ReportTypeId, $"Xóa báo cáo {report.ReportTypeName}", report);
+
+                await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
+                             .MessageResourceFormatDatas( report.ReportTypeName)
+                             .ObjectId(report.ReportTypeId)
+                             .JsonData(report)
+                             .CreateLog();
+
                 return report.ReportTypeId;
             }
             catch (Exception ex)
@@ -604,5 +657,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             return null;
         }
+       
     }
 }

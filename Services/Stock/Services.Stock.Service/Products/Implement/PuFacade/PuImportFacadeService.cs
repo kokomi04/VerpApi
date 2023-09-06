@@ -347,7 +347,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.PuFacade
                                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProductUnitConversionFromExcel)
                                       .MessageResourceFormatDatas(productInfo.ProductCode)
                                       .ObjectId(productInfo.ProductId)
-                                      .JsonData(puByProduct.Value.JsonSerialize())
+                                      .JsonData(puByProduct.Value)
                                       .CreateLog();
                             }
 

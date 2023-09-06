@@ -104,5 +104,15 @@ namespace Verp.Resources.Master.Config.ActionButton {
                 return ResourceManager.GetString("Update", resourceCulture);
             }
         }
+        /// <summary>
+        ///   Looks up a localized string similar to Xác nhận nút chức năng {0}.
+        /// </summary>
+        public static string Confirm
+        {
+            get
+            {
+                return ResourceManager.GetString("Confirm", resourceCulture);
+            }
+        }
     }
 }

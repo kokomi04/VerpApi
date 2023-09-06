@@ -2,6 +2,40 @@ USE MasterDB
 GO
 BEGIN TRY
   BEGIN TRAN
+	
+	
+	INSERT INTO PrintConfigHeaderCustom (
+		PrintConfigHeaderStandardId, 
+		Title, 
+		PrintConfigHeaderCustomCode, 
+		JsAction, 
+		IsShow, 
+		SortOrder, 
+		CreatedByUserId, 
+		CreatedDatetimeUtc, 
+		UpdatedByUserId, 
+		UpdatedDatetimeUtc, 
+		IsDeleted, 
+		DeletedDatetimeUtc
+	)
+	SELECT 
+		s.PrintConfigHeaderStandardId, 
+		s.Title, 
+		s.PrintConfigHeaderStandardCode, 
+		s.JsAction, 
+		s.IsShow, 
+		s.SortOrder, 
+		s.CreatedByUserId, 
+		s.CreatedDatetimeUtc, 
+		s.UpdatedByUserId, 
+		s.UpdatedDatetimeUtc, 
+		s.IsDeleted, 
+		s.DeletedDatetimeUtc
+	FROM PrintConfigHeaderStandard s
+	LEFT JOIN PrintConfigHeaderCustom c ON c.PrintConfigHeaderStandardId = s.PrintConfigHeaderStandardId AND c.IsDeleted = 0
+	WHERE c.PrintConfigHeaderCustomId IS NULL AND s.IsDeleted = 0
+
+
 	DECLARE @tblNewCustomId TABLE
 	(
 		PrintConfigCustomId INT
@@ -9,6 +43,7 @@ BEGIN TRY
 
     INSERT INTO MasterDB.dbo.PrintConfigCustom (
 		PrintConfigStandardId,
+		PrintConfigHeaderCustomId,
         PrintConfigName,
         Title,
         BodyTable,
@@ -38,6 +73,7 @@ BEGIN TRY
 	 INTO @tblNewCustomId(PrintConfigCustomId)
      SELECT
         v.PrintConfigStandardId,
+		v.PrintConfigHeaderCustomId,
         v.PrintConfigName,
         v.Title,
         v.BodyTable,
@@ -65,6 +101,7 @@ BEGIN TRY
       FROM (
 		SELECT
 			p.PrintConfigStandardId,
+			c.PrintConfigHeaderCustomId,
 			p.PrintConfigName,
 			p.Title,
 			p.BodyTable,
@@ -90,17 +127,26 @@ BEGIN TRY
 			s.SubsidiaryId--,
 			--p.ModuleTypeId
 		  FROM MasterDB.dbo.PrintConfigStandard p
+				
 			  CROSS APPLY (
 				SELECT
 					s.SubsidiaryId
 				  FROM OrganizationDB.dbo.Subsidiary s
 				  WHERE s.IsDeleted = 0
 			  ) s
+
+			   OUTER APPLY (
+				SELECT
+					TOP(1)
+					c.PrintConfigHeaderCustomId
+				  FROM MasterDB.dbo.PrintConfigHeaderCustom c
+				  WHERE c.PrintConfigHeaderStandardId = p.PrintConfigHeaderStandardId and c.IsDeleted = 0
+			  ) c
 		  WHERE p.IsDeleted = 0
 	  ) v
       LEFT JOIN MasterDB.dbo.PrintConfigCustom c
         ON c.PrintConfigStandardId = v.PrintConfigStandardId and v.SubsidiaryId = c.SubsidiaryId and c.IsDeleted = 0
-      WHERE c.PrintConfigCustomId is null
+      WHERE c.PrintConfigCustomId is null and v.IsDeleted = 0
 	  
 
 	  INSERT INTO dbo.PrintConfigCustomModuleType

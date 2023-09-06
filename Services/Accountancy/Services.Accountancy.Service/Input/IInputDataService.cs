@@ -31,27 +31,34 @@ namespace VErp.Services.Accountancy.Service.Input
 
         Task<IDictionary<long, BillInfoModel>> GetBillInfos(int inputTypeId, IList<long> fIds);
 
+        Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId);
         Task<InputType> GetTypeInfo(int inputTypeId);
 
         Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId);
 
-        Task<long> CreateBill(int inputTypeId, BillInfoModel data);
+        Task<BillInfoModel> GetBillInfoByParent(int inputTypeId, long parentFId);
 
-        Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data);
+        Task<IList<string>> GetAllocationDataBillCodes(int inputTypeId, long fId);
 
-        Task<bool> DeleteBill(int inputTypeId, long inputValueBillId);
+        Task<bool> UpdateAllocationDataBillCodes(int inputTypeId, long fId, IList<string> dataAllowcationBillCodes);
+
+        Task<long> CreateBill(int inputTypeId, BillInfoModel data, bool isDeleteAllowcationBill);
+
+        Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data, bool isDeleteAllowcationBill);
+
+        Task<bool> DeleteBill(int inputTypeId, long inputValueBillId, bool isDeleteAllowcationBill);
 
         Task<List<ValidateField>> GetInputFields(int inputTypeId, int? areaId = null, bool isExport = false);
 
         Task<CategoryNameModel> GetFieldDataForMapping(int inputTypeId, int? areaId, bool? isExport);
 
-        Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream);
+        Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream, bool isDeleteAllowcationBill);
 
         Task<BillInfoModel> ParseBillFromMapping(int inputTypeId, BillParseMapping parseMapping, Stream stream);
 
         Task<(MemoryStream Stream, string FileName)> ExportBill(int inputTypeId, long fId);
 
-        Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds);
+        Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds, bool isDeleteAllowcationBill);
 
         Task<bool> CheckReferFromCategory(string categoryCode, IList<string> fieldNames, NonCamelCaseDictionary categoryRow);
 

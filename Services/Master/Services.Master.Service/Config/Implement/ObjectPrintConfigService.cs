@@ -13,7 +13,9 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -83,7 +85,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _objectPrintConfigActivityLog.LogBuilder(() => ObjectPrintConfigActivityLogMessage.MapingObjectPrintConfigs)
                  .ObjectType(mapping.ObjectTypeId)
                  .ObjectId(mapping.ObjectId)
-                 .JsonData(mapping.JsonSerialize())
+                 .JsonData(mapping)
                  .CreateLog();
 
                 return true;
@@ -308,6 +310,14 @@ namespace VErp.Services.Master.Service.Config.Implement
                          )
                      );
             }
+
+
+            result.Add(
+                GetObjectPrintConfigSearch(
+                moduleTypeId: EnumModuleType.Organization,
+                objectTypeId: EnumObjectType.SalaryEmployee,
+                objectTitle: "Bảng lương nhân sự")
+            );
 
             return result;
         }

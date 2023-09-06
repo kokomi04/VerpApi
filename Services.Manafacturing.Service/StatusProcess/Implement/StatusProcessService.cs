@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Process;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
@@ -17,6 +20,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
@@ -29,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
     public abstract class StatusProcessService : IStatusProcessService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         public StatusProcessService(ManufacturingDBContext manufacturingDB
@@ -38,7 +42,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionAssignment);
             _logger = logger;
             _mapper = mapper;
         }
@@ -209,7 +213,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 .ProjectTo<ProductionInventoryRequirementModel>(_mapper.ConfigurationProvider)
                 .ToList();
 
-            var productionStepIds = groups.Select(g => g.ProductionStepId).ToList();
+            var productionStepIds = groups.Select(g => (long?)g.ProductionStepId).ToList();
             // Lấy thông tin vật tư yêu cầu thêm
             var allMaterialRequirements = _manufacturingDBContext.ProductionMaterialsRequirementDetail
                  .Include(mrd => mrd.ProductionMaterialsRequirement)
@@ -221,25 +225,27 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                  .ToList();
 
             // Lấy thông tin phân bổ thủ công
-            var allMaterialAllocations = _manufacturingDBContext.MaterialAllocation
-                .Where(ma => ma.ProductionOrderId == productionOrderId && productionStepIds.Contains(ma.ProductionStepId) && departmentIds.Contains(ma.DepartmentId))
+            var allMaterialAllocations = _manufacturingDBContext.ProductionHandover
+                .Where(ma => ma.ProductionOrderId == productionOrderId && !ma.IsAuto && (productionStepIds.Contains(ma.FromProductionStepId) || productionStepIds.Contains(ma.ToProductionStepId))
+                && (departmentIds.Contains(ma.FromDepartmentId) || departmentIds.Contains(ma.ToDepartmentId)))
                 .ToList();
 
             // Lấy thông tin bàn giao
             var allHandovers = _manufacturingDBContext.ProductionHandover.Include(h => h.ProductionHandoverReceipt)
                     .Where(h => h.ProductionOrderId == productionOrderId
+                    && !h.IsAuto
                     && ((departmentIds.Contains(h.FromDepartmentId) && productionStepIds.Contains(h.FromProductionStepId))
                     || (departmentIds.Contains(h.ToDepartmentId) && productionStepIds.Contains(h.ToProductionStepId))))
                     .Select(h => new ProductionHandoverModel()
                     {
 
-                        ProductionHandoverReceiptId = h.ProductionHandoverReceipt.ProductionHandoverReceiptId,
-                        ProductionHandoverReceiptCode = h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
+                        ProductionHandoverReceiptId = h.ProductionHandoverReceipt == null ? 0 : h.ProductionHandoverReceipt.ProductionHandoverReceiptId,
+                        ProductionHandoverReceiptCode = h.ProductionHandoverReceipt == null ? "" : h.ProductionHandoverReceipt.ProductionHandoverReceiptCode,
 
                         ProductionHandoverId = h.ProductionHandoverId,
-                        HandoverStatusId = (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
-                        CreatedByUserId = h.ProductionHandoverReceipt.CreatedByUserId,
-                        AcceptByUserId = h.ProductionHandoverReceipt.AcceptByUserId,
+                        HandoverStatusId = h.ProductionHandoverReceipt == null ? (EnumHandoverStatus)h.Status : (EnumHandoverStatus)h.ProductionHandoverReceipt.HandoverStatusId,
+                        CreatedByUserId = h.ProductionHandoverReceipt == null ? h.CreatedByUserId : h.ProductionHandoverReceipt.CreatedByUserId,
+                        AcceptByUserId = h.ProductionHandoverReceipt == null ? h.AcceptByUserId : h.ProductionHandoverReceipt.AcceptByUserId,
 
 
                         HandoverQuantity = h.HandoverQuantity,
@@ -252,7 +258,14 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                         HandoverDatetime = h.HandoverDatetime.GetUnix(),
                         Note = h.Note,
 
-                        ProductionOrderId = h.ProductionOrderId
+                        ProductionOrderId = h.ProductionOrderId,
+                        IsAuto = h.IsAuto,
+                        InventoryCode = h.InventoryCode,
+                        InventoryDetailId = h.InventoryDetailId,
+                        InventoryId = h.InventoryId,
+                        InventoryProductId = h.InventoryProductId,
+                        InventoryQuantity = h.InventoryQuantity,
+                        InventoryRequirementDetailId = h.InventoryRequirementDetailId
                     })
                     .ToList();
 
@@ -548,27 +561,26 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
 
                             // Xử lý phiếu xuất kho phân bổ thủ công
                             var materialAllocations = allMaterialAllocations
-                                .Where(ma => ma.SourceProductId.HasValue
-                                && ma.SourceProductId.Value == inputLinkData.LinkDataObjectId
-                                && ma.ProductionStepId == inOutGroup.ProductionStepId
-                                && ma.DepartmentId == productionAssignment.DepartmentId)
+                                .Where(ma => ma.ObjectId == inputLinkData.LinkDataObjectId
+                                && (ma.FromProductionStepId == inOutGroup.ProductionStepId || ma.ToProductionStepId == inOutGroup.ProductionStepId)
+                                && (ma.FromDepartmentId == productionAssignment.DepartmentId || ma.ToDepartmentId == productionAssignment.DepartmentId))
                                 .ToList();
 
                             foreach (var materialAllocation in materialAllocations)
                             {
                                 var inv = inventoryRequirements
-                                    .FirstOrDefault(inv => inv.InventoryCode == materialAllocation.InventoryCode && inv.ProductId == materialAllocation.ProductId);
+                                    .FirstOrDefault(inv => inv.InventoryCode == materialAllocation.InventoryCode && inv.ProductId == materialAllocation.ObjectId);
                                 if (inv == null) continue;
                                 var history = JsonConvert.DeserializeObject<ProductionInventoryRequirementModel>(JsonConvert.SerializeObject(inv));
 
-                                if (!materialAllocation.SourceProductId.HasValue && inv.ProductId == inputLinkData.LinkDataObjectId)
+                                if (materialAllocation.ObjectId <= 0 && inv.ProductId == inputLinkData.LinkDataObjectId)
                                 {
-                                    history.ActualQuantity = materialAllocation.AllocationQuantity;
+                                    history.ActualQuantity = materialAllocation.InventoryQuantity ?? 0;
                                 }
                                 else
                                 {
-                                    history.ActualQuantity = materialAllocation.SourceQuantity.GetValueOrDefault();
-                                    history.ProductId = materialAllocation.SourceProductId.GetValueOrDefault();
+                                    history.ActualQuantity = materialAllocation.HandoverQuantity;
+                                    history.ProductId = (int)materialAllocation.ObjectId;
                                 }
 
                                 item.InventoryRequirementHistories.Add(history);
@@ -802,7 +814,11 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 }
                 _manufacturingDBContext.SaveChanges();
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrder.ProductionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderCode}, {description}", updateAssignments);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productionOrderCode, description)
+                   .ObjectId(productionOrder.ProductionOrderId)
+                   .JsonData(updateAssignments)
+                   .CreateLog();
 
             }
             catch (Exception ex)
@@ -820,6 +836,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                    && a.ProductionStepId == productionStepId
                    && a.DepartmentId == departmentId)
                    .FirstOrDefault();
+            var productOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(p => p.ProductionOrderId == productionOrderId);
             if (productionAssignment == null) return false;
 
             if (productionAssignment?.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish && productionAssignment.IsManualFinish) return true;
@@ -848,7 +865,13 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                 productionAssignment.AssignedProgressStatus = (int)status;
                 productionAssignment.IsManualFinish = false;
                 _manufacturingDBContext.SaveChanges();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionAssignment, productionOrderId, $"Cập nhật trạng thái phân công sản xuất cho lệnh sản xuất {productionOrderId}", _mapper.Map<ProductionAssignmentModel>(productionAssignment));
+
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStatus)
+                   .MessageResourceFormatDatas(productOrder?.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(_mapper.Map<ProductionAssignmentModel>(productionAssignment))
+                   .CreateLog();
+
                 return true;
             }
             catch (Exception ex)
@@ -859,7 +882,8 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
         }
 
 
-        public async Task UpdateProductionOrderAssignmentStatus(IList<long> productionOrderIds)
+
+        public async Task UpdateProductionOrderAssignmentStatusBak(IList<long> productionOrderIds)
         {
             var steps = await _manufacturingDBContext.ProductionStep
              .Include(s => s.ProductionStepLinkDataRole.Where(r => r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output))
@@ -916,7 +940,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
         }
 
-
+        /*
         public async Task<bool> UpdateFullAssignedProgressStatus(long productionOrderId)
         {
             await UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
@@ -962,7 +986,11 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
                     isManual = false
                 };
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất khởi tạo", logObj);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.Update)
+                    .MessageResourceFormatDatas(productionOrder?.ProductionOrderCode)
+                   .ObjectId(productionOrder.ProductionOrderId)
+                   .JsonData(logObj)
+                   .CreateLog();
             }
 
             // Đổi trạng thái phân công
@@ -972,6 +1000,7 @@ namespace VErp.Services.Manafacturing.Service.StatusProcess.Implement
             }
             return true;
         }
+        */
 
         private class StepLinkDataInfo
         {

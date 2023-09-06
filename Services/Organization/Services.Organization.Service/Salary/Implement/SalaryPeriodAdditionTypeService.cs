@@ -61,7 +61,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _typeActivityLog.LogBuilder(() => SalaryPeriodAdditionTypeActivityLogMessage.Create)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryPeriodAdditionTypeId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return info.SalaryPeriodAdditionTypeId;
         }
@@ -86,7 +86,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _typeActivityLog.LogBuilder(() => SalaryPeriodAdditionTypeActivityLogMessage.Delete)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.SalaryPeriodAdditionTypeId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
             return true;
         }
@@ -108,11 +108,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         public async Task<SalaryPeriodAdditionType> GetFullEntityInfo(int salaryPeriodAdditionTypeId)
         {
-            return await _organizationDBContext.SalaryPeriodAdditionType
+            var info = await _organizationDBContext.SalaryPeriodAdditionType
               .Include(t => t.SalaryPeriodAdditionTypeField)
               .ThenInclude(tf => tf.SalaryPeriodAdditionField)
               .Where(t => t.SalaryPeriodAdditionTypeId == salaryPeriodAdditionTypeId)
               .FirstOrDefaultAsync();
+
+            if (info != null)
+            {
+                info.SalaryPeriodAdditionTypeField = info.SalaryPeriodAdditionTypeField.OrderBy(f => f.SortOrder).ToList();
+            }
+
+            return info;
 
         }
         public async Task<IEnumerable<SalaryPeriodAdditionTypeInfo>> List()
@@ -192,7 +199,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _typeActivityLog.LogBuilder(() => SalaryPeriodAdditionTypeActivityLogMessage.Update)
                 .MessageResourceFormatDatas(model.Title)
                 .ObjectId(info.SalaryPeriodAdditionTypeId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
         }

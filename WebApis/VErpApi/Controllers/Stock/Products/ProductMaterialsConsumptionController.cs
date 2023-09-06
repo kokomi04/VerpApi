@@ -133,7 +133,15 @@ namespace VErpApi.Controllers.Stock.Products
 
             return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
         }
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("materialsConsumption/exports")]
+        public async Task<IActionResult> ExportProductMaterialsConsumptions([FromBody] List<int> productIds)
+        {
+            var (stream, fileName, contentType) = await _productMaterialsConsumptionService.ExportProductMaterialsConsumptions(productIds);
 
+            return new FileStreamResult(stream, !string.IsNullOrWhiteSpace(contentType) ? contentType : "application/octet-stream") { FileDownloadName = fileName };
+        }
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("materialsConsumptionGroups/search")]

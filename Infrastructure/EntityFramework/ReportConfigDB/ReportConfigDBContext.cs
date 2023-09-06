@@ -21,6 +21,8 @@ public partial class ReportConfigDBContext : DbContext
 
     public virtual DbSet<ReportType> ReportType { get; set; }
 
+    public virtual DbSet<ReportTypeCustom> ReportTypeCustom { get; set; }
+
     public virtual DbSet<ReportTypeGroup> ReportTypeGroup { get; set; }
 
     public virtual DbSet<ReportTypeView> ReportTypeView { get; set; }
@@ -99,6 +101,11 @@ public partial class ReportConfigDBContext : DbContext
                 .HasForeignKey(d => d.ReportTypeGroupId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ReportType_ReportGroup");
+        });
+
+        modelBuilder.Entity<ReportTypeCustom>(entity =>
+        {
+            entity.HasKey(e => e.ReportTypeCustomId).HasName("PK__ReportTy__8A5B8027D56A757C");
         });
 
         modelBuilder.Entity<ReportTypeGroup>(entity =>

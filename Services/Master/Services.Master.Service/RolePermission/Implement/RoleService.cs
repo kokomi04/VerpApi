@@ -13,7 +13,11 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Inv;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -256,7 +260,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Create)
                .MessageResourceFormatDatas(roleInfo.RoleName)
                .ObjectId(roleInfo.RoleId)
-               .JsonData(roleInfo.JsonSerialize())
+               .JsonData(roleInfo)
                .CreateLog();
 
             return roleInfo.RoleId;
@@ -392,7 +396,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Update)
             .MessageResourceFormatDatas(roleInfo.RoleName)
             .ObjectId(roleInfo.RoleId)
-            .JsonData(roleInfo.JsonSerialize())
+            .JsonData(roleInfo)
             .CreateLog();
 
             return true;
@@ -433,7 +437,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.Delete)
               .MessageResourceFormatDatas(roleInfo.RoleName)
               .ObjectId(roleInfo.RoleId)
-              .JsonData(roleInfo.JsonSerialize())
+              .JsonData(roleInfo)
               .CreateLog();
 
             return true;
@@ -492,7 +496,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                 await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRolePermission)
                     .MessageResourceFormatDatas(roleInfo.RoleName)
                     .ObjectId(roleInfo.RoleId)
-                    .JsonData(permissions.JsonSerialize())
+                    .JsonData(permissions)
                     .CreateLog();
 
                 RemoveAuthCache();
@@ -570,7 +574,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
 
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleStockPermission)
-                .JsonData(req.JsonSerialize())
+                .JsonData(req)
                 .CreateLog();
 
             RemoveAuthCache();
@@ -664,7 +668,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             await _masterContext.SaveChangesAsync();
 
             await _roleActivityLog.LogBuilder(() => RoleActivityLogMessage.UpdateRoleCategoryPermission)
-              .JsonData(req.JsonSerialize())
+              .JsonData(req)
               .CreateLog();
 
             RemoveAuthCache();

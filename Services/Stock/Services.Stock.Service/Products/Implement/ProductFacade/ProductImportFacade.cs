@@ -4,6 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.IO;
 using System.Linq;
@@ -11,6 +13,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using Verp.Resources.Stock.Product;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -19,7 +22,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -316,7 +319,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportNew)
                                   .MessageResourceFormatDatas(row.ProductCode)
                                   .ObjectId(productsMap[row].ProductId)
-                                  .JsonData(row.JsonSerialize())
+                                  .JsonData(row)
                                   .CreateLog();
 
                         }
@@ -329,7 +332,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportUpdate)
                                       .MessageResourceFormatDatas(row.ProductCode)
                                       .ObjectId(productsMap[row].ProductId)
-                                      .JsonData(row.JsonSerialize())
+                                      .JsonData(row)
                                       .CreateLog();
 
                             }

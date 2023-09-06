@@ -449,7 +449,7 @@ namespace VErp.Commons.Library
             return lst;
         }
 
-        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
+        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data, bool dateTimeToUnix = true)
         {
             var lst = new List<NonCamelCaseDictionary>();
             for (var i = 0; i < data.Rows.Count; i++)
@@ -465,7 +465,7 @@ namespace VErp.Commons.Library
                         continue;
                     }
 
-                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    if (dateTimeToUnix && v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                     {
                         var vInDateTime = (v as DateTime?).GetUnix();
                         dic.Add(c.ColumnName, vInDateTime);

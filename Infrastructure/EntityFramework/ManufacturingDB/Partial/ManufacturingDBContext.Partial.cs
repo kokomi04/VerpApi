@@ -51,5 +51,22 @@ namespace VErp.Infrastructure.EF.ManufacturingDB
             this.SetHistoryBaseValue(CurrentContextService);
             return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
+
+    }
+
+    public partial class UnAuthorizeManufacturingDBContext : ManufacturingDBContext
+    {
+        public UnAuthorizeManufacturingDBContext(DbContextOptions<UnAuthorizeManufacturingDBContext> options
+           , ILoggerFactory loggerFactory)
+           : base(options.ChangeOptionsType<ManufacturingDBContext>(loggerFactory))
+        {
+
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.AddFilterBase();
+        }
     }
 }

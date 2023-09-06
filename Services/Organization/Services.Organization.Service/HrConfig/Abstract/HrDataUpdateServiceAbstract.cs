@@ -14,7 +14,6 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using Verp.Resources.Organization;
 using VErp.Infrastructure.EF.EFExtensions;
 using Newtonsoft.Json;
@@ -22,6 +21,8 @@ using Microsoft.EntityFrameworkCore;
 using OpenXmlPowerTools;
 using DocumentFormat.OpenXml.Math;
 using VErp.Commons.GlobalObject.InternalDataInterface.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 
 namespace VErp.Services.Organization.Service.HrConfig.Abstract
 {
@@ -321,14 +322,15 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                         Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                         if (filterClause != null && !(await CheckRequireFilter(filterClause, rows, hrAreaFields, sfValues)))
                         {
-                            continue;
+                                continue;
                         }
                     }
 
                     row.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(HrErrorCode.RequiredFieldIsEmpty, new object[] { index, field.Title });
+                        throw new BadRequestException(HrErrorCode.RequireValueNotValidFilter, 
+                            new object[] { index, field.Title, field.RequireFiltersName });
                     }
                 }
             }
@@ -527,7 +529,8 @@ namespace VErp.Services.Organization.Service.HrConfig.Abstract
                 }
                 else
                 {
-                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, new object[] { field.HrAreaTitle, field.Title + ": " + value });
+                    throw new BadRequestException(HrErrorCode.ReferValueNotValidFilter, 
+                        new object[] { field.HrAreaTitle, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }

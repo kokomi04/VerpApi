@@ -169,6 +169,15 @@ namespace Verp.Resources.Organization.Customer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mã số thuế &quot;{0}&quot; đã tồn tại.
+        /// </summary>
+        public static string CustomerTaxIdAlreadyExists {
+            get {
+                return ResourceManager.GetString("CustomerTaxIdAlreadyExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Tồn tại nhiều đối tác &quot;{0}&quot; trong file excel.
         /// </summary>
         public static string MultipleCustomerFound {

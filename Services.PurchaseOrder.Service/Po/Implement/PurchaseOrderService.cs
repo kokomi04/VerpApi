@@ -18,7 +18,6 @@ using VErp.Commons.GlobalObject.InternalDataInterface;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -35,6 +34,11 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using DocumentFormat.OpenXml.InkML;
 using Verp.Resources.Enums.ErrorCodes.PO;
 using VErp.Commons.GlobalObject.InternalDataInterface.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 
 namespace VErp.Services.PurchaseOrder.Service.Implement
 {
@@ -175,6 +179,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.DeliveryMethod,
                             po.PaymentMethod,
                             po.AttachmentBill,
+                            po.InputTypeSelectedState,
+                            po.InputUnitTypeSelectedState,
 
                         };
 
@@ -297,6 +303,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeliveryMethod = info.DeliveryMethod,
                     PaymentMethod = info.DeliveryMethod,
                     AttachmentBill = info.AttachmentBill,
+
+                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
                 });
             }
 
@@ -422,6 +431,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             po.DeliveryMethod,
                             po.PaymentMethod,
                             po.AttachmentBill,
+
+                            po.InputTypeSelectedState,
+                            po.InputUnitTypeSelectedState,
                         };
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -520,7 +532,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 query = query.Skip((page - 1) * size).Take(size);
             }
             var pagedData = await query.ToListAsync();
-            
+
             var poAssignmentDetailIds = pagedData.Where(d => d.PoAssignmentDetailId.HasValue).Select(d => d.PoAssignmentDetailId.Value).ToList();
             var purchasingSuggestDetailIds = pagedData.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
@@ -605,6 +617,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     DeliveryMethod = item.DeliveryMethod,
                     PaymentMethod = item.DeliveryMethod,
                     AttachmentBill = item.AttachmentBill,
+
+                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)item.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)item.InputUnitTypeSelectedState : null,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult?.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
@@ -683,6 +698,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PaymentMethod = info.PaymentMethod,
                 AttachmentBill = info.AttachmentBill,
 
+                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
+                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
+
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder)
                 .Select(d =>
@@ -760,7 +778,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Create)
                 .MessageResourceFormatDatas(po.PurchaseOrderCode)
                 .ObjectId(po.PurchaseOrderId)
-                .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                 .CreateLog();
 
                 return po.PurchaseOrderId;
@@ -813,6 +831,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeliveryMethod = model.DeliveryMethod,
                 PaymentMethod = model.PaymentMethod,
                 AttachmentBill = model.AttachmentBill,
+                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault,
+                InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null,
+
             };
 
             if (po.DeliveryDestination?.Length > 1024)
@@ -992,6 +1013,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.DeliveryMethod = model.DeliveryMethod;
                 info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
+                info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null;
+                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
@@ -1212,7 +1235,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Update)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                   .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                    .CreateLog();
 
 
@@ -1252,7 +1275,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info }).JsonSerialize())
+                   .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model = info })
                    .CreateLog();
 
 
@@ -1354,7 +1377,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData((new { purchaseOrderId }))
                    .CreateLog();
 
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
@@ -1404,7 +1427,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CheckReject)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
 
@@ -1450,7 +1473,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorApprove)
                    .MessageResourceFormatDatas(info.PurchaseOrderCode)
                    .ObjectId(info.PurchaseOrderId)
-                   .JsonData((new { purchaseOrderId }).JsonSerialize())
+                   .JsonData((new { purchaseOrderId }))
                    .CreateLog();
 
 
@@ -1497,7 +1520,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.CensorReject)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
 
@@ -1541,7 +1564,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.SendToCensor)
                   .MessageResourceFormatDatas(info.PurchaseOrderCode)
                   .ObjectId(info.PurchaseOrderId)
-                  .JsonData((new { purchaseOrderId }).JsonSerialize())
+                  .JsonData((new { purchaseOrderId }))
                   .CreateLog();
 
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
@@ -1574,7 +1597,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePoProcessStatus)
                  .MessageResourceFormatDatas(poProcessStatusId, info.PurchaseOrderCode)
                  .ObjectId(info.PurchaseOrderId)
-                 .JsonData((new { purchaseOrderId, poProcessStatusId }).JsonSerialize())
+                 .JsonData((new { purchaseOrderId, poProcessStatusId }))
                  .CreateLog();
 
 

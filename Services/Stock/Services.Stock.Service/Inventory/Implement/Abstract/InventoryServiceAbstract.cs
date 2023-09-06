@@ -7,9 +7,11 @@ using System.Data;
 using System.Linq;
 using System.Reflection.Emit;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.AccountantEnum;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
+using VErp.Commons.Enums.Stock;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.GlobalObject.QueueMessage;
@@ -18,10 +20,11 @@ using VErp.Commons.Library.Formaters;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Services.Stock.Model.Inventory;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static Verp.Resources.Stock.Inventory.Abstract.InventoryAbstractMessage;
 using static VErp.Commons.GlobalObject.QueueName.ManufacturingQueueNameConstants;
 using StockEntity = VErp.Infrastructure.EF.StockDB.Stock;
@@ -257,10 +260,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         public async Task ProductionOrderInventory(ProductionOrderStatusInventorySumaryMessage msg)
         {
+            var (invRequireDetails, invDetails) = await InventoryStatiticsByProductionOrder(msg);
+
+            var data = new ProductionOrderCalcStatusV2Message
+            {
+                ProductionOrderCode = msg.ProductionOrderCode,
+                InvRequireDetails = invRequireDetails,
+                InvDetails = invDetails,
+                Description = msg.Description
+            };
+
+            await _productionOrderQueueHelperService.CalcProductionOrderStatusV2(data);
+
+            /*
             try
             {
-                Dictionary<string, DataTable> inventoryMap = new Dictionary<string, DataTable>();
-
 
                 var parammeters = new SqlParameter[]
                 {
@@ -284,8 +298,50 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 _logger.LogError(ex, UpdateProductionOrderStatusError);
                 throw new Exception(string.Format(UpdateProductionOrderStatusError, msg.ProductionOrderCode) + ": " + ex.Message, ex);
-            }
+            }*/
         }
+
+
+        private async Task<(IList<InventoryRequireDetailByProductionOrderModel> invRequireDetails, IList<InventoryDetailByProductionOrderModel> invDetails)> InventoryStatiticsByProductionOrder(ProductionOrderStatusInventorySumaryMessage msg)
+        {
+            var requiredDetails = await (from rd in _stockDbContext.InventoryRequirementDetail
+                                         join r in _stockDbContext.InventoryRequirement on rd.InventoryRequirementId equals r.InventoryRequirementId
+                                         where r.CensorStatus != (int)EnumInventoryRequirementStatus.Rejected &&
+                                         rd.ProductionOrderCode == msg.ProductionOrderCode
+                                         select new InventoryRequireDetailByProductionOrderModel
+                                         {
+                                             DepartmentId = rd.DepartmentId,
+                                             InventoryRequirementDetailId = rd.InventoryRequirementDetailId,
+                                             PrimaryQuantity = rd.PrimaryQuantity,
+                                             ProductionStepId = rd.ProductionStepId,
+                                             InventoryTypeId = (EnumInventoryType)r.InventoryTypeId,
+                                             InventoryRequirementId = r.InventoryRequirementId,
+                                             InventoryRequirementCode = r.InventoryRequirementCode,
+                                             ProductId = rd.ProductId
+                                         }).ToListAsync();
+
+            var requiredDetailIds = requiredDetails.Select(d => (long?)d.InventoryRequirementDetailId).ToList();
+
+            var invDetails = await (from d in _stockDbContext.InventoryDetail
+                                    join inv in _stockDbContext.Inventory on d.InventoryId equals inv.InventoryId
+                                    where inv.IsApproved && (d.ProductionOrderCode == msg.ProductionOrderCode || requiredDetailIds.Contains(d.InventoryRequirementDetailId))
+                                    select new InventoryDetailByProductionOrderModel
+                                    {
+                                        Date = inv.Date,
+                                        InventoryId = inv.InventoryId,
+                                        InventoryCode = inv.InventoryCode,
+                                        InventoryDetailId = d.InventoryDetailId,
+                                        DepartmentId = inv.DepartmentId,
+                                        InventoryTypeId = (EnumInventoryType)inv.InventoryTypeId,
+                                        InventoryRequirementDetailId = d.InventoryRequirementDetailId,
+                                        PrimaryQuantity = d.PrimaryQuantity,
+                                        ProductId = d.ProductId,
+                                        Description = d.Description
+                                    }).ToListAsync();
+            return (requiredDetails, invDetails);
+
+        }
+
 
         protected void ValidatePackage(Package package)
         {
@@ -316,6 +372,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             if (stockProduct.ProductUnitConversionRemaining < 0) throw new Exception("Stock Negative ProductUnitConversionRemaining! " + stockProduct.StockProductId);
 
         }
+
+
+      
 
 
 

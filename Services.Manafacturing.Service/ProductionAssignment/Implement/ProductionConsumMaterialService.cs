@@ -1,15 +1,20 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production;
+using Verp.Resources.Manafacturing.Production.ConsumMaterial;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionAssignment;
 
@@ -18,7 +23,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
     public class ProductionConsumMaterialService : IProductionConsumMaterialService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -28,7 +33,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionConsumMaterial);
             _logger = logger;
             _mapper = mapper;
         }
@@ -73,15 +78,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.ProductionConsumMaterialDetail.AddRangeAsync(details);
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionConsumMaterial, consumMaterial.ProductionConsumMaterialId, $"Khai báo tiêu hao vật tư từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}",
-                     new
-                     {
-                         departmentId,
-                         productionOrderId,
-                         productionStepId,
-                         model
-                     });
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Declare)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate,consumMaterial?.ToDate)
+                   .ObjectId(consumMaterial.ProductionConsumMaterialId)
+                   .JsonData(new
+                   {
+                       departmentId,
+                       productionOrderId,
+                       productionStepId,
+                       model
+                   })
+                   .CreateLog();
                 return consumMaterial.ProductionConsumMaterialId;
             }
         }
@@ -162,13 +169,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionConsumMaterial, productionConsumMaterialId, $"Cập nhật khai báo vật tư tiêu hao từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}",
-                     new
-                     {
-                         productionConsumMaterialId,
-                         model
-                     });
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Update)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate,consumMaterial?.ToDate)
+                   .ObjectId(productionConsumMaterialId)
+                   .JsonData(new
+                   {
+                       productionConsumMaterialId,
+                       model
+                   })
+                   .CreateLog();
                 return true;
             }
         }
@@ -203,12 +212,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 await _manufacturingDBContext.SaveChangesAsync();
 
                 await trans.CommitAsync();
-
-                await _activityLogService.CreateLog(EnumObjectType.ProductionConsumMaterial, productionConsumMaterialId, $"Xóa khai báo vật tư tiêu hao từ ngày {consumMaterial?.FromDate?.ToString("dd/MM/yyyy")} đến ngày {consumMaterial?.ToDate?.ToString("dd/MM/yyyy")}",
-                     new
-                     {
-                         productionConsumMaterialId,
-                     });
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(consumMaterial?.FromDate, consumMaterial?.ToDate)
+                   .ObjectId(productionConsumMaterialId)
+                   .JsonData(new
+                   {
+                       productionConsumMaterialId,
+                   })
+                   .CreateLog();
                 return true;
             }
         }
@@ -225,18 +236,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                                          && sd.ObjectId == objectId
                                          select sd).ToList();
 
+            var productOders = _manufacturingDBContext.ProductionOrder.FirstOrDefault(s => s.ProductionOrderId == productionOrderId);
             foreach (var consumMaterialDetail in consumMaterialDetails)
             {
                 consumMaterialDetail.IsDeleted = true;
-                await _activityLogService.CreateLog(EnumObjectType.ProductionConsumMaterial, objectId, $"Xóa khai báo vật tư tiêu hao",
-                    new
-                    {
-                        departmentId,
-                        productionOrderId,
-                        productionStepId,
-                        objectTypeId,
-                        objectId
-                    });
+                await _objActivityLogFacade.LogBuilder(() => ProductionConsumMaterialActivityLogMessage.DeleteConsumMaterial)
+                   .MessageResourceFormatDatas(productOders?.ProductionOrderCode)
+                   .ObjectId(objectId)
+                   .JsonData(new
+                   {
+                       departmentId,
+                       productionOrderId,
+                       productionStepId,
+                       objectTypeId,
+                       objectId
+                   })
+                   .CreateLog();
             }
 
             await _manufacturingDBContext.SaveChangesAsync();

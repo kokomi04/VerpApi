@@ -216,6 +216,12 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Cấu hình phiếu in tùy chỉnh")]
         PrintConfigCustom = 50002,
 
+        [Description("Cấu hình header phiếu in mặc định")]
+        PrintConfigHeaderStandard = 50003,
+
+        [Description("Cấu hình header phiếu in tùy chỉnh")]
+        PrintConfigHeaderCustom = 50004,
+
         [Description("CSDL")]
         StorageDabase = 51,
 
@@ -259,9 +265,14 @@ namespace VErp.Commons.Enums.MasterEnum
         Step = 61,
         [Description("Nhóm danh mục công đoạn")]
         StepGroup = 62,
-        [Description("Yêu cầu gia công")]
+        [Description("Yêu cầu gia công chi tiết")]
         [GenCodeObject]
-        OutsourceRequest = 63,
+        OutsourceRequestPart = 63,
+
+        [Description("Yêu cầu gia công công đoạn")]
+        [GenCodeObject]
+        OutsourceRequestStep = 64,
+
         [Description("Lệnh sản xuất")]
         [GenCodeObject]
         ProductionOrder = 70,
@@ -383,7 +394,7 @@ namespace VErp.Commons.Enums.MasterEnum
         HrTypeGlobalSetting = 1038,
         [Description("Trường dữ liệu vùng chứng từ hành chính nhân sự")]
         HrAreaField = 1039,
-
+        
         [Description("Dòng chứng từ hành chính nhân sự")]
         HrTypeRow = 1040,
 
@@ -393,6 +404,8 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Chứng từ hành chính nhân sự")]
         HrBill = 1042,
 
+        [Description("Vùng thông tin chứng từ hành chính nhân sự")]
+        HrArea = 1043,
 
         [Description("Cấu hình liên kết bảng lương")]
         SalaryRefTable = 10004200,
@@ -405,7 +418,7 @@ namespace VErp.Commons.Enums.MasterEnum
         SalaryPeriod = 10004203,
         [Description("Bảng lương theo kỳ")]
         SalaryPeriodGroup = 10004204,
-        [Description("Dữ liệu bảng lương")]
+        [Description("Bảng lương nhân sự")]
         SalaryEmployee = 10004205,
 
 

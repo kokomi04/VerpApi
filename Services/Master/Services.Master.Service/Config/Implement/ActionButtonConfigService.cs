@@ -63,7 +63,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Create)
                   .MessageResourceFormatDatas($"{data.Title} {typeTitle}")
                   .ObjectId(action.ActionButtonId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 return _mapper.Map<ActionButtonModel>(action);
@@ -93,7 +93,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Create)
             .MessageResourceFormatDatas($"{data.Title} {typeTitle}")
             .ObjectId(info.ActionButtonId)
-            .JsonData(data.JsonSerialize())
+            .JsonData(data)
             .CreateLog();
 
 
@@ -118,7 +118,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
                        .MessageResourceFormatDatas($"{info.Title} {typeTitle}")
                        .ObjectId(info.ActionButtonId)
-                       .JsonData(data.JsonSerialize())
+                       .JsonData(data)
                        .CreateLog();
 
                 return true;
@@ -166,7 +166,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.AddMappingBillTypeObject)
                        .MessageResourceFormatDatas(info.Title, objectTitle)
                        .ObjectId(info.ActionButtonId)
-                       .JsonData(data.JsonSerialize())
+                       .JsonData(data)
                        .CreateLog();
 
                 return actionButtonId;
@@ -195,7 +195,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.RemoveMappingBillTypeObject)
                          .MessageResourceFormatDatas(mapping.Button.Title, objectTitle)
                          .ObjectId(mapping.Button.ActionButtonId)
-                         .JsonData(data.JsonSerialize())
+                         .JsonData(data)
                          .CreateLog();
 
                 return true;
@@ -232,7 +232,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                         await _actionButtonActivityLog.LogBuilder(() => ActionButtonActivityLogMessage.RemoveMappingBillTypeObject)
                          .MessageResourceFormatDatas(item.Button.Title, objectTitle)
                          .ObjectId(item.Mapping.ActionButtonId)
-                         .JsonData(data.JsonSerialize())
+                         .JsonData(data)
                          .CreateLog();
                     }
 

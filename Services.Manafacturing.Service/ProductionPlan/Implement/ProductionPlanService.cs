@@ -17,7 +17,6 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionHandover;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
@@ -26,13 +25,20 @@ using VErp.Services.Manafacturing.Model.WorkloadPlanModel;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using ProductSemiEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductSemi;
 using ProductionOrderEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionOrder;
+using VErp.Infrastructure.ServiceCore.Facade;
+using DocumentFormat.OpenXml.EMMA;
+using Verp.Resources.Master.Config.ActionButton;
+using Verp.Resources.Manafacturing.Production.Plan;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 
 namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
 {
     public class ProductionPlanService : IProductionPlanService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -57,7 +63,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
             , IOptions<AppSetting> appSetting)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionPlan);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -196,7 +202,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                     var productionOrderDetailId = item.Key;
                     var productionOrderDetail = productionOrderDetails.First(pod => pod.ProductionOrderDetailId == productionOrderDetailId);
                     var productionOrder = productionOrders.Find(po => po.ProductionOrderId == productionOrderDetail.ProductionOrderId);
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderDetail.ProductionOrderId, $"Cập nhật dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", data);
+                    await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Update)
+                            .MessageResourceFormatDatas(productionOrder?.ProductionOrderCode)
+                            .ObjectId(productionOrderDetail.ProductionOrderId)
+                            .JsonData(data)
+                            .CreateLog();
                 }
 
                 var productionPlans = await _manufacturingDBContext.ProductionWeekPlan
@@ -242,7 +252,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionPlan.Implement
                 _manufacturingDBContext.ProductionWeekPlanDetail.RemoveRange(currentProductionWeekPlanDetails);
                 _manufacturingDBContext.ProductionWeekPlan.RemoveRange(currentProductionWeekPlans);
 
-                await _activityLogService.CreateLog(EnumObjectType.ProductionPlan, productionOrderId, $"Xóa dữ liệu kế hoạch tuần cho lệnh {productionOrder.ProductionOrderCode}", currentProductionWeekPlans);
+                await _objActivityLogFacade.LogBuilder(() => ProductionPlanActivityLogMessage.Delete)
+                   .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+                   .ObjectId(productionOrderId)
+                   .JsonData(currentProductionWeekPlans)
+                   .CreateLog();
                 return true;
             }
             catch (Exception ex)

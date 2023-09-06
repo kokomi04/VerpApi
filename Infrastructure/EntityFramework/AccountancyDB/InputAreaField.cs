@@ -35,6 +35,8 @@ public partial class InputAreaField
 
     public string Filters { get; set; }
 
+    public string FiltersName { get; set; }
+
     public int? Width { get; set; }
 
     public int? Height { get; set; }
@@ -71,6 +73,8 @@ public partial class InputAreaField
 
     public string RequireFilters { get; set; }
 
+    public string RequireFiltersName { get; set; }
+
     public string ReferenceUrl { get; set; }
 
     public bool IsBatchSelect { get; set; }
@@ -84,6 +88,12 @@ public partial class InputAreaField
     public string MouseEnter { get; set; }
 
     public string MouseLeave { get; set; }
+
+    public bool IsPivotAllowcation { get; set; }
+
+    public bool IsReadOnly { get; set; }
+
+    public bool IsPivotValue { get; set; }
 
     public virtual InputArea InputArea { get; set; }
 

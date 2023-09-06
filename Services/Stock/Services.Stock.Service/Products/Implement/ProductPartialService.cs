@@ -247,7 +247,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProductProducitity)
                                   .MessageResourceFormatDatas(pInfo.ProductCode, productInfo.ProductCode)
                                   .ObjectId(p.ProductId)
-                                  .JsonData(p.JsonSerialize())
+                                  .JsonData(p)
                                   .CreateLog();
 
                             }
@@ -265,7 +265,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateGeneralInfo)
                           .MessageResourceFormatDatas(productInfo.ProductCode)
                           .ObjectId(productId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
 
                 }
@@ -448,7 +448,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateStockInfo)
                   .MessageResourceFormatDatas(productInfo.ProductCode)
                   .ObjectId(productId)
-                  .JsonData(model.JsonSerialize())
+                  .JsonData(model)
                   .CreateLog();
 
                 return true;
@@ -576,7 +576,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateSellInfo)
                    .MessageResourceFormatDatas(productInfo.ProductCode)
                    .ObjectId(productId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
                 return true;
             }
@@ -621,7 +621,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
                    .MessageResourceFormatDatas(productInfo.ProductCode)
                    .ObjectId(productId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
                 return true;
             }

@@ -1,27 +1,32 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionProcessMold;
 using ProductionProcessMoldEntity = VErp.Infrastructure.EF.ManufacturingDB.ProductionProcessMold;
+using Verp.Resources.Manafacturing.Production.Process;
 
 namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 {
     public class ProductionProcessMoldService : IProductionProcessMoldService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -31,7 +36,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold);
             _logger = logger;
             _mapper = mapper;
         }
@@ -105,7 +110,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
                 await _manufacturingDBContext.ProductionStepMoldLink.AddRangeAsync(nLinks);
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, process.ProductionProcessMoldId, $"Tạo quy trình mẫu {process.ProductionProcessMoldId}", model);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.CreateProcessMold)
+                   .MessageResourceFormatDatas(process.Title)
+                   .ObjectId(process.ProductionProcessMoldId)
+                   .JsonData(model)
+                   .CreateLog();
 
                 await trans.CommitAsync();
                 return process.ProductionProcessMoldId;
@@ -173,7 +182,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Cập nhật quy trình mẫu {productionProcessMoldId}", model);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcessMold)
+                   .MessageResourceFormatDatas(model.Title)
+                   .ObjectId(productionProcessMoldId)
+                   .JsonData(model)
+                   .CreateLog();
 
                 await trans.CommitAsync();
                 return true;
@@ -205,7 +218,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcessMold.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(Commons.Enums.MasterEnum.EnumObjectType.ProductionProcessMold, productionProcessMoldId, $"Xóa quy trình sản xuất mẫu {productionProcessMoldId}", process);
+                await _objActivityLogFacade.LogBuilder(() => ProductionProcessActivityLogMessage.DeleteProcessMold)
+                   .MessageResourceFormatDatas(process.Title)
+                   .ObjectId(productionProcessMoldId)
+                   .JsonData(process)
+                   .CreateLog();
 
                 await trans.CommitAsync();
                 return true;

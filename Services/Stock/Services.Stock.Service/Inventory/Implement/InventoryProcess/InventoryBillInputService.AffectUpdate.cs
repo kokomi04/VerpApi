@@ -52,7 +52,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.UpdateAndApprove)
                    .MessageResourceFormatDatas(req?.Inventory?.InventoryCode)
                    .ObjectId(inventoryId)
-                   .JsonData(req.JsonSerialize())
+                   .JsonData(req)
                    .CreateLog();
 
                 if (isDeleted)
@@ -61,7 +61,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                      .MessageResourceFormatDatas(req?.Inventory?.InventoryCode)
                      .ObjectId(inventoryId)
                      .Action(EnumActionType.Delete)
-                     .JsonData(req.JsonSerialize())
+                     .JsonData(req)
                      .CreateLog();
                 }
 
@@ -891,7 +891,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _packageActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.UpdatedCauseByRefInvInput)
                      .MessageResourceFormatDatas(packageInfo.PackageCode, req.Inventory.InventoryCode)
                      .ObjectId(packageInfo.PackageId)
-                     .JsonData(req.JsonSerialize())
+                     .JsonData(req)
                      .CreateLog();
                 }
 
@@ -938,7 +938,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await builder
                        .MessageResourceFormatDatas(inv.InventoryCode, req.Inventory.InventoryCode)
                        .ObjectId(inv.InventoryId)
-                       .JsonData(req.JsonSerialize())
+                       .JsonData(req)
                        .CreateLog();
                 }
 

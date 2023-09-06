@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -8,7 +9,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Step;
 using Verp.Resources.Manafacturing.Step;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -17,6 +20,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.Step;
@@ -27,7 +31,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
     public class StepService : IStepService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacade;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
 
@@ -37,7 +41,7 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
             , IMapper mapper)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacade = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Step);
             _logger = logger;
             _mapper = mapper;
         }
@@ -61,7 +65,11 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, entity.StepId, $"Tạo danh mục công đoạn '{entity.StepName}'", entity);
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.CreateStep)
+                   .MessageResourceFormatDatas(entity.StepName)
+                   .ObjectId(entity.StepId)
+                   .JsonData(entity)
+                   .CreateLog();
                 await trans.CommitAsync();
 
                 return entity.StepId;
@@ -99,7 +107,11 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Xóa công đoạn '{step.StepName}'", step);
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.DeleteStep)
+                   .MessageResourceFormatDatas(step.StepName)
+                   .ObjectId(step.StepId)
+                   .JsonData(step)
+                   .CreateLog();
                 await trans.CommitAsync();
                 return true;
             }
@@ -181,7 +193,11 @@ namespace VErp.Services.Manafacturing.Service.Step.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await _activityLogService.CreateLog(EnumObjectType.Step, step.StepId, $"Cập nhật danh mục công đoạn '{step.StepName}'", step);
+                await _objActivityLogFacade.LogBuilder(() => StepActivityLogMessage.UpdateStepGroup)
+                   .MessageResourceFormatDatas(step.StepName)
+                   .ObjectId(step.StepId)
+                   .JsonData(step)
+                   .CreateLog();
                 await trans.CommitAsync();
 
                 return true;

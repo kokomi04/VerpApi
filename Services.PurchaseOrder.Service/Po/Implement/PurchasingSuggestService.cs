@@ -17,7 +17,8 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -417,7 +418,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                        .LogBuilder(() => PurchasingSuggestActivityLogMessage.Create)
                        .MessageResourceFormatDatas(purchasingSuggest.PurchasingSuggestCode)
                        .ObjectId(purchasingSuggest.PurchasingSuggestId)
-                       .JsonData(model.JsonSerialize())
+                       .JsonData(model)
                        .CreateLog();
 
                     return purchasingSuggest.PurchasingSuggestId;
@@ -606,7 +607,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Update)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData(model.JsonSerialize())
+                     .JsonData(model)
                      .CreateLog();
                     return true;
                 }
@@ -704,7 +705,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Delete)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData(info.JsonSerialize())
+                     .JsonData(info)
                      .CreateLog();
                     return true;
                 }
@@ -737,7 +738,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.SentToCensor)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                     .JsonData((new { purchasingSuggestId }))
                      .CreateLog();
                 return true;
             }
@@ -770,7 +771,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                  .LogBuilder(() => PurchasingSuggestActivityLogMessage.Approved)
                  .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                  .ObjectId(info.PurchasingSuggestId)
-                 .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                 .JsonData((new { purchasingSuggestId }))
                  .CreateLog();
                 return true;
             }
@@ -816,7 +817,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .LogBuilder(() => PurchasingSuggestActivityLogMessage.Rejected)
                 .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                 .ObjectId(info.PurchasingSuggestId)
-                .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                .JsonData((new { purchasingSuggestId }))
                 .CreateLog();
                 return true;
             }
@@ -839,7 +840,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PurchasingSuggestActivityLogMessage.UpdateProgress)
                   .MessageResourceFormatDatas(info.PurchasingSuggestCode, poProcessStatusId.GetEnumDescription())
                   .ObjectId(info.PurchasingSuggestId)
-                  .JsonData((new { purchasingSuggestId, poProcessStatusId }).JsonSerialize())
+                  .JsonData((new { purchasingSuggestId, poProcessStatusId }))
                   .CreateLog();
 
                 return true;
@@ -1363,7 +1364,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Create)
                     .MessageResourceFormatDatas(poAssignment.PoAssignmentCode)
                     .ObjectId(poAssignment.PoAssignmentId)
-                    .JsonData(model.JsonSerialize())
+                    .JsonData(model)
                     .CreateLog();
 
                     return poAssignment.PoAssignmentId;
@@ -1460,7 +1461,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Update)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                     .ObjectId(assignmentInfo.PoAssignmentId)
-                    .JsonData(model.JsonSerialize())
+                    .JsonData(model)
                     .CreateLog();
                     return true;
                 }
@@ -1508,7 +1509,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .LogBuilder(() => PoAssignmentActivityLogMessage.SendToUser)
                 .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                 .ObjectId(assignmentInfo.PoAssignmentId)
-                .JsonData((new { poAssignmentId }).JsonSerialize())
+                .JsonData((new { poAssignmentId }))
                 .CreateLog();
                 return true;
             }
@@ -1602,7 +1603,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PoAssignmentActivityLogMessage.UserConfirm)
                   .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                   .ObjectId(assignmentInfo.PoAssignmentId)
-                  .JsonData((new { poAssignmentId }).JsonSerialize())
+                  .JsonData((new { poAssignmentId }))
                   .CreateLog();
 
                 return true;
@@ -1656,7 +1657,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                     .ObjectId(assignmentInfo.PoAssignmentId)
-                    .JsonData(assignmentInfo.JsonSerialize())
+                    .JsonData(assignmentInfo)
                     .CreateLog();
                     return true;
                 }
