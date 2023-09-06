@@ -139,7 +139,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 }
 
                 var isStockIdProp = entityType.FindProperty(GlobalFieldConstants.StockId);
-                if (isStockIdProp != null && dbContext is IStockRequestDbContext && filterStock)
+                if (isStockIdProp != null && dbContext is IStockRequestDbContext db && filterStock && db.StockIds != null)
                 {
                     var stockIds = Expression.PropertyOrField(ctxConstant, nameof(IStockRequestDbContext.StockIds));
                     filterBuilder.AddFilterListContains<int>(GlobalFieldConstants.StockId, stockIds);

@@ -38,7 +38,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
         protected readonly IProductionOrderQueueHelperService _productionOrderQueueHelperService;
         protected readonly StockDBContext _stockDbContext;
         protected readonly ICurrentContextService _currentContextService;
-        internal InventoryServiceAbstract(StockDBContext stockContext
+        public InventoryServiceAbstract(StockDBContext stockContext
             , ILogger logger
             , ICustomGenCodeHelperService customGenCodeHelperService
             , ICurrentContextService currentContextService
@@ -258,17 +258,11 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
         }
 
+
+        
         public async Task ProductionOrderInventory(ProductionOrderStatusInventorySumaryMessage msg)
         {
-            var (invRequireDetails, invDetails) = await InventoryStatiticsByProductionOrder(msg);
-
-            var data = new ProductionOrderCalcStatusV2Message
-            {
-                ProductionOrderCode = msg.ProductionOrderCode,
-                InvRequireDetails = invRequireDetails,
-                InvDetails = invDetails,
-                Description = msg.Description
-            };
+            var data = await GetProductionOrderCalcStatusV2Message(msg);
 
             await _productionOrderQueueHelperService.CalcProductionOrderStatusV2(data);
 
@@ -299,6 +293,21 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 _logger.LogError(ex, UpdateProductionOrderStatusError);
                 throw new Exception(string.Format(UpdateProductionOrderStatusError, msg.ProductionOrderCode) + ": " + ex.Message, ex);
             }*/
+        }
+
+        public async Task<ProductionOrderCalcStatusV2Message> GetProductionOrderCalcStatusV2Message(ProductionOrderStatusInventorySumaryMessage msg)
+        {
+            var (invRequireDetails, invDetails) = await InventoryStatiticsByProductionOrder(msg);
+
+            var data = new ProductionOrderCalcStatusV2Message
+            {
+                ProductionOrderCode = msg.ProductionOrderCode,
+                InvRequireDetails = invRequireDetails,
+                InvDetails = invDetails,
+                Description = msg.Description
+            };
+
+            return data;
         }
 
 
