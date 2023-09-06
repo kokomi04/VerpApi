@@ -39,6 +39,11 @@ namespace MigrateProductProcessStatus.Services
                 .ToListAsync();
             var productIds = products.Select(p => (long)p.ProductId).ToList();
             var productProcess = await _productionProcessService.GetProductionProcessByContainerIds(EnumContainerType.Product, productIds);
+
+            var total = productIds.Count;
+            var dem = 0;
+            Console.Write($"Calc 0 / {total}");
+
             foreach (var containerId in productIds)
             {
                 var mess = (await _validateProductionProcess.ValidateProductionProcess(EnumContainerType.Product, containerId, productProcess.FirstOrDefault(p => p.ContainerId == containerId)));
@@ -58,6 +63,9 @@ namespace MigrateProductProcessStatus.Services
                         product.ProductionProcessStatusId = (int)EnumProductionProcessStatus.Created;
                     }
                 }
+
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write($"Calc {dem++} / {total}  ");
 
             }
             await _stockDBContext.SaveChangesAsync();

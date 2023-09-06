@@ -31,6 +31,9 @@ namespace ReCaclProductionOrderStatus.Services
         public async Task Execute()
         {
             var productionOrderCodes = await manufacturingDBContext.ProductionOrder.Select(o => o.ProductionOrderCode).ToListAsync();
+            var total = productionOrderCodes.Count;
+            var dem = 0;
+            Console.Write($"Calc 0 / {total}");
             foreach (var code in productionOrderCodes)
             {
                 var data = await migrateInventoryService.GetProductionOrderCalcStatusV2Message(new ProductionOrderStatusInventorySumaryMessage()
@@ -40,6 +43,8 @@ namespace ReCaclProductionOrderStatus.Services
                 });
 
                 await productionProgressService.CalcAndUpdateProductionOrderStatusV2(data);
+                Console.SetCursorPosition(0, Console.CursorTop);
+                Console.Write($"Calc {dem++} / {total}  ");
             }
         }
     }
