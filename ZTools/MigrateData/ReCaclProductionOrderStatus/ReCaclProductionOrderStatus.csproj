@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\ApiCore\ApiCore.csproj" />
+    <ProjectReference Include="..\..\..\Infrastructure\AppSettings\AppSettings.csproj" />
+    <ProjectReference Include="..\..\..\Services.Grpc.Service\Services.Grpc.Service.csproj" />
+    <ProjectReference Include="..\..\..\Services.Manafacturing.Service\Services.Manafacturing.Service.csproj" />
+    <ProjectReference Include="..\..\..\Services\Stock\Services.Stock.Service\Services.Stock.Service.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="ReCaclProductionOrderStatus.bat">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

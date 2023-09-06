@@ -227,48 +227,61 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 */
         public async Task<bool> CalcAndUpdateProductionOrderStatusV2(ProductionOrderCalcStatusV2Message data)
         {
-            var productionOrder = _manufacturingDBContext.ProductionOrder
-                .Include(po => po.ProductionOrderDetail)
-                .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
-
-            if (productionOrder == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
-
-            await AutoAllowcation(productionOrder.ProductionOrderId, data);
-
-            await UpdateAssignProgress(productionOrder.ProductionOrderId);
-
-            var oldStatus = productionOrder.ProductionOrderStatus;
-
-            if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished && productionOrder.IsManualFinish) return true;
-
-            productionOrder.ProductionOrderStatus = (int)await CalcProductionOrderStatus(productionOrder.ProductionOrderId, productionOrder.EndDate, data.InvDetails);
-
-           
-            if (oldStatus != productionOrder.ProductionOrderStatus)
+            try
             {
-                _manufacturingDBContext.SaveChanges();
-                //await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false });
+                var productionOrder = _manufacturingDBContext.ProductionOrder
+               .Include(po => po.ProductionOrderDetail)
+               .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
 
-                await _objActivityLogFacade.LogBuilder(() => ProductionProgressActivityLogMessage.UpdateProductionOrderStatus)
-                            .MessageResourceFormatDatas(data.Description)
-                            .ObjectId(productionOrder.ProductionOrderId)
-                            .JsonData(new { productionOrder, data, isManual = false })
-                            .CreateLog();
+                if (productionOrder == null)
+                    throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+                await AutoAllowcation(productionOrder.ProductionOrderId, data);
+
+                await UpdateAssignProgress(productionOrder.ProductionOrderId);
+
+                var oldStatus = productionOrder.ProductionOrderStatus;
+
+                if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished && productionOrder.IsManualFinish) return true;
+
+
+                productionOrder.ProductionOrderStatus = (int)await CalcProductionOrderStatus(productionOrder.ProductionOrderId, productionOrder.EndDate, data.InvDetails);
+
+
+                if (oldStatus != productionOrder.ProductionOrderStatus)
+                {
+                    _manufacturingDBContext.SaveChanges();
+                    //await _activityLogService.CreateLog(EnumObjectType.ProductionOrder, productionOrder.ProductionOrderId, $"Cập nhật trạng thái lệnh sản xuất, {data.Description}", new { productionOrder, data, isManual = false });
+
+                    await _objActivityLogFacade.LogBuilder(() => ProductionProgressActivityLogMessage.UpdateProductionOrderStatus)
+                                .MessageResourceFormatDatas(data.Description)
+                                .ObjectId(productionOrder.ProductionOrderId)
+                                .JsonData(new { productionOrder, data, isManual = false })
+                                .CreateLog();
+                }
+
+                await _productionOrderService.SetProductionOrderIsFinish(productionOrder);
+
+
+                return true;
+            }
+            finally
+            {
+                ReducePendingStatus(data);
             }
 
-            await _productionOrderService.SetProductionOrderIsFinish(productionOrder);
+        }
 
-
+        private void ReducePendingStatus(ProductionOrderCalcStatusV2Message data)
+        {
             var tag = ProductionOrderCacheKeys.CACHE_CALC_PRODUCTION_ORDER_STATUS;
-            var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(productionOrder.ProductionOrderCode);
+            var key = ProductionOrderCacheKeys.CalcProductionOrderStatusPending(data.ProductionOrderCode);
 
             _cachingService.TryUpdate<int>(tag, key, TimeSpan.FromMinutes(5), (currentQueue) =>
             {
                 return --currentQueue;
             });
 
-            return true;
         }
 
         public bool IsPendingCalcStatus(string productionOrderCode)
@@ -428,7 +441,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ).ToList();
 
                 assign.AssignedInputStatus = (int)CalcAssignInputStatus(productionSteps, assignments, assign, requireIns, handovers);
-               
+
             }
             await _manufacturingDBContext.SaveChangesAsync();
         }

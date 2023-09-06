@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ReCaclProductionOrderStatus": {
+      "commandName": "Project",
+      "commandLineArgs": "D:\\usr\\verp\\config\\config.Development.json"
+    }
+  }
+}
