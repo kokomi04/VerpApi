@@ -1089,7 +1089,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
                     }, false);
                 }
-
+                ValidateTitleProductionProcess(req);
                 var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)containerTypeId && c.ContainerId == containerId);
                 if (info == null)
                 {
@@ -1153,7 +1153,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw;
             }
         }
+        private void ValidateTitleProductionProcess(ProductionProcessModel req)
+        {
+            var groupTitle = req.ProductionSteps.Where(x=> x.IsGroup.HasValue && x.IsGroup.Value).GroupBy(x => x.Title);
+            var groupProcessTitle = groupTitle.Where(g => g.Count() > 1).Select(x=> x.Key).ToList();
+            if (groupProcessTitle.Count > 0)
+            {
+                throw new BadRequestException($"Tên công đoạn {string.Join(",", groupProcessTitle)} bị trùng." );
+            }
+            var groupChild = req.ProductionSteps.Where(x => x.IsGroup.HasValue && !x.IsGroup.Value).GroupBy(x => x.ParentCode);
+            foreach (var group in groupChild)
+            {
+                var childTitles = group.GroupBy(x => x.Title).Where(x=> x.Count() >1);
 
+                if (childTitles.Count() >0)
+                {
+                    throw new BadRequestException($"Tên {string.Join(",",childTitles.Select(x=>x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault()?.ParentCode)?.Title}.");
+                }
+            }
+        }
         public async Task<bool> DismissUpdateQuantity(long productionOrderId)
         {
             try

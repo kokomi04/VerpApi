@@ -768,20 +768,26 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var repeatAlias = columns.Where(c => c.IsRepeat == true).Select(c => c.Alias).ToList();
             var repeatGroups = columns.Where(c => c.IsRepeat == true).Select(c => c.ColGroupName).ToList();
 
+            var sql = reportInfo.BodySql;
+
             Regex regex;
 
-            if (filterCondition.Contains("$RepeatId"))
+            if (sql.Contains("$RepeatId"))
             {
                 foreach (var alias in repeatAlias)
                 {
-                    regex = new Regex(alias + "([a-zA-Z0-9_]*)");
-                    regex.Replace(filterCondition, alias);
+                    filterCondition = Regex.Replace(filterCondition, "(?<c>[^\\@])(?<alias>" + alias + "([a-zA-Z0-9_]*))", delegate (Match match)
+                    {
+                        var c = match.Groups["c"].Value;
+                        //var originAlias = match.Groups["alias"].Value;
+                        return c + alias;
+                    });
                 }
             }
 
             var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
 
-            var sql = reportInfo.BodySql;
+
 
             regex = new Regex("\\$FILTER(?<param>[\\S\\\\n]*)");
 
