@@ -106,10 +106,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var reportTypeCustomInfo = await _reportConfigDBContext.ReportTypeCustom.FirstOrDefaultAsync(r => r.ReportTypeId == reportId && !r.IsDeleted);
             if (reportTypeCustomInfo != null)
             {
-                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql) && !string.IsNullOrEmpty(reportTypeCustomInfo.BodySql) || !string.IsNullOrEmpty(reportTypeCustomInfo.FooterSql))
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql)  )
                 {
                     reportInfo.HeadSql = reportTypeCustomInfo.HeadSql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.BodySql))
+                {
                     reportInfo.BodySql = reportTypeCustomInfo.BodySql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.FooterSql))
+                {
                     reportInfo.FooterSql = reportTypeCustomInfo.FooterSql;
                 }
             }
