@@ -7,11 +7,18 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
+using VErp.Commons.Enums.Organization.TimeKeeping;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Organization.Service.HrConfig;
+using VErp.Services.Organization.Service.Salary;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -19,7 +26,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         Task<long> AddTimeSheetRaw(TimeSheetRawModel model);
         Task<bool> DeleteTimeSheetRaw(long timeSheetRawId);
-        Task<IList<TimeSheetRawModel>> GetListTimeSheetRaw();
+        Task<PageData<TimeSheetRawViewModel>> GetListTimeSheetRaw(TimeSheetRawFilterModel filter, int page, int size);
         Task<TimeSheetRawModel> GetTimeSheetRaw(long timeSheetRawId);
         Task<bool> UpdateTimeSheetRaw(long timeSheetRawId, TimeSheetRawModel model);
 
@@ -33,15 +40,29 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
+        private readonly IHrDataService _hrDataService;
 
-        public TimeSheetRawService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public TimeSheetRawService(OrganizationDBContext organizationDBContext, IMapper mapper, IHrDataService hrDataService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _hrDataService = hrDataService;
         }
 
         public async Task<long> AddTimeSheetRaw(TimeSheetRawModel model)
         {
+            if(model.TimeKeepingRecorder == null)
+            {
+                model.TimeKeepingMethod = TimeKeepingMethodType.Machine;
+                model.TimeKeepingRecorder = await _organizationDBContext.HrBill.Where(b => b.FId == model.EmployeeId)
+                                                .Select(b => b.BillCode)
+                                                .FirstOrDefaultAsync();
+                if (model.Date == 0)
+                    model.Date = DateTime.Now.GetUnix();
+
+                if (model.Time == 0)
+                    model.Time = DateTime.Now.TimeOfDay.TotalSeconds;
+            }    
             var entity = _mapper.Map<TimeSheetRaw>(model);
 
             await _organizationDBContext.TimeSheetRaw.AddAsync(entity);
@@ -85,19 +106,61 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return _mapper.Map<TimeSheetRawModel>(timeSheetRaw);
         }
 
-        public async Task<IList<TimeSheetRawModel>> GetListTimeSheetRaw()
+        public async Task<PageData<TimeSheetRawViewModel>> GetListTimeSheetRaw(TimeSheetRawFilterModel filter, int page, int size)
         {
-            var query = _organizationDBContext.TimeSheetRaw.AsNoTracking();
+            var hrEmployeeTypeId = await _organizationDBContext.HrType.Where(t => t.HrTypeCode == OrganizationConstants.HR_EMPLOYEE_TYPE_CODE).Select(t => t.HrTypeId).FirstOrDefaultAsync();
+            
+            var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, filter.HrTypeFilters, 0, 0);
 
-            return await query.Select(x => new TimeSheetRawModel
+            var employeeIds = employees.List.Select(e => (long)e["F_Id"]).ToList();
+
+            var query = _organizationDBContext.TimeSheetRaw.Where(t => employeeIds.Contains(t.EmployeeId)).AsNoTracking();
+
+            if (!String.IsNullOrWhiteSpace(filter.Keyword))
+                query = query.Where(t => t.TimeKeepingRecorder.Contains(filter.Keyword));
+
+            if (filter.FromDate.HasValue)
+                query = query.Where(t => t.Date > filter.FromDate.UnixToDateTime());
+
+            if (filter.ToDate.HasValue)
+                query = query.Where(t => t.Date < filter.ToDate.UnixToDateTime());
+
+            //if(filter.ColumnsFilters.fi)
+
+            query = query.InternalFilter(filter.ColumnsFilters);
+
+            query = query.InternalOrderBy(filter.OrderBy, filter.Asc);
+
+            var timeSheetRaws = await query.ToListAsync();
+
+            var result = new List<TimeSheetRawViewModel>();
+
+            Parallel.ForEach(employees.List, e =>
             {
-                Date = x.Date.GetUnix(),
-                Time = x.Time.TotalSeconds,
-                EmployeeId = x.EmployeeId,
-                TimeSheetRawId = x.TimeSheetRawId
-            }).ToListAsync();
-        }
+                var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e["F_Id"]);
 
+                if(matchingTimeSheetRaws != null)
+                {
+                    foreach (var timeSheetRaw in matchingTimeSheetRaws)
+                    {
+                        result.Add(new TimeSheetRawViewModel()
+                        {
+                            EmployeeId = timeSheetRaw.EmployeeId,
+                            TimeSheetRawId = timeSheetRaw.TimeSheetRawId,
+                            Date = timeSheetRaw.Date.GetUnix(),
+                            Time = timeSheetRaw.Time.TotalSeconds,
+                            TimeKeepingMethod = (TimeKeepingMethodType)timeSheetRaw.TimeKeepingMethod,
+                            TimeKeepingRecorder = timeSheetRaw.TimeKeepingRecorder,
+                            Employee = e
+                        });
+                    }
+                }
+            });
+
+            var data = size > 0 && page > 0 ? result.Skip((page - 1) * size).Take(size).ToList() : result;
+
+            return (data, result.Count);
+        }
 
         public CategoryNameModel GetFieldDataForMapping()
         {

@@ -13,6 +13,10 @@ public partial class TimeSheetRaw
 
     public TimeSpan Time { get; set; }
 
+    public int TimeKeepingMethod { get; set; }
+
+    public string TimeKeepingRecorder { get; set; }
+
     public DateTime CreatedDatetimeUtc { get; set; }
 
     public int CreatedByUserId { get; set; }
