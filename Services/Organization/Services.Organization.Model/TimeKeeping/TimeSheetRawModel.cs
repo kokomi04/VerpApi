@@ -1,8 +1,11 @@
 ﻿using AutoMapper;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.Organization.TimeKeeping;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Services.Accountancy.Model.Input;
 
 namespace Services.Organization.Model.TimeKeeping
 {
@@ -12,6 +15,8 @@ namespace Services.Organization.Model.TimeKeeping
         public long EmployeeId { get; set; }
         public long Date { get; set; }
         public double Time { get; set; }
+        public TimeKeepingMethodType TimeKeepingMethod { get; set; }
+        public string TimeKeepingRecorder { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -22,6 +27,29 @@ namespace Services.Organization.Model.TimeKeeping
             .ForMember(m => m.Date, v => v.MapFrom(m => m.Date.GetUnix()))
             .ForMember(m => m.Time, v => v.MapFrom(m => m.Time.TotalSeconds));
         }
+    }
+
+    public class TimeSheetRawViewModel : TimeSheetRawModel, IMapFrom<TimeSheetRaw>
+    {
+        public NonCamelCaseDictionary Employee { get; set; }
+    }
+
+    public class TimeSheetRawRequestModel : TimeSheetRawFilterModel
+    {
+        public int Page { get; set; }
+        public int Size { get; set; }
+    }
+
+    public class TimeSheetRawFilterModel
+    {
+        public string Keyword { get; set; }
+        public string OrderBy { get; set; }
+        public bool Asc { get; set; } = true;
+        public long? FromDate { get; set; }
+        public long? ToDate { get; set; }
+        public Clause ColumnsFilters { get; set; }
+
+        public HrTypeBillsFilterModel? HrTypeFilters { get; set; }
     }
 
     public class TimeSheetRawImportFieldModel

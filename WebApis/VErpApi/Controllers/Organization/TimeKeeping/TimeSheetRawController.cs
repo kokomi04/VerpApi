@@ -4,11 +4,14 @@ using Microsoft.AspNetCore.Routing;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.Organization.TimeKeeping
@@ -38,11 +41,15 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
             return await _timeSheetRawService.DeleteTimeSheetRaw(timeSheetRawId);
         }
 
-        [HttpGet]
-        [Route("")]
-        public async Task<IList<TimeSheetRawModel>> GetListTimeSheetRaw()
+        [HttpPost]
+        [Route("Search")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<TimeSheetRawViewModel>> GetListTimeSheetRaw([FromBody] TimeSheetRawRequestModel request)
         {
-            return await _timeSheetRawService.GetListTimeSheetRaw();
+            if (request == null) 
+                throw new BadRequestException(GeneralCode.InvalidParams);
+
+            return await _timeSheetRawService.GetListTimeSheetRaw(request, request.Page, request.Size);
         }
 
         [HttpGet]
