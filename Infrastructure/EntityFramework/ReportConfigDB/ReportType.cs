@@ -93,7 +93,7 @@ public partial class ReportType
 
     public int? ReplicatedFromReportTypeId { get; set; }
 
-    public bool? IsChangeSql { get; set; }
+    public bool? IsCanCustomReport { get; set; }
 
     public virtual ReportTypeGroup ReportTypeGroup { get; set; }
 

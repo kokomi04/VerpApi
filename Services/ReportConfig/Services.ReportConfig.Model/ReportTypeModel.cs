@@ -53,7 +53,7 @@ namespace Verp.Services.ReportConfig.Model
         public long? TemplateFileId { get; set; }
         public string GroupTitleSql { get; set; }
         public bool? IsDbPaging { get; set; }
-        public bool? IsChangeSQL { get; set; }
+        public bool? IsCanCustomReport { get; set; }
         public ReportDisplayConfigModel DisplayConfig { get; set; }
 
         public IList<ReportColumnModel> Columns { get; set; }
@@ -89,7 +89,7 @@ namespace Verp.Services.ReportConfig.Model
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonSerialize()))
        .ForMember(m => m.ReportTypeGroup, m => m.Ignore())
-       .ForMember(m => m.IsChangeSql, m=> m.MapFrom(v => v.IsChangeSQL.Value));
+       .ForMember(m => m.IsCanCustomReport, m=> m.MapFrom(v => v.IsCanCustomReport.Value));
 
     }
 
