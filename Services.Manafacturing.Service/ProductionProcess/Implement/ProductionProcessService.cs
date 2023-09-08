@@ -1271,7 +1271,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 if (req.ProductionStepLinkDataRoles.Any(x=> req.ProductionStepLinkDatas.FirstOrDefault(d=> d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
                 {
-                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện role không có chi tiết");
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Trong stepLinkDataRoles tồn tại stepLinkDatas bằng rỗng!");
                 }
 
                 var inputRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
