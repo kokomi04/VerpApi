@@ -93,6 +93,8 @@ public partial class ReportType
 
     public int? ReplicatedFromReportTypeId { get; set; }
 
+    public bool? IsChangeSql { get; set; }
+
     public virtual ReportTypeGroup ReportTypeGroup { get; set; }
 
     public virtual ICollection<ReportTypeView> ReportTypeView { get; set; } = new List<ReportTypeView>();

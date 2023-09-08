@@ -87,6 +87,7 @@ public partial class ReportConfigDBContext : DbContext
 
         modelBuilder.Entity<ReportType>(entity =>
         {
+            entity.Property(e => e.IsChangeSql).HasColumnName("IsChangeSQL");
             entity.Property(e => e.MainView).HasMaxLength(128);
             entity.Property(e => e.PrintTitle).HasMaxLength(128);
             entity.Property(e => e.ReportPath)
