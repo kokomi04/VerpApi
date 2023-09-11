@@ -96,5 +96,14 @@ namespace Verp.Resources.Organization.TimeKeeping.Validation {
                 return ResourceManager.GetString("ShiftCodeIsRequired", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã ca đã tồn tại trong danh sách!.
+        /// </summary>
+        public static string ShiftCodeIsUnique {
+            get {
+                return ResourceManager.GetString("ShiftCodeIsUnique", resourceCulture);
+            }
+        }
     }
 }
