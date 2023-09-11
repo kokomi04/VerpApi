@@ -10,6 +10,8 @@ namespace Services.Organization.Model.TimeKeeping
     {
         public int OvertimeConfigurationId { get; set; }
 
+        public EnumOvertimeMode OvertimeMode { get; set; }
+
         public int? WeekdayLevel { get; set; }
 
         public bool IsWeekdayLevel { get; set; }
@@ -44,6 +46,12 @@ namespace Services.Organization.Model.TimeKeeping
 
         public bool IsOvertimeThresholdMins { get; set; }
 
+        public int MinsLimitOvertime { get; set; }
+
+        public int MinsReaches { get; set; }
+
+        public int MinsBonusWhenMinsReaches { get; set; }
+
         public int? MinThresholdMinutesBeforeWork { get; set; }
 
         public int? MinThresholdMinutesAfterWork { get; set; }
@@ -52,17 +60,17 @@ namespace Services.Organization.Model.TimeKeeping
 
         public bool IsMinThresholdMinutesAfterWork { get; set; }
 
-        public long MinsLimitOvertimeBeforeWork { get; set; }
+        public int MinsLimitOvertimeBeforeWork { get; set; }
 
-        public long MinsLimitOvertimeAfterWork { get; set; }
+        public int MinsLimitOvertimeAfterWork { get; set; }
 
-        public long MinsReachesBeforeWork { get; set; }
+        public int MinsReachesBeforeWork { get; set; }
 
-        public long MinsReachesAfterWork { get; set; }
+        public int MinsReachesAfterWork { get; set; }
 
-        public long MinsBonusWhenMinsReachesBeforeWork { get; set; }
+        public int MinsBonusWhenMinsReachesBeforeWork { get; set; }
 
-        public long MinsBonusWhenMinsReachesAfterWork { get; set; }
+        public int MinsBonusWhenMinsReachesAfterWork { get; set; }
 
         public virtual IList<OvertimeConfigurationMappingModel> OvertimeConfigurationMapping { get; set; }
 

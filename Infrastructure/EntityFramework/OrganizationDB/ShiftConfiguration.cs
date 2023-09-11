@@ -21,9 +21,9 @@ public partial class ShiftConfiguration
 
     public bool? IsCheckOutDateTimekeeping { get; set; }
 
-    public TimeSpan LunchTimeStart { get; set; }
+    public TimeSpan? LunchTimeStart { get; set; }
 
-    public TimeSpan LunchTimeFinish { get; set; }
+    public TimeSpan? LunchTimeFinish { get; set; }
 
     public long ConvertToMins { get; set; }
 
@@ -36,8 +36,6 @@ public partial class ShiftConfiguration
     public TimeSpan StartTimeOutRecord { get; set; }
 
     public TimeSpan EndTimeOutRecord { get; set; }
-
-    public int WorkScheduleId { get; set; }
 
     public bool IsSkipSaturdayWithShift { get; set; }
 
