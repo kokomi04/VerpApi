@@ -10,8 +10,6 @@ namespace Services.Organization.Model.TimeKeeping
     {
         public int OvertimeConfigurationId { get; set; }
 
-        public EnumOvertimeMode OvertimeMode { get; set; }
-
         public int? WeekdayLevel { get; set; }
 
         public bool IsWeekdayLevel { get; set; }
