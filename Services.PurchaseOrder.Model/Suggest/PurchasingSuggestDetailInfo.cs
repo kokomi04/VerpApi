@@ -20,6 +20,8 @@
         public string ProductionOrderCode { get; set; }
         public int? SortOrder { get; set; }
 
+        public int? CustomerId { get; set; }
+
     }
 
     public class PoAssignmentBasicInfo

@@ -650,7 +650,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return new PurchaseOrderOutputDetail()
                     {
                         PurchaseOrderDetailId = d.PurchaseOrderDetailId,
-                        PoAssignmentDetailId = d.PoAssignmentDetailId,
+                        //PoAssignmentDetailId = d.PoAssignmentDetailId,
                         ProviderProductName = d.ProviderProductName,
                         ProductId = d.ProductId,
                         PrimaryQuantity = d.PrimaryQuantity,
