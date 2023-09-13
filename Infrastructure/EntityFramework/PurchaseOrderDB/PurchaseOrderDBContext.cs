@@ -541,18 +541,18 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.ProviderProductName).HasMaxLength(128);
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.PoAssignmentDetail).WithMany(p => p.PurchaseOrderDetail)
-                .HasForeignKey(d => d.PoAssignmentDetailId)
-                .HasConstraintName("FK_PurchaseOrderDetail_PoAssignmentDetail");
+            //entity.HasOne(d => d.PoAssignmentDetail).WithMany(p => p.PurchaseOrderDetail)
+            //    .HasForeignKey(d => d.PoAssignmentDetailId)
+            //    .HasConstraintName("FK_PurchaseOrderDetail_PoAssignmentDetail");
 
             entity.HasOne(d => d.PurchaseOrder).WithMany(p => p.PurchaseOrderDetail)
                 .HasForeignKey(d => d.PurchaseOrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PurchaseOrderDetail_PurchaseOrder");
 
-            entity.HasOne(d => d.PurchasingSuggestDetail).WithMany(p => p.PurchaseOrderDetail)
-                .HasForeignKey(d => d.PurchasingSuggestDetailId)
-                .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
+            //entity.HasOne(d => d.PurchasingSuggestDetail).WithMany(p => p.PurchaseOrderDetail)
+            //    .HasForeignKey(d => d.PurchasingSuggestDetailId)
+            //    .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
         });
 
         modelBuilder.Entity<PurchaseOrderDetailSubCalculation>(entity =>
@@ -704,9 +704,9 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.PurchasingRequestDetail).WithMany(p => p.PurchasingSuggestDetail)
-                .HasForeignKey(d => d.PurchasingRequestDetailId)
-                .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingRequestDetail");
+            //entity.HasOne(d => d.PurchasingRequestDetail).WithMany(p => p.PurchasingSuggestDetail)
+            //    .HasForeignKey(d => d.PurchasingRequestDetailId)
+            //    .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingRequestDetail");
 
             entity.HasOne(d => d.PurchasingSuggest).WithMany(p => p.PurchasingSuggestDetail)
                 .HasForeignKey(d => d.PurchasingSuggestId)

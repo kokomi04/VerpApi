@@ -13,7 +13,9 @@ public partial class PurchasingSuggestDetail
 
     public int CustomerId { get; set; }
 
-    public long? PurchasingRequestDetailId { get; set; }
+    //public long? PurchasingRequestDetailId { get; set; }
+
+    public long? RefPurchasingRequestId { get; set; }
 
     public int ProductId { get; set; }
 
@@ -57,7 +59,7 @@ public partial class PurchasingSuggestDetail
 
     public virtual ICollection<PurchaseOrderDetail> PurchaseOrderDetail { get; set; } = new List<PurchaseOrderDetail>();
 
-    public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
+    //public virtual PurchasingRequestDetail PurchasingRequestDetail { get; set; }
 
     public virtual PurchasingSuggest PurchasingSuggest { get; set; }
 
