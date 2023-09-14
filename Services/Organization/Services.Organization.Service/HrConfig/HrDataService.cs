@@ -47,6 +47,7 @@ using VErp.Services.Organization.Service.HrConfig.Abstract;
 using VErp.Services.Organization.Service.HrConfig.Facade;
 using static VErp.Commons.Library.EvalUtils;
 using static VErp.Commons.Library.ExcelReader;
+using static VErp.Services.Organization.Service.HrConfig.HrDataService;
 
 namespace VErp.Services.Organization.Service.HrConfig
 {
@@ -66,6 +67,7 @@ namespace VErp.Services.Organization.Service.HrConfig
         Task<CategoryNameModel> GetFieldDataForMapping(int hrTypeId, int? areaId);
         Task<bool> ImportHrBillFromMapping(int hrTypeId, ImportExcelMapping mapping, Stream stream);
         Task<bool> UpdateHrBillReference(int hrTypeId, int hrAreaId, long hrBill_F_Id, long hrBillReference_F_Id);
+        Task<List<HrValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField);
         Task<(string query, IList<string> fieldNames)> BuildHrQuery(string hrTypeCode, bool includedMultiRowArea, string joinMore = null);
     }
 
@@ -1094,7 +1096,7 @@ namespace VErp.Services.Organization.Service.HrConfig
             return $"{hrAreaCode}_F_Id";
         }
 
-        private async Task<List<HrValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
+        public async Task<List<HrValidateField>> GetHrFields(int hrTypeId, int? areaId, bool includeSelectSqlField)
         {
             var area = _organizationDBContext.HrArea.AsQueryable();
             if (areaId > 0)
