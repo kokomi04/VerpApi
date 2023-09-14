@@ -140,7 +140,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     await trans.CommitAsync();
 
                     await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
-                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName, reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .JsonData(model)
                              .CreateLog();
@@ -245,7 +245,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
-                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName, reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .JsonData(model)
                              .CreateLog();
@@ -352,6 +352,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
             }
+
+            var groupInfo = await _reportConfigContext.ReportTypeGroup.FirstOrDefaultAsync(g => g.ReportTypeGroupId == reportType.ReportTypeGroupId);
+            if (groupInfo != null)
+                info.ReportModuleTypeId = (EnumModuleType)groupInfo.ModuleTypeId;
             return info;
         }
 
@@ -501,7 +505,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
                 await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
-                             .MessageResourceFormatDatas( report.ReportTypeName)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
                              .JsonData(report)
                              .CreateLog();
@@ -646,6 +650,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             return null;
         }
-       
+
     }
 }
