@@ -432,13 +432,29 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return await exportFacade.Export(product.ProductCode);
         }
-        public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds, bool isExportAllTopBOM)
         {
             var products = await _stockDbContext.Product.AsNoTracking().Where(p => productIds.Contains( p.ProductId)).ToListAsync();
             if (products.Count == 0)
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
-
-            var materialsConsums = await GetProductMaterialsConsumptions(await GetTopIdsFromProductIds(productIds));
+            var productExportIds = new List<int>();
+            if (isExportAllTopBOM)
+            {
+                var checkParams = new[]
+                {
+                     productIds.ToSqlParameter("@InputProductIds")
+                };
+                var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
+                foreach (var p in productParentIds)
+                {
+                    productExportIds.Add(Convert.ToInt32(p["ProductId"]));
+                }
+            }
+            else
+            {
+                productExportIds.AddRange( await GetTopIdsFromProductIds(productIds));
+            }
+            var materialsConsums = await GetProductMaterialsConsumptions(productExportIds);
             var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsums, _organizationHelperService, _manufacturingHelperService);
 
             return await exportFacade.Export("Vật tư tiêu hao");
