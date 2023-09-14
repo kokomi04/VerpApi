@@ -35,7 +35,7 @@ namespace VErpApi.Controllers.Organization
 
         [HttpPut]
         [Route("")]
-        public async Task<bool> UpdateObjectApprovalStep(ObjectApprovalStepModel model)
+        public async Task<bool> UpdateObjectApprovalStep([FromBody] ObjectApprovalStepModel model)
         {
             return await _objectApprovalStepService.UpdateObjectApprovalStep(model);
         }

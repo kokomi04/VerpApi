@@ -830,19 +830,19 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var oldDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => d.PurchasingRequestId == purchasingRequestId).ToListAsync();
 
-            var purchasingRequestDetailIds = oldDetails.Select(d => (long?)d.PurchasingRequestDetailId).ToList();
-            var sugguests = await (
-                from d in _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId))
-                join s in _purchaseOrderDBContext.PurchasingSuggest on d.PurchasingSuggestId equals s.PurchasingSuggestId
-                select
+            //var purchasingRequestDetailIds = oldDetails.Select(d => (long?)d.PurchasingRequestDetailId).ToList();
+            //var sugguests = await (
+            //    from d in _purchaseOrderDBContext.PurchasingSuggestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId))
+            //    join s in _purchaseOrderDBContext.PurchasingSuggest on d.PurchasingSuggestId equals s.PurchasingSuggestId
+            //    select
 
-                    s.PurchasingSuggestCode
-                ).Distinct()
-                .ToListAsync();
-            if (sugguests.Count > 0)
-            {
-                throw PurchasingRequestMessage.CanNotDeletePurchasingRequestWithExistedSuggest.BadRequestFormat(string.Join(", ", sugguests));
-            }
+            //        s.PurchasingSuggestCode
+            //    ).Distinct()
+            //    .ToListAsync();
+            //if (sugguests.Count > 0)
+            //{
+            //    throw PurchasingRequestMessage.CanNotDeletePurchasingRequestWithExistedSuggest.BadRequestFormat(string.Join(", ", sugguests));
+            //}
 
             foreach (var item in oldDetails)
             {

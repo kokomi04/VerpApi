@@ -129,4 +129,7 @@
   <data name="ShiftCodeIsRequired" xml:space="preserve">
     <value>Mã ca không được để trống!</value>
   </data>
+  <data name="ShiftCodeIsUnique" xml:space="preserve">
+    <value>Mã ca đã tồn tại trong danh sách!</value>
+  </data>
 </root>

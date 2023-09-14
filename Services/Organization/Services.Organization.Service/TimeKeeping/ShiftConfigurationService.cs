@@ -42,6 +42,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddShiftConfiguration(ShiftConfigurationModel model)
         {
+            if (await _organizationDBContext.ShiftConfiguration.AnyAsync(s => s.ShiftCode == model.ShiftCode))
+                throw ShiftConfigurationValidationMessage.ShiftCodeIsUnique.BadRequest();
+
             await ValidateModel(model);
             var entity = _mapper.Map<ShiftConfiguration>(model);
             await _organizationDBContext.ShiftConfiguration.AddAsync(entity);
@@ -63,6 +66,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var shiftConfiguration = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(x => x.ShiftConfigurationId == shiftConfigurationId);
             if (shiftConfiguration == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            if (model.ShiftCode != shiftConfiguration.ShiftCode && await _organizationDBContext.ShiftConfiguration.AnyAsync(s => s.ShiftCode == model.ShiftCode))
+                throw ShiftConfigurationValidationMessage.ShiftCodeIsUnique.BadRequest();
 
             var overtimeConfiguration = await _organizationDBContext.OvertimeConfiguration
                 .FirstOrDefaultAsync(x => x.OvertimeConfigurationId == shiftConfiguration.OvertimeConfigurationId);

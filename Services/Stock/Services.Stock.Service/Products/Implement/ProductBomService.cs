@@ -335,12 +335,12 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds, bool isFindTopBOM = false)
+        public async Task<(Stream stream, string fileName, string contentType)> ExportBom(IList<int> productIds, bool isFindTopBOM = false, bool isExportAllTopBom = false)
         {
             var steps = await _manufacturingHelperService.GetSteps();
             var properties = await _propertyService.GetProperties();
             var bomExport = new ProductBomExportFacade(_stockDbContext, productIds, steps, properties, this);
-            return await bomExport.BomExport(isFindTopBOM);
+            return await bomExport.BomExport(isFindTopBOM, isExportAllTopBom);
         }
 
         private bool HasChange(ProductBom oldValue, ProductBomInput newValue)

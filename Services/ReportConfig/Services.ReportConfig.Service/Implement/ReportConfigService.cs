@@ -140,7 +140,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     await trans.CommitAsync();
 
                     await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.UpdateReportFilter)
-                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName, reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .JsonData(model)
                              .CreateLog();
@@ -245,7 +245,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 await trans.CommitAsync();
 
                 await _objActivityLogFacadeReportTypeView.LogBuilder(() => ReportConfigActivityLogMessage.CreateReportFilter)
-                             .MessageResourceFormatDatas(info.ReportTypeViewName,reportTypeInfo.ReportTypeName)
+                             .MessageResourceFormatDatas(info.ReportTypeViewName, reportTypeInfo.ReportTypeName)
                              .ObjectId(info.ReportTypeViewId)
                              .JsonData(model)
                              .CreateLog();
@@ -333,9 +333,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportTypeModel> Info(int reportTypeId)
         {
-            var reportCustom = await _reportConfigContext.ReportTypeCustom
-              .Where(r => r.ReportTypeId == reportTypeId && !r.IsDeleted)
-              .FirstOrDefaultAsync();
             var reportType = await _reportConfigContext.ReportType.Include(x => x.ReportTypeGroup)
                 //.ProjectTo<ReportTypeModel>(_mapper.ConfigurationProvider)
                 .FirstOrDefaultAsync(r => r.ReportTypeId == reportTypeId);
@@ -343,15 +340,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 throw new BadRequestException(ReportErrorCode.ReportNotFound);
             }
-            if (reportCustom != null)
-            {
-                if (!string.IsNullOrEmpty(reportCustom.HeadSql) || !string.IsNullOrEmpty(reportCustom.BodySql) || !string.IsNullOrEmpty(reportCustom.FooterSql))
-                {
-                    reportType.HeadSql = reportCustom.HeadSql;
-                    reportType.BodySql = reportCustom.BodySql;
-                    reportType.FooterSql = reportCustom.FooterSql;
-                }
-            }
+
             var info = _mapper.Map<ReportTypeModel>(reportType);
             if (info.BscConfig?.Rows != null)
             {
@@ -363,6 +352,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
                 }
             }
+
+            var groupInfo = await _reportConfigContext.ReportTypeGroup.FirstOrDefaultAsync(g => g.ReportTypeGroupId == reportType.ReportTypeGroupId);
+            if (groupInfo != null)
+                info.ReportModuleTypeId = (EnumModuleType)groupInfo.ModuleTypeId;
             return info;
         }
 
@@ -512,7 +505,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 trans.Commit();
 
                 await _objActivityLogFacadeReportType.LogBuilder(() => ReportConfigActivityLogMessage.DeleteReport)
-                             .MessageResourceFormatDatas( report.ReportTypeName)
+                             .MessageResourceFormatDatas(report.ReportTypeName)
                              .ObjectId(report.ReportTypeId)
                              .JsonData(report)
                              .CreateLog();
@@ -657,6 +650,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             return null;
         }
-       
+
     }
 }
