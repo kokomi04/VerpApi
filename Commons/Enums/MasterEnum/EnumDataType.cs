@@ -65,6 +65,15 @@ namespace VErp.Commons.Enums.MasterEnum
         [Description("Horizontal bar relative")]
         [DataSize(-1)]
         [Regex("^[0-9]*(?:\\.[0-9]*)?$")]
-        HBarRelative = 14
+        HBarRelative = 14,
+
+        [Description("Time")]
+        [DataSize(-1)]
+        [Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$")]
+        Time = 15,
+
+        [Description("Enum")]
+        [DataSize(-1)]
+        Enum = 16,
     }
 }
