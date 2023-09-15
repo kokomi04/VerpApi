@@ -21,6 +21,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Accountancy.Model.Input;
+using VErp.Services.Master.Service.Users;
 using VErp.Services.Organization.Service.HrConfig;
 using VErp.Services.Organization.Service.HrConfig.Facade;
 using VErp.Services.Organization.Service.Salary;
@@ -49,19 +50,22 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         private readonly IMapper _mapper;
         private readonly IHrDataService _hrDataService;
         private readonly IHrDataImportDIService _hrDataImportDIService;
-        private ICurrentContextService _currentContextService;
+        private readonly ICurrentContextService _currentContextService;
+        private readonly IUserService _userService;
 
         public TimeSheetRawService(
-            OrganizationDBContext organizationDBContext, 
+            OrganizationDBContext organizationDBContext,
             IMapper mapper, IHrDataService hrDataService,
             IHrDataImportDIService hrDataImportDIService,
-            ICurrentContextService currentContextService)
+            ICurrentContextService currentContextService, 
+            IUserService userService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
             _hrDataService = hrDataService;
             _hrDataImportDIService = hrDataImportDIService;
             _currentContextService = currentContextService;
+            _userService = userService;
         }
 
         public async Task<long> AddTimeSheetRaw(TimeSheetRawModel model)
@@ -275,7 +279,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         if (DateTime.TryParse(value, out DateTime date))
                         {
-                            entity.SetPropertyValue(propertyName, date.GetUnix()); // Chỉ lấy phần ngày
+                            entity.SetPropertyValue(propertyName, date.GetUnix());
                         }
                         else
                         {
@@ -313,11 +317,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, new HrTypeBillsFilterModel(), 0, 0);
 
-            var employeeIds = employees.List.Select(e => (long)e[F_Id]).ToList();
-
-            var query = _organizationDBContext.TimeSheetRaw.Where(t => employeeIds.Contains(t.EmployeeId)).AsNoTracking();
-
-
             foreach (var item in lstData)
             {
                 var employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
@@ -331,10 +330,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     Date = item.Date.UnixToDateTime().Value,
                     Time = TimeSpan.FromSeconds(item.Time),
                     TimeKeepingMethod = (int)TimeKeepingMethodType.Software,
-                    TimeKeepingRecorder = await _organizationDBContext.HrBill.Where(b => b.FId == (long)employee[F_Id])
-                                                .Select(b => b.BillCode)
-                                                .FirstOrDefaultAsync()
-            };
+                    TimeKeepingRecorder = (await _userService.GetInfo(_currentContextService.UserId)).EmployeeCode
+                };
                 await _organizationDBContext.TimeSheetRaw.AddAsync(ent);
             }
             await _organizationDBContext.SaveChangesAsync();
