@@ -57,7 +57,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             OrganizationDBContext organizationDBContext,
             IMapper mapper, IHrDataService hrDataService,
             IHrDataImportDIService hrDataImportDIService,
-            ICurrentContextService currentContextService, 
+            ICurrentContextService currentContextService,
             IUserService userService)
         {
             _organizationDBContext = organizationDBContext;
@@ -248,7 +248,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     foreach(var matchingKey in item.Employee.Keys.Where(k => k.Contains(field)).ToList())
                     {
                         if(!f.Keys.Any(k => k.Equals(matchingKey)))
-                        f.Add(matchingKey, item.Employee[matchingKey]);
+                            f.Add(matchingKey, item.Employee[matchingKey]);
                     }
 
                     var property = item.GetType().GetProperty(char.ToUpper(field[0]) + field.Substring(1));
@@ -279,7 +279,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         if (DateTime.TryParse(value, out DateTime date))
                         {
-                            entity.SetPropertyValue(propertyName, date.GetUnix());
+                            entity.SetPropertyValue(propertyName, date.Date.GetUnix());
                         }
                         else
                         {
@@ -293,17 +293,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     if (!string.IsNullOrWhiteSpace(value))
                     {
-                        var pattern = @"(?<hour>\d+):(?<min>\d+)";
-                        Regex rx = new Regex(pattern);
-                        MatchCollection match = rx.Matches(value);
-                        if (match.Count != 1) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
+                        if (!DateTime.TryParse(value, out DateTime date))
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng HH:mm");
+                        }    
 
-                        if (!int.TryParse(match[0].Groups["hour"].Value, out int hour) || !int.TryParse(match[0].Groups["min"].Value, out int min))
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
-
-                        if (hour >= 24 || hour < 0 || min >= 60 || min < 0) throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng hh:mm");
-
-                        double time = hour * 60 * 60 + min * 60;
+                        double time = date.Hour * 60 * 60 + date.Minute * 60;
 
                         entity.SetPropertyValue(propertyName, time);
                     }
@@ -321,8 +316,20 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 var employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
 
-                if(employee == null) 
+                if(employee == null)
                     throw new BadRequestException(GeneralCode.InvalidParams, $"Mã nhân viên {item.so_ct} không tồn tại!");
+                
+                if (await _organizationDBContext.TimeSheetRaw.AnyAsync(t => t.EmployeeId == (long)employee[F_Id] && t.Date == item.Date.UnixToDateTime().Value && t.Time == TimeSpan.FromSeconds(item.Time)))
+                {
+                    if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Đã tồn tại mã nhân viên {item.so_ct} với ngày chấm công {item.Date.UnixToDateTime().Value.ToShortDateString()} và giờ chấm công {TimeSpan.FromSeconds(item.Time).ToString()}");
+                    }
+                    else if(mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Update)
+                    {
+                        continue;
+                    }
+                } 
 
                 var ent = new TimeSheetRaw
                 {
