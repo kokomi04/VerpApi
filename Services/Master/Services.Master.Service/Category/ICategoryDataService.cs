@@ -22,7 +22,7 @@ namespace VErp.Services.Master.Service.Category
 
         Task<int> AddCategoryRowToDb(int categoryId, NonCamelCaseDictionary data);
 
-        Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data);
+        Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data, bool validateDataIsOld);
 
         Task<int> DeleteCategoryRow(int categoryId, int fId);
 

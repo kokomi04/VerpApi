@@ -87,7 +87,7 @@ namespace VErpApi.Controllers.System.Category
         [Route("{categoryId}/categoryrows/{categoryRowId}")]
         public async Task<int> UpdateCategoryRow([FromRoute] int categoryId, [FromRoute] int categoryRowId, [FromBody] NonCamelCaseDictionary data)
         {
-            return await _categoryDataService.UpdateCategoryRow(categoryId, categoryRowId, data);
+            return await _categoryDataService.UpdateCategoryRow(categoryId, categoryRowId, data, true);
         }
 
         [HttpDelete]

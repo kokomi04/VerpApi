@@ -244,7 +244,7 @@ namespace VErp.Services.Accountancy.Service.Category
             return (int)id;
         }
 
-        public async Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data)
+        public async Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data, bool validateDataIsOld)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -265,13 +265,16 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
-            data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
-
-            categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
-
-            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+            if (validateDataIsOld)
             {
-                throw GeneralCode.DataIsOld.BadRequest();
+                data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+                categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+                if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
             }
 
             bool isParentChange = false;
