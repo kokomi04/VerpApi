@@ -829,7 +829,7 @@ namespace VErp.Commons.Library
                         try
                         {
                             var date = DateTime.FromOADate(cell.NumericCellValue);
-                            date = date.Date;
+                            //date = date.Date;
                             return date.ToString();
                         }
                         catch (Exception)

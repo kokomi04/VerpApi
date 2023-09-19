@@ -1033,7 +1033,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             var inventoryInImport = new InventoryInputImportFacade();
                             inventoryInImport.SetProductService(_productService);
                             inventoryInImport.SetMasterDBContext(_masterDBContext);
-                            inventoryInImport.SetStockDBContext(_stockDbContext);
+                            inventoryInImport.SetStockDBContext(_stockDbContext, _currentContextService);
                             inventoryInImport.SetOrganizationHelper(_organizationHelperService);
                             await inventoryInImport.ProcessExcelFile(longTask, mapping, stream);
 
@@ -1092,7 +1092,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     using (var batchLog = _activityLogService.BeginBatchLog())
                     {
                         var inventoryExport = new InventoryOutImportFacade();
-                        inventoryExport.SetStockDBContext(_stockDbContext);
+                        inventoryExport.SetStockDBContext(_stockDbContext, _currentContextService);
                         inventoryExport.SetOrganizationHelper(_organizationHelperService);
                         await inventoryExport.ProcessExcelFile(mapping, stream);
 
