@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Organization;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -149,20 +150,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private async Task<List<int>> GetTopIdsFromProductIds(IList<int> productIds)
         {
             var lstProductIds = new List<int>();
-            var parentChildProductIds = new Dictionary<int, int>();
             var checkParams = new[]
                {
                      productIds.ToSqlParameter("@InputProductIds")
                };
             var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetParentBomProductIds", checkParams)).ConvertData();
-            foreach (var p in productParentIds)
-            {
-                parentChildProductIds.Add(Convert.ToInt32(p["ParentId"]), Convert.ToInt32(p["ChildId"]));
-            }
             foreach (var productId in productIds)
             {
                 var parentProductIds = new List<int>();
-                GetParentIds(productId, productIds, parentChildProductIds, ref parentProductIds);
+                GetParentIds(productId, productIds, productParentIds, ref parentProductIds);
                 if (parentProductIds.Count == 0)
                 {
                     lstProductIds.Add(productId);
@@ -170,13 +166,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
             return lstProductIds;
         }
-        private List<int> GetParentIds(int checkProductId, IList<int> productIds, Dictionary<int, int> parentChildProductIds, ref List<int> productIdsOutput)
+        private List<int> GetParentIds(int checkProductId, IList<int> productIds, List<NonCamelCaseDictionary> productParentIds, ref List<int> productIdsOutput)
         {
-            var lstParentIds = parentChildProductIds.Where(x => checkProductId == x.Value).Select(x => x.Key).ToList();
+            var lstParentIds = productParentIds.Where(x => checkProductId == Convert.ToInt32(x["ChildId"])).Select(x => Convert.ToInt32(x["ParentId"])).ToList();
 
             foreach (var parentId in lstParentIds)
             {
-                GetParentIds(parentId, productIds, parentChildProductIds, ref productIdsOutput);
+                GetParentIds(parentId, productIds, productParentIds, ref productIdsOutput);
             }
             productIdsOutput.AddRange(lstParentIds.Where(x => productIds.Contains(x)).ToList());
 
