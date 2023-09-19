@@ -172,7 +172,7 @@ namespace VErp.Services.Master.Service.Category
 
                             var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]?.ToString());
 
-                            await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
+                            await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow, false);
 
                             longTask.IncProcessedRows();
                         }
