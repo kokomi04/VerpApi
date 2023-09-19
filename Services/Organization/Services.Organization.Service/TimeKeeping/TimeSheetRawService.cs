@@ -178,6 +178,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var data = size > 0 && page > 0 ? result.Skip((page - 1) * size).Take(size).ToList() : result;
 
+            data = data.OrderByDescending(x => x.Date).ThenByDescending(x => x.Time).ToList();
+
             return (data, result.Count);
         }
 
@@ -227,7 +229,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         FieldName = prop.Name,
                         Title = nameAttribute.Name,
                         DataTypeId = dataTypeAttribute.DataType,
-                        HrAreaTitle = nameAttribute.GroupName,
                         IsMultiRow = true
                     });
                 }
@@ -273,11 +274,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var lstData = reader.ReadSheetEntity<TimeSheetRawImportFieldModel>(mapping, (entity, propertyName, value) =>
             {
+                if(propertyName == nameof(TimeSheetRawImportFieldModel.so_ct) && string.IsNullOrWhiteSpace(value))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã nhân viên không được để trống");
+
                 if (propertyName == nameof(TimeSheetRawModel.Date))
                 {
-                    if (!string.IsNullOrWhiteSpace(value))
+                    if (string.IsNullOrWhiteSpace(value))
                     {
-                        if (DateTime.TryParse(value, out DateTime date))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chấm công không được để trống");
+                    }
+                    if (DateTime.TryParse(value, out DateTime date))
                         {
                             entity.SetPropertyValue(propertyName, date.Date.GetUnix());
                         }
@@ -285,15 +291,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Ngày chấm công sai định dạng");
                         }
-                    }
                     return true;
                 }
 
                 if (propertyName == nameof(TimeSheetRawModel.Time))
                 {
-                    if (!string.IsNullOrWhiteSpace(value))
+                    if (string.IsNullOrWhiteSpace(value))
                     {
-                        if (!DateTime.TryParse(value, out DateTime date))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Giờ chấm công không được để trống");
+                    }
+                    if (!DateTime.TryParse(value, out DateTime date))
                         {
                             throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng HH:mm");
                         }    
@@ -301,7 +308,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         double time = date.Hour * 60 * 60 + date.Minute * 60;
 
                         entity.SetPropertyValue(propertyName, time);
-                    }
+
                     return true;
                 }
 
@@ -312,12 +319,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, new HrTypeBillsFilterModel(), 0, 0);
 
+            if (!lstData.Any())
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bản ghi nào!");
+
             foreach (var item in lstData)
             {
                 var employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
 
                 if(employee == null)
-                    throw new BadRequestException(GeneralCode.InvalidParams, $"Mã nhân viên {item.so_ct} không tồn tại!");
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Mã nhân viên {item.so_ct} không tồn tại!");
                 
                 if (await _organizationDBContext.TimeSheetRaw.AnyAsync(t => t.EmployeeId == (long)employee[F_Id] && t.Date == item.Date.UnixToDateTime().Value && t.Time == TimeSpan.FromSeconds(item.Time)))
                 {

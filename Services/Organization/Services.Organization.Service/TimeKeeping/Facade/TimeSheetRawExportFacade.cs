@@ -15,6 +15,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.OrganizationDB;
+using static NPOI.HSSF.UserModel.HeaderFooter;
 using static VErp.Services.Organization.Service.HrConfig.HrDataService;
 
 namespace VErp.Services.Organization.Service.HrConfig.Facade
@@ -23,13 +24,13 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
     {
         private ISheet _sheet = null;
         private int _currentRow = 0;
-        private Dictionary<int, List<HrValidateField>> _fieldsByArea = new Dictionary<int, List<HrValidateField>>();
+        private List<HrValidateField> _fields = new List<HrValidateField>();
         private IList<int> _columnMaxLineLength = new List<int>();
         private ICurrentContextService _currentContextService;
 
         public TimeSheetRawExportFacade(List<HrValidateField> fields, ICurrentContextService currentContextService)
         {
-            _fieldsByArea = fields.GroupBy(f => f.HrAreaId).ToDictionary(g => g.Key, g => g.ToList());
+            _fields = fields;
             _currentContextService = currentContextService;
         }
 
@@ -44,7 +45,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
 
             var currentRowTmp = _currentRow;
 
-            for (var i = 0; i < _fieldsByArea.Sum(a => a.Value.Count) + 1; i++)
+            for (var i = 0; i < _fields.Count + 1; i++)
             {
                 _sheet.ManualResize(i, _columnMaxLineLength[i]);
             }
@@ -73,34 +74,19 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             _sheet.SetHeaderCellStyle(fRow, 0);
 
             var sColIndex = 1;
-            if (_fieldsByArea.Count > 0)
-            {
-                sRow = fRow + 1;
-            }
 
-            _columnMaxLineLength = new List<int>(_fieldsByArea.Count + 1)
+            _columnMaxLineLength = new List<int>(_fields.Count + 1)
             {
                 5
             };
 
-            foreach (var (fieldName, fields) in _fieldsByArea)
+            foreach (var f in _fields)
             {
-                _sheet.EnsureCell(fRow, sColIndex).SetCellValue(fields.First().HrAreaTitle);
-                _sheet.SetHeaderCellStyle(fRow, sColIndex);
+                _sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.Title);
+                _columnMaxLineLength.Add(f.Title?.Length + 5 ?? 10);
 
-                if (fields.Count() > 1)
-                {
-                    MergeColumns(fRow, sColIndex, sColIndex + fields.Count() - 1);
-                }
-
-                foreach (var f in fields)
-                {
-                    _sheet.EnsureCell(sRow, sColIndex).SetCellValue(f.Title);
-                    _columnMaxLineLength.Add(f.Title?.Length + 5 ?? 10);
-
-                    _sheet.SetHeaderCellStyle(sRow, sColIndex);
-                    sColIndex++;
-                }
+                _sheet.SetHeaderCellStyle(sRow, sColIndex);
+                sColIndex++;
             }
 
             _currentRow = sRow + 1;
@@ -119,130 +105,104 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
             var dateStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "dd/MM/yyyy");
             var timeStyle = _sheet.GetCellStyle(isBorder: true, vAlign: VerticalAlignment.Top, hAlign: HorizontalAlignment.Right, dataFormat: "HH:mm");
 
-            var groupByEmployee = dataExport.GroupBy(d => d["so_ct"]).ToDictionary(g => g.Key, g => g.ToList());
-
-            foreach (var (eCode, details) in groupByEmployee)
+            foreach (var detail in dataExport)
             {
                 _sheet.EnsureCell(_currentRow, 0, intStyle).SetCellValue(stt);
-                var mergeRowsEnd = _currentRow + details.Count - 1;
-                if (details.Count > 1)
-                {
-                    MergeRows(_currentRow, mergeRowsEnd, 0);
-                }
+                var sColIndex = 1;
 
-                for (var i = 0; i < details.Count; i++)
+                foreach (var f in _fields)
                 {
-                    var detail = details[i];
-                    var sColIndex = 1;
-
-                    foreach (var (areaId, areaFields) in _fieldsByArea)
+                    var v = detail[f.FieldName];
+                    var dataTypeId = f.DataTypeId;
+                    if (!string.IsNullOrWhiteSpace(f.RefTableCode))
                     {
-                        if (!areaFields.First().IsMultiRow && i > 0)
-                        {
-                            sColIndex += areaFields.Count;
-                            continue;
-                        }
-                        foreach (var f in areaFields)
-                        {
-                            var v = detail[f.FieldName];
-                            var dataTypeId = f.DataTypeId;
-                            if (!string.IsNullOrWhiteSpace(f.RefTableCode))
-                            {
-                                dataTypeId = EnumDataType.Text;
-                                v = detail[f.FieldNameRefTitle];
-                            }
-
-                            if (!f.IsMultiRow && details.Count > 1)
-                            {
-                                MergeRows(_currentRow, mergeRowsEnd, sColIndex);
-                            }
-
-                            switch (dataTypeId)
-                            {
-                                case EnumDataType.BigInt:
-                                case EnumDataType.Int:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, intStyle)
-                                            .SetCellValue(Convert.ToInt64(v));
-                                    }
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, intStyle);
-                                    }
-                                    break;
-                                case EnumDataType.Decimal:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, decimalStyle)
-                                            .SetCellValue(Convert.ToDouble(v));
-                                    }
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, decimalStyle);
-                                    }
-                                    break;
-                                case EnumDataType.Date:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle).SetCellValue(Convert.ToInt64(v).UnixToDateTime(_currentContextService.TimeZoneOffset));
-                                    }
-
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, dateStyle);
-                                    }
-                                    break;
-                                case EnumDataType.Boolean:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(dataTypeId.GetDataTypeValueTitleByLanguage(v));
-                                    }
-
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle);
-                                    }
-                                    break;
-                                case EnumDataType.Enum:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(EnumExtensions.GetEnumDescription(v as Enum));
-                                    }
-
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, textStyle);
-                                    }
-                                    break;
-                                case EnumDataType.Time:
-                                    if (!v.IsNullOrEmptyObject())
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, timeStyle).SetCellValue((new DateTime(1970, 1, 1).AddSeconds((double)v)).ToString("HH:mm"));
-                                    }
-
-                                    else
-                                    {
-                                        _sheet.EnsureCell(_currentRow, sColIndex, timeStyle);
-                                    }
-                                    break;
-
-
-                                default:
-                                    _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(v?.ToString());
-                                    break;
-                            }
-                            if (v?.ToString()?.Length + 5 > _columnMaxLineLength[sColIndex])
-                            {
-                                _columnMaxLineLength[sColIndex] = v?.ToString()?.Length + 5 ?? 10;
-                            }
-
-                            sColIndex++;
-                        }
+                        dataTypeId = EnumDataType.Text;
+                        v = detail[f.FieldNameRefTitle];
                     }
-                    _currentRow++;
+
+                    switch (dataTypeId)
+                    {
+                        case EnumDataType.BigInt:
+                        case EnumDataType.Int:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, intStyle)
+                                    .SetCellValue(Convert.ToInt64(v));
+                            }
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, intStyle);
+                            }
+                            break;
+                        case EnumDataType.Decimal:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, decimalStyle)
+                                    .SetCellValue(Convert.ToDouble(v));
+                            }
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, decimalStyle);
+                            }
+                            break;
+                        case EnumDataType.Date:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, dateStyle).SetCellValue(Convert.ToInt64(v).UnixToDateTime(_currentContextService.TimeZoneOffset));
+                            }
+
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, dateStyle);
+                            }
+                            break;
+                        case EnumDataType.Boolean:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(dataTypeId.GetDataTypeValueTitleByLanguage(v));
+                            }
+
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, textStyle);
+                            }
+                            break;
+                        case EnumDataType.Enum:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(EnumExtensions.GetEnumDescription(v as Enum));
+                            }
+
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, textStyle);
+                            }
+                            break;
+                        case EnumDataType.Time:
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, timeStyle).SetCellValue((new DateTime(1970, 1, 1).AddSeconds((double)v)).ToString("HH:mm"));
+                            }
+
+                            else
+                            {
+                                _sheet.EnsureCell(_currentRow, sColIndex, timeStyle);
+                            }
+                            break;
+
+
+                        default:
+                            _sheet.EnsureCell(_currentRow, sColIndex, textStyle).SetCellValue(v?.ToString());
+                            break;
+                    }
+                    if (v?.ToString()?.Length + 5 > _columnMaxLineLength[sColIndex])
+                    {
+                        _columnMaxLineLength[sColIndex] = v?.ToString()?.Length + 5 ?? 10;
+                    }
+
+                    sColIndex++;
                 }
-                
+                _currentRow++;
                 stt++;
             }
 
