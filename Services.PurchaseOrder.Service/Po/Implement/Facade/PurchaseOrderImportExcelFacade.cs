@@ -187,10 +187,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 var details = group.ToList();
 
-                model.Date = details.GetFirstValueNotNull(x => x.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset) ?? 0;
+                model.Date = details.GetFirstValueNotNull(x => x.Date?.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset) ?? 0;
 
 
-                model.DeliveryDate = details.GetFirstValueNotNull(x => x.DeliveryDate)?.GetUnixUtc(_currentContextService.TimeZoneOffset);
+                model.DeliveryDate = details.GetFirstValueNotNull(x => x.DeliveryDate?.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset);
 
                 model.CustomerId = details.GetFirstValueNotNull(x => x.CustomerInfo.CustomerId) ?? 0;
 

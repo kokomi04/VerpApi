@@ -137,7 +137,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                     sheet.EnsureCell(fRow, 3, textStyle).SetCellValue(bill.BillCode);
 
-                    sheet.EnsureCell(fRow, 4, dateStyle).SetCellValue(bill.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? -420));
+                    sheet.EnsureCell(fRow, 4, dateStyle).SetCellValue(bill.Date.AddMinutes(-(_currentContextService.TimeZoneOffset ?? -420)));
 
                     sheet.EnsureCell(fRow, 5, textStyle).SetCellValue(bill.Content);
 

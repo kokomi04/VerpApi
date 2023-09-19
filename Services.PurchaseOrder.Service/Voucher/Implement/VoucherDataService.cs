@@ -2455,7 +2455,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     {
                         if (!DateTime.TryParse(strValue, out DateTime date))
                             throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(originValue?.JsonSerialize(), row.Index, field.Title);
-                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
+                        value = date.Date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
                         strValue = value?.ToString();
                     }
 
