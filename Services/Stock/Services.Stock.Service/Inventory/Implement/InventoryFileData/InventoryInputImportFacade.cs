@@ -44,11 +44,12 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
         private MasterDBContext _masterDBContext;
         private IProductService _productService;
         private IOrganizationHelperService _organizationHelperService;
+        private ICurrentContextService _currentContextService;
 
-
-        public InventoryInputImportFacade SetStockDBContext(StockDBContext stockDbContext)
+        public InventoryInputImportFacade SetStockDBContext(StockDBContext stockDbContext, ICurrentContextService currentContextService)
         {
             _stockDbContext = stockDbContext;
+            _currentContextService = currentContextService;
             return this;
         }
 
@@ -538,7 +539,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     InventoryActionId = firstRow.InventoryActionId ?? EnumInventoryAction.Normal,
                     InventoryCode = g.Key,
                     //InventoryCode = string.Format("PN_TonDau_{0}", DateTime.UtcNow.ToString("ddMMyyyyHHmmss")),
-                    Date = firstRow.Date.GetUnix(),
+                    Date = firstRow.Date.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? -420).GetUnix(),
 
                     Shipper = firstRow.Shipper,
                     Content = firstRow.Description,
@@ -548,7 +549,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData
                     StockKeeperUserId = null,
                     BillCode = firstRow.BillCode,
                     BillSerial = firstRow.BillSerial,
-                    BillDate = firstRow.BillDate?.GetUnix(),
+                    BillDate = firstRow.BillDate?.Date.AddMinutes(_currentContextService.TimeZoneOffset ?? -420).GetUnix(),
                     FileIdList = null,
                     InProducts = newInventoryInputModel,
                     //AccountancyAccountNumber = _model.AccountancyAccountNumber

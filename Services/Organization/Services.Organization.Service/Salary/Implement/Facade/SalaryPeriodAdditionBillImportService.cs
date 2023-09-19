@@ -157,7 +157,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                         if (row.Data.TryGetValue(dateMapping?.Column ?? "", out var strDate) && DateTime.TryParse(strDate, out var date))
                         {
-                            modelBill.Date = date.GetUnixUtc(_currentContextService.TimeZoneOffset);
+                            modelBill.Date = date.Date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                         }
 
                         parseFacade.MapAndLoadRowToModel(row, modelBill.BillCode, modelBill.Details);
