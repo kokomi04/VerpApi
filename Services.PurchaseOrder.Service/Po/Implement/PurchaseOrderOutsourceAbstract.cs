@@ -650,7 +650,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     return new PurchaseOrderOutputDetail()
                     {
                         PurchaseOrderDetailId = d.PurchaseOrderDetailId,
-                        PoAssignmentDetailId = d.PoAssignmentDetailId,
+                        //PoAssignmentDetailId = d.PoAssignmentDetailId,
                         ProviderProductName = d.ProviderProductName,
                         ProductId = d.ProductId,
                         PrimaryQuantity = d.PrimaryQuantity,
@@ -729,7 +729,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
         {
             var track = new purchaseOrderTrackedModel
             {
-                Date = DateTime.UtcNow.GetUnixUtc(_currentContext.TimeZoneOffset),
+                Date = DateTime.UtcNow.Date.GetUnixUtc(_currentContext.TimeZoneOffset),
                 Description = "Tạo đơn hàng gia công",
                 Status = EnumPurchaseOrderTrackStatus.Created,
                 PurchaseOrderId = purchaseOrderId,

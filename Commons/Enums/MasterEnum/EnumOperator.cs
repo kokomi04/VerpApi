@@ -12,7 +12,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Email,
             EnumDataType.Int,
             EnumDataType.Text,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("Equal")]
@@ -27,7 +28,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Email,
             EnumDataType.Int,
             EnumDataType.Percentage,
-            EnumDataType.Text
+            EnumDataType.Text,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("Is Not Equal")]
@@ -110,7 +112,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Date,
             EnumDataType.Decimal,
             EnumDataType.Int,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("Greater")]
@@ -122,7 +125,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Date,
             EnumDataType.Decimal,
             EnumDataType.Int,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("GreaterOrEqual")]
@@ -134,7 +138,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Date,
             EnumDataType.Decimal,
             EnumDataType.Int,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("LessThan")]
@@ -146,7 +151,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Date,
             EnumDataType.Decimal,
             EnumDataType.Int,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(1)]
         [Description("LessThanOrEqual")]
@@ -161,7 +167,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Email,
             EnumDataType.Int,
             EnumDataType.Text,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(0)]
         [Description("Is Null")]
@@ -185,7 +192,8 @@ namespace VErp.Commons.Enums.MasterEnum
             EnumDataType.Email,
             EnumDataType.Int,
             EnumDataType.Text,
-            EnumDataType.Percentage
+            EnumDataType.Percentage,
+            EnumDataType.Time
         })]
         [ParamNumber(0)]
         [Description("Is Null Or Empty")]

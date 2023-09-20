@@ -16,15 +16,14 @@ namespace Services.Organization.Model.TimeKeeping
         public double ExitTime { get; set; }
         public bool IsNightShift { get; set; }
         public bool? IsCheckOutDateTimekeeping { get; set; }
-        public double LunchTimeStart { get; set; }
-        public double LunchTimeFinish { get; set; }
+        public double? LunchTimeStart { get; set; }
+        public double? LunchTimeFinish { get; set; }
         public long ConvertToMins { get; set; }
         public decimal ConfirmationUnit { get; set; }
         public double StartTimeOnRecord { get; set; }
         public double EndTimeOnRecord { get; set; }
         public double StartTimeOutRecord { get; set; }
         public double EndTimeOutRecord { get; set; }
-        public int WorkScheduleId { get; set; }
         public bool IsSkipSaturdayWithShift { get; set; }
         public bool IsSkipSundayWithShift { get; set; }
         public bool IsSkipHolidayWithShift { get; set; }
@@ -61,8 +60,8 @@ namespace Services.Organization.Model.TimeKeeping
             profile.CreateMapCustom<ShiftConfiguration, ShiftConfigurationModel>()
             .ForMember(m => m.EntryTime, v => v.MapFrom(m => m.EntryTime.TotalSeconds))
             .ForMember(m => m.ExitTime, v => v.MapFrom(m => m.ExitTime.TotalSeconds))
-            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart.TotalSeconds))
-            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => m.LunchTimeFinish.TotalSeconds))
+            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart != null ? m.LunchTimeStart.Value.TotalSeconds : (double?)null))
+            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => m.LunchTimeFinish != null ? m.LunchTimeFinish.Value.TotalSeconds : (double?)null))
             .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => m.StartTimeOnRecord.TotalSeconds))
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => m.EndTimeOutRecord.TotalSeconds))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => m.EndTimeOnRecord.TotalSeconds))
@@ -71,8 +70,8 @@ namespace Services.Organization.Model.TimeKeeping
             .ReverseMapCustom()
             .ForMember(m => m.EntryTime, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EntryTime)))
             .ForMember(m => m.ExitTime, v => v.MapFrom(m => TimeSpan.FromSeconds(m.ExitTime)))
-            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => TimeSpan.FromSeconds(m.LunchTimeStart)))
-            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => TimeSpan.FromSeconds(m.LunchTimeFinish)))
+            .ForMember(m => m.LunchTimeStart, v => v.MapFrom(m => m.LunchTimeStart != null ? TimeSpan.FromSeconds(m.LunchTimeStart.Value) : (TimeSpan?)null))
+            .ForMember(m => m.LunchTimeFinish, v => v.MapFrom(m => m.LunchTimeFinish != null ? TimeSpan.FromSeconds(m.LunchTimeFinish.Value) : (TimeSpan?)null))
             .ForMember(m => m.StartTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.StartTimeOnRecord)))
             .ForMember(m => m.EndTimeOutRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOutRecord)))
             .ForMember(m => m.EndTimeOnRecord, v => v.MapFrom(m => TimeSpan.FromSeconds(m.EndTimeOnRecord)))

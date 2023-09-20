@@ -103,7 +103,22 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var asc = model.Asc;
 
             var reportInfo = await _reportConfigDBContext.ReportType.Include(x => x.ReportTypeGroup).AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
-
+            var reportTypeCustomInfo = await _reportConfigDBContext.ReportTypeCustom.FirstOrDefaultAsync(r => r.ReportTypeId == reportId && !r.IsDeleted);
+            if (reportTypeCustomInfo != null)
+            {
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql)  )
+                {
+                    reportInfo.HeadSql = reportTypeCustomInfo.HeadSql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.BodySql))
+                {
+                    reportInfo.BodySql = reportTypeCustomInfo.BodySql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.FooterSql))
+                {
+                    reportInfo.FooterSql = reportTypeCustomInfo.FooterSql;
+                }
+            }
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
 

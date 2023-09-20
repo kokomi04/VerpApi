@@ -521,7 +521,7 @@ namespace VErp.Services.Organization.Service.HrConfig.Facade
                 {
                     if (!DateTime.TryParse(value.ToString(), out DateTime date))
                         throw HrDataValidationMessage.CannotConvertValueInRowFieldToDateTime.BadRequestFormat(value?.JsonSerialize(), row.Index, field.Title);
-                    value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
+                    value = date.Date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
                 }
 
                 // Validate refer

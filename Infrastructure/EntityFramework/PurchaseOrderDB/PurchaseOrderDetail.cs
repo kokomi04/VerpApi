@@ -11,9 +11,12 @@ public partial class PurchaseOrderDetail
 
     public long PurchaseOrderId { get; set; }
 
-    public long? PoAssignmentDetailId { get; set; }
+    //public long? PoAssignmentDetailId { get; set; }
 
-    public long? PurchasingSuggestDetailId { get; set; }
+    //public long? PurchasingSuggestDetailId { get; set; }
+
+    public long? RefPoAssignmentId { get; set; }
+    public long? RefPurchasingSuggestId { get; set; }
 
     public int ProductId { get; set; }
 
@@ -61,11 +64,11 @@ public partial class PurchaseOrderDetail
 
     public bool IsSubCalculation { get; set; }
 
-    public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
+    //public virtual PoAssignmentDetail PoAssignmentDetail { get; set; }
 
     public virtual PurchaseOrder PurchaseOrder { get; set; }
 
     public virtual ICollection<PurchaseOrderDetailSubCalculation> PurchaseOrderDetailSubCalculation { get; set; } = new List<PurchaseOrderDetailSubCalculation>();
 
-    public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
+    //public virtual PurchasingSuggestDetail PurchasingSuggestDetail { get; set; }
 }
