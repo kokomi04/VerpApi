@@ -199,8 +199,10 @@ namespace ObjectDefineAlter
                 Directory.CreateDirectory("/usr");
             }
 
-            System.IO.File.WriteAllText($"/usr/Verp_{DateTime.Now.ToString("yyyy_MM_dd")}.sql", alterStr.ToString());
+            var path = Path.GetFullPath($"/usr/Verp_{DateTime.Now.ToString("yyyy_MM_dd")}.sql");
+            System.IO.File.WriteAllText(path, alterStr.ToString());
 
+            Console.WriteLine(path);
 
             if (!string.IsNullOrWhiteSpace(sv2))
                 Deploy(sv2, objDefineSorts);
