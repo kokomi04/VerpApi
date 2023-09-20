@@ -81,7 +81,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                .FirstOrDefaultAsync();
             if (report == null)
             {
-                throw new BadRequestException(ReportErrorCode.ReportNotFound);
+               return await AddReportTypeCustom(data);
             }
             using var trans = await _reportConfigContext.Database.BeginTransactionAsync();
             try
@@ -150,7 +150,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var reportType = _mapper.Map<ReportTypeCustomModel>(report);
             if (report == null)
             {
-                throw new BadRequestException(ReportErrorCode.ReportNotFound);
+                return new ReportTypeCustomModel()
+                {
+                    ReportTypeId = reportTypeId
+                };
             }
             return reportType;
         }
