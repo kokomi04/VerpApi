@@ -703,8 +703,6 @@ public partial class MasterDBContext : DbContext
 
         modelBuilder.Entity<UserProgramingFunction>(entity =>
         {
-            entity.HasKey(e => e.ProgramingFunctionId).HasName("PK_ProgramingFunctionCustom");
-
             entity.Property(e => e.Description).HasMaxLength(512);
             entity.Property(e => e.FunctionBody).IsRequired();
             entity.Property(e => e.ProgramingFunctionName)

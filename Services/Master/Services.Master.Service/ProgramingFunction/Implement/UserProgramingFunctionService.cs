@@ -32,7 +32,7 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
                 var info = _mapper.Map<UserProgramingFunction>(model);
                 await _masterDbContext.UserProgramingFunction.AddAsync(info);
                 await _masterDbContext.SaveChangesAsync();
-                return info.ProgramingFunctionId;
+                return info.UserProgramingFunctionId;
             }
             catch (Exception ex)
             {
@@ -42,9 +42,9 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
            
         }
 
-        public async Task<bool> DeleteFunction(int programingFunctionId)
+        public async Task<bool> DeleteFunction(int userProgramingFunctionId)
         {
-            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
+            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.UserProgramingFunctionId == userProgramingFunctionId);
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");
@@ -74,9 +74,9 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
             return data.ConvertData();
         }
 
-        public async Task<UserProgramingFunctionModel> GetFunctionInfo(int programingFunctionId)
+        public async Task<UserProgramingFunctionModel> GetFunctionInfo(int userProgramingFunctionId)
         {
-            var info = await _masterDbContext.UserProgramingFunction.Where(f => f.ProgramingFunctionId == programingFunctionId).ProjectTo<UserProgramingFunctionModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var info = await _masterDbContext.UserProgramingFunction.Where(f => f.UserProgramingFunctionId == userProgramingFunctionId).ProjectTo<UserProgramingFunctionModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");
@@ -109,9 +109,9 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
             return (lst, total);
         }
 
-        public async Task<bool> UpdateFunction(int programingFunctionId, UserProgramingFunctionModel model)
+        public async Task<bool> UpdateFunction(int userProgramingFunctionId, UserProgramingFunctionModel model)
         {
-            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
+            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.UserProgramingFunctionId == userProgramingFunctionId);
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");

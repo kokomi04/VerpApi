@@ -18,7 +18,7 @@ namespace VErpApi.Controllers.System.Internal
         }
 
         [HttpGet("")]
-        public async Task<IEnumerable<ProgramingFunctionBaseModel>> GetListFunction()
+        public async Task<IEnumerable<UserProgramingFuctionModel>> GetListFunction()
         {
             return (await _userProgramingFunctionService.GetListFunctions("", 1, int.MaxValue)).List;
         }

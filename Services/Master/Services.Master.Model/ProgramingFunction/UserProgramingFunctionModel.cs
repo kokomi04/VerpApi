@@ -12,9 +12,9 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.ProgramingFunction
 {
-    public class UserProgramingFunctionModel : ProgramingFunctionBaseModel, IMapFrom<UserProgramingFunction>
+    public class UserProgramingFunctionModel : UserProgramingFuctionModel, IMapFrom<UserProgramingFunction>
     {
-        protected void MappingBase<T>(Profile profile) where T : ProgramingFunctionBaseModel
+        protected void MappingBase<T>(Profile profile) where T : UserProgramingFuctionModel
            => profile.CreateMapCustom<T, UserProgramingFunction>()
            .ForMember(d => d.Params, s => s.MapFrom(f => f.Params == null ? null : f.Params.JsonSerialize()))
            .ReverseMapCustom()

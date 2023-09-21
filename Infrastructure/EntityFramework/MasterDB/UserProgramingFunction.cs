@@ -7,7 +7,7 @@ public partial class UserProgramingFunction
 {
     public int SubsidiaryId { get; set; }
 
-    public int ProgramingFunctionId { get; set; }
+    public int UserProgramingFunctionId { get; set; }
 
     public string ProgramingFunctionName { get; set; }
 
