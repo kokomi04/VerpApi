@@ -23,7 +23,7 @@ namespace VErp.Services.Master.Model.ProgramingFunction
     }
     public class UserProgramingFunctionOutputList : UserProgramingFunctionModel
     {
-        public int ProgramingFunctionId { get; set; }
+        public int UserProgramingFunctionId { get; set; }
         public override void Mapping(Profile profile) => MappingBase<UserProgramingFunctionOutputList>(profile);
     }
 
