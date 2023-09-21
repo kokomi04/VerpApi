@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace VErp.Infrastructure.EF.MasterDB;
 
-public partial class ProgramingFunctionCustom
+public partial class UserProgramingFunction
 {
     public int SubsidiaryId { get; set; }
 
@@ -12,10 +12,6 @@ public partial class ProgramingFunctionCustom
     public string ProgramingFunctionName { get; set; }
 
     public string FunctionBody { get; set; }
-
-    public int ProgramingLangId { get; set; }
-
-    public int ProgramingLevelId { get; set; }
 
     public string Description { get; set; }
 

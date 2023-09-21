@@ -95,8 +95,6 @@ public partial class MasterDBContext : DbContext
 
     public virtual DbSet<PrintConfigStandardModuleType> PrintConfigStandardModuleType { get; set; }
 
-    public virtual DbSet<ProgramingFunctionCustom> ProgramingFunctionCustom { get; set; }
-
     public virtual DbSet<ReuseContent> ReuseContent { get; set; }
 
     public virtual DbSet<Role> Role { get; set; }
@@ -110,6 +108,8 @@ public partial class MasterDBContext : DbContext
     public virtual DbSet<Unit> Unit { get; set; }
 
     public virtual DbSet<User> User { get; set; }
+
+    public virtual DbSet<UserProgramingFunction> UserProgramingFunction { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -616,17 +616,6 @@ public partial class MasterDBContext : DbContext
                 .HasConstraintName("FK_PrintConfigStandardModuleType_PrintConfigStandard");
         });
 
-        modelBuilder.Entity<ProgramingFunctionCustom>(entity =>
-        {
-            entity.HasKey(e => e.ProgramingFunctionId);
-
-            entity.Property(e => e.Description).HasMaxLength(512);
-            entity.Property(e => e.FunctionBody).IsRequired();
-            entity.Property(e => e.ProgramingFunctionName)
-                .IsRequired()
-                .HasMaxLength(128);
-        });
-
         modelBuilder.Entity<ReuseContent>(entity =>
         {
             entity.Property(e => e.Key).HasMaxLength(128);
@@ -710,6 +699,17 @@ public partial class MasterDBContext : DbContext
             entity.Property(e => e.UserName)
                 .IsRequired()
                 .HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<UserProgramingFunction>(entity =>
+        {
+            entity.HasKey(e => e.ProgramingFunctionId).HasName("PK_ProgramingFunctionCustom");
+
+            entity.Property(e => e.Description).HasMaxLength(512);
+            entity.Property(e => e.FunctionBody).IsRequired();
+            entity.Property(e => e.ProgramingFunctionName)
+                .IsRequired()
+                .HasMaxLength(128);
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -10,34 +10,34 @@ using VErp.Services.Master.Service.ProgramingFunction;
 
 namespace VErpApi.Controllers.System.Config
 {
-    [Route("api/system/programingfunctionscustom")]
-    public class ProgramingFunctionCustomController : VErpBaseController
+    [Route("api/system/UserProgramingFunctions")]
+    public class UserProgramingFunctionController : VErpBaseController
     {
-        public readonly IProgramingFunctionCustomService _programingFunctionForUserService;
-        public ProgramingFunctionCustomController(IProgramingFunctionCustomService programingFunctionForUserService) 
+        public readonly IUserProgramingFunctionService _programingFunctionForUserService;
+        public UserProgramingFunctionController(IUserProgramingFunctionService programingFunctionForUserService) 
         {
             _programingFunctionForUserService = programingFunctionForUserService;
         }
         [HttpGet("List")]
-        public Task<PageData<ProgramingFunctionCustomOutputList>> GetListFunctions([FromQuery] string keyword, [FromQuery] EnumProgramingLang? programingLangId, [FromQuery] EnumProgramingLevel? programingLevelId, [FromQuery] int page, [FromQuery] int size)
+        public Task<PageData<UserProgramingFunctionOutputList>> GetListFunctions([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
         {
-            return _programingFunctionForUserService.GetListFunctions(keyword, programingLangId, programingLevelId, page, size);
+            return _programingFunctionForUserService.GetListFunctions(keyword, page, size);
         }
 
         [HttpPost("")]
-        public Task<int> AddFunction([FromBody] ProgramingFunctionCustomModel model)
+        public Task<int> AddFunction([FromBody] UserProgramingFunctionModel model)
         {
             return _programingFunctionForUserService.AddFunction(model);
         }
 
         [HttpGet("{programingFunctionId}")]
-        public Task<ProgramingFunctionCustomModel> GetFunctionInfo([FromRoute] int programingFunctionId)
+        public Task<UserProgramingFunctionModel> GetFunctionInfo([FromRoute] int programingFunctionId)
         {
             return _programingFunctionForUserService.GetFunctionInfo(programingFunctionId);
         }
 
         [HttpPut("{programingFunctionId}")]
-        public Task<bool> UpdateFunction([FromRoute] int programingFunctionId, [FromBody] ProgramingFunctionCustomModel model)
+        public Task<bool> UpdateFunction([FromRoute] int programingFunctionId, [FromBody] UserProgramingFunctionModel model)
         {
             return _programingFunctionForUserService.UpdateFunction(programingFunctionId, model);
         }

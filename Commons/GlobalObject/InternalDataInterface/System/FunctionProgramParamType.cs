@@ -11,12 +11,13 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.System
     {
         public string ProgramingFunctionName { get; set; }
         public string FunctionBody { get; set; }
+        public string Description { get; set; }
         public EnumProgramingLang ProgramingLangId { get; set; }
         public EnumProgramingLevel ProgramingLevelId { get; set; }
-
-        public string Description { get; set; }
         public FunctionProgramParamType Params { get; set; }
     }
+
+    
 
     public class FunctionProgramParamType
     {

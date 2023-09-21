@@ -12,19 +12,19 @@ using VErp.Infrastructure.EF.MasterDB;
 
 namespace VErp.Services.Master.Model.ProgramingFunction
 {
-    public class ProgramingFunctionCustomModel : ProgramingFunctionBaseModel, IMapFrom<ProgramingFunctionCustom>
+    public class UserProgramingFunctionModel : ProgramingFunctionBaseModel, IMapFrom<UserProgramingFunction>
     {
         protected void MappingBase<T>(Profile profile) where T : ProgramingFunctionBaseModel
-           => profile.CreateMapCustom<T, ProgramingFunctionCustom>()
+           => profile.CreateMapCustom<T, UserProgramingFunction>()
            .ForMember(d => d.Params, s => s.MapFrom(f => f.Params == null ? null : f.Params.JsonSerialize()))
            .ReverseMapCustom()
            .ForMember(d => d.Params, s => s.MapFrom(f => f.Params == null ? null : f.Params.JsonDeserialize<FunctionProgramParamType>()));
-        public virtual void Mapping(Profile profile) => MappingBase<ProgramingFunctionCustomModel>(profile);
+        public virtual void Mapping(Profile profile) => MappingBase<UserProgramingFunctionModel>(profile);
     }
-    public class ProgramingFunctionCustomOutputList : ProgramingFunctionCustomModel
+    public class UserProgramingFunctionOutputList : UserProgramingFunctionModel
     {
         public int ProgramingFunctionId { get; set; }
-        public override void Mapping(Profile profile) => MappingBase<ProgramingFunctionCustomOutputList>(profile);
+        public override void Mapping(Profile profile) => MappingBase<UserProgramingFunctionOutputList>(profile);
     }
 
     public class FuncParameter

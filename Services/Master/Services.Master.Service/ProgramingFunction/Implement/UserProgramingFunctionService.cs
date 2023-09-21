@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using VErp.Commons.Enums.MasterEnum.Accountant;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
@@ -16,22 +15,22 @@ using Microsoft.Data.SqlClient;
 using VErp.Commons.Library;
 namespace VErp.Services.Master.Service.ProgramingFunction.Implement
 {
-    public class ProgramingFunctionCustomService : IProgramingFunctionCustomService
+    public class UserProgramingFunctionService : IUserProgramingFunctionService
     {
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDbContext;
 
-        public ProgramingFunctionCustomService(IMapper mapper, MasterDBContext masterDbContext)
+        public UserProgramingFunctionService(IMapper mapper, MasterDBContext masterDbContext)
         {
             _mapper = mapper;
             _masterDbContext = masterDbContext;
         }
-        public async Task<int> AddFunction(ProgramingFunctionCustomModel model)
+        public async Task<int> AddFunction(UserProgramingFunctionModel model)
         {
             try
             {
-                var info = _mapper.Map<ProgramingFunctionCustom>(model);
-                await _masterDbContext.ProgramingFunctionCustom.AddAsync(info);
+                var info = _mapper.Map<UserProgramingFunction>(model);
+                await _masterDbContext.UserProgramingFunction.AddAsync(info);
                 await _masterDbContext.SaveChangesAsync();
                 return info.ProgramingFunctionId;
             }
@@ -45,13 +44,13 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
 
         public async Task<bool> DeleteFunction(int programingFunctionId)
         {
-            var info = await _masterDbContext.ProgramingFunctionCustom.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
+            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");
             }
 
-            _masterDbContext.ProgramingFunctionCustom.Remove(info);
+            _masterDbContext.UserProgramingFunction.Remove(info);
 
             await _masterDbContext.SaveChangesAsync();
             return true;
@@ -59,7 +58,7 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
 
         public async Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary<FuncParameter> inputData)
         {
-            var function = _masterDbContext.ProgramingFunctionCustom.FirstOrDefault(f => f.ProgramingFunctionName == programingFunctionName);
+            var function = _masterDbContext.UserProgramingFunction.FirstOrDefault(f => f.ProgramingFunctionName == programingFunctionName);
             if (function == null) throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy chức năng {programingFunctionName}");
 
             List<SqlParameter> sqlParams = new List<SqlParameter>();
@@ -75,9 +74,9 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
             return data.ConvertData();
         }
 
-        public async Task<ProgramingFunctionCustomModel> GetFunctionInfo(int programingFunctionId)
+        public async Task<UserProgramingFunctionModel> GetFunctionInfo(int programingFunctionId)
         {
-            var info = await _masterDbContext.ProgramingFunctionCustom.Where(f => f.ProgramingFunctionId == programingFunctionId).ProjectTo<ProgramingFunctionCustomModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
+            var info = await _masterDbContext.UserProgramingFunction.Where(f => f.ProgramingFunctionId == programingFunctionId).ProjectTo<UserProgramingFunctionModel>(_mapper.ConfigurationProvider).FirstOrDefaultAsync();
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");
@@ -85,44 +84,34 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
             return info;
         }
 
-        public async Task<PageData<ProgramingFunctionCustomOutputList>> GetListFunctions(string keyword, EnumProgramingLang? programingLangId, EnumProgramingLevel? programingLevelId, int page, int size)
+        public async Task<PageData<UserProgramingFunctionOutputList>> GetListFunctions(string keyword, int page, int size)
         {
             keyword = (keyword ?? "").Trim();
 
-            var query = _masterDbContext.ProgramingFunctionCustom.AsQueryable();
+            var query = _masterDbContext.UserProgramingFunction.AsQueryable();
             if (!string.IsNullOrWhiteSpace(keyword))
             {
                 query = query.Where(f => f.ProgramingFunctionName.Contains(keyword) || f.FunctionBody.Contains(keyword) || f.Description.Contains(keyword) || f.Params.Contains(keyword));
             }
 
-            if (programingLangId.HasValue)
-            {
-                query = query.Where(f => f.ProgramingLangId == (int)programingLangId.Value);
-            }
-
-            if (programingLevelId.HasValue)
-            {
-                query = query.Where(f => f.ProgramingLevelId == (int)programingLevelId.Value);
-            }
-
             var total = await query.CountAsync();
-            var lst = new List<ProgramingFunctionCustomOutputList>();
+            var lst = new List<UserProgramingFunctionOutputList>();
 
             if (size > 0)
             {
-                lst = await query.OrderBy(f => f.ProgramingFunctionName).Skip((page - 1) * size).Take(size).ProjectTo<ProgramingFunctionCustomOutputList>(_mapper.ConfigurationProvider).ToListAsync();
+                lst = await query.OrderBy(f => f.ProgramingFunctionName).Skip((page - 1) * size).Take(size).ProjectTo<UserProgramingFunctionOutputList>(_mapper.ConfigurationProvider).ToListAsync();
             }
             else
             {
-                lst = await query.OrderBy(f => f.ProgramingFunctionName).ProjectTo<ProgramingFunctionCustomOutputList>(_mapper.ConfigurationProvider).ToListAsync();
+                lst = await query.OrderBy(f => f.ProgramingFunctionName).ProjectTo<UserProgramingFunctionOutputList>(_mapper.ConfigurationProvider).ToListAsync();
             }
 
             return (lst, total);
         }
 
-        public async Task<bool> UpdateFunction(int programingFunctionId, ProgramingFunctionCustomModel model)
+        public async Task<bool> UpdateFunction(int programingFunctionId, UserProgramingFunctionModel model)
         {
-            var info = await _masterDbContext.ProgramingFunctionCustom.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
+            var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.ProgramingFunctionId == programingFunctionId);
             if (info == null)
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy function trong hệ thống");

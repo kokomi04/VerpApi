@@ -10,15 +10,15 @@ using VErp.Services.Master.Model.ProgramingFunction;
 
 namespace VErp.Services.Master.Service.ProgramingFunction
 {
-    public interface IProgramingFunctionCustomService
+    public interface IUserProgramingFunctionService
     {
-        Task<PageData<ProgramingFunctionCustomOutputList>> GetListFunctions(string keyword, EnumProgramingLang? programingLangId, EnumProgramingLevel? programingLevelId, int page, int size);
+        Task<PageData<UserProgramingFunctionOutputList>> GetListFunctions(string keyword, int page, int size);
 
-        Task<int> AddFunction(ProgramingFunctionCustomModel model);
+        Task<int> AddFunction(UserProgramingFunctionModel model);
 
-        Task<ProgramingFunctionCustomModel> GetFunctionInfo(int programingFunctionId);
+        Task<UserProgramingFunctionModel> GetFunctionInfo(int programingFunctionId);
 
-        Task<bool> UpdateFunction(int programingFunctionId, ProgramingFunctionCustomModel model);
+        Task<bool> UpdateFunction(int programingFunctionId, UserProgramingFunctionModel model);
 
         Task<bool> DeleteFunction(int programingFunctionId);
 
