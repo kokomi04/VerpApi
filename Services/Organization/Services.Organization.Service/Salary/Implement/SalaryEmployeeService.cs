@@ -257,7 +257,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             }, item => item);
 
             var sqlFunctions = await _programingFunctionHelperService.Sqls();
+            var userSqlFunctions = await _programingFunctionHelperService.UserSqls();
+            foreach (var function in userSqlFunctions)
+            {
+                var sqlFunction = sqlFunctions.FirstOrDefault(x => x.ProgramingFunctionName == function.ProgramingFunctionName);
+                if (sqlFunction != null)
+                    sqlFunctions.Remove(sqlFunction);
+                sqlFunctions.Add(function);
 
+            }
             var sqlFnHandle = _organizationDBContext.EvaluateFunctionHandlerSql(sqlFunctions);
 
 

@@ -109,6 +109,8 @@ public partial class MasterDBContext : DbContext
 
     public virtual DbSet<User> User { get; set; }
 
+    public virtual DbSet<UserProgramingFunction> UserProgramingFunction { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Action>(entity =>
@@ -697,6 +699,15 @@ public partial class MasterDBContext : DbContext
             entity.Property(e => e.UserName)
                 .IsRequired()
                 .HasMaxLength(64);
+        });
+
+        modelBuilder.Entity<UserProgramingFunction>(entity =>
+        {
+            entity.Property(e => e.Description).HasMaxLength(512);
+            entity.Property(e => e.FunctionBody).IsRequired();
+            entity.Property(e => e.ProgramingFunctionName)
+                .IsRequired()
+                .HasMaxLength(128);
         });
 
         OnModelCreatingPartial(modelBuilder);
