@@ -27,19 +27,15 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
         }
         public async Task<int> AddFunction(UserProgramingFunctionModel model)
         {
-            try
+            var programingFunctions = await _masterDbContext.UserProgramingFunction.ToListAsync();
+            if (programingFunctions.Any(x=> x.ProgramingFunctionName.ToLower() == model.ProgramingFunctionName.ToLower()))
             {
-                var info = _mapper.Map<UserProgramingFunction>(model);
-                await _masterDbContext.UserProgramingFunction.AddAsync(info);
-                await _masterDbContext.SaveChangesAsync();
-                return info.UserProgramingFunctionId;
+                throw new BadRequestException("Tên hàm đã tồn tại, xin vui lòng chọn tên khác!");
             }
-            catch (Exception ex)
-            {
-
-                throw new BadRequestException(ex.InnerException.Message);
-            }
-           
+            var info = _mapper.Map<UserProgramingFunction>(model);
+            await _masterDbContext.UserProgramingFunction.AddAsync(info);
+            await _masterDbContext.SaveChangesAsync();
+            return info.UserProgramingFunctionId;
         }
 
         public async Task<bool> DeleteFunction(int userProgramingFunctionId)
