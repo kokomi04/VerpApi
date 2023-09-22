@@ -7,6 +7,7 @@ using NPOI.POIFS.Properties;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Drawing.Drawing2D;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -1529,8 +1530,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             if (billIds.Length == 0) throw ListBillsToUpdateIsEmpty.BadRequest();
 
             // Get field
-            var field = _accountancyDBContext.InputAreaField.Include(f => f.InputField).Include(f => f.InputArea).FirstOrDefault(f => f.InputArea.InputTypeId == inputTypeId && f.InputField.FieldName == fieldName);
+            var fields = await _accountancyDBContext.InputAreaField.Include(f => f.InputField).Include(f => f.InputArea).Where(f => f.InputArea.InputTypeId == inputTypeId).ToListAsync();
+            var field = fields.FirstOrDefault(f => f.InputField.FieldName == fieldName);
             if (field == null) throw FieldNotFound.BadRequest();
+
+            if (!string.IsNullOrWhiteSpace(field.Filters))
+            {
+                throw new BadRequestException($@"Không thể cập nhật đồng loạt trường dữ liệu có ràng buộc {field.Title} {field.FiltersName}");
+            }
+
+            var dependField = fields.FirstOrDefault(f => f.Filters?.Contains(field.InputField.FieldName) == true);
+
+            if (dependField != null)
+            {
+                throw new BadRequestException($@"Không thể cập nhật đồng loạt trường dữ liệu có ràng buộc {field.Title} bởi {dependField.FiltersName} {dependField.Title}");
+            }
 
             if (!field.InputArea.IsMultiRow && detailIds?.Length > 0)
             {
