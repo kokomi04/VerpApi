@@ -691,7 +691,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         }
 
-        public async Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data)
+        public async Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data, EnumHandoverStatus status)
         {
             foreach (var h in data.Handovers)
             {
@@ -703,7 +703,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 h.ProductionOrderId = productionOrderId;
             }
 
-            return await Create(data, EnumHandoverStatus.Accepted);
+            return await Create(data, status);
         }
         /*
         public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)

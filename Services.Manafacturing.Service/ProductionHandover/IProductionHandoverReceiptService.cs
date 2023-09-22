@@ -22,7 +22,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
         Task<long> Create(long productionOrderId, ProductionHandoverReceiptModel data);
         Task<PageData<ProductionHandoverHistoryReceiptModel>> GetList(string keyword, long? fromDate, long? toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<ProductionHandoverReceiptModel> Info(long receiptId);
-        Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data);
+        Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data, EnumHandoverStatus status);
       
         Task<bool> Confirm(long receiptId, EnumHandoverStatus status);
         Task<bool> AcceptBatch(IList<long> receiptIds);
