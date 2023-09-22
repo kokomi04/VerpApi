@@ -538,7 +538,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var assignmentDetails = await GetAssignementDetailInfos(assignmentIds);
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestIds);
+            var suggestDetails = await GetSuggestDetailInfos(suggestIds, new List<long>());
 
 
             var result = new List<PurchaseOrderOutputListByProduct>();
@@ -703,12 +703,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var assignmentIds = details.Select(d => d.RefPoAssignmentId).ToList();
 
-            var suggestIds = details.Where(d=>d.RefPurchasingSuggestId.HasValue).Select(d => d.RefPurchasingSuggestId.Value).ToList();
+            var suggestIds = details.Where(d => d.RefPurchasingSuggestId.HasValue).Select(d => d.RefPurchasingSuggestId.Value).ToList();
 
 
             var assignmentDetails = await GetAssignementDetailInfos(assignmentIds);
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestIds);
+            var suggestDetails = await GetSuggestDetailInfos(suggestIds, new List<long>());
 
 
             var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
@@ -2030,7 +2030,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var suggestDetailIds = model.Details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestDetailIds.ToList());
+            var suggestDetails = await GetSuggestDetailInfos(new List<long>(), suggestDetailIds.ToList());
 
             if (suggestDetails.Select(d => d.PurchasingSuggestId).Distinct().Count() > 1)
             {
@@ -2093,16 +2093,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
              .ToListAsync();
         }
 
-        private async Task<IList<VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo>> GetSuggestDetailInfos(IList<long> suggestDetailIds)
+        private async Task<IList<VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo>> GetSuggestDetailInfos(IList<long> purchasingSuggestIds, IList<long> suggestDetailIds)
         {
             return await (
              from pd in _purchaseOrderDBContext.PurchasingSuggestDetail
              join sd in _purchaseOrderDBContext.PurchasingSuggest on pd.PurchasingSuggestId equals sd.PurchasingSuggestId
-             where suggestDetailIds.Contains(pd.PurchasingSuggestDetailId)
-             select new VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo
+             where purchasingSuggestIds.Contains(pd.PurchasingSuggestId) || suggestDetailIds.Contains(pd.PurchasingSuggestDetailId)
+             select new Model.PurchasingSuggestDetailInfo
              {
                  PurchasingSuggestId = pd.PurchasingSuggestId,
-                 PurchasingSuggestCode = pd.PurchasingSuggest.PurchasingSuggestCode,
+                 PurchasingSuggestCode = sd.PurchasingSuggestCode,
                  PurchasingSuggestDetailId = pd.PurchasingSuggestDetailId,
                  ProductId = pd.ProductId,
                  CustomerId = pd.CustomerId
