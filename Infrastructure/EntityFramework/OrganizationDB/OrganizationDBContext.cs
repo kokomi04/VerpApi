@@ -125,6 +125,14 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
 
+    public virtual DbSet<ShiftSchedule> ShiftSchedule { get; set; }
+
+    public virtual DbSet<ShiftScheduleConfiguration> ShiftScheduleConfiguration { get; set; }
+
+    public virtual DbSet<ShiftScheduleDepartment> ShiftScheduleDepartment { get; set; }
+
+    public virtual DbSet<ShiftScheduleDetail> ShiftScheduleDetail { get; set; }
+
     public virtual DbSet<SplitHour> SplitHour { get; set; }
 
     public virtual DbSet<Subsidiary> Subsidiary { get; set; }
@@ -933,6 +941,7 @@ public partial class OrganizationDBContext : DbContext
             entity.HasKey(e => e.ShiftConfigurationId).HasName("PK_Shift");
 
             entity.Property(e => e.ConfirmationUnit).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.IsCheckOutDateTimekeeping).HasDefaultValueSql("((0))");
             entity.Property(e => e.ShiftCode)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -940,6 +949,42 @@ public partial class OrganizationDBContext : DbContext
             entity.HasOne(d => d.OvertimeConfiguration).WithMany(p => p.ShiftConfiguration)
                 .HasForeignKey(d => d.OvertimeConfigurationId)
                 .HasConstraintName("FK_ShiftConfiguration_OvertimeConfiguration");
+        });
+
+        modelBuilder.Entity<ShiftSchedule>(entity =>
+        {
+            entity.HasKey(e => e.ShiftScheduleId).HasName("PK__ShiftSch__93A9B590EC9DA6AB");
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(256);
+        });
+
+        modelBuilder.Entity<ShiftScheduleConfiguration>(entity =>
+        {
+            entity.HasKey(e => new { e.ShiftScheduleId, e.ShiftConfigurationId }).HasName("PK__ShiftSch__204A69BC5822DCC8");
+
+            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleConfiguration)
+                .HasForeignKey(d => d.ShiftScheduleId)
+                .HasConstraintName("FK__ShiftSche__Shift__522FEADD");
+        });
+
+        modelBuilder.Entity<ShiftScheduleDepartment>(entity =>
+        {
+            entity.HasKey(e => new { e.ShiftScheduleId, e.DepartmentId }).HasName("PK__ShiftSch__5889CC2EF49F738B");
+
+            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleDepartment)
+                .HasForeignKey(d => d.ShiftScheduleId)
+                .HasConstraintName("FK__ShiftSche__Shift__550C5788");
+        });
+
+        modelBuilder.Entity<ShiftScheduleDetail>(entity =>
+        {
+            entity.HasKey(e => new { e.ShiftScheduleId, e.ShiftConfigurationId, e.AssignedDate, e.EmployeeId }).HasName("PK__ShiftSch__CA713DD74AB698E8");
+
+            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleDetail)
+                .HasForeignKey(d => d.ShiftScheduleId)
+                .HasConstraintName("FK__ShiftSche__Shift__57E8C433");
         });
 
         modelBuilder.Entity<SplitHour>(entity =>
@@ -1032,6 +1077,14 @@ public partial class OrganizationDBContext : DbContext
                 .HasForeignKey(d => d.TimeSheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
+        });
+
+        modelBuilder.Entity<TimeSheetRaw>(entity =>
+        {
+            entity.Property(e => e.TimeKeepingRecorder)
+                .IsRequired()
+                .HasMaxLength(128)
+                .HasDefaultValueSql("('')");
         });
 
         modelBuilder.Entity<TimeSortConfiguration>(entity =>

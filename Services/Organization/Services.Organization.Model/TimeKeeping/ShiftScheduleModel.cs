@@ -1,0 +1,63 @@
+﻿using AutoMapper;
+using Services.Organization.Model.TimeKeeping;
+using System;
+using System.Collections.Generic;
+using VErp.Commons.Enums.Organization.TimeKeeping;
+using VErp.Commons.GlobalObject;
+using VErp.Services.Accountancy.Model.Input;
+
+namespace VErp.Infrastructure.EF.OrganizationDB;
+
+public partial class ShiftScheduleModel : IMapFrom<ShiftSchedule>
+{
+    public long ShiftScheduleId { get; set; }
+
+    public string Title { get; set; }
+
+    public long FromDate { get; set; }
+
+    public long ToDate { get; set; }
+
+    public EnumOvertimeMode OvertimeMode { get; set; }
+
+    public IList<ShiftScheduleConfigurationModel> ShiftScheduleConfiguration { get; set; } = new List<ShiftScheduleConfigurationModel>();
+
+    public IList<ShiftScheduleDepartmentModel> ShiftScheduleDepartment { get; set; } = new List<ShiftScheduleDepartmentModel>();
+
+    public IList<ShiftScheduleDetailModel> ShiftScheduleDetail { get; set; } = new List<ShiftScheduleDetailModel>();
+
+    public void Mapping(Profile profile)
+    {
+        profile.CreateMapCustom<ShiftSchedule, ShiftScheduleModel>()
+        .ForMember(m => m.ShiftScheduleConfiguration, v => v.MapFrom(m => m.ShiftScheduleConfiguration))
+        .ForMember(m => m.ShiftScheduleDepartment, v => v.MapFrom(m => m.ShiftScheduleDepartment))
+        .ForMember(m => m.ShiftScheduleDetail, v => v.MapFrom(m => m.ShiftScheduleDetail))
+        .ReverseMapCustom()
+        .ForMember(m => m.ShiftScheduleConfiguration, v => v.MapFrom(m => m.ShiftScheduleConfiguration))
+        .ForMember(m => m.ShiftScheduleDepartment, v => v.MapFrom(m => m.ShiftScheduleDepartment))
+        .ForMember(m => m.ShiftScheduleDetail, v => v.MapFrom(m => m.ShiftScheduleDetail));
+    }
+}
+
+public class ShiftScheduleFilterModel
+{
+    public string Keyword { get; set; }
+    public string OrderBy { get; set; }
+    public bool Asc { get; set; } = true;
+    public List<int> DepartmentIds { get; set; }
+    public long? FromDate { get; set; }
+    public long? ToDate { get; set; }
+    public Clause ColumnsFilters { get; set; }
+}
+public class ShiftScheduleRequestModel : ShiftScheduleFilterModel
+{
+    public int Page { get; set; }
+    public int Size { get; set; }
+}
+
+public class EmployeeViolationModel
+{
+    public int EmployeeId { get; set; }
+    public long AssignedDate { get; set; }
+    public List<long> ShiftScheduleIds { get; set; } = new List<long>();
+}
