@@ -76,5 +76,9 @@ namespace Services.Organization.Model.TimeKeeping
     {
         [Display(Name = "Mã nhân viên")]
         public string so_ct { get; set; }
+
+        [Display(Name = "Mã chấm công")]
+        public string ma_cham_cong { get; set; }
+
     }
 }
