@@ -45,6 +45,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private const string F_Id = "F_Id";
         private const string so_ct = "so_ct";
+        private const string ma_cham_cong = "ma_cham_cong";
 
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
@@ -176,9 +177,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
             });
 
-            var data = size > 0 && page > 0 ? result.Skip((page - 1) * size).Take(size).ToList() : result;
+            result = result.OrderByDescending(x => x.Date).ThenByDescending(x => x.Time).ToList();
 
-            data = data.OrderByDescending(x => x.Date).ThenByDescending(x => x.Time).ToList();
+            var data = size > 0 && page > 0 ? result.Skip((page - 1) * size).Take(size).ToList() : result;
 
             return (data, result.Count);
         }
@@ -201,8 +202,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile && f.FormTypeId != EnumFormType.MultiSelect && f.IsMultiRow == false).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
             var employeeFields = (await importFacade.GetFieldDataForMapping()).Fields;
+            var employeeCodeField = employeeFields.FirstOrDefault(e => e.FieldName == so_ct);
+            employeeCodeField.IsRequired = false;
 
-            result.Fields = timeSheetFields.Concat(employeeFields).DistinctBy(f => f.FieldName).ToList();
+            result.Fields = employeeFields.Concat(timeSheetFields).DistinctBy(f => f.FieldName).ToList();
             return result;
         }
 
@@ -270,12 +273,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<bool> ImportTimeSheetRawFromMapping(ImportExcelMapping mapping, Stream stream)
         {
+            ValidateModel(mapping);
+
             var reader = new ExcelReader(stream);
 
             var lstData = reader.ReadSheetEntity<TimeSheetRawImportFieldModel>(mapping, (entity, propertyName, value) =>
             {
-                if(propertyName == nameof(TimeSheetRawImportFieldModel.so_ct) && string.IsNullOrWhiteSpace(value))
-                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã nhân viên không được để trống");
+                if ((propertyName == nameof(TimeSheetRawImportFieldModel.so_ct) || propertyName == nameof(TimeSheetRawImportFieldModel.ma_cham_cong)) && string.IsNullOrWhiteSpace(value))
+                    throw new BadRequestException(GeneralCode.InvalidParams, "Mã nhân viên hoặc mã chấm công không được để trống");
 
                 if (propertyName == nameof(TimeSheetRawModel.Date))
                 {
@@ -284,13 +289,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         throw new BadRequestException(GeneralCode.InvalidParams, "Ngày chấm công không được để trống");
                     }
                     if (DateTime.TryParse(value, out DateTime date))
-                        {
-                            entity.SetPropertyValue(propertyName, date.Date.GetUnix());
-                        }
-                        else
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Ngày chấm công sai định dạng");
-                        }
+                    {
+                        entity.SetPropertyValue(propertyName, date.Date.GetUnix());
+                    }
+                    else
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Ngày chấm công sai định dạng");
+                    }
                     return true;
                 }
 
@@ -301,13 +306,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         throw new BadRequestException(GeneralCode.InvalidParams, "Giờ chấm công không được để trống");
                     }
                     if (!DateTime.TryParse(value, out DateTime date))
-                        {
-                            throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng HH:mm");
-                        }    
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Giờ chấm công sai định dạng HH:mm");
+                    }
 
-                        double time = date.Hour * 60 * 60 + date.Minute * 60;
+                    double time = date.Hour * 60 * 60 + date.Minute * 60;
 
-                        entity.SetPropertyValue(propertyName, time);
+                    entity.SetPropertyValue(propertyName, time);
 
                     return true;
                 }
@@ -324,11 +329,23 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             foreach (var item in lstData)
             {
-                var employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
+                var employee = new NonCamelCaseDictionary();
+                var errorMess = "";
+
+                if (item.so_ct != null)
+                {
+                    employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
+                    errorMess = "mã nhân viên " + item.so_ct;
+                }
+                else if (item.ma_cham_cong != null)
+                {
+                    employee = employees.List.FirstOrDefault(e => (e[ma_cham_cong] != null ? e[ma_cham_cong].ToString() : "") == item.ma_cham_cong);
+                    errorMess = "mã chấm công " + item.ma_cham_cong;
+                }
 
                 if(employee == null)
-                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Mã nhân viên {item.so_ct} không tồn tại!");
-                
+                    throw new BadRequestException(GeneralCode.ItemNotFound, $"Nhân viên có {errorMess} không tồn tại!");
+
                 if (await _organizationDBContext.TimeSheetRaw.AnyAsync(t => t.EmployeeId == (long)employee[F_Id] && t.Date == item.Date.UnixToDateTime().Value && t.Time == TimeSpan.FromSeconds(item.Time)))
                 {
                     if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
@@ -339,7 +356,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         continue;
                     }
-                } 
+                }
 
                 var ent = new TimeSheetRaw
                 {
@@ -354,6 +371,24 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _organizationDBContext.SaveChangesAsync();
 
             return true;
+        }
+
+        private void ValidateModel(ImportExcelMapping mapping)
+        {
+            var mappingFields = mapping.MappingFields.Select(f => f.FieldName).ToList();
+
+            if (!mappingFields.Contains(so_ct) && !mappingFields.Contains(ma_cham_cong))
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Vui lòng chọn cột Excel cho trường \"Mã nhân viên\" hoặc \"Mã chấm công\"");
+            }
+            if (!mappingFields.Contains(nameof(TimeSheetRawImportFieldModel.Date)))
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Vui lòng chọn cột Excel cho trường \"Ngày chấm công\"");
+            }
+            if (!mappingFields.Contains(nameof(TimeSheetRawImportFieldModel.Time)))
+            {
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Vui lòng chọn cột Excel cho trường \"Giờ chấm công\"");
+            }
         }
     }
 }
