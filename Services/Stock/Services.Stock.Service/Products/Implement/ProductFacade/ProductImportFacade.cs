@@ -240,7 +240,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         p.IsProduct = true;
                     }
-
+                    var unit = units.FirstOrDefault(x => x.Key == p.Unit.NormalizeAsInternalName());
+                    if (unit.Key == null)
+                    {
+                        throw new BadRequestException($"Không tồn tại đơn vị tính {p.Unit}");
+                    }
+                    if (p.DecimalPlaceDefault == null)
+                    {
+                        p.DecimalPlaceDefault = unitInfos.FirstOrDefault(x => x.Key == unit.Value).Value?.DecimalPlace;
+                    }
                     //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
                     //{
                     //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
@@ -367,6 +375,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
+                    case nameof(ProductImportModel.Description):
+                        entity.Description = value;
+                        return true;
+                    case nameof(ProductImportModel.DescriptionToStock):
+                        entity.DescriptionToStock = value;
+                        return true;
                     case nameof(ProductImportModel.TargetProductivityCode):
                         if (!string.IsNullOrWhiteSpace(value))
                         {
