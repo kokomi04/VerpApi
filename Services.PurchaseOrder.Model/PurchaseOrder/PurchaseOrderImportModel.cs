@@ -27,6 +27,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public DateTime? DeliveryDate { get; set; }
 
         [ValidateDuplicateByKeyCode]
+        [Required]
         [Display(Name = "Nhà cung cấp", GroupName = "TT Chung", Order = 1004)]
         public ProviderCustomerImportModel CustomerInfo { get; set; }
 
