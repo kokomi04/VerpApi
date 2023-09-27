@@ -1,6 +1,7 @@
 ﻿using DocumentFormat.OpenXml.InkML;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -240,19 +241,32 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         p.IsProduct = true;
                     }
-                    var unit = units.FirstOrDefault(x => x.Key == p.Unit.NormalizeAsInternalName());
-                    if (unit.Key == null)
-                    {
-                        throw new BadRequestException($"Không tồn tại đơn vị tính {p.Unit}");
-                    }
                     if (p.DecimalPlaceDefault == null)
+                        p.DecimalPlaceDefault = SetDecimalPlace(p.Unit);
+                    if (!string.IsNullOrEmpty( p.SecondaryUnit02))
                     {
-                        p.DecimalPlaceDefault = unitInfos.FirstOrDefault(x => x.Key == unit.Value).Value?.DecimalPlace;
+                        if (p.DecimalPlace02 == null)
+                            p.DecimalPlace02 = SetDecimalPlace(p.SecondaryUnit02);
+
                     }
-                    //if (defaultTypeId == null && string.IsNullOrWhiteSpace(p.ProductTypeCode) && string.IsNullOrWhiteSpace(p.ProductTypeName))
-                    //{
-                    //    throw new BadRequestException(ProductErrorCode.ProductTypeInvalid, $"Cần chọn loại mã mặt hàng cho mặt hàng {p.ProductCode} {rowNumber}");
-                    //}
+                    if (!string.IsNullOrEmpty(p.SecondaryUnit03))
+                    {
+                        if (p.DecimalPlace03 == null)
+                            p.DecimalPlace03 = SetDecimalPlace(p.SecondaryUnit03);
+
+                    }
+                    if (!string.IsNullOrEmpty(p.SecondaryUnit04))
+                    {
+                        if (p.DecimalPlace04 == null)
+                            p.DecimalPlace04 = SetDecimalPlace(p.SecondaryUnit04);
+
+                    }
+                    if (!string.IsNullOrEmpty(p.SecondaryUnit05))
+                    {
+                        if (p.DecimalPlace05 == null)
+                            p.DecimalPlace05 = SetDecimalPlace(p.SecondaryUnit05);
+
+                    }
 
                     var productCodeRowTitle = p.ProductCode + " " + rowNumber;
                     if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
@@ -358,7 +372,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
             }
         }
-
+        private int? SetDecimalPlace( string unitName)
+        {
+            var unit = units.FirstOrDefault(x => x.Key == unitName.NormalizeAsInternalName());
+            if (unit.Key == null)
+            {
+                throw new BadRequestException($"Không tồn tại đơn vị tính {unitName}");
+            }
+            return unitInfos.FirstOrDefault(x => x.Key == unit.Value).Value?.DecimalPlace;
+        }
 
         private IList<ProductImportModel> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
