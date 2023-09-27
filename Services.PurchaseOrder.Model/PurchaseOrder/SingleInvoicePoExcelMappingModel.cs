@@ -47,25 +47,25 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     //        public string DescriptionColumn { get; set; }
     //    }
     //}
-
     [Display(Name = "Chi tiết đơn mua hàng")]
-    public class PoDetailRowValue : MappingDataRowAbstract
+    public class PoDetailRowValue : PoDetailRowValueShared
     {
-
         [Display(Name = "Mặt hàng", GroupName = "Mặt hàng", Order = 2002)]
         public PoDetailProductParseModel ProductInfo { get; set; }
-
-        [FieldDataIgnore]
-        public string ProductInternalName { get; set; }
-
-        [Display(Name = "Tên mặt hàng tương ứng NCC", GroupName = "Mặt hàng", Order = 2003)]
-        public string ProductProviderName { get; set; }
-
         [Display(Name = "Số lượng Đơn vị chính", GroupName = "TT về lượng", Order = 2004)]
         public decimal? PrimaryQuantity { get; set; }
 
         [Display(Name = "Giá theo đơn vị chính", GroupName = "TT về lượng", Order = 2005)]
         public decimal? PrimaryPrice { get; set; }
+    }
+    public class PoDetailRowValueShared : MappingDataRowAbstract
+    {
+       
+        [FieldDataIgnore]
+        public string ProductInternalName { get; set; }
+
+        [Display(Name = "Tên mặt hàng tương ứng NCC", GroupName = "Mặt hàng", Order = 2003)]
+        public string ProductProviderName { get; set; }
 
         [Display(Name = "Tên Đơn vị chuyển đổi", GroupName = "TT về lượng", Order = 2006)]
         public string ProductUnitConversionName { get; set; }
