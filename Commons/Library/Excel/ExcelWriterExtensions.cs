@@ -68,15 +68,15 @@ namespace VErp.Commons.Library
                 style.Alignment = hAlign.Value;
             }
 
-            var font = sheet.Workbook.CreateFont();
+            var font = (XSSFFont)sheet.Workbook.CreateFont();
             font.FontHeightInPoints = fontSize;
             font.IsBold = isBold;
             font.IsItalic = isItalic;
             if (color != null)
             {
-                font.Color = new XSSFColor(color).Index;
+                font.SetColor(new XSSFColor(color));
             }
-
+           
             style.SetFont(font);
 
             if (isBorder)
