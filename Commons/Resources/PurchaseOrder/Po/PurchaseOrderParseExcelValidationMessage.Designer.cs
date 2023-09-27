@@ -88,6 +88,15 @@ namespace Verp.Resources.PurchaseOrder.Po {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Nhà cung cấp không được để trống.
+        /// </summary>
+        public static string CustomerInfoIsRequired {
+            get {
+                return ResourceManager.GetString("CustomerInfoIsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Không tìm thấy khách hàng có tên &quot;{0}&quot;.
         /// </summary>
         public static string CustomerNameNotFound {
@@ -151,11 +160,38 @@ namespace Verp.Resources.PurchaseOrder.Po {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Giá theo đơn vị tính không được để trống.
+        /// </summary>
+        public static string PrimaryPriceIsRequire {
+            get {
+                return ResourceManager.GetString("PrimaryPriceIsRequire", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Đơn vị tính của mặt hàng {0} không tìm thấy.
         /// </summary>
         public static string PrimaryPuOfProductNotFound {
             get {
                 return ResourceManager.GetString("PrimaryPuOfProductNotFound", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Số lượng đơn vị chính không được để trống.
+        /// </summary>
+        public static string PrimaryQuantityIsRequire {
+            get {
+                return ResourceManager.GetString("PrimaryQuantityIsRequire", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mã mặt hàng không được để trống.
+        /// </summary>
+        public static string ProductInfoIsRequire {
+            get {
+                return ResourceManager.GetString("ProductInfoIsRequire", resourceCulture);
             }
         }
         

@@ -479,7 +479,22 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
             {
                 throw GeneralCode.InvalidParams.BadRequest(PurchaseOrderDeliveryDateIsRequired);
             }
-
+            if (!mapping.MappingFields.Any(m=> m.FieldName == nameof(PurchaseOrderImportModel.CustomerInfo)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest(CustomerInfoIsRequired);
+            }
+            if (!mapping.MappingFields.Any(m => m.FieldName == nameof(PurchaseOrderImportModel.ProductInfo)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest(ProductInfoIsRequire);
+            }
+            if (!mapping.MappingFields.Any(m => m.FieldName == nameof(PurchaseOrderImportModel.PrimaryQuantity)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest(PrimaryQuantityIsRequire);
+            }
+            if (!mapping.MappingFields.Any(m => m.FieldName == nameof(PurchaseOrderImportModel.PrimaryPrice)))
+            {
+                throw GeneralCode.InvalidParams.BadRequest(PrimaryPriceIsRequire);
+            }
             var rowDatas = await reader.ReadSheetEntity<PurchaseOrderImportModel>(mapping, async (entity, propertyName, value, refObj, refPropertyName, refPropertyPathSeparateByPoint) =>
             {
                 if (propertyName == nameof(PurchaseOrderImportModel.PurchaseOrderCode))
@@ -555,7 +570,6 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
         private async Task ReadProvider(object refObj, string refPropertyName, string value, string normalizeValue)
         {
             await EnsureGetAllCustomers();
-
             var obj = (ProviderCustomerImportModel)refObj;
             if (refPropertyName == nameof(ProviderCustomerImportModel.CustomerCode))
             {

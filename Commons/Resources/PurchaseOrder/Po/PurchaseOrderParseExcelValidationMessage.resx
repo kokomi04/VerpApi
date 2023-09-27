@@ -126,6 +126,9 @@
   <data name="CustomerCodeNotFound" xml:space="preserve">
     <value>Không tìm thấy khách hàng có mã "{0}"</value>
   </data>
+  <data name="CustomerInfoIsRequired" xml:space="preserve">
+    <value>Nhà cung cấp không được để trống</value>
+  </data>
   <data name="CustomerNameNotFound" xml:space="preserve">
     <value>Không tìm thấy khách hàng có tên "{0}"</value>
   </data>
@@ -147,8 +150,17 @@
   <data name="FoundNumberOfPuConversion" xml:space="preserve">
     <value>Tìm thấy {0} đơn vị chuyển đổi {1} mặt hàng {2}</value>
   </data>
+  <data name="PrimaryPriceIsRequire" xml:space="preserve">
+    <value>Giá theo đơn vị tính không được để trống</value>
+  </data>
   <data name="PrimaryPuOfProductNotFound" xml:space="preserve">
     <value>Đơn vị tính của mặt hàng {0} không tìm thấy</value>
+  </data>
+  <data name="PrimaryQuantityIsRequire" xml:space="preserve">
+    <value>Số lượng đơn vị chính không được để trống</value>
+  </data>
+  <data name="ProductInfoIsRequire" xml:space="preserve">
+    <value>Mã mặt hàng không được để trống</value>
   </data>
   <data name="ProductInfoNotFound" xml:space="preserve">
     <value>Không tìm thấy mặt hàng {0}</value>

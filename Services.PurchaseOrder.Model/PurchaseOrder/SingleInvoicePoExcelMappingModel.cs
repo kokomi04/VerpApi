@@ -51,7 +51,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
     [Display(Name = "Chi tiết đơn mua hàng")]
     public class PoDetailRowValue : MappingDataRowAbstract
     {
-
+        [Required]
         [Display(Name = "Mặt hàng", GroupName = "Mặt hàng", Order = 2002)]
         public PoDetailProductParseModel ProductInfo { get; set; }
 
@@ -61,9 +61,11 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         [Display(Name = "Tên mặt hàng tương ứng NCC", GroupName = "Mặt hàng", Order = 2003)]
         public string ProductProviderName { get; set; }
 
+        [Required]
         [Display(Name = "Số lượng Đơn vị chính", GroupName = "TT về lượng", Order = 2004)]
         public decimal? PrimaryQuantity { get; set; }
 
+        [Required]
         [Display(Name = "Giá theo đơn vị chính", GroupName = "TT về lượng", Order = 2005)]
         public decimal? PrimaryPrice { get; set; }
 
