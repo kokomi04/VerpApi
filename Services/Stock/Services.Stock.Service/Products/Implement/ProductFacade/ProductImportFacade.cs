@@ -241,33 +241,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     {
                         p.IsProduct = true;
                     }
-                    if (p.DecimalPlaceDefault == null)
-                        p.DecimalPlaceDefault = SetDecimalPlace(p.Unit);
-                    if (!string.IsNullOrEmpty( p.SecondaryUnit02))
-                    {
-                        if (p.DecimalPlace02 == null)
-                            p.DecimalPlace02 = SetDecimalPlace(p.SecondaryUnit02);
-
-                    }
-                    if (!string.IsNullOrEmpty(p.SecondaryUnit03))
-                    {
-                        if (p.DecimalPlace03 == null)
-                            p.DecimalPlace03 = SetDecimalPlace(p.SecondaryUnit03);
-
-                    }
-                    if (!string.IsNullOrEmpty(p.SecondaryUnit04))
-                    {
-                        if (p.DecimalPlace04 == null)
-                            p.DecimalPlace04 = SetDecimalPlace(p.SecondaryUnit04);
-
-                    }
-                    if (!string.IsNullOrEmpty(p.SecondaryUnit05))
-                    {
-                        if (p.DecimalPlace05 == null)
-                            p.DecimalPlace05 = SetDecimalPlace(p.SecondaryUnit05);
-
-                    }
-
                     var productCodeRowTitle = p.ProductCode + " " + rowNumber;
                     if (defaultCateId == null && string.IsNullOrWhiteSpace(p.ProductCate))
                     {
@@ -372,15 +345,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
             }
         }
-        private int? SetDecimalPlace( string unitName)
-        {
-            var unit = units.FirstOrDefault(x => x.Key == unitName.NormalizeAsInternalName());
-            if (unit.Key == null)
-            {
-                throw new BadRequestException($"Không tồn tại đơn vị tính {unitName}");
-            }
-            return unitInfos.FirstOrDefault(x => x.Key == unit.Value).Value?.DecimalPlace;
-        }
+        
 
         private IList<ProductImportModel> ReadExcel(ExcelReader reader, ImportExcelMapping mapping)
         {
@@ -722,7 +687,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 }
             }
 
-            var newProductUnitConversions = ParsePuConverions(row, product.ProductId);
+            var newProductUnitConversions = ParsePuConverions(row, product.ProductId, product);
 
             var existedPus = product.ProductUnitConversion.GroupBy(p => p.ProductUnitConversionName.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.First());
@@ -803,9 +768,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
         }
 
-        private IList<ProductUnitConversionUpdate> ParsePuConverions(ProductImportModel row, int productId)
+        private int SetDecimalPlace(string unitName)
         {
-            var defaultDecPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : null;
+            var unit = units.FirstOrDefault(x => x.Key == unitName.NormalizeAsInternalName());
+            if (unit.Key == null)
+            {
+                throw new BadRequestException($"Không tồn tại đơn vị tính {unitName}");
+            }
+            return unitInfos.FirstOrDefault(x => x.Key == unit.Value).Value?.DecimalPlace ?? DECIMAL_PLACE_DEFAULT;
+        }
+
+        private IList<ProductUnitConversionUpdate> ParsePuConverions(ProductImportModel row, int productId, Product product)
+        {
+            var defaultDecPlace = row.DecimalPlaceDefault >= 0 ? row.DecimalPlaceDefault : product.ProductUnitConversion.FirstOrDefault(p => p.IsDefault)?.DecimalPlace;
 
             var lstUnitConverions = new List<ProductUnitConversionUpdate>(){
                             new ProductUnitConversionUpdate()
@@ -817,7 +792,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                 ConversionDescription = "Default",
                                 IsDefault = true,
                                 IsFreeStyle = false,
-                                DecimalPlace = defaultDecPlace??DECIMAL_PLACE_DEFAULT,
+                                DecimalPlace = defaultDecPlace??SetDecimalPlace(row.Unit.NormalizeAsInternalName()),
                                 UploadDecimalPlace= defaultDecPlace
                             }
                         };
@@ -830,7 +805,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
 
                 var unit = typeInfo.GetProperty(unitNamePropName).GetValue(row) as string;
                 var exp = typeInfo.GetProperty(unitExpPropName).GetValue(row) as string;
-                var decimalPlace = (int?)typeInfo.GetProperty(unitDecimalPropName).GetValue(row);
+                var decimalPlace = (int?)typeInfo.GetProperty(unitDecimalPropName).GetValue(row) ?? product.ProductUnitConversion.FirstOrDefault(p=> p.ProductUnitConversionName == unit)?.DecimalPlace;
                 if (!string.IsNullOrEmpty(unit))
                 {
                     try
@@ -854,7 +829,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         FactorExpression = exp,
                         IsDefault = false,
                         IsFreeStyle = false,
-                        DecimalPlace = decimalPlace >= 0 ? decimalPlace.Value : DECIMAL_PLACE_DEFAULT,
+                        DecimalPlace = decimalPlace >= 0 ? decimalPlace.Value : SetDecimalPlace(unit.NormalizeAsInternalName()),
                         UploadDecimalPlace = decimalPlace
                     });
                 }
