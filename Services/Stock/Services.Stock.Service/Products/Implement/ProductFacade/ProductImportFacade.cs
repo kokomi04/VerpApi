@@ -762,6 +762,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                         if (!existedItem.IsDefault)
                         {
                             existedItem.UpdateIfAvaiable(v => v.ConversionDescription, pu.ConversionDescription);
+                            existedItem.UpdateIfAvaiable(v => v.DecimalPlace, pu.DecimalPlace);
                         }
 
                     }
