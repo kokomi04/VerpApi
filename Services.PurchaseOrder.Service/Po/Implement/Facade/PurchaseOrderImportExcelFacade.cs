@@ -505,17 +505,16 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     }
                     return false;
                 }
-
-                if (string.IsNullOrWhiteSpace(value)) return true;
-                var normalizeValue = value.NormalizeAsInternalName();
-
-
                 if (propertyName == nameof(PurchaseOrderImportModel.CustomerInfo))
                 {
-                    await ReadProvider(refObj, refPropertyName, value, normalizeValue);
+                    if (string.IsNullOrEmpty(value))
+                        throw new BadRequestException(CustomerInfoIsRequired);
+                    await ReadProvider(refObj, refPropertyName, value, value.NormalizeAsInternalName());
 
                     return true;
                 }
+                if (string.IsNullOrWhiteSpace(value)) return true;
+                var normalizeValue = value.NormalizeAsInternalName();
 
                 if (propertyName == nameof(PurchaseOrderImportModel.DeliveryInfo))
                 {
