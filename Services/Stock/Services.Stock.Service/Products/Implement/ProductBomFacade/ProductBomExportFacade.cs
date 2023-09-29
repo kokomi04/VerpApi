@@ -40,7 +40,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             this.productIds = productIds;
             this.steps = steps;
             _productBomProperties = productBomProperties;
-            maxColumnIndex = 15 + productBomProperties.Count;
+            maxColumnIndex = 17 + productBomProperties.Count;
             _productBomService = productBomService;
         }
 
@@ -94,35 +94,41 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 0).SetCellValue($"STT");
 
-            sheet.EnsureCell(fRow, 1).SetCellValue($"Mã mặt hàng");
+            sheet.EnsureCell(fRow, 1).SetCellValue($"Mã mặt hàng gốc");
 
-            sheet.EnsureCell(fRow, 2).SetCellValue($"Tên mặt hàng");
+            sheet.EnsureCell(fRow, 2).SetCellValue($"Tên mặt hàng gốc");
 
-            sheet.EnsureCell(fRow, 3).SetCellValue($"ĐVT");
+            sheet.EnsureCell(fRow, 3).SetCellValue($"Mã mặt hàng");
 
-            sheet.EnsureCell(fRow, 4).SetCellValue($"Quy cách");
+            sheet.EnsureCell(fRow, 4).SetCellValue($"Tên mặt hàng");
 
-            sheet.EnsureCell(fRow, 5).SetCellValue($"Mã chi tiết");
 
-            sheet.EnsureCell(fRow, 6).SetCellValue($"Tên chi tiết");
 
-            sheet.EnsureCell(fRow, 7).SetCellValue($"ĐVT chi tiết");
+            sheet.EnsureCell(fRow, 5).SetCellValue($"ĐVT");
 
-            sheet.EnsureCell(fRow, 8).SetCellValue($"Quy cách chi tiết");
+            sheet.EnsureCell(fRow, 6).SetCellValue($"Quy cách");
 
-            sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng");
+            sheet.EnsureCell(fRow, 7).SetCellValue($"Mã chi tiết");
 
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Tỷ lệ hao hụt");
+            sheet.EnsureCell(fRow, 8).SetCellValue($"Tên chi tiết");
 
-            sheet.EnsureCell(fRow, 11).SetCellValue($"Tổng SL");
+            sheet.EnsureCell(fRow, 9).SetCellValue($"ĐVT chi tiết");
 
-            sheet.EnsureCell(fRow, 12).SetCellValue($"Mô tả");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Quy cách chi tiết");
 
-            sheet.EnsureCell(fRow, 13).SetCellValue($"Là nguyên liệu");
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Số lượng");
 
-            sheet.EnsureCell(fRow, 14).SetCellValue($"Cộng đoạn vào");
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Tỷ lệ hao hụt");
 
-            sheet.EnsureCell(fRow, 15).SetCellValue($"Công đoạn ra");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Tổng SL");
+
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Mô tả");
+
+            sheet.EnsureCell(fRow, 15).SetCellValue($"Là nguyên liệu");
+
+            sheet.EnsureCell(fRow, 16).SetCellValue($"Cộng đoạn vào");
+
+            sheet.EnsureCell(fRow, 17).SetCellValue($"Công đoạn ra");
 
 
 
@@ -235,48 +241,54 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             var mapTotalQuantity = new Dictionary<int?, decimal?>();
             foreach (var productBoms in productBomsLevels)
             {
+                productInfos.TryGetValue(productBoms.Key, out var currentProduct);
                 foreach (var item in productBoms.Value)
                 {
 
                     sheet.EnsureCell(currentRow, 0).SetCellValue(stt);
                     productInfos.TryGetValue(item.ProductId, out var productInfo);
                     productInfos.TryGetValue(item.ChildProductId ?? 0, out var childProductInfo);
-
+                    if (!topMostProductIds.Contains(item.ProductId))
+                    {
+                        sheet.EnsureCell(currentRow, 1).SetCellValue(currentProduct.ProductCode);
+                        sheet.EnsureCell(currentRow, 2).SetCellValue(currentProduct.ProductName);
+                    }
                     if (productInfo != null )
                     {
                         if (string.IsNullOrWhiteSpace(firstProductCode))
                         {
                             firstProductCode = productInfo.ProductCode;
                         }
-                        sheet.EnsureCell(currentRow, 1).SetCellValue(productInfo.ProductCode);
-                        sheet.EnsureCell(currentRow, 2).SetCellValue(productInfo.ProductName);
-                        sheet.EnsureCell(currentRow, 3).SetCellValue(productInfo.ProductUnitConversionName);
-                        sheet.EnsureCell(currentRow, 4).SetCellValue(productInfo.Specification);
+                        sheet.EnsureCell(currentRow, 3).SetCellValue(productInfo.ProductCode);
+                        sheet.EnsureCell(currentRow, 4).SetCellValue(productInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 5).SetCellValue(productInfo.ProductUnitConversionName);
+                        sheet.EnsureCell(currentRow, 6).SetCellValue(productInfo.Specification);
                     }
                     if (childProductInfo != null)
                     {
-                        sheet.EnsureCell(currentRow, 5).SetCellValue(childProductInfo.ProductCode);
-                        sheet.EnsureCell(currentRow, 6).SetCellValue(childProductInfo.ProductName);
-                        sheet.EnsureCell(currentRow, 7).SetCellValue(childProductInfo.ProductUnitConversionName);
-                        sheet.EnsureCell(currentRow, 8).SetCellValue(childProductInfo.Specification);
+                        sheet.EnsureCell(currentRow, 7).SetCellValue(childProductInfo.ProductCode);
+                        sheet.EnsureCell(currentRow, 8).SetCellValue(childProductInfo.ProductName);
+                        sheet.EnsureCell(currentRow, 9).SetCellValue(childProductInfo.ProductUnitConversionName);
+                        sheet.EnsureCell(currentRow, 10).SetCellValue(childProductInfo.Specification);
                     }
 
-                    sheet.EnsureCell(currentRow, 9).SetCellValue(Convert.ToDouble(item.Quantity));
-                    sheet.EnsureCell(currentRow, 10).SetCellValue(Convert.ToDouble(item.Wastage));
-                    sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.TotalQuantity));
+                    sheet.EnsureCell(currentRow, 11).SetCellValue(Convert.ToDouble(item.Quantity));
+                    sheet.EnsureCell(currentRow, 12).SetCellValue(Convert.ToDouble(item.Wastage));
+                    sheet.EnsureCell(currentRow, 13).SetCellValue(Convert.ToDouble(item.TotalQuantity));
 
-                    sheet.EnsureCell(currentRow, 12).SetCellValue(item.Description);
+                    sheet.EnsureCell(currentRow, 14).SetCellValue(item.Description);
 
 
                     if (productMaterial.Contains(item.ChildProductId ?? 0))
                     {
-                        sheet.EnsureCell(currentRow, 13).SetCellValue("Có");
-                        sheet.EnsureCell(currentRow, 13).CellStyle.Alignment = HorizontalAlignment.Center;
+                        sheet.EnsureCell(currentRow, 15).SetCellValue("Có");
+                        sheet.EnsureCell(currentRow, 15).CellStyle.Alignment = HorizontalAlignment.Center;
                         //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                     }
 
-                    sheet.EnsureCell(currentRow, 14).SetCellValue(GetStepName(item.InputStepId));
-                    sheet.EnsureCell(currentRow, 15).SetCellValue(GetStepName(item.OutputStepId));
+                    sheet.EnsureCell(currentRow, 16).SetCellValue(GetStepName(item.InputStepId));
+                    sheet.EnsureCell(currentRow, 17).SetCellValue(GetStepName(item.OutputStepId));
+                    
 
                     var col = START_PROP_COLUMN_INDEX;
 
