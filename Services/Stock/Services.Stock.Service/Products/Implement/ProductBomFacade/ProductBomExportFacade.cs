@@ -25,7 +25,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private ISheet sheet = null;
         private int currentRow = 0;
 
-        const int START_PROP_COLUMN_INDEX = 16;
+        const int START_PROP_COLUMN_INDEX = 17;
 
         private int maxColumnIndex;
 
