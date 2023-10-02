@@ -279,7 +279,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     sheet.EnsureCell(currentRow, 14).SetCellValue(item.Description);
 
 
-                    if (productMaterial.Contains(item.ChildProductId ?? 0))
+                    if (item.IsMaterial)
                     {
                         sheet.EnsureCell(currentRow, 15).SetCellValue("Có");
                         sheet.EnsureCell(currentRow, 15).CellStyle.Alignment = HorizontalAlignment.Center;
@@ -291,10 +291,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     
 
                     var col = START_PROP_COLUMN_INDEX;
-
                     foreach (var p in _productBomProperties)
                     {
-                        if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId))
+                        if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId && prop.PathProductIds == string.Join(",", item.PathProductIds)))
                         {
                             sheet.EnsureCell(currentRow, col).SetCellValue("Có");
                             sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
