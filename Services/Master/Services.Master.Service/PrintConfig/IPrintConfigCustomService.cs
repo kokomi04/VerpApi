@@ -9,6 +9,6 @@ namespace VErp.Services.Master.Service.PrintConfig
 {
     public interface IPrintConfigCustomService: IPrintConfigService<PrintConfigCustomModel>
     {
-        Task<bool> RollbackPrintConfigCustom(int printConfigId);
+        Task<bool> RollbackPrintConfigCustom(int printConfigCustomId);
     }
 }

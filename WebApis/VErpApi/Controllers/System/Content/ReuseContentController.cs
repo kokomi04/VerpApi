@@ -47,7 +47,7 @@ namespace VErpApi.Controllers.System
         [HttpPut]
         [Route("{reuseContentId}")]
         [GlobalApi]
-        public async Task<bool> Update([FromRoute] long reuseContentId, ReuseContentModel model)
+        public async Task<bool> Update([FromRoute] long reuseContentId, [FromBody] ReuseContentModel model)
         {
             return await _reuseContentService.Update(reuseContentId, model);
         }

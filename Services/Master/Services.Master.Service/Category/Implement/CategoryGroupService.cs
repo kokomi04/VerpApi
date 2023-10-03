@@ -49,7 +49,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             await _categoryGroupActivityLog.LogBuilder(() => CategoryGroupActivityLogMessage.Create)
               .MessageResourceFormatDatas(info.CategoryGroupName)
               .ObjectId(info.CategoryGroupId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
             return info.CategoryGroupId;
@@ -76,7 +76,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             await _categoryGroupActivityLog.LogBuilder(() => CategoryGroupActivityLogMessage.Delete)
              .MessageResourceFormatDatas(info.CategoryGroupName)
              .ObjectId(info.CategoryGroupId)
-             .JsonData(info.JsonSerialize())
+             .JsonData(info)
              .CreateLog();
 
             return true;
@@ -104,7 +104,7 @@ namespace VErp.Services.Master.Service.Category.Implement
             await _categoryGroupActivityLog.LogBuilder(() => CategoryGroupActivityLogMessage.Update)
              .MessageResourceFormatDatas(info.CategoryGroupName)
              .ObjectId(info.CategoryGroupId)
-             .JsonData(info.JsonSerialize())
+             .JsonData(info)
              .CreateLog();
 
             return true;

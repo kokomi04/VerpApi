@@ -15,8 +15,10 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -119,7 +121,15 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
             return materialsConsumption;
         }
-
+        public async Task<IList<IEnumerable<ProductMaterialsConsumptionOutput>>> GetProductMaterialsConsumptions(IList<int> productIds)
+        {
+            var materialsConsumptions = new List<IEnumerable<ProductMaterialsConsumptionOutput>> ();
+            foreach (var productId in productIds)
+            {
+                materialsConsumptions.Add(await GetProductMaterialsConsumption(productId));
+            }
+            return materialsConsumptions;
+        }
         private IList<ProductMaterialsConsumptionOutput> LoopGetMaterialConsumInheri(List<ProductMaterialsConsumptionOutput> materialsConsumptionInheri
             , IEnumerable<ProductBomOutput> productBom
             , IEnumerable<ProductBomOutput> boms
@@ -305,7 +315,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateMaterialConsumption)
                  .MessageResourceFormatDatas(product.ProductCode)
                  .ObjectId(productId)
-                 .JsonData(model.JsonSerialize())
+                 .JsonData(model)
                  .CreateLog();
 
 
@@ -348,7 +358,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateDetailMaterialConsumption)
            .MessageResourceFormatDatas(materialProducInfo.ProductCode, product.ProductCode)
            .ObjectId(productId)
-           .JsonData(model.JsonSerialize())
+           .JsonData(model)
            .CreateLog();
 
             return true;
@@ -418,11 +428,68 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
 
             var materialsConsum = await GetProductMaterialsConsumption(productId);
-            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsum, _organizationHelperService, _manufacturingHelperService);
+            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, new List<IEnumerable<ProductMaterialsConsumptionOutput>>() { materialsConsum }, _organizationHelperService, _manufacturingHelperService);
 
             return await exportFacade.Export(product.ProductCode);
         }
+        public async Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds, bool isExportAllTopBOM)
+        {
+            var products = await _stockDbContext.Product.AsNoTracking().Where(p => productIds.Contains( p.ProductId)).ToListAsync();
+            if (products.Count == 0)
+                throw new BadRequestException(ProductErrorCode.ProductNotFound);
+            var productExportIds = new List<int>();
+            if (isExportAllTopBOM)
+            {
+                var checkParams = new[]
+                {
+                     productIds.ToSqlParameter("@InputProductIds")
+                };
+                var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
+                foreach (var p in productParentIds)
+                {
+                    productExportIds.Add(Convert.ToInt32(p["ProductId"]));
+                }
+            }
+            else
+            {
+                productExportIds.AddRange( await GetTopIdsFromProductIds(productIds));
+            }
+            var materialsConsums = await GetProductMaterialsConsumptions(productExportIds);
+            var exportFacade = new ProductMaterialsConsumptionExportFacade(_stockDbContext, materialsConsums, _organizationHelperService, _manufacturingHelperService);
 
+            return await exportFacade.Export("Vật tư tiêu hao");
+        }
+        private async Task<List<int>> GetTopIdsFromProductIds(IList<int> productIds)
+        {
+            var lstProductIds = new List<int>();
+            var checkParams = new[]
+               {
+                     productIds.ToSqlParameter("@InputProductIds")
+               };
+            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetParentBomProductIds", checkParams)).ConvertData();
+            foreach (var productId in productIds)
+            {
+                var parentProductIds = new List<int>();
+                GetParentIds(productId, productIds, productParentIds, ref parentProductIds);
+                if (parentProductIds.Count == 0)
+                {
+                    lstProductIds.Add(productId);
+                }
+            }
+            return lstProductIds;
+        }
+        private List<int> GetParentIds(int checkProductId, IList<int> productIds, List<NonCamelCaseDictionary> productParentIds, ref List<int> productIdsOutput)
+        {
+            var lstParentIds = productParentIds.Where(x => checkProductId == Convert.ToInt32(x["ChildId"])).Select(x => Convert.ToInt32(x["ParentId"])).ToList();
+
+            foreach (var parentId in lstParentIds)
+            {
+                GetParentIds(parentId, productIds, productParentIds, ref productIdsOutput);
+            }
+            productIdsOutput.AddRange( lstParentIds.Where(x => productIds.Contains(x)).ToList());
+            
+            return productIdsOutput;
+        }
         private ProductMaterialsConsumptionImportFacade InitializationFacade(bool isPreview)
         {
             return new ProductMaterialsConsumptionImportFacade(isPreview)

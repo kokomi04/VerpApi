@@ -13,7 +13,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<bool> CheckHasAssignment(long productionOrderId);
         Task<bool> DismissUpdateQuantity(long productionOrderId);
         Task<bool> UpdateProductionProcess(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req);
-        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId);
+        Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId, bool isValidateSourceProductionProcessExists);
 
         Task<ProductionProcessInfo> GetProductionProcessByProductionOrder(long productionOrderId);
         Task<ProductionProcessModel> GetProductionProcessByContainerId(EnumContainerType containerTypeId, long containerId);
@@ -58,5 +58,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess
         Task<IList<ProductionStepLinkDataObjectModel>> GetAllProductInProductionProcessV2(EnumContainerType containerTypeId, long containerId);
 
         Task<IList<ProductionStepLinkDataInput>> GetAllProductInProductionProcess(EnumContainerType containerTypeId, long containerId);
+
+        Task<IList<ProductionProcessWarningMessage>> ValidateStatusProductionProcess(IList<int> productIds);
     }
 }

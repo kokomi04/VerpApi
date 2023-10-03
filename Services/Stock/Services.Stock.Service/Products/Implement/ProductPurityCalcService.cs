@@ -44,7 +44,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productPurityCalcActivityLog.LogBuilder(() => ProductPurityCalcActivityLogMessage.Create)
                  .MessageResourceFormatDatas(info.Title)
                  .ObjectId(info.ProductPurityCalcId)
-                 .JsonData(req.JsonSerialize())
+                 .JsonData(req)
                  .CreateLog();
             return info.ProductPurityCalcId;
         }
@@ -63,7 +63,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productPurityCalcActivityLog.LogBuilder(() => ProductPurityCalcActivityLogMessage.Delete)
                  .MessageResourceFormatDatas(info.Title)
                  .ObjectId(info.ProductPurityCalcId)
-                 .JsonData(info.JsonSerialize())
+                 .JsonData(info)
                  .CreateLog();
             return true;
         }
@@ -97,7 +97,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             await _productPurityCalcActivityLog.LogBuilder(() => ProductPurityCalcActivityLogMessage.Update)
                  .MessageResourceFormatDatas(info.Title)
                  .ObjectId(info.ProductPurityCalcId)
-                 .JsonData(info.JsonSerialize())
+                 .JsonData(info)
                  .CreateLog();
 
             return true;

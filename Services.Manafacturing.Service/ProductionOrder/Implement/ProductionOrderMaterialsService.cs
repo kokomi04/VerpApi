@@ -11,7 +11,8 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder.Materials;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
@@ -148,7 +149,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                            on r.ProductionStepLinkDataId equals a.ProductionStepLinkDataId into assignMap
                                       from m in assignMap.DefaultIfEmpty()
                                       let AssignmentQuantity = r.ProductionStepLinkData.Quantity - m?.TotalAssignmentQuantity
-                                      where AssignmentQuantity is null || AssignmentQuantity > 0 && r.ProductionStepLinkData.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                                      where (AssignmentQuantity is null || AssignmentQuantity > 0) && r.ProductionStepLinkData.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
                                       select new ProductionOrderMaterialsCalc
                                       {
                                           AssignmentQuantity = !AssignmentQuantity.HasValue ? r.ProductionStepLinkData.Quantity : AssignmentQuantity,

@@ -51,6 +51,9 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public EnumPurchasingOrderType PurchaseOrderType { get; set; }
 
+        public EnumPurchaseOrderInputType? InputTypeSelectedState { get; set; }
+        public EnumPurchaseOrderInputUnitType? InputUnitTypeSelectedState { get; set; }
+
         [MaxLength(512)]
         public string DeliveryMethod { get; set; }
         [MaxLength(512)]
@@ -102,6 +105,7 @@ namespace VErp.Services.PurchaseOrder.Model
         public PurchaseOrderInputDetail()
         {
             OutsourceMappings = new List<PurchaseOrderOutsourceMappingModel>();
+
         }
         public long? PurchaseOrderDetailId { get; set; }
         public long? PurchasingSuggestDetailId { get; set; }

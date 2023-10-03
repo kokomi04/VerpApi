@@ -64,6 +64,8 @@ public partial class ProductionStep
 
     public string Comment { get; set; }
 
+    public int ProductionStepAssignmentStatusId { get; set; }
+
     public virtual OutsourceStepRequest OutsourceStepRequest { get; set; }
 
     public virtual ICollection<OutsourceStepRequestData> OutsourceStepRequestData { get; set; } = new List<OutsourceStepRequestData>();

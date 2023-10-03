@@ -13,7 +13,12 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Inv;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -153,7 +158,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCode)
              .MessageResourceFormatDatas(config.CustomGenCodeName)
              .ObjectId(obj.ObjectCustomGenCodeMappingId)
-             .JsonData(model.JsonSerialize())
+             .JsonData(model)
              .CreateLog();
 
 
@@ -210,7 +215,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                 await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.MapObjectGenCodeMulti)
                  .MessageResourceFormatDatas(item.Value.CustomGenCodeName)
                  .ObjectId(item.Key.ObjectCustomGenCodeMappingId)
-                 .JsonData(item.Key.JsonSerialize())
+                 .JsonData(item.Key)
                  .CreateLog();
 
             }
@@ -235,7 +240,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _objectGenCodeActivityLog.LogBuilder(() => ObjectGenCodeActivityLogMessage.DeleteMapObjectGenCode)
               .MessageResourceFormatDatas(objectName, info.ConfigObjectId > 0 ? (long?)info.ConfigObjectId : null)
               .ObjectId(objectCustomGenCodeMappingId)
-              .JsonData(info.JsonSerialize())
+              .JsonData(info)
               .CreateLog();
 
             return true;
@@ -429,6 +434,15 @@ namespace VErp.Services.Master.Service.Config.Implement
                         configObjectId: areaField.HrAreaFieldId,
                         targetObjectName: hrType.Title,
                         fieldName: areaField.HrAreaFieldTitle)
+                    );
+                    result.Add(
+                        GetObjectGenCodeMappingTypeModel(
+                        moduleTypeId: EnumModuleType.Organization,
+                        targeObjectTypeId: EnumObjectType.HrTypeRow,
+                        configObjectTypeId: EnumObjectType.HrArea,
+                        configObjectId: areaField.HrAreaId,
+                        targetObjectName: hrType.Title,
+                        fieldName: areaField.HrAreaTitle)
                     );
                 }
             }
@@ -637,9 +651,16 @@ namespace VErp.Services.Master.Service.Config.Implement
             result.Add(
              GetObjectGenCodeMappingTypeModel(
              moduleTypeId: EnumModuleType.Manufacturing,
-             targeObjectTypeId: EnumObjectType.OutsourceRequest,
-             fieldName: "Mã yêu cầu gia công")
+             targeObjectTypeId: EnumObjectType.OutsourceRequestPart,
+             fieldName: "Mã yêu cầu gia công chi tiết")
             );
+
+            result.Add(
+               GetObjectGenCodeMappingTypeModel(
+               moduleTypeId: EnumModuleType.Manufacturing,
+               targeObjectTypeId: EnumObjectType.OutsourceRequestStep,
+               fieldName: "Mã yêu cầu gia công công đoạn")
+              );
 
             result.Add(
                GetObjectGenCodeMappingTypeModel(

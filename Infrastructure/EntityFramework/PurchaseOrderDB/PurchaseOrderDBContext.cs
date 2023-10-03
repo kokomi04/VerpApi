@@ -541,18 +541,18 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.ProviderProductName).HasMaxLength(128);
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.PoAssignmentDetail).WithMany(p => p.PurchaseOrderDetail)
-                .HasForeignKey(d => d.PoAssignmentDetailId)
-                .HasConstraintName("FK_PurchaseOrderDetail_PoAssignmentDetail");
+            //entity.HasOne(d => d.PoAssignmentDetail).WithMany(p => p.PurchaseOrderDetail)
+            //    .HasForeignKey(d => d.PoAssignmentDetailId)
+            //    .HasConstraintName("FK_PurchaseOrderDetail_PoAssignmentDetail");
 
             entity.HasOne(d => d.PurchaseOrder).WithMany(p => p.PurchaseOrderDetail)
                 .HasForeignKey(d => d.PurchaseOrderId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_PurchaseOrderDetail_PurchaseOrder");
 
-            entity.HasOne(d => d.PurchasingSuggestDetail).WithMany(p => p.PurchaseOrderDetail)
-                .HasForeignKey(d => d.PurchasingSuggestDetailId)
-                .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
+            //entity.HasOne(d => d.PurchasingSuggestDetail).WithMany(p => p.PurchaseOrderDetail)
+            //    .HasForeignKey(d => d.PurchasingSuggestDetailId)
+            //    .HasConstraintName("FK_PurchaseOrderDetail_PurchasingSuggestDetail");
         });
 
         modelBuilder.Entity<PurchaseOrderDetailSubCalculation>(entity =>
@@ -704,9 +704,9 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.TaxInPercent).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.PurchasingRequestDetail).WithMany(p => p.PurchasingSuggestDetail)
-                .HasForeignKey(d => d.PurchasingRequestDetailId)
-                .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingRequestDetail");
+            //entity.HasOne(d => d.PurchasingRequestDetail).WithMany(p => p.PurchasingSuggestDetail)
+            //    .HasForeignKey(d => d.PurchasingRequestDetailId)
+            //    .HasConstraintName("FK_PurchasingSuggestDetail_PurchasingRequestDetail");
 
             entity.HasOne(d => d.PurchasingSuggest).WithMany(p => p.PurchasingSuggestDetail)
                 .HasForeignKey(d => d.PurchasingSuggestId)
@@ -879,11 +879,13 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
             entity.Property(e => e.DefaultValue).HasMaxLength(512);
             entity.Property(e => e.Filters).HasMaxLength(512);
+            entity.Property(e => e.FiltersName).HasMaxLength(255);
             entity.Property(e => e.InputStyleJson).HasMaxLength(512);
             entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
             entity.Property(e => e.Placeholder).HasMaxLength(128);
             entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
             entity.Property(e => e.RegularExpression).HasMaxLength(256);
+            entity.Property(e => e.RequireFiltersName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
             entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
 

@@ -30,7 +30,7 @@ namespace VErp.Commons.GlobalObject
         public string AreaCode { get; set; }
         public bool IsMultiRow { get; set; }
         public int Columns { get; set; }
-        public string SortOrder { get; set; }
+        public int SortOrder { get; set; }
         public IList<FieldStructureModel> Fields { get; set; }
         public AreaStructureModel()
         {
@@ -42,8 +42,8 @@ namespace VErp.Commons.GlobalObject
     {
         public string FieldTitle { get; set; }
         public string FieldCode { get; set; }
-        public string Column { get; set; }
-        public string SortOrder { get; set; }
+        public int Column { get; set; }
+        public int SortOrder { get; set; }
         public EnumFormType FormTypeId { get; set; }
         public EnumDataType DataTypeId { get; set; }
         public string RefTableCode { get; set; }

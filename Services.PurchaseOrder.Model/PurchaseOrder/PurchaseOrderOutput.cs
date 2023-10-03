@@ -48,6 +48,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public string DeliveryMethod { get; set; }
         public string PaymentMethod { get; set; }
         public string AttachmentBill { get; set; }
+        public EnumPurchaseOrderInputType? InputTypeSelectedState { get; set; }
+        public EnumPurchaseOrderInputUnitType? InputUnitTypeSelectedState { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList

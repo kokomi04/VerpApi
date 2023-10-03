@@ -153,6 +153,9 @@
   <data name="CustomerNameAlreadyExists" xml:space="preserve">
     <value>Tên đối tác "{0}" đã tồn tại</value>
   </data>
+  <data name="CustomerTaxIdAlreadyExists" xml:space="preserve">
+    <value>Mã số thuế "{0}" đã tồn tại</value>
+  </data>
   <data name="MultipleCustomerFound" xml:space="preserve">
     <value>Tồn tại nhiều đối tác "{0}" trong file excel</value>
   </data>

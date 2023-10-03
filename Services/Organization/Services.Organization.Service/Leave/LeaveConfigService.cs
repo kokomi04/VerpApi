@@ -99,7 +99,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveConfigActivityLogMessage.Create)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.LeaveConfigId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return info.LeaveConfigId;
@@ -127,7 +127,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveConfigActivityLogMessage.Delete)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.LeaveConfigId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
 
             return true;
@@ -242,7 +242,7 @@ namespace VErp.Services.Organization.Service.Leave
             await _leaveConfigActivityLog.LogBuilder(() => LeaveConfigActivityLogMessage.Update)
                 .MessageResourceFormatDatas(info.Title)
                 .ObjectId(info.LeaveConfigId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return true;
         }

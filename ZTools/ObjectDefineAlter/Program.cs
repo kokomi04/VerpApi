@@ -266,7 +266,14 @@ namespace ObjectDefineAlter
 
             var objName = NormalizeObjectName(db, schema, name);
 
-            if (!objectDefines.ContainsKey(objName) && !name.ToLower().EndsWith("_bak") && !name.ToLower().EndsWith("_old") && !name.ToLower().StartsWith("test") && !name.ToLower().Contains("diagram"))
+            if (!objectDefines.ContainsKey(objName)
+                && !name.ToLower().EndsWith("_bak")
+                && !name.ToLower().EndsWith("_old")
+                && !name.ToLower().StartsWith("test")
+                && !name.ToLower().Contains("diagram")
+                && !name.ToLower().StartsWith("v_EmployeeSalary_".ToLower())
+
+                )
             {
                 objectDefines.Add(objName, new DataDefine()
                 {

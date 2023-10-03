@@ -27,7 +27,7 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpGet]
         [Route("DepartmentHandoverByDate")]
-        public async Task<PageData<ProductionHandoverReceiptByDateModel>> GetDepartmentHandovers([FromQuery] IList<long> fromDepartmentIds, [FromQuery] IList<long> toDepartmentIds, [FromQuery] IList<long> fromStepIds, [FromQuery] IList<long> toStepIds, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish, [FromQuery] int page, [FromQuery] int size)
+        public async Task<PageData<ProductionHandoverReceiptByDateModel>> GetDepartmentHandoversByDate([FromQuery] IList<long> fromDepartmentIds, [FromQuery] IList<long> toDepartmentIds, [FromQuery] IList<long> fromStepIds, [FromQuery] IList<long> toStepIds, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish, [FromQuery] int page, [FromQuery] int size)
         {
             return await _productionHandoverReceiptService.GetDepartmentHandoversByDate(fromDepartmentIds, toDepartmentIds, fromStepIds, toStepIds, fromDate, toDate, isInFinish, isOutFinish, page, size);
         }
@@ -146,15 +146,17 @@ namespace VErpApi.Controllers.Manufacturing
 
         [HttpPost]
         [Route("patch")]
-        public async Task<bool> CreateProductionHandoverPatch([FromBody] IList<ProductionHandoverReceiptModel> data)
+        public async Task<bool> CreateBatch([FromBody] IList<ProductionHandoverReceiptModel> data)
         {
             return await _productionHandoverReceiptService.CreateBatch(data);
         }
+
         [HttpPost]
         [Route("")]
-        public async Task<long> CreateProductionHandoverReceipt([FromBody] ProductionHandoverReceiptModel data)
+        public async Task<long> Create([FromBody] ProductionHandoverReceiptModel data)
         {
             return await _productionHandoverReceiptService.Create(data);
         }
+
     }
 }

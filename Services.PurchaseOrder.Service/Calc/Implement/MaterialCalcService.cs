@@ -17,7 +17,8 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -73,6 +74,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
          o.TotalOrderProductQuantity,
          o.OrderCodes,
          r.PurchasingRequestId,
+         CONVERT(BIT, CASE WHEN r.PurchasingRequestId>0 THEN 1 ELSE 0 END) IsPurchasingRequestCreated,
          r.PurchasingRequestCode
     FROM dbo.MaterialCalc c
         JOIN dbo.MaterialCalcProduct d ON c.MaterialCalcId = d.MaterialCalcId
@@ -218,7 +220,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
                 await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Create)
                     .MessageResourceFormatDatas(entity.MaterialCalcCode)
                     .ObjectId(entity.MaterialCalcId)
-                    .JsonData(req.JsonSerialize())
+                    .JsonData(req)
                     .CreateLog();
 
                 return entity.MaterialCalcId;
@@ -237,7 +239,6 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
 
             var info = _mapper.Map<MaterialCalcModel>(entity);
             info.PurchasingRequestId = requestInfo?.PurchasingRequestId;
-            info.PurchasingRequestCode = requestInfo?.PurchasingRequestCode;
             return info;
         }
 
@@ -274,7 +275,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Update)
                 .MessageResourceFormatDatas(entity.MaterialCalcCode)
                 .ObjectId(entity.MaterialCalcId)
-                .JsonData(req.JsonSerialize())
+                .JsonData(req)
                 .CreateLog();
 
             return true;
@@ -292,7 +293,7 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
             await _materialCalcActivityLog.LogBuilder(() => MaterialCalcActivityLogMessage.Delete)
                .MessageResourceFormatDatas(entity.MaterialCalcCode)
                .ObjectId(entity.MaterialCalcId)
-               .JsonData(entity.JsonSerialize())
+               .JsonData(entity)
                .CreateLog();
 
             return true;

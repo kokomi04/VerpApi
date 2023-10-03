@@ -70,6 +70,24 @@ namespace VErp.Services.Stock.Model.Inventory
         public IList<MappingInputBillModel> InputBills { get; set; }
     }
 
+    public class InventoryListProductOutput: InventoryListOutput
+    {
+        public long InventoryDetailId { get; set; }
+        public int ProductId { get; set; }
+        public string ProductCode { get; set; }
+        public string ProductName { get; set; }
+        public int UnitId { get; set; }
+        public string UnitName { get; set; }
+        public int ProductUnitConversionId { set; get; }
+        public string ProductUnitConversionName { set; get; }
+        public decimal PrimaryQuantity { get; set; }
+        public decimal ProductUnitConversionQuantity { get; set; }
+        public string PoCode { get; set; }
+        public string OrderCode { get; set; }
+        public string ProductionOrderCode { get; set; }
+    }
+
+
     public class InventoryOutput: InventoryListOutput
     {
         public InventoryOutput()
@@ -86,6 +104,8 @@ namespace VErp.Services.Stock.Model.Inventory
     public class MappingInputBillModel
     {
         //public string MappingFunctionKey { get; set; }
+        public string SourceBillCode { get; set; }
+        public string SoCt { get; set; }
         public int InputTypeId { get; set; }
         public string InputType_Title { get; set; }
         //public string SourceId { get; set; }

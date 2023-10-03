@@ -37,6 +37,8 @@ public partial class InputArea
 
     public string ColumnStyles { get; set; }
 
+    public bool IsGeneratedArea { get; set; }
+
     public virtual ICollection<InputAreaField> InputAreaField { get; set; } = new List<InputAreaField>();
 
     public virtual InputType InputType { get; set; }

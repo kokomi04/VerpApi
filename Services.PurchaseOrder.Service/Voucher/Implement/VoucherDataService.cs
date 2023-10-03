@@ -30,7 +30,8 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -560,7 +561,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                  .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                  .BillTypeId(voucherTypeId)
                  .ObjectId(billInfo.FId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
                 return billInfo.FId;
@@ -857,7 +858,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
+                        throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, 
+                            new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -876,14 +878,15 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             Clause filterClause = JsonConvert.DeserializeObject<Clause>(field.RequireFilters);
                             if (filterClause != null && !(await CheckRequireFilter(filterClause, info, rows, voucherAreaFields, sfValues, rowIndx - 1)))
                             {
-                                continue;
+                                    continue;
                             }
                         }
 
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(VoucherErrorCode.RequiredFieldIsEmpty, new object[] { rowIndx, field.Title });
+                            throw new BadRequestException(VoucherErrorCode.RequireValueNotValidFilter, 
+                                new object[] { rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }
@@ -1090,7 +1093,9 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", field.Title + ": " + value });
+                    throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, 
+                        new object[] { rowIndex.HasValue ? rowIndex.ToString() : "thông tin chung", 
+                            field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -1280,7 +1285,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                 .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                 .BillTypeId(voucherTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
                 return true;
@@ -1502,7 +1507,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                          .MessageResourceFormatDatas(voucherTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
                          .BillTypeId(voucherTypeId)
                          .ObjectId(bill.FId)
-                         .JsonData(new { voucherTypeId, fieldName, oldValue, newValue, billIds }.JsonSerialize().JsonSerialize())
+                         .JsonData(new { voucherTypeId, fieldName, oldValue, newValue, billIds })
                          .CreateLog();
 
                         // Update last bill version
@@ -1550,7 +1555,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var voucherTypeInfo = await _purchaseOrderDBContext.VoucherType.AsNoTracking().FirstOrDefaultAsync(t => t.VoucherTypeId == voucherTypeId);
             if (voucherTypeInfo == null) throw VoucherTypeNotFound.BadRequest();
             var info = _mapper.Map<VoucherTypeExecData>(voucherTypeInfo);
-            info.GlobalSetting = global;
+            info.SetGlobalSetting(global);
             return info;
         }
 
@@ -1648,7 +1653,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         .MessageResourceFormatDatas(voucherTypeInfo.Title, billInfo.BillCode)
                         .BillTypeId(voucherTypeId)
                         .ObjectId(billInfo.FId)
-                        .JsonData(data.JsonSerialize().JsonSerialize())
+                        .JsonData(data)
                         .CreateLog();
 
                 await _outsideMappingHelperService.MappingObjectDelete(EnumObjectType.VoucherBill, billInfo.FId);
@@ -2042,6 +2047,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     IsAutoIncrement = af.IsAutoIncrement,
                                     IsRequire = af.IsRequire,
                                     IsUnique = af.IsUnique,
+                                    FiltersName = af.FiltersName,
                                     Filters = af.Filters,
                                     FieldName = f.FieldName,
                                     DataTypeId = f.DataTypeId,
@@ -2051,6 +2057,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                                     RefTableTitle = f.RefTableTitle,
                                     RegularExpression = af.RegularExpression,
                                     IsMultiRow = a.IsMultiRow,
+                                    RequireFiltersName = af.RequireFiltersName,
                                     RequireFilters = af.RequireFilters,
                                     IsReadOnly = f.IsReadOnly,
                                     IsHidden = af.IsHidden,
@@ -2448,7 +2455,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                     {
                         if (!DateTime.TryParse(strValue, out DateTime date))
                             throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(originValue?.JsonSerialize(), row.Index, field.Title);
-                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
+                        value = date.Date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
                         strValue = value?.ToString();
                     }
 
@@ -2565,7 +2572,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue });
+                                throw new BadRequestException(VoucherErrorCode.ReferValueNotValidFilter, 
+                                    new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];
@@ -2604,7 +2612,8 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
                         }
                     }
                 }
-                rows.Add(mapRow);
+                if (mapRow.Count > 0)
+                    rows.Add(mapRow);
             }
             var billInfo = new BillInfoModel
             {
@@ -3073,6 +3082,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public bool IsAutoIncrement { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public int DataTypeId { get; set; }
@@ -3083,6 +3093,7 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
             public bool IsReadOnly { get; set; }
             public bool IsHidden { get; set; }

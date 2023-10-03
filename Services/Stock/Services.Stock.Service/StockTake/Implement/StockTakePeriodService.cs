@@ -16,7 +16,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -112,7 +112,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.Create)
                  .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                  .ObjectId(stockTakePeriod.StockTakePeriodId)
-                 .JsonData(model.JsonSerialize())
+                 .JsonData((model))
                  .CreateLog();
 
                 return model;
@@ -184,7 +184,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.Delete)
                  .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                  .ObjectId(stockTakePeriod.StockTakePeriodId)
-                 .JsonData(stockTakePeriod.JsonSerialize())
+                 .JsonData(stockTakePeriod)
                  .CreateLog();
 
                 return true;
@@ -416,7 +416,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.Update)
                  .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                  .ObjectId(stockTakePeriod.StockTakePeriodId)
-                 .JsonData(model.JsonSerialize())
+                 .JsonData(model)
                  .CreateLog();
 
 
@@ -522,7 +522,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.UpdateAcceptanceCerfificate)
                    .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                    .ObjectId(stockTakePeriod.StockTakePeriodId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
 
                 return model;
@@ -587,7 +587,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.ConfirmAcceptanceCerfificate)
                  .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                  .ObjectId(stockTakePeriod.StockTakePeriodId)
-                 .JsonData(status.JsonSerialize())
+                 .JsonData((status))
                  .CreateLog();
 
 
@@ -630,7 +630,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _periodActivityLog.LogBuilder(() => StockTakePeriodActivityLogMessage.DeleteAcceptanceCerfificate)
                     .MessageResourceFormatDatas(stockTakePeriod.StockTakePeriodCode)
                     .ObjectId(stockTakePeriod.StockTakePeriodId)
-                    .JsonData(acceptanceCertificate.JsonSerialize())
+                    .JsonData((acceptanceCertificate))
                     .CreateLog();
 
 

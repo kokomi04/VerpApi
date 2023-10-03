@@ -24,14 +24,13 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string OrderCodes { get; set; }
         public decimal? TotalOrderProductQuantity { get; set; }
 
-        public bool IsPurchasingRequestCreated { get { return PurchasingRequestId > 0; } }
+        public bool IsPurchasingRequestCreated { get; set; }
         public long? PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
+        //public string PurchasingRequestCode { get; set; }
     }
     public class MaterialCalcModel : MaterialCalcBasicModel, IMapFrom<MaterialCalc>
     {
         public long? PurchasingRequestId { get; set; }
-        public string PurchasingRequestCode { get; set; }
 
         public IList<MaterialCalcConsumptionGroupModel> ConsumptionGroups { get; set; }
         public IList<MaterialCalcProductModel> Products { get; set; }

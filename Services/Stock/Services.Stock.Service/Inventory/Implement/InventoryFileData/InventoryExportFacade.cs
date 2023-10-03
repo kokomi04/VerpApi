@@ -10,7 +10,9 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Inv;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Services.Stock.Model.Inventory;
 
 namespace VErp.Services.Stock.Service.Stock.Implement.InventoryFileData

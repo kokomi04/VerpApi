@@ -20,12 +20,15 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
 using VErp.Services.Stock.Model.Product;
+using VErp.Services.Stock.Model.Product.Partial;
 using VErp.Services.Stock.Model.Stock;
 using VErp.Services.Stock.Service.FileResources;
 using VErp.Services.Stock.Service.Inventory.Implement.Abstract;
@@ -124,7 +127,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
                       .MessageResourceFormatDatas(req.ProductCode)
                       .ObjectId(productId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
                 return productId;
@@ -212,7 +215,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CreateProductPart)
                       .MessageResourceFormatDatas(req.ProductCode)
                       .ObjectId(productInfo.ProductId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
                 return req;
             }
@@ -585,7 +588,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Update)
                           .MessageResourceFormatDatas(req.ProductCode)
                           .ObjectId(productInfo.ProductId)
-                          .JsonData(req.JsonSerialize())
+                          .JsonData(req)
                           .CreateLog();
                 }
                 catch (Exception)
@@ -786,7 +789,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Delete)
                           .MessageResourceFormatDatas(productInfo.ProductCode)
                           .ObjectId(productInfo.ProductId)
-                          .JsonData(productInfo.JsonSerialize())
+                          .JsonData(productInfo)
                           .CreateLog();
                     return true;
                 }
@@ -1183,7 +1186,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
         }
 
-        public CategoryNameModel GetFieldMappings()
+        public CategoryNameModel GetFieldMappings(bool isExport)
         {
             var result = new CategoryNameModel()
             {
@@ -1194,7 +1197,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>();
+            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>(null,isExport);
             result.Fields = fields;
             return result;
         }
@@ -1281,7 +1284,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.Create)
                           .MessageResourceFormatDatas(req.ProductCode)
                           .ObjectId(productId)
-                          .JsonData(req.JsonSerialize())
+                          .JsonData(req)
                           .CreateLog();
 
                     await _manufacturingHelperService.CopyProductionProcess(EnumContainerType.Product, sourceProductId, productId);
@@ -1329,7 +1332,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyBom)
                         .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
                         .ObjectId(destProductId)
-                        .JsonData(bom.JsonSerialize())
+                        .JsonData(bom)
                         .CreateLog();
 
                     return destProductId;
@@ -1375,7 +1378,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.CopyConsumption)
                         .MessageResourceFormatDatas(sourceProduct.ProductCode, desProduct.ProductCode)
                         .ObjectId(destProductId)
-                        .JsonData(consum.JsonSerialize())
+                        .JsonData(consum)
                         .CreateLog();
 
                     return destProductId;
@@ -1421,6 +1424,32 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 new SqlParameter("@IsCheckExistOnly", SqlDbType.Bit){ Value  = isCheckExistOnly }
             };
             return await _stockDbContext.QueryListProc<ObjectBillInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
+        }
+
+        public async Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog =false)
+        {
+            using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
+            {
+                var productInfo = await _stockDbContext.Product.FirstOrDefaultAsync(p => p.ProductId == processStatus.ProductId);
+                if (productInfo == null)
+                {
+                    throw new BadRequestException(ProductErrorCode.ProductNotFound);
+                }
+
+                productInfo.ProductionProcessStatusId = (int)processStatus.ProcessStatus;
+
+                await _stockDbContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+                if (isSaveLog)
+                    await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.UpdateProcessInfo)
+                  .MessageResourceFormatDatas(productInfo.ProductCode)
+                  .ObjectId(processStatus.ProductId)
+                  .JsonData(productInfo)
+                  .CreateLog();
+
+                return true;
+            }
         }
 
     }

@@ -23,6 +23,7 @@ namespace VErp.Commons.Enums.ErrorCodes.PO
         PrimaryQuanityGreaterThanQuantityRequirment = 7,
 
         ExcessNotFound = 8,
+
         PrimaryQuantityLessThanAllocateQuantity = 9,
     }
 }

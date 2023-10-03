@@ -15,7 +15,7 @@ using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Stock.Model.StockTake;
@@ -105,7 +105,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Create)
                 .MessageResourceFormatDatas(stockTake.StockTakeCode)
                 .ObjectId(stockTake.StockTakeId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
                 return model;
             }
@@ -227,7 +227,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Update)
                    .MessageResourceFormatDatas(stockTake.StockTakeCode)
                    .ObjectId(stockTake.StockTakeId)
-                   .JsonData(model.JsonSerialize())
+                   .JsonData(model)
                    .CreateLog();
 
                 return model;
@@ -333,7 +333,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Delete)
                    .MessageResourceFormatDatas(stockTake.StockTakeCode)
                    .ObjectId(stockTake.StockTakeId)
-                   .JsonData(stockTake.JsonSerialize())
+                   .JsonData(stockTake)
                    .CreateLog();
 
                 return true;
@@ -374,7 +374,7 @@ namespace VErp.Services.Stock.Service.StockTake.Implement
                 await _stockTakeActivityLog.LogBuilder(() => StockTakeActivityLogMessage.Approve)
                  .MessageResourceFormatDatas(stockTake.StockTakeCode)
                  .ObjectId(stockTake.StockTakeId)
-                 .JsonData(stockTake.JsonSerialize())
+                 .JsonData(stockTake)
                  .CreateLog();
 
                 return true;

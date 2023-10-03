@@ -61,6 +61,14 @@ namespace VErpApi.Controllers.Organization.Hr
         }
 
         [HttpPost]
+        [VErpAction(EnumActionType.View)]
+        [Route("{hrTypeId}/GetByIds")]
+        public async Task<Dictionary<long, NonCamelCaseDictionary>> GetByIds([FromRoute] int hrTypeId, [FromBody] IList<long> fIds)
+        {
+            return await _hrDataService.GetByIds(hrTypeId, fIds).ConfigureAwait(true);
+        }
+
+        [HttpPost]
         [Route("{hrTypeId}")]
         public async Task<long> CreateBill([FromRoute] int hrTypeId, [FromBody] NonCamelCaseDictionary<IList<NonCamelCaseDictionary>> data)
         {

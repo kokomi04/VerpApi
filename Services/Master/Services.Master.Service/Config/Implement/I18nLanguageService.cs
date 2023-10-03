@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Cache.Caching;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.MasterDB;
@@ -28,12 +29,14 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly MasterDBContext _masterDbContext;
         private readonly IMapper _mapper;
         private readonly IActivityLogService _activityLogService;
-
-        public I18nLanguageService(MasterDBContext masterDbContext, IMapper mapper, IActivityLogService activityLogService)
+        private readonly ICachingService _cachingService;
+        private const string i18nCacheTag = "i18n";
+        public I18nLanguageService(MasterDBContext masterDbContext, IMapper mapper, IActivityLogService activityLogService, ICachingService cachingService)
         {
             _masterDbContext = masterDbContext;
             _mapper = mapper;
             _activityLogService = activityLogService;
+            _cachingService = cachingService;
         }
 
         public async Task<PageData<I18nLanguageModel>> SearchI18n(string keyword, int size, int page)
@@ -53,24 +56,28 @@ namespace VErp.Services.Master.Service.Config.Implement
 
         public async Task<NonCamelCaseDictionary> GetI18nByLanguage(string language)
         {
-            return (await _masterDbContext.I18nLanguage.ToListAsync())
-            .GroupBy(x => x.Key)
-            .Select(x => x.First())
-            .ToNonCamelCaseDictionary(k => k.Key, v =>
+            return await _cachingService.TryGetSet(i18nCacheTag, "languge_" + language, TimeSpan.FromDays(7), async () =>
             {
-                Type type = v.GetType();
-                var property = type.GetProperties().FirstOrDefault(x => x.Name.ToLower() == language.ToLower());
-                if (property != null)
-                {
-                    var value = property.GetValue(v, null);
+                return (await _masterDbContext.I18nLanguage.ToListAsync())
+                    .GroupBy(x => x.Key)
+                    .Select(x => x.First())
+                    .ToNonCamelCaseDictionary(k => k.Key, v =>
+                    {
+                        Type type = v.GetType();
+                        var property = type.GetProperties().FirstOrDefault(x => x.Name.ToLower() == language.ToLower());
+                        if (property != null)
+                        {
+                            var value = property.GetValue(v, null);
 
-                    if (null == value || string.IsNullOrEmpty(value.ToString())) value = v.Key;
+                            if (null == value || string.IsNullOrEmpty(value.ToString())) value = v.Key;
 
-                    return value;
-                }
+                            return value;
+                        }
 
-                return v.Key;
+                        return v.Key;
+                    });
             });
+
         }
 
         public async Task<long> AddMissingKeyI18n(string key)
@@ -86,7 +93,9 @@ namespace VErp.Services.Master.Service.Config.Implement
                 //En = $"{key} (En)"
             };
 
-            return await AddI18n(model);
+            var r = await AddI18n(model);
+            _cachingService.TryRemoveByTag(i18nCacheTag);
+            return r;
         }
 
         public async Task<long> AddI18n(I18nLanguageModel model)
@@ -100,6 +109,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             _masterDbContext.I18nLanguage.Add(entity);
 
             await _masterDbContext.SaveChangesAsync();
+
+            _cachingService.TryRemoveByTag(i18nCacheTag);
 
             return entity.I18nLanguageId;
         }
@@ -123,6 +134,8 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             await _masterDbContext.SaveChangesAsync();
 
+            _cachingService.TryRemoveByTag(i18nCacheTag);
+
             return true;
         }
 
@@ -135,6 +148,8 @@ namespace VErp.Services.Master.Service.Config.Implement
             existsI18n.IsDeleted = true;
 
             await _masterDbContext.SaveChangesAsync();
+
+            _cachingService.TryRemoveByTag(i18nCacheTag);
 
             return true;
         }

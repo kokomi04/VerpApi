@@ -58,7 +58,7 @@ namespace VErp.Services.Master.Service.Notification
             //             };
             var query = _activityLogContext.Notification.Where(x => x.UserId == _currentContextService.UserId);
 
-            return await query.AsNoTracking().OrderBy(x => x.CreatedDatetimeUtc).ProjectTo<NotificationModel>(_mapper.ConfigurationProvider).ToListAsync();
+            return await query.AsNoTracking().OrderBy(x => x.IsRead).ThenByDescending(x => x.CreatedDatetimeUtc).ProjectTo<NotificationModel>(_mapper.ConfigurationProvider).Take(100).ToListAsync();
         }
 
         public async Task<long> GetCountNotification()

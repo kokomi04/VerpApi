@@ -47,7 +47,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _packageCustomPropertyActivityLog.LogBuilder(() => PackageCustomPropertyActivityLogMessage.Create)
               .MessageResourceFormatDatas(model.Title)
               .ObjectId(info.PackageCustomPropertyId)
-              .JsonData(model.JsonSerialize())
+              .JsonData(model)
               .CreateLog();
 
             return info.PackageCustomPropertyId;
@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _packageCustomPropertyActivityLog.LogBuilder(() => PackageCustomPropertyActivityLogMessage.Delete)
               .MessageResourceFormatDatas(info.Title)
               .ObjectId(info.PackageCustomPropertyId)
-              .JsonData(info.JsonSerialize())
+              .JsonData(info)
               .CreateLog();
 
             return true;
@@ -109,7 +109,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _packageCustomPropertyActivityLog.LogBuilder(() => PackageCustomPropertyActivityLogMessage.Delete)
               .MessageResourceFormatDatas(info.Title)
               .ObjectId(info.PackageCustomPropertyId)
-              .JsonData(info.JsonSerialize())
+              .JsonData(info)
               .CreateLog();
 
             return true;

@@ -108,7 +108,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarCreate)
                 .MessageResourceFormatDatas(calendar.CalendarCode, time, department.DepartmentCode)
                 .ObjectId(department.DepartmentId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
                 return data;
@@ -172,7 +172,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarUpdate)
                    .MessageResourceFormatDatas(calendar.CalendarCode, time, department.DepartmentCode)
                    .ObjectId(department.DepartmentId)
-                   .JsonData(data.JsonSerialize())
+                   .JsonData(data)
                    .CreateLog();
                 return data;
             }
@@ -213,7 +213,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentCalendarDelete)
                  .MessageResourceFormatDatas(calendar?.CalendarCode, time, department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(departmentCalendar.JsonSerialize())
+                 .JsonData(departmentCalendar)
                  .CreateLog();
                 return true;
             }
@@ -568,7 +568,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourCreate)
                    .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
                    .ObjectId(department.DepartmentId)
-                   .JsonData(data.JsonSerialize())
+                   .JsonData(data)
                    .CreateLog();
 
                 return data;
@@ -602,7 +602,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourUpdate)
                  .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
                 return data;
@@ -647,7 +647,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourCreate)
                           .MessageResourceFormatDatas(currentOverHour.StartDate, currentOverHour.EndDate, departmentInfo.DepartmentCode)
                           .ObjectId(departmentInfo.DepartmentId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
 
                     }
@@ -659,7 +659,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourUpdate)
                           .MessageResourceFormatDatas(currentOverHour.StartDate, currentOverHour.EndDate, departmentInfo.DepartmentCode)
                           .ObjectId(departmentInfo.DepartmentId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
                     }
                 }
@@ -699,7 +699,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentOverHourDelete)
                   .MessageResourceFormatDatas(overHour.StartDate, overHour.EndDate, department.DepartmentCode)
                   .ObjectId(department.DepartmentId)
-                  .JsonData(overHour.JsonSerialize())
+                  .JsonData(overHour)
                   .CreateLog();
 
                 return true;
@@ -763,7 +763,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseCreate)
                    .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
                    .ObjectId(department.DepartmentId)
-                   .JsonData(data.JsonSerialize())
+                   .JsonData(data)
                    .CreateLog();
 
                 return data;
@@ -799,7 +799,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseUpdate)
                  .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
                  .ObjectId(department.DepartmentId)
-                 .JsonData(data.JsonSerialize())
+                 .JsonData(data)
                  .CreateLog();
 
                 return data;
@@ -841,7 +841,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseCreate)
                           .MessageResourceFormatDatas(currentIncrease.StartDate, currentIncrease.EndDate, departmentInfo.DepartmentCode)
                           .ObjectId(departmentInfo.DepartmentId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
 
                     }
@@ -853,7 +853,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseUpdate)
                           .MessageResourceFormatDatas(currentIncrease.StartDate, currentIncrease.EndDate, departmentInfo.DepartmentCode)
                           .ObjectId(departmentInfo.DepartmentId)
-                          .JsonData(model.JsonSerialize())
+                          .JsonData(model)
                           .CreateLog();
                     }
                 }
@@ -892,7 +892,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                 await _departmentActivityLog.LogBuilder(() => DepartmentActivityLogMessage.DepartmentIncreaseDelete)
                   .MessageResourceFormatDatas(increase.StartDate, increase.EndDate, department.DepartmentCode)
                   .ObjectId(department.DepartmentId)
-                  .JsonData(increase.JsonSerialize())
+                  .JsonData(increase)
                   .CreateLog();
 
                 return true;

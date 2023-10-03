@@ -33,6 +33,8 @@ public partial class HrAreaField
 
     public string DefaultValue { get; set; }
 
+    public string FiltersName { get; set; }
+
     public string Filters { get; set; }
 
     public int? Width { get; set; }
@@ -69,6 +71,8 @@ public partial class HrAreaField
 
     public DateTime? DeletedDatetimeUtc { get; set; }
 
+    public string RequireFiltersName { get; set; }
+
     public string RequireFilters { get; set; }
 
     public string ReferenceUrl { get; set; }
@@ -90,4 +94,5 @@ public partial class HrAreaField
     public virtual HrField HrField { get; set; }
 
     public virtual HrType HrType { get; set; }
+
 }

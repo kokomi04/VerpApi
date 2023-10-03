@@ -37,21 +37,21 @@ namespace VErpApi.Controllers.Stock.Inventory
             [FromQuery] bool? hasInventory,
             [FromBody] Clause filters = null)
         {
-            return await _inventoryRequirementService.GetListInventoryRequirements(inventoryType, keyword, page, size, orderByFieldName, asc, hasInventory, filters).ConfigureAwait(true);
+            return await _inventoryRequirementService.GetList(inventoryType, keyword, page, size, orderByFieldName, asc, hasInventory, filters).ConfigureAwait(true);
         }
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/code")]
         public async Task<long> GetInventoryRequirementIdByCode([FromRoute] EnumInventoryType inventoryType, [FromQuery] string inventoryRequirementCode)
         {
-            return await _inventoryRequirementService.GetInventoryRequirementId(inventoryType, inventoryRequirementCode);
+            return await _inventoryRequirementService.GetIdByCode(inventoryType, inventoryRequirementCode);
         }
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
         public async Task<InventoryRequirementOutputModel> GetInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
-            return await _inventoryRequirementService.GetInventoryRequirement(inventoryType, inventoryRequirementId);
+            return await _inventoryRequirementService.Info(inventoryType, inventoryRequirementId);
         }
 
 
@@ -60,28 +60,28 @@ namespace VErpApi.Controllers.Stock.Inventory
         [Route("types/{inventoryTypeId}/GetByIds")]
         public async Task<IList<InventoryRequirementOutputModel>> GetByIds([FromRoute] EnumInventoryType inventoryTypeId, [FromBody] IList<long> inventoryRequirementIds)
         {
-            return await _inventoryRequirementService.GetRequirements(inventoryTypeId, inventoryRequirementIds);
+            return await _inventoryRequirementService.GetByIds(inventoryTypeId, inventoryRequirementIds);
         }
 
         [HttpPost]
         [Route("inventorytype/{inventoryType}")]
         public async Task<long> AddInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromBody] InventoryRequirementInputModel req)
         {
-            return await _inventoryRequirementService.AddInventoryRequirement(inventoryType, req);
+            return await _inventoryRequirementService.Create(inventoryType, req);
         }
 
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
         public async Task<long> UpdateInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] InventoryRequirementInputModel req)
         {
-            return await _inventoryRequirementService.UpdateInventoryRequirement(inventoryType, inventoryRequirementId, req);
+            return await _inventoryRequirementService.Update(inventoryType, inventoryRequirementId, req);
         }
 
         [HttpDelete]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}")]
         public async Task<bool> DeleteInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
-            return await _inventoryRequirementService.DeleteInventoryRequirement(inventoryType, inventoryRequirementId);
+            return await _inventoryRequirementService.Delete(inventoryType, inventoryRequirementId);
         }
 
         [HttpPut]
@@ -89,27 +89,27 @@ namespace VErpApi.Controllers.Stock.Inventory
         [VErpAction(EnumActionType.Censor)]
         public async Task<bool> AcceptInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId, [FromBody] Dictionary<long, int> assignStocks)
         {
-            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted, assignStocks);
+            return await _inventoryRequirementService.Confirm(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Accepted, assignStocks);
         }
 
         [HttpPut]
         [Route("inventorytype/{inventoryType}/inventoryrequirement/{inventoryRequirementId}/reject")]
         [VErpAction(EnumActionType.Censor)]
-        public async Task<bool> RejectInventoryRequirement([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
+        public async Task<bool> Reject([FromRoute] EnumInventoryType inventoryType, [FromRoute] long inventoryRequirementId)
         {
-            return await _inventoryRequirementService.ConfirmInventoryRequirement(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Rejected);
+            return await _inventoryRequirementService.Confirm(inventoryType, inventoryRequirementId, EnumInventoryRequirementStatus.Rejected);
         }
 
         [HttpGet]
         [Route("inventorytype/{inventoryType}/inventoryrequirement")]
-        public async Task<InventoryRequirementOutputModel> GetSingleByProductionOrder([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
+        public async Task<InventoryRequirementOutputModel> GetByProductionOrderV1([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType? requirementType, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
         {
             return (await _inventoryRequirementService.GetByProductionOrder(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId, productionOrderMaterialSetId)).FirstOrDefault();
         }
 
         [HttpGet]
         [Route("inventoryType/{inventoryType}/GetByProductionOrder")]
-        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrder([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType requirementType, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
+        public async Task<IList<InventoryRequirementOutputModel>> GetByProductionOrderV2([FromRoute] EnumInventoryType inventoryType, [FromQuery] string productionOrderCode, [FromQuery] EnumInventoryRequirementType? requirementType, [FromQuery] int? productMaterialsConsumptionGroupId, [FromQuery] int? productionOrderMaterialSetId)
         {
             return await _inventoryRequirementService.GetByProductionOrder(inventoryType, productionOrderCode, requirementType, productMaterialsConsumptionGroupId, productionOrderMaterialSetId);
         }

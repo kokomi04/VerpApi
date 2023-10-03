@@ -1,24 +1,31 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Verp.Resources.Manafacturing.Production.Process;
+using Verp.Resources.Master.Config.ActionButton;
 using VErp.Commons.Enums.ErrorCodes;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
+using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.ManufacturingDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
 using VErp.Services.Manafacturing.Model.ProductionProcess;
@@ -33,7 +40,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
     public class ProductionProcessService : IProductionProcessService
     {
         private readonly ManufacturingDBContext _manufacturingDBContext;
-        private readonly IActivityLogService _activityLogService;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeStep;
+        private readonly ObjectActivityLogFacade _objActivityLogFacadeProcess;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IProductHelperService _productHelperService;
@@ -51,7 +59,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             , IProductionOrderQueueHelperService productionOrderQueueHelperService)
         {
             _manufacturingDBContext = manufacturingDB;
-            _activityLogService = activityLogService;
+            _objActivityLogFacadeStep = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionStep);
+            _objActivityLogFacadeProcess = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.ProductionProcess);
             _logger = logger;
             _mapper = mapper;
             _productHelperService = productHelperService;
@@ -76,8 +85,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, step.ProductionStepId,
-                        $"Tạo mới công đoạn {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
+                    await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.CreateStep)
+                            .MessageResourceFormatDatas(req.ProductionStepCode, req.ContainerTypeId.GetEnumDescription(), req.ContainerId)
+                            .ObjectId(step.ProductionStepId)
+                            .JsonData(req)
+                            .CreateLog();
                     return step.ProductionStepId;
                 }
                 catch (Exception ex)
@@ -118,8 +130,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _manufacturingDBContext.SaveChangesAsync();
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, productionStep.ProductionStepId,
-                        $"Xóa công đoạn {productionStep.ProductionStepId} của {((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription()} {productionStep.ContainerId}", productionStep);
+                    await _objActivityLogFacadeStep.LogBuilder(() => ActionButtonActivityLogMessage.Delete)
+                            .MessageResourceFormatDatas(productionStep.ProductionStepCode, ((EnumContainerType)productionStep.ContainerTypeId).GetEnumDescription(), productionStep.ContainerId)
+                            .ObjectId(productionStep.ProductionStepId)
+                            .JsonData(productionStep)
+                            .CreateLog();
                     return true;
                 }
                 catch (Exception ex)
@@ -655,7 +670,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                             CoordinateY = maxY + step.CoordinateY,
                             SortOrder = step.SortOrder,
                             IsFinish = step.IsFinish,
-                            Comment =step.Comment
+                            Comment = step.Comment
                         };
                         if (newStep.CoordinateY.GetValueOrDefault() > newMaxY) newMaxY = newStep.CoordinateY.GetValueOrDefault();
                         if (step.ParentId.HasValue)
@@ -773,7 +788,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
-                await UpdateStatusValidForProductionOrder(EnumContainerType.ProductionOrder, productionOrderId, (await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId)));
+                await UpdateStatusValidForProductionOrder(productionOrderId);
 
                 await trans.CommitAsync();
 
@@ -925,8 +940,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     await trans.CommitAsync();
 
-                    await _activityLogService.CreateLog(EnumObjectType.ProductionStep, sProductionStep.ProductionStepId,
-                        $"Cập nhật công đoạn {sProductionStep.ProductionStepId} của {((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription()} {sProductionStep.ContainerId}", req);
+                    await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateDetail)
+                            .MessageResourceFormatDatas(sProductionStep.ProductionStepCode, ((EnumProductionProcess.EnumContainerType)sProductionStep.ContainerTypeId).GetEnumDescription(), sProductionStep.ContainerId)
+                            .ObjectId(sProductionStep.ProductionStepId)
+                            .JsonData(req)
+                            .CreateLog();
                     return true;
                 }
                 catch (Exception ex)
@@ -1022,8 +1040,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
             await _manufacturingDBContext.SaveChangesAsync();
 
-            await _activityLogService.CreateLog(EnumObjectType.ProductionStep, stepGroup.ProductionStepId,
-                        $"Tạo mới quy trình con {req.ProductionStepId} của {req.ContainerTypeId.GetEnumDescription()} {req.ContainerId}", req);
+            await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.Create)
+                            .MessageResourceFormatDatas(req.ProductionStepCode, req.ContainerTypeId.GetEnumDescription(), req.ContainerId)
+                            .ObjectId(stepGroup.ProductionStepId)
+                            .JsonData(req)
+                            .CreateLog();
             return stepGroup.ProductionStepId;
         }
 
@@ -1039,8 +1060,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
                 await _manufacturingDBContext.SaveChangesAsync();
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionStep, req.First().ProductionStepId,
-                        $"Cập nhật vị trí cho các công đoạn", req);
+
+                await _objActivityLogFacadeStep.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateStep)
+                           .ObjectId(req.First().ProductionStepId)
+                           .JsonData(req)
+                           .CreateLog();
                 return true;
             }
             catch (Exception ex)
@@ -1057,6 +1081,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (containerTypeId == EnumContainerType.Product)
+                {
+                    await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                    {
+                        ProductId = containerId,
+                        ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
+                    }, false);
+                }
+                ValidateTitleProductionProcess(req);
                 var info = await _manufacturingDBContext.ProductionContainer.FirstOrDefaultAsync(c => c.ContainerTypeId == (int)containerTypeId && c.ContainerId == containerId);
                 if (info == null)
                 {
@@ -1100,9 +1133,13 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     await _productHelperService.UpdateProductionProcessVersion(containerId);
 
                 await trans.CommitAsync();
-                await _activityLogService.CreateLog(EnumObjectType.ProductionProcess, req.ContainerId, "Cập nhật quy trình sản xuất", req);
 
-                if(containerTypeId== EnumContainerType.ProductionOrder)
+                await _objActivityLogFacadeProcess.LogBuilder(() => ProductionProcessActivityLogMessage.UpdateProcess)
+                           .ObjectId(req.ContainerId)
+                           .JsonData(req)
+                           .CreateLog();
+
+                if (containerTypeId == EnumContainerType.ProductionOrder)
                 {
                     var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == containerId);
                     await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrderInfo?.ProductionOrderCode, $"Cập nhật quy trình sản xuất");
@@ -1116,7 +1153,25 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 throw;
             }
         }
+        private void ValidateTitleProductionProcess(ProductionProcessModel req)
+        {
+            var groupTitle = req.ProductionSteps.Where(x=> x.IsGroup.HasValue && x.IsGroup.Value).GroupBy(x => x.Title);
+            var groupProcessTitle = groupTitle.Where(g => g.Count() > 1).Select(x=> x.Key).ToList();
+            if (groupProcessTitle.Count > 0)
+            {
+                throw new BadRequestException($"Tên công đoạn {string.Join(",", groupProcessTitle)} bị trùng." );
+            }
+            var groupChild = req.ProductionSteps.Where(x => x.IsGroup.HasValue && !x.IsGroup.Value).GroupBy(x => x.ParentCode);
+            foreach (var group in groupChild)
+            {
+                var childTitles = group.GroupBy(x => x.Title).Where(x=> x.Count() >1);
 
+                if (childTitles.Count() >0)
+                {
+                    throw new BadRequestException($"Tên {string.Join(",",childTitles.Select(x=>x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault()?.ParentCode)?.Title}.");
+                }
+            }
+        }
         public async Task<bool> DismissUpdateQuantity(long productionOrderId)
         {
             try
@@ -1161,10 +1216,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 }
                 else
                 {
-                    var remaingQuantity = d.QuantityOrigin - d.OutsourceQuantity - (d.OutsourcePartQuantity ?? 0) - d.ExportOutsourceQuantity;
-                    if (d.Quantity.SubProductionDecimal(remaingQuantity) != 0)
+                    var remaingQuantity = d.QuantityOrigin - d.OutsourceQuantity - (d.OutsourcePartQuantity ?? 0);// - d.ExportOutsourceQuantity;
+                    if (d.Quantity.SubProductionDecimal(remaingQuantity) != 0 && !isFromCopy)
                     {
                         throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải bằng số lượng ban đầu trừ các số lượng đi gia công!");
+                    }
+
+                    if (d.Quantity.SubProductionDecimal(d.ExportOutsourceQuantity) < 0 && !isFromCopy)
+                    {
+                        throw GeneralCode.InvalidParams.BadRequest("Lỗi xử lý quy trình sản xuất, Số lượng sản xuất phải lớn hơn số lượng xuất đi gia công!");
                     }
                 }
             }
@@ -1173,25 +1233,109 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 req.ProductionStepLinkDatas.Remove(d);
             }
 
+            var productionStepGroups = req.ProductionSteps.Where(x => x.IsGroup == true && !x.IsFinish).ToList();
+            var productionStepsInGroup = req.ProductionSteps.Where(x => x.IsGroup != true && !x.IsFinish).ToList();
 
-            if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
-
-            if (req.ProductionStepLinkDataRoles.GroupBy(x => new { x.ProductionStepCode, x.ProductionStepLinkDataCode, x.ProductionStepLinkDataRoleTypeId })
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkDataRole, "Xuất hiện role trùng nhau");
-
-            if (req.ProductionSteps.GroupBy(x => x.ProductionStepCode)
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Xuất hiện công đoạn trùng nhau mã code");
-
-            if (req.ProductionStepLinkDatas.GroupBy(x => x.ProductionStepLinkDataCode)
-                .Any(x => x.Count() > 1))
-                throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
-
-            if (req.ProductionOutsourcePartMappings == null)
+            productionStepGroups.Where(x => x.IsGroup == true).ToList().ForEach(x =>
             {
-                req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
+                if (!productionStepsInGroup.Any(t => t.ParentCode == x.ProductionStepCode) && !isFromCopy)
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{x.Title}\" chưa được thiết lập chi tiết công đoạn");
+            });
+
+            var groupRolesByStepCode = req.ProductionStepLinkDataRoles.GroupBy(r => r.ProductionStepCode).ToDictionary(r => r.Key, r => r.ToList());
+
+            if (!isFromCopy)
+            {
+                foreach (var p in productionStepsInGroup)
+                {
+                    var step = productionStepGroups.FirstOrDefault(x => x.ProductionStepCode == p.ParentCode);
+                    if (step == null)
+                    {
+                        throw $"Công đoạn cha của công đoạn {p.Title} không tồn tại".BadRequest();
+                    }
+
+                    if (!groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
+                    {
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra đầu vào");
+                    }
+                    if (groupRolesByStepCode.ContainsKey(p.ProductionStepCode))
+                    {
+                        if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input))
+                        {
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu vào");
+                        }
+
+                        if (!groupRolesByStepCode[p.ProductionStepCode].Any(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output))
+                        {
+                            throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, $"Công đoạn \"{p.Title}\" trong nhóm công đoạn \"{step.Title}\" không có đầu ra");
+                        }
+                    }
+
+                }
+                if (req.ProductionSteps.Count() > 0 && req.ProductionSteps.Any(x => x.IsGroup == true && x.IsFinish == false && !x.StepId.HasValue))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Trong QTSX đang có công đoạn trắng. Cần thiết lập nó là công đoạn gì.");
+
+                if (req.ProductionStepLinkDataRoles.GroupBy(x => new { x.ProductionStepCode, x.ProductionStepLinkDataCode, x.ProductionStepLinkDataRoleTypeId })
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkDataRole, "Xuất hiện role trùng nhau");
+
+                if (req.ProductionSteps.GroupBy(x => x.ProductionStepCode)
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStep, "Xuất hiện công đoạn trùng nhau mã code");
+
+                if (req.ProductionStepLinkDatas.GroupBy(x => x.ProductionStepLinkDataCode)
+                    .Any(x => x.Count() > 1))
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
+
+                if (req.ProductionStepLinkDataRoles.Any(x=> req.ProductionStepLinkDatas.FirstOrDefault(d=> d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
+                {
+                    throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Trong stepLinkDataRoles tồn tại stepLinkDatas bằng rỗng!");
+                }
+
+                var inputRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Input);
+                var outRoles = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepLinkDataRoleTypeId == EnumProductionStepLinkDataRoleType.Output);
+
+                foreach (var pStep in req.ProductionSteps)
+                {
+                    var outs = req.ProductionStepLinkDataRoles.Where(r => r.ProductionStepCode == pStep.ProductionStepCode)
+                        .Select(o => new
+                        {
+                            o.ProductionStepLinkDataCode,
+                            Role = o.ProductionStepLinkDataRoleTypeId,
+                            LinkData = req.ProductionStepLinkDatas.FirstOrDefault(d => d.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode),
+                            FromProductionStepCode = outRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode,
+                            ToProductionStepCode = inputRoles.FirstOrDefault(r => r.ProductionStepLinkDataCode == o.ProductionStepLinkDataCode)?.ProductionStepCode
+                        }).ToList();
+
+                    var duplicateLink = outs.GroupBy(o => new
+                    {
+                        o.LinkData?.LinkDataObjectTypeId ,
+                        o.LinkData?.LinkDataObjectId ,
+                        o.FromProductionStepCode,
+                        o.ToProductionStepCode
+                    }).FirstOrDefault(o => o.Count() > 1);
+                    if (duplicateLink != null)
+                    {
+                        var fromProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.FromProductionStepCode);
+                        var toProductionStep = req.ProductionSteps.FirstOrDefault(d => d.ProductionStepCode == duplicateLink.Key.ToProductionStepCode);
+
+                        var fromProductionStepTitle = "Kho";
+                        if (fromProductionStep != null)
+                            fromProductionStepTitle = fromProductionStep.Title;
+
+                        var toProductionStepTitle = "Kho";
+                        if (toProductionStep != null)
+                            toProductionStepTitle = toProductionStep.Title;
+
+                        throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, $"Bàn giao giữa {fromProductionStepTitle} và {toProductionStepTitle} có mặt hàng trùng nhau");
+                    }
+
+                }
+
+                if (req.ProductionOutsourcePartMappings == null)
+                {
+                    req.ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>();
+                }
             }
 
             if (containerTypeId == EnumContainerType.ProductionOrder)
@@ -1329,12 +1473,16 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             if (containerTypeId == EnumContainerType.ProductionOrder)
             {
-                await UpdateStatusValidForProductionOrder(containerTypeId, containerId, req);
                 await ValidOutsourcePartRequest(containerId);
                 await ValidOutsourceStepRequest(containerId);
             }
 
             await _manufacturingDBContext.SaveChangesAsync();
+
+            if (containerTypeId == EnumContainerType.ProductionOrder)
+            {
+                await UpdateStatusValidForProductionOrder(containerId);
+            }
 
             // Xóa thông tin phân công, bàn giao, khai báo nhân công khi thay đổi quy trình
             if (containerTypeId == EnumContainerType.ProductionOrder)
@@ -1376,13 +1524,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await _manufacturingDBContext.SaveChangesAsync();
             }
+            if (containerTypeId == EnumContainerType.Product)
+            {
+                var productProcessModel = await GetProductionProcessByContainerId(containerTypeId, containerId);
+                if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productProcessModel)).Count() == 0)
+                {
+                    await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                    {
+                        ProductId = containerId,
+                        ProcessStatus = EnumProductionProcessStatus.Created
+                    }, true);
+                }
+                else await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                {
+                    ProductId = containerId,
+                    ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
+                }, true);
+            }
+
         }
 
-        private async Task UpdateStatusValidForProductionOrder(EnumContainerType containerTypeId, long containerId, ProductionProcessModel process)
+        private async Task UpdateStatusValidForProductionOrder(long productionOrderId)
         {
-            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == containerId);
+            var process = await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId);
+
+            var productionOrder = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(x => x.ProductionOrderId == productionOrderId);
             productionOrder.IsResetProductionProcess = true;
-            productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, process)).Count() > 0;
+            productionOrder.IsInvalid = (await _validateProductionProcessService.ValidateProductionProcess(EnumContainerType.ProductionOrder, productionOrderId, process)).Count() > 0;
 
             await _manufacturingDBContext.SaveChangesAsync();
         }
@@ -1798,12 +1966,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             await _manufacturingDBContext.SaveChangesAsync();
         }
 
-        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId, bool isValidateSourceProductionProcessExists = true)
         {
             var process = await GetProductionProcessByContainerId(containerTypeId, fromContainerId);
-
             var trans = await _manufacturingDBContext.Database.BeginTransactionAsync();
-
+            if (isValidateSourceProductionProcessExists && containerTypeId == EnumContainerType.Product)
+            {
+                if (process != null && process.ProductionStepLinkDataRoles.Count == 0)
+                    throw new BadRequestException($"Không thể copy vì mặt hàng chưa được thiết lập QTSX");
+            }
             try
             {
                 var semiIds = process.ProductionStepLinkDatas
@@ -1821,6 +1992,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 //remove outsource link
                 process.ProductionStepLinkDatas = process.ProductionStepLinkDatas.Where(d => d.ProductionStepLinkDataTypeId == EnumProductionStepLinkDataType.None).ToList();
+
+                // change id and unitId of last step
+                if (process.ContainerTypeId == EnumContainerType.Product)
+                {
+                    var currentProductInfo = await _productHelperService.GetProduct((int)toContainerId);
+                    process.ProductionStepLinkDatas.Where(p => p.LinkDataObjectId == fromContainerId && p.LinkDataObjectTypeId == EnumProductionStepLinkDataObjectType.Product).ToList().ForEach(x =>
+                    {
+                        x.LinkDataObjectId = toContainerId;
+                        x.UnitId = currentProductInfo.UnitId;
+                    });
+                }
 
                 //remove outsource step and outsource data from roles
                 process.ProductionStepLinkDataRoles = process.ProductionStepLinkDataRoles
@@ -2361,6 +2543,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             }
 
             return arrayNode;
+        }
+
+        public async Task<IList<ProductionProcessWarningMessage>> ValidateStatusProductionProcess(IList<int> productIds)
+        {
+            var lstWaring = new List<ProductionProcessWarningMessage>();
+            var products = await _productHelperService.GetListProducts(productIds);
+            foreach (var product in products)
+            {
+                if (product.ProductionProcessStatusId != EnumProductionProcessStatus.Created)
+                {
+                    lstWaring.Add(new ProductionProcessWarningMessage()
+                    {
+                        WarningCode = EnumProductionProcessWarningCode.WarningProduct,
+                        Message = $"Mặt hàng {product.ProductCode} {product.ProductionProcessStatusId.GetEnumDescription()} QTSX",
+                        GroupName = EnumProductionProcessWarningCode.WarningProduct.GetEnumDescription()
+                    });
+                }
+
+            }
+            return lstWaring;
         }
 
         public class AllProductInProductionProcessNode

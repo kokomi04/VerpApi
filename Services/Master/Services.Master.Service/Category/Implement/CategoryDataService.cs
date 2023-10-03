@@ -26,7 +26,8 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -237,13 +238,13 @@ namespace VErp.Services.Accountancy.Service.Category
               .MessageResourceFormatDatas(id)
               .BillTypeId(category.CategoryId)
               .ObjectId(id)
-              .JsonData(data.JsonSerialize())
+              .JsonData(data)
               .CreateLog();
 
             return (int)id;
         }
 
-        public async Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data)
+        public async Task<int> UpdateCategoryRow(int categoryId, int fId, NonCamelCaseDictionary data, bool validateDataIsOld)
         {
             var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
             if (category == null)
@@ -264,13 +265,16 @@ namespace VErp.Services.Accountancy.Service.Category
 
             var categoryRow = await GetCategoryRowInfo(category, categoryFields, fId);
 
-            data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
-
-            categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
-
-            if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+            if (validateDataIsOld)
             {
-                throw GeneralCode.DataIsOld.BadRequest();
+                data.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object modelUpdatedDatetimeUtc);
+
+                categoryRow.TryGetValue(GlobalFieldConstants.UpdatedDatetimeUtc, out object entityUpdatedDatetimeUtc);
+
+                if (modelUpdatedDatetimeUtc?.ToString() != entityUpdatedDatetimeUtc?.ToString())
+                {
+                    throw GeneralCode.DataIsOld.BadRequest();
+                }
             }
 
             bool isParentChange = false;
@@ -392,7 +396,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(data.JsonSerialize())
+             .JsonData(data)
              .CreateLog();
 
             return numberChange;
@@ -536,7 +540,7 @@ namespace VErp.Services.Accountancy.Service.Category
              .MessageResourceFormatDatas(fId)
              .BillTypeId(category.CategoryId)
              .ObjectId(fId)
-             .JsonData(categoryRow.JsonSerialize())
+             .JsonData(categoryRow)
              .CreateLog();
 
             return numberChange;

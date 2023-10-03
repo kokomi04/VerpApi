@@ -12,14 +12,20 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 {
     public class ProductionHandoverModel : ProductionHandoverInputModel
     {
-        public long ProductionHandoverReceiptId { get; set; }
-        public string ProductionHandoverReceiptCode { get; set; }
-        public EnumHandoverStatus HandoverStatusId { get; set; }
-
-        public int CreatedByUserId { get; set; }
-        public int? AcceptByUserId { get; set; }
-
-
+        public required long ProductionHandoverReceiptId { get; set; }
+        public required string ProductionHandoverReceiptCode { get; set; }
+        public required EnumHandoverStatus HandoverStatusId { get; set; }
+               
+        public required int CreatedByUserId { get; set; }
+        public required int? AcceptByUserId { get; set; }
+               
+        public required long? InventoryRequirementDetailId { get; set; }
+        public required long? InventoryDetailId { get; set; }
+        public required int? InventoryProductId { get; set; }
+        public required bool IsAuto { get; set; }
+        public required long? InventoryId { get; set; }
+        public required string InventoryCode { get; set; }
+        public required decimal? InventoryQuantity { get; set; }
     }
 
     public class ProductionHandoverReceiptModel : IMapFrom<ProductionHandoverReceipt>
@@ -45,18 +51,18 @@ namespace VErp.Services.Manafacturing.Model.ProductionHandover
 
     public class ProductionHandoverInputModel : IMapFrom<ProductionHandoverEntity>
     {
-        public long? ProductionHandoverId { get; set; }
-        public decimal HandoverQuantity { get; set; }
-        public long ObjectId { get; set; }
-        public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
-        public int FromDepartmentId { get; set; }
-        public long FromProductionStepId { get; set; }
-        public int ToDepartmentId { get; set; }
-        public long ToProductionStepId { get; set; }
-        public long? HandoverDatetime { get; set; }
-        public string Note { get; set; }
-
-        public long ProductionOrderId { get; set; }
+        public required long? ProductionHandoverId { get; set; }
+        public required decimal HandoverQuantity { get; set; }
+        public required long ObjectId { get; set; }
+        public required EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
+        public required int FromDepartmentId { get; set; }
+        public required long FromProductionStepId { get; set; }
+        public required int ToDepartmentId { get; set; }
+        public required long ToProductionStepId { get; set; }
+        public required long? HandoverDatetime { get; set; }
+        public required string Note { get; set; }
+               
+        public required long ProductionOrderId { get; set; }
 
 
     }

@@ -83,7 +83,7 @@ namespace VErp.Services.Organization.Service.Salary
             await logBuilder
                 .MessageResourceFormatDatas(info.Month, info.Year)
                 .ObjectId(info.SalaryPeriodId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -133,7 +133,7 @@ namespace VErp.Services.Organization.Service.Salary
             await logBuilder
                 .MessageResourceFormatDatas(info.Month, info.Year)
                 .ObjectId(info.SalaryPeriodId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
@@ -178,7 +178,7 @@ namespace VErp.Services.Organization.Service.Salary
             await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Create)
                 .MessageResourceFormatDatas(model.Month, model.Year)
                 .ObjectId(info.SalaryPeriodId)
-                .JsonData(model.JsonSerialize())
+                .JsonData(model)
                 .CreateLog();
             return info.SalaryPeriodId;
         }
@@ -207,7 +207,7 @@ namespace VErp.Services.Organization.Service.Salary
                 await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(info.Month, info.Year)
                     .ObjectId(info.SalaryPeriodId)
-                    .JsonData(info.JsonSerialize())
+                    .JsonData(info)
                     .CreateLog();
 
                 return true;
@@ -283,10 +283,15 @@ namespace VErp.Services.Organization.Service.Salary
             await _salaryPeriodActivityLog.LogBuilder(() => SalaryPeriodActivityLogMessage.Update)
                 .MessageResourceFormatDatas(info.Month, info.Year)
                 .ObjectId(info.SalaryPeriodId)
-                .JsonData(info.JsonSerialize())
+                .JsonData(info)
                 .CreateLog();
 
             return true;
+        }
+
+        public async Task<IList<SalaryPeriodInfo>> GetAllList()
+        {
+            return await _organizationDBContext.SalaryPeriod.ProjectTo<SalaryPeriodInfo>(_mapper.ConfigurationProvider).OrderByDescending(x=> x.Year).ThenByDescending(x=>x.Month).ToListAsync();
         }
     }
 }

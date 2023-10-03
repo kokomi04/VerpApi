@@ -60,7 +60,9 @@ namespace VErp.Commons.GlobalObject
         {
             var types = assembly.GetExportedTypes()
                 .Where(t => t.GetInterfaces().Any(i =>
-                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMapFrom<>)))
+                    i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMapFrom<>))
+                 && !t.IsAbstract
+                )
                 .ToList();
 
             var methods = new HashSet<string>();

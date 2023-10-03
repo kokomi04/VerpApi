@@ -38,7 +38,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment
 
         Task<bool> ChangeAssignedProgressStatus(long productionOrderId, long productionStepId, int departmentId, EnumAssignedProgressStatus status);
 
-        Task UpdateProductionOrderAssignmentStatus(IList<long> productionOrderIds);
+        //Task UpdateProductionOrderAssignmentStatus(IList<long> productionOrderIds);
 
     }
 }

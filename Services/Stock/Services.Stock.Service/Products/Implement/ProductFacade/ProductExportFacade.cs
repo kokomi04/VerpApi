@@ -36,7 +36,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             _stockDbContext = stockDbContext;
             customers = (_stockDbContext.RefCustomerBasic.AsNoTracking().ToList()).ToDictionary(c => c.CustomerId, c => c);
             stocks = (_stockDbContext.Stock.Select(s => new SimpleStockInfo { StockId = s.StockId, StockName = s.StockName }).ToList()).ToDictionary(c => c.StockId, c => c);
-            fields = ExcelUtils.GetFieldNameModels<ProductImportModel>().Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
+            fields = ExcelUtils.GetFieldNameModels<ProductImportModel>(null,true).Where(f => fieldNames == null || fieldNames.Count == 0 || fieldNames.Contains(f.FieldName)).ToList();
             groups = fields.Select(g => g.GroupName).Distinct().ToList();
         }
 
@@ -234,9 +234,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Decimal, product.LoadAbility);
                 case nameof(ProductImportModel.StockOutputRuleId):
                     return (EnumDataType.Text, product.StockOutputRuleId?.GetEnumDescription());
-                    //return (EnumDataType.Decimal, product.LoadAbility);
-                //case nameof(ProductImportModel.ProductionProcessStatusId):
-                //    return (EnumDataType.Text, product.ProductionProcessStatusId?.GetEnumDescription());
+                //return (EnumDataType.Decimal, product.LoadAbility);
+                case nameof(ProductImportModel.ProductionProcessStatusId):
+                    return (EnumDataType.Text, product.ProductionProcessStatusId.GetEnumDescription());
                 case nameof(ProductImportModel.DescriptionToStock):
                     return (EnumDataType.Text, product.DescriptionToStock);
                 case nameof(ProductImportModel.AmountWarningMin):

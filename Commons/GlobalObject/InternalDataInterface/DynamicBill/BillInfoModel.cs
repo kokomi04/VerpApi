@@ -4,6 +4,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill
 {
     public class BillInfoModel
     {
+        public long? ParentId { get; set; }
         public NonCamelCaseDictionary Info { get; set; }
         public IList<NonCamelCaseDictionary> Rows { get; set; }
         public OutsideImportMappingData OutsideImportMappingData { get; set; }

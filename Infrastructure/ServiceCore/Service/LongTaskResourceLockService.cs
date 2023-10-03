@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Verp.Cache.RedisCache;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 
 namespace VErp.Infrastructure.ServiceCore.Service
 {

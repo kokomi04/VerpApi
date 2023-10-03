@@ -46,13 +46,16 @@ namespace VErp.Services.Master.Service.Config.Implement
 
             var total = await query.CountAsync();
             IList<OutsideImportMappingFunction> pagedData = null;
+
+            query = query.OrderBy(q => q.SourceObjectTypeId).ThenBy(q => q.SourceInputTypeId);
+
             if (size > 0)
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).Skip((page - 1) * size).Take(size).ToListAsync();
+                pagedData = await query.Skip((page - 1) * size).Take(size).ToListAsync();
             }
             else
             {
-                pagedData = await query.OrderBy(q => q.FunctionName).ToListAsync();
+                pagedData = await query.ToListAsync();
             }
 
             return (_mapper.Map<IList<OutsideMappingModelList>>(pagedData), total);
@@ -88,7 +91,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Create)
                         .MessageResourceFormatDatas(model.FunctionName)
                          .ObjectId(functionInfo.OutsideImportMappingFunctionId)
-                         .JsonData(model.JsonSerialize())
+                         .JsonData(model)
                          .CreateLog();
 
                     return functionInfo.OutsideImportMappingFunctionId;
@@ -171,7 +174,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Update)
                       .MessageResourceFormatDatas(model.FunctionName)
                       .ObjectId(outsideImportMappingFunctionId)
-                      .JsonData(model.JsonSerialize())
+                      .JsonData(model)
                       .CreateLog();
 
                     return true;
@@ -209,7 +212,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                     await _outsideImportMappingActivityLog.LogBuilder(() => OutsideImportMappingActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(functionInfo.FunctionName)
                       .ObjectId(outsideImportMappingFunctionId)
-                      .JsonData(functionInfo.JsonSerialize())
+                      .JsonData(functionInfo)
                       .CreateLog();
 
                     return true;
@@ -266,7 +269,7 @@ namespace VErp.Services.Master.Service.Config.Implement
                       objectId,
                       billObjectTypeId,
                       billFId
-                  }.JsonSerialize())
+                  })
                   .CreateLog();
 
             return true;

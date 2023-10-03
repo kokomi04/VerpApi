@@ -22,6 +22,6 @@ namespace VErp.Commons.Enums.StandardEnum
         DuplicateProductionStep = 12,
         LongTaskIsRunning = 13,
         DataIsOld = 14,
-        ItemInUsed = 15,
+        ItemInUsed = 15        
     }
 }

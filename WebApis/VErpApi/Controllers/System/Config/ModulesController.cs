@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
 using VErp.Services.Master.Model.RolePermission;
 using VErp.Services.Master.Service.RolePermission;
@@ -38,6 +40,14 @@ namespace VErpApi.Controllers.System
         public async Task<IList<ModuleOutput>> Modules()
         {
             return (await _moduleService.GetList()).ToList();
+        }
+
+
+        [HttpGet]
+        [Route("GetRefCategoryForQuery")]
+        public async Task<IList<CategoryNameModel>> GetRefCategoryForQuery([FromQuery] EnumModuleType moduleTypeId)
+        {
+            return (await _moduleService.GetRefCategoryForQuery(moduleTypeId)).ToList();
         }
 
     }

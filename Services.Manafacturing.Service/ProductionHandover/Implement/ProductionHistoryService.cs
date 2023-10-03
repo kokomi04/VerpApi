@@ -16,9 +16,9 @@ using VErp.Services.Manafacturing.Model.ProductionHandover;
 using static VErp.Commons.Enums.Manafacturing.EnumProductionProcess;
 using static VErp.Services.Manafacturing.Service.Facade.ProductivityWorkloadFacade;
 using VErp.Services.Manafacturing.Service.Facade;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using OpenXmlPowerTools;
 using VErp.Commons.Enums.Manafacturing;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 
 namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 {

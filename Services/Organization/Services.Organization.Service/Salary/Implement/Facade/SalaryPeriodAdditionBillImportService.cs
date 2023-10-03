@@ -11,7 +11,6 @@ using Verp.Resources.Organization;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Service;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.Facade;
 using Microsoft.EntityFrameworkCore;
 using VErp.Infrastructure.ServiceCore.Extensions;
@@ -22,6 +21,8 @@ using Verp.Resources.Organization.Salary.Validation;
 using System.Reflection;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Library.Utilities;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 
 namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 {
@@ -156,7 +157,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
 
                         if (row.Data.TryGetValue(dateMapping?.Column ?? "", out var strDate) && DateTime.TryParse(strDate, out var date))
                         {
-                            modelBill.Date = date.GetUnixUtc(_currentContextService.TimeZoneOffset);
+                            modelBill.Date = date.Date.GetUnixUtc(_currentContextService.TimeZoneOffset);
                         }
 
                         parseFacade.MapAndLoadRowToModel(row, modelBill.BillCode, modelBill.Details);
@@ -279,7 +280,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.CreateFromExcel)
                                  .MessageResourceFormatDatas(info.BillCode, typeInfo.Title)
                                  .ObjectId(info.SalaryPeriodAdditionBillId)
-                                 .JsonData(model.JsonSerialize())
+                                 .JsonData(model)
                                  .CreateLog();
 
                             longTask.IncProcessedRows();
@@ -327,7 +328,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Facade
                             await _billActivityLog.LogBuilder(() => SalaryPeriodAdditionBillActivityLogMessage.UpdateFromExcel)
                                .MessageResourceFormatDatas(model.Key.BillCode, typeInfo.Title)
                                .ObjectId(entity.SalaryPeriodAdditionBillId)
-                               .JsonData(model.Key.JsonSerialize())
+                               .JsonData(model.Key)
                                .CreateLog();
 
                             longTask.IncProcessedRows();

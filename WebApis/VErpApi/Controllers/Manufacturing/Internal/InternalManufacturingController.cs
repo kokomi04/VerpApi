@@ -47,21 +47,21 @@ namespace VErpApi.Controllers.Manufacturing.Internal
 
         [HttpPost]
         [Route("productionProcess/copy")]
-        public async Task<bool> CopyProductionProcess(EnumContainerType containerTypeId, long fromContainerId, long toContainerId)
+        public async Task<bool> CopyProductionProcess([FromQuery] EnumContainerType containerTypeId,[FromQuery] long fromContainerId,[FromQuery] long toContainerId)
         {
-            return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId);
+            return await _productionProcessService.CopyProductionProcess(containerTypeId, fromContainerId, toContainerId, false);
         }
 
         [HttpPut]
         [Route("outsourceRequest/Part/Status")]
-        public async Task<bool> UpdateOutsourcePartRequestStatus(long[] outsourcePartRequestId)
+        public async Task<bool> UpdateOutsourcePartRequestStatus([FromBody] long[] outsourcePartRequestId)
         {
             return await _outsourcePartRequestService.UpdateOutsourcePartRequestStatus(outsourcePartRequestId);
         }
 
         [HttpPut]
         [Route("outsourceRequest/Step/Status")]
-        public async Task<bool> UpdateOutsourceStepRequestStatus(long[] outsourceStepRequestId)
+        public async Task<bool> UpdateOutsourceStepRequestStatus([FromBody] long[] outsourceStepRequestId)
         {
             return await _outsourceStepRequestService.UpdateOutsourceStepRequestStatus(outsourceStepRequestId);
         }

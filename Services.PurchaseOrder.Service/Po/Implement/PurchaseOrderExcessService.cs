@@ -8,7 +8,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
@@ -56,7 +56,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.UpdatePurchaseOrderExcess)
              .MessageResourceFormatDatas(product, poInfo.PurchaseOrderCode)
              .ObjectId(poInfo.PurchaseOrderId)
-             .JsonData((new { purchaseOrderExcessId, model }).JsonSerialize())
+             .JsonData((new { purchaseOrderExcessId, model }))
              .CreateLog();
 
             return true;

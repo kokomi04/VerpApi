@@ -19,6 +19,8 @@ public partial class AccountancyDBContext : DbContext
 
     public virtual DbSet<InputBill> InputBill { get; set; }
 
+    public virtual DbSet<InputBillAllocation> InputBillAllocation { get; set; }
+
     public virtual DbSet<InputField> InputField { get; set; }
 
     public virtual DbSet<InputType> InputType { get; set; }
@@ -66,11 +68,13 @@ public partial class AccountancyDBContext : DbContext
             entity.Property(e => e.Column).HasDefaultValueSql("((1))");
             entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
             entity.Property(e => e.DefaultValue).HasMaxLength(512);
+            entity.Property(e => e.FiltersName).HasMaxLength(128);
             entity.Property(e => e.InputStyleJson).HasMaxLength(512);
             entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
             entity.Property(e => e.Placeholder).HasMaxLength(128);
             entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
             entity.Property(e => e.RegularExpression).HasMaxLength(256);
+            entity.Property(e => e.RequireFiltersName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
             entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
 
@@ -100,11 +104,31 @@ public partial class AccountancyDBContext : DbContext
 
             entity.Property(e => e.FId).HasColumnName("F_Id");
             entity.Property(e => e.BillCode).HasMaxLength(512);
+            entity.Property(e => e.ParentInputBillFId).HasColumnName("ParentInputBill_F_Id");
 
             entity.HasOne(d => d.InputType).WithMany(p => p.InputBill)
                 .HasForeignKey(d => d.InputTypeId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_InputValueBill_InputType");
+
+            entity.HasOne(d => d.ParentInputBillF).WithMany(p => p.InverseParentInputBillF)
+                .HasForeignKey(d => d.ParentInputBillFId)
+                .HasConstraintName("FK_InputBill_InputBill");
+        });
+
+        modelBuilder.Entity<InputBillAllocation>(entity =>
+        {
+            entity.HasKey(e => new { e.ParentInputBillFId, e.DataAllowcationBillCode });
+
+            entity.Property(e => e.ParentInputBillFId).HasColumnName("Parent_InputBill_F_Id");
+            entity.Property(e => e.DataAllowcationBillCode)
+                .HasMaxLength(128)
+                .HasColumnName("DataAllowcation_BillCode");
+
+            entity.HasOne(d => d.ParentInputBillF).WithMany(p => p.InputBillAllocation)
+                .HasForeignKey(d => d.ParentInputBillFId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_InputBillAllocation_InputBill");
         });
 
         modelBuilder.Entity<InputField>(entity =>
@@ -125,6 +149,7 @@ public partial class AccountancyDBContext : DbContext
 
         modelBuilder.Entity<InputType>(entity =>
         {
+            entity.Property(e => e.DataAllowcationInputTypeIds).HasMaxLength(1024);
             entity.Property(e => e.InputTypeCode)
                 .IsRequired()
                 .HasMaxLength(128);
@@ -133,6 +158,10 @@ public partial class AccountancyDBContext : DbContext
             entity.HasOne(d => d.InputTypeGroup).WithMany(p => p.InputType)
                 .HasForeignKey(d => d.InputTypeGroupId)
                 .HasConstraintName("FK_InputType_InputTypeGroup");
+
+            entity.HasOne(d => d.ResultAllowcationInputType).WithMany(p => p.InverseResultAllowcationInputType)
+                .HasForeignKey(d => d.ResultAllowcationInputTypeId)
+                .HasConstraintName("FK_InputType_InputType");
         });
 
         modelBuilder.Entity<InputTypeGroup>(entity =>

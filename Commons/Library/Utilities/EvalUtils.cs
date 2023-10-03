@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
+using System;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -23,7 +25,7 @@ namespace VErp.Commons.Library
             }
         }
 
-        public static object EvalObject(string expression, NonCamelCaseDictionary parameters)
+        public static object EvalObject(string expression, NonCamelCaseDictionary parameters, NCalc.EvaluateFunctionHandler evalFuncions = null)
         {
             try
             {
@@ -33,7 +35,10 @@ namespace VErp.Commons.Library
 
                 var ex = new NCalc.Expression(expression, NCalc.EvaluateOptions.MatchStringsWithIgnoreCase);
                 ex.EvaluateFunction += Ex_EvaluateFunction;
-
+                if (evalFuncions != null)
+                {
+                    ex.EvaluateFunction += evalFuncions;
+                }
                 if (parameters != null)
                 {
                     foreach (var (name, value) in parameters)
@@ -64,6 +69,9 @@ namespace VErp.Commons.Library
                 throw;
             }
         }
+
+
+       
 
         public class EvalObjectArgException : ArgumentException
         {

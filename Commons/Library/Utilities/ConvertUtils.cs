@@ -151,6 +151,17 @@ namespace VErp.Commons.Library
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu decimal");
                     }
                     return decimalValue;
+                case EnumDataType.Time:
+                    TimeSpan timeValue;
+                    try
+                    {
+                        timeValue = TimeSpan.FromSeconds(Convert.ToDouble(value));
+                    }
+                    catch
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Không thể chuyển giá trị {value?.JsonSerialize()} sang kiểu TimeSpan");
+                    }
+                    return timeValue;
                 default: return value?.ToString()?.Trim();
             }
         }
@@ -449,7 +460,7 @@ namespace VErp.Commons.Library
             return lst;
         }
 
-        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data)
+        public static List<NonCamelCaseDictionary> ConvertData(this DataTable data, bool dateTimeToUnix = true)
         {
             var lst = new List<NonCamelCaseDictionary>();
             for (var i = 0; i < data.Rows.Count; i++)
@@ -465,7 +476,7 @@ namespace VErp.Commons.Library
                         continue;
                     }
 
-                    if (v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
+                    if (dateTimeToUnix && v != null && v.GetType() == typeof(DateTime) || v.GetType() == typeof(DateTime?))
                     {
                         var vInDateTime = (v as DateTime?).GetUnix();
                         dic.Add(c.ColumnName, vInDateTime);

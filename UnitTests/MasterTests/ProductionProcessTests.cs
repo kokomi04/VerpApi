@@ -64,7 +64,7 @@ namespace MasterTests
             var productionOrderId = 20708L;
             try
             {
-                await productionAssignmentService.UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
+                //await productionAssignmentService.UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
             }
             catch (Exception)
             {
@@ -80,7 +80,7 @@ namespace MasterTests
             try
             {
                 var productionOrderIds = await _manufacturingDBContext.ProductionAssignment.Select(a => a.ProductionOrderId).Distinct().ToListAsync();
-                await productionAssignmentService.UpdateProductionOrderAssignmentStatus(productionOrderIds);
+               // await productionAssignmentService.UpdateProductionOrderAssignmentStatus(productionOrderIds);
             }
             catch (Exception)
             {

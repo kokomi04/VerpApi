@@ -1,5 +1,6 @@
 ﻿
 using AutoMapper;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using OpenXmlPowerTools;
 using System;
@@ -17,7 +18,8 @@ using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -75,9 +77,13 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var files = await _purchaseOrderDBContext.PurchasingSuggestFile.AsNoTracking().Where(s => s.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
-            var requestDetailIds = details.Select(d => d.PurchasingRequestDetailId).Where(d => d.HasValue).Select(d => d.Value).ToList();
+            var refPurchasingRequestIds = details.Select(d => d.RefPurchasingRequestId).Where(d => d.HasValue).Select(d => d.Value).ToList();
 
-            var requestDetailInfos = (await _purchasingRequestService.PurchasingRequestDetailInfo(requestDetailIds)).ToDictionary(d => d.PurchasingRequestDetailId, d => d);
+            var requestDetails = await _purchaseOrderDBContext.PurchasingRequestDetail
+                .Include(d => d.PurchasingRequest)
+                .AsNoTracking()
+                .Where(d => refPurchasingRequestIds.Contains(d.PurchasingRequestId))
+                .ToListAsync();
 
             return new PurchasingSuggestOutput()
             {
@@ -106,8 +112,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder).Select(d =>
                   {
-                      requestDetailInfos.TryGetValue(d.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                      var requestDetail = requestDetails.FirstOrDefault(rd => rd.PurchasingRequestId == d.RefPurchasingRequestId && rd.ProductId == d.ProductId && rd.ProductionOrderCode == d.ProductionOrderCode && rd.OrderCode == d.OrderCode);
+                      PurchasingRequestDetailInfo requestDetailInfo = null;
+                      if (requestDetail != null)
+                          requestDetailInfo = new PurchasingRequestDetailInfo()
+                          {
+                              PurchasingRequestId = requestDetail.PurchasingRequestId,
+                              PurchasingRequestCode = requestDetail.PurchasingRequest.PurchasingRequestCode,
 
+                              PurchasingRequestDetailId = requestDetail.PurchasingRequestDetailId,
+                              ProductId = requestDetail.ProductId,
+                              PrimaryQuantity = requestDetail.PrimaryQuantity,
+                              ProductUnitConversionId = requestDetail.ProductUnitConversionId,
+                              ProductUnitConversionQuantity = requestDetail.ProductUnitConversionQuantity,
+
+                          };
                       return new PurchasingSuggestDetailOutputModel()
                       {
                           RequestDetail = requestDetailInfo,
@@ -138,6 +157,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             };
 
         }
+
 
         public async Task<PageData<PurchasingSuggestOutputList>> GetList(string keyword, EnumPurchasingSuggestStatus? purchasingSuggestStatusId, EnumPoProcessStatus? poProcessStatusId, bool? isApproved, long? fromDate, long? toDate, string sortBy, bool asc, int page, int size)
         {
@@ -243,7 +263,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             d.ProductUnitConversionQuantity,
                             d.ProductUnitConversionPrice,
 
-                            d.PurchasingRequestDetailId,
+                            d.RefPurchasingRequestId,
 
                             d.PrimaryUnitPrice,
                             s.TaxInPercent,
@@ -298,16 +318,32 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             var total = await query.CountAsync();
             var pagedData = await query.SortByFieldName(sortBy, asc).ThenBy(s => s.SortOrder).Skip((page - 1) * size).Take(size).ToListAsync();
 
-            var requestDetailIds = pagedData.Select(d => d.PurchasingRequestDetailId).Where(d => d.HasValue).Select(d => d.Value).ToList();
+            var refPurchasingRequestIds = pagedData.Select(d => d.RefPurchasingRequestId).Where(d => d.HasValue).Select(d => d.Value).ToList();
 
-            var requestDetailInfos = (await _purchasingRequestService.PurchasingRequestDetailInfo(requestDetailIds)).ToDictionary(d => d.PurchasingRequestDetailId, d => d);
-
+            var requestDetails = await _purchaseOrderDBContext.PurchasingRequestDetail
+              .Include(d => d.PurchasingRequest)
+              .AsNoTracking()
+              .Where(d => refPurchasingRequestIds.Contains(d.PurchasingRequestId))
+              .ToListAsync();
 
             var result = new List<PurchasingSuggestOutputListByProduct>();
             foreach (var item in pagedData)
             {
-                requestDetailInfos.TryGetValue(item.PurchasingRequestDetailId ?? 0, out var requestDetailInfo);
+                var requestDetail = requestDetails.FirstOrDefault(rd => rd.PurchasingRequestId == item.RefPurchasingRequestId && rd.ProductId == item.ProductId && rd.ProductionOrderCode == item.ProductionOrderCode && rd.OrderCode == item.OrderCode);
+                PurchasingRequestDetailInfo requestDetailInfo = null;
+                if (requestDetail != null)
+                    requestDetailInfo = new PurchasingRequestDetailInfo()
+                    {
+                        PurchasingRequestId = requestDetail.PurchasingRequestId,
+                        PurchasingRequestCode = requestDetail.PurchasingRequest.PurchasingRequestCode,
 
+                        PurchasingRequestDetailId = requestDetail.PurchasingRequestDetailId,
+                        ProductId = requestDetail.ProductId,
+                        PrimaryQuantity = requestDetail.PrimaryQuantity,
+                        ProductUnitConversionId = requestDetail.ProductUnitConversionId,
+                        ProductUnitConversionQuantity = requestDetail.ProductUnitConversionQuantity,
+
+                    };
 
                 result.Add(new PurchasingSuggestOutputListByProduct()
                 {
@@ -387,15 +423,22 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     await _purchaseOrderDBContext.AddAsync(purchasingSuggest);
                     await _purchaseOrderDBContext.SaveChangesAsync();
 
-                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d))
+                    var purchasingRequestDetailIds = model.Details.Select(d => d.PurchasingRequestDetailId).ToList();
+                    var requestDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId)).ToListAsync();
+
+
+                    var purchasingSuggestDetailList = model.Details.Select(d => PurchasingSuggestDetailObjectToEntity(purchasingSuggest.PurchasingSuggestId, d, requestDetails))
                         .OrderBy(s => s.SortOrder)
                         .ToList();
+
+
 
                     var sortOrder = 1;
                     foreach (var item in purchasingSuggestDetailList)
                     {
                         item.SortOrder = sortOrder++;
                     }
+
                     if (model.FileIds?.Count > 0)
                     {
                         await _purchaseOrderDBContext.PurchasingSuggestFile.AddRangeAsync(model.FileIds.Select(f => new PurchasingSuggestFile()
@@ -417,7 +460,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                        .LogBuilder(() => PurchasingSuggestActivityLogMessage.Create)
                        .MessageResourceFormatDatas(purchasingSuggest.PurchasingSuggestCode)
                        .ObjectId(purchasingSuggest.PurchasingSuggestId)
-                       .JsonData(model.JsonSerialize())
+                       .JsonData(model)
                        .CreateLog();
 
                     return purchasingSuggest.PurchasingSuggestId;
@@ -461,6 +504,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     var newDetails = new List<PurchasingSuggestDetail>();
 
+                    var purchasingRequestDetailIds = model.Details.Select(d => d.PurchasingRequestDetailId).ToList();
+                    var requestDetails = await _purchaseOrderDBContext.PurchasingRequestDetail.Where(d => purchasingRequestDetailIds.Contains(d.PurchasingRequestDetailId)).ToListAsync();
+
                     foreach (var item in model.Details)
                     {
                         var found = false;
@@ -470,7 +516,9 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             {
                                 found = true;
 
-                                detail.PurchasingRequestDetailId = item.PurchasingRequestDetailId;
+                                //detail.PurchasingRequestDetailId = item.PurchasingRequestDetailId;
+
+                                detail.RefPurchasingRequestId = requestDetails.FirstOrDefault(d => d.PurchasingRequestDetailId == item.PurchasingRequestDetailId)?.PurchasingRequestId;
 
                                 detail.ProductId = item.ProductId;
                                 detail.PrimaryQuantity = item.PrimaryQuantity;
@@ -528,7 +576,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                         if (!found)
                         {
-                            newDetails.Add(PurchasingSuggestDetailObjectToEntity(purchasingSuggestId, item));
+                            newDetails.Add(PurchasingSuggestDetailObjectToEntity(purchasingSuggestId, item, requestDetails));
                         }
                     }
 
@@ -606,7 +654,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Update)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData(model.JsonSerialize())
+                     .JsonData(model)
                      .CreateLog();
                     return true;
                 }
@@ -673,7 +721,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     if (info == null) throw new BadRequestException(PurchasingSuggestErrorCode.SuggestNotFound);
 
 
-                    var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Include(d=>d.PurchasingSuggestDetailSubCalculation).Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
+                    var oldDetails = await _purchaseOrderDBContext.PurchasingSuggestDetail.Include(d => d.PurchasingSuggestDetailSubCalculation).Where(d => d.PurchasingSuggestId == purchasingSuggestId).ToListAsync();
 
                     if (!await ValidateInUsePurchasingSuggestDetail(oldDetails.Select(d => d.PurchasingSuggestDetailId).ToList()))
                     {
@@ -687,7 +735,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     foreach (var item in oldDetails)
                     {
-                        foreach(var s in item.PurchasingSuggestDetailSubCalculation)
+                        foreach (var s in item.PurchasingSuggestDetailSubCalculation)
                         {
                             s.IsDeleted = true;
                         }
@@ -704,7 +752,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.Delete)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData(info.JsonSerialize())
+                     .JsonData(info)
                      .CreateLog();
                     return true;
                 }
@@ -737,7 +785,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                      .LogBuilder(() => PurchasingSuggestActivityLogMessage.SentToCensor)
                      .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                      .ObjectId(info.PurchasingSuggestId)
-                     .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                     .JsonData((new { purchasingSuggestId }))
                      .CreateLog();
                 return true;
             }
@@ -770,7 +818,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                  .LogBuilder(() => PurchasingSuggestActivityLogMessage.Approved)
                  .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                  .ObjectId(info.PurchasingSuggestId)
-                 .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                 .JsonData((new { purchasingSuggestId }))
                  .CreateLog();
                 return true;
             }
@@ -816,7 +864,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .LogBuilder(() => PurchasingSuggestActivityLogMessage.Rejected)
                 .MessageResourceFormatDatas(info.PurchasingSuggestCode)
                 .ObjectId(info.PurchasingSuggestId)
-                .JsonData((new { purchasingSuggestId }).JsonSerialize())
+                .JsonData((new { purchasingSuggestId }))
                 .CreateLog();
                 return true;
             }
@@ -839,7 +887,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PurchasingSuggestActivityLogMessage.UpdateProgress)
                   .MessageResourceFormatDatas(info.PurchasingSuggestCode, poProcessStatusId.GetEnumDescription())
                   .ObjectId(info.PurchasingSuggestId)
-                  .JsonData((new { purchasingSuggestId, poProcessStatusId }).JsonSerialize())
+                  .JsonData((new { purchasingSuggestId, poProcessStatusId }))
                   .CreateLog();
 
                 return true;
@@ -1363,7 +1411,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Create)
                     .MessageResourceFormatDatas(poAssignment.PoAssignmentCode)
                     .ObjectId(poAssignment.PoAssignmentId)
-                    .JsonData(model.JsonSerialize())
+                    .JsonData(model)
                     .CreateLog();
 
                     return poAssignment.PoAssignmentId;
@@ -1460,7 +1508,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Update)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                     .ObjectId(assignmentInfo.PoAssignmentId)
-                    .JsonData(model.JsonSerialize())
+                    .JsonData(model)
                     .CreateLog();
                     return true;
                 }
@@ -1508,7 +1556,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .LogBuilder(() => PoAssignmentActivityLogMessage.SendToUser)
                 .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                 .ObjectId(assignmentInfo.PoAssignmentId)
-                .JsonData((new { poAssignmentId }).JsonSerialize())
+                .JsonData((new { poAssignmentId }))
                 .CreateLog();
                 return true;
             }
@@ -1602,7 +1650,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                   .LogBuilder(() => PoAssignmentActivityLogMessage.UserConfirm)
                   .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                   .ObjectId(assignmentInfo.PoAssignmentId)
-                  .JsonData((new { poAssignmentId }).JsonSerialize())
+                  .JsonData((new { poAssignmentId }))
                   .CreateLog();
 
                 return true;
@@ -1632,11 +1680,11 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     var deleteDetailIds = poAssignmentDetails.Select(d => d.PoAssignmentDetailId).ToList();
 
-                    if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
-                    {
-                        trans.Rollback();
-                        throw new BadRequestException(PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty);
-                    }
+                    //if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
+                    //{
+                    //    trans.Rollback();
+                    //    throw new BadRequestException(PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty);
+                    //}
 
                     assignmentInfo.IsDeleted = true;
                     assignmentInfo.DeletedDatetimeUtc = DateTime.UtcNow;
@@ -1656,7 +1704,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     .LogBuilder(() => PoAssignmentActivityLogMessage.Delete)
                     .MessageResourceFormatDatas(assignmentInfo.PoAssignmentCode)
                     .ObjectId(assignmentInfo.PoAssignmentId)
-                    .JsonData(assignmentInfo.JsonSerialize())
+                    .JsonData(assignmentInfo)
                     .CreateLog();
                     return true;
                 }
@@ -1704,14 +1752,14 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<IDictionary<long, IList<PurchasingSuggestBasic>>> GetSuggestByRequest(IList<long> purchasingRequestIds)
         {
+            var refPurchasingRequestIds = purchasingRequestIds.Select(r => (long?)r).ToList();
             var suggestDetail = await (
                 from s in _purchaseOrderDBContext.PurchasingSuggest
-                join sd in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals sd.PurchasingSuggestId
-                join r in _purchaseOrderDBContext.PurchasingRequestDetail on sd.PurchasingRequestDetailId equals r.PurchasingRequestDetailId
-                where purchasingRequestIds.Contains(r.PurchasingRequestId)
+                join d in _purchaseOrderDBContext.PurchasingSuggestDetail on s.PurchasingSuggestId equals d.PurchasingSuggestDetailId
+                where refPurchasingRequestIds.Contains(d.RefPurchasingRequestId)
                 select new
                 {
-                    r.PurchasingRequestId,
+                    d.RefPurchasingRequestId,
                     s.PurchasingSuggestId,
                     s.PurchasingSuggestCode
                 }).ToListAsync();
@@ -1719,7 +1767,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             return purchasingRequestIds.Distinct()
                 .ToDictionary(
                 r => r,
-                r => (IList<PurchasingSuggestBasic>)suggestDetail.Where(d => d.PurchasingRequestId == r).Select(d => new PurchasingSuggestBasic
+                r => (IList<PurchasingSuggestBasic>)suggestDetail.Where(d => d.RefPurchasingRequestId == r).Select(d => new PurchasingSuggestBasic
                 {
                     PurchasingSuggestId = d.PurchasingSuggestId,
                     PurchasingSuggestCode = d.PurchasingSuggestCode
@@ -1740,7 +1788,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             };
         }
 
-        private PurchasingSuggestDetail PurchasingSuggestDetailObjectToEntity(long purchasingSuggestId, PurchasingSuggestDetailInputModel d)
+        private PurchasingSuggestDetail PurchasingSuggestDetailObjectToEntity(long purchasingSuggestId, PurchasingSuggestDetailInputModel d, IList<PurchasingRequestDetail> requestDetails)
         {
             ICollection<PurchasingSuggestDetailSubCalculation> subCalculations = new List<PurchasingSuggestDetailSubCalculation>();
             if (d.SubCalculations != null)
@@ -1752,7 +1800,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 PurchasingSuggestId = purchasingSuggestId,
 
-                PurchasingRequestDetailId = d.PurchasingRequestDetailId,
+                //PurchasingRequestDetailId = d.PurchasingRequestDetailId,
+                RefPurchasingRequestId = requestDetails.FirstOrDefault(rd => rd.PurchasingRequestDetailId == d.PurchasingRequestDetailId)?.PurchasingRequestId,
 
                 ProductId = d.ProductId,
                 PrimaryQuantity = d.PrimaryQuantity,
@@ -1882,29 +1931,31 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 .Where(d => d.PoAssignmentId == poAssignmentId && !updatedIds.Contains(d.PoAssignmentDetailId))
                 .Select(d => d.PoAssignmentDetailId).ToList();
 
-            if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
-            {
-                return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
-            }
+            //if (!await ValidateDeletePoAssignmentDetail(deleteDetailIds))
+            //{
+            //    return PurchasingSuggestErrorCode.PurchaseOrderDetailNotEmpty;
+            //}
             return GeneralCode.Success;
         }
+        /*
+      private async Task<bool> ValidateDeletePoAssignmentDetail(IList<long> deletePoAssignmentDetailIds)
+      {
 
-        private async Task<bool> ValidateDeletePoAssignmentDetail(IList<long> deletePoAssignmentDetailIds)
-        {
-            if (deletePoAssignmentDetailIds == null || deletePoAssignmentDetailIds.Count == 0) return true;
 
-            var poAssignmentDetailIds = deletePoAssignmentDetailIds.Cast<long?>();
-            var poDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => poAssignmentDetailIds.Contains(d.PoAssignmentDetailId)).ToListAsync();
-            foreach (var detail in deletePoAssignmentDetailIds)
-            {
-                if (poDetails.Any(d => d.PoAssignmentDetailId == detail))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
+          if (deletePoAssignmentDetailIds == null || deletePoAssignmentDetailIds.Count == 0) return true;
 
+          var poAssignmentDetailIds = deletePoAssignmentDetailIds.Cast<long?>();
+          var poDetails = await _purchaseOrderDBContext.PurchaseOrderDetail.AsNoTracking().Where(d => poAssignmentDetailIds.Contains(d.PoAssignmentDetailId)).ToListAsync();
+          foreach (var detail in deletePoAssignmentDetailIds)
+          {
+              if (poDetails.Any(d => d.PoAssignmentDetailId == detail))
+              {
+                  return false;
+              }
+          }
+          return true;
+    }
+        */
 
         private async Task<bool> ValidateInUsePurchasingSuggestDetail(IList<long> deletePurchasingSuggestDetailIds)
         {
@@ -1919,14 +1970,15 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 }
             }
 
-            await ValidateInUsePurchaseOrderPurchasingSuggestDetail(deletePurchasingSuggestDetailIds.Select(id => (long?)id).ToList());
+            //await ValidateInUsePurchaseOrderPurchasingSuggestDetail(deletePurchasingSuggestDetailIds.Select(id => (long?)id).ToList());
 
             return true;
         }
-
+        /*
 
         private async Task ValidateInUsePurchaseOrderPurchasingSuggestDetail(IList<long?> deletePurchasingSuggestDetailIds)
         {
+            
             if (deletePurchasingSuggestDetailIds == null || deletePurchasingSuggestDetailIds.Count == 0) return;
 
             var pos = await (
@@ -1939,8 +1991,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             {
                 throw ExistsPoUseSuggest.BadRequestFormat(string.Join(", ", pos));
             }
-        }
-
+    }
+        */
 
         private async Task ValidateProductUnitConversion(PurchasingSuggestInput model)
         {

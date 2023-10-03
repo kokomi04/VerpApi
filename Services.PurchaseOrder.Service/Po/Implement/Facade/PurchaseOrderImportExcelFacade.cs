@@ -33,7 +33,9 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.PurchaseOrder.Model;
@@ -100,7 +102,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                         await _poActivityLog.LogBuilder(() => PurchaseOrderActivityLogMessage.Import)
                           .MessageResourceFormatDatas(entity.PurchaseOrderCode)
                           .ObjectId(entity.PurchaseOrderId)
-                          .JsonData((new { purchaseOrderType = EnumPurchasingOrderType.Default, model }).JsonSerialize())
+                          .JsonData(new { purchaseOrderType = EnumPurchasingOrderType.Default, model })
                           .CreateLog();
                     }
 
@@ -185,10 +187,10 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 var details = group.ToList();
 
-                model.Date = details.GetFirstValueNotNull(x => x.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset) ?? 0;
+                model.Date = details.GetFirstValueNotNull(x => x.Date?.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset) ?? 0;
 
 
-                model.DeliveryDate = details.GetFirstValueNotNull(x => x.DeliveryDate)?.GetUnixUtc(_currentContextService.TimeZoneOffset);
+                model.DeliveryDate = details.GetFirstValueNotNull(x => x.DeliveryDate?.Date)?.GetUnixUtc(_currentContextService.TimeZoneOffset);
 
                 model.CustomerId = details.GetFirstValueNotNull(x => x.CustomerInfo.CustomerId) ?? 0;
 

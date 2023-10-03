@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Verp.Resources.PurchaseOrder.Voucher;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -12,7 +13,8 @@ using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 
@@ -82,8 +84,11 @@ namespace VErp.Services.PurchaseOrder.Service.Voucher.Implement
             var billCode = data.Info.ContainsKey("so_ct") ? data.Info["so_ct"] : "";
             var logMessage = $"{action.Title} {billCode}. ";
 
-            await _voucherDataActivityLog.CreateLog(billId, logMessage, data, (EnumActionType)action.ActionTypeId, false, null, null, null, voucherTypeId);
-
+            await _voucherDataActivityLog.LogBuilder(() => VoucherActionExecActivityLogMessage.ExecActionButton)
+                .ObjectId(billId)
+                .MessageResourceFormatDatas(action.Title, billCode)
+                .JsonData(data)
+                .CreateLog();
             return result;
         }
     }

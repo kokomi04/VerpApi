@@ -67,7 +67,7 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Create)
                       .MessageResourceFormatDatas(spm.Name)
                       .ObjectId(sParameterInfo.SystemParameterId)
-                      .JsonData(spm.JsonSerialize())
+                      .JsonData(spm)
                       .CreateLog();
 
                     return sParameterInfo.SystemParameterId;
@@ -100,7 +100,7 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Delete)
                      .MessageResourceFormatDatas(sParameterInfo.Name)
                      .ObjectId(sParameterInfo.SystemParameterId)
-                     .JsonData(sParameterInfo.JsonSerialize())
+                     .JsonData(sParameterInfo)
                      .CreateLog();
                     return true;
                 }
@@ -186,7 +186,7 @@ namespace Services.Organization.Service.Parameter.Implement
                     await _systemParameterActivityLog.LogBuilder(() => SystemParameterActivityLogMessage.Update)
                        .MessageResourceFormatDatas(sParameterInfo.Name)
                        .ObjectId(sParameterInfo.SystemParameterId)
-                       .JsonData(sParameterInfo.JsonSerialize())
+                       .JsonData(sParameterInfo)
                        .CreateLog();
 
                     return true;

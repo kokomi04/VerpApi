@@ -1,11 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Services.Master.Model.RolePermission;
 
@@ -61,5 +65,33 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
                     ModuleGroupName = g.ModuleGroupName,
                 }).ToListAsync();
         }
+
+        public async Task<IList<CategoryNameModel>> GetRefCategoryForQuery(EnumModuleType moduleTypeId)
+        {
+            var fields = await _masterContext.QueryListProc<RefCategoryFieldNameModel>("asp_GetRefCategoryForQuery", new[]
+            {
+                new SqlParameter("moduleTypeId",(int)moduleTypeId),
+                new SqlParameter("moduleId",_currentContextService.ModuleId)
+            });
+
+            var lst = new List<CategoryNameModel>();
+
+            return fields.GroupBy(f => f.CategoryCode)
+                .Select(g => new CategoryNameModel()
+                {
+                    CategoryCode = g.Key,
+                    CategoryTitle = g.First().CategoryTitle,
+                    Fields = g.Cast<CategoryFieldNameModel>().ToList()
+                })
+                .ToList();
+
+        }
+
+    }
+
+    internal class RefCategoryFieldNameModel : CategoryFieldNameModel
+    {
+        public string CategoryCode { get; set; }
+        public string CategoryTitle { get; set; }
     }
 }

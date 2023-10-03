@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Organization;
+using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.Manufacturing;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -44,14 +45,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
 
-        public async Task<(Stream stream, string fileName, string contentType)> BomExport(bool isFindTopBOM = false)
+        public async Task<(Stream stream, string fileName, string contentType)> BomExport(bool isFindTopBOM , bool isExportAllTopBom)
         {
 
             var xssfwb = new XSSFWorkbook();
             sheet = xssfwb.CreateSheet();
 
 
-            var firstProductCode = await WriteTable(isFindTopBOM);
+            var firstProductCode = await WriteTable(isFindTopBOM, isExportAllTopBom);
 
             var currentRowTmp = currentRow;
 
@@ -84,7 +85,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
 
 
-        private async Task<string> WriteTable(bool isFindTopBOM)
+        private async Task<string> WriteTable(bool isFindTopBOM, bool isExportAllTopBom)
         {
             currentRow = 1;
 
@@ -143,10 +144,41 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             currentRow = sRow + 1;
 
-            return await WriteTableDetailData(isFindTopBOM);
+            return await WriteTableDetailData(isFindTopBOM, isExportAllTopBom);
         }
 
-        private async Task<string> WriteTableDetailData(bool isFindTopBOM)
+        private async Task<List<int>> GetTopIdsFromProductIds(IList<int> productIds)
+        {
+            var lstProductIds = new List<int>();
+            var checkParams = new[]
+               {
+                     productIds.ToSqlParameter("@InputProductIds")
+               };
+            var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetParentBomProductIds", checkParams)).ConvertData();
+            foreach (var productId in productIds)
+            {
+                var parentProductIds = new List<int>();
+                GetParentIds(productId, productIds, productParentIds, ref parentProductIds);
+                if (parentProductIds.Count == 0)
+                {
+                    lstProductIds.Add(productId);
+                }
+            }
+            return lstProductIds;
+        }
+        private List<int> GetParentIds(int checkProductId, IList<int> productIds, List<NonCamelCaseDictionary> productParentIds, ref List<int> productIdsOutput)
+        {
+            var lstParentIds = productParentIds.Where(x => checkProductId == Convert.ToInt32(x["ChildId"])).Select(x => Convert.ToInt32(x["ParentId"])).ToList();
+
+            foreach (var parentId in lstParentIds)
+            {
+                GetParentIds(parentId, productIds, productParentIds, ref productIdsOutput);
+            }
+            productIdsOutput.AddRange(lstParentIds.Where(x => productIds.Contains(x)).ToList());
+
+            return productIdsOutput;
+        }
+        private async Task<string> WriteTableDetailData(bool isFindTopBOM, bool isExportAllTopBom)
         {
             IList<int> topMostProductIds = new List<int>();
 
@@ -156,15 +188,23 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
             else
             {
-                var checkParams = new[]
+                if (isExportAllTopBom)
                 {
+                    var checkParams = new[]
+                    {
                      productIds.ToSqlParameter("@InputProductIds")
                 };
-                var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
-                foreach (var p in productParentIds)
-                {
-                    topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+                    var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
+                    foreach (var p in productParentIds)
+                    {
+                        topMostProductIds.Add(Convert.ToInt32(p["ProductId"]));
+                    }
                 }
+                else
+                {
+                    topMostProductIds = await GetTopIdsFromProductIds(productIds);
+                }
+                
             }
             
             var productBomsLevels = await _productBomService.GetBoms(topMostProductIds);
@@ -256,7 +296,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }
             }
 
-            return firstProductCode;
+            return !isFindTopBOM ? firstProductCode : "";
         }
         private string GetStepName(int? stepId)
         {

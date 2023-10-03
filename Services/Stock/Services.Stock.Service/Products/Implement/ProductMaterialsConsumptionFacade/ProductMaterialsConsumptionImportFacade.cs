@@ -14,7 +14,8 @@ using VErp.Commons.GlobalObject.InternalDataInterface.Stock;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -301,7 +302,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     await _productActivityLog.LogBuilder(() => ProductActivityLogMessage.ImportConsumption)
                      .MessageResourceFormatDatas(p.ProductCode)
                      .ObjectId(p.ProductId)
-                     .JsonData(new { _mapping, consumps }.JsonSerialize())
+                     .JsonData(new { _mapping, consumps })
                      .CreateLog();
                 }
 

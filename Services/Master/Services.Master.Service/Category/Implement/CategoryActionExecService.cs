@@ -11,7 +11,7 @@ using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 
 namespace VErp.Services.Master.Service.Category.Implement
 {

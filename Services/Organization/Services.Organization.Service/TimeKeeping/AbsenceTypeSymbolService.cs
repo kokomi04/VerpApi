@@ -1,4 +1,5 @@
-using AutoMapper;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
@@ -32,6 +33,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<int> AddAbsenceTypeSymbol(AbsenceTypeSymbolModel model)
         {
+            if (await _organizationDBContext.AbsenceTypeSymbol.AnyAsync(a => a.SymbolCode == model.SymbolCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu loại vắng đã tồn tại");
+
             var entity = _mapper.Map<AbsenceTypeSymbol>(model);
 
             await _organizationDBContext.AbsenceTypeSymbol.AddAsync(entity);
@@ -42,9 +46,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<bool> UpdateAbsenceTypeSymbol(int absenceTypeSymbolId, AbsenceTypeSymbolModel model)
         {
+
             var absenceTypeSymbol = await _organizationDBContext.AbsenceTypeSymbol.FirstOrDefaultAsync(x => x.AbsenceTypeSymbolId == absenceTypeSymbolId);
             if (absenceTypeSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
+
+            if (absenceTypeSymbol.SymbolCode != model.SymbolCode && await _organizationDBContext.AbsenceTypeSymbol.AnyAsync(a => a.SymbolCode == model.SymbolCode))
+                throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu loại vắng đã tồn tại");
 
             model.AbsenceTypeSymbolId = absenceTypeSymbolId;
             _mapper.Map(model, absenceTypeSymbol);
@@ -77,17 +85,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<IList<AbsenceTypeSymbolModel>> GetListAbsenceTypeSymbol()
         {
-            var query = _organizationDBContext.AbsenceTypeSymbol.AsNoTracking();
-
-            return await query.Select(x => new AbsenceTypeSymbolModel
-            {
-                AbsenceTypeSymbolId = x.AbsenceTypeSymbolId,
-                IsCounted = x.IsCounted,
-                IsUsed = x.IsUsed,
-                SymbolCode = x.SymbolCode,
-                TypeSymbolCode = x.TypeSymbolCode,
-                TypeSymbolDescription = x.TypeSymbolDescription
-            }).ToListAsync();
+            return await _organizationDBContext.AbsenceTypeSymbol
+                .OrderBy(o => !o.IsAnnualLeave)
+                .ThenBy(o => o.CreatedDatetimeUtc)
+                .ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
         }
     }
 }

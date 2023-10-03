@@ -172,7 +172,7 @@ namespace VErp.Services.Master.Service.Category
 
                             var rowId = int.Parse(uRow[CategoryFieldConstants.F_Id]?.ToString());
 
-                            await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow);
+                            await _categoryDataService.UpdateCategoryRow(_categoryId, rowId, uRow, false);
 
                             longTask.IncProcessedRows();
                         }
@@ -410,7 +410,7 @@ namespace VErp.Services.Master.Service.Category
                 if (!DateTime.TryParse(value, out DateTime date))
                     throw ImportCannotConvertToDateTime.BadRequestFormat(value, i + mapping.FromRow, column, fieldInfo.Title);
 
-                value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
+                value = date.Date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix().ToString();
             }
 
             if ((EnumDataType)fieldInfo?.DataTypeId == EnumDataType.Boolean)

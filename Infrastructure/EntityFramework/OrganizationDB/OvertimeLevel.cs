@@ -7,13 +7,15 @@ public partial class OvertimeLevel
 {
     public int OvertimeLevelId { get; set; }
 
-    public int OrdinalNumber { get; set; }
-
     public decimal OvertimeRate { get; set; }
 
-    public string Title { get; set; }
+    public string OvertimeCode { get; set; }
 
-    public string Note { get; set; }
+    public string Description { get; set; }
+
+    public int OvertimePriority { get; set; }
+
+    public int SortOrder { get; set; }
 
     public int UpdatedByUserId { get; set; }
 
@@ -24,6 +26,8 @@ public partial class OvertimeLevel
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
+
+    public virtual ICollection<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; } = new List<OvertimeConfigurationMapping>();
 
     public virtual ICollection<TimeSheetOvertime> TimeSheetOvertime { get; set; } = new List<TimeSheetOvertime>();
 }

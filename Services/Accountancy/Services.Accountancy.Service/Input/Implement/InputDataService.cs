@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using NPOI.POIFS.Properties;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -27,7 +28,8 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.ServiceCore.Abstract;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -53,6 +55,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         {
 
         }
+
     }
 
     public class InputDataPublicService : InputDataServiceBase, IInputDataPublicService
@@ -234,7 +237,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 from af in _accountancyDBContext.InputAreaField
                 join a in _accountancyDBContext.InputArea on af.InputAreaId equals a.InputAreaId
                 join f in _inputFieldsSet on af.InputFieldId equals f.InputFieldId
-                where af.InputTypeId == inputTypeId && ((f.FormTypeId != (int)EnumFormType.ViewOnly && f.FormTypeId != (int)EnumFormType.SqlSelect) || _specialViewOnlyColumns.Contains(f.FieldName))
+                // && f.FormTypeId != (int)EnumFormType.SqlSelect
+                where af.InputTypeId == inputTypeId && ((f.FormTypeId != (int)EnumFormType.ViewOnly) || _specialViewOnlyColumns.Contains(f.FieldName))
                 select new { a.InputAreaId, af.InputAreaFieldId, f.FieldName, f.RefTableCode, f.RefTableField, f.RefTableTitle, f.FormTypeId, f.DataTypeId, a.IsMultiRow, a.IsAddition, af.IsCalcSum }
            ).ToListAsync()
            ).ToDictionary(f => f.FieldName, f => f);
@@ -489,6 +493,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return (data, total);
         }
 
+        public async Task<IList<NonCamelCaseDictionary>> CalcResultAllowcation(int parentInputTypeId, long parentFId)
+        {
+            var type = await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == parentInputTypeId);
+            if (type == null) throw GeneralCode.ItemNotFound.BadRequest();
+
+            var data = await _accountancyDBContext.QueryDataTableRaw(type.CalcResultAllowcationSqlQuery, new[]
+            {
+                new SqlParameter("@ParentInputTypeId", parentInputTypeId),
+                new SqlParameter("@ParentFId", parentFId),
+            });
+
+            return data.ConvertData();
+        }
+
         public async Task<InputType> GetTypeInfo(int inputTypeId)
         {
             return await _accountancyDBContext.InputType.FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
@@ -498,6 +516,35 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         public async Task<BillInfoModel> GetBillInfo(int inputTypeId, long fId)
         {
             return (await GetBillInfos(inputTypeId, new[] { fId })).First().Value;
+        }
+
+        public async Task<BillInfoModel> GetBillInfoByParent(int inputTypeId, long parentFId)
+        {
+            var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.ParentInputBillFId == parentFId);
+            if (billInfo == null) return new BillInfoModel();
+            return await GetBillInfo(inputTypeId, billInfo.FId);
+        }
+
+        public async Task<IList<string>> GetAllocationDataBillCodes(int inputTypeId, long fId)
+        {
+            return (await _accountancyDBContext.InputBillAllocation.Where(a => a.ParentInputBillFId == fId).Select(a => a.DataAllowcationBillCode).ToListAsync());
+        }
+
+        public async Task<bool> UpdateAllocationDataBillCodes(int inputTypeId, long fId, IList<string> dataAllowcationBillCodes)
+        {
+            var lst = await _accountancyDBContext.InputBillAllocation.Where(a => a.ParentInputBillFId == fId).ToListAsync();
+            _accountancyDBContext.InputBillAllocation.RemoveRange(lst);
+            await _accountancyDBContext.SaveChangesAsync();
+            await _accountancyDBContext.InputBillAllocation.AddRangeAsync(
+                dataAllowcationBillCodes.Select(c => c?.ToUpper()).Where(c => !string.IsNullOrWhiteSpace(c))
+                .Distinct()
+                .Select(c => new InputBillAllocation()
+                {
+                    ParentInputBillFId = fId,
+                    DataAllowcationBillCode = c
+                }));
+            await _accountancyDBContext.SaveChangesAsync();
+            return true;
         }
 
         public async Task<IDictionary<long, BillInfoModel>> GetBillInfos(int inputTypeId, IList<long> fIds)
@@ -539,9 +586,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
             var billEntryInfos = (await _accountancyDBContext.QueryDataTableRaw(billEntryInfoSql, new[] { fIds.ToSqlParameter("@FIds") })).ConvertData();
             var lst = new Dictionary<long, BillInfoModel>();
+
+            var billInfos = await _accountancyDBContext.InputBill.Where(b => fIds.Contains(b.FId)).ToListAsync();
             foreach (var fId in fIds)
             {
-                var result = new BillInfoModel();
+                var result = new BillInfoModel()
+                {
+                    ParentId = billInfos?.FirstOrDefault(b => b.FId == fId)?.ParentInputBillFId
+                };
 
                 var rows = data.Where(r => (long)r["InputBill_F_Id"] == fId).ToList();
 
@@ -572,8 +624,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<long> CreateBill(int inputTypeId, BillInfoModel data)
+        public async Task<long> CreateBill(int inputTypeId, BillInfoModel data, bool isDeleteAllowcationBill)
         {
+            await CheckAndDeleteAllocationBill(inputTypeId, 0, isDeleteAllowcationBill, data.ParentId);
+
             await ValidateAccountantConfig(data?.Info, null);
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
@@ -633,9 +687,17 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     LatestBillVersion = 1,
                     SubsidiaryId = _currentContextService.SubsidiaryId,
                     BillCode = Guid.NewGuid().ToString(),
-                    IsDeleted = false
+                    IsDeleted = false,
+                    ParentInputBillFId = data.ParentId
                 };
                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
+
+                if (data.ParentId > 0)
+                {
+                    var parentInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(p => p.FId == data.ParentId);
+                    if (parentInfo == null) throw GeneralCode.ItemNotFound.BadRequest("Parent was not found!");
+                    parentInfo.HasChildren = true;
+                }
 
                 await _accountancyDBContext.SaveChangesAsync();
 
@@ -659,7 +721,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                 .BillTypeId(inputTypeId)
                 .ObjectId(billInfo.FId)
-                .JsonData(data.JsonSerialize())
+                .JsonData(data)
                 .CreateLog();
 
 
@@ -986,7 +1048,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     info.Data.TryGetStringValue(field.FieldName, out string value);
                     if (string.IsNullOrEmpty(value))
                     {
-                        throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { SingleRowArea, field.Title });
+                        throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter,
+                            new object[] { SingleRowArea, field.Title, field.RequireFiltersName });
                     }
                 }
                 else // Validate rows
@@ -1012,7 +1075,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                         row.Data.TryGetStringValue(field.FieldName, out string value);
                         if (string.IsNullOrEmpty(value))
                         {
-                            throw new BadRequestException(InputErrorCode.RequiredFieldIsEmpty, new object[] { row.ExcelRow ?? rowIndx, field.Title });
+                            throw new BadRequestException(InputErrorCode.RequireValueNotValidFilter,
+                                new object[] { row.ExcelRow ?? rowIndx, field.Title, field.RequireFiltersName });
                         }
                     }
                 }
@@ -1245,7 +1309,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 }
                 else
                 {
-                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value });
+                    throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter,
+                        new object[] { rowIndex.HasValue ? rowIndex.ToString() : SingleRowArea, field.Title + ": " + value, field.FiltersName });
                 }
             }
         }
@@ -1308,8 +1373,10 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data)
+        public async Task<bool> UpdateBill(int inputTypeId, long inputValueBillId, BillInfoModel data, bool isDeleteAllowcationBill)
         {
+            await CheckAndDeleteAllocationBill(inputTypeId, inputValueBillId, isDeleteAllowcationBill, data.ParentId);
+
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             // Validate multiRow existed
@@ -1434,7 +1501,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                   .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                   .BillTypeId(inputTypeId)
                   .ObjectId(billInfo.FId)
-                  .JsonData(data.JsonSerialize())
+                  .JsonData(data)
                   .CreateLog();
 
                 return true;
@@ -1447,9 +1514,15 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
         }
 
-        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds)
+        public async Task<bool> UpdateMultipleBills(int inputTypeId, string fieldName, object oldValue, object newValue, long[] billIds, long[] detailIds, bool isDeleteAllowcationBill)
         {
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
+            var billInfos = await _accountancyDBContext.InputBill.Where(b => billIds.Contains(b.FId)).ToListAsync();
+            foreach (var billId in billIds)
+            {
+                await CheckAndDeleteAllocationBill(inputTypeId, billId, isDeleteAllowcationBill, billInfos.FirstOrDefault(b => b.FId == billId)?.ParentInputBillFId);
+            }
 
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -1661,7 +1734,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             .MessageResourceFormatDatas(inputTypeInfo.Title, field?.Title + " (" + field?.Title + ")", bill.BillCode)
                             .BillTypeId(inputTypeId)
                             .ObjectId(bill.FId)
-                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, billIds }.JsonSerialize().JsonSerialize())
+                            .JsonData(new { inputTypeId, fieldName, oldValue, newValue, billIds })
                             .CreateLog();
 
                         // Update last bill version
@@ -1711,15 +1784,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var inputTypeInfo = await _accountancyDBContext.InputType.AsNoTracking().FirstOrDefaultAsync(t => t.InputTypeId == inputTypeId);
             if (inputTypeInfo == null) throw InputTypeNotFound.BadRequest();
             var info = _mapper.Map<InputTypeExecData>(inputTypeInfo);
-            info.GlobalSetting = global;
+            info.SetGlobalSetting(global);
             return info;
         }
 
-        public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id)
+        public async Task<bool> DeleteBill(int inputTypeId, long inputBill_F_Id, bool isDeleteAllowcationBill)
         {
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
             using var @lock = await DistributedLockFactory.GetLockAsync(DistributedLockFactory.GetLockInputTypeKey(inputTypeId));
+
 
             using var trans = await _accountancyDBContext.Database.BeginTransactionAsync();
             try
@@ -1727,6 +1801,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.FId == inputBill_F_Id && b.SubsidiaryId == _currentContextService.SubsidiaryId);
 
                 if (billInfo == null) throw BillNotFound.BadRequest();
+
+                await CheckAndDeleteAllocationBill(inputTypeId, inputBill_F_Id, isDeleteAllowcationBill, billInfo.ParentInputBillFId);
 
                 var inputAreaFields = new List<ValidateField>();
 
@@ -1782,6 +1858,16 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 billInfo.DeletedDatetimeUtc = DateTime.UtcNow;
                 billInfo.UpdatedByUserId = _currentContextService.UserId;
 
+
+                if (billInfo.ParentInputBillFId > 0)
+                {
+                    var parentInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(p => p.FId == billInfo.ParentInputBillFId);
+                    if (parentInfo != null)
+                    {
+                        parentInfo.HasChildren = await _accountancyDBContext.InputBill.AnyAsync(b => b.FId != billInfo.FId && b.ParentInputBillFId == billInfo.ParentInputBillFId);
+                    }
+                }
+
                 await _accountancyDBContext.SaveChangesAsync();
 
                 // After saving action (SQL)
@@ -1795,7 +1881,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                            .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                            .BillTypeId(inputTypeId)
                            .ObjectId(billInfo.FId)
-                           .JsonData(data.JsonSerialize().JsonSerialize())
+                           .JsonData(data)
                            .CreateLog();
 
                 return true;
@@ -1972,7 +2058,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             }
 
 
-            var requireFields = fields.Values.Where(f => f.IsRequire).Select(f => f.FieldName).Distinct().ToHashSet();
+            var requireFields = fields.Values.Where(f => f.IsRequire && string.IsNullOrWhiteSpace(f.RequireFilters)).Select(f => f.FieldName).Distinct().ToHashSet();
 
             var ignoreCopyInfoValues = new HashSet<string>();
             //Create rows
@@ -2195,6 +2281,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     IsReadOnly = f.IsReadOnly,
                                     IsRequire = af.IsRequire,
                                     IsUnique = af.IsUnique,
+                                    FiltersName = af.FiltersName,
                                     Filters = af.Filters,
                                     FieldName = f.FieldName,
                                     DataTypeId = f.DataTypeId,
@@ -2204,6 +2291,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     RefTableTitle = f.RefTableTitle,
                                     RegularExpression = af.RegularExpression,
                                     IsMultiRow = a.IsMultiRow,
+                                    RequireFiltersName = af.RequireFiltersName,
                                     RequireFilters = af.RequireFilters,
                                     AreaTitle = a.Title,
                                     AreaId = a.InputAreaId
@@ -2313,7 +2401,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
 
 
 
-        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream)
+        public async Task<bool> ImportBillFromMapping(int inputTypeId, ImportExcelMapping mapping, Stream stream, bool isDeleteAllowcationBill)
         {
             var inputTypeInfo = await GetInputTypExecInfo(inputTypeId);
 
@@ -2600,7 +2688,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                     BillCode = billCode?.ToUpper(),
                                     IsDeleted = false
                                 };
-                                 
+
                                 await _accountancyDBContext.InputBill.AddAsync(billInfo);
 
                                 await _accountancyDBContext.SaveChangesAsync();
@@ -2614,7 +2702,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                   .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                                   .BillTypeId(inputTypeId)
                                   .ObjectId(billInfo.FId)
-                                  .JsonData(bill.JsonSerialize())
+                                  .JsonData(bill)
                                   .CreateLog();
 
                                 longTask.IncProcessedRows();
@@ -2736,6 +2824,9 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                 var billInfo = await _accountancyDBContext.InputBill.FirstOrDefaultAsync(b => b.InputTypeId == inputTypeId && b.FId == bill.Key && b.SubsidiaryId == _currentContextService.SubsidiaryId);
                                 if (billInfo == null) throw BillNotFound.BadRequest();
 
+                                await CheckAndDeleteAllocationBill(inputTypeId, billInfo.FId, isDeleteAllowcationBill, billInfo.ParentInputBillFId);
+
+
                                 // Before saving action (SQL)
                                 var result = await ProcessActionAsync(inputTypeId, inputTypeInfo.BeforeSaveActionExec, newBillInfo, inputFields, EnumActionType.Update, billInfo.FId);
                                 if (result.Code != 0)
@@ -2763,7 +2854,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                                    .MessageResourceFormatDatas(inputTypeInfo.Title, billInfo.BillCode)
                                    .BillTypeId(inputTypeId)
                                    .ObjectId(billInfo.FId)
-                                   .JsonData(newBillInfo.JsonSerialize())
+                                   .JsonData(newBillInfo)
                                    .CreateLog();
 
                                 longTask.IncProcessedRows();
@@ -2848,7 +2939,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                     {
                         if (!DateTime.TryParse(strValue, out DateTime date))
                             throw CannotConvertValueInRowFieldToDateTime.BadRequestFormat(originValue?.JsonSerialize(), row.Index, field.Title);
-                        value = date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
+                        value = date.Date.AddMinutes(_currentContextService.TimeZoneOffset.Value).GetUnix();
                         strValue = value?.ToString();
                     }
 
@@ -2978,7 +3069,8 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                             }
                             else
                             {
-                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter, new object[] { row.Index, field.Title + ": " + originValue });
+                                throw new BadRequestException(InputErrorCode.ReferValueNotValidFilter,
+                                    new object[] { row.Index, field.Title + ": " + originValue, field.FiltersName });
                             }
                         }
                         var refRow = referData.Rows[0];
@@ -3129,7 +3221,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var billExcel = new KeyValuePair<string, List<ImportExcelRowModel>>("", insertRows);
 
             var billInfo = await GetBillFromRows(billExcel, mapping, fields, referFields, true, bill.Info);
-            
+
             billInfo.Info = bill.Info;
 
             foreach (var row in billInfo.Rows)
@@ -3448,6 +3540,23 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             return field.CategoryFieldTitle;
         }
 
+        private async Task CheckAndDeleteAllocationBill(int inputTypeId, long fId, bool isDelete, long? parentId)
+        {
+            var lst = await _accountancyDBContext.QueryListProc<ObjectBillInUsedInfo>("asp_InputBill_CheckAndDeleteAllocationBillV2", new[]
+            {
+                new SqlParameter("@BillTypeId",inputTypeId),
+                new SqlParameter("@BillId",fId),
+                new SqlParameter("@ObjectTypeId",(int)_inputBillObjectType),
+                new SqlParameter("@IsDelete",isDelete),
+                new SqlParameter("@ParentId",parentId),
+            });
+            if (!isDelete && lst.Count > 0)
+            {
+                throw GeneralCode.ItemInUsed.BadRequestFormatWithData(lst, $"Tồn tại chứng từ phân bổ {lst.First().BillCode}");
+            }
+        }
+
+
         protected class DataEqualityComparer : IEqualityComparer<object>
         {
             private readonly EnumDataType dataType;
@@ -3497,6 +3606,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public bool IsReadOnly { get; set; }
             public bool IsRequire { get; set; }
             public bool IsUnique { get; set; }
+            public string FiltersName { get; set; }
             public string Filters { get; set; }
             public string FieldName { get; set; }
             public int DataTypeId { get; set; }
@@ -3507,6 +3617,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             public string RefTableTitle { get; set; }
             public string RegularExpression { get; set; }
             public bool IsMultiRow { get; set; }
+            public string RequireFiltersName { get; set; }
             public string RequireFilters { get; set; }
 
             public string AreaTitle { get; set; }

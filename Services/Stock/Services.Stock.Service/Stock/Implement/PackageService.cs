@@ -14,7 +14,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -72,7 +72,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Update)
               .MessageResourceFormatDatas(obj.PackageCode)
               .ObjectId(obj.PackageId)
-              .JsonData(req.JsonSerialize())
+              .JsonData(req)
               .CreateLog();
 
             return true;
@@ -210,7 +210,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
                   .MessageResourceFormatDatas(origin.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
                   .ObjectId(origin.PackageId)
-                  .JsonData(new { req, packageRefs }.JsonSerialize())
+                  .JsonData(new { req, packageRefs })
                   .CreateLog();
 
                 foreach (var newPackage in newPackages)
@@ -218,7 +218,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Split)
                       .MessageResourceFormatDatas(origin.PackageCode, string.Join(", ", req.ToPackages.Select(p => p.PackageCode)))
                       .ObjectId(newPackage.PackageId)
-                      .JsonData(new { req, packageRefs, newPackage }.JsonSerialize())
+                      .JsonData(new { req, packageRefs, newPackage })
                       .CreateLog();
                 }
             }
@@ -355,7 +355,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Join)
                  .MessageResourceFormatDatas(string.Join(", ", fromPackages.Select(p => p.PackageCode)), newPackage.PackageCode)
                  .ObjectId(newPackage.PackageId)
-                 .JsonData(new { req, packageRefs }.JsonSerialize())
+                 .JsonData(new { req, packageRefs })
                  .CreateLog();
 
                 foreach (var oldPackage in fromPackages)
@@ -363,7 +363,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _packageActivityLog.LogBuilder(() => PackageActivityLogMessage.Join)
                       .MessageResourceFormatDatas(string.Join(", ", fromPackages.Select(p => p.PackageCode)), newPackage.PackageCode)
                       .ObjectId(oldPackage.PackageId)
-                      .JsonData(new { req, packageRefs, oldPackage }.JsonSerialize())
+                      .JsonData(new { req, packageRefs, oldPackage })
                       .CreateLog();
                 }
 

@@ -21,5 +21,6 @@ namespace VErp.Services.Stock.Service.Products
 
         Task<IEnumerable<ProductMaterialsConsumptionOutput>> GetProductMaterialsConsumption(int[] productIds);
         Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumption(int productId);
+        Task<(Stream stream, string fileName, string contentType)> ExportProductMaterialsConsumptions(IList<int> productIds, bool isExportAllTopBOM);
     }
 }

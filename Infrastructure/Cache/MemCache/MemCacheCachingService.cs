@@ -10,7 +10,7 @@ namespace Verp.Cache.MemCache
 {
     public class MemCacheCachingService : ICachingService
     {
-        private IMemoryCache _cache;
+        private readonly IMemoryCache _cache;
 
         public MemCacheCachingService(IMemoryCache memoryCache)
         {
@@ -24,6 +24,12 @@ namespace Verp.Cache.MemCache
             return default(T);
         }
 
+        public void TryUpdate<T>(string tag, string key, TimeSpan ttl, Func<T, T> queryData)
+        {
+            var oldValue = TryGet<T>(key);
+            var value= queryData.Invoke(oldValue);
+            TrySet(tag, key, value, ttl);
+        }
 
         public T TryGetSet<T>(string tag, string key, TimeSpan ttl, Func<T> queryData, TimeSpan? sliding = null)
         {
@@ -97,6 +103,17 @@ namespace Verp.Cache.MemCache
             return $"TAG_CACHE_{tag}";
         }
 
-
+        public void TryRemove(string key)
+        {
+            try
+            {
+                _cache.Remove(key);
+            }
+            catch (Exception)
+            {
+                // Ignore
+            }
+           
+        }
     }
 }

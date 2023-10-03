@@ -103,7 +103,22 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var asc = model.Asc;
 
             var reportInfo = await _reportConfigDBContext.ReportType.Include(x => x.ReportTypeGroup).AsNoTracking().FirstOrDefaultAsync(r => r.ReportTypeId == reportId);
-
+            var reportTypeCustomInfo = await _reportConfigDBContext.ReportTypeCustom.FirstOrDefaultAsync(r => r.ReportTypeId == reportId && !r.IsDeleted);
+            if (reportTypeCustomInfo != null)
+            {
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql)  )
+                {
+                    reportInfo.HeadSql = reportTypeCustomInfo.HeadSql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.BodySql))
+                {
+                    reportInfo.BodySql = reportTypeCustomInfo.BodySql;
+                }
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.FooterSql))
+                {
+                    reportInfo.FooterSql = reportTypeCustomInfo.FooterSql;
+                }
+            }
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
 
@@ -266,7 +281,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             foreach (var param in filterField.ParamerterName.Split(','))
             {
                 if (string.IsNullOrWhiteSpace(param)) continue;
-               
+
                 var paramName = param.Trim();
                 var paramKey = paramName?.ToLower();
 
@@ -764,11 +779,30 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private async Task<(PageDataTable data, NonCamelCaseDictionary<decimal> totals)> GetRowsByQuery(ReportType reportInfo, string orderByFieldName, string filterCondition, bool asc, int page, int size, IList<SqlParameter> sqlParams)
         {
-            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+            IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().OrderBy(col => col.SortOrder).ToList();//.Where(col => !col.IsHidden)
+            var repeatAlias = columns.Where(c => c.IsRepeat == true).Select(c => c.Alias).ToList();
+            var repeatGroups = columns.Where(c => c.IsRepeat == true).Select(c => c.ColGroupName).ToList();
 
             var sql = reportInfo.BodySql;
 
             Regex regex;
+
+            if (sql.Contains("$RepeatId"))
+            {
+                foreach (var alias in repeatAlias)
+                {
+                    filterCondition = Regex.Replace(filterCondition, "(?<c>[^\\@])(?<alias>" + alias + "([a-zA-Z0-9_]*))", delegate (Match match)
+                    {
+                        var c = match.Groups["c"].Value;
+                        //var originAlias = match.Groups["alias"].Value;
+                        return c + alias;
+                    });
+                }
+            }
+
+            var _dbContext = GetDbContext((EnumModuleType)reportInfo.ReportTypeGroup.ModuleTypeId);
+
+
 
             regex = new Regex("\\$FILTER(?<param>[\\S\\\\n]*)");
 
@@ -785,6 +819,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
 
+
+
             var sqlParamReplace = sqlParams.Select(p => p).ToList();
             if (_dbContext is ISubsidiayRequestDbContext requestDbContext)
             {
@@ -797,9 +833,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo.BodySql.Contains("$INPUT_PARAMS_DECLARE"))
             {
-                
+
                 var dynamicParamDeclare = string.Join(", ", sqlParamReplace?.Select(p => p.ToDeclareString())?.ToArray());
-                
+
                 sql = ReplaceCustom(sql, "$INPUT_PARAMS_DECLARE", dynamicParamDeclare);
 
             }
@@ -830,14 +866,109 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var table = await _dbContext.QueryDataTableRaw(sql, sqlParams.Select(p => p.CloneSqlParam()).ToArray(), timeout: AccountantConstants.REPORT_QUERY_TIMEOUT);
 
-            var totals = new NonCamelCaseDictionary<decimal>();
+
+
+
+
+
+            DataColumn repeatIdColumn = null;
+            DataColumn mergeRowIdColumn = null;
+
+            IList<DataColumn> noneRepeatColumns = new List<DataColumn>();
+            IList<DataColumn> repeatColumns = new List<DataColumn>();
+
+
+            var flatTable = new DataTable();
+            for (var i = 0; i < table.Columns.Count; i++)
+            {
+                var column = table.Columns[i];
+                if (column.ColumnName?.ToLower() == "$RepeatId".ToLower())
+                {
+                    repeatIdColumn = column;
+                }
+
+                if (column.ColumnName?.ToLower() == "$MergeRowId".ToLower())
+                {
+                    mergeRowIdColumn = column;
+                }
+
+                if (repeatAlias.Contains(column.ColumnName) || repeatGroups.Contains(column.ColumnName))
+                {
+                    repeatColumns.Add(column);
+                }
+                else
+                {
+                    var newColumn = new DataColumn(column.ColumnName, column.DataType);
+                    noneRepeatColumns.Add(newColumn);
+                    flatTable.Columns.Add(newColumn);
+                }
+            }
+
+            if (repeatIdColumn != null && mergeRowIdColumn != null)
+            {
+
+                var repeateValues = new HashSet<string>();
+                for (var i = 0; i < table.Rows.Count; i++)
+                {
+                    var repeatValue = table.Rows[i][repeatIdColumn]?.ToString();
+                    if (!repeateValues.Contains(repeatValue) && !repeatValue.IsNullOrEmptyObject())
+                    {
+                        repeateValues.Add(repeatValue);
+                    }
+                }
+
+                foreach (var column in repeatColumns)
+                {
+                    foreach (var value in repeateValues)
+                    {
+                        flatTable.Columns.Add(new DataColumn(column.ColumnName + value, column.DataType));
+                    }
+                }
+
+                var rows = new Dictionary<string, DataRow>();
+
+                for (var i = 0; i < table.Rows.Count; i++)
+                {
+                    var currentRow = table.Rows[i];
+                    var mergeRowId = currentRow[mergeRowIdColumn]?.ToString();
+                    if (!rows.TryGetValue(mergeRowId, out var row))
+                    {
+                        row = flatTable.NewRow();
+                        flatTable.Rows.Add(row);
+                        rows.Add(mergeRowId, row);
+                    }
+                    foreach (var column in noneRepeatColumns)
+                    {
+                        var v = currentRow[column.ColumnName];
+                        if (!v.IsNullOrEmptyObject())
+                        {
+                            row[column] = v;
+                        }
+                    }
+
+                    var repeatValue = currentRow[repeatIdColumn]?.ToString();
+                    if (!string.IsNullOrWhiteSpace(repeatValue))
+                    {
+                        foreach (var column in repeatColumns)
+                        {
+                            var v = currentRow[column.ColumnName];
+
+                            if (!v.IsNullOrEmptyObject())
+                            {
+                                row[column.ColumnName + repeatValue] = v;
+                            }
+                        }
+                    }
+                }
+
+                table = flatTable;
+            }
 
             var data = table.ConvertData();
-
-            IList<ReportColumnModel> columns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>().OrderBy(col => col.SortOrder).ToList();//.Where(col => !col.IsHidden)
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
 
 
+            var totals = new NonCamelCaseDictionary<decimal>();
 
             var totalRecord = 0;
             var pagedData = new List<NonCamelCaseDictionary>();

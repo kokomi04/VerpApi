@@ -17,8 +17,8 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.QueueHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -94,7 +94,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Create)
                        .MessageResourceFormatDatas(req.InventoryCode)
                        .ObjectId(invInput.InventoryId)
-                       .JsonData(req.JsonSerialize())
+                       .JsonData(req)
                        .CreateLog();
 
 
@@ -371,7 +371,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Update)
                             .MessageResourceFormatDatas(req.InventoryCode)
                             .ObjectId(inventoryId)
-                            .JsonData(req.JsonSerialize())
+                            .JsonData(req)
                             .CreateLog();
 
 
@@ -468,7 +468,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Delete)
                           .MessageResourceFormatDatas(inventoryObj.InventoryCode)
                           .ObjectId(inventoryId)
-                          .JsonData(inventoryObj.JsonSerialize())
+                          .JsonData(inventoryObj)
                           .CreateLog();
 
 
@@ -586,7 +586,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Approve)
                         .MessageResourceFormatDatas(inventoryObj.InventoryCode)
                         .ObjectId(inventoryId)
-                        .JsonData(inventoryObj.JsonSerialize())
+                        .JsonData(inventoryObj)
                         .CreateLog();
 
 
@@ -676,7 +676,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.WaitToCensor)
                         .MessageResourceFormatDatas(info.InventoryCode)
                         .ObjectId(inventoryId)
-                        .JsonData(info.JsonSerialize())
+                        .JsonData(info)
                         .CreateLog();
 
                 await _notificationFactoryService.AddSubscription(new SubscriptionSimpleModel
@@ -724,7 +724,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                 await _invInputActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.Reject)
                         .MessageResourceFormatDatas(info.InventoryCode)
                         .ObjectId(inventoryId)
-                        .JsonData(info.JsonSerialize())
+                        .JsonData(info)
                         .CreateLog();
 
 
@@ -1179,7 +1179,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             await _packageActivityLog.LogBuilder(() => InventoryBillInputActivityLogMessage.CreatePackage)
                .MessageResourceFormatDatas(newPackage.PackageCode, inventoryCode)
                .ObjectId(newPackage.PackageId)
-               .JsonData(newPackage.JsonSerialize())
+               .JsonData(newPackage)
                .CreateLog();
 
 

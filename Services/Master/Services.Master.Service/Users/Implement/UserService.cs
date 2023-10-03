@@ -21,7 +21,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -282,7 +282,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Delete)
                       .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
                       .ObjectId(userId)
-                      .JsonData(userInfo.JsonSerialize())
+                      .JsonData(userInfo)
                       .CreateLog();
 
                 }
@@ -515,7 +515,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Update)
                        .MessageResourceFormatDatas(userInfo?.Employee?.EmployeeCode)
                        .ObjectId(userId)
-                       .JsonData(req.JsonSerialize())
+                       .JsonData(req)
                        .CreateLog();
 
                 }
@@ -857,7 +857,7 @@ namespace VErp.Services.Master.Service.Users.Implement
                     await _userActivityLog.LogBuilder(() => UserActivityLogMessage.Create)
                       .MessageResourceFormatDatas(info.userInfo.EmployeeCode)
                       .ObjectId(info.userId)
-                      .JsonData(req.JsonSerialize())
+                      .JsonData(req)
                       .CreateLog();
 
 

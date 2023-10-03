@@ -268,7 +268,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Update)
              .MessageResourceFormatDatas(obj.CustomGenCodeName)
              .ObjectId(obj.CustomGenCodeId)
-             .JsonData(model.JsonSerialize())
+             .JsonData(model)
              .CreateLog();
 
             return true;
@@ -362,7 +362,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Delete)
              .MessageResourceFormatDatas(obj.CustomGenCodeName)
              .ObjectId(obj.CustomGenCodeId)
-             .JsonData(obj.JsonSerialize())
+             .JsonData(obj)
              .CreateLog();
 
 
@@ -420,7 +420,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             await _genCodeConfigActivityLog.LogBuilder(() => GenCodeConfigActivityLogMessage.Update)
              .MessageResourceFormatDatas(model.CustomGenCodeName)
              .ObjectId(entity.CustomGenCodeId)
-             .JsonData(model.JsonSerialize())
+             .JsonData(model)
              .CreateLog();
 
 

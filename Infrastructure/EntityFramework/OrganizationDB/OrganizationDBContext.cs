@@ -91,6 +91,8 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeConfiguration> OvertimeConfiguration { get; set; }
 
+    public virtual DbSet<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; }
+
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
     public virtual DbSet<SalaryEmployee> SalaryEmployee { get; set; }
@@ -157,12 +159,18 @@ public partial class OrganizationDBContext : DbContext
     {
         modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
         {
+            entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsCounted)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.IsUsed)
+                .IsRequired()
+                .HasDefaultValueSql("((1))");
+            entity.Property(e => e.MaxOfDaysOffPerMonth).HasDefaultValueSql("((1))");
+            entity.Property(e => e.SalaryRate).HasDefaultValueSql("((1))");
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
-                .HasMaxLength(50);
-            entity.Property(e => e.TypeSymbolCode)
-                .IsRequired()
-                .HasMaxLength(50);
+                .HasMaxLength(20);
             entity.Property(e => e.TypeSymbolDescription)
                 .IsRequired()
                 .HasMaxLength(256);
@@ -465,11 +473,13 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.Column).HasDefaultValueSql("((1))");
             entity.Property(e => e.CustomButtonHtml).HasMaxLength(128);
             entity.Property(e => e.DefaultValue).HasMaxLength(512);
+            entity.Property(e => e.FiltersName).HasMaxLength(255);
             entity.Property(e => e.InputStyleJson).HasMaxLength(512);
             entity.Property(e => e.OnBlur).HasDefaultValueSql("('')");
             entity.Property(e => e.Placeholder).HasMaxLength(128);
             entity.Property(e => e.ReferenceUrl).HasMaxLength(1024);
             entity.Property(e => e.RegularExpression).HasMaxLength(256);
+            entity.Property(e => e.RequireFiltersName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
             entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
 
@@ -693,11 +703,31 @@ public partial class OrganizationDBContext : DbContext
                 .HasConstraintName("FK_ObjectProcessStepUser_ObjectProcessStep");
         });
 
+        modelBuilder.Entity<OvertimeConfigurationMapping>(entity =>
+        {
+            entity.HasKey(e => new { e.OvertimeConfigurationId, e.OvertimeLevelId }).HasName("PK__Overtime__F94FAF4E88EEADFA");
+
+            entity.HasOne(d => d.OvertimeConfiguration).WithMany(p => p.OvertimeConfigurationMapping)
+                .HasForeignKey(d => d.OvertimeConfigurationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__OvertimeC__Overt__4DB54E83");
+
+            entity.HasOne(d => d.OvertimeLevel).WithMany(p => p.OvertimeConfigurationMapping)
+                .HasForeignKey(d => d.OvertimeLevelId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__OvertimeC__Overt__4EA972BC");
+        });
+
         modelBuilder.Entity<OvertimeLevel>(entity =>
         {
-            entity.Property(e => e.Note).HasMaxLength(1024);
-            entity.Property(e => e.OvertimeRate).HasColumnType("decimal(18, 5)");
-            entity.Property(e => e.Title).HasMaxLength(1024);
+            entity.Property(e => e.Description)
+                .IsRequired()
+                .HasMaxLength(256);
+            entity.Property(e => e.OvertimeCode)
+                .IsRequired()
+                .HasMaxLength(20);
+            entity.Property(e => e.OvertimePriority).HasDefaultValueSql("((2))");
+            entity.Property(e => e.OvertimeRate).HasColumnType("decimal(5, 2)");
         });
 
         modelBuilder.Entity<SalaryEmployee>(entity =>
