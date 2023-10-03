@@ -447,7 +447,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 var productParentIds = (await _stockDbContext.ExecuteDataProcedure("asp_GetTopMostBomProductIds", checkParams)).ConvertData();
                 foreach (var p in productParentIds)
                 {
-                    productExportIds.Add(Convert.ToInt32(p["ProductId"]));
+                    if (!productExportIds.Contains(Convert.ToInt32(p["ProductId"])))
+                    {
+                        productExportIds.Add(Convert.ToInt32(p["ProductId"]));
+                    }
                 }
             }
             else
