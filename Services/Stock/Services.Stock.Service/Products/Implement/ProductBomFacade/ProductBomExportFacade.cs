@@ -293,7 +293,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     var col = START_PROP_COLUMN_INDEX;
                     foreach (var p in _productBomProperties)
                     {
-                        if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId && prop.PathProductIds == string.Join(",", item.PathProductIds)))
+                        if (productBomProperties.Any(prop => prop.ProductId == item.ChildProductId && prop.PropertyId == p.PropertyId && prop.PathProductIds.Replace(" ","").ToLower() == string.Join(",", item.PathProductIds).ToLower()))
                         {
                             sheet.EnsureCell(currentRow, col).SetCellValue("Có");
                             sheet.EnsureCell(currentRow, col).CellStyle.Alignment = HorizontalAlignment.Center;
