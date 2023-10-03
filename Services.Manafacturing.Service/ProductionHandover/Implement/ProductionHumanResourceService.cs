@@ -316,6 +316,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 var currentProductionHumanResources = _manufacturingDBContext.ProductionHumanResource
                     .Where(r => r.DepartmentId == departmentId && r.Date >= start && r.Date <= end).ToList();
 
+                var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
+                var productionSteps = await _manufacturingDBContext.ProductionStep.Where(p => productionStepIds.Contains(p.ProductionStepId)).ToListAsync();
                 foreach (var item in data)
                 {
                     var current = currentProductionHumanResources.FirstOrDefault(r => r.ProductionHumanResourceId == item.ProductionHumanResourceId);
@@ -343,7 +345,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 foreach (var item in insertData)
                 {
                     await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(item.ProductionStep.Title)
+                   .MessageResourceFormatDatas(productionSteps.FirstOrDefault(s => s.ProductionStepId == item.ProductionStepId)?.Title)
                    .ObjectId(item.ProductionHumanResourceId)
                    .ObjectType(EnumObjectType.ProductionHumanResource)
                    .JsonData(data)
