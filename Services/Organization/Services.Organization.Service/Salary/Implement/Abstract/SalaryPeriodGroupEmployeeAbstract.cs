@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +37,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement.Abstract
                 UpdatedByUserId = _currentContextService.UserId
             });
             await _organizationDBContext.SaveChangesAsync();
+
+
+            var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
+            if (subsidiaryInfo != null)
+            {
+                var sql = $"UPDATE SalaryEmployee_{subsidiaryInfo.SubsidiaryCode} SET IsDeleted = 1, DeletedDatetimeUtc = GETUTCDATE(), UpdatedByUserId = @UserId WHERE SalaryPeriodId = @SalaryPeriodId AND SalaryGroupId = @SalaryGroupId";
+                var sqlParams = new[]
+                {
+                    new SqlParameter("@UserId", _currentContextService.UserId),
+                    new SqlParameter("@SalaryPeriodId", salaryPeriodId),
+                    new SqlParameter("@SalaryGroupId", salaryGroupId),
+                };
+                await _organizationDBContext.Database.ExecuteSqlRawAsync(sql, sqlParams);
+            }
             return true;
         }
     }

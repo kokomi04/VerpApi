@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 {
     public class SalaryFieldService : ISalaryFieldService
     {
-
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
@@ -40,10 +40,22 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         {
             await ValidateSalaryField(0, model);
             var info = _mapper.Map<SalaryField>(model);
-            await _organizationDBContext.SalaryField.AddAsync(info);
-            await _organizationDBContext.SaveChangesAsync();
+            using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
+            {
+                await _organizationDBContext.SalaryField.AddAsync(info);
+                await _organizationDBContext.SaveChangesAsync();
 
-            await DropAndCreateSalaryFlatData();
+
+                if (!info.IsDisplayRefData)
+                {
+                    await ModifyColumn(null, info.SalaryFieldName, (EnumDataType)info.DataTypeId);
+                }
+
+                await DropAndCreateSalaryFlatData();
+
+                await trans.CommitAsync();
+            }
+           
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Create)
              .MessageResourceFormatDatas(model.SalaryFieldName, model.Title)
@@ -53,7 +65,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             return info.SalaryFieldId;
         }
-        
+
         public async Task<bool> Delete(int salaryFieldId)
         {
             var info = await _organizationDBContext.SalaryField.FirstOrDefaultAsync(s => s.SalaryFieldId == salaryFieldId);
@@ -101,10 +113,18 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 info.IsDeleted = true;
                 await _organizationDBContext.SaveChangesAsync();
 
+
+                if (!info.IsDisplayRefData)
+                {
+                    await ModifyColumn(info.SalaryFieldName, null, (EnumDataType)info.DataTypeId);
+                }
+
+                await DropAndCreateSalaryFlatData();
+
                 await trans.CommitAsync();
             }
 
-            await DropAndCreateSalaryFlatData();
+          
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Delete)
              .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
@@ -142,6 +162,11 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
+                var oldFieldName = "";
+                if (!info.IsDisplayRefData)
+                {
+                    oldFieldName = info.SalaryFieldName;
+                }
 
                 _mapper.Map(model, info);
                 info.SalaryFieldId = salaryFieldId;
@@ -153,16 +178,21 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                        .UpdateByBatch(f => new SalaryGroupField { IsEditable = model.IsEditable });
                 }
 
+                if (!model.IsDisplayRefData)
+                    await ModifyColumn(oldFieldName, model.SalaryFieldName, model.DataTypeId);
+
+                await DropAndCreateSalaryFlatData();
+
                 await trans.CommitAsync();
             }
-
-            await DropAndCreateSalaryFlatData();
+            
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Update)
                .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
                .ObjectId(info.SalaryFieldId)
                .JsonData(info)
                .CreateLog();
+
             return true;
         }
 
@@ -178,6 +208,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw SalaryFieldValidationMessage.RefDataFieldCanNotEditable.BadRequestFormat(model.SalaryFieldName);
             }
         }
+
         private async Task DropAndCreateSalaryFlatData()
         {
             var parameters = new List<SqlParameter>
@@ -185,6 +216,19 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 new SqlParameter("@SubsidiaryId", _currentContextService.SubsidiaryId)
             };
             await _organizationDBContext.ExecuteStoreProcedure("usp_DropAndCreateSalaryFlatData", parameters);
+        }
+
+        private async Task ModifyColumn(string oldFieldName, string newFieldName, EnumDataType dataTypeId)
+        {
+
+            var parameters = new List<SqlParameter>
+            {
+                new SqlParameter("@SubId", _currentContextService.SubsidiaryId),
+                new SqlParameter("@OldFieldName", oldFieldName),
+                new SqlParameter("@NewFieldName", newFieldName),
+                new SqlParameter("@DataTypeId",(int)dataTypeId)
+            };
+            await _organizationDBContext.ExecuteStoreProcedure("asp_SalaryEmployeeTable_UpdateField", parameters);
         }
     }
 }
