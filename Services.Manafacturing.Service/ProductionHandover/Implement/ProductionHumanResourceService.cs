@@ -95,6 +95,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             try
             {
                 var productionHumanResource = _manufacturingDBContext.ProductionHumanResource
+                    .Include(h => h.ProductionStep)
                     .Where(h => h.ProductionHumanResourceId == productionHumanResourceId)
                     .FirstOrDefault();
 
@@ -103,7 +104,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 productionHumanResource.IsDeleted = true;
                 _manufacturingDBContext.SaveChanges();
                 await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Delete)
-                   .MessageResourceFormatDatas(productionHumanResource.ProductionStep.Title)
+                   .MessageResourceFormatDatas(productionHumanResource.ProductionStep?.Title)
                    .ObjectId(productionHumanResourceId)
                    .JsonData(productionHumanResource)
                    .CreateLog();
@@ -124,6 +125,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
             {
                 var currentProductionHumanResources = _manufacturingDBContext.ProductionHumanResource.Where(r => r.ProductionOrderId == productionOrderId).ToList();
 
+                var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
+                var productionSteps = await _manufacturingDBContext.ProductionStep.Where(p => productionStepIds.Contains(p.ProductionStepId)).ToListAsync();
 
                 foreach (var item in data)
                 {
@@ -155,7 +158,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 foreach (var item in insertData)
                 {
                     await _objActivityLogFacade.LogBuilder(() => ProductionHumanResourceActivityLogMessage.Create)
-                   .MessageResourceFormatDatas(item.ProductionStep.Title)
+                   .MessageResourceFormatDatas(productionSteps.FirstOrDefault(p => p.ProductionStepId == item.ProductionStepId)?.Title)
                    .ObjectId(item.ProductionHumanResourceId)
                    .JsonData(data)
                    .CreateLog();
