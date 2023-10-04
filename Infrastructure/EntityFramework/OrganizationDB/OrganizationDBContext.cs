@@ -129,8 +129,6 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<ShiftScheduleConfiguration> ShiftScheduleConfiguration { get; set; }
 
-    public virtual DbSet<ShiftScheduleDepartment> ShiftScheduleDepartment { get; set; }
-
     public virtual DbSet<ShiftScheduleDetail> ShiftScheduleDetail { get; set; }
 
     public virtual DbSet<SplitHour> SplitHour { get; set; }
@@ -967,15 +965,6 @@ public partial class OrganizationDBContext : DbContext
             entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleConfiguration)
                 .HasForeignKey(d => d.ShiftScheduleId)
                 .HasConstraintName("FK__ShiftSche__Shift__522FEADD");
-        });
-
-        modelBuilder.Entity<ShiftScheduleDepartment>(entity =>
-        {
-            entity.HasKey(e => new { e.ShiftScheduleId, e.DepartmentId }).HasName("PK__ShiftSch__5889CC2EF49F738B");
-
-            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleDepartment)
-                .HasForeignKey(d => d.ShiftScheduleId)
-                .HasConstraintName("FK__ShiftSche__Shift__550C5788");
         });
 
         modelBuilder.Entity<ShiftScheduleDetail>(entity =>
