@@ -46,7 +46,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public ShiftScheduleService(
             OrganizationDBContext organizationDBContext,
-            IMapper mapper, 
+            IMapper mapper,
             IHrDataService hrDataService)
         {
             _organizationDBContext = organizationDBContext;
@@ -92,7 +92,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     throw new BadRequestException(GeneralCode.InvalidParams, "Tiêu đề đã tồn tại trong danh sách!");
 
                 await RemoveShiftScheduleConfiguration(shiftScheduleId);
-                await RemoveShiftScheduleDepartment(shiftScheduleId);
                 await RemoveShiftScheduleDetail(shiftScheduleId);
 
                 model.ShiftScheduleId = shiftScheduleId;
@@ -124,7 +123,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 shiftSchedule.IsDeleted = true;
 
                 await RemoveShiftScheduleConfiguration(shiftScheduleId);
-                await RemoveShiftScheduleDepartment(shiftScheduleId);
                 await RemoveShiftScheduleDetail(shiftScheduleId);
 
                 await _organizationDBContext.SaveChangesAsync();
@@ -143,7 +141,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var shiftSchedule = await _organizationDBContext.ShiftSchedule
                 .Include(s => s.ShiftScheduleConfiguration)
-                .Include(s => s.ShiftScheduleDepartment)
                 .Include(s => s.ShiftScheduleDetail)
                 .FirstOrDefaultAsync(x => x.ShiftScheduleId == shiftScheduleId);
             if (shiftSchedule == null)
@@ -155,7 +152,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         public async Task<PageData<ShiftScheduleModel>> GetListShiftSchedule(ShiftScheduleFilterModel filter, int page, int size)
         {
             var query = _organizationDBContext.ShiftSchedule
-                .Include(s => s.ShiftScheduleDepartment)
+                .Include(s => s.ShiftScheduleDetail)
                 .AsQueryable();
 
             if (!String.IsNullOrWhiteSpace(filter.Keyword))
@@ -168,7 +165,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 query = query.Where(t => t.ToDate < filter.ToDate.UnixToDateTime());
 
             if (filter.DepartmentIds != null && filter.DepartmentIds.Count > 0)
-                query = query.Where(t => t.ShiftScheduleDepartment.Any(d => filter.DepartmentIds.Contains(d.DepartmentId)));
+            {
+                var employeeIds = (await GetEmployeesByDepartments(filter.DepartmentIds)).Select(e => e["F_Id"]).ToList();
+
+                query = query.Where(t => t.ShiftScheduleDetail.Any(e => employeeIds.Contains(e.EmployeeId)));
+            }
 
             query = query.InternalFilter(filter.ColumnsFilters);
 
@@ -219,11 +220,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             return employees.Where(e => !scheduledEmployeeIds.Contains((long)e["F_Id"])).ToList();
         }
-       
+
         public async Task<List<EmployeeViolationModel>> GetListEmployeeViolations()
         {
             var query = _organizationDBContext.ShiftSchedule
-                .Include(s => s.ShiftScheduleDepartment)
                 .Include(s => s.ShiftScheduleDetail)
                 .AsNoTracking();
             var shiftSchedules = new List<ShiftScheduleModel>();
@@ -354,13 +354,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var entity = _organizationDBContext.ShiftScheduleConfiguration
                     .Where(m => m.ShiftScheduleId == shiftScheduleId).AsNoTracking();
             _organizationDBContext.ShiftScheduleConfiguration.RemoveRange(entity);
-            await _organizationDBContext.SaveChangesAsync();
-        }
-        private async Task RemoveShiftScheduleDepartment(long shiftScheduleId)
-        {
-            var entity = _organizationDBContext.ShiftScheduleDepartment
-                    .Where(m => m.ShiftScheduleId == shiftScheduleId).AsNoTracking();
-            _organizationDBContext.ShiftScheduleDepartment.RemoveRange(entity);
             await _organizationDBContext.SaveChangesAsync();
         }
         private async Task RemoveShiftScheduleDetail(long shiftScheduleId)

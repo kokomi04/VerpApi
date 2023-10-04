@@ -20,9 +20,9 @@ public partial class ShiftScheduleModel : IMapFrom<ShiftSchedule>
 
     public EnumOvertimeMode OvertimeMode { get; set; }
 
-    public IList<ShiftScheduleConfigurationModel> ShiftScheduleConfiguration { get; set; } = new List<ShiftScheduleConfigurationModel>();
+    public EnumApplicableMode ApplicableMode { get; set; }
 
-    public IList<ShiftScheduleDepartmentModel> ShiftScheduleDepartment { get; set; } = new List<ShiftScheduleDepartmentModel>();
+    public IList<ShiftScheduleConfigurationModel> ShiftScheduleConfiguration { get; set; } = new List<ShiftScheduleConfigurationModel>();
 
     public IList<ShiftScheduleDetailModel> ShiftScheduleDetail { get; set; } = new List<ShiftScheduleDetailModel>();
 
@@ -30,11 +30,9 @@ public partial class ShiftScheduleModel : IMapFrom<ShiftSchedule>
     {
         profile.CreateMapCustom<ShiftSchedule, ShiftScheduleModel>()
         .ForMember(m => m.ShiftScheduleConfiguration, v => v.MapFrom(m => m.ShiftScheduleConfiguration))
-        .ForMember(m => m.ShiftScheduleDepartment, v => v.MapFrom(m => m.ShiftScheduleDepartment))
         .ForMember(m => m.ShiftScheduleDetail, v => v.MapFrom(m => m.ShiftScheduleDetail))
         .ReverseMapCustom()
         .ForMember(m => m.ShiftScheduleConfiguration, v => v.MapFrom(m => m.ShiftScheduleConfiguration))
-        .ForMember(m => m.ShiftScheduleDepartment, v => v.MapFrom(m => m.ShiftScheduleDepartment))
         .ForMember(m => m.ShiftScheduleDetail, v => v.MapFrom(m => m.ShiftScheduleDetail));
     }
 }

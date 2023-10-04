@@ -15,6 +15,8 @@ public partial class ShiftSchedule
 
     public int OvertimeMode { get; set; }
 
+    public int ApplicableMode { get; set; }
+
     public int CreatedByUserId { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }
@@ -28,8 +30,6 @@ public partial class ShiftSchedule
     public DateTime? DeletedDatetimeUtc { get; set; }
 
     public virtual ICollection<ShiftScheduleConfiguration> ShiftScheduleConfiguration { get; set; } = new List<ShiftScheduleConfiguration>();
-
-    public virtual ICollection<ShiftScheduleDepartment> ShiftScheduleDepartment { get; set; } = new List<ShiftScheduleDepartment>();
 
     public virtual ICollection<ShiftScheduleDetail> ShiftScheduleDetail { get; set; } = new List<ShiftScheduleDetail>();
 }
