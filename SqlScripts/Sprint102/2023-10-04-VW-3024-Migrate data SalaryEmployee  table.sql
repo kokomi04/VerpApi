@@ -19,7 +19,7 @@
     WHILE @@FETCH_STATUS = 0  
     BEGIN  
   
-		DECLARE @TableName NVARCHAR(128) = CONCAT('SalaryEmployee','_',@SubsidiayCode);
+		DECLARE @TableName NVARCHAR(128) = CONCAT('_SalaryEmployee','_',@SubsidiayCode);
 
 
 		DECLARE @SelectFields NVARCHAR(MAX) = '
@@ -44,10 +44,10 @@
 			   @CastIsEditedFields = COALESCE(@CastIsEditedFields + ', ', '') + QUOTENAME(f.SalaryFieldName) + ' AS [' +  CONCAT(f.SalaryFieldName,'_IsEdited]'),
 			   @ConvertColumns = COALESCE(@ConvertColumns + ', ', '')  + CONCAT(
 					CASE DataTypeId 
-						WHEN 2 THEN 'CONVERT(INT, '  + QUOTENAME(f.SalaryFieldName) + ')'
-						WHEN 8 THEN 'CONVERT(BIGINT,' + QUOTENAME(f.SalaryFieldName) + ')'
-						WHEN 9 THEN 'CONVERT(DECIMAL(32,12),'+ QUOTENAME(f.SalaryFieldName) + ')'
-						ELSE 'CONVERT(NVARCHAR(1024),'+ QUOTENAME(f.SalaryFieldName) + ')'
+						WHEN 2 THEN 'ISNULL(CONVERT(INT, '  + QUOTENAME(f.SalaryFieldName) + '),0)'
+						WHEN 8 THEN 'ISNULL(CONVERT(BIGINT,' + QUOTENAME(f.SalaryFieldName) + '),0)'
+						WHEN 9 THEN 'ISNULL(CONVERT(DECIMAL(32,12),'+ QUOTENAME(f.SalaryFieldName) + '),0)'
+						ELSE 'ISNULL(CONVERT(NVARCHAR(1024),'+ QUOTENAME(f.SalaryFieldName) + '),'''')'
 					END,
 					' ',
 					QUOTENAME(SalaryFieldName)

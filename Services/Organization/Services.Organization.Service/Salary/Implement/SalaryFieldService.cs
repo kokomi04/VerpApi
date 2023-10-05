@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
 using Verp.Resources.Organization.Salary.Validation;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
@@ -28,9 +30,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _salaryFieldActivityLog;
-
-        public SalaryFieldService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
+        private readonly ILogger _logger;
+        public SalaryFieldService(ILogger<SalaryFieldService> logger, OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
         {
+            _logger = logger;
             _organizationDBContext = organizationDBContext;
             _currentContextService = currentContextService;
             _mapper = mapper;
@@ -55,7 +58,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 await trans.CommitAsync();
             }
-           
+
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Create)
              .MessageResourceFormatDatas(model.SalaryFieldName, model.Title)
@@ -73,38 +76,28 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
-            var usingEmployeeValue = await (
-                 from v in _organizationDBContext.SalaryEmployeeValue
-                 join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
-                 join p in _organizationDBContext.SalaryPeriod on e.SalaryPeriodId equals p.SalaryPeriodId
-                 join g in _organizationDBContext.SalaryGroup on e.SalaryGroupId equals g.SalaryGroupId
-                 where v.SalaryFieldId == salaryFieldId && v.Value != null
-                 select new
-                 {
-                     e.SalaryGroupId,
-                     g.Title,
-                     e.SalaryPeriodId,
-                     p.Year,
-                     p.Month
-                 }
-                ).FirstOrDefaultAsync();
+
+            var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
+            if (subsidiaryInfo == null)
+            {
+                throw GeneralCode.NotYetSupported.BadRequest();
+            }
+
+            var sql = $"SELECT TOP(1) e.SalaryGroupId, g.Title SalaryGroupTitle, e.SalaryPeriodId, p.Year, p.Month " +
+                $"FROM {OrganizationConstants.GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} e " +
+                $"JOIN SalaryPeriod p ON e.SalaryPeriodId = p.SalaryPeriodId " +
+                $"JOIN SalaryGroup g ON e.SalaryGroupId = g.SalaryGroupId " +
+                $"WHERE IsDeleted = 0 AND e.[{info.SalaryFieldName}] <> NULL AND e.[{info.SalaryFieldName}] <> '' AND e.[{info.SalaryFieldName}] <> 0";
+
+            var usingEmployeeValue = (await _organizationDBContext.QueryListRaw<InUsedEmployeeSalaryFieldModel>(sql, Array.Empty<SqlParameter>())).FirstOrDefault();
 
             if (usingEmployeeValue != null)
             {
-                throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.SalaryFieldName + " (" + info.Title + ")", usingEmployeeValue.Title, usingEmployeeValue.Month, usingEmployeeValue.Year);
+                throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(info.SalaryFieldName + " (" + info.Title + ")", usingEmployeeValue.SalaryGroupTitle, usingEmployeeValue.Month, usingEmployeeValue.Year);
             }
-
-            var nullEmployeeValues = await (
-                from v in _organizationDBContext.SalaryEmployeeValue
-                join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
-                where v.SalaryFieldId == salaryFieldId && v.Value == null
-                select v
-               ).ToListAsync();
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
-                _organizationDBContext.SalaryEmployeeValue.RemoveRange(nullEmployeeValues);
-                await _organizationDBContext.SaveChangesAsync();
 
                 var groupFields = await _organizationDBContext.SalaryGroupField.Where(g => g.SalaryFieldId == salaryFieldId).ToListAsync();
                 _organizationDBContext.SalaryGroupField.RemoveRange(groupFields);
@@ -124,7 +117,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 await trans.CommitAsync();
             }
 
-          
+
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Delete)
              .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
@@ -152,13 +145,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.ItemNotFound.BadRequest();
             }
 
-            //Can not use any here because EF 5 not generate global filter IsDeleted for SalaryEmployee
-            var existedValue = await _organizationDBContext.SalaryEmployeeValue.Include(v => v.SalaryEmployee).FirstOrDefaultAsync(f => f.SalaryFieldId == salaryFieldId);
+            ////Can not use any here because EF 5 not generate global filter IsDeleted for SalaryEmployee
+            //var existedValue = await _organizationDBContext.SalaryEmployeeValue.Include(v => v.SalaryEmployee).FirstOrDefaultAsync(f => f.SalaryFieldId == salaryFieldId);
 
-            if (existedValue != null && (int)model.DataTypeId != info.DataTypeId)
-            {
-                throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName);
-            }
+            //if (existedValue != null && (int)model.DataTypeId != info.DataTypeId)
+            //{
+            //    throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName);
+            //}
+
+            var isChangeDataType = (int)model.DataTypeId != info.DataTypeId;
 
             using (var trans = await _organizationDBContext.Database.BeginTransactionAsync())
             {
@@ -179,13 +174,29 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 }
 
                 if (!model.IsDisplayRefData)
-                    await ModifyColumn(oldFieldName, model.SalaryFieldName, model.DataTypeId);
+                {
+                    try
+                    {
+                        await ModifyColumn(oldFieldName, model.SalaryFieldName, model.DataTypeId);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (isChangeDataType)
+                        {
+                            _logger.LogError(ex, "ModifyColumn");
+                            throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName + " " + ex.Message);
+                        }
+
+                        throw;
+                    }
+
+                }
 
                 await DropAndCreateSalaryFlatData();
 
                 await trans.CommitAsync();
             }
-            
+
 
             await _salaryFieldActivityLog.LogBuilder(() => SalaryFieldActivityLogMessage.Update)
                .MessageResourceFormatDatas(info.SalaryFieldName, info.Title)
@@ -229,6 +240,15 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 new SqlParameter("@DataTypeId",(int)dataTypeId)
             };
             await _organizationDBContext.ExecuteStoreProcedure("asp_SalaryEmployeeTable_UpdateField", parameters);
+        }
+
+        public class InUsedEmployeeSalaryFieldModel
+        {
+            public int SalaryGroupId { get; set; }
+            public string SalaryGroupTitle { get; set; }
+            public long SalaryPeriodId { get; set; }
+            public int Year { get; set; }
+            public int Month { get; set; }
         }
     }
 }

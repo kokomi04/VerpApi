@@ -43,7 +43,5 @@ public partial class SalaryField
 
     public DateTime? DeletedDatetimeUtc { get; set; }
 
-    public virtual ICollection<SalaryEmployeeValue> SalaryEmployeeValue { get; set; } = new List<SalaryEmployeeValue>();
-
     public virtual ICollection<SalaryGroupField> SalaryGroupField { get; set; } = new List<SalaryGroupField>();
 }

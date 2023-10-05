@@ -23,7 +23,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
     internal class ReportTypeCustomService : IReportTypeCustomService
     {
         private readonly ReportConfigDBContext _reportConfigContext;
-        private readonly AppSetting _appSetting;
         private readonly ObjectActivityLogFacade _objLogActivityReportTypeCustom;
         private readonly IMapper _mapper;
         private readonly ILogger _logger;

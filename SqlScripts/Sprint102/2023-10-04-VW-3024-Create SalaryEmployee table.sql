@@ -24,7 +24,7 @@
     BEGIN  
   
 		DECLARE @OldName NVARCHAR(128) = NULL
-		DECLARE @TableName NVARCHAR(128) = CONCAT('SalaryEmployee','_',@SubsidiayCode);
+		DECLARE @TableName NVARCHAR(128) = CONCAT('_SalaryEmployee','_',@SubsidiayCode);
 
         SELECT @OldName = COLUMN_NAME  FROM [INFORMATION_SCHEMA].[COLUMNS] WHERE TABLE_NAME = @TableName AND COLUMN_NAME = @FieldName
 

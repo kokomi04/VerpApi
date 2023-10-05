@@ -37,11 +37,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 {
     public class SalaryEmployeeService : SalaryPeriodGroupEmployeeAbstract, ISalaryEmployeeService
     {
-        private readonly OrganizationDBContext organizationDBContext;
-        private readonly ICurrentContextService currentContextService;
-        private readonly IMapper _mapper;
-        private readonly IActivityLogService activityLogService;
-        private readonly ObjectActivityLogFacade _salaryEmployeeActivityLog;
+
         private readonly ObjectActivityLogFacade _salaryPeriodGroupActivityLog;
 
         private readonly ISalaryGroupService _salaryGroupService;
@@ -64,6 +60,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private const string EMPLOYEE_SALARY_GROUP_ID_FIELD = "salaryGroupId";
 
+        private const string EMPLOYEE_SALARY_EMPLOYEE_EMPLOYEE_ID_FIELD = "EmployeeId";
+
+
+
         public SalaryEmployeeService(OrganizationDBContext organizationDBContext,
             ICurrentContextService currentContextService,
             IMapper mapper,
@@ -79,11 +79,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             ILogger<SalaryEmployeeService> logger)
             : base(organizationDBContext, currentContextService, logger)
         {
-            this.organizationDBContext = organizationDBContext;
-            this.currentContextService = currentContextService;
-            _mapper = mapper;
-            this.activityLogService = activityLogService;
-            _salaryEmployeeActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryEmployee);
+
             _salaryPeriodGroupActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriodGroup);
 
             _salaryGroupService = salaryGroupService;
@@ -188,13 +184,23 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var (employees, columns) = await FilterEmployee(groupInfo.EmployeeFilter, period.Year, period.Month, req.FromDate, req.ToDate, false);
 
-            var employeeInOtherGroups = (await
-                  _organizationDBContext.SalaryEmployee
-                  .Where(e => e.SalaryPeriodId == period.SalaryPeriodId && e.SalaryGroupId != groupInfo.SalaryGroupId)
-                  .Select(e => e.EmployeeId)
-                  .ToListAsync()
-              ).Distinct()
-              .ToHashSet();
+            var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
+            if (subsidiaryInfo == null)
+            {
+                throw GeneralCode.NotYetSupported.BadRequest();
+            }
+            var sqlEmployeeSalarySamePeriodButOtherGroups = $"SELECT EmployeeId FROM _SalaryEmployee_{subsidiaryInfo.SubsidiaryCode} WHERE SalaryPeriodId = @SalaryPeriodId AND SalaryGroupId <> @SalaryGroupId AND IsDeleted = 0";
+
+            var employeeSalarySamePeriodButOtherGroups = (await _organizationDBContext.QueryDataTableRaw(sqlEmployeeSalarySamePeriodButOtherGroups, new[]
+            {
+                new SqlParameter("@SalaryPeriodId", period.SalaryPeriodId),
+                new SqlParameter("@SalaryGroupId",  groupInfo.SalaryGroupId)
+            })).ConvertData();
+
+
+            var employeeInOtherGroups = employeeSalarySamePeriodButOtherGroups.Select(e => Convert.ToInt64(e.First().Value))
+                .Distinct()
+                .ToHashSet();
 
             var employeeData = new List<NonCamelCaseDictionary>();
             foreach (var item in employees)
@@ -266,7 +272,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
             var employeeIds = new HashSet<long>();
-            foreach (var item in employees)
+            foreach (var item in employees.OrderBy(e =>
+            {
+                var code = e.ContainsKey(OrganizationConstants.BILL_CODE) ? e[OrganizationConstants.BILL_CODE]?.ToString() : "";
+                var id = e.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY) ? e[OrganizationConstants.HR_TABLE_F_IDENTITY]?.ToString() : "";
+                return code + "_" + id;
+            }))
             {
                 long employeeId = 0;
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
@@ -346,6 +357,12 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         }
 
                     }
+
+                    if (fieldValue == null &&!f.IsDisplayRefData && f.DataTypeId.IsNumber())
+                    {
+                        fieldValue = 0;
+                    }
+
 
                     if (fieldValue == null)
                     {
@@ -488,12 +505,20 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
         private async Task<IList<NonCamelCaseDictionary<SalaryEmployeeValueModel>>> GetSalaryEmployeePeriodByGroup(SalaryPeriodInfo period, SalaryPeriodGroupInfo group, SalaryGroupInfo groupInfo, SortedSalaryFields sortedSalaryFields)
         {
+            var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
+            if (subsidiaryInfo == null)
+            {
+                throw GeneralCode.NotYetSupported.BadRequest();
+            }
+            var sql = $"SELECT * FROM {GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} WHERE SalaryPeriodId = @SalaryPeriodId AND SalaryGroupId = @SalaryGroupId AND IsDeleted = 0";
 
-            var salaryData = await _organizationDBContext.SalaryEmployee
-                .Include(s => s.SalaryEmployeeValue)
-                .ThenInclude(v => v.SalaryField)
-                .Where(s => s.SalaryPeriodId == period.SalaryPeriodId && s.SalaryGroupId == group.SalaryGroupId)
-                .ToListAsync();
+            var salaryData = (await _organizationDBContext.QueryDataTableRaw(sql, new[]
+            {
+                new SqlParameter("@SalaryPeriodId", period.SalaryPeriodId),
+                new SqlParameter("@SalaryGroupId",  group.SalaryGroupId)
+            })).ConvertData();
+
+
             var dbSalaries = new List<NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
 
             var resultByEmployee = new Dictionary<long, NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
@@ -501,17 +526,35 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var fromDate = group.FromDate;
             var toDate = group.ToDate;
 
+
+            var salaryFields = await _salaryFieldService.GetList();
+
+
             foreach (var item in salaryData)
             {
                 var model = new NonCamelCaseDictionary<SalaryEmployeeValueModel>();
                 dbSalaries.Add(model);
-                resultByEmployee.Add(item.EmployeeId, model);
 
-                model.Add(OrganizationConstants.HR_TABLE_F_IDENTITY, new SalaryEmployeeValueModel(item.EmployeeId));
-
-                foreach (var v in item.SalaryEmployeeValue)
+                long employeeId = 0;
+                if (item.ContainsKey(EMPLOYEE_SALARY_EMPLOYEE_EMPLOYEE_ID_FIELD))
                 {
-                    model.Add(v.SalaryField.SalaryFieldName, new SalaryEmployeeValueModel(v.Value, v.IsEdited));
+                    employeeId = Convert.ToInt64(item[EMPLOYEE_SALARY_EMPLOYEE_EMPLOYEE_ID_FIELD]);
+                }
+
+
+                resultByEmployee.Add(employeeId, model);
+
+                model.Add(OrganizationConstants.HR_TABLE_F_IDENTITY, new SalaryEmployeeValueModel(employeeId));
+
+                foreach (var f in salaryFields)
+                {
+                    if (item.ContainsKey(f.SalaryFieldName))
+                    {
+                        var value = item[f.SalaryFieldName];
+                        item.TryGetValue($"{f.SalaryFieldName}_IsEdited", out var isEdited);
+
+                        model.Add(f.SalaryFieldName, new SalaryEmployeeValueModel(value, Convert.ToBoolean(isEdited)));
+                    }
                 }
             }
 
@@ -559,6 +602,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
             var salaryFields = await _salaryFieldService.GetList();
+            var updateSalaryFields = salaryFields.Where(f => !f.IsDisplayRefData).OrderBy(f => f.SalaryFieldId).ToList();
 
             var evalData = await EvalSalaryEmployeeByGroup(period, groupInfo, new SortedSalaryFields(salaryFields), model);
 
@@ -607,42 +651,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, salaryGroupId);
 
-                var salaries = new Dictionary<SalaryEmployee, NonCamelCaseDictionary<SalaryEmployeeValueModel>>();
-
-                var lst = new List<SalaryEmployee>();
-                foreach (var item in model.Salaries)
-                {
-                    long employeeId = 0;
-                    if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
-                    {
-                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
-                    }
-
-
-                    var entity = new SalaryEmployee()
-                    {
-                        EmployeeId = employeeId,
-                        SalaryPeriodId = salaryPeriodId,
-                        SalaryGroupId = salaryGroupId,
-                    };
-                    salaries.Add(entity, item);
-                    lst.Add(entity);
-                }
-
-                await _organizationDBContext.InsertByBatch(lst, true, true);
-
-
-                var salaryData = new List<SalaryEmployeeValue>();
 
                 var groupFields = groupInfo.TableFields.ToDictionary(t => t.SalaryFieldId, t => t);
 
                 var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
-                if (subsidiaryInfo != null)
+                if (subsidiaryInfo == null)
                 {
                     throw GeneralCode.NotYetSupported.BadRequest();
                 }
 
-                var tableType = $"SalaryEmployeeTableType_{subsidiaryInfo.SubsidiaryCode}";
+                var tableType = $"_SalaryEmployeeTableType_{subsidiaryInfo.SubsidiaryCode}";
 
                 var dataTable = new System.Data.DataTable(tableType);
                 dataTable.Columns.Add("SalaryEmployeeId", typeof(long));
@@ -657,54 +675,63 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 dataTable.Columns.Add("IsDeleted", typeof(bool));
                 dataTable.Columns.Add("DeletedDatetimeUtc", typeof(DateTime));
 
-                foreach (var f in salaryFields.OrderBy(f => f.SalaryFieldId))
+                foreach (var f in updateSalaryFields)
                 {
                     var type = typeof(string);
+                    object defaultValue = "";
                     switch (f.DataTypeId)
                     {
                         case EnumDataType.Int:
                         case EnumDataType.BigInt:
                         case EnumDataType.Decimal:
                             type = typeof(decimal);
+                            defaultValue = 0;
                             break;
                         case EnumDataType.Date:
                             type = typeof(DateTime);
+                            defaultValue = null;
                             break;
                         case EnumDataType.Boolean:
                             type = typeof(bool);
+                            defaultValue = false;
                             break;
 
                     }
-                    dataTable.Columns.Add(f.SalaryFieldName, type);
-                    dataTable.Columns.Add(f.SalaryFieldName + "_IsEdited", typeof(bool));
+                    dataTable.Columns.Add(new DataColumn(f.SalaryFieldName, type) { DefaultValue = defaultValue });
+                    dataTable.Columns.Add(new DataColumn(f.SalaryFieldName + "_IsEdited", typeof(bool)) { DefaultValue = false });
                 }
 
-                foreach (var item in lst)
+                foreach (var item in model.Salaries)
                 {
-
-                    if (!evalDataByEmployee.TryGetValue(item.EmployeeId, out var evalItem))
+                    long employeeId = 0;
+                    if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                     {
-                        throw SalaryPeriodValidationMessage.EmployeeNotFoundInEval.BadRequestFormat(item.EmployeeId);
+                        employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]?.Value);
                     }
 
-                    var data = salaries[item];
+
+                    if (!evalDataByEmployee.TryGetValue(employeeId, out var evalItem))
+                    {
+                        throw SalaryPeriodValidationMessage.EmployeeNotFoundInEval.BadRequestFormat(employeeId);
+                    }
+
 
                     var row = dataTable.NewRow();
                     dataTable.Rows.Add(row);
 
-                    row["SalaryEmployeeId"] = null;
+                    row["SalaryEmployeeId"] = DBNull.Value;
                     row["SubsidiaryId"] = _currentContextService.SubsidiaryId;
-                    row["EmployeeId"] = item.EmployeeId;
-                    row["SalaryPeriodId"] = item.SalaryPeriodId;
-                    row["SalaryGroupId"] = item.SalaryGroupId;
+                    row["EmployeeId"] = employeeId;
+                    row["SalaryPeriodId"] = salaryPeriodId;
+                    row["SalaryGroupId"] = salaryGroupId;
                     row["CreatedByUserId"] = _currentContextService.UserId;
                     row["CreatedDatetimeUtc"] = DateTime.UtcNow;
                     row["UpdatedByUserId"] = _currentContextService.UserId;
                     row["UpdatedDatetimeUtc"] = DateTime.UtcNow;
 
-                    foreach (var field in salaryFields)
+                    foreach (var field in updateSalaryFields)
                     {
-                        var hasDataValue = data.TryGetValue(field.SalaryFieldName, out var dataValue);
+                        var hasDataValue = item.TryGetValue(field.SalaryFieldName, out var dataValue);
 
                         if (!field.IsEditable || groupFields.TryGetValue(field.SalaryFieldId, out var groupField) && !groupField.IsEditable)
                         {
@@ -723,16 +750,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                         if (hasDataValue)
                         {
-                            if (!dataValue.IsNullOrEmptyObject())
+                            if (dataValue != null && !dataValue.Value.IsNullOrEmptyObject())
                             {
-                                salaryData.Add(new SalaryEmployeeValue()
-                                {
-                                    SalaryEmployeeId = item.SalaryEmployeeId,
-                                    SalaryFieldId = field.SalaryFieldId,
-                                    IsEdited = dataValue.IsEdited,
-                                    Value = dataValue.Value
-                                });
-
                                 row[field.SalaryFieldName] = dataValue.Value;
                                 row[field.SalaryFieldName + "_IsEdited"] = dataValue.IsEdited;
 
@@ -742,15 +761,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                 }
 
-                await _organizationDBContext.InsertByBatch(salaryData, false, false);
 
                 var fields = new List<string>() { "SubsidiaryId", "EmployeeId", "SalaryPeriodId", "SalaryGroupId", "CreatedByUserId", "CreatedDatetimeUtc", "UpdatedByUserId", "UpdatedDatetimeUtc" };
-                foreach (var f in salaryFields.OrderBy(f => f.SalaryFieldId))
+                foreach (var f in updateSalaryFields.OrderBy(f => f.SalaryFieldId))
                 {
-                    fields.Add(f.SalaryFieldName);
-                    fields.Add(f.SalaryFieldName + "_IsEdited");
+                    fields.Add($"[{f.SalaryFieldName}]");
+                    fields.Add($"[{f.SalaryFieldName + "_IsEdited"}]");
                 }
-                var sql = $"INSERT INTO SalaryEmployee_{subsidiaryInfo.SubsidiaryCode} ({string.Join(',', fields.ToArray())}) SELECT {string.Join(',', fields.ToArray())} FROM @Data";
+                var sql = $"INSERT INTO {GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} ({string.Join(',', fields.ToArray())}) SELECT {string.Join(',', fields.ToArray())} FROM @Data";
 
                 await _organizationDBContext.Database.ExecuteSqlRawAsync(sql, new SqlParameter("@Data", dataTable) { TypeName = tableType, SqlDbType = SqlDbType.Structured });
 
@@ -775,12 +793,6 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 return true;
             }
-        }
-
-
-        private async Task InsertSalaryEmployeeSubsidiaryTable()
-        {
-
         }
 
 
@@ -1285,5 +1297,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 Fields = categoryNameModels,
             };
         }
+
+
     }
 }
