@@ -619,10 +619,10 @@ namespace VErp.Services.Manafacturing.Service.Outsource.Implement
                 await transaction.CommitAsync();
                 return true;
             }
-            catch (System.Exception ex)
+            catch (System.Exception)
             {
                 transaction.TryRollbackTransaction();
-                throw ex;
+                throw;
             }
         }
 

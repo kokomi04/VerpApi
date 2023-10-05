@@ -20,5 +20,10 @@
         {
             return $"{HR_TABLE_NAME_PREFIX}_{hrTypeCode}_{hrAreaCode}";
         }
+
+        public static string GetEmployeeSalaryTableName(string subsidiaryCode)
+        {
+            return $"_SalaryEmployee_{subsidiaryCode}";
+        }
     }
 }

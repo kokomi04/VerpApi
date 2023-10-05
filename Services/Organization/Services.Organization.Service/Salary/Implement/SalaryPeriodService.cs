@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,21 +21,18 @@ using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
+using VErp.Services.Organization.Service.Salary.Implement.Abstract;
 
 namespace VErp.Services.Organization.Service.Salary
 {
-    public class SalaryPeriodService : BillDateValidateionServiceAbstract, ISalaryPeriodService
+    public class SalaryPeriodService : SalaryPeriodGroupEmployeeAbstract, ISalaryPeriodService
     {
-        private readonly OrganizationDBContext _organizationDBContext;
-        private readonly ICurrentContextService _currentContextService;
         private readonly IMapper _mapper;
         private readonly ObjectActivityLogFacade _salaryPeriodActivityLog;
 
-        public SalaryPeriodService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, IMapper mapper, IActivityLogService activityLogService)
-            : base(organizationDBContext)
+        public SalaryPeriodService(OrganizationDBContext organizationDBContext, ICurrentContextService currentContextService, ILogger<SalaryPeriodService> logger, IMapper mapper, IActivityLogService activityLogService)
+            : base(organizationDBContext, currentContextService, logger)
         {
-            _organizationDBContext = organizationDBContext;
-            _currentContextService = currentContextService;
             _mapper = mapper;
             _salaryPeriodActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.SalaryPeriod);
         }
@@ -217,13 +215,7 @@ namespace VErp.Services.Organization.Service.Salary
 
         private async Task DeletePeriodGroupEmployee(int salaryPeriodId)
         {
-            await _organizationDBContext.SalaryEmployee.Where(e => e.SalaryPeriodId == salaryPeriodId)
-                .UpdateByBatch(e => new SalaryEmployee
-                {
-                    IsDeleted = true,
-                    DeletedDatetimeUtc = DateTime.UtcNow,
-                    UpdatedByUserId = _currentContextService.UserId
-                });
+            await DeleteSalaryEmployeeByPeriodGroup(salaryPeriodId, null);
         }
 
         private async Task DeletePeriodGroup(int salaryPeriodId)

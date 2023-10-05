@@ -34,7 +34,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         //private readonly IMaterialAllocationService _materialAllocationService;
         private readonly ManufacturingDBContext _manufacturingDBContext;
         private readonly ObjectActivityLogFacade _objActivityLogFacade;
-        private readonly IActivityLogService _activityLogService;
         //private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly ICachingService _cachingService;

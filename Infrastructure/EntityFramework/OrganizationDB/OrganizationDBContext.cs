@@ -95,9 +95,6 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
-    public virtual DbSet<SalaryEmployee> SalaryEmployee { get; set; }
-
-    public virtual DbSet<SalaryEmployeeValue> SalaryEmployeeValue { get; set; }
 
     public virtual DbSet<SalaryField> SalaryField { get; set; }
 
@@ -736,44 +733,6 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.OvertimeRate).HasColumnType("decimal(5, 2)");
         });
 
-        modelBuilder.Entity<SalaryEmployee>(entity =>
-        {
-            entity.HasIndex(e => new { e.SalaryPeriodId, e.EmployeeId }, "IX_SalaryEmployee")
-                .IsUnique()
-                .HasFilter("([IsDeleted]=(0))");
-
-            entity.HasOne(d => d.Employee).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.EmployeeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_HrBill");
-
-            entity.HasOne(d => d.SalaryGroup).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.SalaryGroupId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_SalaryGroup");
-
-            entity.HasOne(d => d.SalaryPeriod).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.SalaryPeriodId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_SalaryPeriod");
-        });
-
-        modelBuilder.Entity<SalaryEmployeeValue>(entity =>
-        {
-            entity.HasKey(e => new { e.SalaryEmployeeId, e.SalaryFieldId });
-
-            entity.Property(e => e.Value).HasColumnType("sql_variant");
-
-            entity.HasOne(d => d.SalaryEmployee).WithMany(p => p.SalaryEmployeeValue)
-                .HasForeignKey(d => d.SalaryEmployeeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployeeValue_SalaryEmployee");
-
-            entity.HasOne(d => d.SalaryField).WithMany(p => p.SalaryEmployeeValue)
-                .HasForeignKey(d => d.SalaryFieldId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployeeValue_SalaryField");
-        });
 
         modelBuilder.Entity<SalaryField>(entity =>
         {

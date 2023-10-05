@@ -28,6 +28,5 @@ public partial class HrBill
     public string BillCode { get; set; }
 
     public virtual HrType HrType { get; set; }
-
-    public virtual ICollection<SalaryEmployee> SalaryEmployee { get; set; } = new List<SalaryEmployee>();
+    
 }
