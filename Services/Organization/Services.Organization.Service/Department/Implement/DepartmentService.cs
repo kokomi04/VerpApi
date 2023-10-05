@@ -10,10 +10,12 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -28,14 +30,18 @@ namespace VErp.Services.Organization.Service.Department.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly ObjectActivityLogFacade _departmentActivityLog;
+        private readonly ICategoryHelperService _categoryHelperService;
+        private const string DEPARTMENT_CODE = "_Department";
 
         public DepartmentService(OrganizationDBContext organizationContext
             , IActivityLogService activityLogService
             , IAsyncRunnerService asyncRunnerService
+            , ICategoryHelperService categoryHelperService
             )
         {
             _organizationContext = organizationContext;
             _asyncRunnerService = asyncRunnerService;
+            _categoryHelperService = categoryHelperService;
             _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
 
@@ -173,10 +179,13 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc,  Clause filters = null)
+        public async Task<PageData<DepartmentExtendModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
+
+            var departmentInfos = await _categoryHelperService.GetDataRows(DEPARTMENT_CODE, new CategoryFilterModel());
+
             if (departmentIds != null && departmentIds.Count > 0)
             {
                 query = query.Where(d => departmentIds.Contains(d.DepartmentId));
@@ -197,8 +206,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             query = query.InternalFilter(filters);
 
             query = query.InternalOrderBy(orderByFieldName, asc);
-
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
+            var lst = await query.Select(d => new DepartmentExtendModel
             {
                 DepartmentId = d.DepartmentId,
                 DepartmentCode = d.DepartmentCode,
@@ -213,11 +221,26 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
+            lst.ForEach(d =>
+            {
+                var department = departmentInfos.List.FirstOrDefault(x => Convert.ToInt32(x.FirstOrDefault().Value) == d.DepartmentId);
+                department.TryGetValue(nameof(DepartmentExtendModel.Level), out var level);
+                department.TryGetValue(nameof(DepartmentExtendModel.PathCodes), out var pathCodes);
+                department.TryGetValue(nameof(DepartmentExtendModel.PathNames), out var pathNames);
+                department.TryGetValue(nameof(DepartmentExtendModel.TreeTitle), out var treeTitle);
+                d.Level = Convert.ToInt32(level);
+                d.PathCodes = pathCodes.ToString();
+                d.PathNames = pathNames.ToString();
+                d.TreeTitle = treeTitle.ToString();
+            });
+
+            lst = (size > 0 ? lst.Skip((page - 1) * size).Take(size).ToList() : lst).OrderBy(d=> d.PathCodes).ToList();
+
             var total = await query.CountAsync();
 
             return (lst, total);
         }
-
+       
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
         {
