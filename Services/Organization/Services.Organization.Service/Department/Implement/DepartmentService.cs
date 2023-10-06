@@ -230,10 +230,9 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 parentDepartment.Level = level;
                 parentDepartment.PathCodes = string.Join("/", new string[] { pathCode, parentDepartment.DepartmentCode });
                 parentDepartment.PathNames = string.Join("/", new string[] { pathName, parentDepartment.DepartmentName });
-                if (!newLstDepartments.Any(d=> d.DepartmentId == parentDepartment.DepartmentId))
-                    newLstDepartments.Add(parentDepartment);
+                newLstDepartments.Add(parentDepartment);
                 var childrenDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartment.DepartmentId).ToList();
-                foreach(var childDepartment in childrenDepartments)
+                if (childrenDepartments.Count > 0)
                 {
                     SetTreePathCode(currentLstDepartment, newLstDepartments, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
                 }
