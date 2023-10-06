@@ -32,6 +32,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
         private readonly ObjectActivityLogFacade _departmentActivityLog;
         private readonly ICategoryHelperService _categoryHelperService;
         private const string DEPARTMENT_CODE = "_Department";
+        private const string F_ID = "F_Id";
 
         public DepartmentService(OrganizationDBContext organizationContext
             , IActivityLogService activityLogService
@@ -223,7 +224,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
 
             lst.ForEach(d =>
             {
-                var department = departmentInfos.List.FirstOrDefault(x => Convert.ToInt32(x.FirstOrDefault().Value) == d.DepartmentId);
+                var department = departmentInfos.List.FirstOrDefault(x => x.TryGetValue(F_ID, out var fId) && Convert.ToInt32(fId) == d.DepartmentId);
                 department.TryGetValue(nameof(DepartmentExtendModel.Level), out var level);
                 department.TryGetValue(nameof(DepartmentExtendModel.PathCodes), out var pathCodes);
                 department.TryGetValue(nameof(DepartmentExtendModel.PathNames), out var pathNames);
