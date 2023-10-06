@@ -212,16 +212,16 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
-            var newlst = SetTreePathCode(lst, new List<DepartmentExtendModel>()).OrderBy(d=> d.PathCodes).ToIList();
+            lst = SetTreePathCode(lst).OrderBy(d=> d.PathCodes).ToList();
 
-            newlst = size > 0 ? newlst.Skip((page - 1) * size).Take(size).ToIList() : newlst;
+            lst = size > 0 ? lst.Skip((page - 1) * size).Take(size).ToList() : lst;
 
             var total = await query.CountAsync();
 
-            return (newlst, total);
+            return (lst, total);
         }
 
-        private IList<DepartmentExtendModel> SetTreePathCode(IList<DepartmentExtendModel> currentLstDepartment, IList<DepartmentExtendModel> newLstDepartments, int level =0, int? parentDepartmentId = null, string pathCode = null, string pathName = null)
+        private IList<DepartmentExtendModel> SetTreePathCode(IList<DepartmentExtendModel> currentLstDepartment, int level =0, int? parentDepartmentId = null, string pathCode = null, string pathName = null)
         {
             level++;
             var parentDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartmentId).ToList();
@@ -230,14 +230,13 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 parentDepartment.Level = level;
                 parentDepartment.PathCodes = string.Join("/", new string[] { pathCode, parentDepartment.DepartmentCode });
                 parentDepartment.PathNames = string.Join("/", new string[] { pathName, parentDepartment.DepartmentName });
-                newLstDepartments.Add(parentDepartment);
                 var childrenDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartment.DepartmentId).ToList();
                 if (childrenDepartments.Count > 0)
                 {
-                    SetTreePathCode(currentLstDepartment, newLstDepartments, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
+                    SetTreePathCode(currentLstDepartment, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
                 }
             }
-            return newLstDepartments;
+            return currentLstDepartment;
         }
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
