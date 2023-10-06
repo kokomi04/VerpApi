@@ -10,12 +10,10 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
-using VErp.Commons.GlobalObject.InternalDataInterface.Category;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
-using VErp.Infrastructure.ServiceCore.CrossServiceHelper.General;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -30,19 +28,14 @@ namespace VErp.Services.Organization.Service.Department.Implement
         private readonly OrganizationDBContext _organizationContext;
         private readonly IAsyncRunnerService _asyncRunnerService;
         private readonly ObjectActivityLogFacade _departmentActivityLog;
-        private readonly ICategoryHelperService _categoryHelperService;
-        private const string DEPARTMENT_CODE = "_Department";
-        private const string F_ID = "F_Id";
 
         public DepartmentService(OrganizationDBContext organizationContext
             , IActivityLogService activityLogService
             , IAsyncRunnerService asyncRunnerService
-            , ICategoryHelperService categoryHelperService
             )
         {
             _organizationContext = organizationContext;
             _asyncRunnerService = asyncRunnerService;
-            _categoryHelperService = categoryHelperService;
             _departmentActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Department);
         }
 
@@ -184,9 +177,6 @@ namespace VErp.Services.Organization.Service.Department.Implement
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
-
-            var departmentInfos = await _categoryHelperService.GetDataRows(DEPARTMENT_CODE, new CategoryFilterModel());
-
             if (departmentIds != null && departmentIds.Count > 0)
             {
                 query = query.Where(d => departmentIds.Contains(d.DepartmentId));
@@ -207,7 +197,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             query = query.InternalFilter(filters);
 
             query = query.InternalOrderBy(orderByFieldName, asc);
-            var lst = await query.Select(d => new DepartmentExtendModel
+            var lst = await query.Select(d=> new DepartmentExtendModel
             {
                 DepartmentId = d.DepartmentId,
                 DepartmentCode = d.DepartmentCode,
@@ -222,26 +212,34 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
-            lst.ForEach(d =>
-            {
-                var department = departmentInfos.List.FirstOrDefault(x => x.TryGetValue(F_ID, out var fId) && Convert.ToInt32(fId) == d.DepartmentId);
-                department.TryGetValue(nameof(DepartmentExtendModel.Level), out var level);
-                department.TryGetValue(nameof(DepartmentExtendModel.PathCodes), out var pathCodes);
-                department.TryGetValue(nameof(DepartmentExtendModel.PathNames), out var pathNames);
-                department.TryGetValue(nameof(DepartmentExtendModel.TreeTitle), out var treeTitle);
-                d.Level = Convert.ToInt32(level);
-                d.PathCodes = pathCodes.ToString();
-                d.PathNames = pathNames.ToString();
-                d.TreeTitle = treeTitle.ToString();
-            });
+            var newlst = SetTreePathCode(lst, new List<DepartmentExtendModel>()).OrderBy(d=> d.PathCodes).ToIList();
 
-            lst = (size > 0 ? lst.Skip((page - 1) * size).Take(size).ToList() : lst).OrderBy(d=> d.PathCodes).ToList();
+            newlst = size > 0 ? newlst.Skip((page - 1) * size).Take(size).ToIList() : newlst;
 
             var total = await query.CountAsync();
 
-            return (lst, total);
+            return (newlst, total);
         }
-       
+
+        private IList<DepartmentExtendModel> SetTreePathCode(IList<DepartmentExtendModel> currentLstDepartment, IList<DepartmentExtendModel> newLstDepartments, int level =0, int? parentDepartmentId = null, string pathCode = null, string pathName = null)
+        {
+            level++;
+            var parentDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartmentId).ToList();
+            foreach (var parentDepartment in parentDepartments)
+            {
+                parentDepartment.Level = level;
+                parentDepartment.PathCodes = string.Join("/", new string[] { pathCode, parentDepartment.DepartmentCode });
+                parentDepartment.PathNames = string.Join("/", new string[] { pathName, parentDepartment.DepartmentName });
+                if (!newLstDepartments.Any(d=> d.DepartmentId == parentDepartment.DepartmentId))
+                    newLstDepartments.Add(parentDepartment);
+                var childrenDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartment.DepartmentId).ToList();
+                foreach(var childDepartment in childrenDepartments)
+                {
+                    SetTreePathCode(currentLstDepartment, newLstDepartments, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
+                }
+            }
+            return newLstDepartments;
+        }
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
         {

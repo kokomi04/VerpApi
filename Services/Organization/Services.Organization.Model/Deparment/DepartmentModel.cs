@@ -14,7 +14,6 @@ namespace VErp.Services.Organization.Model.Department
     }
     public class DepartmentExtendModel : DepartmentModel
     {
-        public string TreeTitle { get; set; }
         public string PathCodes { get; set; }
         public string PathNames { get; set; }
         public int? Level { get; set; } 
