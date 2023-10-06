@@ -181,12 +181,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     }
                     catch (Exception ex)
                     {
+                        await trans.RollbackAsync();
+
                         if (isChangeDataType)
                         {
                             _logger.LogError(ex, "ModifyColumn");
-                            throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName + " " + ex.Message);
-                        }
-
+                            throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName + "\n " + ex.Message);
+                        }                        
                         throw;
                     }
 
