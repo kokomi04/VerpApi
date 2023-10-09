@@ -4,11 +4,15 @@ using Microsoft.AspNetCore.Routing;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Infrastructure.ApiCore.ModelBinders;
+using VErp.Infrastructure.EF.OrganizationDB;
+using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.TimeKeeping;
 
 namespace VErpApi.Controllers.Organization.TimeKeeping
@@ -32,66 +36,67 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
         }
 
         [HttpDelete]
-        [Route("{year}/{month}")]
-        public async Task<bool> DeleteTimeSheet([FromRoute] int year, [FromRoute] int month)
+        [Route("{timeSheetId}")]
+        public async Task<bool> DeleteTimeSheet([FromRoute] long timeSheetId)
         {
-            return await _timeSheetService.DeleteTimeSheet(year, month);
-        }
-
-        [HttpGet]
-        [Route("")]
-        public async Task<IList<TimeSheetModel>> GetListTimeSheet()
-        {
-            return await _timeSheetService.GetListTimeSheet();
-        }
-
-        [HttpGet]
-        [Route("{year}/{month}")]
-        public async Task<TimeSheetModel> GetTimeSheet([FromRoute] int year, [FromRoute] int month)
-        {
-            return await _timeSheetService.GetTimeSheet(year, month);
-        }
-
-        [HttpGet]
-        [Route("{year}/{month}/employee/{employeeId}")]
-        public async Task<TimeSheetModel> GetTimeSheetByEmployee([FromRoute] int year, [FromRoute] int month, [FromRoute] int employeeId)
-        {
-            return await _timeSheetService.GetTimeSheetByEmployee(year, month, employeeId);
-        }
-
-        [HttpPut]
-        [Route("{year}/{month}")]
-        public async Task<bool> UpdateTimeSheet([FromRoute] int year, [FromRoute] int month, [FromBody] TimeSheetModel model)
-        {
-            return await _timeSheetService.UpdateTimeSheet(year, month, model);
-
-        }
-
-        [HttpPut]
-        [Route("{year}/{month}/approve")]
-        public async Task<bool> ApproveTimeSheet([FromRoute] int year, [FromRoute] int month)
-        {
-            return await _timeSheetService.ApproveTimeSheet(year, month);
-
-        }
-
-        [HttpGet]
-        [Route("fieldDataForMapping")]
-        public CategoryNameModel GetFieldDataForMapping([FromQuery] long beginDate, [FromQuery] long endDate)
-        {
-            return _timeSheetService.GetFieldDataForMapping(beginDate, endDate);
+            return await _timeSheetService.DeleteTimeSheet(timeSheetId);
         }
 
         [HttpPost]
-        [Route("importFromMapping")]
-        public async Task<bool> ImportFromMapping([FromQuery] int month, [FromQuery] int year, [FromQuery] long beginDate, [FromQuery] long endDate, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        [Route("Search")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<PageData<TimeSheetModel>> GetListTimeSheet([FromBody] TimeSheetRequestModel request)
         {
-            if (file == null)
-            {
-                throw new BadRequestException(GeneralCode.InvalidParams);
-            }
-            return await _timeSheetService.ImportTimeSheetFromMapping(month, year, beginDate, endDate, mapping, file.OpenReadStream()).ConfigureAwait(true);
+            return await _timeSheetService.GetListTimeSheet(request, request.Page, request.Size);
         }
+
+        [HttpGet]
+        [Route("{timeSheetId}")]
+        public async Task<TimeSheetModel> GetTimeSheet([FromRoute] long timeSheetId)
+        {
+            return await _timeSheetService.GetTimeSheet(timeSheetId);
+        }
+
+        [HttpGet]
+        [Route("{timeSheetId}/employee/{employeeId}")]
+        public async Task<TimeSheetModel> GetTimeSheetByEmployee([FromRoute] long timeSheetId, [FromRoute] int employeeId)
+        {
+            return await _timeSheetService.GetTimeSheetByEmployee(timeSheetId, employeeId);
+        }
+
+        [HttpPut]
+        [Route("{timeSheetId}")]
+        public async Task<bool> UpdateTimeSheet([FromRoute] long timeSheetId, [FromBody] TimeSheetModel model)
+        {
+            return await _timeSheetService.UpdateTimeSheet(timeSheetId, model);
+
+        }
+
+        [HttpPut]
+        [Route("{timeSheetId}/approve")]
+        public async Task<bool> ApproveTimeSheet([FromRoute] long timeSheetId)
+        {
+            return await _timeSheetService.ApproveTimeSheet(timeSheetId);
+
+        }
+
+        //[HttpGet]
+        //[Route("fieldDataForMapping")]
+        //public CategoryNameModel GetFieldDataForMapping([FromQuery] long beginDate, [FromQuery] long endDate)
+        //{
+        //    return _timeSheetService.GetFieldDataForMapping(beginDate, endDate);
+        //}
+
+        //[HttpPost]
+        //[Route("importFromMapping")]
+        //public async Task<bool> ImportFromMapping([FromQuery] int month, [FromQuery] int year, [FromQuery] long beginDate, [FromQuery] long endDate, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        //{
+        //    if (file == null)
+        //    {
+        //        throw new BadRequestException(GeneralCode.InvalidParams);
+        //    }
+        //    return await _timeSheetService.ImportTimeSheetFromMapping(month, year, beginDate, endDate, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        //}
 
 
     }

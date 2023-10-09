@@ -13,17 +13,7 @@ public partial class TimeSheetDetail
 
     public DateTime Date { get; set; }
 
-    public TimeSpan? TimeIn { get; set; }
-
-    public TimeSpan? TimeOut { get; set; }
-
-    public int? AbsenceTypeSymbolId { get; set; }
-
-    public long? MinsOvertime { get; set; }
-
-    public long? MinsLate { get; set; }
-
-    public long? MinsEarly { get; set; }
+    public int DateType { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }
 
@@ -38,4 +28,6 @@ public partial class TimeSheetDetail
     public DateTime? DeletedDatetimeUtc { get; set; }
 
     public virtual TimeSheet TimeSheet { get; set; }
+
+    public virtual ICollection<TimeSheetDetailShift> TimeSheetDetailShift { get; set; } = new List<TimeSheetDetailShift>();
 }

@@ -68,6 +68,13 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
         }
 
         [HttpGet]
+        [Route("distinct")]
+        public async Task<IList<TimeSheetRawModel>> GetDistinctTimeSheetRawByEmployee([FromBody] List<long?> employeeIds)
+        {
+            return await _timeSheetRawService.GetDistinctTimeSheetRawByEmployee(employeeIds);
+        }
+
+        [HttpGet]
         [Route("fieldDataForMapping")]
         public async Task<CategoryNameModel> GetFieldDataForMapping()
         {

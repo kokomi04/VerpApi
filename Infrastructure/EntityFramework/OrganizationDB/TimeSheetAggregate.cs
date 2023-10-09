@@ -15,9 +15,13 @@ public partial class TimeSheetAggregate
 
     public decimal CountedWeekend { get; set; }
 
+    public decimal CountedHoliday { get; set; }
+
     public decimal CountedWeekdayHour { get; set; }
 
     public decimal CountedWeekendHour { get; set; }
+
+    public decimal CountedHolidayHour { get; set; }
 
     public long MinsLate { get; set; }
 
@@ -26,14 +30,6 @@ public partial class TimeSheetAggregate
     public long MinsEarly { get; set; }
 
     public int CountedEarly { get; set; }
-
-    public decimal Overtime1 { get; set; }
-
-    public decimal Overtime2 { get; set; }
-
-    public decimal Overtime3 { get; set; }
-
-    public int CountedAbsence { get; set; }
 
     public bool IsDeleted { get; set; }
 
@@ -44,4 +40,8 @@ public partial class TimeSheetAggregate
     public DateTime UpdatedDatetimeUtc { get; set; }
 
     public virtual TimeSheet TimeSheet { get; set; }
+
+    public virtual ICollection<TimeSheetAggregateAbsence> TimeSheetAggregateAbsence { get; set; } = new List<TimeSheetAggregateAbsence>();
+
+    public virtual ICollection<TimeSheetAggregateOvertime> TimeSheetAggregateOvertime { get; set; } = new List<TimeSheetAggregateOvertime>();
 }
