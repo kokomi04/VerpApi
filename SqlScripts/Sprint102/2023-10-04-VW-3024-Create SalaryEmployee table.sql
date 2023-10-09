@@ -29,10 +29,11 @@
         SELECT @OldName = COLUMN_NAME  FROM [INFORMATION_SCHEMA].[COLUMNS] WHERE TABLE_NAME = @TableName AND COLUMN_NAME = @FieldName
 
 		EXEC dbo.asp_SalaryEmployeeTable_UpdateField
-				@SubId = @SubId,	
+				@SubId = @SubId,
+				@OldDataTypeId = @DataTypeId,
 				@OldFieldName = @OldName,
 				@NewFieldName = @FieldName,
-				@DataTypeId = @DataTypeId
+				@NewDataTypeId = @DataTypeId
 
         FETCH NEXT FROM salary_field_cursor INTO @SubId, @SubsidiayCode, @FieldName, @DataTypeId
         END  

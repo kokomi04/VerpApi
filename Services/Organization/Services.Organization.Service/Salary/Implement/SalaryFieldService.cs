@@ -83,11 +83,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 throw GeneralCode.NotYetSupported.BadRequest();
             }
 
+
+
             var sql = $"SELECT TOP(1) e.SalaryGroupId, g.Title SalaryGroupTitle, e.SalaryPeriodId, p.Year, p.Month " +
                 $"FROM {OrganizationConstants.GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} e " +
                 $"JOIN SalaryPeriod p ON e.SalaryPeriodId = p.SalaryPeriodId " +
                 $"JOIN SalaryGroup g ON e.SalaryGroupId = g.SalaryGroupId " +
-                $"WHERE e.IsDeleted = 0 AND e.[{info.SalaryFieldName}] <> NULL AND e.[{info.SalaryFieldName}] <> '' AND e.[{info.SalaryFieldName}] <> 0";
+                $"WHERE e.IsDeleted = 0 AND e.[{info.SalaryFieldName}] <> NULL ";
 
             var usingEmployeeValue = (await _organizationDBContext.QueryListRaw<InUsedEmployeeSalaryFieldModel>(sql, Array.Empty<SqlParameter>())).FirstOrDefault();
 
