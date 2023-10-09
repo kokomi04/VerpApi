@@ -28,7 +28,7 @@ namespace VErpApi.Controllers.Organization
         [HttpGet]
         [Route("")]
         [GlobalApi]
-        public async Task<PageData<DepartmentModel>> Get(
+        public async Task<PageData<DepartmentExtendModel>> Get(
             [FromQuery] string keyword, 
             [FromQuery] IList<int> departmentIds, 
             [FromQuery] bool? isProduction, 

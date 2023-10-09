@@ -12,4 +12,10 @@ namespace VErp.Services.Organization.Model.Department
         public long? ImageFileId { get; set; }
         public bool IsFactory { get; set; }
     }
+    public class DepartmentExtendModel : DepartmentModel
+    {
+        public string PathCodes { get; set; }
+        public string PathNames { get; set; }
+        public int? Level { get; set; } 
+    }
 }

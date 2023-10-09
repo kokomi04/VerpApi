@@ -173,7 +173,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc,  Clause filters = null)
+        public async Task<PageData<DepartmentExtendModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
@@ -197,8 +197,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             query = query.InternalFilter(filters);
 
             query = query.InternalOrderBy(orderByFieldName, asc);
-
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
+            var lst = await query.Select(d=> new DepartmentExtendModel
             {
                 DepartmentId = d.DepartmentId,
                 DepartmentCode = d.DepartmentCode,
@@ -213,11 +212,32 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 IsFactory = d.IsFactory
             }).ToListAsync();
 
+            lst = SetTreePathCode(lst).OrderBy(d=> d.PathCodes).ToList();
+
+            lst = size > 0 ? lst.Skip((page - 1) * size).Take(size).ToList() : lst;
+
             var total = await query.CountAsync();
 
             return (lst, total);
         }
 
+        private IList<DepartmentExtendModel> SetTreePathCode(IList<DepartmentExtendModel> currentLstDepartment, int level =0, int? parentDepartmentId = null, string pathCode = null, string pathName = null)
+        {
+            level++;
+            var parentDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartmentId).ToList();
+            foreach (var parentDepartment in parentDepartments)
+            {
+                parentDepartment.Level = level;
+                parentDepartment.PathCodes = string.Join("/", new string[] { pathCode, parentDepartment.DepartmentCode });
+                parentDepartment.PathNames = string.Join("/", new string[] { pathName, parentDepartment.DepartmentName });
+                var childrenDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartment.DepartmentId).ToList();
+                if (childrenDepartments.Count > 0)
+                {
+                    SetTreePathCode(currentLstDepartment, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
+                }
+            }
+            return currentLstDepartment;
+        }
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
         {
