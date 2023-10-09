@@ -466,7 +466,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
                     {
-                       // throw GeneralCode.DataIsOld.BadRequest();
+                        throw GeneralCode.DataIsOld.BadRequest();
                     }
 
                     _mapper.Map(model, info);

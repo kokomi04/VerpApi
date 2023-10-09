@@ -215,6 +215,8 @@ public partial class PurchaseOrderDBContext : DbContext
                 .HasFilter("([IsDeleted]=(0))");
 
             entity.Property(e => e.Description).HasMaxLength(1024);
+            entity.Property(e => e.InputTypeSelectedState).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InputUnitTypeSelectedState).HasDefaultValueSql("((1))");
             entity.Property(e => e.MaterialCalcCode).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
         });

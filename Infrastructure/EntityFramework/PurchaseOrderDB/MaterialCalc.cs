@@ -15,6 +15,10 @@ public partial class MaterialCalc
 
     public string Description { get; set; }
 
+    public int? InputTypeSelectedState { get; set; }
+
+    public int? InputUnitTypeSelectedState { get; set; }
+
     public int CreatedByUserId { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }
