@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Enums.StandardEnum;
 
 namespace VErp.Services.PurchaseOrder.Model
 {
@@ -48,8 +49,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public string DeliveryMethod { get; set; }
         public string PaymentMethod { get; set; }
         public string AttachmentBill { get; set; }
-        public EnumPurchaseOrderInputType? InputTypeSelectedState { get; set; }
-        public EnumPurchaseOrderInputUnitType? InputUnitTypeSelectedState { get; set; }
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
     }
 
     public class PurchaseOrderOutput : PurchaseOrderOutputList

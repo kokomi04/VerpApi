@@ -304,8 +304,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PaymentMethod = info.DeliveryMethod,
                     AttachmentBill = info.AttachmentBill,
 
-                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
+                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumInputType)info.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)info.InputUnitTypeSelectedState : null,
                 });
             }
 
@@ -621,8 +621,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PaymentMethod = item.DeliveryMethod,
                     AttachmentBill = item.AttachmentBill,
 
-                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)item.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)item.InputUnitTypeSelectedState : null,
+                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumInputType)item.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)item.InputUnitTypeSelectedState : null,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult?.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
@@ -763,8 +763,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PaymentMethod = info.PaymentMethod,
                 AttachmentBill = info.AttachmentBill,
 
-                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
+                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumInputType)info.InputTypeSelectedState : EnumInputType.Default,
+                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)info.InputUnitTypeSelectedState : null,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder)
@@ -904,7 +904,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeliveryMethod = model.DeliveryMethod,
                 PaymentMethod = model.PaymentMethod,
                 AttachmentBill = model.AttachmentBill,
-                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault,
+                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumInputType.Default,
                 InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null,
 
             };
@@ -1095,7 +1095,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
                 info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null;
-                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
+                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumInputType.Default;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {

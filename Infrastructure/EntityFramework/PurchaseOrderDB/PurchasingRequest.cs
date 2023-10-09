@@ -62,6 +62,10 @@ public partial class PurchasingRequest
 
     public long? ProductionOrderMaterialSetId { get; set; }
 
+    public int? InputTypeSelectedState { get; set; }
+
+    public int? InputUnitTypeSelectedState { get; set; }
+
     public virtual MaterialCalc MaterialCalc { get; set; }
 
     public virtual PropertyCalc PropertyCalc { get; set; }
