@@ -212,6 +212,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                             r.UpdatedDatetimeUtc,
                             r.CensorByUserId,
                             r.CensorDatetimeUtc,
+                            r.InputTypeSelectedState,
+                            r.InputUnitTypeSelectedState,
                             d.PurchasingRequestDetailId,
                             d.ProductId,
                             d.PrimaryQuantity,
@@ -302,7 +304,10 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     ProductMaterialsConsumptionGroupId = info.ProductMaterialsConsumptionGroupId,
                     MaterialCalcId = info.MaterialCalcId,
                     PropertyCalcId = info.PropertyCalcId,
-                    SortOrder = info.SortOrder
+                    SortOrder = info.SortOrder,
+
+                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumInputType)info.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)info.InputUnitTypeSelectedState : null,
 
                 });
             }
@@ -461,7 +466,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
                     if (model.UpdatedDatetimeUtc != info.UpdatedDatetimeUtc.GetUnix())
                     {
-                        throw GeneralCode.DataIsOld.BadRequest();
+                       // throw GeneralCode.DataIsOld.BadRequest();
                     }
 
                     _mapper.Map(model, info);

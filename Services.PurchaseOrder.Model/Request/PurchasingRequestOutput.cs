@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
@@ -33,7 +34,8 @@ namespace VErp.Services.PurchaseOrder.Model
         public int? ProductMaterialsConsumptionGroupId { get; set; }
         public long? ProductionOrderMaterialSetId { get; set; }
 
-
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
 
         public long? NeedDate { get; set; }
 

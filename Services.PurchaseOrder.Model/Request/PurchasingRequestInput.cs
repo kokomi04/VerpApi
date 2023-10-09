@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Verp.Resources.PurchaseOrder.PurchasingRequest;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
@@ -19,6 +20,9 @@ namespace VErp.Services.PurchaseOrder.Model
         public long? ProductionOrderId { get; set; }
         public int? ProductMaterialsConsumptionGroupId { get; set; }
         public long? ProductionOrderMaterialSetId { get; set; }
+
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
 
         public List<PurchasingRequestInputDetail> Details { set; get; }
 
