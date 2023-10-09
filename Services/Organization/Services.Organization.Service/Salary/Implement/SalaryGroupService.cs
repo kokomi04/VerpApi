@@ -157,7 +157,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                        $"FROM {OrganizationConstants.GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} e " +
                        $"JOIN SalaryPeriod p ON e.SalaryPeriodId = p.SalaryPeriodId " +
                        $"JOIN SalaryGroup g ON e.SalaryGroupId = g.SalaryGroupId " +
-                       $"WHERE IsDeleted = 0 e.SalaryGroupId = @SalaryGroupId AND e.[{field.SalaryFieldName}] <> NULL AND e.[{field.SalaryFieldName}] <> '' AND e.[{field.SalaryFieldName}] <> 0";
+                       $"WHERE e.IsDeleted = 0 e.SalaryGroupId = @SalaryGroupId AND e.[{field.SalaryFieldName}] <> NULL AND e.[{field.SalaryFieldName}] <> '' AND e.[{field.SalaryFieldName}] <> 0";
 
                     var usingEmployeeValue = (await _organizationDBContext.QueryListRaw<InUsedEmployeeSalaryFieldModel>(sql, new[] { new SqlParameter("@SalaryGroupId", salaryGroupId) })).FirstOrDefault();
 
