@@ -51,7 +51,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 if (!info.IsDisplayRefData)
                 {
-                    await ModifyColumn(null, info.SalaryFieldName, (EnumDataType)info.DataTypeId);
+                    await ModifyColumn((EnumDataType)info.DataTypeId, null, info.SalaryFieldName, (EnumDataType)info.DataTypeId);
                 }
 
                 await DropAndCreateSalaryFlatData();
@@ -87,7 +87,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 $"FROM {OrganizationConstants.GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} e " +
                 $"JOIN SalaryPeriod p ON e.SalaryPeriodId = p.SalaryPeriodId " +
                 $"JOIN SalaryGroup g ON e.SalaryGroupId = g.SalaryGroupId " +
-                $"WHERE IsDeleted = 0 AND e.[{info.SalaryFieldName}] <> NULL AND e.[{info.SalaryFieldName}] <> '' AND e.[{info.SalaryFieldName}] <> 0";
+                $"WHERE e.IsDeleted = 0 AND e.[{info.SalaryFieldName}] <> NULL AND e.[{info.SalaryFieldName}] <> '' AND e.[{info.SalaryFieldName}] <> 0";
 
             var usingEmployeeValue = (await _organizationDBContext.QueryListRaw<InUsedEmployeeSalaryFieldModel>(sql, Array.Empty<SqlParameter>())).FirstOrDefault();
 
@@ -109,7 +109,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                 if (!info.IsDisplayRefData)
                 {
-                    await ModifyColumn(info.SalaryFieldName, null, (EnumDataType)info.DataTypeId);
+                    await ModifyColumn((EnumDataType)info.DataTypeId, info.SalaryFieldName, null, (EnumDataType)info.DataTypeId);
                 }
 
                 await DropAndCreateSalaryFlatData();
@@ -162,6 +162,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     oldFieldName = info.SalaryFieldName;
                 }
+                var oldDataTypeId = (EnumDataType)info.DataTypeId;
 
                 _mapper.Map(model, info);
                 info.SalaryFieldId = salaryFieldId;
@@ -177,7 +178,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 {
                     try
                     {
-                        await ModifyColumn(oldFieldName, model.SalaryFieldName, model.DataTypeId);
+                        await ModifyColumn(oldDataTypeId, oldFieldName, model.SalaryFieldName, model.DataTypeId);
                     }
                     catch (Exception ex)
                     {
@@ -187,7 +188,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         {
                             _logger.LogError(ex, "ModifyColumn");
                             throw SalaryFieldValidationMessage.CannotChangeDataTypeOfSalaryField.BadRequestFormat(info.SalaryFieldName + "\n " + ex.Message);
-                        }                        
+                        }
                         throw;
                     }
 
@@ -230,15 +231,16 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             await _organizationDBContext.ExecuteStoreProcedure("usp_DropAndCreateSalaryFlatData", parameters);
         }
 
-        private async Task ModifyColumn(string oldFieldName, string newFieldName, EnumDataType dataTypeId)
+        private async Task ModifyColumn(EnumDataType oldDataTypeId, string oldFieldName, string newFieldName, EnumDataType newDataTypeId)
         {
 
             var parameters = new List<SqlParameter>
             {
                 new SqlParameter("@SubId", _currentContextService.SubsidiaryId),
+                new SqlParameter("@OldDataTypeId",(int)oldDataTypeId),
                 new SqlParameter("@OldFieldName", oldFieldName),
                 new SqlParameter("@NewFieldName", newFieldName),
-                new SqlParameter("@DataTypeId",(int)dataTypeId)
+                new SqlParameter("@NewDataTypeId",(int)newDataTypeId)
             };
             await _organizationDBContext.ExecuteStoreProcedure("asp_SalaryEmployeeTable_UpdateField", parameters);
         }
