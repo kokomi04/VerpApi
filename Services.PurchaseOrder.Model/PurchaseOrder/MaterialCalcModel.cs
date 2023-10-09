@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using System.Collections.Generic;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.PurchaseOrderDB;
 
@@ -11,6 +12,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public string MaterialCalcCode { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
         public int CreatedByUserId { get; set; }
         public long CreatedDatetimeUtc { get; set; }
     }
@@ -114,6 +117,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public long MaterialCalcId { get; set; }
         public string MaterialCalcCode { get; set; }
         public string Title { get; set; }
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
         public IList<MaterialCalcConsumptionGroupModel> ConsumptionGroups { get; set; }
 
         public string OrderCode { get; set; }
