@@ -358,10 +358,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
                     }
 
-                    if (fieldValue == null &&!f.IsDisplayRefData && f.DataTypeId.IsNumber())
-                    {
-                        fieldValue = 0;
-                    }
+                    //if (fieldValue == null &&!f.IsDisplayRefData && f.DataTypeId.IsNumber())
+                    //{
+                    //    fieldValue = 0;
+                    //}
 
 
                     if (fieldValue == null)
@@ -678,26 +678,26 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 foreach (var f in updateSalaryFields)
                 {
                     var type = typeof(string);
-                    object defaultValue = "";
+                    //object defaultValue = "";
                     switch (f.DataTypeId)
                     {
                         case EnumDataType.Int:
                         case EnumDataType.BigInt:
                         case EnumDataType.Decimal:
                             type = typeof(decimal);
-                            defaultValue = 0;
+                            //defaultValue = 0;
                             break;
                         case EnumDataType.Date:
                             type = typeof(DateTime);
-                            defaultValue = null;
+                          //  defaultValue = null;
                             break;
                         case EnumDataType.Boolean:
                             type = typeof(bool);
-                            defaultValue = false;
+                            //defaultValue = false;
                             break;
 
                     }
-                    dataTable.Columns.Add(new DataColumn(f.SalaryFieldName, type) { DefaultValue = defaultValue });
+                    dataTable.Columns.Add(new DataColumn(f.SalaryFieldName, type));// { DefaultValue = defaultValue });
                     dataTable.Columns.Add(new DataColumn(f.SalaryFieldName + "_IsEdited", typeof(bool)) { DefaultValue = false });
                 }
 
