@@ -215,7 +215,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                     sheet.EnsureCell(currentRow, 9, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity));
                     sheet.EnsureCell(currentRow,10, styleNumber).SetCellValue(Convert.ToDouble(m.Wastage));
-                    sheet.EnsureCell(currentRow,11, styleNumber).SetCellValue(((Convert.ToDouble(m.Quantity) * Convert.ToDouble(m.Wastage)) + Convert.ToDouble(m.TotalQuantityInheritance)) * Convert.ToDouble( m.BomQuantity));
+                    sheet.EnsureCell(currentRow,11, styleNumber).SetCellValue((Convert.ToDouble(m.Quantity) * Convert.ToDouble(m.Wastage) * Convert.ToDouble(m.BomQuantity)) + Convert.ToDouble(m.TotalQuantityInheritance) );
 
                     if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
                         sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(stepInfos[(int)m.StepId]);
