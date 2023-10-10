@@ -211,32 +211,32 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 NumberOfPerson = d.NumberOfPerson,
                 IsFactory = d.IsFactory
             }).ToListAsync();
-
-            lst = SetTreePathCode(lst).OrderBy(d=> d.PathCodes).ToList();
-
-            lst = size > 0 ? lst.Skip((page - 1) * size).Take(size).ToList() : lst;
-
+            
+            var parentDepartmentIds = (asc ? lst.Where(d => d.ParentId == null).OrderBy(d=> d.GetType().GetProperty(orderByFieldName)) : lst.Where(d => d.ParentId == null).OrderByDescending(d => d.GetType().GetProperty(orderByFieldName))).Select(d=> d.DepartmentId).ToList();
+            var newLst = new List<DepartmentExtendModel>();
+            foreach (var item in parentDepartmentIds)
+            {
+                newLst.AddRange(OrderByDepartment(lst, new List<DepartmentExtendModel>(), asc, orderByFieldName, parentId: item));
+            }
+            newLst = size > 0 ? newLst.Skip((page - 1) * size).Take(size).ToList() : newLst;
             var total = await query.CountAsync();
 
-            return (lst, total);
+            return (newLst, total);
         }
-
-        private IList<DepartmentExtendModel> SetTreePathCode(IList<DepartmentExtendModel> currentLstDepartment, int level =0, int? parentDepartmentId = null, string pathCode = null, string pathName = null)
+        private IList<DepartmentExtendModel> OrderByDepartment(IList<DepartmentExtendModel> currentDepartment, List<DepartmentExtendModel> newDepartments, bool asc, string orderByFieldName, int level =0, int? parentId = null)
         {
             level++;
-            var parentDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartmentId).ToList();
-            foreach (var parentDepartment in parentDepartments)
+            var parentDepartment = currentDepartment.FirstOrDefault(d => d.DepartmentId == parentId);
+            parentDepartment.Level = level;
+            if (!newDepartments.Contains(parentDepartment))
+                newDepartments.Add(parentDepartment);
+            var childrenDepartment = currentDepartment.Where(d => d.ParentId.HasValue && d.ParentId.Value == parentDepartment.DepartmentId).ToList();
+            newDepartments.AddRange(childrenDepartment);
+            foreach (var item in childrenDepartment)
             {
-                parentDepartment.Level = level;
-                parentDepartment.PathCodes = string.Join("/", new string[] { pathCode, parentDepartment.DepartmentCode });
-                parentDepartment.PathNames = string.Join("/", new string[] { pathName, parentDepartment.DepartmentName });
-                var childrenDepartments = currentLstDepartment.Where(d=> d.ParentId == parentDepartment.DepartmentId).ToList();
-                if (childrenDepartments.Count > 0)
-                {
-                    SetTreePathCode(currentLstDepartment, level, parentDepartment.DepartmentId, parentDepartment.PathCodes, parentDepartment.PathNames);
-                }
+                OrderByDepartment(currentDepartment, newDepartments, asc, orderByFieldName, level, item.DepartmentId);
             }
-            return currentLstDepartment;
+            return newDepartments;
         }
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
