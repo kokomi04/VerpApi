@@ -164,7 +164,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsApproved = false,
                     DepartmentId = req.DepartmentId,
                     InventoryActionId = (int)req.InventoryActionId,
-                    InventoryStatusId = (int)EnumInventoryStatus.Draff
+                    InventoryStatusId = (int)EnumInventoryStatus.Draff,
+                    InputTypeSelectedState = req.InputTypeSelectedState.HasValue ? (int)req.InputTypeSelectedState : (int)EnumInputType.Default,
+                    InputUnitTypeSelectedState = req.InputUnitTypeSelectedState.HasValue ? (int)req.InputUnitTypeSelectedState : null,
                 };
                 await _stockDbContext.AddAsync(inventoryObj);
                 await _stockDbContext.SaveChangesAsync();
@@ -418,6 +420,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             inventoryObj.TotalMoney = totalMoney;
             inventoryObj.DepartmentId = req.DepartmentId;
             inventoryObj.InventoryActionId = (int)req.InventoryActionId;
+            inventoryObj.InputTypeSelectedState = req.InputTypeSelectedState.HasValue ? (int)req.InputTypeSelectedState : (int)EnumInputType.Default;
+            inventoryObj.InputUnitTypeSelectedState = req.InputUnitTypeSelectedState.HasValue ? (int)req.InputUnitTypeSelectedState : null;
 
             if (inventoryObj.InventoryStatusId != (int)EnumInventoryStatus.Censored)
                 inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Draff;

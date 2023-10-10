@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.EMMA;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -843,6 +844,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     InputBills = invMappingObjs,
                     InventoryStatusId = inventoryObj.InventoryStatusId,
                     InventoryActionId = (EnumInventoryAction)inventoryObj.InventoryActionId,
+                    InputTypeSelectedState = inventoryObj.InputTypeSelectedState.HasValue ? (EnumInputType)inventoryObj.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = inventoryObj.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)inventoryObj.InputUnitTypeSelectedState : null,
                     UpdatedDatetimeUtc = inventoryObj.UpdatedDatetimeUtc.GetUnix(),
                 };
 
