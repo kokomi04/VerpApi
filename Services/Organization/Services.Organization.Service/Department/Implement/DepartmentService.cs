@@ -230,12 +230,14 @@ namespace VErp.Services.Organization.Service.Department.Implement
             parentDepartment.Level = level;
             if (!newDepartments.Contains(parentDepartment))
                 newDepartments.Add(parentDepartment);
-            var childrenDepartment = currentDepartment.Where(d => d.ParentId.HasValue && d.ParentId.Value == parentDepartment.DepartmentId).ToList();
-            newDepartments.AddRange(childrenDepartment);
-            foreach (var item in childrenDepartment)
+            var childrenDepartments = currentDepartment.Where(d => d.ParentId.HasValue && d.ParentId.Value == parentDepartment.DepartmentId).ToList();
+            foreach (var item in childrenDepartments)
             {
+                if (!newDepartments.Contains(item))
+                    newDepartments.Add(item);
                 OrderByDepartment(currentDepartment, newDepartments, asc, orderByFieldName, level, item.DepartmentId);
             }
+
             return newDepartments;
         }
 
