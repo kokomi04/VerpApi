@@ -140,6 +140,8 @@ public partial class StockDBContext : DbContext
             entity.Property(e => e.Content).HasMaxLength(512);
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Department).HasMaxLength(128);
+            entity.Property(e => e.InputTypeSelectedState).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InputUnitTypeSelectedState).HasDefaultValueSql("((1))");
             entity.Property(e => e.InventoryActionId).HasDefaultValueSql("((1))");
             entity.Property(e => e.InventoryCode)
                 .IsRequired()
@@ -291,8 +293,8 @@ public partial class StockDBContext : DbContext
                 .IsUnique()
                 .HasFilter("([IsDeleted]=(0))");
 
-         
-           
+
+
             entity.Property(e => e.CensorStatus).HasDefaultValueSql("((1))");
             entity.Property(e => e.Content).HasMaxLength(512);
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
@@ -300,7 +302,7 @@ public partial class StockDBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(128);
             entity.Property(e => e.ModuleTypeId).HasDefaultValueSql("((2))");
-        
+            
             entity.Property(e => e.UpdatedDatetimeUtc).HasDefaultValueSql("(getdate())");
         });
 
@@ -319,12 +321,12 @@ public partial class StockDBContext : DbContext
                 .IsUnicode(false)
                 .HasColumnName("POCode");
             entity.Property(e => e.PrimaryQuantity).HasColumnType("decimal(32, 12)");
-         
+
             entity.Property(e => e.ProductUnitConversionQuantity).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.ProductionOrderCode)
                 .HasMaxLength(64)
                 .IsUnicode(false);
-        
+
             entity.HasOne(d => d.AssignStock).WithMany(p => p.InventoryRequirementDetail)
                 .HasForeignKey(d => d.AssignStockId)
                 .HasConstraintName("FK_InventoryRequirementDetail_Stock");

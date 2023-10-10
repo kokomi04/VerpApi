@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Stock.Model.Package;
 
 namespace VErp.Services.Stock.Model.Inventory
@@ -10,6 +11,8 @@ namespace VErp.Services.Stock.Model.Inventory
         public string InventoryCode { get; set; }
         public long Date { get; set; }
         public EnumInventoryAction InventoryActionId { get; set; }
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
     }
     public class InventoryInModel : InventoryModelBase
     {
