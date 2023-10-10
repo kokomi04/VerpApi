@@ -1,4 +1,5 @@
-﻿using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
+﻿using System.Collections.Generic;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 
 namespace VErp.Services.Organization.Model.Department
 {
@@ -14,8 +15,6 @@ namespace VErp.Services.Organization.Model.Department
     }
     public class DepartmentExtendModel : DepartmentModel
     {
-        public string PathCodes { get; set; }
-        public string PathNames { get; set; }
         public int? Level { get; set; } 
     }
 }
