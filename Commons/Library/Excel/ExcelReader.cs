@@ -824,6 +824,15 @@ namespace VErp.Commons.Library
                     return PREFIX_ERROR_CELL + ((XSSFCell)cell).ErrorCellString + " => " + cell.Address.ToString() + " (" + cellFormular + ")";
 
                 case CellType.Numeric:
+                    try
+                    {
+                        var date = cell.DateCellValue;
+                        return date.ToString();
+                    }
+                    catch (Exception)
+                    {
+                    }
+
                     if (DateUtil.IsCellDateFormatted(cell))
                     {
                         try
