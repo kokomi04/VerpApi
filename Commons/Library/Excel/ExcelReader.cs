@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Spreadsheet;
+using NPOI.HSSF.UserModel;
 using NPOI.SS.Formula.Functions;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
@@ -36,6 +37,7 @@ namespace VErp.Commons.Library
         {
             //hssfwb = WorkbookFactory.Create(file);// new XSSFWorkbook(file);
             _xssfwb = new XSSFWorkbook(file);
+
             file.Close();
         }
 
@@ -824,16 +826,11 @@ namespace VErp.Commons.Library
                     return PREFIX_ERROR_CELL + ((XSSFCell)cell).ErrorCellString + " => " + cell.Address.ToString() + " (" + cellFormular + ")";
 
                 case CellType.Numeric:
-                    try
-                    {
-                        var date = cell.DateCellValue;
-                        return date.ToString();
-                    }
-                    catch (Exception)
-                    {
-                    }
+                    
 
-                    if (DateUtil.IsCellDateFormatted(cell))
+                    var isCellInternalDateFormatted = IsCellInternalDateFormatted(cell);
+
+                    if (DateUtil.IsCellDateFormatted(cell) || isCellInternalDateFormatted)
                     {
                         try
                         {
@@ -869,6 +866,29 @@ namespace VErp.Commons.Library
             return _dataFormatter.FormatCellValue(cell);
             // return cell.StringCellValue?.Trim();
 
+        }
+
+        private static bool IsCellInternalDateFormatted(ICell cell)
+        {
+            if (cell == null) return false;
+            bool bDate = false;
+
+            double d = cell.NumericCellValue;
+
+            if (DateUtil.IsValidExcelDate(d))
+            {
+                ICellStyle style = cell.CellStyle;
+                int formatIndex = style.DataFormat;
+
+                //https://www.tabnine.com/code/java/methods/org.apache.poi.ss.usermodel.DateUtil/isCellDateFormatted
+                if (formatIndex == 14 || formatIndex == 31 || formatIndex == 57 || formatIndex == 58 || formatIndex == 20 || formatIndex == 32)
+                {
+                    return true;
+                }
+
+                bDate = DateUtil.IsInternalDateFormat(formatIndex);
+            }
+            return bDate;
         }
 
         private string GetExcelColumnName(int columnNumber)
