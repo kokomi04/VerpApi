@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DocumentFormat.OpenXml.EMMA;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -8,15 +9,18 @@ using System.Text;
 using System.Threading.Tasks;
 using Verp.Resources.Organization.Salary;
 using Verp.Resources.Organization.Salary.Validation;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
+using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Organization.Model.Salary;
+using static VErp.Services.Organization.Service.Salary.Implement.SalaryFieldService;
 
 namespace VErp.Services.Organization.Service.Salary.Implement
 {
@@ -128,40 +132,45 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             var lstFields = _mapper.Map<List<SalaryGroupField>>(model.TableFields);
 
-            var toRemoveFieldsFromGroup = new List<int>();
+            var toRemoveFieldIdsFromGroup = new List<int>();
             foreach (var field in info.SalaryGroupField)
             {
                 if (!lstFields.Any(f => f.SalaryFieldId == field.SalaryFieldId))
                 {
-                    toRemoveFieldsFromGroup.Add(field.SalaryFieldId);
+                    toRemoveFieldIdsFromGroup.Add(field.SalaryFieldId);
                 }
             }
 
+            var toRemoveFieldsFromGroup = await _organizationDBContext.SalaryField.Where(f => toRemoveFieldIdsFromGroup.Contains(f.SalaryFieldId)).ToListAsync();
             if (toRemoveFieldsFromGroup.Count > 0)
             {
-                var usingEmployeeValue = await (
-                 from v in _organizationDBContext.SalaryEmployeeValue
-                 join f in _organizationDBContext.SalaryField on v.SalaryFieldId equals f.SalaryFieldId
-                 join e in _organizationDBContext.SalaryEmployee on v.SalaryEmployeeId equals e.SalaryEmployeeId
-                 join p in _organizationDBContext.SalaryPeriod on e.SalaryPeriodId equals p.SalaryPeriodId
-                 join g in _organizationDBContext.SalaryGroup on e.SalaryGroupId equals g.SalaryGroupId
-                 where toRemoveFieldsFromGroup.Contains(v.SalaryFieldId) && v.Value != null && g.SalaryGroupId == salaryGroupId
-                 select new
-                 {
-                     f.SalaryFieldName,
-                     SalaryFieldTitle = f.Title,
-                     e.SalaryGroupId,
-                     g.Title,
-                     e.SalaryPeriodId,
-                     p.Year,
-                     p.Month
-                 }
-                ).FirstOrDefaultAsync();
-
-                if (usingEmployeeValue != null)
+                var subsidiaryInfo = await _organizationDBContext.Subsidiary.FirstOrDefaultAsync(s => s.SubsidiaryId == _currentContextService.SubsidiaryId);
+                if (subsidiaryInfo == null)
                 {
-                    throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(usingEmployeeValue.SalaryFieldName + " (" + usingEmployeeValue.SalaryFieldTitle + ")", usingEmployeeValue.Title, usingEmployeeValue.Month, usingEmployeeValue.Year);
+                    throw GeneralCode.NotYetSupported.BadRequest();
                 }
+
+
+                foreach (var field in toRemoveFieldsFromGroup)
+                {
+                    
+
+                    var sql = $"SELECT TOP(1) e.SalaryGroupId, g.Title SalaryGroupTitle, e.SalaryPeriodId, p.Year, p.Month " +
+                       $"FROM {OrganizationConstants.GetEmployeeSalaryTableName(subsidiaryInfo.SubsidiaryCode)} e " +
+                       $"JOIN SalaryPeriod p ON e.SalaryPeriodId = p.SalaryPeriodId " +
+                       $"JOIN SalaryGroup g ON e.SalaryGroupId = g.SalaryGroupId " +
+                       $"WHERE e.IsDeleted = 0 e.SalaryGroupId = @SalaryGroupId AND e.[{field.SalaryFieldName}] <> NULL";
+
+                    var usingEmployeeValue = (await _organizationDBContext.QueryListRaw<InUsedEmployeeSalaryFieldModel>(sql, new[] { new SqlParameter("@SalaryGroupId", salaryGroupId) })).FirstOrDefault();
+
+
+                    if (usingEmployeeValue != null)
+                    {
+                        throw SalaryFieldValidationMessage.SalaryFieldInUsed.BadRequestFormat(field.SalaryFieldName + " (" + field.Title + ")", usingEmployeeValue.SalaryGroupTitle, usingEmployeeValue.Month, usingEmployeeValue.Year);
+                    }
+                }
+
+
             }
 
             _mapper.Map(model, info);

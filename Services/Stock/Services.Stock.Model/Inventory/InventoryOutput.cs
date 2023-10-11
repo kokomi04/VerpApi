@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Services.Stock.Model.FileResources;
 using VErp.Services.Stock.Model.Stock;
 
@@ -95,7 +96,10 @@ namespace VErp.Services.Stock.Model.Inventory
             InventoryDetailOutputList = new List<InventoryDetailOutput>(50);
         }
 
-     
+
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
+
         public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
 
         public IList<FileToDownloadInfo> FileList { set; get; }

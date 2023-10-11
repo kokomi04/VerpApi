@@ -95,9 +95,6 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
-    public virtual DbSet<SalaryEmployee> SalaryEmployee { get; set; }
-
-    public virtual DbSet<SalaryEmployeeValue> SalaryEmployeeValue { get; set; }
 
     public virtual DbSet<SalaryField> SalaryField { get; set; }
 
@@ -124,6 +121,12 @@ public partial class OrganizationDBContext : DbContext
     public virtual DbSet<SalaryRefTable> SalaryRefTable { get; set; }
 
     public virtual DbSet<ShiftConfiguration> ShiftConfiguration { get; set; }
+
+    public virtual DbSet<ShiftSchedule> ShiftSchedule { get; set; }
+
+    public virtual DbSet<ShiftScheduleConfiguration> ShiftScheduleConfiguration { get; set; }
+
+    public virtual DbSet<ShiftScheduleDetail> ShiftScheduleDetail { get; set; }
 
     public virtual DbSet<SplitHour> SplitHour { get; set; }
 
@@ -730,44 +733,6 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.OvertimeRate).HasColumnType("decimal(5, 2)");
         });
 
-        modelBuilder.Entity<SalaryEmployee>(entity =>
-        {
-            entity.HasIndex(e => new { e.SalaryPeriodId, e.EmployeeId }, "IX_SalaryEmployee")
-                .IsUnique()
-                .HasFilter("([IsDeleted]=(0))");
-
-            entity.HasOne(d => d.Employee).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.EmployeeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_HrBill");
-
-            entity.HasOne(d => d.SalaryGroup).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.SalaryGroupId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_SalaryGroup");
-
-            entity.HasOne(d => d.SalaryPeriod).WithMany(p => p.SalaryEmployee)
-                .HasForeignKey(d => d.SalaryPeriodId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployee_SalaryPeriod");
-        });
-
-        modelBuilder.Entity<SalaryEmployeeValue>(entity =>
-        {
-            entity.HasKey(e => new { e.SalaryEmployeeId, e.SalaryFieldId });
-
-            entity.Property(e => e.Value).HasColumnType("sql_variant");
-
-            entity.HasOne(d => d.SalaryEmployee).WithMany(p => p.SalaryEmployeeValue)
-                .HasForeignKey(d => d.SalaryEmployeeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployeeValue_SalaryEmployee");
-
-            entity.HasOne(d => d.SalaryField).WithMany(p => p.SalaryEmployeeValue)
-                .HasForeignKey(d => d.SalaryFieldId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_SalaryEmployeeValue_SalaryField");
-        });
 
         modelBuilder.Entity<SalaryField>(entity =>
         {
@@ -933,6 +898,7 @@ public partial class OrganizationDBContext : DbContext
             entity.HasKey(e => e.ShiftConfigurationId).HasName("PK_Shift");
 
             entity.Property(e => e.ConfirmationUnit).HasColumnType("decimal(18, 3)");
+            entity.Property(e => e.IsCheckOutDateTimekeeping).HasDefaultValueSql("((0))");
             entity.Property(e => e.ShiftCode)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -940,6 +906,33 @@ public partial class OrganizationDBContext : DbContext
             entity.HasOne(d => d.OvertimeConfiguration).WithMany(p => p.ShiftConfiguration)
                 .HasForeignKey(d => d.OvertimeConfigurationId)
                 .HasConstraintName("FK_ShiftConfiguration_OvertimeConfiguration");
+        });
+
+        modelBuilder.Entity<ShiftSchedule>(entity =>
+        {
+            entity.HasKey(e => e.ShiftScheduleId).HasName("PK__ShiftSch__93A9B590EC9DA6AB");
+
+            entity.Property(e => e.Title)
+                .IsRequired()
+                .HasMaxLength(256);
+        });
+
+        modelBuilder.Entity<ShiftScheduleConfiguration>(entity =>
+        {
+            entity.HasKey(e => new { e.ShiftScheduleId, e.ShiftConfigurationId }).HasName("PK__ShiftSch__204A69BC5822DCC8");
+
+            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleConfiguration)
+                .HasForeignKey(d => d.ShiftScheduleId)
+                .HasConstraintName("FK__ShiftSche__Shift__522FEADD");
+        });
+
+        modelBuilder.Entity<ShiftScheduleDetail>(entity =>
+        {
+            entity.HasKey(e => new { e.ShiftScheduleId, e.ShiftConfigurationId, e.AssignedDate, e.EmployeeId }).HasName("PK__ShiftSch__CA713DD74AB698E8");
+
+            entity.HasOne(d => d.ShiftSchedule).WithMany(p => p.ShiftScheduleDetail)
+                .HasForeignKey(d => d.ShiftScheduleId)
+                .HasConstraintName("FK__ShiftSche__Shift__57E8C433");
         });
 
         modelBuilder.Entity<SplitHour>(entity =>
@@ -1032,6 +1025,14 @@ public partial class OrganizationDBContext : DbContext
                 .HasForeignKey(d => d.TimeSheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
+        });
+
+        modelBuilder.Entity<TimeSheetRaw>(entity =>
+        {
+            entity.Property(e => e.TimeKeepingRecorder)
+                .IsRequired()
+                .HasMaxLength(128)
+                .HasDefaultValueSql("('')");
         });
 
         modelBuilder.Entity<TimeSortConfiguration>(entity =>

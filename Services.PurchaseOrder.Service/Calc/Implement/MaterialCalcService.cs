@@ -141,6 +141,8 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
                     c.MaterialCalcId,
                     c.MaterialCalcCode,
                     c.Title,
+                    c.InputTypeSelectedState,
+                    c.InputUnitTypeSelectedState,
                     d.ProductId,
                     o.OrderCode,
                     o.OrderProductQuantity
@@ -157,6 +159,8 @@ SELECT * FROM tmp WHERE RowNumber BETWEEN {(page - 1) * size + 1} AND {page * si
                     MaterialCalcId = item.MaterialCalcId,
                     MaterialCalcCode = item.MaterialCalcCode,
                     Title = item.Title,
+                    InputTypeSelectedState = (EnumInputType)item.InputTypeSelectedState,
+                    InputUnitTypeSelectedState = (EnumInputUnitType)item.InputUnitTypeSelectedState,
                     ConsumptionGroups = _mapper.Map<List<MaterialCalcConsumptionGroupModel>>(groups.Where(g => g.MaterialCalcId == item.MaterialCalcId)),
 
                     OrderCode = item.OrderCode,

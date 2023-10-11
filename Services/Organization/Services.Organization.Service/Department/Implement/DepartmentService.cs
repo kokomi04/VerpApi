@@ -173,7 +173,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             };
         }
 
-        public async Task<PageData<DepartmentModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc,  Clause filters = null)
+        public async Task<PageData<DepartmentExtendModel>> GetList(string keyword, IList<int> departmentIds, bool? isProduction, bool? isActived, int page, int size, string orderByFieldName, bool asc, Clause filters = null)
         {
             keyword = (keyword ?? "").Trim();
             var query = _organizationContext.Department.Include(d => d.Parent).AsQueryable();
@@ -197,8 +197,7 @@ namespace VErp.Services.Organization.Service.Department.Implement
             query = query.InternalFilter(filters);
 
             query = query.InternalOrderBy(orderByFieldName, asc);
-
-            var lst = await (size > 0 ? query.Skip((page - 1) * size).Take(size) : query).Select(d => new DepartmentModel
+            var lst = await query.Select(d=> new DepartmentExtendModel
             {
                 DepartmentId = d.DepartmentId,
                 DepartmentCode = d.DepartmentCode,
@@ -212,12 +211,35 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 NumberOfPerson = d.NumberOfPerson,
                 IsFactory = d.IsFactory
             }).ToListAsync();
-
+            
+            var parentDepartmentIds = (asc ? lst.Where(d => d.ParentId == null).OrderBy(d=> d.GetType().GetProperty(orderByFieldName)) : lst.Where(d => d.ParentId == null).OrderByDescending(d => d.GetType().GetProperty(orderByFieldName))).Select(d=> d.DepartmentId).ToList();
+            var newLst = new List<DepartmentExtendModel>();
+            foreach (var item in parentDepartmentIds)
+            {
+                newLst.AddRange(OrderByDepartment(lst, new List<DepartmentExtendModel>(), asc, orderByFieldName, parentId: item));
+            }
+            newLst = size > 0 ? newLst.Skip((page - 1) * size).Take(size).ToList() : newLst;
             var total = await query.CountAsync();
 
-            return (lst, total);
+            return (newLst, total);
         }
+        private IList<DepartmentExtendModel> OrderByDepartment(IList<DepartmentExtendModel> currentDepartment, List<DepartmentExtendModel> newDepartments, bool asc, string orderByFieldName, int level =0, int? parentId = null)
+        {
+            level++;
+            var parentDepartment = currentDepartment.FirstOrDefault(d => d.DepartmentId == parentId);
+            parentDepartment.Level = level;
+            if (!newDepartments.Contains(parentDepartment))
+                newDepartments.Add(parentDepartment);
+            var childrenDepartments = currentDepartment.Where(d => d.ParentId.HasValue && d.ParentId.Value == parentDepartment.DepartmentId).ToList();
+            foreach (var item in childrenDepartments)
+            {
+                if (!newDepartments.Contains(item))
+                    newDepartments.Add(item);
+                OrderByDepartment(currentDepartment, newDepartments, asc, orderByFieldName, level, item.DepartmentId);
+            }
 
+            return newDepartments;
+        }
 
         public async Task<IList<DepartmentModel>> GetListByIds(IList<int> departmentIds)
         {

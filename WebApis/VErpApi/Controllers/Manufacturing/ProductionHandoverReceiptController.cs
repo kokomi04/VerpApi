@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
 using VErp.Infrastructure.ApiCore.Attributes;
@@ -65,6 +66,15 @@ namespace VErpApi.Controllers.Manufacturing
         }
 
 
+
+        [HttpGet]
+        [Route("ProductionStepDepartmentHandover/{departmentId}")]
+        public async Task<PageData<ProductionStepHandoverByDepartmentModel>> GetProductionStepDepartmentHandover([FromRoute] long departmentId, [FromQuery] string keyword, [FromQuery] int? stepId, [FromQuery] int? productId, [FromQuery] int page, [FromQuery] int size, [FromQuery] long? fromDate, [FromQuery] long? toDate, [FromQuery] bool? isInFinish, [FromQuery] bool? isOutFinish)
+        {
+            return await _productionHandoverReceiptService.GetProductionStepDepartmentHandovers(departmentId, keyword, page, size, fromDate, toDate, stepId, productId, isInFinish, isOutFinish);
+        }
+
+
         [HttpGet]
         [Route("productionInventoryRequirement/{productionOrderId}")]
         public async Task<IList<ProductionInventoryRequirementModel>> GetProductionInventoryRequirements([FromRoute] long productionOrderId)
@@ -83,7 +93,20 @@ namespace VErpApi.Controllers.Manufacturing
         [Route("statictic/{productionOrderId}")]
         public async Task<long> CreateStatictic([FromRoute] long productionOrderId, [FromBody] ProductionHandoverReceiptModel data)
         {
-            return await _productionHandoverReceiptService.CreateStatictic(productionOrderId, data);
+            return await _productionHandoverReceiptService.CreateStatictic(productionOrderId, data, EnumHandoverStatus.Accepted);
+        }
+
+        [HttpPost]
+        [Route("statictic/{productionOrderId}/byDepartment/{fromDepartmentId}")]
+        public async Task<long> CreateStaticticByDepartment([FromRoute] long productionOrderId, [FromRoute] int fromDepartmentId, [FromBody] ProductionHandoverReceiptModel data)
+        {
+            if (data?.Handovers?.Any(h => h.FromDepartmentId != fromDepartmentId) == true)
+                throw GeneralCode.InvalidParams.BadRequest();
+
+            if (data?.Histories?.Any(h => h.DepartmentId != fromDepartmentId) == true)
+                throw GeneralCode.InvalidParams.BadRequest();
+
+            return await _productionHandoverReceiptService.CreateStatictic(productionOrderId, data, EnumHandoverStatus.Waiting);
         }
 
         [HttpPut]
@@ -110,8 +133,8 @@ namespace VErpApi.Controllers.Manufacturing
         [HttpPost]
         [Route("HandoverHistoryReceipts")]
         [VErpAction(EnumActionType.View)]
-        public async Task<PageData<ProductionHandoverHistoryReceiptModel>> HandoverHistoryReceipts([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate, 
-            [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody]  Clause filters = null)
+        public async Task<PageData<ProductionHandoverHistoryReceiptModel>> HandoverHistoryReceipts([FromQuery] string keyword, [FromQuery] long? fromDate, [FromQuery] long? toDate,
+            [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByFieldName, [FromQuery] bool asc, [FromBody] Clause filters = null)
         {
             return await _productionHandoverReceiptService.GetList(keyword, fromDate, toDate, page, size, orderByFieldName, asc, filters);
         }

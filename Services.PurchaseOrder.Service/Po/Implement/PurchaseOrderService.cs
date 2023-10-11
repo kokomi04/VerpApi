@@ -304,8 +304,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PaymentMethod = info.DeliveryMethod,
                     AttachmentBill = info.AttachmentBill,
 
-                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
+                    InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumInputType)info.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)info.InputUnitTypeSelectedState : null,
                 });
             }
 
@@ -538,7 +538,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var assignmentDetails = await GetAssignementDetailInfos(assignmentIds);
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestIds);
+            var suggestDetails = await GetSuggestDetailInfos(suggestIds, new List<long>());
 
 
             var result = new List<PurchaseOrderOutputListByProduct>();
@@ -621,8 +621,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                     PaymentMethod = item.DeliveryMethod,
                     AttachmentBill = item.AttachmentBill,
 
-                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)item.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)item.InputUnitTypeSelectedState : null,
+                    InputTypeSelectedState = item.InputTypeSelectedState.HasValue ? (EnumInputType)item.InputTypeSelectedState : EnumInputType.Default,
+                    InputUnitTypeSelectedState = item.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)item.InputUnitTypeSelectedState : null,
                 });
             }
             return (result, total, new { SumTotalMoney = sumTotalMoney.Sum(t => t.TotalMoney), additionResult?.SumPrimaryQuantity, SumTaxInMoney = sumTotalMoney.Sum(t => t.SumTaxInMoney) });
@@ -703,12 +703,12 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var assignmentIds = details.Select(d => d.RefPoAssignmentId).ToList();
 
-            var suggestIds = details.Where(d=>d.RefPurchasingSuggestId.HasValue).Select(d => d.RefPurchasingSuggestId.Value).ToList();
+            var suggestIds = details.Where(d => d.RefPurchasingSuggestId.HasValue).Select(d => d.RefPurchasingSuggestId.Value).ToList();
 
 
             var assignmentDetails = await GetAssignementDetailInfos(assignmentIds);
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestIds);
+            var suggestDetails = await GetSuggestDetailInfos(suggestIds, new List<long>());
 
 
             var files = await _purchaseOrderDBContext.PurchaseOrderFile.AsNoTracking().Where(d => d.PurchaseOrderId == purchaseOrderId).ToListAsync();
@@ -763,8 +763,8 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 PaymentMethod = info.PaymentMethod,
                 AttachmentBill = info.AttachmentBill,
 
-                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumPurchaseOrderInputType)info.InputTypeSelectedState : EnumPurchaseOrderInputType.InputDefault,
-                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumPurchaseOrderInputUnitType)info.InputUnitTypeSelectedState : null,
+                InputTypeSelectedState = info.InputTypeSelectedState.HasValue ? (EnumInputType)info.InputTypeSelectedState : EnumInputType.Default,
+                InputUnitTypeSelectedState = info.InputUnitTypeSelectedState.HasValue ? (EnumInputUnitType)info.InputUnitTypeSelectedState : null,
 
                 FileIds = files.Select(f => f.FileId).ToList(),
                 Details = details.OrderBy(d => d.SortOrder)
@@ -904,7 +904,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 DeliveryMethod = model.DeliveryMethod,
                 PaymentMethod = model.PaymentMethod,
                 AttachmentBill = model.AttachmentBill,
-                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault,
+                InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumInputType.Default,
                 InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null,
 
             };
@@ -1095,7 +1095,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
                 info.PaymentMethod = model.PaymentMethod;
                 info.AttachmentBill = model.AttachmentBill;
                 info.InputUnitTypeSelectedState = model.InputUnitTypeSelectedState.HasValue ? (int)model.InputUnitTypeSelectedState : null;
-                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumPurchaseOrderInputType.InputDefault;
+                info.InputTypeSelectedState = model.InputTypeSelectedState.HasValue ? (int)model.InputTypeSelectedState : (int)EnumInputType.Default;
 
                 if (info.DeliveryDestination?.Length > 1024)
                 {
@@ -2030,7 +2030,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
             var suggestDetailIds = model.Details.Where(d => d.PurchasingSuggestDetailId.HasValue).Select(d => d.PurchasingSuggestDetailId.Value).ToList();
 
-            var suggestDetails = await GetSuggestDetailInfos(suggestDetailIds.ToList());
+            var suggestDetails = await GetSuggestDetailInfos(new List<long>(), suggestDetailIds.ToList());
 
             if (suggestDetails.Select(d => d.PurchasingSuggestId).Distinct().Count() > 1)
             {
@@ -2093,16 +2093,16 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
              .ToListAsync();
         }
 
-        private async Task<IList<VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo>> GetSuggestDetailInfos(IList<long> suggestDetailIds)
+        private async Task<IList<VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo>> GetSuggestDetailInfos(IList<long> purchasingSuggestIds, IList<long> suggestDetailIds)
         {
             return await (
              from pd in _purchaseOrderDBContext.PurchasingSuggestDetail
              join sd in _purchaseOrderDBContext.PurchasingSuggest on pd.PurchasingSuggestId equals sd.PurchasingSuggestId
-             where suggestDetailIds.Contains(pd.PurchasingSuggestDetailId)
-             select new VErp.Services.PurchaseOrder.Model.PurchasingSuggestDetailInfo
+             where purchasingSuggestIds.Contains(pd.PurchasingSuggestId) || suggestDetailIds.Contains(pd.PurchasingSuggestDetailId)
+             select new Model.PurchasingSuggestDetailInfo
              {
                  PurchasingSuggestId = pd.PurchasingSuggestId,
-                 PurchasingSuggestCode = pd.PurchasingSuggest.PurchasingSuggestCode,
+                 PurchasingSuggestCode = sd.PurchasingSuggestCode,
                  PurchasingSuggestDetailId = pd.PurchasingSuggestDetailId,
                  ProductId = pd.ProductId,
                  CustomerId = pd.CustomerId

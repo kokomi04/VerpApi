@@ -9,6 +9,7 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.System
     public interface IProgramingFunctionHelperService
     {
         Task<IList<ProgramingFunctionBaseModel>> Sqls();
+        Task<IList<ProgramingFunctionBaseModel>> UserSqls();
     }
     public class ProgramingFunctionHelperService : IProgramingFunctionHelperService
     {
@@ -22,6 +23,10 @@ namespace VErp.Infrastructure.ServiceCore.CrossServiceHelper.System
         public async Task<IList<ProgramingFunctionBaseModel>> Sqls()
         {
             return await _httpCrossService.Get<List<ProgramingFunctionBaseModel>>($"api/internal/InternalProgramingFunction/Sqls", new { });
+        }
+        public async Task<IList<ProgramingFunctionBaseModel>> UserSqls()
+        {
+            return await _httpCrossService.Get<List<ProgramingFunctionBaseModel>>($"api/internal/InternalUserProgramingFunction", new { });
         }
     }
 }

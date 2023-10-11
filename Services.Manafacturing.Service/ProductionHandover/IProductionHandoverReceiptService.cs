@@ -14,13 +14,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover
     {
         Task<PageData<DepartmentHandoverModel>> GetDepartmentHandovers(long departmentId, string keyword, int page, int size, long fromDate, long toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish, EnumProductionStepLinkDataRoleType? productionStepLinkDataRoleTypeId);
 
+        Task<PageData<ProductionStepHandoverByDepartmentModel>> GetProductionStepDepartmentHandovers(long departmentId, string keyword, int page, int size, long? fromDate, long? toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish);
+
         Task<PageData<ProductionHandoverReceiptByDateModel>> GetDepartmentHandoversByDate(IList<long> fromDepartmentIds, IList<long> toDepartmentIds, IList<long> fromStepIds, IList<long> toStepIds, long? fromDate, long? toDate, bool? isInFinish, bool? isOutFinish, int page, int size);
 
         Task<IList<ProductionHandoverModel>> GetProductionHandovers(long productionOrderId);
         Task<long> Create(long productionOrderId, ProductionHandoverReceiptModel data);
         Task<PageData<ProductionHandoverHistoryReceiptModel>> GetList(string keyword, long? fromDate, long? toDate, int page, int size, string orderByFieldName, bool asc, Clause filters = null);
         Task<ProductionHandoverReceiptModel> Info(long receiptId);
-        Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data);
+        Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data, EnumHandoverStatus status);
       
         Task<bool> Confirm(long receiptId, EnumHandoverStatus status);
         Task<bool> AcceptBatch(IList<long> receiptIds);

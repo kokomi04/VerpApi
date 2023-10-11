@@ -24,14 +24,14 @@ namespace VErpApi.Controllers.System.Internal
         [HttpPost]
         [VErpAction(EnumActionType.View)]
         [Route("")]
-        public async Task<PageData<DepartmentModel>> Get(
+        public async Task<PageData<DepartmentExtendModel>> Get(
             [FromQuery] string keyword, 
             [FromQuery] IList<int> departmentIds, 
             [FromQuery] bool? isProduction, 
             [FromQuery] bool? isActived, 
             [FromQuery] int page, 
             [FromQuery] int size,
-            [FromQuery] string orderByFieldName = nameof(DepartmentModel.DepartmentCode),
+            [FromQuery] string orderByFieldName = nameof(DepartmentExtendModel.DepartmentCode),
             [FromQuery] bool asc = true, 
             [FromBody] Clause filters = null)
         {

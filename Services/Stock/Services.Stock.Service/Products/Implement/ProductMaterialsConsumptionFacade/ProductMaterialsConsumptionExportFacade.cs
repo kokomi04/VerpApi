@@ -108,15 +108,19 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             /* Thông tin chung */
             sheet.EnsureCell(fRow, 9).SetCellValue($"Số lượng sử dụng");
 
-            sheet.EnsureCell(fRow, 10).SetCellValue($"Công đoạn");
+            sheet.EnsureCell(fRow, 10).SetCellValue($"Tỷ lệ hao hụt");
 
-            sheet.EnsureCell(fRow, 11).SetCellValue($"Mã bộ phận");
+            sheet.EnsureCell(fRow, 11).SetCellValue($"Tổng vật tư sử dụng");
 
-            sheet.EnsureCell(fRow, 12).SetCellValue($"Bộ phận");
+            sheet.EnsureCell(fRow, 12).SetCellValue($"Công đoạn");
 
-            sheet.EnsureCell(fRow, 13).SetCellValue($"Ghi chú");
+            sheet.EnsureCell(fRow, 13).SetCellValue($"Mã bộ phận");
 
-            sheet.EnsureCell(fRow, 14).SetCellValue($"Nhóm Nvl tiêu hao");
+            sheet.EnsureCell(fRow, 14).SetCellValue($"Bộ phận");
+
+            sheet.EnsureCell(fRow, 15).SetCellValue($"Ghi chú");
+
+            sheet.EnsureCell(fRow, 16).SetCellValue($"Nhóm Nvl tiêu hao");
 
 
 
@@ -187,7 +191,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     sheet.EnsureCell(currentRow, 0, styleText).SetCellValue(index);
 
                     if (groupsConsump.ContainsKey(m.ProductMaterialsConsumptionGroupId))
-                        sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
+                        sheet.EnsureCell(currentRow, 16, styleText).SetCellValue(groupsConsump[m.ProductMaterialsConsumptionGroupId]);
 
                     if (materialConsumptionInfo != null)
                     {
@@ -210,18 +214,20 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     }
 
                     sheet.EnsureCell(currentRow, 9, styleNumber).SetCellValue(Convert.ToDouble(m.Quantity));
+                    sheet.EnsureCell(currentRow,10, styleNumber).SetCellValue(Convert.ToDouble(m.Wastage));
+                    sheet.EnsureCell(currentRow,11, styleNumber).SetCellValue((Convert.ToDouble(m.Quantity) * Convert.ToDouble(m.Wastage) * Convert.ToDouble(m.BomQuantity)) + Convert.ToDouble(m.TotalQuantityInheritance) );
 
                     if (m.StepId.HasValue && stepInfos.ContainsKey((int)m.StepId))
-                        sheet.EnsureCell(currentRow, 10, styleText).SetCellValue(stepInfos[(int)m.StepId]);
+                        sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(stepInfos[(int)m.StepId]);
 
                     if (m.DepartmentId.HasValue && departmentInfos.ContainsKey((int)m.DepartmentId))
                     {
                         var department = departmentInfos[(int)m.DepartmentId];
-                        sheet.EnsureCell(currentRow, 11, styleText).SetCellValue(department.DepartmentCode);
-                        sheet.EnsureCell(currentRow, 12, styleText).SetCellValue(department.DepartmentName);
+                        sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(department.DepartmentCode);
+                        sheet.EnsureCell(currentRow, 14, styleText).SetCellValue(department.DepartmentName);
                     }
 
-                    sheet.EnsureCell(currentRow, 13, styleText).SetCellValue(m.Description);
+                    sheet.EnsureCell(currentRow, 15, styleText).SetCellValue(m.Description);
 
                     currentRow++;
                     index++;

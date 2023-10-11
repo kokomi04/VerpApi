@@ -70,6 +70,10 @@ public partial class Inventory
     /// </summary>
     public long? RefInventoryId { get; set; }
 
+    public int? InputTypeSelectedState { get; set; }
+
+    public int? InputUnitTypeSelectedState { get; set; }
+
     public virtual ICollection<InventoryDetail> InventoryDetail { get; set; } = new List<InventoryDetail>();
 
     public virtual ICollection<Inventory> InverseRefInventory { get; set; } = new List<Inventory>();

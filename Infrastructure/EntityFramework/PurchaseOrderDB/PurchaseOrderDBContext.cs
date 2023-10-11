@@ -215,6 +215,8 @@ public partial class PurchaseOrderDBContext : DbContext
                 .HasFilter("([IsDeleted]=(0))");
 
             entity.Property(e => e.Description).HasMaxLength(1024);
+            entity.Property(e => e.InputTypeSelectedState).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InputUnitTypeSelectedState).HasDefaultValueSql("((1))");
             entity.Property(e => e.MaterialCalcCode).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
         });
@@ -637,6 +639,8 @@ public partial class PurchaseOrderDBContext : DbContext
             entity.Property(e => e.Content).HasMaxLength(512);
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Date).HasDefaultValueSql("(getutcdate())");
+            entity.Property(e => e.InputTypeSelectedState).HasDefaultValueSql("((0))");
+            entity.Property(e => e.InputUnitTypeSelectedState).HasDefaultValueSql("((1))");
             entity.Property(e => e.OrderDetailId).HasComment("VoucherValueRowId");
             entity.Property(e => e.OrderDetailQuantity).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.OrderDetailRequestQuantity).HasColumnType("decimal(32, 12)");

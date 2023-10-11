@@ -10,6 +10,7 @@ using OpenXmlPowerTools;
 using Org.BouncyCastle.Ocsp;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -690,7 +691,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
         }
 
-        public async Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data)
+        public async Task<long> CreateStatictic(long productionOrderId, ProductionHandoverReceiptModel data, EnumHandoverStatus status)
         {
             foreach (var h in data.Handovers)
             {
@@ -702,7 +703,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
                 h.ProductionOrderId = productionOrderId;
             }
 
-            return await Create(data, EnumHandoverStatus.Accepted);
+            return await Create(data, status);
         }
         /*
         public async Task<IList<ProductionHandoverModel>> CreateMultipleStatictic(long productionOrderId, IList<ProductionHandoverInputModel> data)
@@ -816,6 +817,33 @@ namespace VErp.Services.Manafacturing.Service.ProductionHandover.Implement
 
             return (lst, total, additionResult);
         }
+
+        public async Task<PageData<ProductionStepHandoverByDepartmentModel>> GetProductionStepDepartmentHandovers(long departmentId, string keyword, int page, int size, long? fromDate, long? toDate, int? stepId, int? productId, bool? isInFinish, bool? isOutFinish)
+        {
+            keyword = (keyword ?? "").Trim();
+            var parammeters = new List<SqlParameter>()
+            {
+                new SqlParameter("@Keyword", keyword),
+                new SqlParameter("@DepartmentId", departmentId),
+                new SqlParameter("@Size", size),
+                new SqlParameter("@Page", page),
+                new SqlParameter("@FromDate", fromDate.UnixToDateTime()),
+                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
+                new SqlParameter("@StepId", stepId),
+                new SqlParameter("@ProductId", productId),
+                new SqlParameter("@IsInFinish", isInFinish),
+                new SqlParameter("@IsOutFinish", isOutFinish)
+            };
+
+            var dataSet = await _manufacturingDBContext.QueryMultiDataTable("asp_ProductionStepDepartmentHandover", parammeters.ToArray(), CommandType.StoredProcedure);
+
+            var lst = dataSet.Tables[0].ConvertData<ProductionStepHandoverByDepartmentModel>();
+            var sums = dataSet.Tables[1].ConvertData()?.First();
+
+
+            return (lst, (sums["total"] as int?).GetValueOrDefault(), sums);
+        }
+
 
         public async Task<PageData<ProductionHandoverReceiptByDateModel>> GetDepartmentHandoversByDate(IList<long> fromDepartmentIds, IList<long> toDepartmentIds, IList<long> fromStepIds, IList<long> toStepIds, long? fromDate, long? toDate, bool? isInFinish, bool? isOutFinish, int page, int size)
         {

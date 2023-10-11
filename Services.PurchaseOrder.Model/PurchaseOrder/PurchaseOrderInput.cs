@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.MasterEnum.PO;
+using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 
@@ -51,8 +52,8 @@ namespace VErp.Services.PurchaseOrder.Model
 
         public EnumPurchasingOrderType PurchaseOrderType { get; set; }
 
-        public EnumPurchaseOrderInputType? InputTypeSelectedState { get; set; }
-        public EnumPurchaseOrderInputUnitType? InputUnitTypeSelectedState { get; set; }
+        public EnumInputType? InputTypeSelectedState { get; set; }
+        public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
 
         [MaxLength(512)]
         public string DeliveryMethod { get; set; }

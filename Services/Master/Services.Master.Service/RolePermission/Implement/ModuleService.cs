@@ -77,6 +77,7 @@ namespace VErp.Services.Master.Service.RolePermission.Implement
             var lst = new List<CategoryNameModel>();
 
             return fields.GroupBy(f => f.CategoryCode)
+                .OrderBy(g => g.First().SortOrder)
                 .Select(g => new CategoryNameModel()
                 {
                     CategoryCode = g.Key,

@@ -9,7 +9,7 @@ using VErp.Commons.Library.Model;
 namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 {
 
-    public class PurchaseOrderImportModel : PoDetailRowValue
+    public class PurchaseOrderImportModel : PoDetailRowValueShared
     {
         [KeyCodeField]
         [Required]
@@ -27,6 +27,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public DateTime? DeliveryDate { get; set; }
 
         [ValidateDuplicateByKeyCode]
+        [Required]
         [Display(Name = "Nhà cung cấp", GroupName = "TT Chung", Order = 1004)]
         public ProviderCustomerImportModel CustomerInfo { get; set; }
 
@@ -102,7 +103,17 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         [Display(Name = "Phương thức thanh toán", GroupName = "TT Bổ sung", Order = 5006)]
         [MaxLength(512)]
         public string PaymentMethod { get; set; }
+        [Required]
+        [Display(Name = "Mặt hàng", GroupName = "Mặt hàng", Order = 2002)]
+        public PoDetailProductParseModel ProductInfo { get; set; }
 
+        [Required]
+        [Display(Name = "Số lượng Đơn vị chính", GroupName = "TT về lượng", Order = 2004)]
+        public decimal? PrimaryQuantity { get; set; }
+
+        [Required]
+        [Display(Name = "Giá theo đơn vị chính", GroupName = "TT về lượng", Order = 2005)]
+        public decimal? PrimaryPrice { get; set; }
 
         [FieldDataIgnore]
         public long? PropertyCalcId { get; set; } = null;
