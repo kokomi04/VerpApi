@@ -200,7 +200,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return await GetListUserActivityLog(null, null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
         }
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 100)
         {
             var query = _activityLogContext.UserActivityLog.AsNoTracking().AsQueryable();
             if (userActivityLogIds?.Length > 0)
