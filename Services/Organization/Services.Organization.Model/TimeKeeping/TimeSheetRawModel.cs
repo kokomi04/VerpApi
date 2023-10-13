@@ -63,6 +63,7 @@ namespace Services.Organization.Model.TimeKeeping
         public bool Asc { get; set; } = true;
         public long? FromDate { get; set; }
         public long? ToDate { get; set; }
+        public List<long?> EmployeeIds { get; set; }
         public Clause ColumnsFilters { get; set; }
 
         public HrTypeBillsFilterModel? HrTypeFilters { get; set; }

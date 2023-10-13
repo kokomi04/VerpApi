@@ -36,6 +36,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<PageData<TimeSheetRawViewModel>> GetListTimeSheetRaw(TimeSheetRawFilterModel filter, int page, int size);
         Task<TimeSheetRawModel> GetTimeSheetRaw(long timeSheetRawId);
         Task<bool> UpdateTimeSheetRaw(long timeSheetRawId, TimeSheetRawModel model);
+        Task<IList<TimeSheetRawModel>> GetDistinctTimeSheetRawByEmployee(List<long?> employeeIds);
         Task<CategoryNameModel> GetFieldDataForMapping();
         Task<(Stream stream, string fileName, string contentType)> Export([FromBody] TimeSheetRawExportModel req);
         Task<bool> ImportTimeSheetRawFromMapping(ImportExcelMapping mapping, Stream stream);
@@ -132,7 +133,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, filter.HrTypeFilters, 0, 0);
 
-            var employeeIds = employees.List.Select(e => (long)e["F_Id"]).ToList();
+            var employeeIds = employees.List.Select(e => (long)e[F_Id]).ToList();
 
             var query = _organizationDBContext.TimeSheetRaw.Where(t => employeeIds.Contains(t.EmployeeId)).AsNoTracking();
 
@@ -145,8 +146,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (filter.ToDate.HasValue)
                 query = query.Where(t => t.Date < filter.ToDate.UnixToDateTime());
 
-            //if(filter.ColumnsFilters.fi)
-
             query = query.InternalFilter(filter.ColumnsFilters);
 
             query = query.InternalOrderBy(filter.OrderBy, filter.Asc);
@@ -157,7 +156,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             Parallel.ForEach(employees.List, e =>
             {
-                var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e["F_Id"]);
+                var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e[F_Id]);
 
                 if (matchingTimeSheetRaws != null)
                 {
@@ -182,6 +181,23 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var data = size > 0 && page > 0 ? result.Skip((page - 1) * size).Take(size).ToList() : result;
 
             return (data, result.Count);
+        }
+
+        public async Task<IList<TimeSheetRawModel>> GetDistinctTimeSheetRawByEmployee(List<long?> employeeIds)
+        {
+            var query = _organizationDBContext.TimeSheetRaw.AsNoTracking();
+
+            if(employeeIds != null && employeeIds.Count > 0)
+            {
+                query = query.Where(t => employeeIds.Contains(t.EmployeeId));
+            }
+
+            var groupedResults = await query.GroupBy(t => new { t.EmployeeId, t.Date, t.Time })
+                                    .Select(g => g.First())
+                                    .ToListAsync();
+
+            var result = _mapper.Map<List<TimeSheetRawModel>>(groupedResults);
+            return result;
         }
 
         public async Task<CategoryNameModel> GetFieldDataForMapping()
