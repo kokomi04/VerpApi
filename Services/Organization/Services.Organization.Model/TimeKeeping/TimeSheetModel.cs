@@ -13,6 +13,10 @@ namespace Services.Organization.Model.TimeKeeping
 
         public string Title { get; set; }
 
+        public int Month { get; set; }
+
+        public int Year { get; set; }
+
         public long BeginDate { get; set; }
 
         public long EndDate { get; set; }
@@ -60,6 +64,21 @@ namespace Services.Organization.Model.TimeKeeping
         public long? FromDate { get; set; }
         public long? ToDate { get; set; }
         public Clause? ColumnsFilters { get; set; }
+    }
+
+    public class TimeSheetByEmployeeModel
+    {
+        public long EmployeeId { get; set; }
+        public List<TimeSheetDetailModel> TimeSheetDetail { get; set; } = new List<TimeSheetDetailModel>();
+        public List<TimeSheetAggregateModel> TimeSheetAggregate { get; set; } = new List<TimeSheetAggregateModel>();
+    }
+
+    public class TimeSheetByEmployeeRequestModel
+    {
+        public long TimeSheetId { get; set; }
+        public int[] DepartmentIds { get; set; }
+        public long BeginDate { get; set; }
+        public long EndDate { get; set; }
     }
 
     public class TimeSheetImportFieldModel

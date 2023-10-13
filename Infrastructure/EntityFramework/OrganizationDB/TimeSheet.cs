@@ -9,6 +9,10 @@ public partial class TimeSheet
 
     public string Title { get; set; }
 
+    public int Month { get; set; }
+
+    public int Year { get; set; }
+
     public DateTime BeginDate { get; set; }
 
     public DateTime EndDate { get; set; }

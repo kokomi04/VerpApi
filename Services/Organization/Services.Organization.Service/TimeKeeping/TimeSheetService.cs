@@ -1,5 +1,7 @@
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Elasticsearch.Net;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System;
@@ -18,6 +20,8 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
+using VErp.Services.Organization.Model.Calendar;
+using VErp.Services.Organization.Service.DepartmentCalendar;
 using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
@@ -30,6 +34,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<TimeSheetModel> GetTimeSheet(long timeSheetId);
         Task<TimeSheetModel> GetTimeSheetByEmployee(long timeSheetId, int employeeId);
         Task<bool> UpdateTimeSheet(long timeSheetId, TimeSheetModel model);
+        Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet(long timeSheetId, int[] departmentIds, long beginDate, long endDate);
 
         //CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate);
 
@@ -40,13 +45,26 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
     public class TimeSheetService : ITimeSheetService
     {
+        private const string EmployeeIdField = "F_Id";
+        private const string DepartmentIdField = "bo_phan";
+
         private readonly OrganizationDBContext _organizationDBContext;
+        private readonly IDepartmentCalendarService _departmentCalendarService;
+        private readonly IShiftScheduleService _shiftScheduleService;
+        private readonly ITimeSheetRawService _timeSheetRawService;
         private readonly IMapper _mapper;
 
-        public TimeSheetService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public TimeSheetService(OrganizationDBContext organizationDBContext
+            , IMapper mapper
+            , IDepartmentCalendarService departmentCalendarService
+            , IShiftScheduleService shiftScheduleService
+            , ITimeSheetRawService timeSheetRawService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _departmentCalendarService = departmentCalendarService;
+            _shiftScheduleService = shiftScheduleService;
+            _timeSheetRawService = timeSheetRawService;
         }
 
         public async Task<long> AddTimeSheet(TimeSheetModel model)
@@ -116,7 +134,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         var eDetailToUpdate = timeSheetDetails.First(e => e.TimeSheetDetailId == mDetail.TimeSheetDetailId);
                         await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
-                        
+
                         _mapper.Map(mDetail, eDetailToUpdate);
                         await _organizationDBContext.SaveChangesAsync();
                     }
@@ -284,6 +302,448 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return (data, total);
         }
 
+        public async Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet(long timeSheetId, int[] departmentIds, long beginDate, long endDate)
+        {
+            var result = new List<TimeSheetByEmployeeModel>();
+
+            var dateRange = new List<long>();
+            for (var date = beginDate; date <= endDate; date += 86400)
+            {
+                dateRange.Add(date);
+            }
+            var lstEmployees = await _shiftScheduleService.GetEmployeesByDepartments(departmentIds.ToList());
+            var employeesByDepartment = lstEmployees.GroupBy(e => (int)e[DepartmentIdField]).ToDictionary(g => g.Key, g => g.ToList());
+
+            var departmentCalendars = await _departmentCalendarService.GetListDepartmentCalendar(departmentIds, beginDate, endDate);
+
+            var dayOffByDepartment = departmentCalendars.GroupBy(x => x.DepartmentId)
+                .ToDictionary(g => g.Key, g => g.SelectMany(x => x.DepartmentDayOffCalendar.Where(d => d.Day >= beginDate && d.Day <= endDate)).ToList());
+
+            var allShiftDetails = await _organizationDBContext.ShiftScheduleDetail
+                .Where(s => lstEmployees.Select(e => (long)e[EmployeeIdField]).Contains(s.EmployeeId)
+                    && dateRange.Select(d => d.UnixToDateTime()).ToList().Contains(s.AssignedDate))
+                .ToListAsync();
+
+            var allShiftConfigurations = await _organizationDBContext.ShiftConfiguration
+                .Where(s => allShiftDetails.Select(d => d.ShiftConfigurationId).Distinct().Contains(s.ShiftConfigurationId))
+                .ProjectTo<ShiftConfigurationModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var allTimeSheetRaws = await _timeSheetRawService.GetDistinctTimeSheetRawByEmployee(lstEmployees.Select(e => (long?)e[EmployeeIdField]).ToList());
+
+            var countedSymbols = await _organizationDBContext.CountedSymbol.ProjectTo<CountedSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            foreach (var (departmentId, employees) in employeesByDepartment)
+            {
+                foreach (var employee in employees)
+                {
+                    var employeeId = (long)employee[EmployeeIdField];
+
+                    var timeSheetByEmployee = new TimeSheetByEmployeeModel();
+                    timeSheetByEmployee.EmployeeId = employeeId;
+
+                    var details = new List<TimeSheetDetailModel>();
+
+                    foreach (var date in dateRange)
+                    {
+                        var detail = new TimeSheetDetailModel();
+                        detail.EmployeeId = employeeId;
+                        detail.Date = date;
+                        detail.TimeSheetId = timeSheetId;
+
+                        var dayOff = dayOffByDepartment[departmentId].FirstOrDefault(d => d.Day == date);
+                        if (dayOff != null)
+                        {
+                            detail.TimeSheetDateType = (EnumTimeSheetDateType)dayOff.DayOffType;
+                        }
+                        else
+                        {
+                            detail.TimeSheetDateType = EnumTimeSheetDateType.Weekday;
+                        }
+
+                        var detailShifts = new List<TimeSheetDetailShiftModel>();
+
+                        var shiftsForDate = allShiftDetails.Where(d => d.EmployeeId == employeeId && d.AssignedDate.GetUnix() == date);
+
+                        if (!shiftsForDate.Any())
+                        {
+                            detail.IsScheduled = false;
+                            details.Add(detail);
+                            continue;
+                        }
+
+                        detail.IsScheduled = true;
+
+                        var shifts = allShiftConfigurations.Where(s => shiftsForDate.Any(sd => sd.ShiftConfigurationId == s.ShiftConfigurationId)).ToList();
+
+                        var timeSheetRaw = allTimeSheetRaws.Where(r => r.EmployeeId == employeeId && r.Date == date);
+
+                        foreach (var shift in shifts)
+                        {
+                            var detailShift = CreateDetailShift(shift, detail, timeSheetRaw, countedSymbols);
+
+                            if(detailShift != null)
+                            {
+                                detailShifts.Add(detailShift);
+                            }
+                        }
+                        detail.TimeSheetDetailShift = detailShifts;
+                        details.Add(detail);
+                    }
+
+                    timeSheetByEmployee.TimeSheetDetail = details;
+
+                    result.Add(timeSheetByEmployee);
+                }
+            }
+
+            return result;
+        }
+
+        private TimeSheetDetailShiftModel CreateDetailShift(ShiftConfigurationModel shift, TimeSheetDetailModel detail, IEnumerable<TimeSheetRawModel> timeSheetRaw, List<CountedSymbolModel> countedSymbols)
+        {
+            var detailShift = new TimeSheetDetailShiftModel();
+            detailShift.ShiftConfigurationId = shift.ShiftConfigurationId;
+            detailShift.HasOvertimePlan = true;
+            detailShift.DateAsOvertimeLevelId = GetOverTimeLevelId(detail.TimeSheetDateType, shift.OvertimeConfiguration, false);
+
+            if (detailShift.DateAsOvertimeLevelId != 0 && detailShift.DateAsOvertimeLevelId != null)
+            {
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeDateSymbol));
+            }
+
+            //TimeIn
+            double? timeInRaw = null;
+            var timeInRaws = timeSheetRaw.Where(r => r.Time > shift.StartTimeOnRecord && r.Time < shift.EndTimeOnRecord).ToList();
+            if (timeInRaws.Any())
+            {
+                timeInRaw = timeInRaws.Min(r => r.Time);
+                detailShift.TimeIn = timeInRaw;
+
+                if (timeInRaw <= shift.EntryTime
+                    || !shift.IsSubtractionForLate
+                    || (shift.IsSubtractionForLate && shift.MinsAllowToLate * 60 > (timeInRaw - shift.EntryTime)))
+                {
+                    //Đủ công (X)
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+
+                    if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
+                    {
+                        //Tăng ca trc giờ (X+)
+                        var overtime = GetDetailShiftOvertimeModel(detail, shift);
+
+                        overtime.OvertimeType = EnumTimeSheetOvertimeType.BeforeWork;
+
+                        var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork
+                                                        && (shift.EntryTime - timeInRaw) > shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork * 60 ?
+                                                    (shift.EntryTime - timeInRaw) / 60 : 0);
+
+                        var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
+
+                        overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+
+                        if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReachesBeforeWork)
+                        {
+                            overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
+                        }
+
+                        if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork)
+                        {
+                            overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
+                        }
+
+                        overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
+
+                        if (overtime.MinsOvertime > 0)
+                        {
+                            detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
+                        }
+                    }
+                }
+                else
+                {
+                    if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
+                    {
+                        //(X-)
+                        detailShift.ActualWorkMins = shift.ConvertToMins / 2;
+                        detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
+                    }
+                    else
+                    {
+                        if ((timeInRaw - shift.EntryTime) <= shift.MaxLateMins * 60
+                        || ((timeInRaw - shift.EntryTime) > shift.MaxLateMins * 60 && (shift.ExceededLateAbsenceTypeId == null || shift.ExceededLateAbsenceTypeId == 0)))
+                        {
+                            //Trễ (TR)
+
+                            var actualMinsLate = shift.IsCalculationForLate ? (long)(timeInRaw - shift.EntryTime) : (long)(timeInRaw - shift.EntryTime) - shift.MinsAllowToLate * 60;
+                            actualMinsLate /= 60;
+
+                            detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
+
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BeLateSymbol));
+                        }
+                        else
+                        {
+                            //Vắng (V)
+                            detailShift.AbsenceTypeSymbolId = shift.ExceededLateAbsenceTypeId;
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (shift.IsNoEntryTimeWorkMins)
+                {
+                    //(X-)
+                    detailShift.ActualWorkMins = shift.NoEntryTimeWorkMins;
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BasedOnActualHoursSymbol));
+                }
+                else
+                {
+                    //(V)
+                    detailShift.AbsenceTypeSymbolId = shift.NoEntryTimeAbsenceTypeId;
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                }
+            }
+
+            //TimeOut
+            double? timeOutRaw = null;
+            var timeOutRaws = timeSheetRaw.Where(r => r.Time > shift.StartTimeOutRecord && r.Time < shift.EndTimeOutRecord).ToList();
+            if (timeOutRaws.Any())
+            {
+                timeOutRaw = timeOutRaws.Max(r => r.Time);
+                detailShift.TimeOut = timeOutRaw;
+
+                if (timeOutRaw >= shift.ExitTime
+                    || !shift.IsSubtractionForLate
+                    || (shift.IsSubtractionForLate && shift.MinsAllowToLate * 60 > (shift.ExitTime - timeOutRaw)))
+                {
+                    if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
+                    {
+                        //Tăng ca sau giờ (X+)
+                        var overtime = GetDetailShiftOvertimeModel(detail, shift);
+
+                        overtime.OvertimeType = EnumTimeSheetOvertimeType.AfterWork;
+
+                        var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork
+                                                        && (timeOutRaw - shift.ExitTime) > shift.OvertimeConfiguration.MinThresholdMinutesAfterWork * 60 ?
+                                                    (timeOutRaw - shift.ExitTime) / 60 : 0);
+
+                        var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
+
+                        overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+
+                        if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReachesAfterWork)
+                        {
+                            overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
+                        }
+
+                        if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork)
+                        {
+                            overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
+                        }
+
+                        overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
+
+                        if (overtime.MinsOvertime > 0)
+                        {
+                            detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
+                        }
+                    }
+                }
+                else
+                {
+                    if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
+                    {
+                        //(X-)
+                        detailShift.ActualWorkMins = shift.ConvertToMins / 2;
+                        detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
+                    }
+                    else
+                    {
+                        if ((shift.ExitTime - timeOutRaw) <= shift.MaxEarlyMins * 60
+                            || ((shift.ExitTime - timeOutRaw) > shift.MaxEarlyMins * 60 && (shift.ExceededEarlyAbsenceTypeId == null || shift.ExceededEarlyAbsenceTypeId == 0)))
+                        {
+                            //Sớm (SM)
+                            var actualMinsEarly = shift.IsCalculationForEarly ? (long)(shift.ExitTime - timeOutRaw) : (long)(shift.ExitTime - timeOutRaw) - shift.MinsAllowToEarly * 60;
+                            actualMinsEarly /= 60;
+
+                            detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
+
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.EarlySymbol));
+                        }
+                        else
+                        {
+                            //Vắng (V)
+                            detailShift.AbsenceTypeSymbolId = shift.ExceededEarlyAbsenceTypeId;
+                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (shift.IsNoExitTimeWorkMins)
+                {
+                    //(X-)
+                    detailShift.ActualWorkMins = shift.NoExitTimeWorkMins;
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BasedOnActualHoursSymbol));
+                }
+                else
+                {
+                    //(V)
+                    detailShift.AbsenceTypeSymbolId = shift.NoExitTimeAbsenceTypeId;
+
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                }
+            }
+
+            if (timeInRaw == null && timeOutRaw == null)
+            {
+                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && (shift.IsSkipSaturdayWithShift || shift.IsSkipSundayWithShift))
+                {
+                    detail.IsScheduled = false;
+                    return null;
+                }
+
+                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
+                {
+                    //Đủ công (X)
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+                }
+            }
+
+            //Tăng ca tổng hợp
+            if (shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByActualWorkingHours
+                && timeInRaw != null && timeInRaw < shift.EntryTime && timeOutRaw != null && timeOutRaw > shift.ExitTime)
+            {
+                var overtime = GetDetailShiftOvertimeModel(detail, shift);
+
+                overtime.OvertimeType = EnumTimeSheetOvertimeType.Default;
+
+                var actualTime = timeOutRaw - timeInRaw;
+
+                var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsOvertimeThresholdMins
+                                                && (actualTime - shift.ExitTime + shift.EntryTime) > shift.OvertimeConfiguration.OvertimeThresholdMins * 60 ?
+                                            (actualTime - shift.ExitTime + shift.EntryTime) / 60 : 0);
+
+                var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
+
+                overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+
+                if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReaches)
+                {
+                    overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
+                }
+
+                if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertime)
+                {
+                    overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertime;
+                }
+
+                overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
+
+                if (overtime.MinsOvertime > 0)
+                {
+                    detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
+
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
+                }
+            }
+
+            return detailShift;
+        }
+
+        private TimeSheetDetailShiftCountedModel GetCountedSymbolModel(ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, EnumCountedSymbol symbol)
+        {
+            return new TimeSheetDetailShiftCountedModel()
+            {
+                ShiftConfigurationId = shift.ShiftConfigurationId,
+                CountedSymbolId = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == (int)symbol).CountedSymbolId
+            };
+        }
+        private TimeSheetDetailShiftOvertimeModel GetDetailShiftOvertimeModel(TimeSheetDetailModel detail, ShiftConfigurationModel shift)
+        {
+            return new TimeSheetDetailShiftOvertimeModel()
+            {
+                ShiftConfigurationId = shift.ShiftConfigurationId,
+                OvertimeLevelId = (int)GetOverTimeLevelId(detail.TimeSheetDateType, shift.OvertimeConfiguration, true)
+            };
+        }
+
+        private long RoundValue(long actualValue, bool isRoundBack, long? roundValue)
+        {
+            return roundValue == null || roundValue == 0 ?
+                    actualValue :
+                    (isRoundBack ?
+                    actualValue / roundValue.Value * roundValue.Value :
+                    (long)Math.Ceiling((double)actualValue / roundValue.Value) * roundValue.Value);
+        }
+
+        private long CheckOvertimeLevelLimit(long minsOvertime, OvertimeConfigurationModel overtimeConfig, int overtimeLevelId)
+        {
+            var limitOvertimeLevel = overtimeConfig.OvertimeConfigurationMapping.FirstOrDefault(o => o.OvertimeLevelId == overtimeLevelId);
+            if (limitOvertimeLevel != null && minsOvertime > limitOvertimeLevel.MinsLimit)
+            {
+                return limitOvertimeLevel.MinsLimit;
+            }
+            return minsOvertime;
+        }
+
+        private int? GetOverTimeLevelId(EnumTimeSheetDateType dateType, OvertimeConfigurationModel overtimeConfig, bool isOvertime)
+        {
+            int? overTimeLevelId;
+            switch (dateType)
+            {
+                case EnumTimeSheetDateType.Weekend:
+                    if (isOvertime)
+                    {
+                        overTimeLevelId = overtimeConfig.IsWeekendOvertimeLevel ? overtimeConfig.WeekendOvertimeLevel : 0;
+                    }
+                    else
+                    {
+                        overTimeLevelId = overtimeConfig.IsWeekendLevel ? overtimeConfig.WeekendLevel : 0;
+                    }
+                    break;
+                case EnumTimeSheetDateType.Holiday:
+                    if (isOvertime)
+                    {
+                        overTimeLevelId = overtimeConfig.IsHolidayOvertimeLevel ? overtimeConfig.HolidayOvertimeLevel : 0;
+                    }
+                    else
+                    {
+                        overTimeLevelId = overtimeConfig.IsHolidayLevel ? overtimeConfig.HolidayLevel : 0;
+                    }
+                    break;
+                default:
+                    if (isOvertime)
+                    {
+                        overTimeLevelId = overtimeConfig.IsWeekdayOvertimeLevel ? overtimeConfig.WeekdayOvertimeLevel : 0;
+                    }
+                    else
+                    {
+                        overTimeLevelId = overtimeConfig.IsWeekdayLevel ? overtimeConfig.WeekdayLevel : 0;
+                    }
+                    break;
+            }
+            return overTimeLevelId;
+        }
+        private async Task<List<ShiftConfigurationModel>> GetShiftsByEmployee(long employeeId, long date)
+        {
+            var shiftConfigurationIds = _organizationDBContext.ShiftScheduleDetail
+                .Where(s => s.EmployeeId == employeeId && s.AssignedDate == date.UnixToDateTime())
+                .Select(d => d.ShiftConfigurationId)
+                .Distinct().ToList();
+
+            return await _organizationDBContext.ShiftConfiguration
+                .Where(s => shiftConfigurationIds
+                .Contains(s.ShiftConfigurationId))
+                .ProjectTo<ShiftConfigurationModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+        }
 
         //public CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate)
         //{
@@ -725,6 +1185,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
         private async Task RemoveTimeSheetDetailShift(long timeSheetDetailId)
         {
+            var countedEntities = _organizationDBContext.TimeSheetDetailShiftCounted
+                    .Where(c => c.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
+            _organizationDBContext.TimeSheetDetailShiftCounted.RemoveRange(countedEntities);
+
+            var overtimeEntities = _organizationDBContext.TimeSheetDetailShiftOvertime
+                    .Where(o => o.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
+            _organizationDBContext.TimeSheetDetailShiftOvertime.RemoveRange(overtimeEntities);
+
             var entity = _organizationDBContext.TimeSheetDetailShift
                     .Where(m => m.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
             _organizationDBContext.TimeSheetDetailShift.RemoveRange(entity);

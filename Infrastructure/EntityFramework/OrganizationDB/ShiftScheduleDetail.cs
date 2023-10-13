@@ -11,7 +11,7 @@ public partial class ShiftScheduleDetail
 
     public DateTime AssignedDate { get; set; }
 
-    public int EmployeeId { get; set; }
+    public long EmployeeId { get; set; }
 
     public bool HasOvertimePlan { get; set; }
 

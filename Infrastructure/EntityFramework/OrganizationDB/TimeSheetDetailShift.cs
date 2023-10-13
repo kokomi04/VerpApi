@@ -9,8 +9,6 @@ public partial class TimeSheetDetailShift
 
     public int ShiftConfigurationId { get; set; }
 
-    public int CountedSymbolId { get; set; }
-
     public TimeSpan? TimeIn { get; set; }
 
     public TimeSpan? TimeOut { get; set; }
@@ -21,13 +19,15 @@ public partial class TimeSheetDetailShift
 
     public long? MinsEarly { get; set; }
 
-    public int? OvertimeLevelId { get; set; }
+    public long? ActualWorkMins { get; set; }
 
-    public long? MinsOvertime { get; set; }
+    public int? DateAsOvertimeLevelId { get; set; }
 
-    public int? OvertimeLevelId2 { get; set; }
-
-    public long? MinsOvertime2 { get; set; }
+    public bool? HasOvertimePlan { get; set; }
 
     public virtual TimeSheetDetail TimeSheetDetail { get; set; }
+
+    public virtual ICollection<TimeSheetDetailShiftCounted> TimeSheetDetailShiftCounted { get; set; } = new List<TimeSheetDetailShiftCounted>();
+
+    public virtual ICollection<TimeSheetDetailShiftOvertime> TimeSheetDetailShiftOvertime { get; set; } = new List<TimeSheetDetailShiftOvertime>();
 }

@@ -14,7 +14,7 @@ public partial class ShiftScheduleDetailModel : IMapFrom<ShiftScheduleDetail>
 
     public long AssignedDate { get; set; }
 
-    public int EmployeeId { get; set; }
+    public long EmployeeId { get; set; }
 
     public bool HasOvertimePlan { get; set; }
 

@@ -80,6 +80,13 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
 
         }
 
+        [HttpGet]
+        [Route("timeSheetByEmployee")]
+        public async Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet([FromBody] TimeSheetByEmployeeRequestModel model)
+        {
+            return await _timeSheetService.GenerateTimeSheet(model.TimeSheetId, model.DepartmentIds, model.BeginDate, model.EndDate);
+        }
+
         //[HttpGet]
         //[Route("fieldDataForMapping")]
         //public CategoryNameModel GetFieldDataForMapping([FromQuery] long beginDate, [FromQuery] long endDate)

@@ -231,7 +231,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
 
             var shifts = await _organizationDBContext.ShiftConfiguration.ToDictionaryAsync(s => s.ShiftConfigurationId);
-            var allViolations = new Dictionary<(int EmployeeId, long AssignedDate), EmployeeViolationModel>();
+            var allViolations = new Dictionary<(long EmployeeId, long AssignedDate), EmployeeViolationModel>();
 
             foreach (var schedule in shiftSchedules)
             {

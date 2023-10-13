@@ -13,7 +13,9 @@ public partial class TimeSheetDetail
 
     public DateTime Date { get; set; }
 
-    public int DateType { get; set; }
+    public int TimeSheetDateType { get; set; }
+
+    public bool IsScheduled { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }
 

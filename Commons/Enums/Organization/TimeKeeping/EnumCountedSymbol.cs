@@ -11,7 +11,7 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
         EarlySymbol = 2,
 
         [Description("Kí hiệu đúng giờ")]
-        WorkOnTimeSymbol = 3,
+        FullCountedSymbol = 3,
 
         [Description("Kí hiệu tăng ca")]
         OvertimeSymbol = 4,
@@ -31,7 +31,14 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
 
         [Description("Kí hiệu ngày không xếp ca")]
         OffSymbol = 9,
+
         [Description("Kí hiệu làm nửa công")]
         HalfWorkOnTimeSymbol = 10,
+
+        [Description("Kí hiệu tính công theo số giờ thực tế")]
+        BasedOnActualHoursSymbol = 11,
+
+        [Description("Kí hiệu ngày tăng ca")]
+        OvertimeDateSymbol = 12,
     }
 }
