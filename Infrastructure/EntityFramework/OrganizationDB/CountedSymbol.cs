@@ -13,6 +13,8 @@ public partial class CountedSymbol
 
     public string SymbolDescription { get; set; }
 
+    public int CountedPriority { get; set; }
+
     public bool IsHide { get; set; }
 
     public int UpdatedByUserId { get; set; }

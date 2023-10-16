@@ -22,7 +22,9 @@ namespace Services.Organization.Model.TimeKeeping
 
         public long? MinsEarly { get; set; }
 
-        public long? ActualWorkMins { get; set; }
+        public long ActualWorkMins { get; set; }
+
+        public decimal WorkCounted { get; set; }
 
         public int? DateAsOvertimeLevelId { get; set; }
 
