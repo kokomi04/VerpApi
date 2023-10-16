@@ -19,11 +19,13 @@ public partial class TimeSheetDetailShift
 
     public long? MinsEarly { get; set; }
 
-    public long? ActualWorkMins { get; set; }
+    public long ActualWorkMins { get; set; }
+
+    public decimal WorkCounted { get; set; }
 
     public int? DateAsOvertimeLevelId { get; set; }
 
-    public bool? HasOvertimePlan { get; set; }
+    public bool HasOvertimePlan { get; set; }
 
     public virtual TimeSheetDetail TimeSheetDetail { get; set; }
 

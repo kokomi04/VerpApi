@@ -135,6 +135,20 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         var eDetailToUpdate = timeSheetDetails.First(e => e.TimeSheetDetailId == mDetail.TimeSheetDetailId);
                         await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
 
+                        if (mDetail.TimeSheetDetailShift.Any(ds => ds.TimeSheetDetailShiftCounted.Count > 0))
+                        {
+                            foreach(var ds in mDetail.TimeSheetDetailShift)
+                            {
+                                foreach(var counted in ds.TimeSheetDetailShiftCounted)
+                                {
+                                    counted.TimeSheetDetailShiftCountedId = 0;
+                                    var eCounted = new TimeSheetDetailShiftCounted();
+                                    await _organizationDBContext.TimeSheetDetailShiftCounted.AddAsync(_mapper.Map(counted, eCounted));
+                                }
+                                ds.TimeSheetDetailShiftCounted = null;
+                            }
+                        }
+
                         _mapper.Map(mDetail, eDetailToUpdate);
                         await _organizationDBContext.SaveChangesAsync();
                     }
@@ -190,10 +204,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 return true;
 
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 await trans.RollbackAsync();
-                throw;
+                throw new BadRequestException(ex.Message);
             }
         }
 
@@ -382,7 +396,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         {
                             var detailShift = CreateDetailShift(shift, detail, timeSheetRaw, countedSymbols);
 
-                            if(detailShift != null)
+                            if (detailShift != null)
                             {
                                 detailShifts.Add(detailShift);
                             }
@@ -414,7 +428,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             //TimeIn
             double? timeInRaw = null;
-            var timeInRaws = timeSheetRaw.Where(r => r.Time > shift.StartTimeOnRecord && r.Time < shift.EndTimeOnRecord).ToList();
+            var timeInRaws = timeSheetRaw.Where(r => r.Time >= shift.StartTimeOnRecord && r.Time <= shift.EndTimeOnRecord).ToList();
             if (timeInRaws.Any())
             {
                 timeInRaw = timeInRaws.Min(r => r.Time);
@@ -426,6 +440,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     //Đủ công (X)
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+                    detailShift.WorkCounted = shift.ConfirmationUnit;
+                    detailShift.ActualWorkMins = shift.ConvertToMins;
 
                     if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
                     {
@@ -465,8 +481,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
-                        //(X-)
+                        //(X/2)
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
+                        detailShift.WorkCounted = shift.ConfirmationUnit / 2;
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
                     }
                     else
@@ -481,12 +498,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
 
+                            detailShift.WorkCounted = shift.ConfirmationUnit * (1 - (decimal)detailShift.MinsLate / shift.ConvertToMins);
+                            detailShift.ActualWorkMins = shift.ConvertToMins - (long)detailShift.MinsLate;
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BeLateSymbol));
                         }
                         else
                         {
                             //Vắng (V)
                             detailShift.AbsenceTypeSymbolId = shift.ExceededLateAbsenceTypeId;
+                            detailShift.WorkCounted = 0;
+                            detailShift.ActualWorkMins = 0;
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
                         }
                     }
@@ -497,20 +518,23 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 if (shift.IsNoEntryTimeWorkMins)
                 {
                     //(X-)
-                    detailShift.ActualWorkMins = shift.NoEntryTimeWorkMins;
+                    detailShift.ActualWorkMins = (long)shift.NoEntryTimeWorkMins;
+                    detailShift.WorkCounted = shift.ConfirmationUnit * ((decimal)shift.NoEntryTimeWorkMins / shift.ConvertToMins);
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BasedOnActualHoursSymbol));
                 }
                 else
                 {
                     //(V)
                     detailShift.AbsenceTypeSymbolId = shift.NoEntryTimeAbsenceTypeId;
+                    detailShift.WorkCounted = 0;
+                    detailShift.ActualWorkMins = 0;
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
                 }
             }
 
             //TimeOut
             double? timeOutRaw = null;
-            var timeOutRaws = timeSheetRaw.Where(r => r.Time > shift.StartTimeOutRecord && r.Time < shift.EndTimeOutRecord).ToList();
+            var timeOutRaws = timeSheetRaw.Where(r => r.Time >= shift.StartTimeOutRecord && r.Time <= shift.EndTimeOutRecord).ToList();
             if (timeOutRaws.Any())
             {
                 timeOutRaw = timeOutRaws.Max(r => r.Time);
@@ -558,7 +582,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
-                        //(X-)
+                        //(X/2)
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
                     }
@@ -573,12 +597,22 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
 
+                            detailShift.WorkCounted = detailShift.WorkCounted - shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
+                            if (detailShift.WorkCounted < 0)
+                                detailShift.WorkCounted = 0;
+
+                            detailShift.ActualWorkMins = detailShift.ActualWorkMins - (long)detailShift.MinsEarly;
+                            if (detailShift.ActualWorkMins < 0)
+                                detailShift.ActualWorkMins = 0;
+
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.EarlySymbol));
                         }
                         else
                         {
                             //Vắng (V)
                             detailShift.AbsenceTypeSymbolId = shift.ExceededEarlyAbsenceTypeId;
+                            detailShift.WorkCounted = 0;
+                            detailShift.ActualWorkMins = 0;
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
                         }
                     }
@@ -589,14 +623,23 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 if (shift.IsNoExitTimeWorkMins)
                 {
                     //(X-)
-                    detailShift.ActualWorkMins = shift.NoExitTimeWorkMins;
+                    detailShift.ActualWorkMins = detailShift.ActualWorkMins - (shift.ConvertToMins - (long)shift.NoExitTimeWorkMins);
+                    if (detailShift.ActualWorkMins < 0)
+                        detailShift.ActualWorkMins = 0;
+
+                    var actualWorkCountTmp = shift.ConfirmationUnit * ((decimal)shift.NoExitTimeWorkMins / shift.ConvertToMins);
+                    detailShift.WorkCounted = detailShift.WorkCounted - (shift.ConfirmationUnit - actualWorkCountTmp);
+                    if (detailShift.WorkCounted < 0)
+                        detailShift.WorkCounted = 0;
+
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BasedOnActualHoursSymbol));
                 }
                 else
                 {
                     //(V)
                     detailShift.AbsenceTypeSymbolId = shift.NoExitTimeAbsenceTypeId;
-
+                    detailShift.WorkCounted = 0;
+                    detailShift.ActualWorkMins = 0;
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
                 }
             }
@@ -606,6 +649,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && (shift.IsSkipSaturdayWithShift || shift.IsSkipSundayWithShift))
                 {
                     detail.IsScheduled = false;
+                    detailShift.WorkCounted = 0;
+                    detailShift.ActualWorkMins = 0;
                     return null;
                 }
 
@@ -613,6 +658,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     //Đủ công (X)
                     detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+                    detailShift.WorkCounted = shift.ConfirmationUnit;
+                    detailShift.ActualWorkMins = shift.ConvertToMins;
                 }
             }
 

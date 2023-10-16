@@ -9,6 +9,7 @@ namespace Services.Organization.Model.TimeKeeping
         public int CountedSymbolType { get; set; }
         public string SymbolCode { get; set; }
         public string SymbolDescription { get; set; }
+        public int CountedPriority { get; set; }
         public bool IsHide { get; set; }
     }
 }

@@ -70,7 +70,7 @@ namespace Services.Organization.Model.TimeKeeping
     {
         public long EmployeeId { get; set; }
         public List<TimeSheetDetailModel> TimeSheetDetail { get; set; } = new List<TimeSheetDetailModel>();
-        public List<TimeSheetAggregateModel> TimeSheetAggregate { get; set; } = new List<TimeSheetAggregateModel>();
+        public TimeSheetAggregateModel TimeSheetAggregate { get; set; }
     }
 
     public class TimeSheetByEmployeeRequestModel
