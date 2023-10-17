@@ -89,9 +89,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
 
-            groupRowColumns = columns.Where(c => c.IsGroupRow).ToList();
-
-
             xssfwb = new ExcelWriter();
             sheet = xssfwb.GetSheet(sheetName);
 
