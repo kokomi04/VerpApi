@@ -28,5 +28,6 @@ namespace Services.Organization.Model.TimeKeeping
         [Range(0.0, 1.0, ErrorMessage = "Tỷ lệ hưởng lương phải nằm trong khoảng từ 0 đến 1")]
         public double SalaryRate { get; set; }
         public bool IsAnnualLeave { get; set; }
+        public bool IsUnpaidLeave { get; set; }
     }
 }

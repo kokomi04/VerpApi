@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,6 +23,7 @@ using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Calendar;
 using VErp.Services.Organization.Service.DepartmentCalendar;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static VErp.Commons.Library.ExcelReader;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
@@ -35,6 +37,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<TimeSheetModel> GetTimeSheetByEmployee(long timeSheetId, int employeeId);
         Task<bool> UpdateTimeSheet(long timeSheetId, TimeSheetModel model);
         Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet(long timeSheetId, int[] departmentIds, long beginDate, long endDate);
+        Task<TimeSheetDetailModel> SingleTimeKeeping(TimeSheetDetailRequestModel model);
 
         //CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate);
 
@@ -72,6 +75,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
+                if (_organizationDBContext.TimeSheet.Any(t => t.Title == model.Title))
+                {
+                    throw new BadRequestException("Tên bảng chấm công đã tồn tại");
+                }
+
                 model.IsApprove = false;
 
                 var entity = _mapper.Map<TimeSheet>(model);
@@ -107,59 +115,81 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             var trans = await _organizationDBContext.Database.BeginTransactionAsync();
             try
             {
-                var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.TimeSheetId == timeSheetId);
+                var timeSheet = await _organizationDBContext.TimeSheet.AsNoTracking().FirstOrDefaultAsync(x => x.TimeSheetId == timeSheetId);
                 if (timeSheet == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy bảng chấm công có ID {timeSheetId}");
+
+                if (_organizationDBContext.TimeSheet.Any(t => t.Title != timeSheet.Title && t.Title == model.Title))
+                    throw new BadRequestException("Tên bảng chấm công đã tồn tại");
 
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
 
                 await RemoveTimeSheetDepartment(timeSheetId);
 
-                var existingDetailIds = new HashSet<long>(timeSheetDetails.Select(e => e.TimeSheetDetailId));
-                var modelDetailIds = new HashSet<long>(model.TimeSheetDetail.Select(m => m.TimeSheetDetailId));
+                var eTimeSheetDPMs = new List<TimeSheetDepartment>();
+                _mapper.Map(model.TimeSheetDepartment, eTimeSheetDPMs);
+                _organizationDBContext.TimeSheetDepartment.AddRange(eTimeSheetDPMs);
 
-                var detailsToRemove = timeSheetDetails.Where(e => !modelDetailIds.Contains(e.TimeSheetDetailId)).ToList();
+                var existingDetailSet = new HashSet<(long EmployeeId, long Date)>(timeSheetDetails.Select(e => (e.EmployeeId, e.Date.GetUnix())));
+                var modelDetailSet = new HashSet<(long EmployeeId, long Date)>(model.TimeSheetDetail.Select(m => (m.EmployeeId, m.Date)));
+
+                var detailsToRemove = timeSheetDetails.Where(e => !modelDetailSet.Contains((e.EmployeeId, e.Date.GetUnix()))).ToList();
                 foreach (var detail in detailsToRemove)
                 {
                     detail.IsDeleted = true;
-                    await _organizationDBContext.SaveChangesAsync();
                 }
+
+                var newDetails = new List<TimeSheetDetail>();
 
                 foreach (var mDetail in model.TimeSheetDetail)
                 {
                     mDetail.TimeSheetId = timeSheetId;
 
-                    if (existingDetailIds.Contains(mDetail.TimeSheetDetailId))
+                    if (existingDetailSet.Contains((mDetail.EmployeeId, mDetail.Date)))
                     {
-                        var eDetailToUpdate = timeSheetDetails.First(e => e.TimeSheetDetailId == mDetail.TimeSheetDetailId);
+                        var eDetailToUpdate = timeSheetDetails.FirstOrDefault(e => e.EmployeeId == mDetail.EmployeeId && e.Date.GetUnix() == mDetail.Date);
+                        mDetail.TimeSheetDetailId = eDetailToUpdate.TimeSheetDetailId;
                         await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
+
+                        var counteds = new List<TimeSheetDetailShiftCountedModel>();
 
                         if (mDetail.TimeSheetDetailShift.Any(ds => ds.TimeSheetDetailShiftCounted.Count > 0))
                         {
-                            foreach(var ds in mDetail.TimeSheetDetailShift)
+                            foreach (var ds in mDetail.TimeSheetDetailShift)
                             {
-                                foreach(var counted in ds.TimeSheetDetailShiftCounted)
+                                foreach (var counted in ds.TimeSheetDetailShiftCounted)
                                 {
+                                    counted.TimeSheetDetailId = eDetailToUpdate.TimeSheetDetailId;
                                     counted.TimeSheetDetailShiftCountedId = 0;
-                                    var eCounted = new TimeSheetDetailShiftCounted();
-                                    await _organizationDBContext.TimeSheetDetailShiftCounted.AddAsync(_mapper.Map(counted, eCounted));
+                                    counteds.Add(counted);
                                 }
                                 ds.TimeSheetDetailShiftCounted = null;
                             }
                         }
 
                         _mapper.Map(mDetail, eDetailToUpdate);
+
+                        var eCounted = new List<TimeSheetDetailShiftCounted>();
+                        await _organizationDBContext.TimeSheetDetailShiftCounted.AddRangeAsync(_mapper.Map(counteds, eCounted));
                         await _organizationDBContext.SaveChangesAsync();
                     }
                     else
                     {
                         mDetail.TimeSheetDetailId = 0;
+                        foreach (var ds in mDetail.TimeSheetDetailShift)
+                        {
+                            foreach (var counted in ds.TimeSheetDetailShiftCounted)
+                            {
+                                counted.TimeSheetDetailShiftCountedId = 0;
+                            }
+                        }
                         var newEDetail = _mapper.Map<TimeSheetDetail>(mDetail);
-                        await _organizationDBContext.TimeSheetDetail.AddAsync(newEDetail);
-                        await _organizationDBContext.SaveChangesAsync();
+                        newDetails.Add(newEDetail);
                     }
                 }
+                await _organizationDBContext.TimeSheetDetail.AddRangeAsync(newDetails);
+                await _organizationDBContext.SaveChangesAsync();
 
                 var existingAggregateIds = new HashSet<long>(timeSheet.TimeSheetAggregate.Select(e => e.TimeSheetAggregateId));
                 var modelAggregateIds = new HashSet<long>(model.TimeSheetAggregate.Select(m => m.TimeSheetAggregateId));
@@ -168,8 +198,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 foreach (var aggregate in aggregatesToRemove)
                 {
                     aggregate.IsDeleted = true;
-                    await _organizationDBContext.SaveChangesAsync();
                 }
+
+                var newAggregates = new List<TimeSheetAggregate>();
 
                 foreach (var mAggregate in model.TimeSheetAggregate)
                 {
@@ -182,16 +213,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         await RemoveTimeSheetAggregateOvertime(eAggregateToUpdate.TimeSheetAggregateId);
                         mAggregate.TimeSheetId = eAggregateToUpdate.TimeSheetId;
                         _mapper.Map(mAggregate, eAggregateToUpdate);
-                        await _organizationDBContext.SaveChangesAsync();
                     }
                     else
                     {
                         mAggregate.TimeSheetAggregateId = 0;
                         var newEAggregate = _mapper.Map<TimeSheetAggregate>(mAggregate);
-                        await _organizationDBContext.TimeSheetAggregate.AddAsync(newEAggregate);
-                        await _organizationDBContext.SaveChangesAsync();
+                        newAggregates.Add(newEAggregate);
                     }
                 }
+                await _organizationDBContext.TimeSheetAggregate.AddRangeAsync(newAggregates);
 
                 model.TimeSheetId = timeSheet.TimeSheetId;
                 model.IsApprove = false;
@@ -221,13 +251,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công có ID {timeSheetId}");
 
                 timeSheet.IsDeleted = true;
-
-                var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-                var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
-
-                timeSheetAggregates.ForEach(x => x.IsDeleted = true);
-                timeSheetDetails.ForEach(x => x.IsDeleted = true);
-                timeSheet.IsDeleted = true;
+                _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToList().ForEach(x => x.IsDeleted = true);
+                _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToList().ForEach(x => x.IsDeleted = true);
 
                 await RemoveTimeSheetDepartment(timeSheetId);
 
@@ -235,6 +260,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     await RemoveTimeSheetDetailShift(eDetail.TimeSheetDetailId);
                 }
+
 
                 foreach (var eAggregate in timeSheet.TimeSheetAggregate)
                 {
@@ -295,7 +321,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var query = _organizationDBContext.TimeSheet.Include(x => x.TimeSheetDepartment).AsNoTracking();
 
-            if (!String.IsNullOrWhiteSpace(filter.Keyword))
+            if (!string.IsNullOrWhiteSpace(filter.Keyword))
                 query = query.Where(t => t.Title.Contains(filter.Keyword));
 
             query = query.InternalFilter(filter.ColumnsFilters);
@@ -311,9 +337,95 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             query = size > 0 && page > 0 ? query.Skip((page - 1) * size).Take(size) : query;
 
-            var data = await query.ProjectTo<TimeSheetModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var data = new List<TimeSheetModel>();
+            _mapper.Map(query, data).ToList();
 
             return (data, total);
+        }
+
+        public async Task<TimeSheetDetailModel> SingleTimeKeeping(TimeSheetDetailRequestModel model)
+        {
+            var absences = await _organizationDBContext.AbsenceTypeSymbol.Where(a => a.IsUsed).ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
+            var countedSymbols = await _organizationDBContext.CountedSymbol.ProjectTo<CountedSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
+
+            var shiftIds = model.TimeSheetDetail.TimeSheetDetailShift.Select(ds => ds.ShiftConfigurationId).ToList();
+            var shifts = await _organizationDBContext.ShiftConfiguration
+                .Where(s => shiftIds.Contains(s.ShiftConfigurationId))
+                .ProjectTo<ShiftConfigurationModel>(_mapper.ConfigurationProvider)
+                .ToListAsync();
+
+            var lstDetailShift = new List<TimeSheetDetailShiftModel>();
+
+            switch (model.TimeSheetDetail.TimeSheetMode)
+            {
+                case EnumTimeSheetMode.ByCheckinCheckoutInDay:
+
+                    break;
+
+                case EnumTimeSheetMode.ByDayLabour:
+                    foreach (var shift in shifts)
+                    {
+                        var detailShift = new TimeSheetDetailShiftModel()
+                        {
+                            TimeSheetDetailId = model.TimeSheetDetail.TimeSheetDetailId,
+                            WorkCounted = shift.ConfirmationUnit,
+                            ActualWorkMins = shift.ConvertToMins,
+                            ShiftConfigurationId = shift.ShiftConfigurationId,
+                            TimeIn = shift.EntryTime,
+                            TimeOut = shift.ExitTime
+                        };
+                        detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
+
+                        lstDetailShift.Add(detailShift);
+                    }
+
+                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
+                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
+                    break;
+
+                case EnumTimeSheetMode.Absence:
+                    foreach (var shift in shifts)
+                    {
+                        var absenceTypeSymbolId = model.TimeSheetDetail.TimeSheetDetailShift
+                            .Where(s => s.ShiftConfigurationId == shift.ShiftConfigurationId)
+                            .Select(d => d.AbsenceTypeSymbolId).FirstOrDefault();
+
+                        var detailShift = new TimeSheetDetailShiftModel()
+                        {
+                            TimeSheetDetailId = model.TimeSheetDetail.TimeSheetDetailId,
+                            ShiftConfigurationId = shift.ShiftConfigurationId,
+                            TimeIn = null,
+                            TimeOut = null
+                        };
+                        SetDetailShiftForAbsence(detailShift, absenceTypeSymbolId, shift, countedSymbols, absences);
+
+                        lstDetailShift.Add(detailShift);
+                    }
+
+                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
+                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
+                    break;
+
+                default:
+                    foreach (var shift in shifts)
+                    {
+                        var detailShift = model.TimeSheetDetail.TimeSheetDetailShift.FirstOrDefault(s => s.ShiftConfigurationId == shift.ShiftConfigurationId);
+
+                        detailShift = CreateDetailShift(shift, model.TimeSheetDetail, detailShift.TimeIn, detailShift.TimeOut, countedSymbols, absences);
+
+                        if (detailShift != null)
+                        {
+                            lstDetailShift.Add(detailShift);
+                        }
+                    }
+
+                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
+                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
+                    break;
+            }
+
+            return model.TimeSheetDetail;
+
         }
 
         public async Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet(long timeSheetId, int[] departmentIds, long beginDate, long endDate)
@@ -347,6 +459,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var countedSymbols = await _organizationDBContext.CountedSymbol.ProjectTo<CountedSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
 
+            var absences = await _organizationDBContext.AbsenceTypeSymbol.Where(a => a.IsUsed).ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
+
             foreach (var (departmentId, employees) in employeesByDepartment)
             {
                 foreach (var employee in employees)
@@ -364,6 +478,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         detail.EmployeeId = employeeId;
                         detail.Date = date;
                         detail.TimeSheetId = timeSheetId;
+                        detail.TimeSheetMode = EnumTimeSheetMode.ByShift;
 
                         var dayOff = dayOffByDepartment[departmentId].FirstOrDefault(d => d.Day == date);
                         if (dayOff != null)
@@ -390,11 +505,32 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                         var shifts = allShiftConfigurations.Where(s => shiftsForDate.Any(sd => sd.ShiftConfigurationId == s.ShiftConfigurationId)).ToList();
 
-                        var timeSheetRaw = allTimeSheetRaws.Where(r => r.EmployeeId == employeeId && r.Date == date);
 
                         foreach (var shift in shifts)
                         {
-                            var detailShift = CreateDetailShift(shift, detail, timeSheetRaw, countedSymbols);
+                            IEnumerable<TimeSheetRawModel> timeSheetRaw;
+
+                            timeSheetRaw = shift.IsNightShift ?
+                                        allTimeSheetRaws.Where(r => r.EmployeeId == employeeId && (r.Date == date || r.Date == ((bool)shift.IsCheckOutDateTimekeeping ? date - 86400 : date + 86400))) :
+                                        allTimeSheetRaws.Where(r => r.EmployeeId == employeeId && r.Date == date);
+
+                            double? timeInRaw = null;
+                            double? timeOutRaw = null;
+
+                            if (timeSheetRaw.Any())
+                            {
+                                var dateIn = shift.IsNightShift && (bool)shift.IsCheckOutDateTimekeeping ? detail.Date - 86400 : detail.Date;
+                                var dateOut = shift.IsNightShift && !(bool)shift.IsCheckOutDateTimekeeping ? detail.Date + 86400 : detail.Date;
+
+                                var timeInRaws = timeSheetRaw.Where(r => r.Date == dateIn && r.Time >= shift.StartTimeOnRecord && r.Time <= shift.EndTimeOnRecord).ToList();
+                                var timeOutRaws = timeSheetRaw.Where(r => r.Date == dateOut && r.Time >= shift.StartTimeOutRecord && r.Time <= shift.EndTimeOutRecord).ToList();
+
+                                timeInRaw = timeInRaws.Any() ? timeInRaws.Min(r => r.Time) : null;
+                                timeOutRaw = timeOutRaws.Any() ? timeOutRaws.Max(r => r.Time) : null;
+                            }
+
+
+                            var detailShift = CreateDetailShift(shift, detail, timeInRaw, timeOutRaw, countedSymbols, absences);
 
                             if (detailShift != null)
                             {
@@ -414,7 +550,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return result;
         }
 
-        private TimeSheetDetailShiftModel CreateDetailShift(ShiftConfigurationModel shift, TimeSheetDetailModel detail, IEnumerable<TimeSheetRawModel> timeSheetRaw, List<CountedSymbolModel> countedSymbols)
+        private TimeSheetDetailShiftModel CreateDetailShift(ShiftConfigurationModel shift, TimeSheetDetailModel detail, double? timeInRaw, double? timeOutRaw, List<CountedSymbolModel> countedSymbols, List<AbsenceTypeSymbolModel> absences)
         {
             var detailShift = new TimeSheetDetailShiftModel();
             detailShift.ShiftConfigurationId = shift.ShiftConfigurationId;
@@ -426,12 +562,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeDateSymbol));
             }
 
-            //TimeIn
-            double? timeInRaw = null;
-            var timeInRaws = timeSheetRaw.Where(r => r.Time >= shift.StartTimeOnRecord && r.Time <= shift.EndTimeOnRecord).ToList();
-            if (timeInRaws.Any())
+            if (timeInRaw.HasValue)
             {
-                timeInRaw = timeInRaws.Min(r => r.Time);
                 detailShift.TimeIn = timeInRaw;
 
                 if (timeInRaw <= shift.EntryTime
@@ -439,42 +571,17 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     || (shift.IsSubtractionForLate && shift.MinsAllowToLate * 60 > (timeInRaw - shift.EntryTime)))
                 {
                     //Đủ công (X)
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+                    if (shift.IsNightShift)
+                    {
+                        detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.ShiftNightSymbol));
+                    }
                     detailShift.WorkCounted = shift.ConfirmationUnit;
                     detailShift.ActualWorkMins = shift.ConvertToMins;
 
                     if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
                     {
                         //Tăng ca trc giờ (X+)
-                        var overtime = GetDetailShiftOvertimeModel(detail, shift);
-
-                        overtime.OvertimeType = EnumTimeSheetOvertimeType.BeforeWork;
-
-                        var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork
-                                                        && (shift.EntryTime - timeInRaw) > shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork * 60 ?
-                                                    (shift.EntryTime - timeInRaw) / 60 : 0);
-
-                        var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
-
-                        overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
-
-                        if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReachesBeforeWork)
-                        {
-                            overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
-                        }
-
-                        if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork)
-                        {
-                            overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
-                        }
-
-                        overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
-
-                        if (overtime.MinsOvertime > 0)
-                        {
-                            detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
-                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
-                        }
+                        CalcOvertime(detailShift, detail, shift, EnumTimeSheetOvertimeType.BeforeWork, countedSymbols, timeInRaw, null);
                     }
                 }
                 else
@@ -505,10 +612,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            detailShift.AbsenceTypeSymbolId = shift.ExceededLateAbsenceTypeId;
-                            detailShift.WorkCounted = 0;
-                            detailShift.ActualWorkMins = 0;
-                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                            SetDetailShiftForAbsence(detailShift, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences);
                         }
                     }
                 }
@@ -525,19 +629,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    detailShift.AbsenceTypeSymbolId = shift.NoEntryTimeAbsenceTypeId;
-                    detailShift.WorkCounted = 0;
-                    detailShift.ActualWorkMins = 0;
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                    SetDetailShiftForAbsence(detailShift, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences);
                 }
             }
 
-            //TimeOut
-            double? timeOutRaw = null;
-            var timeOutRaws = timeSheetRaw.Where(r => r.Time >= shift.StartTimeOutRecord && r.Time <= shift.EndTimeOutRecord).ToList();
-            if (timeOutRaws.Any())
+            if (timeOutRaw.HasValue)
             {
-                timeOutRaw = timeOutRaws.Max(r => r.Time);
                 detailShift.TimeOut = timeOutRaw;
 
                 if (timeOutRaw >= shift.ExitTime
@@ -547,35 +644,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
                     {
                         //Tăng ca sau giờ (X+)
-                        var overtime = GetDetailShiftOvertimeModel(detail, shift);
-
-                        overtime.OvertimeType = EnumTimeSheetOvertimeType.AfterWork;
-
-                        var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork
-                                                        && (timeOutRaw - shift.ExitTime) > shift.OvertimeConfiguration.MinThresholdMinutesAfterWork * 60 ?
-                                                    (timeOutRaw - shift.ExitTime) / 60 : 0);
-
-                        var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
-
-                        overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
-
-                        if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReachesAfterWork)
-                        {
-                            overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
-                        }
-
-                        if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork)
-                        {
-                            overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
-                        }
-
-                        overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
-
-                        if (overtime.MinsOvertime > 0)
-                        {
-                            detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
-                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
-                        }
+                        CalcOvertime(detailShift, detail, shift, EnumTimeSheetOvertimeType.AfterWork, countedSymbols, null, timeOutRaw);
                     }
                 }
                 else
@@ -597,11 +666,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
 
-                            detailShift.WorkCounted = detailShift.WorkCounted - shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
+                            detailShift.WorkCounted -= shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
                             if (detailShift.WorkCounted < 0)
                                 detailShift.WorkCounted = 0;
 
-                            detailShift.ActualWorkMins = detailShift.ActualWorkMins - (long)detailShift.MinsEarly;
+                            detailShift.ActualWorkMins -= (long)detailShift.MinsEarly;
                             if (detailShift.ActualWorkMins < 0)
                                 detailShift.ActualWorkMins = 0;
 
@@ -610,10 +679,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            detailShift.AbsenceTypeSymbolId = shift.ExceededEarlyAbsenceTypeId;
-                            detailShift.WorkCounted = 0;
-                            detailShift.ActualWorkMins = 0;
-                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                            SetDetailShiftForAbsence(detailShift, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences);
                         }
                     }
                 }
@@ -623,12 +689,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 if (shift.IsNoExitTimeWorkMins)
                 {
                     //(X-)
-                    detailShift.ActualWorkMins = detailShift.ActualWorkMins - (shift.ConvertToMins - (long)shift.NoExitTimeWorkMins);
+                    detailShift.ActualWorkMins -= (shift.ConvertToMins - (long)shift.NoExitTimeWorkMins);
                     if (detailShift.ActualWorkMins < 0)
                         detailShift.ActualWorkMins = 0;
 
                     var actualWorkCountTmp = shift.ConfirmationUnit * ((decimal)shift.NoExitTimeWorkMins / shift.ConvertToMins);
-                    detailShift.WorkCounted = detailShift.WorkCounted - (shift.ConfirmationUnit - actualWorkCountTmp);
+                    detailShift.WorkCounted -= (shift.ConfirmationUnit - actualWorkCountTmp);
                     if (detailShift.WorkCounted < 0)
                         detailShift.WorkCounted = 0;
 
@@ -637,10 +703,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    detailShift.AbsenceTypeSymbolId = shift.NoExitTimeAbsenceTypeId;
-                    detailShift.WorkCounted = 0;
-                    detailShift.ActualWorkMins = 0;
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+                    SetDetailShiftForAbsence(detailShift, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences);
                 }
             }
 
@@ -649,59 +712,120 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && (shift.IsSkipSaturdayWithShift || shift.IsSkipSundayWithShift))
                 {
                     detail.IsScheduled = false;
-                    detailShift.WorkCounted = 0;
-                    detailShift.ActualWorkMins = 0;
                     return null;
                 }
-
-                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
+                else if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
                 {
                     //Đủ công (X)
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
                     detailShift.WorkCounted = shift.ConfirmationUnit;
                     detailShift.ActualWorkMins = shift.ConvertToMins;
                 }
+                else
+                {
+                    SetDetailShiftForAbsence(detailShift, null, shift, countedSymbols, absences);
+                }
             }
 
-            //Tăng ca tổng hợp
-            if (shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByActualWorkingHours
-                && timeInRaw != null && timeInRaw < shift.EntryTime && timeOutRaw != null && timeOutRaw > shift.ExitTime)
+            if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByActualWorkingHours
+                && ((timeInRaw != null && timeInRaw < shift.EntryTime) || (timeOutRaw != null && timeOutRaw > shift.ExitTime)))
             {
-                var overtime = GetDetailShiftOvertimeModel(detail, shift);
-
-                overtime.OvertimeType = EnumTimeSheetOvertimeType.Default;
-
-                var actualTime = timeOutRaw - timeInRaw;
-
-                var actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsOvertimeThresholdMins
-                                                && (actualTime - shift.ExitTime + shift.EntryTime) > shift.OvertimeConfiguration.OvertimeThresholdMins * 60 ?
-                                            (actualTime - shift.ExitTime + shift.EntryTime) / 60 : 0);
-
-                var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
-
-                overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
-
-                if (overtime.MinsOvertime >= shift.OvertimeConfiguration.MinsReaches)
-                {
-                    overtime.MinsOvertime += shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
-                }
-
-                if (overtime.MinsOvertime > shift.OvertimeConfiguration.MinsLimitOvertime)
-                {
-                    overtime.MinsOvertime = shift.OvertimeConfiguration.MinsLimitOvertime;
-                }
-
-                overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
-
-                if (overtime.MinsOvertime > 0)
-                {
-                    detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
-
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
-                }
+                //Tăng ca tổng hợp
+                CalcOvertime(detailShift, detail, shift, EnumTimeSheetOvertimeType.Default, countedSymbols, timeInRaw, timeOutRaw);
             }
+
+            var s = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == EnumCountedSymbol.OvertimeDateSymbol);
+            if (!detailShift.TimeSheetDetailShiftCounted.Where(c => c.CountedSymbolId != s.CountedSymbolId).Any())
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
 
             return detailShift;
+        }
+
+        private void CalcOvertime(
+            TimeSheetDetailShiftModel detailShift,
+            TimeSheetDetailModel detail,
+            ShiftConfigurationModel shift,
+            EnumTimeSheetOvertimeType overtimeType,
+            List<CountedSymbolModel> countedSymbols,
+            double? timeInRaw, double? timeOutRaw)
+        {
+
+            var overtime = GetDetailShiftOvertimeModel(detail, shift);
+            overtime.OvertimeType = overtimeType;
+
+            long minsReaches;
+            long minsBonus;
+            long minsLimit;
+            long actualMinsOvertime;
+
+            switch (overtimeType)
+            {
+                case EnumTimeSheetOvertimeType.BeforeWork:
+                    minsReaches = shift.OvertimeConfiguration.MinsReachesBeforeWork;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
+                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork
+                                        && (shift.EntryTime - timeInRaw) > shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork * 60 ?
+                                    (shift.EntryTime - timeInRaw) / 60 : 0);
+
+                    break;
+                case EnumTimeSheetOvertimeType.AfterWork:
+                    minsReaches = shift.OvertimeConfiguration.MinsReachesAfterWork;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
+                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork
+                                        && (timeOutRaw - shift.ExitTime) > shift.OvertimeConfiguration.MinThresholdMinutesAfterWork * 60 ?
+                                    (timeOutRaw - shift.ExitTime) / 60 : 0);
+                    break;
+                default:
+                    minsReaches = shift.OvertimeConfiguration.MinsReaches;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertime;
+                    var actualTime = timeOutRaw - timeInRaw;
+                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsOvertimeThresholdMins
+                                        && (actualTime - shift.ExitTime + shift.EntryTime) > shift.OvertimeConfiguration.OvertimeThresholdMins * 60 ?
+                                    (actualTime - shift.ExitTime + shift.EntryTime) / 60 : 0);
+                    break;
+            }
+
+            var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
+            overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+
+            if (overtime.MinsOvertime >= minsReaches)
+            {
+                overtime.MinsOvertime += minsBonus;
+            }
+
+            if (overtime.MinsOvertime > minsLimit)
+            {
+                overtime.MinsOvertime = minsLimit;
+            }
+
+            overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
+
+            if (overtime.MinsOvertime > 0)
+            {
+                detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
+            }
+        }
+
+        private void SetDetailShiftForAbsence(TimeSheetDetailShiftModel detailShift, int? absenceTypeSymbolId, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, List<AbsenceTypeSymbolModel> absences)
+        {
+            var absence = absenceTypeSymbolId != null ? absences.FirstOrDefault(a => a.AbsenceTypeSymbolId == absenceTypeSymbolId) : absences.FirstOrDefault(a => a.IsUnpaidLeave);
+            if (absence == null)
+            {
+                detailShift.WorkCounted = 0;
+                detailShift.ActualWorkMins = 0;
+            }
+            else
+            {
+                detailShift.AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId;
+                detailShift.WorkCounted = absence.IsCounted ? shift.ConfirmationUnit * (decimal)absence.SalaryRate : 0;
+                detailShift.ActualWorkMins = absence.IsCounted ? (long)(shift.ConvertToMins * absence.SalaryRate) : 0;
+            }
+
+            detailShift.TimeSheetDetailShiftCounted.Clear();
+            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
         }
 
         private TimeSheetDetailShiftCountedModel GetCountedSymbolModel(ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, EnumCountedSymbol symbol)
@@ -709,7 +833,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return new TimeSheetDetailShiftCountedModel()
             {
                 ShiftConfigurationId = shift.ShiftConfigurationId,
-                CountedSymbolId = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == (int)symbol).CountedSymbolId
+                CountedSymbolId = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == symbol).CountedSymbolId
             };
         }
         private TimeSheetDetailShiftOvertimeModel GetDetailShiftOvertimeModel(TimeSheetDetailModel detail, ShiftConfigurationModel shift)
@@ -777,19 +901,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     break;
             }
             return overTimeLevelId;
-        }
-        private async Task<List<ShiftConfigurationModel>> GetShiftsByEmployee(long employeeId, long date)
-        {
-            var shiftConfigurationIds = _organizationDBContext.ShiftScheduleDetail
-                .Where(s => s.EmployeeId == employeeId && s.AssignedDate == date.UnixToDateTime())
-                .Select(d => d.ShiftConfigurationId)
-                .Distinct().ToList();
-
-            return await _organizationDBContext.ShiftConfiguration
-                .Where(s => shiftConfigurationIds
-                .Contains(s.ShiftConfigurationId))
-                .ProjectTo<ShiftConfigurationModel>(_mapper.ConfigurationProvider)
-                .ToListAsync();
         }
 
         //public CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate)
@@ -1210,40 +1321,29 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         private async Task RemoveTimeSheetDepartment(long timeSheetId)
         {
-            var entity = _organizationDBContext.TimeSheetDepartment
-                    .Where(m => m.TimeSheetId == timeSheetId).AsNoTracking();
-            _organizationDBContext.TimeSheetDepartment.RemoveRange(entity);
-            await _organizationDBContext.SaveChangesAsync();
+            await _organizationDBContext.TimeSheetDepartment
+                    .Where(m => m.TimeSheetId == timeSheetId).DeleteByBatch();
         }
         private async Task RemoveTimeSheetAggregateAbsence(long timeSheetAggregateId)
         {
-            var entity = _organizationDBContext.TimeSheetAggregateAbsence
-                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).AsNoTracking();
-            var lst = entity.ToList();
-            _organizationDBContext.TimeSheetAggregateAbsence.RemoveRange(entity);
-            await _organizationDBContext.SaveChangesAsync();
+            await _organizationDBContext.TimeSheetAggregateAbsence
+                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).DeleteByBatch();
         }
         private async Task RemoveTimeSheetAggregateOvertime(long timeSheetAggregateId)
         {
-            var entity = _organizationDBContext.TimeSheetAggregateOvertime
-                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).AsNoTracking();
-            _organizationDBContext.TimeSheetAggregateOvertime.RemoveRange(entity);
-            await _organizationDBContext.SaveChangesAsync();
+            await _organizationDBContext.TimeSheetAggregateOvertime
+                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).DeleteByBatch();
         }
         private async Task RemoveTimeSheetDetailShift(long timeSheetDetailId)
         {
-            var countedEntities = _organizationDBContext.TimeSheetDetailShiftCounted
-                    .Where(c => c.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
-            _organizationDBContext.TimeSheetDetailShiftCounted.RemoveRange(countedEntities);
+            await _organizationDBContext.TimeSheetDetailShiftCounted
+                    .Where(c => c.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
 
-            var overtimeEntities = _organizationDBContext.TimeSheetDetailShiftOvertime
-                    .Where(o => o.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
-            _organizationDBContext.TimeSheetDetailShiftOvertime.RemoveRange(overtimeEntities);
+            await _organizationDBContext.TimeSheetDetailShiftOvertime
+                    .Where(o => o.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
 
-            var entity = _organizationDBContext.TimeSheetDetailShift
-                    .Where(m => m.TimeSheetDetailId == timeSheetDetailId).AsNoTracking();
-            _organizationDBContext.TimeSheetDetailShift.RemoveRange(entity);
-            await _organizationDBContext.SaveChangesAsync();
+            await _organizationDBContext.TimeSheetDetailShift
+                    .Where(m => m.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
         }
 
     }

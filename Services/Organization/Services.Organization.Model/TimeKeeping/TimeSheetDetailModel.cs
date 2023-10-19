@@ -18,6 +18,8 @@ namespace Services.Organization.Model.TimeKeeping
 
         public long Date { get; set; }
 
+        public EnumTimeSheetMode TimeSheetMode { get; set; }
+
         public EnumTimeSheetDateType TimeSheetDateType { get; set; }
 
         public bool IsScheduled { get; set; }

@@ -70,7 +70,6 @@ namespace Services.Organization.Model.TimeKeeping
     {
         public long EmployeeId { get; set; }
         public List<TimeSheetDetailModel> TimeSheetDetail { get; set; } = new List<TimeSheetDetailModel>();
-        public TimeSheetAggregateModel TimeSheetAggregate { get; set; }
     }
 
     public class TimeSheetByEmployeeRequestModel
@@ -79,6 +78,15 @@ namespace Services.Organization.Model.TimeKeeping
         public int[] DepartmentIds { get; set; }
         public long BeginDate { get; set; }
         public long EndDate { get; set; }
+    }
+
+    public class TimeSheetDetailRequestModel
+    {
+        public TimeSheetDetailModel TimeSheetDetail { get; set; }
+
+        public double? TimeIn { get; set; }
+
+        public double? TimeOut { get; set; }
     }
 
     public class TimeSheetImportFieldModel
