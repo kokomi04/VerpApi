@@ -88,6 +88,15 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
             return await _timeSheetService.GenerateTimeSheet(model.TimeSheetId, model.DepartmentIds, model.BeginDate, model.EndDate);
         }
 
+        
+        [HttpPost]
+        [Route("singleTimeKeeping")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<TimeSheetDetailModel> SingleTimeKeeping(TimeSheetDetailRequestModel model)
+        {
+            return await _timeSheetService.SingleTimeKeeping(model);
+        }
+
         //[HttpGet]
         //[Route("fieldDataForMapping")]
         //public CategoryNameModel GetFieldDataForMapping([FromQuery] long beginDate, [FromQuery] long endDate)

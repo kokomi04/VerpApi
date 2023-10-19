@@ -21,6 +21,8 @@ public partial class AbsenceTypeSymbol
 
     public bool IsAnnualLeave { get; set; }
 
+    public bool IsUnpaidLeave { get; set; }
+
     public int CreatedByUserId { get; set; }
 
     public DateTime CreatedDatetimeUtc { get; set; }

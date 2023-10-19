@@ -27,4 +27,19 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
         [Description("Tăng ca sau giờ làm việc")]
         AfterWork = 2,
     }
+    public enum EnumTimeSheetMode
+    {
+        [Description("Theo ca")]
+        ByShift = 0,
+
+        [Description("Theo giờ vào ra")]
+        ByCheckinCheckoutInDay = 1,
+
+        [Description("Làm công nhật")]
+        ByDayLabour = 2,
+
+        [Description("Vắng")]
+        Absence = 3,
+    }
+
 }

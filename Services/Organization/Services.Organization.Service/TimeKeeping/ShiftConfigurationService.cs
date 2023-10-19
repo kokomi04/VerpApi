@@ -174,7 +174,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (string.IsNullOrWhiteSpace(model.ShiftCode))
                 throw ShiftConfigurationValidationMessage.ShiftCodeIsRequired.BadRequest();
 
-            if (model.LunchTimeStart != 0 && model.LunchTimeFinish != 0 && model.LunchTimeStart >= model.LunchTimeFinish)
+            if (!model.IsNightShift && model.LunchTimeStart != 0 && model.LunchTimeFinish != 0 && model.LunchTimeStart >= model.LunchTimeFinish)
                 throw ShiftConfigurationValidationMessage.InvalidLunchTime.BadRequest();
 
             if (model.StartTimeOnRecord >= model.EndTimeOnRecord)

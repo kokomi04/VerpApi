@@ -17,6 +17,8 @@ public partial class TimeSheetDetail
 
     public bool IsScheduled { get; set; }
 
+    public int TimeSheetMode { get; set; }
+
     public DateTime CreatedDatetimeUtc { get; set; }
 
     public int CreatedByUserId { get; set; }
