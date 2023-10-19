@@ -211,8 +211,9 @@ namespace VErp.Services.Organization.Service.Department.Implement
                 NumberOfPerson = d.NumberOfPerson,
                 IsFactory = d.IsFactory
             }).ToListAsync();
-            
-            var parentDepartmentIds = (asc ? lst.Where(d => d.ParentId == null).OrderBy(d=> d.GetType().GetProperty(orderByFieldName)) : lst.Where(d => d.ParentId == null).OrderByDescending(d => d.GetType().GetProperty(orderByFieldName))).Select(d=> d.DepartmentId).ToList();
+            var lstDeparmentIds = lst.Select(d=> d.DepartmentId).ToList();
+            var lstParentIds = lst.Select(d=> d.ParentId).Where(id => id == null || !lstDeparmentIds.Contains(id.Value)).ToHashSet();
+            var parentDepartmentIds = (asc ? lst.Where(d => lstParentIds.Contains( d.ParentId) ).OrderBy(d=> d.GetType().GetProperty(orderByFieldName)) : lst.Where(d => d.ParentId == null).OrderByDescending(d => d.GetType().GetProperty(orderByFieldName))).Select(d=> d.DepartmentId).ToList();
             var newLst = new List<DepartmentExtendModel>();
             foreach (var item in parentDepartmentIds)
             {
