@@ -154,6 +154,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var result = new List<TimeSheetRawViewModel>();
 
+            object lockObj = new object();
+
             Parallel.ForEach(employees.List, e =>
             {
                 var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e[F_Id]);
@@ -162,16 +164,19 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     foreach (var timeSheetRaw in matchingTimeSheetRaws)
                     {
-                        result.Add(new TimeSheetRawViewModel()
+                        lock (lockObj)
                         {
-                            EmployeeId = timeSheetRaw.EmployeeId,
-                            TimeSheetRawId = timeSheetRaw.TimeSheetRawId,
-                            Date = timeSheetRaw.Date.GetUnix(),
-                            Time = timeSheetRaw.Time.TotalSeconds,
-                            TimeKeepingMethod = (TimeKeepingMethodType)timeSheetRaw.TimeKeepingMethod,
-                            TimeKeepingRecorder = timeSheetRaw.TimeKeepingRecorder,
-                            Employee = e
-                        });
+                            result.Add(new TimeSheetRawViewModel()
+                            {
+                                EmployeeId = timeSheetRaw.EmployeeId,
+                                TimeSheetRawId = timeSheetRaw.TimeSheetRawId,
+                                Date = timeSheetRaw.Date.GetUnix(),
+                                Time = timeSheetRaw.Time.TotalSeconds,
+                                TimeKeepingMethod = (TimeKeepingMethodType)timeSheetRaw.TimeKeepingMethod,
+                                TimeKeepingRecorder = timeSheetRaw.TimeKeepingRecorder,
+                                Employee = e
+                            });
+                        }
                     }
                 }
             });
