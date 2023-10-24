@@ -359,6 +359,71 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             switch (model.TimeSheetDetail.TimeSheetMode)
             {
                 case EnumTimeSheetMode.ByCheckinCheckoutInDay:
+                    var shiftsWithoutNight = shifts.Where(s => !s.IsNightShift).ToList();
+
+                    var sortedByEntryTime = shiftsWithoutNight.OrderBy(s => s.EntryTime).ToList();
+                    var sortedByExitTime = shiftsWithoutNight.OrderBy(s => s.ExitTime).ToList();
+
+                    var earliestShift = new ShiftConfigurationModel();
+                    var lastestShift = new ShiftConfigurationModel();
+
+                    foreach (var shift in sortedByEntryTime)
+                    {
+                        if (model.TimeIn.HasValue && model.TimeIn > shift.StartTimeOnRecord && model.TimeIn < shift.EndTimeOnRecord)
+                        {
+                            earliestShift = shift;
+                            break;
+                        }
+                    }
+
+                    foreach (var shift in sortedByExitTime)
+                    {
+                        if (model.TimeOut.HasValue && model.TimeOut > shift.StartTimeOutRecord && model.TimeOut < shift.EndTimeOutRecord)
+                        {
+                            lastestShift = shift;
+                            break;
+                        }
+                    }
+
+
+                    var timeIn = (model.TimeIn.HasValue && earliestShift != null) ? model.TimeIn : null;
+                    var timeOut = (model.TimeOut.HasValue && lastestShift != null) ? model.TimeOut : null;
+
+                    foreach (var shift in shiftsWithoutNight)
+                    {
+                        var detailShift = model.TimeSheetDetail.TimeSheetDetailShift.FirstOrDefault(s => s.ShiftConfigurationId == shift.ShiftConfigurationId);
+                        if(shiftsWithoutNight.Count() == 1)
+                        {
+                            detailShift = CreateDetailShift(shift, model.TimeSheetDetail, timeIn, timeOut, countedSymbols, absences);
+                        }
+                        else 
+                        {
+                            if (earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
+                            {
+                                detailShift = CreateDetailShift(shift, model.TimeSheetDetail, timeIn, (timeIn.HasValue && timeOut.HasValue) ? shift.ExitTime : null, countedSymbols, absences);
+                            }
+                            else if (lastestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
+                            {
+                                detailShift = CreateDetailShift(shift, model.TimeSheetDetail, (timeIn.HasValue && timeOut.HasValue) ? shift.EntryTime : null, timeOut, countedSymbols, absences);
+                            }
+                            else if (!timeIn.HasValue || !timeOut.HasValue || shift.EntryTime < earliestShift.EntryTime || shift.ExitTime > lastestShift.ExitTime)
+                            {
+                                detailShift = CreateDetailShift(shift, model.TimeSheetDetail, null, null, countedSymbols, absences);
+                            }
+                            else
+                            {
+                                detailShift = CreateDetailShift(shift, model.TimeSheetDetail, shift.EntryTime, shift.ExitTime, countedSymbols, absences);
+                            }
+                        }
+
+                        if (detailShift != null)
+                        {
+                            lstDetailShift.Add(detailShift);
+                        }
+                    }
+
+                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
+                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
 
                     break;
 
@@ -517,7 +582,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             double? timeInRaw = null;
                             double? timeOutRaw = null;
 
-                            if (timeSheetRaw.Any())
+                            if (timeSheetRaw != null && timeSheetRaw.Any())
                             {
                                 var dateIn = shift.IsNightShift && (bool)shift.IsCheckOutDateTimekeeping ? detail.Date - 86400 : detail.Date;
                                 var dateOut = shift.IsNightShift && !(bool)shift.IsCheckOutDateTimekeeping ? detail.Date + 86400 : detail.Date;
@@ -787,7 +852,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     break;
             }
 
-            var roundMinutes = shift.OvertimeConfiguration.RoundMinutes;
+            var roundMinutes = shift.OvertimeConfiguration.RoundMinutes ?? 0;
             overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
 
             if (overtime.MinsOvertime >= minsReaches)
