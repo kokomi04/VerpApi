@@ -361,30 +361,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 case EnumTimeSheetMode.ByCheckinCheckoutInDay:
                     var shiftsWithoutNight = shifts.Where(s => !s.IsNightShift).ToList();
 
-                    var sortedByEntryTime = shiftsWithoutNight.OrderBy(s => s.EntryTime).ToList();
-                    var sortedByExitTime = shiftsWithoutNight.OrderBy(s => s.ExitTime).ToList();
-
-                    var earliestShift = new ShiftConfigurationModel();
-                    var lastestShift = new ShiftConfigurationModel();
-
-                    foreach (var shift in sortedByEntryTime)
-                    {
-                        if (model.TimeIn.HasValue && model.TimeIn > shift.StartTimeOnRecord && model.TimeIn < shift.EndTimeOnRecord)
-                        {
-                            earliestShift = shift;
-                            break;
-                        }
-                    }
-
-                    foreach (var shift in sortedByExitTime)
-                    {
-                        if (model.TimeOut.HasValue && model.TimeOut > shift.StartTimeOutRecord && model.TimeOut < shift.EndTimeOutRecord)
-                        {
-                            lastestShift = shift;
-                            break;
-                        }
-                    }
-
+                    var earliestShift = shiftsWithoutNight.OrderBy(s => s.EntryTime).FirstOrDefault(shift => model.TimeIn.HasValue && model.TimeIn >= shift.StartTimeOnRecord && model.TimeIn <= shift.EndTimeOnRecord);
+                    var lastestShift = shiftsWithoutNight.OrderBy(s => s.ExitTime).FirstOrDefault(shift => model.TimeOut.HasValue && model.TimeOut >= shift.StartTimeOutRecord && model.TimeOut <= shift.EndTimeOutRecord);
 
                     var timeIn = (model.TimeIn.HasValue && earliestShift != null) ? model.TimeIn : null;
                     var timeOut = (model.TimeOut.HasValue && lastestShift != null) ? model.TimeOut : null;
@@ -398,11 +376,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         }
                         else 
                         {
-                            if (earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
+                            if (earliestShift != null && earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
                             {
                                 detailShift = CreateDetailShift(shift, model.TimeSheetDetail, timeIn, (timeIn.HasValue && timeOut.HasValue) ? shift.ExitTime : null, countedSymbols, absences);
                             }
-                            else if (lastestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
+                            else if (lastestShift != null && lastestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
                             {
                                 detailShift = CreateDetailShift(shift, model.TimeSheetDetail, (timeIn.HasValue && timeOut.HasValue) ? shift.EntryTime : null, timeOut, countedSymbols, absences);
                             }
@@ -421,9 +399,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             lstDetailShift.Add(detailShift);
                         }
                     }
-
-                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
-                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
 
                     break;
 
@@ -444,8 +419,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         lstDetailShift.Add(detailShift);
                     }
 
-                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
-                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
                     break;
 
                 case EnumTimeSheetMode.Absence:
@@ -467,8 +440,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         lstDetailShift.Add(detailShift);
                     }
 
-                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
-                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
                     break;
 
                 default:
@@ -484,11 +455,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         }
                     }
 
-                    model.TimeSheetDetail.TimeSheetDetailShift.Clear();
-                    model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
                     break;
             }
 
+            model.TimeSheetDetail.TimeSheetDetailShift.Clear();
+            model.TimeSheetDetail.TimeSheetDetailShift = lstDetailShift;
             return model.TimeSheetDetail;
 
         }
