@@ -171,14 +171,6 @@ public partial class OrganizationDBContext : DbContext
         modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
         {
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.IsCounted)
-                .IsRequired()
-                .HasDefaultValueSql("((1))");
-            entity.Property(e => e.IsUsed)
-                .IsRequired()
-                .HasDefaultValueSql("((1))");
-            entity.Property(e => e.MaxOfDaysOffPerMonth).HasDefaultValueSql("((1))");
-            entity.Property(e => e.SalaryRate).HasDefaultValueSql("((1))");
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -992,34 +984,34 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetAggregateAbsence>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetAggregateId, e.AbsenceTypeSymbolId }).HasName("PK__TimeShee__7E7CA50059A8709C");
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.AbsenceTypeSymbolId }).HasName("PK__TimeShee__7E7CA500C2F33F4B");
 
             entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateAbsence)
                 .HasForeignKey(d => d.TimeSheetAggregateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__0351120B");
+                .HasConstraintName("FK__TimeSheet__TimeS__7F772ADD");
         });
 
         modelBuilder.Entity<TimeSheetAggregateOvertime>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetAggregateId, e.OvertimeLevelId }).HasName("PK__TimeShee__B3138CBBADFD1E96");
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.OvertimeLevelId }).HasName("PK__TimeShee__B3138CBB6849F3DF");
 
             entity.Property(e => e.CountedMins).HasColumnType("decimal(18, 5)");
 
             entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateOvertime)
                 .HasForeignKey(d => d.TimeSheetAggregateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__0074A560");
+                .HasConstraintName("FK__TimeSheet__TimeS__7C9ABE32");
         });
 
         modelBuilder.Entity<TimeSheetDepartment>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetId, e.DepartmentId }).HasName("PK__TimeShee__CD052EF4C6BCC0AC");
+            entity.HasKey(e => new { e.TimeSheetId, e.DepartmentId }).HasName("PK__TimeShee__CD052EF4B37C1EC7");
 
             entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetDepartment)
                 .HasForeignKey(d => d.TimeSheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__72268609");
+                .HasConstraintName("FK__TimeSheet__TimeS__62DAEC2F");
         });
 
         modelBuilder.Entity<TimeSheetDetail>(entity =>
@@ -1032,34 +1024,34 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetDetailShift>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId }).HasName("PK__TimeShee__3F25922631AE7536");
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId }).HasName("PK__TimeShee__3F25922677ED5919");
 
             entity.Property(e => e.WorkCounted).HasColumnType("decimal(18, 3)");
 
             entity.HasOne(d => d.TimeSheetDetail).WithMany(p => p.TimeSheetDetailShift)
                 .HasForeignKey(d => d.TimeSheetDetailId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__360845B8");
+                .HasConstraintName("FK__TimeSheet__TimeS__6893C585");
         });
 
         modelBuilder.Entity<TimeSheetDetailShiftCounted>(entity =>
         {
-            entity.HasKey(e => e.TimeSheetDetailShiftCountedId).HasName("PK__TimeShee__E7FF6B3A52601E70");
+            entity.HasKey(e => e.TimeSheetDetailShiftCountedId).HasName("PK__TimeShee__E7FF6B3A57BC0FCC");
 
             entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftCounted)
                 .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheetDetailS__38E4B263");
+                .HasConstraintName("FK__TimeSheetDetailS__6B703230");
         });
 
         modelBuilder.Entity<TimeSheetDetailShiftOvertime>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.OvertimeLevelId, e.OvertimeType }).HasName("PK__TimeShee__19101DA10B09318B");
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.OvertimeLevelId, e.OvertimeType }).HasName("PK__TimeShee__19101DA19A46D34C");
 
             entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftOvertime)
                 .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheetDetailS__3BC11F0E");
+                .HasConstraintName("FK__TimeSheetDetailS__6E4C9EDB");
         });
 
         modelBuilder.Entity<TimeSheetRaw>(entity =>
