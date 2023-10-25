@@ -745,7 +745,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             if (timeInRaw == null && timeOutRaw == null)
             {
-                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && (shift.IsSkipSaturdayWithShift || shift.IsSkipSundayWithShift))
+                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift)
                 {
                     detail.IsScheduled = false;
                     return null;
