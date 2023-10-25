@@ -416,7 +416,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             cellStyleStr = row[cellStyleAlias]?.ToString();
                         }
 
-                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
 
                         if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
                         {
@@ -425,11 +424,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         }
                         var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
 
+                        var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
+                        if (dataType == EnumDataType.Decimal || dataType == EnumDataType.Percentage)
+                        {
+                            field.DecimalPlace = GetDecimalPlace(value.ToString());
+                        }
+                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr );
                         cellStyles[i + currentRow][columnIndx] = cellStyle;
 
-                        if (row.ContainsKey(field.Alias))
+                         if (row.ContainsKey(field.Alias))
                         {
-                            var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
                             tbRow[columnIndx] = new ExcelCell
                             {
                                 Value = value,
@@ -603,6 +607,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 if (cellStyles.Length > m.FirstRow && cellStyles[m.FirstRow] != null)
                     sheet.SetCellStyle(m.FirstRow, m.FirstColumn, cellStyles[m.FirstRow][m.FirstColumn]);
             });
+        }
+        private int GetDecimalPlace(string value)
+        {
+            var decimalPlace = value.Split('.').Count() > 1 && value.Split('.').Count() < 3 ? value.Split('.').LastOrDefault() : null;
+            return decimalPlace == null ? 0 : decimalPlace.Length;
         }
 
         private void GenerateDataTable_bak()
