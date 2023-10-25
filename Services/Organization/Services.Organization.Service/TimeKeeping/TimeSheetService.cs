@@ -370,7 +370,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     foreach (var shift in shiftsWithoutNight)
                     {
                         var detailShift = model.TimeSheetDetail.TimeSheetDetailShift.FirstOrDefault(s => s.ShiftConfigurationId == shift.ShiftConfigurationId);
-                        if(shiftsWithoutNight.Count() == 1)
+                        if(shiftsWithoutNight.Count() == 1 || (earliestShift != null && lastestShift != null && earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId && earliestShift.ShiftConfigurationId == lastestShift.ShiftConfigurationId))
                         {
                             detailShift = CreateDetailShift(shift, model.TimeSheetDetail, timeIn, timeOut, countedSymbols, absences);
                         }
