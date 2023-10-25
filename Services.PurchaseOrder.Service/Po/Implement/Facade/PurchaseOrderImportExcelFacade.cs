@@ -410,8 +410,8 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                     model.Details.Add(detailModel);
                 }
 
-                model.TaxInPercent = details.GetFirstValueNotNull(x => x.TaxInPercent);
-                model.TaxInMoney = details.GetFirstValueNotNull(x => x.TaxInMoney);
+                model.TaxInPercent = details.GetFirstValueNotNull(x => x.TaxInPercent) ?? 0;
+                model.TaxInMoney = details.GetFirstValueNotNull(x => x.TaxInMoney) ?? 0;
                 if ((!model.TaxInMoney.HasValue || model.TaxInMoney == 0) && model.TaxInPercent > 0)
                 {
                     model.TaxInMoney = (model.TaxInPercent * sumMoney / 100.0M)?.RoundBy(defaultCurrencyDecimalPlace);
@@ -421,7 +421,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
 
                 if (model.TotalMoney == 0)
                 {
-                    model.TotalMoney += ((sumMoney + model.TaxInMoney)?.RoundBy(defaultCurrencyDecimalPlace)) ?? 0;
+                    model.TotalMoney += ((sumMoney + model.TaxInMoney )?.RoundBy(defaultCurrencyDecimalPlace)) ?? 0;
                 }
             }
 
