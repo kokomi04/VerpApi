@@ -965,7 +965,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             var data = table.ConvertData();
-            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
+            var firstRow = RepeatColumnUtils.GetFistRow(data);
+
+            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, firstRow);
 
 
             var totals = new NonCamelCaseDictionary<decimal>();

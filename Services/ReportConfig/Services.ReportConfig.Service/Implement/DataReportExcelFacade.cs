@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using DocumentFormat.OpenXml.EMMA;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
@@ -30,10 +31,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
         private int currentRow = 0;
         private int numberOfColumns = 15;
         private ReportFacadeModel _model;
-        private IList<ReportColumnModel> allColumns = null;
+        private IList<ReportColumnModel> originalColumns = null;
         private IList<ReportColumnModel> groupRowColumns = null;
         private bool isMergeRow = false;
-        private IList<ReportColumnModel> columns = null;
+        private IList<ReportColumnModel> visibleColumns = null;
+        private IList<ReportColumnModel> allValueColumns = null;
         private ReportDataModel dataTable = null;
 
         private readonly string sheetName = "Data";
@@ -72,27 +74,56 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             if (reportInfo == null) throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy loại báo cáo");
 
+            xssfwb = new ExcelWriter();
+            sheet = xssfwb.GetSheet(sheetName);
+
+
             _model = model;
 
-            allColumns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+            originalColumns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
+            foreach (var c in originalColumns.OrderBy(s => s.SortOrder))
+            {
+                c.ColGroupName = originalColumns.FirstOrDefault(c1 => c1.ColGroupId == c.ColGroupId)?.ColGroupName;
+            }
 
-            groupRowColumns = allColumns.Where(c => c.IsGroupRow).ToList();
+            groupRowColumns = originalColumns.Where(c => c.IsGroupRow).ToList();
 
             isMergeRow = groupRowColumns.Any(c => !c.IsHidden);
 
-            columns = allColumns.Where(col => !col.IsHidden).ToList();
 
             var size = 0;
             if (reportInfo.IsDbPaging == true)
                 size = int.MaxValue;
             dataTable = _dataReportService.Report(reportInfo.ReportTypeId, _model.Body.FilterData, 1, size).Result;
 
-            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, dataTable.Rows.List);
+            var firstRow = RepeatColumnUtils.GetFistRow(dataTable.Rows.List);
 
-            xssfwb = new ExcelWriter();
-            sheet = xssfwb.GetSheet(sheetName);
+            allValueColumns = RepeatColumnUtils.RepeatColumnAndSortProcess(originalColumns, firstRow);
 
-            numberOfColumns = columns.Count;
+            groupRowColumns = allValueColumns.Where(c => c.IsGroupRow).ToList();
+
+            if (firstRow != null && firstRow.Count > 0)
+            {
+                foreach (var c in allValueColumns)
+                {
+                    if (firstRow.TryGetStringValue($"${c.Alias}_CONFIG", out var strCfg))
+                    {
+                        var style = ParseCellStyle(sheet, c, strCfg);
+                        if (style.IsHidden)
+                        {
+                            c.IsHidden = true;
+                        }
+                    }
+
+                }
+            }
+
+
+            visibleColumns = allValueColumns.Where(col => !col.IsHidden).ToList();
+
+
+
+            numberOfColumns = visibleColumns.Count;
 
             await WriteHeader();
 
@@ -255,7 +286,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             int fRow, sRow;
             fRow = sRow = 0;
 
-            var groupColumns = columns
+            var groupColumns = visibleColumns
                 .GroupBy(c => new { c.ColGroupId, c.SuffixKey })
                 .OrderBy(g => g.Key.ColGroupId)
                 .ThenBy(g => g.Key.SuffixKey)
@@ -324,19 +355,19 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
             else
             {
-                for (int i = 0; i < columns.Count; i++)
+                for (int i = 0; i < visibleColumns.Count; i++)
                 {
-                    sheet.EnsureCell(fRow, i).SetCellValue(columns[i].Name);
+                    sheet.EnsureCell(fRow, i).SetCellValue(visibleColumns[i].Name);
                     sheet.SetCellStyle(fRow, i,
                         vAlign: VerticalAlignment.Center, hAlign: HorizontalAlignment.Center,
                         rgb: headerRgb, isBold: true, fontSize: 12, isBorder: true);
                 }
             }
 
-            for (int i = 0; i < columns.Count; i++)
+            for (int i = 0; i < visibleColumns.Count; i++)
             {
-                var nameLineLength = columns[i].Name?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
-                var groupLineLength = columns[i].ColGroupName?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
+                var nameLineLength = visibleColumns[i].Name?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
+                var groupLineLength = visibleColumns[i].ColGroupName?.Split('\n')?.Select(l => l.Length)?.Max() ?? 0;
                 maxColumnLineLengths.Add(i, Math.Max(nameLineLength, groupLineLength));
             }
             currentRow = sRow;
@@ -350,18 +381,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
             currentRow += 1;
             ExcelData table = new ExcelData();
 
-            for (var index = 1; index <= columns.Count; index++)
+            for (var index = 1; index <= visibleColumns.Count; index++)
             {
                 table.Columns.Add($"Col-{index}");
             }
 
 
-            var conditionHiddenColumns = allColumns.Select(c => c.CalcSumConditionCol).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToArray();
-            for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+            var conditionSumColumns = originalColumns.Select(c => c.CalcSumConditionCol).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToArray();
+            for (var conditionIndex = 0; conditionIndex < conditionSumColumns.Length; conditionIndex++)
             {
-                var col = conditionHiddenColumns[conditionIndex];
-                sheet.SetColumnHidden(columns.Count + conditionIndex, true);
-                table.Columns.Add($"Col-{columns.Count + conditionIndex + 1}");
+                var col = conditionSumColumns[conditionIndex];
+                sheet.SetColumnHidden(visibleColumns.Count + conditionIndex, true);
+                table.Columns.Add($"Col-{visibleColumns.Count + conditionIndex + 1}");
             }
 
 
@@ -382,12 +413,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var i = 0;
             foreach (var groupRow in groups)
             {
-                foreach(var row in groupRow)
+                foreach (var row in groupRow)
                 {
                     ExcelRow tbRow = table.NewRow();
                     int columnIndx = 0;
 
-                    _mergeRows[i] = new bool[columns.Count];
+                    _mergeRows[i] = new bool[visibleColumns.Count];
                     Array.Fill(_mergeRows[i], false);
 
                     //customCellStyles
@@ -398,10 +429,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         rowStyleStr = row[ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS]?.ToString();
                         rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
                     }
-                    cellStyles[i + currentRow] = new ICellStyle[columns.Count];
+                    cellStyles[i + currentRow] = new ICellStyle[visibleColumns.Count];
                     Array.Fill(cellStyles[i + currentRow], rowStyle);
 
-                    foreach (var field in columns)
+                    foreach (var field in visibleColumns)
                     {
                         var charLengths = row[field.Alias]?.ToString()?.Length;
                         if (charLengths > maxColumnLineLengths[columnIndx])
@@ -429,10 +460,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         {
                             field.DecimalPlace = GetDecimalPlace(value.ToString());
                         }
-                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr );
+                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr);
                         cellStyles[i + currentRow][columnIndx] = cellStyle;
 
-                         if (row.ContainsKey(field.Alias))
+                        if (row.ContainsKey(field.Alias))
                         {
                             tbRow[columnIndx] = new ExcelCell
                             {
@@ -461,7 +492,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             if (firstGroupDataRow.HasValue)
                             {
                                 columnIndx = 0;
-                                foreach (var field in columns)
+                                foreach (var field in visibleColumns)
                                 {
                                     if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
                                     {
@@ -483,9 +514,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     }
 
 
-                    for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
+                    for (var conditionIndex = 0; conditionIndex < conditionSumColumns.Length; conditionIndex++)
                     {
-                        var col = conditionHiddenColumns[conditionIndex];
+                        var col = conditionSumColumns[conditionIndex];
                         if (row.ContainsKey(col))
                         {
                             var v = row[col];
@@ -512,11 +543,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             }
 
-            
+
             if (firstGroupDataRow.HasValue)
             {
                 var columnIndx = 0;
-                foreach (var field in columns)
+                foreach (var field in visibleColumns)
                 {
                     if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
                     {
@@ -542,12 +573,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                     var columnName = (index + 1).GetExcelColumnName();
 
-                    var conditionColum = conditionHiddenColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
+                    var conditionColum = conditionSumColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
 
                     var sumRange = $"{columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()}";
                     if (!string.IsNullOrWhiteSpace(column.CalcSumConditionCol) && conditionColum != null)
                     {
-                        var aliasIndex = columns.Count + Array.IndexOf(conditionHiddenColumns, conditionColum);
+                        var aliasIndex = visibleColumns.Count + Array.IndexOf(conditionSumColumns, conditionColum);
                         var aliasName = (aliasIndex + 1).GetExcelColumnName();
 
                         var conditionRange = $"{aliasName}{currentRow + 1}:{aliasName}{currentRow + dataTable.Rows.List.Count()}";
@@ -577,7 +608,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 }
                 var columnIndx = 0;
-                foreach (var field in columns)
+                foreach (var field in visibleColumns)
                 {
                     if (!sumCalc.ContainsKey(columnIndx))
                     {
@@ -614,279 +645,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return decimalPlace == null ? 0 : decimalPlace.Length;
         }
 
-        private void GenerateDataTable_bak()
-        {
-            var sheet = xssfwb.GetSheet(sheetName);
-            currentRow += 1;
-            ExcelData table = new ExcelData();
-
-            for (var index = 1; index <= columns.Count; index++)
-            {
-                table.Columns.Add($"Col-{index}");
-            }
-
-
-            var conditionHiddenColumns = allColumns.Select(c => c.CalcSumConditionCol).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToArray();
-            for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
-            {
-                var col = conditionHiddenColumns[conditionIndex];
-                sheet.SetColumnHidden(columns.Count + conditionIndex, true);
-                table.Columns.Add($"Col-{columns.Count + conditionIndex + 1}");
-            }
-
-
-            var sumCalc = new Dictionary<int, ReportColumnModel>();
-            //var sumValues = new Dictionary<int, decimal>();
-
-            int? firstGroupDataRow = null;
-            int? lastGroupDataRow = null;
-            string currentMergeValue = null;
-
-            _mergeRows = new bool[dataTable.Rows.List.Count][];
-            cellStyles = new ICellStyle[dataTable.Rows.List.Count + currentRow][];
-
-
-            var mergeRanges = new List<CellRangeAddress>();
-            for (var i = 0; i < dataTable.Rows.List.Count; i++)
-            {
-                var row = dataTable.Rows.List[i];
-
-                ExcelRow tbRow = table.NewRow();
-                int columnIndx = 0;
-
-                _mergeRows[i] = new bool[columns.Count];
-                Array.Fill(_mergeRows[i], false);
-
-                //customCellStyles
-                ICellStyle rowStyle = null;
-                var rowStyleStr = "";
-                if (row.ContainsKey(ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS))
-                {
-                    rowStyleStr = row[ReportSpecialColumnConstants.ROW_CSS_STYLE_ALIAS]?.ToString();
-                    rowStyle = ParseCellStyle(sheet, null, rowStyleStr);
-                }
-                cellStyles[i + currentRow] = new ICellStyle[columns.Count];
-                Array.Fill(cellStyles[i + currentRow], rowStyle);
-
-                foreach (var field in columns)
-                {
-                    var charLengths = row[field.Alias]?.ToString()?.Length;
-                    if (charLengths > maxColumnLineLengths[columnIndx])
-                    {
-                        maxColumnLineLengths[columnIndx] = charLengths.Value;
-                    }
-
-                    var cellStyleStr = "";
-                    var cellStyleAlias = string.Format(ReportSpecialColumnConstants.ROW_COLUMN_CSS_STYLE_ALIAS_FORMAT, field.Alias);
-                    if (row.ContainsKey(cellStyleAlias))
-                    {
-                        cellStyleStr = row[cellStyleAlias]?.ToString();
-                    }
-
-                    ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr); ;
-
-                    if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
-                    {
-                        sumCalc.Add(columnIndx, field);
-                        //sumValues.Add(columnIndx, 0);
-                    }
-                    var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
-
-                    cellStyles[i + currentRow][columnIndx] = cellStyle;
-
-                    if (row.ContainsKey(field.Alias))
-                    {
-                        var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
-                        tbRow[columnIndx] = new ExcelCell
-                        {
-                            Value = value,
-                            Type = dataType.GetExcelType(),
-                            CellStyle = cellStyle
-                        };
-
-
-                        //if (!value.IsNullObject() && field.IsCalcSum)
-                        //{
-                        //    if (!string.IsNullOrWhiteSpace(field.CalcSumConditionCol) && row.ContainsKey(field.CalcSumConditionCol))
-                        //    {
-                        //        var condition = row[field.CalcSumConditionCol];
-
-                        //        if (condition == (object)true || (long.TryParse(condition?.ToString(), out var vInNumber) && vInNumber > 0))
-                        //        {
-                        //            sumValues[columnIndx] += Convert.ToDecimal(value);
-                        //        }
-                        //    }
-                        //    else
-                        //    {
-                        //        sumValues[columnIndx] += Convert.ToDecimal(value);
-                        //    }
-
-                        //}
-
-                    }
-
-                    columnIndx++;
-                }
-
-
-
-                if (isMergeRow)
-                {
-                    var mergeValue = string.Join('|', groupRowColumns.Select(c => row[c.Alias]));
-
-                    if (currentMergeValue == mergeValue)
-                    {
-                        lastGroupDataRow = i;
-                    }
-                    else
-                    {
-                        if (firstGroupDataRow.HasValue)
-                        {
-                            columnIndx = 0;
-                            foreach (var field in columns)
-                            {
-                                if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
-                                {
-                                    for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
-                                    {
-                                        _mergeRows[s][columnIndx] = true;
-                                    }
-                                    mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
-                                }
-
-                                columnIndx++;
-                            }
-                        }
-
-                        firstGroupDataRow = i;
-                        lastGroupDataRow = i;
-                        currentMergeValue = mergeValue;
-                    }
-                }
-
-
-                for (var conditionIndex = 0; conditionIndex < conditionHiddenColumns.Length; conditionIndex++)
-                {
-                    var col = conditionHiddenColumns[conditionIndex];
-                    if (row.ContainsKey(col))
-                    {
-                        var v = row[col];
-                        long.TryParse(v?.ToString(), out var vInNumber);
-                        if (v == (object)true || vInNumber > 0)
-                        {
-                            tbRow[columnIndx] = new ExcelCell
-                            {
-                                Value = CONDITION_VALUE,
-                                Type = EnumDataType.Int.GetExcelType()
-                            };
-                        }
-
-                    }
-
-                    columnIndx++;
-
-                }
-
-
-                tbRow.FillAllRow();
-                table.Rows.Add(tbRow);
-            }
-            if (firstGroupDataRow.HasValue)
-            {
-                var columnIndx = 0;
-                foreach (var field in columns)
-                {
-                    if (field.IsGroupRow && lastGroupDataRow > firstGroupDataRow)
-                    {
-                        for (var s = firstGroupDataRow.Value; s <= lastGroupDataRow.Value; s++)
-                        {
-                            _mergeRows[s][columnIndx] = true;
-                        }
-                        mergeRanges.Add(new CellRangeAddress(firstGroupDataRow.Value + currentRow, lastGroupDataRow.Value + currentRow, columnIndx, columnIndx));
-                    }
-                    columnIndx++;
-                }
-            }
-
-            mergeRanges.AddRange(MergeColumn(table, dataTable));
-
-            if (sumCalc.Count > 0)
-            {
-                ExcelRow sumRow = table.NewRow();
-                foreach (var (index, column) in sumCalc)
-                {
-
-                    var dataType = column.DataTypeId.HasValue ? (EnumDataType)column.DataTypeId : EnumDataType.Text;
-
-                    var columnName = (index + 1).GetExcelColumnName();
-
-                    var conditionColum = conditionHiddenColumns.FirstOrDefault(c => c == column.CalcSumConditionCol);
-
-                    var sumRange = $"{columnName}{currentRow + 1}:{columnName}{currentRow + dataTable.Rows.List.Count()}";
-                    if (!string.IsNullOrWhiteSpace(column.CalcSumConditionCol) && conditionColum != null)
-                    {
-                        var aliasIndex = columns.Count + Array.IndexOf(conditionHiddenColumns, conditionColum);
-                        var aliasName = (aliasIndex + 1).GetExcelColumnName();
-
-                        var conditionRange = $"{aliasName}{currentRow + 1}:{aliasName}{currentRow + dataTable.Rows.List.Count()}";
-                        sumRow[index] = new ExcelCell
-                        {
-                            Value = $"SUMIF({conditionRange},{CONDITION_VALUE},{sumRange})",
-                            Type = EnumExcelType.Formula,
-                            CellStyle = GetCellStyle(sheet, column, true)
-                        };
-                    }
-                    else
-                    {
-                        sumRow[index] = new ExcelCell
-                        {
-                            Value = $"SUM({sumRange})",
-                            Type = EnumExcelType.Formula,
-                            CellStyle = GetCellStyle(sheet, column, true)
-                        };
-                    }
-
-                    //sumRow[index] = new ExcelCell
-                    //{
-                    //    Value = sumValues[index],
-                    //    Type = EnumExcelType.Number,
-                    //    CellStyle = GetCellStyle(sheet, column, true)
-                    //};
-
-                }
-                var columnIndx = 0;
-                foreach (var field in columns)
-                {
-                    if (!sumCalc.ContainsKey(columnIndx))
-                    {
-                        sumRow[columnIndx] = new ExcelCell
-                        {
-                            Value = $"",
-                            Type = EnumExcelType.String,
-                            CellStyle = GetCellStyle(sheet, field, true)
-                        };
-                    }
-                    columnIndx++;
-
-                }
-                sumRow.FillAllRow();
-                table.Rows.Add(sumRow);
-            }
-
-            xssfwb.WriteToSheet(sheet, table, out currentRow, startCollumn: 0, startRow: currentRow);
-            var wb = xssfwb.GetWorkbook();
-            mergeRanges.ForEach(m =>
-            {
-                sheet.AddMergedRegionUnsafe(m);
-                RegionUtil.SetBorderBottom(1, m, sheet);
-                RegionUtil.SetBorderLeft(1, m, sheet);
-                RegionUtil.SetBorderRight(1, m, sheet);
-                RegionUtil.SetBorderTop(1, m, sheet);
-                if (cellStyles.Length > m.FirstRow && cellStyles[m.FirstRow] != null)
-                    sheet.SetCellStyle(m.FirstRow, m.FirstColumn, cellStyles[m.FirstRow][m.FirstColumn]);
-            });
-        }
-
         private bool[][] _mergeRows = null;
         private ICellStyle[][] cellStyles = null;
         private List<CellRangeAddress> MergeColumn(ExcelData table, ReportDataModel dataTable)
@@ -920,7 +678,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 int? currentMergeColumnValue = null;
                 string dataValue = "";
 
-                foreach (var field in columns)
+                foreach (var field in visibleColumns)
                 {
                     if (!_mergeRows[i][columnIndx])
                     {
@@ -1088,6 +846,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             HorizontalAlignment? hAlign = defaultColumnStyle?.Alignment;
             string format = defaultColumnStyle?.GetDataFormatString();
             short? indention = null;
+            bool? isHidden = null;
+
             foreach (var styleConfig in styleConfigs)
             {
                 if (string.IsNullOrWhiteSpace(styleConfig)) continue;
@@ -1162,9 +922,14 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                 }
 
+                if (cfgs.ContainsKey("isHidden"))
+                {
+                    isHidden = cfgs.Value<bool>("isHidden");
+                }
+
             }
 
-            var style = sheet.GetCellStyle(fontSize, isBold, isItalic, vAlign, hAlign, isBorder: true, rgb: bgColor, color: color, dataFormat: format, indention: indention);
+            var style = sheet.GetCellStyle(fontSize, isBold, isItalic, vAlign, hAlign, isBorder: true, rgb: bgColor, color: color, dataFormat: format, indention: indention, isHidden: isHidden);
             customCellStyles.Add(cached, style);
             return style;
         }

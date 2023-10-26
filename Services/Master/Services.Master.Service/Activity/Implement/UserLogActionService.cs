@@ -337,7 +337,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         {
             try
             {
-                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
+                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting?.WebPush?.ActionUrl)
                     && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{data.ObjectTypeId}/{data.ObjectId}/{data.BillTypeId}" : "";
                 foreach (var sub in lsSubscription)
                 {
