@@ -89,6 +89,17 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return columns;
         }*/
 
+        public static void NormalizeColumnGroup(IList<ReportColumnModel> columns)
+        {
+            var lst = columns.OrderBy(s => s.SortOrder);
+            foreach (var c in lst)
+            {
+                if (c.IsColGroup)
+                {
+                    c.ColGroupName = lst.Where(s => s.IsGroup && c.ColGroupId == s.ColGroupId).First()?.ColGroupName;
+                }
+            }
+        }
         public static NonCamelCaseDictionary GetFistRow(IList<NonCamelCaseDictionary> lst)
         {
             var firstRow = new NonCamelCaseDictionary();
@@ -215,10 +226,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 columns.Add(newColumn);
             }
 
-            foreach(var c in columns)
-            {
 
-            }
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)
                         .ThenBy(c => c.SuffixKey)

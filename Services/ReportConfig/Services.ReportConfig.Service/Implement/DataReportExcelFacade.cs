@@ -81,10 +81,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             _model = model;
 
             originalColumns = reportInfo.Columns.JsonDeserialize<ReportColumnModel[]>();
-            foreach (var c in originalColumns.OrderBy(s => s.SortOrder))
-            {
-                c.ColGroupName = originalColumns.FirstOrDefault(c1 => c1.ColGroupId == c.ColGroupId)?.ColGroupName;
-            }
+
+            RepeatColumnUtils.NormalizeColumnGroup(originalColumns);
+
 
             groupRowColumns = originalColumns.Where(c => c.IsGroupRow).ToList();
 
