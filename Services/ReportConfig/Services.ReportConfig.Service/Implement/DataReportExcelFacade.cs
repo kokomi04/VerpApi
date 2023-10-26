@@ -446,7 +446,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         {
                             cellStyleStr = row[cellStyleAlias]?.ToString();
                         }
-
+                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr);
 
                         if (field.IsCalcSum && !sumCalc.ContainsKey(columnIndx))
                         {
@@ -454,17 +454,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             //sumValues.Add(columnIndx, 0);
                         }
                         var dataType = field.DataTypeId.HasValue ? (EnumDataType)field.DataTypeId : EnumDataType.Text;
-
-                        var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
-                        if (dataType == EnumDataType.Decimal || dataType == EnumDataType.Percentage)
-                        {
-                            field.DecimalPlace = GetDecimalPlace(value.ToString());
-                        }
-                        ICellStyle cellStyle = ParseCellStyle(sheet, field, rowStyleStr, cellStyleStr);
+                        
                         cellStyles[i + currentRow][columnIndx] = cellStyle;
 
                         if (row.ContainsKey(field.Alias))
                         {
+                            var value = dataType.GetSqlValueAtTimezone(row[field.Alias], _currentContextService.TimeZoneOffset);
                             tbRow[columnIndx] = new ExcelCell
                             {
                                 Value = value,
