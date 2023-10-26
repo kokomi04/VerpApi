@@ -745,16 +745,17 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             if (timeInRaw == null && timeOutRaw == null)
             {
-                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift)
-                {
-                    detail.IsScheduled = false;
-                    return null;
-                }
-                else if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
+                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
                 {
                     //Đủ công (X)
                     detailShift.WorkCounted = shift.ConfirmationUnit;
                     detailShift.ActualWorkMins = shift.ConvertToMins;
+                    detailShift.TimeSheetDetailShiftCounted.Clear();
+                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+                }
+                else if ((detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift) || (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsSkipHolidayWithShift))
+                {
+                    return null;
                 }
                 else
                 {
