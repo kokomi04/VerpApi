@@ -96,7 +96,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 if (c.IsColGroup)
                 {
-                    c.ColGroupName = lst.Where(s => s.IsGroup && c.ColGroupId == s.ColGroupId).First()?.ColGroupName;
+                    c.ColGroupName = lst.Where(s => s.IsColGroup && c.ColGroupId == s.ColGroupId).FirstOrDefault()?.ColGroupName;
                 }
             }
         }
