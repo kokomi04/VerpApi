@@ -634,12 +634,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     sheet.SetCellStyle(m.FirstRow, m.FirstColumn, cellStyles[m.FirstRow][m.FirstColumn]);
             });
         }
-        private int GetDecimalPlace(string value)
-        {
-            var decimalPlace = value.Split('.').Count() > 1 && value.Split('.').Count() < 3 ? value.Split('.').LastOrDefault() : null;
-            return decimalPlace == null ? 0 : decimalPlace.Length;
-        }
-
         private bool[][] _mergeRows = null;
         private ICellStyle[][] cellStyles = null;
         private List<CellRangeAddress> MergeColumn(ExcelData table, ReportDataModel dataTable)
