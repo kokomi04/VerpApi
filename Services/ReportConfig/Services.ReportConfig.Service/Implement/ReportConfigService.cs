@@ -342,6 +342,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             var info = _mapper.Map<ReportTypeModel>(reportType);
+            foreach (var c in info.Columns.OrderBy(s => s.SortOrder))
+            {
+                c.ColGroupName = info.Columns.FirstOrDefault(c1 => c1.ColGroupId == c.ColGroupId)?.ColGroupName;
+            }
+
             if (info.BscConfig?.Rows != null)
             {
                 foreach (var row in info.BscConfig.Rows)

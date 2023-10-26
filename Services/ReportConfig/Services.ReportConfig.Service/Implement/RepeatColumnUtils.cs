@@ -89,9 +89,29 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return columns;
         }*/
 
-        public static IList<ReportColumnModel> RepeatColumnAndSortProcess(IList<ReportColumnModel> columns, IList<NonCamelCaseDictionary> dataTable)
+        public static NonCamelCaseDictionary GetFistRow(IList<NonCamelCaseDictionary> lst)
         {
-            if (dataTable == null || dataTable.Count == 0)
+            var firstRow = new NonCamelCaseDictionary();
+            foreach (var row in lst)
+            {
+                foreach (var (k, v) in row)
+                {
+                    if (!firstRow.ContainsKey(k))
+                    {
+                        firstRow.Add(k, v);
+                    }
+                    else if (firstRow[k].IsNullOrEmptyObject())
+                    {
+                        firstRow[k] = v;
+                    }
+
+                }
+            }
+            return firstRow;
+        }
+        public static IList<ReportColumnModel> RepeatColumnAndSortProcess(IList<ReportColumnModel> columns, NonCamelCaseDictionary firstRow)
+        {
+            if (firstRow == null || firstRow.Count == 0)
                 return columns;
 
             columns = columns.OrderBy(c => c.SortOrder).ToList();
@@ -113,23 +133,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 }
             };
 
-
-            var firstRow = new NonCamelCaseDictionary();
-            foreach (var row in dataTable)
-            {
-                foreach (var (k, v) in row)
-                {
-                    if (!firstRow.ContainsKey(k))
-                    {
-                        firstRow.Add(k, v);
-                    }
-                    else if (firstRow[k].IsNullOrEmptyObject())
-                    {
-                        firstRow[k] = v;
-                    }
-
-                }
-            }
 
 
             var dynamicColumns = new List<ReportColumnModel>();
@@ -212,6 +215,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 columns.Add(newColumn);
             }
 
+            foreach(var c in columns)
+            {
+
+            }
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)
                         .ThenBy(c => c.SuffixKey)
