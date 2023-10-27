@@ -106,7 +106,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var reportTypeCustomInfo = await _reportConfigDBContext.ReportTypeCustom.FirstOrDefaultAsync(r => r.ReportTypeId == reportId && !r.IsDeleted);
             if (reportTypeCustomInfo != null)
             {
-                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql)  )
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql))
                 {
                     reportInfo.HeadSql = reportTypeCustomInfo.HeadSql;
                 }
@@ -210,6 +210,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sqlParams.Add(new SqlParameter("@Page", page));
                 sqlParams.Add(new SqlParameter("@Size", size));
             }
+
+            sqlParams.Add(new SqlParameter("@OrderBy", string.IsNullOrWhiteSpace(model.OrderByFieldName) ? DBNull.Value : model.OrderByFieldName));
+            sqlParams.Add(new SqlParameter("@Asc", model.Asc));
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
