@@ -17,6 +17,7 @@ namespace VErp.Commons.Library.OpenXmlTools
         public string ImageDirectoryName { get; }
         public int ImageCounter { get; private set; }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "<Pending>")]
         public XElement TransformImage(ImageInfo imageInfo)
         {
             var localDirInfo = new DirectoryInfo(ImageDirectoryName);

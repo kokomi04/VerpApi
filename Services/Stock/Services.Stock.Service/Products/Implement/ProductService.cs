@@ -920,7 +920,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   s.DescriptionToStock,
 
                   p.Color,
-                  p.TargetProductivityId
+                  p.TargetProductivityId,
+
+                  p.AccountNumber
               });
 
 
@@ -952,6 +954,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         || c.Specification.Contains(keyword)
                         || c.Description.Contains(keyword)
                         || c.DescriptionToStock.Contains(keyword)
+                        || c.AccountNumber.Contains(keyword)
                         select c;
             }
             query = query.InternalFilter(req.Filters);
@@ -1043,6 +1046,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Description = item.Description,
                     Color = item.Color,
                     TargetProductivityId = item.TargetProductivityId,
+                    AccountNumber = item.AccountNumber,
 
                     StockRemainings = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {

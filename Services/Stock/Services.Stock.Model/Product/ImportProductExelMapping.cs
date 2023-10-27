@@ -54,6 +54,9 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Trạng thái QTSX", GroupName = "Thông tin chung")]
         public int? ProductionProcessStatusId { get; set; }
 
+        [Display(Name = "Tài khoản kế toán", GroupName = "Thông tin chung")]
+        public string AccountNumber { get; set; }
+
 
         [Display(Name = "Tên Đơn vị chính", GroupName = "Đơn vị chính")]
         public string Unit { get; set; }

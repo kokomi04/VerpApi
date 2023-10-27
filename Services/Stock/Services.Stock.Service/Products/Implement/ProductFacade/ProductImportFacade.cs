@@ -619,6 +619,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
             product.UpdateIfAvaiable(p => p.PackingLong, row.PackingLong);
             product.UpdateIfAvaiable(p => p.PackingWidth, row.PackingWidth);
             product.UpdateIfAvaiable(p => p.TargetProductivityId, row.TargetProductivityId);
+            product.UpdateIfAvaiable(p => p.AccountNumber, row.AccountNumber);
 
             if (product.ProductId == 0)
             {
