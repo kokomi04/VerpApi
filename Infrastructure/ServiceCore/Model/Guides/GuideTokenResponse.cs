@@ -10,6 +10,13 @@ namespace VErp.Infrastructure.ServiceCore.Model.Guides
     public class GuideTokenResponse
     {
         public string AccessToken { get; set; }
-        public string RefreshToken { get; set; }
+        public RefreshToken RefreshToken { get; set; }
+    }
+
+    public class RefreshToken
+    {
+        public Guid TokenId { get; set; }
+        public string Token { get; set; }
+        public DateTime ExpirationDate { get; set; }
     }
 }
