@@ -96,6 +96,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportDataModel> Report(int reportId, ReportFilterDataModel model, int page, int size)
         {
+            if (model == null)
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Vui lòng chọn các tham số và lọc báo cáo");
+            }
+
             var result = new ReportDataModel();
 
             var filters = model.Filters.GroupBy(f => f.Key.Trim().ToLower()).ToDictionary(f => f.Key, f => f.Last().Value);
