@@ -61,9 +61,10 @@ namespace MasterTests
         [Fact]
         public async Task TestAssignStatus()
         {
-            var productionOrderId = 20708L;
+            //var productionOrderId = 20708L;
             try
             {
+                await Task.CompletedTask;
                 //await productionAssignmentService.UpdateProductionOrderAssignmentStatus(new[] { productionOrderId });
             }
             catch (Exception)

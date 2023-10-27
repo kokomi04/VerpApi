@@ -71,6 +71,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "HttpCrossService:Put");
                 throw;
             }
         }
@@ -88,6 +89,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "HttpCrossService:Deleted");
                 throw;
             }
         }
@@ -100,7 +102,7 @@ namespace VErp.Infrastructure.ServiceCore.Service
 
                 return await _httpClient.Get<T>(uri, queries, request => SetContextHeaders(request));
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 throw;
             }

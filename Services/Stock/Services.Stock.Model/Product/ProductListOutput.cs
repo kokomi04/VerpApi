@@ -76,6 +76,7 @@ namespace VErp.Services.Stock.Model.Product
         public IList<ProductModelUnitConversion> ProductUnitConversions { get; set; }
         public string Description { get; set; }
         public int? TargetProductivityId { get; set; }
+        public string AccountNumber { get; set; }
 
     }
 }
