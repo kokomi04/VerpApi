@@ -48,9 +48,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
     public class TimeSheetService : ITimeSheetService
     {
-        private const string EmployeeIdField = "F_Id";
-        private const string DepartmentIdField = "bo_phan";
-
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IDepartmentCalendarService _departmentCalendarService;
         private readonly IShiftScheduleService _shiftScheduleService;
@@ -474,7 +471,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 dateRange.Add(date);
             }
             var lstEmployees = await _shiftScheduleService.GetEmployeesByDepartments(departmentIds.ToList());
-            var employeesByDepartment = lstEmployees.GroupBy(e => (int)e[DepartmentIdField]).ToDictionary(g => g.Key, g => g.ToList());
+            var employeesByDepartment = lstEmployees.GroupBy(e => (int)e[EmployeeConstants.DEPARTMENT]).ToDictionary(g => g.Key, g => g.ToList());
 
             var departmentCalendars = await _departmentCalendarService.GetListDepartmentCalendar(departmentIds, beginDate, endDate);
 
@@ -482,7 +479,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 .ToDictionary(g => g.Key, g => g.SelectMany(x => x.DepartmentDayOffCalendar.Where(d => d.Day >= beginDate && d.Day <= endDate)).ToList());
 
             var allShiftDetails = await _organizationDBContext.ShiftScheduleDetail
-                .Where(s => lstEmployees.Select(e => (long)e[EmployeeIdField]).Contains(s.EmployeeId)
+                .Where(s => lstEmployees.Select(e => (long)e[EmployeeConstants.EMPLOYEE_ID]).Contains(s.EmployeeId)
                     && dateRange.Select(d => d.UnixToDateTime()).ToList().Contains(s.AssignedDate))
                 .ToListAsync();
 
@@ -491,7 +488,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 .ProjectTo<ShiftConfigurationModel>(_mapper.ConfigurationProvider)
                 .ToListAsync();
 
-            var allTimeSheetRaws = await _timeSheetRawService.GetDistinctTimeSheetRawByEmployee(lstEmployees.Select(e => (long?)e[EmployeeIdField]).ToList());
+            var allTimeSheetRaws = await _timeSheetRawService.GetDistinctTimeSheetRawByEmployee(lstEmployees.Select(e => (long?)e[EmployeeConstants.EMPLOYEE_ID]).ToList());
 
             var countedSymbols = await _organizationDBContext.CountedSymbol.ProjectTo<CountedSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
 
@@ -501,7 +498,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 foreach (var employee in employees)
                 {
-                    var employeeId = (long)employee[EmployeeIdField];
+                    var employeeId = (long)employee[EmployeeConstants.EMPLOYEE_ID];
 
                     var timeSheetByEmployee = new TimeSheetByEmployeeModel();
                     timeSheetByEmployee.EmployeeId = employeeId;

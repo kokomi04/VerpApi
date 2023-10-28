@@ -44,10 +44,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
     public class TimeSheetRawService : ITimeSheetRawService
     {
-        private const string F_Id = "F_Id";
-        private const string so_ct = "so_ct";
-        private const string ma_cham_cong = "ma_cham_cong";
-
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
         private readonly IHrDataService _hrDataService;
@@ -133,7 +129,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, filter.HrTypeFilters, 0, 0);
 
-            var employeeIds = employees.List.Select(e => (long)e[F_Id]).ToList();
+            var employeeIds = employees.List.Select(e => (long)e[EmployeeConstants.EMPLOYEE_ID]).ToList();
 
             var query = _organizationDBContext.TimeSheetRaw.Where(t => employeeIds.Contains(t.EmployeeId)).AsNoTracking();
 
@@ -158,7 +154,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             Parallel.ForEach(employees.List, e =>
             {
-                var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e[F_Id]);
+                var matchingTimeSheetRaws = timeSheetRaws.Where(t => t.EmployeeId == (long)e[EmployeeConstants.EMPLOYEE_ID]);
 
                 if (matchingTimeSheetRaws != null)
                 {
@@ -223,7 +219,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             fields = fields.Where(f => f.FormTypeId != EnumFormType.ImportFile && f.FormTypeId != EnumFormType.MultiSelect && f.IsMultiRow == false).ToList();
             var importFacade = new HrDataImportFacade(hrType, fields, _hrDataImportDIService);
             var employeeFields = (await importFacade.GetFieldDataForMapping()).Fields;
-            var employeeCodeField = employeeFields.FirstOrDefault(e => e.FieldName == so_ct);
+            var employeeCodeField = employeeFields.FirstOrDefault(e => e.FieldName == EmployeeConstants.EMPLOYEE_CODE);
             employeeCodeField.IsRequired = false;
 
             result.Fields = employeeFields.Concat(timeSheetFields).DistinctBy(f => f.FieldName).ToList();
@@ -355,19 +351,19 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 if (item.so_ct != null)
                 {
-                    employee = employees.List.FirstOrDefault(e => e[so_ct].ToString() == item.so_ct);
+                    employee = employees.List.FirstOrDefault(e => e[EmployeeConstants.EMPLOYEE_CODE].ToString() == item.so_ct);
                     errorMess = "mã nhân viên " + item.so_ct;
                 }
                 else if (item.ma_cham_cong != null)
                 {
-                    employee = employees.List.FirstOrDefault(e => (e[ma_cham_cong] != null ? e[ma_cham_cong].ToString() : "") == item.ma_cham_cong);
+                    employee = employees.List.FirstOrDefault(e => (e[EmployeeConstants.TIMEKEEPING_CODE] != null ? e[EmployeeConstants.TIMEKEEPING_CODE].ToString() : "") == item.ma_cham_cong);
                     errorMess = "mã chấm công " + item.ma_cham_cong;
                 }
 
                 if(employee == null)
                     throw new BadRequestException(GeneralCode.ItemNotFound, $"Nhân viên có {errorMess} không tồn tại!");
 
-                if (await _organizationDBContext.TimeSheetRaw.AnyAsync(t => t.EmployeeId == (long)employee[F_Id] && t.Date == item.Date.UnixToDateTime().Value && t.Time == TimeSpan.FromSeconds(item.Time)))
+                if (await _organizationDBContext.TimeSheetRaw.AnyAsync(t => t.EmployeeId == (long)employee[EmployeeConstants.EMPLOYEE_ID] && t.Date == item.Date.UnixToDateTime().Value && t.Time == TimeSpan.FromSeconds(item.Time)))
                 {
                     if (mapping.ImportDuplicateOptionId == EnumImportDuplicateOption.Denied)
                     {
@@ -381,8 +377,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 var ent = new TimeSheetRaw
                 {
-                    EmployeeId = (long)employee[F_Id],
-                    Date = item.Date.UnixToDateTime(-_currentContextService.TimeZoneOffset),
+                    EmployeeId = (long)employee[EmployeeConstants.EMPLOYEE_ID],
+                    Date = item.Date.UnixToDateTime().Value,
                     Time = TimeSpan.FromSeconds(item.Time),
                     TimeKeepingMethod = (int)TimeKeepingMethodType.Software,
                     TimeKeepingRecorder = (await _userService.GetInfo(_currentContextService.UserId)).EmployeeCode
@@ -398,7 +394,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var mappingFields = mapping.MappingFields.Select(f => f.FieldName).ToList();
 
-            if (!mappingFields.Contains(so_ct) && !mappingFields.Contains(ma_cham_cong))
+            if (!mappingFields.Contains(EmployeeConstants.EMPLOYEE_CODE) && !mappingFields.Contains(EmployeeConstants.TIMEKEEPING_CODE))
             {
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Vui lòng chọn cột Excel cho trường \"Mã nhân viên\" hoặc \"Mã chấm công\"");
             }
