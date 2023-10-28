@@ -26,4 +26,15 @@
             return $"_SalaryEmployee_{subsidiaryCode}";
         }
     }
+
+    public static class EmployeeConstants
+    {
+        public const string EMPLOYEE_ID = "F_Id";
+
+        public const string EMPLOYEE_CODE = "so_ct";
+
+        public const string TIMEKEEPING_CODE = "ma_cham_cong";
+
+        public const string DEPARTMENT = "bo_phan";
+    }
 }
