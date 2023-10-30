@@ -108,7 +108,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            if (req.Department == null && req.CustomerId == null)
+            if (req.DepartmentId == null && req.CustomerId == null)
             {
                 throw new BadRequestException("Vui lòng chọn thông tin khách hàng hoặc bộ phận nhận!");
             }
@@ -232,7 +232,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
                         }
-                        if (req.Department == null && req.CustomerId == null)
+                        if (req.DepartmentId == null && req.CustomerId == null)
                         {
                             throw new BadRequestException("Vui lòng chọn thông tin khách hàng hoặc bộ phận nhận!");
                         }
