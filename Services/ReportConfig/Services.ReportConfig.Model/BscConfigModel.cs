@@ -22,6 +22,9 @@ namespace Verp.Services.ReportConfig.Model
 
     public class BscRowsModel
     {
+        public const string EscapseBscParamPrefix = "\\" + AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX;
+        public const string EscapseBscParamSpecialReplacingString = "AAAAAAA___BB_CC___MMMA_A";
+
         public int SortOrder { get; set; }
         public bool IsBold { get; set; }
 
@@ -37,7 +40,11 @@ namespace Verp.Services.ReportConfig.Model
 
         public static bool IsBscSelect(object valueConfig)
         {
-            return IsSqlSelect(valueConfig) && valueConfig.ToString().Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
+            var str = valueConfig.ToString()??"";
+
+            str = str.Replace(EscapseBscParamPrefix, EscapseBscParamSpecialReplacingString);
+            var isBscSelect = IsSqlSelect(valueConfig) && str.Contains(AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
+            return isBscSelect;
         }
     }
 

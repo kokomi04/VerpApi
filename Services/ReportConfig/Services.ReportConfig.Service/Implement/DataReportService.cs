@@ -37,6 +37,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class DataReportService : IDataReportService
     {
+        private const string EscapseBscParamPrefix = BscRowsModel.EscapseBscParamPrefix;
+        private const string EscapseBscParamSpecialReplacingString = BscRowsModel.EscapseBscParamSpecialReplacingString;
+
         private readonly ReportConfigDBContext _reportConfigDBContext;
         private readonly IReportConfigService _reportConfigService;
         private readonly IDocOpenXmlService _docOpenXmlService;
@@ -663,13 +666,23 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private string ReplaceOldBscValuePrefix(string selectData)
         {
+
+            selectData = selectData.Replace(EscapseBscParamPrefix, EscapseBscParamSpecialReplacingString);
+
+            selectData = selectData.Replace($"\\#", "@#");
+
             selectData = selectData.Replace($"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX_OLD}", "#");
             selectData = selectData.Replace($"#", "@#");
+
+            selectData = selectData.Replace(EscapseBscParamSpecialReplacingString, EscapseBscParamPrefix);
             return selectData;
         }
         private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
         {
             //   selectData = ReplaceOldBscValuePrefix(selectData);
+
+
+            selectData = selectData.Replace(EscapseBscParamPrefix, EscapseBscParamSpecialReplacingString);
 
             var result = new StringBuilder(selectData);
             var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
@@ -691,7 +704,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     moveIndex = moveIndex + newText.Length - match[i].Length;
                 }
             }
-            return result.ToString();
+
+            return result.ToString().Replace(EscapseBscParamSpecialReplacingString, EscapseBscParamPrefix);
         }
 
 
@@ -722,6 +736,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var value = selectValue[fieldName].value;
                         var type = selectValue[fieldName].type;
+                        if (value?.ToString()?.Contains(EscapseBscParamPrefix) == true)
+                        {
+                            value = value?.ToString()?.Replace(EscapseBscParamPrefix, AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
+                        }
 
                         row[col] = value;
 
