@@ -98,6 +98,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     c.ColGroupName = lst.Where(s => s.IsColGroup && c.ColGroupId == s.ColGroupId).FirstOrDefault()?.ColGroupName;
                 }
+                else
+                {
+                    c.ColGroupName = c.Name;
+                }
             }
         }
         public static NonCamelCaseDictionary GetFistRow(IList<NonCamelCaseDictionary> lst)
@@ -185,7 +189,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         if (column.ColGroupName?.StartsWith('[') == true)
                         {
-                            var nameGroupColumn = $"{column.ColGroupName}{suffixKey}";
+                            var nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}{suffixKey}";
 
                             if (firstRow.ContainsKey(nameGroupColumn))
                             {
@@ -193,9 +197,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             }
                             else
                             {
-                                if (!string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                                nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}";
+
+                                if (!string.IsNullOrWhiteSpace(nameGroupColumn) && firstRow.ContainsKey(nameGroupColumn))
                                 {
-                                    newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                                    newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
                                 }
 
                             }
@@ -203,7 +209,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         if (column.Name?.StartsWith('[') == true)
                         {
-                            var nameColumn = $"{column.Name}{suffixKey}";
+                            var nameColumn = $"{column.Name.Trim('[')?.Trim(']')}{suffixKey}";
 
                             if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
                             {
