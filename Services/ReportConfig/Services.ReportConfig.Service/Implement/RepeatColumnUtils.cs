@@ -155,12 +155,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (column.IsRepeat != true)
                     {
-                        if (!string.IsNullOrWhiteSpace(column.ColGroupName) && firstRow.ContainsKey(column.ColGroupName) && !firstRow[column.ColGroupName].IsNullOrEmptyObject())
+                        var groupName = column.ColGroupName ?? "";
+                        groupName = groupName?.Trim()?.Trim('[')?.Trim(']');
+
+                        if (groupName.StartsWith('[') && !string.IsNullOrWhiteSpace(groupName) && firstRow.ContainsKey(groupName) && !firstRow[groupName].IsNullOrEmptyObject())
                         {
-                            column.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                            column.ColGroupName = firstRow[groupName]?.ToString();
                         }
 
-                        if (!string.IsNullOrWhiteSpace(column.Name) && firstRow.ContainsKey(column.Name) && !firstRow[column.Name].IsNullOrEmptyObject())
+                        var colName = column.Name ?? "";
+                        colName = colName?.Trim()?.Trim('[')?.Trim(']');
+
+                        if (colName.StartsWith('[') && !string.IsNullOrWhiteSpace(colName) && firstRow.ContainsKey(colName) && !firstRow[colName].IsNullOrEmptyObject())
                         {
                             column.Name = firstRow[column.Name]?.ToString();
                         }
@@ -177,29 +183,33 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         var newColumn = ObjectUtils.DeepClone(column);
 
-                        var nameGroupColumn = $"{column.ColGroupName}{suffixKey}";
+                        if (column.ColGroupName?.StartsWith('[') == true)
+                        {
+                            var nameGroupColumn = $"{column.ColGroupName}{suffixKey}";
 
-                        if (firstRow.ContainsKey(nameGroupColumn))
-                        {
-                            newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
-                        }
-                        else
-                        {
-                            if (!string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                            if (firstRow.ContainsKey(nameGroupColumn))
                             {
-                                newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                                newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
                             }
+                            else
+                            {
+                                if (!string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                                {
+                                    newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                                }
 
+                            }
                         }
 
-
-                        var nameColumn = $"{column.Name}{suffixKey}";
-
-                        if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
+                        if (column.Name?.StartsWith('[') == true)
                         {
-                            newColumn.Name = firstRow[nameColumn]?.ToString();
-                        }
+                            var nameColumn = $"{column.Name}{suffixKey}";
 
+                            if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
+                            {
+                                newColumn.Name = firstRow[nameColumn]?.ToString();
+                            }
+                        }
 
                         newColumn.Alias = $"{column.Alias}{suffixKey}";
                         newColumn.Value = $"{column.Value}{suffixKey}";
