@@ -422,6 +422,7 @@ namespace VErp.Services.PurchaseOrder.Service.Po.Implement.Facade
                 if (model.TotalMoney == 0)
                 {
                     model.TotalMoney += ((sumMoney + model.TaxInMoney )?.RoundBy(defaultCurrencyDecimalPlace)) ?? 0;
+                    model.TotalMoney += (model.OtherFee + model.DeliveryFee);
                 }
             }
 
