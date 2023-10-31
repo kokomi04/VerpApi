@@ -97,11 +97,20 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cần nhập thông tin khách hàng hoặc bộ phận nhận.
+        ///   Looks up a localized string similar to Vui lòng nhập nhà cung cấp hoặc bộ phận bàn giao.
         /// </summary>
         public static string RequireCustomerIdOrDepartmentId {
             get {
                 return ResourceManager.GetString("RequireCustomerIdOrDepartmentId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vui lòng chỉ nhập nhà cung cấp hoặc bộ phận bàn giao.
+        /// </summary>
+        public static string RequireOnlyCustomerIdOrDepartmentId {
+            get {
+                return ResourceManager.GetString("RequireOnlyCustomerIdOrDepartmentId", resourceCulture);
             }
         }
         

@@ -130,7 +130,10 @@
     <value>Không có số dư trong kiện</value>
   </data>
   <data name="RequireCustomerIdOrDepartmentId" xml:space="preserve">
-    <value>Cần nhập thông tin khách hàng hoặc bộ phận nhận</value>
+    <value>Vui lòng nhập nhà cung cấp hoặc bộ phận bàn giao</value>
+  </data>
+  <data name="RequireOnlyCustomerIdOrDepartmentId" xml:space="preserve">
+    <value>Vui lòng chỉ nhập nhà cung cấp hoặc bộ phận bàn giao</value>
   </data>
   <data name="RotationInputStockIsRequired" xml:space="preserve">
     <value>Vui lòng nhập kho nhập</value>

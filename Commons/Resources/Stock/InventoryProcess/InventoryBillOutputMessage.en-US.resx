@@ -129,6 +129,12 @@
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>The package was empty</value>
   </data>
+  <data name="RequireCustomerIdOrDepartmentId" xml:space="preserve">
+    <value>Please input customer or delivery department</value>
+  </data>
+  <data name="RequireOnlyCustomerIdOrDepartmentId" xml:space="preserve">
+    <value>Please input only customer or delivery department</value>
+  </data>
   <data name="RotationInputStockIsRequired" xml:space="preserve">
     <value>Input stock is required</value>
   </data>
