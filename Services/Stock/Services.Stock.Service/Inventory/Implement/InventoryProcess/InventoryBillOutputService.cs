@@ -108,10 +108,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-            if (req.DepartmentId == null && req.CustomerId == null)
-            {
-                throw new BadRequestException("Vui lòng chọn thông tin khách hàng hoặc bộ phận nhận!");
-            }
             await ValidateInventoryConfig(req.Date.UnixToDateTime(), null);
 
             req.InventoryCode = req.InventoryCode.Trim();
@@ -231,10 +227,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         if (inventoryObj.InventoryActionId == (int)EnumInventoryAction.Rotation)
                         {
                             throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
-                        }
-                        if (req.DepartmentId == null && req.CustomerId == null)
-                        {
-                            throw new BadRequestException("Vui lòng chọn thông tin khách hàng hoặc bộ phận nhận!");
                         }
                         if (inventoryObj.StockId != req.StockId)
                         {

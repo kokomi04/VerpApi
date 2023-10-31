@@ -1107,7 +1107,10 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                             {
                                 throw GeneralCode.InvalidParams.BadRequestFormat(RequireCustomerIdOrDepartmentId);
                             }
-
+                            if (inventoryData.CustomerId != null && inventoryData.DepartmentId != null)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(RequireOnlyCustomerIdOrDepartmentId);
+                            }
                             if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
                             {
                                 throw new BadRequestException("No products found!");
