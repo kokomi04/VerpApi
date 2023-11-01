@@ -1132,7 +1132,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
         private bool EvalOperatorCompare(SingleClause clause, object x, object y)
         {
-
+            if (x is DateTime)
+            {
+                x = ((DateTime)x).GetUnix();
+            }
+            if (y is DateTime)
+            {
+                y = ((DateTime)y).GetUnix();
+            }
             switch (clause.Operator)
             {
                 case EnumOperator.Equal:
