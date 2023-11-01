@@ -28,6 +28,7 @@ namespace VErp.Services.Master.Model.PrintConfig
         public int? MinimumTableRows { get; set; }
         //public int ModuleTypeId { get; set; }
         public IList<int> ModuleTypeIds { get; set; }
+        public string JsCodeBeforePrint { get; set; }
     }
 
     public class PrintConfigRollbackModel : PrintConfigBaseModel, IMapFrom<PrintConfigStandard>
