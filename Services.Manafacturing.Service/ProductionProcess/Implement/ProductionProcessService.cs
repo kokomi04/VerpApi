@@ -1199,7 +1199,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
 
 
-        private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req, bool isFromCopy)
+        private async Task UpdateProductionProcessManual(EnumContainerType containerTypeId, long containerId, ProductionProcessModel req, bool isFromCopy, long? fromProductId = null)
         {
             foreach (var s in req.ProductionSteps)
             {
@@ -1527,23 +1527,35 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             if (containerTypeId == EnumContainerType.Product)
             {
                 var productProcessModel = await GetProductionProcessByContainerId(containerTypeId, containerId);
-                if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productProcessModel)).Count() == 0)
+                if (isFromCopy && fromProductId.HasValue)
                 {
+                    var fromProduct = await _productHelperService.GetProduct((int)fromProductId);
                     await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
                     {
                         ProductId = containerId,
-                        ProcessStatus = EnumProductionProcessStatus.Created
+                        ProcessStatus = fromProduct.ProductionProcessStatusId
+                    },true);
+                }
+                else
+                {
+                    if ((await _validateProductionProcessService.ValidateProductionProcess(containerTypeId, containerId, productProcessModel)).Count() == 0)
+                    {
+                        await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                        {
+                            ProductId = containerId,
+                            ProcessStatus = EnumProductionProcessStatus.Created
+                        }, true);
+                    }
+                    else await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
+                    {
+                        ProductId = containerId,
+                        ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
                     }, true);
                 }
-                else await _productHelperService.UpdateProductionProcessStatus(new InternalProductProcessStatus()
-                {
-                    ProductId = containerId,
-                    ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
-                }, true);
+               
             }
-
+            
         }
-
         private async Task UpdateStatusValidForProductionOrder(long productionOrderId)
         {
             var process = await GetProductionProcessByContainerId(EnumContainerType.ProductionOrder, productionOrderId);
@@ -2081,7 +2093,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     ProductionStepLinkDatas = process.ProductionStepLinkDatas,
                     ProductionSteps = process.ProductionSteps,
                     ProductionOutsourcePartMappings = new List<ProductionOutsourcePartMappingInput>()
-                }, true);
+                }, true, fromContainerId);
 
                 var d1 = await _manufacturingDBContext.ProductionStepRoleClient.AsNoTracking().FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == fromContainerId);
                 var d2 = await _manufacturingDBContext.ProductionStepRoleClient.FirstOrDefaultAsync(x => x.ContainerTypeId == (int)containerTypeId && x.ContainerId == toContainerId);
