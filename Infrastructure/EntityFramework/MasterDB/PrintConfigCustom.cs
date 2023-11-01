@@ -61,5 +61,7 @@ public partial class PrintConfigCustom
 
     public int? MinimumTableRows { get; set; }
 
+    public string JsCodeBeforePrint { get; set; }
+
     public virtual ICollection<PrintConfigCustomModuleType> PrintConfigCustomModuleType { get; set; } = new List<PrintConfigCustomModuleType>();
 }
