@@ -674,8 +674,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.TimeOut = timeOutRaw;
 
                 if (timeOutRaw >= shift.ExitTime
-                    || !shift.IsSubtractionForLate
-                    || (shift.IsSubtractionForLate && shift.MinsAllowToLate * 60 > (shift.ExitTime - timeOutRaw)))
+                    || !shift.IsSubtractionForEarly
+                    || (shift.IsSubtractionForEarly && shift.MinsAllowToEarly * 60 > (shift.ExitTime - timeOutRaw)))
                 {
                     if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
                     {
