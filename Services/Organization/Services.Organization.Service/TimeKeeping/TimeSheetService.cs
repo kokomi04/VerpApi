@@ -137,6 +137,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     detail.IsDeleted = true;
                 }
 
+                var timeSheetDetailIds = model.TimeSheetDetail.Where(d => existingDetailSet.Contains((d.EmployeeId, d.Date))).Select(d => d.TimeSheetDetailId).ToList();
+
+                await RemoveTimeSheetDetailShift(timeSheetDetailIds);
+
                 var newDetails = new List<TimeSheetDetail>();
 
                 foreach (var mDetail in model.TimeSheetDetail)
@@ -147,7 +151,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         var eDetailToUpdate = timeSheetDetails.FirstOrDefault(e => e.EmployeeId == mDetail.EmployeeId && e.Date.GetUnix() == mDetail.Date);
                         mDetail.TimeSheetDetailId = eDetailToUpdate.TimeSheetDetailId;
-                        await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
+                        //await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
 
                         var counteds = new List<TimeSheetDetailShiftCountedModel>();
 
@@ -169,7 +173,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                         var eCounted = new List<TimeSheetDetailShiftCounted>();
                         await _organizationDBContext.TimeSheetDetailShiftCounted.AddRangeAsync(_mapper.Map(counteds, eCounted));
-                        await _organizationDBContext.SaveChangesAsync();
+                        //await _organizationDBContext.SaveChangesAsync();
                     }
                     else
                     {
@@ -186,7 +190,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     }
                 }
                 await _organizationDBContext.TimeSheetDetail.AddRangeAsync(newDetails);
-                await _organizationDBContext.SaveChangesAsync();
+                //await _organizationDBContext.SaveChangesAsync();
 
                 var existingAggregateIds = new HashSet<long>(timeSheet.TimeSheetAggregate.Select(e => e.TimeSheetAggregateId));
                 var modelAggregateIds = new HashSet<long>(model.TimeSheetAggregate.Select(m => m.TimeSheetAggregateId));
@@ -199,15 +203,19 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 var newAggregates = new List<TimeSheetAggregate>();
 
+                var timeSheetAggregateIds = model.TimeSheetAggregate.Where(a => existingAggregateIds.Contains(a.TimeSheetAggregateId)).Select(d => d.TimeSheetAggregateId).ToList();
+
+                await RemoveTimeSheetAggregateAbsence(timeSheetAggregateIds);
+                await RemoveTimeSheetAggregateOvertime(timeSheetAggregateIds);
+
                 foreach (var mAggregate in model.TimeSheetAggregate)
                 {
                     mAggregate.TimeSheetId = timeSheetId;
 
                     if (existingAggregateIds.Contains(mAggregate.TimeSheetAggregateId))
                     {
-                        var eAggregateToUpdate = timeSheet.TimeSheetAggregate.First(e => e.TimeSheetAggregateId == mAggregate.TimeSheetAggregateId);
-                        await RemoveTimeSheetAggregateAbsence(eAggregateToUpdate.TimeSheetAggregateId);
-                        await RemoveTimeSheetAggregateOvertime(eAggregateToUpdate.TimeSheetAggregateId);
+                        var eAggregateToUpdate = timeSheet.TimeSheetAggregate.FirstOrDefault(e => e.TimeSheetAggregateId == mAggregate.TimeSheetAggregateId);
+                        
                         mAggregate.TimeSheetId = eAggregateToUpdate.TimeSheetId;
                         _mapper.Map(mAggregate, eAggregateToUpdate);
                     }
@@ -253,17 +261,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 await RemoveTimeSheetDepartment(timeSheetId);
 
-                foreach (var eDetail in timeSheet.TimeSheetDetail)
-                {
-                    await RemoveTimeSheetDetailShift(eDetail.TimeSheetDetailId);
-                }
+                var timeSheetDetailIds = timeSheet.TimeSheetDetail.Select(d => d.TimeSheetDetailId).ToList();
+                var timeSheetAggregateIds = timeSheet.TimeSheetAggregate.Select(d => d.TimeSheetAggregateId).ToList();
 
-
-                foreach (var eAggregate in timeSheet.TimeSheetAggregate)
-                {
-                    await RemoveTimeSheetAggregateAbsence(eAggregate.TimeSheetAggregateId);
-                    await RemoveTimeSheetAggregateOvertime(eAggregate.TimeSheetAggregateId);
-                }
+                await RemoveTimeSheetDetailShift(timeSheetDetailIds);
+                await RemoveTimeSheetAggregateAbsence(timeSheetAggregateIds);
+                await RemoveTimeSheetAggregateOvertime(timeSheetAggregateIds);
 
                 await _organizationDBContext.SaveChangesAsync();
 
@@ -1358,26 +1361,26 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await _organizationDBContext.TimeSheetDepartment
                     .Where(m => m.TimeSheetId == timeSheetId).DeleteByBatch();
         }
-        private async Task RemoveTimeSheetAggregateAbsence(long timeSheetAggregateId)
+        private async Task RemoveTimeSheetAggregateAbsence(List<long> timeSheetAggregateIds)
         {
             await _organizationDBContext.TimeSheetAggregateAbsence
-                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).DeleteByBatch();
+                       .Where(m => timeSheetAggregateIds.Contains(m.TimeSheetAggregateId)).DeleteByBatch();
         }
-        private async Task RemoveTimeSheetAggregateOvertime(long timeSheetAggregateId)
+        private async Task RemoveTimeSheetAggregateOvertime(List<long> timeSheetAggregateIds)
         {
             await _organizationDBContext.TimeSheetAggregateOvertime
-                    .Where(m => m.TimeSheetAggregateId == timeSheetAggregateId).DeleteByBatch();
+                    .Where(m => timeSheetAggregateIds.Contains(m.TimeSheetAggregateId)).DeleteByBatch();
         }
-        private async Task RemoveTimeSheetDetailShift(long timeSheetDetailId)
+        private async Task RemoveTimeSheetDetailShift(List<long> timeSheetDetailIds)
         {
             await _organizationDBContext.TimeSheetDetailShiftCounted
-                    .Where(c => c.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
+                    .Where(c => timeSheetDetailIds.Contains(c.TimeSheetDetailId)).DeleteByBatch();
 
             await _organizationDBContext.TimeSheetDetailShiftOvertime
-                    .Where(o => o.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
+                    .Where(o => timeSheetDetailIds.Contains(o.TimeSheetDetailId)).DeleteByBatch();
 
             await _organizationDBContext.TimeSheetDetailShift
-                    .Where(m => m.TimeSheetDetailId == timeSheetDetailId).DeleteByBatch();
+                    .Where(m => timeSheetDetailIds.Contains(m.TimeSheetDetailId)).DeleteByBatch();
         }
 
     }
