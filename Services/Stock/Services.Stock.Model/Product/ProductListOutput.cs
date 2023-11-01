@@ -78,5 +78,7 @@ namespace VErp.Services.Stock.Model.Product
         public int? TargetProductivityId { get; set; }
         public string AccountNumber { get; set; }
 
+        public IList<int> StockIds { get; set; }
+
     }
 }
