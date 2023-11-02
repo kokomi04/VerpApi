@@ -9,7 +9,7 @@ namespace VErp.Services.Accountancy.Service.Input
 {
     public interface ICalcBillServiceBase
     {
-        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate, string accoutantNumber);
+        Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(CalcFixExchangeRateRequestModel req);
 
         Task<DataResultModel> FixExchangeRateDetail(long fromDate, long toDate, int currency, string accountNumber, string partnerId);
 

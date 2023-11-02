@@ -1199,7 +1199,7 @@ namespace VErp.Services.Accountancy.Service.Category
 
                     foreach (var item in groupByFilter)
                     {
-                        var referObject = lst.FirstOrDefault(o => o[item.CategoryFieldName].ToString() == item.Value);
+                        var referObject = lst.FirstOrDefault(o => o[item.CategoryFieldName].ToString()?.ToLower() == item.Value?.ToLower());
                         if (referObject != null)
                         {
                             titles.Add(new MapObjectOutputModel
