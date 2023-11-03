@@ -120,7 +120,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchaseOrderOutputList>> GetList(PurchaseOrderFilterRequestModel req)
         {
-            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
+            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, createByUserId, checkByUserId, censorByUserId,  isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
 
             keyword = keyword?.Trim();
 
@@ -216,6 +216,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (poProcessStatusId.HasValue)
             {
                 query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (createByUserId.HasValue)
+            {
+                query = query.Where(q => q.CreatedByUserId == createByUserId);
+            }
+
+            if (checkByUserId.HasValue)
+            {
+                query = query.Where(q=> q.CheckedByUserId == checkByUserId);
+            }
+
+            if (censorByUserId.HasValue)
+            {
+                query = query.Where(q => q.CensorByUserId == censorByUserId);
             }
 
             if (isApproved.HasValue)
@@ -314,7 +329,7 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
 
         public async Task<PageData<PurchaseOrderOutputListByProduct>> GetListByProduct(PurchaseOrderFilterRequestModel req)
         {
-            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
+            var (keyword, poCodes, purchaseOrderTypes, productIds, purchaseOrderStatusId, poProcessStatusId,createByUserId, checkByUserId, censorByUserId, isChecked, isApproved, fromDate, toDate, sortBy, asc, page, size, filters) = req;
 
             keyword = (keyword ?? "").Trim();
 
@@ -466,6 +481,21 @@ namespace VErp.Services.PurchaseOrder.Service.Implement
             if (poProcessStatusId.HasValue)
             {
                 query = query.Where(q => q.PoProcessStatusId == (int)poProcessStatusId.Value);
+            }
+
+            if (createByUserId.HasValue)
+            {
+                query = query.Where(q => q.CreatedByUserId == createByUserId);
+            }
+
+            if (checkByUserId.HasValue)
+            {
+                query = query.Where(q => q.CheckedByUserId == checkByUserId);
+            }
+
+            if (censorByUserId.HasValue)
+            {
+                query = query.Where(q => q.CensorByUserId == censorByUserId);
             }
 
             if (isChecked.HasValue)
