@@ -128,7 +128,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 _mapper.Map(model.TimeSheetDepartment, eTimeSheetDPMs);
                 _organizationDBContext.TimeSheetDepartment.AddRange(eTimeSheetDPMs);
 
-                var existingDetailSet = new HashSet<(long EmployeeId, long Date)>(timeSheetDetails.Select(e => (e.EmployeeId, e.Date.GetUnix())));
+                var eDetailSet = new HashSet<(long EmployeeId, long Date)>(timeSheetDetails.Select(e => (e.EmployeeId, e.Date.GetUnix())));
                 var modelDetailSet = new HashSet<(long EmployeeId, long Date)>(model.TimeSheetDetail.Select(m => (m.EmployeeId, m.Date)));
 
                 var detailsToRemove = timeSheetDetails.Where(e => !modelDetailSet.Contains((e.EmployeeId, e.Date.GetUnix()))).ToList();
@@ -137,7 +137,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     detail.IsDeleted = true;
                 }
 
-                var timeSheetDetailIds = model.TimeSheetDetail.Where(d => existingDetailSet.Contains((d.EmployeeId, d.Date))).Select(d => d.TimeSheetDetailId).ToList();
+                var timeSheetDetailIds = timeSheetDetails.Where(d => modelDetailSet.Contains((d.EmployeeId, d.Date.GetUnix()))).Select(d => d.TimeSheetDetailId).ToList();
 
                 await RemoveTimeSheetDetailShift(timeSheetDetailIds);
 
@@ -147,11 +147,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     mDetail.TimeSheetId = timeSheetId;
 
-                    if (existingDetailSet.Contains((mDetail.EmployeeId, mDetail.Date)))
+                    if (eDetailSet.Contains((mDetail.EmployeeId, mDetail.Date)))
                     {
                         var eDetailToUpdate = timeSheetDetails.FirstOrDefault(e => e.EmployeeId == mDetail.EmployeeId && e.Date.GetUnix() == mDetail.Date);
                         mDetail.TimeSheetDetailId = eDetailToUpdate.TimeSheetDetailId;
-                        //await RemoveTimeSheetDetailShift(eDetailToUpdate.TimeSheetDetailId);
 
                         var counteds = new List<TimeSheetDetailShiftCountedModel>();
 
@@ -192,10 +191,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _organizationDBContext.TimeSheetDetail.AddRangeAsync(newDetails);
                 //await _organizationDBContext.SaveChangesAsync();
 
-                var existingAggregateIds = new HashSet<long>(timeSheet.TimeSheetAggregate.Select(e => e.TimeSheetAggregateId));
+                var eAggregateIds = new HashSet<long>(timeSheetAggregates.Select(e => e.TimeSheetAggregateId));
                 var modelAggregateIds = new HashSet<long>(model.TimeSheetAggregate.Select(m => m.TimeSheetAggregateId));
 
-                var aggregatesToRemove = timeSheet.TimeSheetAggregate.Where(e => !modelAggregateIds.Contains(e.TimeSheetAggregateId)).ToList();
+                var aggregatesToRemove = timeSheetAggregates.Where(e => !modelAggregateIds.Contains(e.TimeSheetAggregateId)).ToList();
                 foreach (var aggregate in aggregatesToRemove)
                 {
                     aggregate.IsDeleted = true;
@@ -203,7 +202,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 var newAggregates = new List<TimeSheetAggregate>();
 
-                var timeSheetAggregateIds = model.TimeSheetAggregate.Where(a => existingAggregateIds.Contains(a.TimeSheetAggregateId)).Select(d => d.TimeSheetAggregateId).ToList();
+                var timeSheetAggregateIds = model.TimeSheetAggregate.Where(a => eAggregateIds.Contains(a.TimeSheetAggregateId)).Select(d => d.TimeSheetAggregateId).ToList();
 
                 await RemoveTimeSheetAggregateAbsence(timeSheetAggregateIds);
                 await RemoveTimeSheetAggregateOvertime(timeSheetAggregateIds);
@@ -212,9 +211,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     mAggregate.TimeSheetId = timeSheetId;
 
-                    if (existingAggregateIds.Contains(mAggregate.TimeSheetAggregateId))
+                    if (eAggregateIds.Contains(mAggregate.TimeSheetAggregateId))
                     {
-                        var eAggregateToUpdate = timeSheet.TimeSheetAggregate.FirstOrDefault(e => e.TimeSheetAggregateId == mAggregate.TimeSheetAggregateId);
+                        var eAggregateToUpdate = timeSheetAggregates.FirstOrDefault(e => e.TimeSheetAggregateId == mAggregate.TimeSheetAggregateId);
                         
                         mAggregate.TimeSheetId = eAggregateToUpdate.TimeSheetId;
                         _mapper.Map(mAggregate, eAggregateToUpdate);
