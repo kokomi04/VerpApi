@@ -625,6 +625,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         //(X/2)
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
                         detailShift.WorkCounted = shift.ConfirmationUnit / 2;
+
+                        SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
+
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
                     }
                     else
@@ -634,10 +637,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         {
                             //Trễ (TR)
 
-                            var actualMinsLate = shift.IsCalculationForLate ? (long)(timeInRaw - shift.EntryTime) : (long)(timeInRaw - shift.EntryTime) - shift.MinsAllowToLate * 60;
-                            actualMinsLate /= 60;
-
-                            detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
+                            SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
 
                             if (shift.IsSubtractionForLate)
                             {
@@ -649,8 +649,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                                 detailShift.WorkCounted = shift.ConfirmationUnit;
                                 detailShift.ActualWorkMins = shift.ConvertToMins;
                             }    
-                            
-                            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BeLateSymbol));
                         }
                         else
                         {
@@ -695,6 +693,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     {
                         //(X/2)
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
+                        detailShift.WorkCounted = shift.ConfirmationUnit / 2;
+
+                        SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
+
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
                     }
                     else
@@ -703,10 +705,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             || ((shift.ExitTime - timeOutRaw) > shift.MaxEarlyMins * 60 && (shift.ExceededEarlyAbsenceTypeId == null || shift.ExceededEarlyAbsenceTypeId == 0)))
                         {
                             //Sớm (SM)
-                            var actualMinsEarly = shift.IsCalculationForEarly ? (long)(shift.ExitTime - timeOutRaw) : (long)(shift.ExitTime - timeOutRaw) - shift.MinsAllowToEarly * 60;
-                            actualMinsEarly /= 60;
-
-                            detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
+                            SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
 
                             if (shift.IsSubtractionForEarly)
                             {
@@ -947,6 +946,25 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     break;
             }
             return overTimeLevelId;
+        }
+
+        private void SetsMinsLate(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeInRaw)
+        {
+            var actualMinsLate = shift.IsCalculationForLate ? (long)(timeInRaw - shift.EntryTime) : (long)(timeInRaw - shift.EntryTime) - shift.MinsAllowToLate * 60;
+            actualMinsLate /= 60;
+
+            detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
+
+            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BeLateSymbol));
+        }
+        private void SetsMinsEarly(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeOutRaw)
+        {
+            var actualMinsEarly = shift.IsCalculationForEarly ? (long)(shift.ExitTime - timeOutRaw) : (long)(shift.ExitTime - timeOutRaw) - shift.MinsAllowToEarly * 60;
+            actualMinsEarly /= 60;
+
+            detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
+
+            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.EarlySymbol));
         }
 
         //public CategoryNameModel GetFieldDataForMapping(long beginDate, long endDate)
