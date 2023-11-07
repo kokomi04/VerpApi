@@ -378,7 +378,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var ent = new TimeSheetRaw
                 {
                     EmployeeId = (long)employee[EmployeeConstants.EMPLOYEE_ID],
-                    Date = item.Date.UnixToDateTime().Value,
+                    Date = item.Date.UnixToDateTime(-_currentContextService.TimeZoneOffset),
                     Time = TimeSpan.FromSeconds(item.Time),
                     TimeKeepingMethod = (int)TimeKeepingMethodType.Software,
                     TimeKeepingRecorder = (await _userService.GetInfo(_currentContextService.UserId)).EmployeeCode
