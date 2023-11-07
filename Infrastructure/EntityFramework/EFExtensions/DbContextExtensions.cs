@@ -493,23 +493,29 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 Expression toDate = null;
                 if (clause.DataType == EnumDataType.Date)
                 {
-                    if (clause.Value.IsNullOrEmptyObject())
+                    if (clause.Value.IsNullOrEmptyObject() )
                     {
                         fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
                         toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
-                    }
+                    } 
                     else
                     {
                         var date = ((long)clause.Value).UnixToDateTime(timeZoneOffset);
                         var fDate = new DateTime(date.Year, date.Month, date.Day).ToUtc(timeZoneOffset);
                         var tDate = new DateTime(date.Year, date.Month, date.Day, 23, 59, 59, 990).ToUtc(timeZoneOffset);
-
-                        fromDate = Expression.PropertyOrField(Expression.Constant(new { p = fDate }), "p");
-                        toDate = Expression.PropertyOrField(Expression.Constant(new { p = tDate }), "p");
+                        if (Nullable.GetUnderlyingType(prop.Type) != null)
+                        {
+                            fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)fDate }), "p");
+                            toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)tDate }), "p");
+                        } else
+                        {
+                            fromDate = Expression.PropertyOrField(Expression.Constant(new { p = fDate }), "p");
+                            toDate = Expression.PropertyOrField(Expression.Constant(new { p = tDate }), "p");
+                        }
+                        
                     }
 
                 }
-
                 if (clause.Operator != EnumOperator.InList)
                 {
                     dbValue = clause.Value.IsNullOrEmptyObject() ? clause.Value : clause.DataType.GetSqlValue(clause.Value);
