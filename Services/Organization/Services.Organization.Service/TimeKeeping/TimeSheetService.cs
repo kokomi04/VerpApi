@@ -602,8 +602,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.TimeIn = timeInRaw;
 
                 if (timeInRaw <= shift.EntryTime
-                    || !shift.IsSubtractionForLate
-                    || (shift.IsSubtractionForLate && shift.MinsAllowToLate * 60 > (timeInRaw - shift.EntryTime)))
+                    || (shift.MinsAllowToLate * 60 >= (timeInRaw - shift.EntryTime)))
                 {
                     //Đủ công (X)
                     if (shift.IsNightShift)
@@ -640,8 +639,17 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
 
-                            detailShift.WorkCounted = shift.ConfirmationUnit * (1 - (decimal)detailShift.MinsLate / shift.ConvertToMins);
-                            detailShift.ActualWorkMins = shift.ConvertToMins - (long)detailShift.MinsLate;
+                            if (shift.IsSubtractionForLate)
+                            {
+                                detailShift.WorkCounted = shift.ConfirmationUnit * (1 - (decimal)detailShift.MinsLate / shift.ConvertToMins);
+                                detailShift.ActualWorkMins = shift.ConvertToMins - (long)detailShift.MinsLate;
+                            }
+                            else
+                            {
+                                detailShift.WorkCounted = shift.ConfirmationUnit;
+                                detailShift.ActualWorkMins = shift.ConvertToMins;
+                            }    
+                            
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.BeLateSymbol));
                         }
                         else
@@ -673,8 +681,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.TimeOut = timeOutRaw;
 
                 if (timeOutRaw >= shift.ExitTime
-                    || !shift.IsSubtractionForEarly
-                    || (shift.IsSubtractionForEarly && shift.MinsAllowToEarly * 60 > (shift.ExitTime - timeOutRaw)))
+                    || shift.MinsAllowToEarly * 60 >= (shift.ExitTime - timeOutRaw))
                 {
                     if (detailShift.HasOvertimePlan && shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByTotalEarlyLateHours)
                     {
@@ -701,13 +708,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
 
-                            detailShift.WorkCounted -= shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
-                            if (detailShift.WorkCounted < 0)
-                                detailShift.WorkCounted = 0;
+                            if (shift.IsSubtractionForEarly)
+                            {
+                                detailShift.WorkCounted -= shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
+                                if (detailShift.WorkCounted < 0)
+                                    detailShift.WorkCounted = 0;
 
-                            detailShift.ActualWorkMins -= (long)detailShift.MinsEarly;
-                            if (detailShift.ActualWorkMins < 0)
-                                detailShift.ActualWorkMins = 0;
+                                detailShift.ActualWorkMins -= (long)detailShift.MinsEarly;
+                                if (detailShift.ActualWorkMins < 0)
+                                    detailShift.ActualWorkMins = 0;
+                            }
 
                             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.EarlySymbol));
                         }
