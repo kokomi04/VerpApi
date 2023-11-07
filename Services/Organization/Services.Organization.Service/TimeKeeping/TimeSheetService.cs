@@ -626,9 +626,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
                         detailShift.WorkCounted = shift.ConfirmationUnit / 2;
 
-                        SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
-
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
+
+                        SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
                     }
                     else
                     {
@@ -695,9 +695,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         detailShift.ActualWorkMins = shift.ConvertToMins / 2;
                         detailShift.WorkCounted = shift.ConfirmationUnit / 2;
 
-                        SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
-
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
+
+                        SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
                     }
                     else
                     {
@@ -951,6 +951,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         private void SetsMinsLate(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeInRaw)
         {
             var actualMinsLate = shift.IsCalculationForLate ? (long)(timeInRaw - shift.EntryTime) : (long)(timeInRaw - shift.EntryTime) - shift.MinsAllowToLate * 60;
+
+            if (timeInRaw > shift.LunchTimeFinish)
+            {
+                actualMinsLate -= (long)(shift.LunchTimeFinish - shift.LunchTimeStart);
+            }
+            else if (timeInRaw > shift.LunchTimeStart)
+            {
+                actualMinsLate -= (long)(timeInRaw - shift.LunchTimeStart);
+            }
             actualMinsLate /= 60;
 
             detailShift.MinsLate = RoundValue((long)actualMinsLate, shift.IsRoundBackForLate, shift.MinsRoundForLate);
@@ -960,6 +969,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         private void SetsMinsEarly(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeOutRaw)
         {
             var actualMinsEarly = shift.IsCalculationForEarly ? (long)(shift.ExitTime - timeOutRaw) : (long)(shift.ExitTime - timeOutRaw) - shift.MinsAllowToEarly * 60;
+
+            if (timeOutRaw < shift.LunchTimeStart)
+            {
+                actualMinsEarly -= (long)(shift.LunchTimeFinish - shift.LunchTimeStart);
+            }
+            else if (timeOutRaw < shift.LunchTimeFinish)
+            {
+                actualMinsEarly -= (long)(shift.LunchTimeFinish - timeOutRaw);
+            }
             actualMinsEarly /= 60;
 
             detailShift.MinsEarly = RoundValue(actualMinsEarly, shift.IsRoundBackForEarly, shift.MinsRoundForEarly);
