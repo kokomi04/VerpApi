@@ -200,7 +200,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
             return await GetListUserActivityLog(null, null, null, null, null, billTypeId, objectId, objectTypeId, null, null, false, pageIdex, pageSize);
         }
 
-        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 20)
+        public async Task<PageData<UserActivityLogOuputModel>> GetListUserActivityLog(long[] userActivityLogIds, string keyword, long? fromDate, long? toDate, int? userId, int? billTypeId, long? objectId, EnumObjectType? objectTypeId, int? actionTypeId, string sortBy, bool asc, int page = 1, int size = 100)
         {
             var query = _activityLogContext.UserActivityLog.AsNoTracking().AsQueryable();
             if (userActivityLogIds?.Length > 0)
@@ -337,7 +337,7 @@ namespace VErp.Services.Master.Service.Activity.Implement
         {
             try
             {
-                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting.WebPush.ActionUrl)
+                var actionUrl = !string.IsNullOrWhiteSpace(_appSetting?.WebPush?.ActionUrl)
                     && (_appSetting.WebPush.ActionUrl.StartsWith("http://") || _appSetting.WebPush.ActionUrl.StartsWith("https://")) ? $"{_appSetting.WebPush.ActionUrl}redirect/{data.ObjectTypeId}/{data.ObjectId}/{data.BillTypeId}" : "";
                 foreach (var sub in lsSubscription)
                 {

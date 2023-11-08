@@ -138,11 +138,19 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<TimeSheetAggregate> TimeSheetAggregate { get; set; }
 
-    public virtual DbSet<TimeSheetDayOff> TimeSheetDayOff { get; set; }
+    public virtual DbSet<TimeSheetAggregateAbsence> TimeSheetAggregateAbsence { get; set; }
+
+    public virtual DbSet<TimeSheetAggregateOvertime> TimeSheetAggregateOvertime { get; set; }
+
+    public virtual DbSet<TimeSheetDepartment> TimeSheetDepartment { get; set; }
 
     public virtual DbSet<TimeSheetDetail> TimeSheetDetail { get; set; }
 
-    public virtual DbSet<TimeSheetOvertime> TimeSheetOvertime { get; set; }
+    public virtual DbSet<TimeSheetDetailShift> TimeSheetDetailShift { get; set; }
+
+    public virtual DbSet<TimeSheetDetailShiftCounted> TimeSheetDetailShiftCounted { get; set; }
+
+    public virtual DbSet<TimeSheetDetailShiftOvertime> TimeSheetDetailShiftOvertime { get; set; }
 
     public virtual DbSet<TimeSheetRaw> TimeSheetRaw { get; set; }
 
@@ -163,14 +171,6 @@ public partial class OrganizationDBContext : DbContext
         modelBuilder.Entity<AbsenceTypeSymbol>(entity =>
         {
             entity.Property(e => e.CreatedDatetimeUtc).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.IsCounted)
-                .IsRequired()
-                .HasDefaultValueSql("((1))");
-            entity.Property(e => e.IsUsed)
-                .IsRequired()
-                .HasDefaultValueSql("((1))");
-            entity.Property(e => e.MaxOfDaysOffPerMonth).HasDefaultValueSql("((1))");
-            entity.Property(e => e.SalaryRate).HasDefaultValueSql("((1))");
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(20);
@@ -242,6 +242,7 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<CountedSymbol>(entity =>
         {
+            entity.Property(e => e.CountedPriority).HasDefaultValueSql("((1))");
             entity.Property(e => e.SymbolCode)
                 .IsRequired()
                 .HasMaxLength(50);
@@ -485,21 +486,6 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.RequireFiltersName).HasMaxLength(128);
             entity.Property(e => e.Title).HasMaxLength(128);
             entity.Property(e => e.TitleStyleJson).HasMaxLength(512);
-
-            entity.HasOne(d => d.HrArea).WithMany(p => p.HrAreaField)
-                .HasForeignKey(d => d.HrAreaId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_HRAreaField_HRArea");
-
-            entity.HasOne(d => d.HrField).WithMany(p => p.HrAreaField)
-                .HasForeignKey(d => d.HrFieldId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_HRAreaField_HRField");
-
-            entity.HasOne(d => d.HrType).WithMany(p => p.HrAreaField)
-                .HasForeignKey(d => d.HrTypeId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_HRAreaField_HRType");
         });
 
         modelBuilder.Entity<HrBill>(entity =>
@@ -975,20 +961,20 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheet>(entity =>
         {
-            entity.Property(e => e.Note)
+            entity.Property(e => e.Note).HasMaxLength(1024);
+            entity.Property(e => e.Title)
                 .IsRequired()
-                .HasMaxLength(1024);
+                .HasMaxLength(512);
         });
 
         modelBuilder.Entity<TimeSheetAggregate>(entity =>
         {
+            entity.Property(e => e.CountedHoliday).HasColumnType("decimal(18, 5)");
+            entity.Property(e => e.CountedHolidayHour).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.CountedWeekday).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.CountedWeekdayHour).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.CountedWeekend).HasColumnType("decimal(18, 5)");
             entity.Property(e => e.CountedWeekendHour).HasColumnType("decimal(18, 5)");
-            entity.Property(e => e.Overtime1).HasColumnType("decimal(18, 5)");
-            entity.Property(e => e.Overtime2).HasColumnType("decimal(18, 5)");
-            entity.Property(e => e.Overtime3).HasColumnType("decimal(18, 5)");
 
             entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetAggregate)
                 .HasForeignKey(d => d.TimeSheetId)
@@ -996,12 +982,36 @@ public partial class OrganizationDBContext : DbContext
                 .HasConstraintName("FK_TimeSheetAggregate_TimeSheet");
         });
 
-        modelBuilder.Entity<TimeSheetDayOff>(entity =>
+        modelBuilder.Entity<TimeSheetAggregateAbsence>(entity =>
         {
-            entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetDayOff)
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.AbsenceTypeSymbolId }).HasName("PK__TimeShee__7E7CA500C2F33F4B");
+
+            entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateAbsence)
+                .HasForeignKey(d => d.TimeSheetAggregateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TimeSheet__TimeS__7F772ADD");
+        });
+
+        modelBuilder.Entity<TimeSheetAggregateOvertime>(entity =>
+        {
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.OvertimeLevelId }).HasName("PK__TimeShee__B3138CBB6849F3DF");
+
+            entity.Property(e => e.CountedMins).HasColumnType("decimal(18, 5)");
+
+            entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateOvertime)
+                .HasForeignKey(d => d.TimeSheetAggregateId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TimeSheet__TimeS__7C9ABE32");
+        });
+
+        modelBuilder.Entity<TimeSheetDepartment>(entity =>
+        {
+            entity.HasKey(e => new { e.TimeSheetId, e.DepartmentId }).HasName("PK__TimeShee__CD052EF4B37C1EC7");
+
+            entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetDepartment)
                 .HasForeignKey(d => d.TimeSheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TimeSheetDayOff_TimeSheetDayOff");
+                .HasConstraintName("FK__TimeSheet__TimeS__62DAEC2F");
         });
 
         modelBuilder.Entity<TimeSheetDetail>(entity =>
@@ -1012,19 +1022,36 @@ public partial class OrganizationDBContext : DbContext
                 .HasConstraintName("FK_TimeSheetDetail_TimeSheet");
         });
 
-        modelBuilder.Entity<TimeSheetOvertime>(entity =>
+        modelBuilder.Entity<TimeSheetDetailShift>(entity =>
         {
-            entity.Property(e => e.MinsOvertime).HasColumnType("decimal(18, 5)");
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId }).HasName("PK__TimeShee__3F25922677ED5919");
 
-            entity.HasOne(d => d.OvertimeLevel).WithMany(p => p.TimeSheetOvertime)
-                .HasForeignKey(d => d.OvertimeLevelId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TimeSheetOvertime_OvertimeLevel");
+            entity.Property(e => e.WorkCounted).HasColumnType("decimal(18, 3)");
 
-            entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetOvertime)
-                .HasForeignKey(d => d.TimeSheetId)
+            entity.HasOne(d => d.TimeSheetDetail).WithMany(p => p.TimeSheetDetailShift)
+                .HasForeignKey(d => d.TimeSheetDetailId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_TimeSheetOvertime_TimeSheet");
+                .HasConstraintName("FK__TimeSheet__TimeS__6893C585");
+        });
+
+        modelBuilder.Entity<TimeSheetDetailShiftCounted>(entity =>
+        {
+            entity.HasKey(e => e.TimeSheetDetailShiftCountedId).HasName("PK__TimeShee__E7FF6B3A57BC0FCC");
+
+            entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftCounted)
+                .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TimeSheetDetailS__6B703230");
+        });
+
+        modelBuilder.Entity<TimeSheetDetailShiftOvertime>(entity =>
+        {
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.OvertimeLevelId, e.OvertimeType }).HasName("PK__TimeShee__19101DA19A46D34C");
+
+            entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftOvertime)
+                .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__TimeSheetDetailS__6E4C9EDB");
         });
 
         modelBuilder.Entity<TimeSheetRaw>(entity =>

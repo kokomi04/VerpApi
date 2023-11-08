@@ -89,9 +89,44 @@ namespace Verp.Services.ReportConfig.Service.Implement
             return columns;
         }*/
 
-        public static IList<ReportColumnModel> RepeatColumnAndSortProcess(IList<ReportColumnModel> columns, IList<NonCamelCaseDictionary> dataTable)
+        public static void NormalizeColumnGroup(IList<ReportColumnModel> columns)
         {
-            if (dataTable == null || dataTable.Count == 0)
+            var lst = columns.OrderBy(s => s.SortOrder);
+            foreach (var c in lst)
+            {
+                if (c.IsColGroup)
+                {
+                    c.ColGroupName = lst.Where(s => s.IsColGroup && c.ColGroupId == s.ColGroupId).FirstOrDefault()?.ColGroupName;
+                }
+                else
+                {
+                    c.ColGroupName = c.Name;
+                }
+            }
+        }
+        public static NonCamelCaseDictionary GetFistRow(IList<NonCamelCaseDictionary> lst)
+        {
+            var firstRow = new NonCamelCaseDictionary();
+            foreach (var row in lst)
+            {
+                foreach (var (k, v) in row)
+                {
+                    if (!firstRow.ContainsKey(k))
+                    {
+                        firstRow.Add(k, v);
+                    }
+                    else if (firstRow[k].IsNullOrEmptyObject())
+                    {
+                        firstRow[k] = v;
+                    }
+
+                }
+            }
+            return firstRow;
+        }
+        public static IList<ReportColumnModel> RepeatColumnAndSortProcess(IList<ReportColumnModel> columns, NonCamelCaseDictionary firstRow)
+        {
+            if (firstRow == null || firstRow.Count == 0)
                 return columns;
 
             columns = columns.OrderBy(c => c.SortOrder).ToList();
@@ -114,23 +149,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
             };
 
 
-            var firstRow = new NonCamelCaseDictionary();
-            foreach (var row in dataTable)
-            {
-                foreach (var (k, v) in row)
-                {
-                    if (!firstRow.ContainsKey(k))
-                    {
-                        firstRow.Add(k, v);
-                    }
-                    else if (firstRow[k].IsNullOrEmptyObject())
-                    {
-                        firstRow[k] = v;
-                    }
-
-                }
-            }
-
 
             var dynamicColumns = new List<ReportColumnModel>();
             foreach (var (key, _) in firstRow)
@@ -141,12 +159,18 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (column.IsRepeat != true)
                     {
-                        if (!string.IsNullOrWhiteSpace(column.ColGroupName) && firstRow.ContainsKey(column.ColGroupName) && !firstRow[column.ColGroupName].IsNullOrEmptyObject())
+                        var groupName = column.ColGroupName ?? "";
+                        groupName = groupName?.Trim()?.Trim('[')?.Trim(']');
+
+                        if (groupName.StartsWith('[') && !string.IsNullOrWhiteSpace(groupName) && firstRow.ContainsKey(groupName) && !firstRow[groupName].IsNullOrEmptyObject())
                         {
-                            column.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                            column.ColGroupName = firstRow[groupName]?.ToString();
                         }
 
-                        if (!string.IsNullOrWhiteSpace(column.Name) && firstRow.ContainsKey(column.Name) && !firstRow[column.Name].IsNullOrEmptyObject())
+                        var colName = column.Name ?? "";
+                        colName = colName?.Trim()?.Trim('[')?.Trim(']');
+
+                        if (colName.StartsWith('[') && !string.IsNullOrWhiteSpace(colName) && firstRow.ContainsKey(colName) && !firstRow[colName].IsNullOrEmptyObject())
                         {
                             column.Name = firstRow[column.Name]?.ToString();
                         }
@@ -163,29 +187,35 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         var newColumn = ObjectUtils.DeepClone(column);
 
-                        var nameGroupColumn = $"{column.ColGroupName}{suffixKey}";
+                        if (column.ColGroupName?.StartsWith('[') == true)
+                        {
+                            var nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}{suffixKey}";
 
-                        if (firstRow.ContainsKey(nameGroupColumn))
-                        {
-                            newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
-                        }
-                        else
-                        {
-                            if (!string.IsNullOrWhiteSpace(newColumn.ColGroupName) && firstRow.ContainsKey(column.ColGroupName))
+                            if (firstRow.ContainsKey(nameGroupColumn))
                             {
-                                newColumn.ColGroupName = firstRow[column.ColGroupName]?.ToString();
+                                newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
                             }
+                            else
+                            {
+                                nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}";
 
+                                if (!string.IsNullOrWhiteSpace(nameGroupColumn) && firstRow.ContainsKey(nameGroupColumn))
+                                {
+                                    newColumn.ColGroupName = firstRow[nameGroupColumn]?.ToString();
+                                }
+
+                            }
                         }
 
-
-                        var nameColumn = $"{column.Name}{suffixKey}";
-
-                        if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
+                        if (column.Name?.StartsWith('[') == true)
                         {
-                            newColumn.Name = firstRow[nameColumn]?.ToString();
-                        }
+                            var nameColumn = $"{column.Name.Trim('[')?.Trim(']')}{suffixKey}";
 
+                            if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
+                            {
+                                newColumn.Name = firstRow[nameColumn]?.ToString();
+                            }
+                        }
 
                         newColumn.Alias = $"{column.Alias}{suffixKey}";
                         newColumn.Value = $"{column.Value}{suffixKey}";
@@ -211,6 +241,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             {
                 columns.Add(newColumn);
             }
+
 
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)

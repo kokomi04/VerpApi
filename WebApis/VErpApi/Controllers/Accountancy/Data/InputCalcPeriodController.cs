@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.AccountantEnum;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ApiCore.Attributes;
 using VErp.Services.Accountancy.Model.Data;
 using VErp.Services.Accountancy.Model.Input;
 using VErp.Services.Accountancy.Service.Input;
@@ -39,11 +41,12 @@ namespace VErpApi.Controllers.Accountancy.Data
         }
 
 
-        [HttpGet]
+        [HttpPost]
+        [VErpAction(EnumActionType.View)]
         [Route("CalcFixExchangeRate")]
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromQuery] long toDate, [FromQuery] int currency, [FromQuery] int exchangeRate, [FromQuery] string accoutantNumber)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate([FromBody] CalcFixExchangeRateRequestModel req)
         {
-            return await _calcBillService.CalcFixExchangeRate(toDate, currency, exchangeRate, accoutantNumber);
+            return await _calcBillService.CalcFixExchangeRate(req);
         }
 
         [HttpGet]

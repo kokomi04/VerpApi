@@ -90,5 +90,22 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
             return await _shiftScheduleService.GetListEmployeeViolations();
         }
 
+        [HttpGet]
+        [Route("fieldDataForMapping")]
+        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        {
+            return await _shiftScheduleService.GetFieldDataForMapping();
+        }
+
+        [HttpPost]
+        [Route("{shiftScheduleId}/importFromMapping")]
+        public async Task<List<ShiftScheduleDetailModel>> ImportFromMapping([FromRoute] long shiftScheduleId, [FromQuery] long fromDate, [FromQuery] long toDate, [FromFormString] ImportExcelMapping mapping, IFormFile file)
+        {
+            if (file == null)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams);
+            }
+            return await _shiftScheduleService.ImportShiftScheduleFromMapping(shiftScheduleId, fromDate, toDate, mapping, file.OpenReadStream()).ConfigureAwait(true);
+        }
     }
 }

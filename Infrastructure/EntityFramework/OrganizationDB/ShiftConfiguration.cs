@@ -37,9 +37,7 @@ public partial class ShiftConfiguration
 
     public TimeSpan EndTimeOutRecord { get; set; }
 
-    public bool IsSkipSaturdayWithShift { get; set; }
-
-    public bool IsSkipSundayWithShift { get; set; }
+    public bool IsSkipWeeklyOffDayWithShift { get; set; }
 
     public bool IsSkipHolidayWithShift { get; set; }
 

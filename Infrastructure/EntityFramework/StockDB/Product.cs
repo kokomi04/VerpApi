@@ -107,6 +107,8 @@ public partial class Product
 
     public int ProductionProcessStatusId { get; set; }
 
+    public string AccountNumber { get; set; }
+
     public virtual ICollection<InventoryDetail> InventoryDetail { get; set; } = new List<InventoryDetail>();
 
     public virtual ICollection<InventoryRequirementDetail> InventoryRequirementDetail { get; set; } = new List<InventoryRequirementDetail>();

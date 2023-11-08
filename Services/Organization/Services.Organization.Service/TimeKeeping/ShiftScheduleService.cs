@@ -22,6 +22,7 @@ using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Service.HrConfig;
 using System.Text;
 using Microsoft.Data.SqlClient;
+using VErp.Services.Accountancy.Model.Input;
 
 namespace VErp.Services.Organization.Service.TimeKeeping
 {
@@ -35,23 +36,27 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<IList<NonCamelCaseDictionary>> GetEmployeesByDepartments(List<int> departmentIds);
         Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees();
         Task<List<EmployeeViolationModel>> GetListEmployeeViolations();
+        Task<CategoryNameModel> GetFieldDataForMapping();
+        Task<List<ShiftScheduleDetailModel>> ImportShiftScheduleFromMapping(long shiftScheduleId, long fromDate, long toDate, ImportExcelMapping mapping, Stream stream);
     }
 
     public class ShiftScheduleService : IShiftScheduleService
     {
-        private const string DEPARTMENT_FIELD_NAME = "bo_phan";
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IMapper _mapper;
         private readonly IHrDataService _hrDataService;
+        private readonly ICurrentContextService _currentContextService;
 
         public ShiftScheduleService(
             OrganizationDBContext organizationDBContext,
             IMapper mapper,
-            IHrDataService hrDataService)
+            IHrDataService hrDataService,
+            ICurrentContextService currentContextService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
             _hrDataService = hrDataService;
+            _currentContextService = currentContextService;
         }
 
         public async Task<long> AddShiftSchedule(ShiftScheduleModel model)
@@ -207,7 +212,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tìm thấy nhân viên trong bộ phận");
 
             if (departmentIds != null && departmentIds.Count > 0)
-                lstData = lstData.Where(x => departmentIds.Contains((int)(x[DEPARTMENT_FIELD_NAME]))).ToList();
+                lstData = lstData.Where(x => departmentIds.Contains((int)(x[EmployeeConstants.DEPARTMENT]))).ToList();
 
             return lstData;
         }
@@ -231,7 +236,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
 
             var shifts = await _organizationDBContext.ShiftConfiguration.ToDictionaryAsync(s => s.ShiftConfigurationId);
-            var allViolations = new Dictionary<(int EmployeeId, long AssignedDate), EmployeeViolationModel>();
+            var allViolations = new Dictionary<(long EmployeeId, long AssignedDate), EmployeeViolationModel>();
 
             foreach (var schedule in shiftSchedules)
             {
@@ -348,6 +353,123 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         //    }
         //    return violations;
         //}
+
+        public async Task<CategoryNameModel> GetFieldDataForMapping()
+        {
+            var result = new CategoryNameModel()
+            {
+                CategoryCode = "ShiftSchedule",
+                CategoryTitle = "Phân ca",
+                IsTreeView = false,
+                Fields = new List<CategoryFieldNameModel>()
+            };
+
+            var timeSheetFields = ExcelUtils.GetFieldNameModels<ShiftScheduleImportModel>(null, true);
+
+            result.Fields = timeSheetFields.DistinctBy(f => f.FieldName).ToList();
+            return result;
+        }
+
+        public async Task<List<ShiftScheduleDetailModel>> ImportShiftScheduleFromMapping(long shiftScheduleId, long fromDate, long toDate, ImportExcelMapping mapping, Stream stream)
+        {
+            if (shiftScheduleId != 0)
+            {
+                var shiftSchedule = await _organizationDBContext.ShiftSchedule.FirstOrDefaultAsync(s => s.ShiftScheduleId == shiftScheduleId);
+                if (shiftSchedule == null)
+                {
+                    throw new BadRequestException(GeneralCode.InvalidParams, $"Không tìm thấy bảng phân ca có Id \"{shiftScheduleId}\"");
+                }
+            }
+
+            var hrEmployeeTypeId = await _organizationDBContext.HrType.Where(t => t.HrTypeCode == OrganizationConstants.HR_EMPLOYEE_TYPE_CODE).Select(t => t.HrTypeId).FirstOrDefaultAsync();
+            var employees = await _hrDataService.SearchHrV2(hrEmployeeTypeId, false, new HrTypeBillsFilterModel(), 0, 0);
+
+            var shifts = await _organizationDBContext.ShiftConfiguration.ToListAsync();
+
+            var reader = new ExcelReader(stream);
+
+            var lstData = reader.ReadSheetEntity<ShiftScheduleImportModel>(mapping, (entity, propertyName, value) =>
+            {
+                if (propertyName == nameof(ShiftScheduleImportModel.EmployeeCode))
+                {
+                    if (string.IsNullOrWhiteSpace(value))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Mã nhân viên không được để trống");
+
+                    if (!employees.List.Any(e => e[EmployeeConstants.EMPLOYEE_CODE].ToString() == value))
+                        throw new BadRequestException(GeneralCode.ItemNotFound, $"Mã nhân viên {value} không tồn tại!");
+                }
+
+                if (propertyName == nameof(ShiftScheduleImportModel.AssignedDate))
+                {
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Ngày phân ca không được để trống");
+                    }
+                    if (DateTime.TryParse(value, out DateTime date))
+                    {
+                        var dateUnix = date.Date.GetUnixUtc(_currentContextService.TimeZoneOffset);
+                        if (dateUnix < fromDate || dateUnix > toDate)
+                        {
+                            throw new BadRequestException(GeneralCode.InvalidParams, "Ngày phân ca phải nằm trong khoảng ngày của bảng phân ca hiện tại");
+                        }
+
+                        entity.SetPropertyValue(propertyName, dateUnix);
+                    }
+                    else
+                    {
+                        throw new BadRequestException(GeneralCode.InvalidParams, $"Ngày phân ca sai định dạng");
+                    }
+                    return true;
+                }
+
+                if (propertyName == nameof(ShiftScheduleImportModel.ShiftCodes))
+                {
+                    if (string.IsNullOrWhiteSpace(value))
+                        throw new BadRequestException(GeneralCode.InvalidParams, "Mã ca không được để trống");
+
+                    var lstShiftCode = value.Split(",").Where(item => !string.IsNullOrWhiteSpace(item)).Select(item => item.Trim().ToLower()).ToArray();
+
+                    foreach (var shiftCode in lstShiftCode)
+                    {
+                        if (!shifts.Any(s => s.ShiftCode.ToLower() == shiftCode))
+                            throw new BadRequestException(GeneralCode.ItemNotFound, $"Mã ca {shiftCode} không tồn tại!");
+                    }
+
+                }
+
+                return false;
+            });
+
+            if (!lstData.Any())
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Không tìm thấy bản ghi nào!");
+
+            var result = new List<ShiftScheduleDetailModel>();
+
+            foreach (var item in lstData)
+            {
+                var employee = employees.List.FirstOrDefault(e => e[EmployeeConstants.EMPLOYEE_CODE].ToString() == item.EmployeeCode);
+
+                var lstShiftCode = item.ShiftCodes.Split(",").Select(item => item.Trim().ToLower()).ToArray();
+
+                var shiftIds = shifts.Where(s => lstShiftCode.Contains(s.ShiftCode.ToLower())).Select(s => s.ShiftConfigurationId).ToList();
+
+                foreach (var shiftId in shiftIds)
+                {
+                    var detail = new ShiftScheduleDetailModel
+                    {
+                        ShiftScheduleId = shiftScheduleId,
+                        EmployeeId = (long)employee[EmployeeConstants.EMPLOYEE_ID],
+                        AssignedDate = item.AssignedDate,
+                        ShiftConfigurationId = shiftId,
+                        HasOvertimePlan = true
+                    };
+                    result.Add(detail);
+                }
+            }
+
+            return result;
+        }
+
 
         private async Task RemoveShiftScheduleConfiguration(long shiftScheduleId)
         {

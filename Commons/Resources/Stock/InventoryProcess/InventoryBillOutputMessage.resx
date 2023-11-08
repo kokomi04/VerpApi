@@ -129,6 +129,12 @@
   <data name="NotEnoughBalancePackageQuantityZero" xml:space="preserve">
     <value>Không có số dư trong kiện</value>
   </data>
+  <data name="RequireCustomerIdOrDepartmentId" xml:space="preserve">
+    <value>Vui lòng nhập khách hàng hoặc bộ phận bàn giao</value>
+  </data>
+  <data name="RequireOnlyCustomerIdOrDepartmentId" xml:space="preserve">
+    <value>Vui lòng chỉ nhập khách hàng hoặc bộ phận bàn giao</value>
+  </data>
   <data name="RotationInputStockIsRequired" xml:space="preserve">
     <value>Vui lòng nhập kho nhập</value>
   </data>

@@ -56,7 +56,7 @@ namespace VErp.Commons.Library
             return cell;
         }
 
-        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null, string dataFormat = "", byte[] color = null, short? indention = null)
+        public static ICellStyle GetCellStyle(this ISheet sheet, int fontSize = 11, bool isBold = false, bool isItalic = false, VerticalAlignment? vAlign = null, HorizontalAlignment? hAlign = null, bool isBorder = false, bool isWrap = false, byte[] rgb = null, string dataFormat = "", byte[] color = null, short? indention = null, bool? isHidden=false)
         {
             var style = sheet.Workbook.CreateCellStyle();
             if (vAlign.HasValue)
@@ -107,7 +107,7 @@ namespace VErp.Commons.Library
                 style.Indention = indention.Value;
             }
 
-
+            style.IsHidden = isHidden ?? false;
             return style;
         }
 

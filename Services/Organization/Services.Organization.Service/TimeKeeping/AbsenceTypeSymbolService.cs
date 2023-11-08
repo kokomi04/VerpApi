@@ -86,7 +86,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         public async Task<IList<AbsenceTypeSymbolModel>> GetListAbsenceTypeSymbol()
         {
             return await _organizationDBContext.AbsenceTypeSymbol
-                .OrderBy(o => !o.IsAnnualLeave)
+                .OrderBy(o => !o.IsAnnualLeave).ThenBy(o => !o.IsUnpaidLeave)
                 .ThenBy(o => o.CreatedDatetimeUtc)
                 .ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
         }

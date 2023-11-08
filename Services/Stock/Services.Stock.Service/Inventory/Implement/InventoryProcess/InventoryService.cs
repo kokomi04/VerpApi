@@ -1103,11 +1103,19 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         var inventoryDatas = await inventoryExport.GetOutputInventoryModel();
                         foreach (var inventoryData in inventoryDatas)
                         {
+                            if(inventoryData.CustomerId == null && inventoryData.DepartmentId == null)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(RequireCustomerIdOrDepartmentId);
+                            }
+                            if (inventoryData.CustomerId != null && inventoryData.DepartmentId != null)
+                            {
+                                throw GeneralCode.InvalidParams.BadRequestFormat(RequireOnlyCustomerIdOrDepartmentId);
+                            }
                             if (inventoryData?.OutProducts == null || inventoryData?.OutProducts?.Count == 0)
                             {
                                 throw new BadRequestException("No products found!");
                             }
-
+                            
                             if (inventoryData.InventoryActionId == EnumInventoryAction.Rotation)
                             {
                                 throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);

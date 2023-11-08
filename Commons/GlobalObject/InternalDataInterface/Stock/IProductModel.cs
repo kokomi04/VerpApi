@@ -40,6 +40,7 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Stock
         public bool? IsProduct { get; set; }
         public bool? IsMaterials { get; set; }
         public EnumProductionProcessStatus ProductionProcessStatusId { get; set; }
+        public string AccountNumber { get; set; }
         public decimal Coefficient { get; set; }
         public string Color { get; set; }
 

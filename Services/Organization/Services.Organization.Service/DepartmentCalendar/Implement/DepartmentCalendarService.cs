@@ -11,6 +11,7 @@ using Verp.Resources.Organization.Calendar;
 using Verp.Resources.Organization.Department;
 using VErp.Commons.Constants;
 using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.Enums.Organization;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.Library;
@@ -374,6 +375,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
+                                DayOffType = EnumDayOffType.Weekend,
                                 Content = CalendarTitle.OffDayOfWeek
                             });
                         }
@@ -382,6 +384,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                     lstDayOff.AddRange(departmentDayOffCalendars.Where(dof => dof.CalendarId == departmentCalendar.CalendarId).Select(dof => new DayOffCalendarModel
                     {
                         Day = dof.Day.GetUnix(),
+                        DayOffType = EnumDayOffType.DayOff,
                         Content = dof.Content
                     }));
 
@@ -442,6 +445,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                     lstDayOff.Add(new DayOffCalendarModel
                                     {
                                         Day = day.GetUnix(),
+                                        DayOffType = EnumDayOffType.Weekend,
                                         Content = CalendarTitle.OffDayOfWeek
                                     });
                                 }
@@ -452,6 +456,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                                 && dof.CalendarId == prevCalendar.CalendarId).Select(dof => new DayOffCalendarModel
                                 {
                                     Day = dof.Day.GetUnix(),
+                                    DayOffType = EnumDayOffType.DayOff,
                                     Content = dof.Content
                                 }));
                         }
@@ -491,6 +496,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                             lstDayOff.Add(new DayOffCalendarModel
                             {
                                 Day = day.GetUnix(),
+                                DayOffType = EnumDayOffType.Weekend,
                                 Content = CalendarTitle.OffDayOfWeek
                             });
                         }
@@ -501,6 +507,7 @@ namespace VErp.Services.Organization.Service.DepartmentCalendar.Implement
                         && dof.CalendarId == prevCalendar.CalendarId).Select(dof => new DayOffCalendarModel
                         {
                             Day = dof.Day.GetUnix(),
+                            DayOffType = EnumDayOffType.DayOff,
                             Content = dof.Content
                         }));
                 }

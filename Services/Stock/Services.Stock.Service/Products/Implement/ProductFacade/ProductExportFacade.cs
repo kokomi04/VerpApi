@@ -249,6 +249,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, product.ExpireTimeTypeId?.GetEnumDescription());
                 case nameof(ProductImportModel.StockIds):
                     return (EnumDataType.Text, string.Join(", ", stocks.Where(s => stockIds?.Contains(s.Key) == true).Select(s => s.Value.StockName)));
+                case nameof(ProductImportModel.AccountNumber):
+                    return (EnumDataType.Text, product.AccountNumber);
 
 
             }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using VErp.Commons.GlobalObject;
@@ -8,45 +9,84 @@ namespace Services.Organization.Model.TimeKeeping
 {
     public class TimeSheetModel : IMapFrom<TimeSheet>
     {
-        public TimeSheetModel()
-        {
-            TimeSheetDetails = new List<TimeSheetDetailModel>();
-            TimeSheetAggregates = new List<TimeSheetAggregateModel>();
-            TimeSheetDayOffs = new List<TimeSheetDayOffModel>();
-        }
-
         public long TimeSheetId { get; set; }
+
+        public string Title { get; set; }
+
         public int Month { get; set; }
+
         public int Year { get; set; }
+
+        public long BeginDate { get; set; }
+
+        public long EndDate { get; set; }
+
         public string Note { get; set; }
+
         public bool IsApprove { get; set; }
 
-        public long? BeginDate { get; set; }
-        public long? EndDate { get; set; }
+        public IList<TimeSheetAggregateModel> TimeSheetAggregate { get; set; } = new List<TimeSheetAggregateModel>();
 
-        public IList<TimeSheetDetailModel> TimeSheetDetails { get; set; }
-        public IList<TimeSheetAggregateModel> TimeSheetAggregates { get; set; }
-        public IList<TimeSheetDayOffModel> TimeSheetDayOffs { get; set; }
-        public IList<TimeSheetOvertimeModel> TimeSheetOvertimes { get; set; }
+        public IList<TimeSheetDepartmentModel> TimeSheetDepartment { get; set; } = new List<TimeSheetDepartmentModel>();
+
+        public IList<TimeSheetDetailModel> TimeSheetDetail { get; set; } = new List<TimeSheetDetailModel>();
 
 
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<TimeSheet, TimeSheetModel>()
-            .ForMember(m => m.TimeSheetDetails, v => v.MapFrom(m => m.TimeSheetDetail))
-            .ForMember(m => m.TimeSheetDayOffs, v => v.MapFrom(m => m.TimeSheetDayOff))
-            .ForMember(m => m.TimeSheetAggregates, v => v.MapFrom(m => m.TimeSheetAggregate))
-            .ForMember(m => m.TimeSheetOvertimes, v => v.MapFrom(m => m.TimeSheetOvertime))
+            .ForMember(m => m.TimeSheetDetail, v => v.Ignore())
+            .ForMember(m => m.TimeSheetAggregate, v => v.Ignore())
+            .ForMember(m => m.TimeSheetDepartment, v => v.MapFrom(m => m.TimeSheetDepartment))
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.GetUnix()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.GetUnix()))
             .ReverseMapCustom()
             .ForMember(m => m.TimeSheetDetail, v => v.Ignore())
-            .ForMember(m => m.TimeSheetDayOff, v => v.Ignore())
             .ForMember(m => m.BeginDate, v => v.MapFrom(m => m.BeginDate.UnixToDateTime()))
             .ForMember(m => m.EndDate, v => v.MapFrom(m => m.EndDate.UnixToDateTime()))
             .ForMember(m => m.TimeSheetAggregate, v => v.Ignore())
-            .ForMember(m => m.TimeSheetOvertime, v => v.Ignore());
+            .ForMember(m => m.TimeSheetDepartment, v => v.MapFrom(m => m.TimeSheetDepartment));
         }
+    }
+
+    public class TimeSheetRequestModel : TimeSheetFilterModel
+    {
+        public int Page { get; set; }
+        public int Size { get; set; }
+    }
+
+    public class TimeSheetFilterModel
+    {
+        public string? Keyword { get; set; }
+        public string? OrderBy { get; set; }
+        public bool Asc { get; set; } = true;
+        public List<int?> DepartmentIds { get; set; }
+        public long? FromDate { get; set; }
+        public long? ToDate { get; set; }
+        public Clause? ColumnsFilters { get; set; }
+    }
+
+    public class TimeSheetByEmployeeModel
+    {
+        public long EmployeeId { get; set; }
+        public List<TimeSheetDetailModel> TimeSheetDetail { get; set; } = new List<TimeSheetDetailModel>();
+    }
+
+    public class TimeSheetByEmployeeRequestModel
+    {
+        public long TimeSheetId { get; set; }
+        public int[] DepartmentIds { get; set; }
+        public long BeginDate { get; set; }
+        public long EndDate { get; set; }
+    }
+
+    public class TimeSheetDetailRequestModel
+    {
+        public TimeSheetDetailModel TimeSheetDetail { get; set; }
+
+        public double? TimeIn { get; set; }
+
+        public double? TimeOut { get; set; }
     }
 
     public class TimeSheetImportFieldModel

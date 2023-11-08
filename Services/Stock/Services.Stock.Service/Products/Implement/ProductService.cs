@@ -920,7 +920,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                   s.DescriptionToStock,
 
                   p.Color,
-                  p.TargetProductivityId
+                  p.TargetProductivityId,
+
+                  p.AccountNumber
               });
 
 
@@ -952,6 +954,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         || c.Specification.Contains(keyword)
                         || c.Description.Contains(keyword)
                         || c.DescriptionToStock.Contains(keyword)
+                        || c.AccountNumber.Contains(keyword)
                         select c;
             }
             query = query.InternalFilter(req.Filters);
@@ -972,6 +975,10 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .GroupBy(p => p.ProductId)
                 .ToDictionary(p => p.Key, p => p.ToList()); ;
 
+            var productStockValidations = (await _stockDbContext.ProductStockValidation.Where(p => dataProductIds.Contains(p.ProductId)).ToListAsync())
+              .GroupBy(p => p.ProductId)
+              .ToDictionary(p => p.Key, p => p.Select(d => d.StockId).ToList());
+
             var pageData = new List<ProductListOutput>();
 
             IList<StockProduct> stockProductData = new List<StockProduct>();
@@ -991,6 +998,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 var barcodeConfigId = item.BarcodeConfigId ?? 0;
                 barCodeConfigs.TryGetValue(barcodeConfigId, out var barcodeConfig);
+
+                productStockValidations.TryGetValue(item.ProductId, out var stockIds);
+
                 var product = new ProductListOutput()
                 {
                     ProductId = item.ProductId,
@@ -1043,6 +1053,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                     Description = item.Description,
                     Color = item.Color,
                     TargetProductivityId = item.TargetProductivityId,
+                    AccountNumber = item.AccountNumber,
 
                     StockRemainings = stockProductData.Where(q => q.ProductId == item.ProductId).Select(q => new StockProductOutput
                     {
@@ -1052,7 +1063,9 @@ namespace VErp.Services.Stock.Service.Products.Implement
                         PrimaryQuantityRemaining = q.PrimaryQuantityRemaining.RoundBy(),
                         ProductUnitConversionId = q.ProductUnitConversionId,
                         ProductUnitConversionRemaining = q.ProductUnitConversionRemaining.RoundBy()
-                    }).ToList()
+                    }).ToList(),
+
+                    StockIds = stockIds
                 };
 
                 var unitInfo = unitInfos.FirstOrDefault(u => u.UnitId == item.UnitId);
@@ -1197,7 +1210,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 Fields = new List<CategoryFieldNameModel>()
             };
 
-            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>(null,isExport);
+            var fields = ExcelUtils.GetFieldNameModels<ProductImportModel>(null, isExport);
             result.Fields = fields;
             return result;
         }
@@ -1426,7 +1439,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             return await _stockDbContext.QueryListProc<ObjectBillInUsedInfo>("asp_Product_GetTopUsed_ByList", checkParams);
         }
 
-        public async Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog =false)
+        public async Task<bool> UpdateProductProcessStatus(InternalProductProcessStatus processStatus, bool isSaveLog = false)
         {
             using (var trans = await _stockDbContext.Database.BeginTransactionAsync())
             {

@@ -15,6 +15,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public IList<long> IgnoreDetailIds { get; set; }
         public EnumPurchaseOrderStatus? PurchaseOrderStatusId { get; set; }
         public EnumPoProcessStatus? PoProcessStatusId { get; set; }
+        public IList<int> CreateByUserIds { get; set; }
+        public IList<int> CheckByUserIds { get; set; }
+        public IList<int> CensorByUserIds { get; set; }
         public bool? IsChecked { get; set; }
         public bool? IsApproved { get; set; }
         public long? FromDate { get; set; }
@@ -27,7 +30,7 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
         public Clause Filters { get; set; }
 
         public void Deconstruct(out string keyword, out IList<string> poCodes, out IList<int> purchaseOrderTypes, out IList<int> productIds,
-            out EnumPurchaseOrderStatus? purchaseOrderStatusId, out EnumPoProcessStatus? poProcessStatusId,
+            out EnumPurchaseOrderStatus? purchaseOrderStatusId, out EnumPoProcessStatus? poProcessStatusId, out IList<int> createByUserIds, out IList<int> checkByUserIds, out IList<int> censorByUserIds,
             out bool? isChecked, out bool? isApproved,
             out long? fromDate, out long? toDate,
             out string sortBy, out bool asc, out int page, out int size, out Clause filters)
@@ -38,6 +41,9 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
             productIds = ProductIds;
             purchaseOrderStatusId = PurchaseOrderStatusId;
             poProcessStatusId = PoProcessStatusId;
+            createByUserIds = CreateByUserIds;
+            checkByUserIds = CheckByUserIds;
+            censorByUserIds = CensorByUserIds;
             isChecked = IsChecked;
             isApproved = IsApproved;
             fromDate = FromDate;

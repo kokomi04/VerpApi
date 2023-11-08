@@ -29,6 +29,7 @@ namespace VErp.Infrastructure.EF.MasterDB
         bool IsDeleted { get; set; }
         DateTime? DeletedDatetimeUtc { get; set; }
         int? ModuleTypeId { get; set; }
+        string JsCodeBeforePrint { get; set; }
     }
 
     public partial class PrintConfigStandard : IPrintConfigEntity

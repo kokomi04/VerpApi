@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Services.Organization.Model.TimeKeeping;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using VErp.Commons.Enums.Organization.TimeKeeping;
 using VErp.Commons.GlobalObject;
 using VErp.Services.Accountancy.Model.Input;
@@ -55,7 +57,19 @@ public class ShiftScheduleRequestModel : ShiftScheduleFilterModel
 
 public class EmployeeViolationModel
 {
-    public int EmployeeId { get; set; }
+    public long EmployeeId { get; set; }
     public long AssignedDate { get; set; }
     public List<long> ShiftScheduleIds { get; set; } = new List<long>();
+}
+
+public class ShiftScheduleImportModel
+{
+    [Display(Name = "Mã nhân viên")]
+    public string EmployeeCode { get; set; }
+
+    [Display(Name = "Ngày phân ca")]
+    public long AssignedDate { get; set; }
+
+    [Display(Name = "Mã ca")]
+    public string ShiftCodes { get; set; }
 }

@@ -342,6 +342,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             var info = _mapper.Map<ReportTypeModel>(reportType);
+
+            RepeatColumnUtils.NormalizeColumnGroup(info.Columns);
+
             if (info.BscConfig?.Rows != null)
             {
                 foreach (var row in info.BscConfig.Rows)

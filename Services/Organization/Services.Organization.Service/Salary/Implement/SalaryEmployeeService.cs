@@ -18,6 +18,7 @@ using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Organization.Salary;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.EFExtensions;
@@ -258,16 +259,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 return employeeId;
             }, item => item);
 
-            var sqlFunctions = await _programingFunctionHelperService.Sqls();
-            var userSqlFunctions = await _programingFunctionHelperService.UserSqls();
-            foreach (var function in userSqlFunctions)
-            {
-                var sqlFunction = sqlFunctions.FirstOrDefault(x => x.ProgramingFunctionName == function.ProgramingFunctionName);
-                if (sqlFunction != null)
-                    sqlFunctions.Remove(sqlFunction);
-                sqlFunctions.Add(function);
-
-            }
+            var sqlFunctions = await _programingFunctionHelperService.GetAllSqls();
             var sqlFnHandle = _organizationDBContext.EvaluateFunctionHandlerSql(sqlFunctions);
 
 
@@ -348,7 +340,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                         {
                             foreach (var condition in f.Expression)
                             {
-                                var (isSucess, value) = EvalValueExpression(f, condition, paramsData, sqlFnHandle);
+
+                                var (isSucess, value) = await EvalValueExpression(f, condition, paramsData, sqlFnHandle);
                                 if (isSucess)
                                 {
                                     fieldValue = value;
@@ -395,10 +388,10 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
 
 
-        private (bool isSucess, object value) EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData, NCalc.EvaluateFunctionHandler functionHandler)
+        private async Task<(bool isSucess, object value)> EvalValueExpression(SalaryFieldModel field, SalaryFieldExpressionModel condition, NonCamelCaseDictionary paramsData, NCalc.EvaluateFunctionHandler functionHandler)
         {
             var filter = condition?.Filter;
-            NormalizeFieldNameInClause(filter);
+            await NormalizeFieldNameInClause(filter);
             bool conditionResult;
             try
             {
@@ -689,7 +682,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                             break;
                         case EnumDataType.Date:
                             type = typeof(DateTime);
-                          //  defaultValue = null;
+                            //  defaultValue = null;
                             break;
                         case EnumDataType.Boolean:
                             type = typeof(bool);
@@ -805,6 +798,8 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var select = new StringBuilder();
             var join = new StringBuilder($"({query}) v");
 
+            var sqlFunction = await _programingFunctionHelperService.GetAllSqls();
+
             foreach (var f in fieldNames)
             {
                 columns.Add(f);
@@ -837,7 +832,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
 
             if (filter != null)
             {
-                NormalizeFieldNameInClause(filter);
+                await NormalizeFieldNameInClause(filter, sqlFunction, fromDate, toDate, month, year);
 
                 suffix = filter.FilterClauseProcess($"({query}) vm", "v", whereCondition, sqlParams, suffix, false, null, data);
             }
@@ -849,12 +844,30 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var additionValues = await PeriodAdditionValues(year, month);
 
             var additionBillFields = await _organizationDBContext.SalaryPeriodAdditionField.AsNoTracking().ToListAsync();
+
+            var duplicateData = new Dictionary<long, NonCamelCaseDictionary>();
             foreach (var item in lstData)
             {
                 long employeeId = 0;
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
                     employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                if (duplicateData.TryGetValue(employeeId, out var existedItem))
+                {
+
+                    foreach (var (fieldName, v1) in item)
+                    {
+                        existedItem.TryGetValue(fieldName, out var v2);
+                        if (v1?.ToString() != v2?.ToString())
+                        {
+                            throw GeneralCode.InternalError.BadRequest($"Ambiguous value for employee ID {employeeId}, FieldName ({fieldName}): {v1}, {v2}");
+                        }
+                    }
+                }
+                else
+                {
+                    duplicateData.Add(employeeId, item);
                 }
 
                 if (additionValues.TryGetValue(employeeId, out var fieldValues))
@@ -954,11 +967,28 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 e => e.GroupBy(f => f.FieldName).ToDictionary(f => f.Key, f => f.Sum(v => v.Value.Value))
                 );
         }
-        private void NormalizeFieldNameInClause(Clause clause)
+        private async Task NormalizeFieldNameInClause(Clause clause, IList<ProgramingFunctionBaseModel> sqls = null, long fromDate = 0, long toDate = 0, int month = 0, int year = 0)
         {
             if (clause is SingleClause single)
             {
                 single.FieldName = EscaseFieldName(single.FieldName);
+
+                if (sqls != null && sqls.Any(x => single.Value != null && single.Value.ToString().Contains(x.ProgramingFunctionName)))
+                {
+                    var paramsData = new NonCamelCaseDictionary();
+                    paramsData.Add($"{SALARY_PARAM_PREFIX}FromDate", fromDate);
+                    paramsData.Add($"{SALARY_PARAM_PREFIX}ToDate", toDate);
+                    paramsData.Add($"{SALARY_PARAM_PREFIX}Month", month);
+                    paramsData.Add($"{SALARY_PARAM_PREFIX}Year", year);
+                    var sqlhandles = _organizationDBContext.EvaluateFunctionHandlerSql(sqls);
+                    var value = EvalUtils.EvalObject(EscaseFieldName(single.Value.ToString()), paramsData, sqlhandles);
+                    if (DateTime.TryParse(value.ToString(), out var time))
+                    {
+                        value = time.GetUnix();
+                    }
+                    single.Value = value;
+                }
+
                 single.Value = EscaseFieldName(single.Value);
 
             }
@@ -966,7 +996,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             {
                 foreach (var c in arrClause.Rules)
                 {
-                    NormalizeFieldNameInClause(c);
+                    await NormalizeFieldNameInClause(c, sqls, fromDate, toDate, month, year);
                 }
             }
         }
@@ -1120,7 +1150,14 @@ namespace VErp.Services.Organization.Service.Salary.Implement
         }
         private bool EvalOperatorCompare(SingleClause clause, object x, object y)
         {
-
+            if (x is DateTime)
+            {
+                x = ((DateTime)x).GetUnix();
+            }
+            if (y is DateTime)
+            {
+                y = ((DateTime)y).GetUnix();
+            }
             switch (clause.Operator)
             {
                 case EnumOperator.Equal:

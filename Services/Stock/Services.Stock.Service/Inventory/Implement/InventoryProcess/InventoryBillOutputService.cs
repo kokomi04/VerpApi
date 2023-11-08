@@ -108,7 +108,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
             {
                 throw new BadRequestException(GeneralCode.InvalidParams);
             }
-
             await ValidateInventoryConfig(req.Date.UnixToDateTime(), null);
 
             req.InventoryCode = req.InventoryCode.Trim();
@@ -229,7 +228,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         {
                             throw GeneralCode.InvalidParams.BadRequestFormat(CannotUpdateInvOutputRotation);
                         }
-
                         if (inventoryObj.StockId != req.StockId)
                         {
                             trans.Rollback();

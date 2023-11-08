@@ -105,7 +105,8 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                 IsMaterials = productInfo.IsMaterials,
                 TargetProductivityId = productInfo.TargetProductivityId,
-                UpdatedDatetimeUtc = productInfo.UpdatedDatetimeUtc.GetUnix(),
+                AccountNumber = productInfo.AccountNumber,
+                UpdatedDatetimeUtc = productInfo.UpdatedDatetimeUtc.GetUnix()
             };
         }
 
@@ -233,6 +234,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
 
                     productInfo.IsMaterials = model.IsMaterials;
                     productInfo.TargetProductivityId = model.TargetProductivityId;
+                    productInfo.AccountNumber = model.AccountNumber;
 
                     if (model.ProductTargetProductivities != null)
                     {
@@ -592,7 +594,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 throw new BadRequestException(ProductErrorCode.ProductNotFound);
             }
 
-            
+
 
             return new ProductProcessModel()
             {

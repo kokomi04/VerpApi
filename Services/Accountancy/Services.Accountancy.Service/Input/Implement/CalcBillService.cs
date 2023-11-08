@@ -46,15 +46,20 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(long toDate, int currency, int exchangeRate, string accoutantNumber)
+        public async Task<ICollection<NonCamelCaseDictionary>> CalcFixExchangeRate(CalcFixExchangeRateRequestModel req)
         {
-            if (accoutantNumber == null) accoutantNumber = string.Empty;
+            if (req == null) throw GeneralCode.InvalidParams.BadRequest();
+
+            if (req.AccountNumber == null) req.AccountNumber = string.Empty;
+            if (req.PartnerIds == null) req.PartnerIds = new List<string>();
+
             var sqlParams = new SqlParameter[]
             {
-                new SqlParameter("@ToDate", toDate.UnixToDateTime()),
-                new SqlParameter("@TyGia", exchangeRate),
-                new SqlParameter("@Currency", currency),
-                new SqlParameter("@AccoutantNumber", accoutantNumber),
+                new SqlParameter("@ToDate", req.ToDate.UnixToDateTime()),
+                new SqlParameter("@TyGia", req.ExchangeRate),
+                new SqlParameter("@CurrencyId", req.CurrencyId),
+                new SqlParameter("@AccountNumber", req.AccountNumber),
+                req.PartnerIds.ToSqlParameter("@PartnerIds")
             };
             var data = await _accountancyDBContext.ExecuteDataProcedure("usp_TK_CalcFixExchangeRate", sqlParams);
             var rows = data.ConvertData();

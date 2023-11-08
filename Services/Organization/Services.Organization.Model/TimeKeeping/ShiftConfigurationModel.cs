@@ -24,8 +24,7 @@ namespace Services.Organization.Model.TimeKeeping
         public double EndTimeOnRecord { get; set; }
         public double StartTimeOutRecord { get; set; }
         public double EndTimeOutRecord { get; set; }
-        public bool IsSkipSaturdayWithShift { get; set; }
-        public bool IsSkipSundayWithShift { get; set; }
+        public bool IsSkipWeeklyOffDayWithShift { get; set; }
         public bool IsSkipHolidayWithShift { get; set; }
         public bool IsCountWorkForHoliday { get; set; }
         public EnumPartialShiftCalculationMode PartialShiftCalculationMode { get; set; }

@@ -1,4 +1,5 @@
 using AutoMapper;
+using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using Services.Organization.Model.TimeKeeping;
 using System.Collections.Generic;
@@ -79,14 +80,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var query = _organizationDBContext.CountedSymbol.AsNoTracking();
 
-            return await query.Select(x => new CountedSymbolModel
-            {
-                CountedSymbolId = x.CountedSymbolId,
-                IsHide = x.IsHide,
-                SymbolCode = x.SymbolCode,
-                SymbolDescription = x.SymbolDescription,
-                CountedSymbolType = x.CountedSymbolType
-            }).ToListAsync();
+            return await query.ProjectTo<CountedSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
         }
     }
 }

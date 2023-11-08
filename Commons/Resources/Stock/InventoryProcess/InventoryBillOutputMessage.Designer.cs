@@ -97,6 +97,24 @@ namespace Verp.Resources.Stock.InventoryProcess {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Vui lòng nhập khách hàng hoặc bộ phận bàn giao.
+        /// </summary>
+        public static string RequireCustomerIdOrDepartmentId {
+            get {
+                return ResourceManager.GetString("RequireCustomerIdOrDepartmentId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Vui lòng chỉ nhập khách hàng hoặc bộ phận bàn giao.
+        /// </summary>
+        public static string RequireOnlyCustomerIdOrDepartmentId {
+            get {
+                return ResourceManager.GetString("RequireOnlyCustomerIdOrDepartmentId", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Vui lòng nhập kho nhập.
         /// </summary>
         public static string RotationInputStockIsRequired {

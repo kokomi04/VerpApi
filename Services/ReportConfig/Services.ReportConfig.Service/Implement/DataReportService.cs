@@ -37,6 +37,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
 {
     public class DataReportService : IDataReportService
     {
+        private const string EscapseBscParamPrefix = BscRowsModel.EscapseBscParamPrefix;
+        private const string EscapseBscParamSpecialReplacingString = BscRowsModel.EscapseBscParamSpecialReplacingString;
+
         private readonly ReportConfigDBContext _reportConfigDBContext;
         private readonly IReportConfigService _reportConfigService;
         private readonly IDocOpenXmlService _docOpenXmlService;
@@ -96,6 +99,11 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         public async Task<ReportDataModel> Report(int reportId, ReportFilterDataModel model, int page, int size)
         {
+            if (model == null)
+            {
+                throw GeneralCode.InvalidParams.BadRequest("Vui lòng chọn các tham số và lọc báo cáo");
+            }
+
             var result = new ReportDataModel();
 
             var filters = model.Filters.GroupBy(f => f.Key.Trim().ToLower()).ToDictionary(f => f.Key, f => f.Last().Value);
@@ -106,7 +114,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
             var reportTypeCustomInfo = await _reportConfigDBContext.ReportTypeCustom.FirstOrDefaultAsync(r => r.ReportTypeId == reportId && !r.IsDeleted);
             if (reportTypeCustomInfo != null)
             {
-                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql)  )
+                if (!string.IsNullOrEmpty(reportTypeCustomInfo.HeadSql))
                 {
                     reportInfo.HeadSql = reportTypeCustomInfo.HeadSql;
                 }
@@ -210,6 +218,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 sqlParams.Add(new SqlParameter("@Page", page));
                 sqlParams.Add(new SqlParameter("@Size", size));
             }
+
+            sqlParams.Add(new SqlParameter("@OrderBy", string.IsNullOrWhiteSpace(model.OrderByFieldName) ? DBNull.Value : model.OrderByFieldName));
+            sqlParams.Add(new SqlParameter("@Asc", model.Asc));
 
             if (!string.IsNullOrWhiteSpace(reportInfo.HeadSql))
             {
@@ -655,13 +666,23 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
         private string ReplaceOldBscValuePrefix(string selectData)
         {
+
+            selectData = selectData.Replace(EscapseBscParamPrefix, EscapseBscParamSpecialReplacingString);
+
+            selectData = selectData.Replace($"\\#", "@#");
+
             selectData = selectData.Replace($"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX_OLD}", "#");
             selectData = selectData.Replace($"#", "@#");
+
+            selectData = selectData.Replace(EscapseBscParamSpecialReplacingString, EscapseBscParamPrefix);
             return selectData;
         }
         private string GetBscSelectData(List<BscValueOrder> cacls, string selectData, string keyValue, string parentKeyValue = null)
         {
             //   selectData = ReplaceOldBscValuePrefix(selectData);
+
+
+            selectData = selectData.Replace(EscapseBscParamPrefix, EscapseBscParamSpecialReplacingString);
 
             var result = new StringBuilder(selectData);
             var pattern = $"@{AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX}(?<key_value>\\w+)";
@@ -683,7 +704,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     moveIndex = moveIndex + newText.Length - match[i].Length;
                 }
             }
-            return result.ToString();
+
+            return result.ToString().Replace(EscapseBscParamSpecialReplacingString, EscapseBscParamPrefix);
         }
 
 
@@ -714,6 +736,10 @@ namespace Verp.Services.ReportConfig.Service.Implement
                     {
                         var value = selectValue[fieldName].value;
                         var type = selectValue[fieldName].type;
+                        if (value?.ToString()?.Contains(EscapseBscParamPrefix) == true)
+                        {
+                            value = value?.ToString()?.Replace(EscapseBscParamPrefix, AccountantConstants.REPORT_BSC_VALUE_PARAM_PREFIX);
+                        }
 
                         row[col] = value;
 
@@ -965,7 +991,9 @@ namespace Verp.Services.ReportConfig.Service.Implement
             }
 
             var data = table.ConvertData();
-            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, data);
+            var firstRow = RepeatColumnUtils.GetFistRow(data);
+
+            columns = RepeatColumnUtils.RepeatColumnAndSortProcess(columns, firstRow);
 
 
             var totals = new NonCamelCaseDictionary<decimal>();
