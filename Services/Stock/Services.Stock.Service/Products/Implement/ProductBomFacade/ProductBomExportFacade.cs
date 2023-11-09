@@ -40,7 +40,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             this.productIds = productIds;
             this.steps = steps;
             _productBomProperties = productBomProperties;
-            maxColumnIndex = 17 + productBomProperties.Count;
+            maxColumnIndex = 18 + productBomProperties.Count;
             _productBomService = productBomService;
         }
 
