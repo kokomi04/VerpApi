@@ -228,8 +228,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 await _organizationDBContext.TimeSheetAggregate.AddRangeAsync(newAggregates);
 
                 model.TimeSheetId = timeSheet.TimeSheetId;
+                model.TimeSheetDepartment = null;
                 model.IsApprove = false;
                 _mapper.Map(model, timeSheet);
+
+                _organizationDBContext.TimeSheet.Update(timeSheet);
 
                 await _organizationDBContext.SaveChangesAsync();
 

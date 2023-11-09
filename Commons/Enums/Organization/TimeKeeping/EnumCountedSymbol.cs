@@ -16,11 +16,11 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
         [Description("Kí hiệu tăng ca")]
         OvertimeSymbol = 4,
 
-        [Description("Kí hiệu thiếu giờ ra")]
-        ShortTimeoutSymbol = 5,
+        //[Description("Kí hiệu thiếu giờ ra")]
+        //ShortTimeoutSymbol = 5,
 
-        [Description("Kí hiệu thiếu giờ vào")]
-        ShortTimeToSymbol = 6,
+        //[Description("Kí hiệu thiếu giờ vào")]
+        //ShortTimeToSymbol = 6,
 
         [Description("Kí hiệu vắng")]
         AbsentSymbol = 7,
