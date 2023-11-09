@@ -124,11 +124,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             sheet.EnsureCell(fRow, 14).SetCellValue($"Mô tả");
 
+
             sheet.EnsureCell(fRow, 15).SetCellValue($"Là nguyên liệu");
 
-            sheet.EnsureCell(fRow, 16).SetCellValue($"Cộng đoạn vào");
+            sheet.EnsureCell(fRow, 16).SetCellValue($"Không đưa vào QTSX");
 
-            sheet.EnsureCell(fRow, 17).SetCellValue($"Công đoạn ra");
+
+            sheet.EnsureCell(fRow, 17).SetCellValue($"Cộng đoạn vào");
+
+            sheet.EnsureCell(fRow, 18).SetCellValue($"Công đoạn ra");
 
 
 
@@ -286,8 +290,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         //sheet.EnsureCell(currentRow, 10).CellStyle.VerticalAlignment = VerticalAlignment.Center;
                     }
 
-                    sheet.EnsureCell(currentRow, 16).SetCellValue(GetStepName(item.InputStepId));
-                    sheet.EnsureCell(currentRow, 17).SetCellValue(GetStepName(item.OutputStepId));
+                    if (item.IsIgnoreStep.HasValue && item.IsIgnoreStep.Value)
+                    {
+                        sheet.EnsureCell(currentRow, 16).SetCellValue("Có");
+                        sheet.EnsureCell(currentRow, 16).CellStyle.Alignment = HorizontalAlignment.Center;
+                    }
+
+                    sheet.EnsureCell(currentRow, 17).SetCellValue(GetStepName(item.InputStepId));
+                    sheet.EnsureCell(currentRow, 18).SetCellValue(GetStepName(item.OutputStepId));
                     
 
                     var col = START_PROP_COLUMN_INDEX;
