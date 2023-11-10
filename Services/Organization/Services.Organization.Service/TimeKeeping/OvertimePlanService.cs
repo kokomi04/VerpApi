@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using Microsoft.EntityFrameworkCore;
 using OpenXmlPowerTools;
 using Services.Organization.Model.TimeKeeping;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,35 +33,59 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<bool> AddOvertimePlan(OvertimePlanRequestModel model)
         {
-            await DeleteOvertimePlan(model);
+            using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
 
-            var ePlan = _mapper.Map<List<OvertimePlan>>(model.OvertimePlans);
+            try
+            {
+                var ePlanToRemove = _organizationDBContext.OvertimePlan.Where(p => p.AssignedDate >= model.FromDate.UnixToDateTime() && p.AssignedDate <= model.ToDate.UnixToDateTime());
+                _organizationDBContext.OvertimePlan.RemoveRange(ePlanToRemove);
 
-            await _organizationDBContext.OvertimePlan.AddRangeAsync(ePlan);
+                var ePlan = _mapper.Map<List<OvertimePlan>>(model.OvertimePlans);
 
-            await _organizationDBContext.SaveChangesAsync();
+                await _organizationDBContext.OvertimePlan.AddRangeAsync(ePlan);
 
-            return true;
+                await _organizationDBContext.SaveChangesAsync();
+
+                await trans.CommitAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+            }
         }
 
 
         public async Task<bool> DeleteOvertimePlan(OvertimePlanRequestModel model)
         {
-            var overtimePlans = await _organizationDBContext.OvertimePlan.Where(p => p.AssignedDate >= model.FromDate.UnixToDateTime() && p.AssignedDate <= model.ToDate.UnixToDateTime()).ToListAsync();
+            using var trans = await _organizationDBContext.Database.BeginTransactionAsync();
 
-            var mPlanSet = new HashSet<(long EmployeeId, long AssignedDate)>(model.OvertimePlans.Select(p => (p.EmployeeId, p.AssignedDate)));
-
-            var ePlanToRemove = overtimePlans.Where(p => mPlanSet.Contains((p.EmployeeId, p.AssignedDate.GetUnix()))).ToList();
-
-            if (overtimePlans == null || !overtimePlans.Any())
+            try
             {
-                throw new BadRequestException("Không tìm thấy bản ghi nào để xóa");
+                var overtimePlans = await _organizationDBContext.OvertimePlan.Where(p => p.AssignedDate >= model.FromDate.UnixToDateTime() && p.AssignedDate <= model.ToDate.UnixToDateTime()).ToListAsync();
+
+                var mPlanSet = new HashSet<(long EmployeeId, long AssignedDate)>(model.OvertimePlans.Select(p => (p.EmployeeId, p.AssignedDate)));
+
+                var ePlanToRemove = overtimePlans.Where(p => mPlanSet.Contains((p.EmployeeId, p.AssignedDate.GetUnix()))).ToList();
+
+                if (ePlanToRemove.Any())
+                {
+                    _organizationDBContext.OvertimePlan.RemoveRange(ePlanToRemove);
+                    await _organizationDBContext.SaveChangesAsync();
+                }
+
+                await trans.CommitAsync();
+
+                return true;
+
             }
-
-            _organizationDBContext.OvertimePlan.RemoveRange(ePlanToRemove);
-            await _organizationDBContext.SaveChangesAsync();
-
-            return true;
+            catch (Exception ex)
+            {
+                await trans.RollbackAsync();
+                throw new BadRequestException(GeneralCode.InternalError, ex.Message);
+            }
         }
         public async Task<IList<OvertimePlanModel>> GetListOvertimePlan(OvertimePlanRequestModel model)
         {
