@@ -95,7 +95,7 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
-
+    public virtual DbSet<OvertimePlan> OvertimePlan { get; set; }
     public virtual DbSet<SalaryField> SalaryField { get; set; }
 
     public virtual DbSet<SalaryGroup> SalaryGroup { get; set; }
@@ -719,6 +719,14 @@ public partial class OrganizationDBContext : DbContext
             entity.Property(e => e.OvertimeRate).HasColumnType("decimal(5, 2)");
         });
 
+        modelBuilder.Entity<OvertimePlan>(entity =>
+        {
+            entity.HasKey(e => new { e.EmployeeId, e.AssignedDate, e.OvertimeLevelId }).HasName("PK_OvertimePlanMapping");
+
+            entity.HasOne(d => d.OvertimeLevel).WithMany(p => p.OvertimePlan)
+                .HasForeignKey(d => d.OvertimeLevelId)
+                .HasConstraintName("FK_OvertimePlanMapping_OvertimeLevel");
+        });
 
         modelBuilder.Entity<SalaryField>(entity =>
         {
@@ -984,34 +992,34 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetAggregateAbsence>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetAggregateId, e.AbsenceTypeSymbolId }).HasName("PK__TimeShee__7E7CA500C2F33F4B");
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.AbsenceTypeSymbolId }).HasName("PK__TimeShee__7E7CA50034D28903");
 
             entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateAbsence)
                 .HasForeignKey(d => d.TimeSheetAggregateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__7F772ADD");
+                .HasConstraintName("FK__TimeSheet__TimeS__32F6CEE3");
         });
 
         modelBuilder.Entity<TimeSheetAggregateOvertime>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetAggregateId, e.OvertimeLevelId }).HasName("PK__TimeShee__B3138CBB6849F3DF");
+            entity.HasKey(e => new { e.TimeSheetAggregateId, e.OvertimeLevelId }).HasName("PK__TimeShee__B3138CBBDA6322AE");
 
             entity.Property(e => e.CountedMins).HasColumnType("decimal(18, 5)");
 
             entity.HasOne(d => d.TimeSheetAggregate).WithMany(p => p.TimeSheetAggregateOvertime)
                 .HasForeignKey(d => d.TimeSheetAggregateId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__7C9ABE32");
+                .HasConstraintName("FK__TimeSheet__TimeS__301A6238");
         });
 
         modelBuilder.Entity<TimeSheetDepartment>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetId, e.DepartmentId }).HasName("PK__TimeShee__CD052EF4B37C1EC7");
+            entity.HasKey(e => new { e.TimeSheetId, e.DepartmentId }).HasName("PK__TimeShee__CD052EF4D43CF7C4");
 
             entity.HasOne(d => d.TimeSheet).WithMany(p => p.TimeSheetDepartment)
                 .HasForeignKey(d => d.TimeSheetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheet__TimeS__62DAEC2F");
+                .HasConstraintName("FK__TimeSheet__TimeS__3D745D56");
         });
 
         modelBuilder.Entity<TimeSheetDetail>(entity =>
@@ -1036,12 +1044,12 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetDetailShiftCounted>(entity =>
         {
-            entity.HasKey(e => e.TimeSheetDetailShiftCountedId).HasName("PK__TimeShee__E7FF6B3A57BC0FCC");
+            entity.HasKey(e => e.TimeSheetDetailShiftCountedId).HasName("PK__TimeShee__E7FF6B3A62398788");
 
             entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftCounted)
                 .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheetDetailS__6B703230");
+                .HasConstraintName("FK__TimeSheetDetailS__3A97F0AB");
         });
 
         modelBuilder.Entity<TimeSheetDetailShiftOvertime>(entity =>
