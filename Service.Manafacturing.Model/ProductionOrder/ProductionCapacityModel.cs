@@ -71,6 +71,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionStepLinkDataObjectType ObjectTypeId { get; set; }
         public decimal Quantity { get; set; }
         public decimal TargetProductivity { get; set; }
+        public decimal MinAssignHours { get; set; };
 
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
@@ -89,6 +90,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public decimal WorkloadQuantity { get; set; }
         public decimal WorkHour { get; set; }
         public decimal? Productivity { get; set; }
+        public decimal? MinAssignHours { get; set; }
         public decimal OutsourceQuantity { get; set; }
     }
 
