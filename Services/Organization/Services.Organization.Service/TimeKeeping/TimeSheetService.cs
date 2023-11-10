@@ -437,7 +437,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             TimeIn = null,
                             TimeOut = null
                         };
-                        SetDetailShiftForAbsence(detailShift, absenceTypeSymbolId, shift, countedSymbols, absences);
+
+                        SetDetailShiftForAbsence(detailShift, EnumTimeSheetDateType.Weekday, absenceTypeSymbolId, shift, countedSymbols, absences);
 
                         lstDetailShift.Add(detailShift);
                     }
@@ -623,6 +624,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 else
                 {
+                    SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
+
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
                         //(X/2)
@@ -631,17 +634,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
 
-                        SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
                     }
                     else
                     {
-                        if ((timeInRaw - shift.EntryTime) <= shift.MaxLateMins * 60
-                        || ((timeInRaw - shift.EntryTime) > shift.MaxLateMins * 60 && (shift.ExceededLateAbsenceTypeId == null || shift.ExceededLateAbsenceTypeId == 0)))
+                        if ((timeInRaw - shift.EntryTime) <= shift.MaxLateMins * 60)
                         {
                             //Trễ (TR)
-
-                            SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
-
                             if (shift.IsSubtractionForLate)
                             {
                                 detailShift.WorkCounted = shift.ConfirmationUnit * (1 - (decimal)detailShift.MinsLate / shift.ConvertToMins);
@@ -656,7 +654,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            SetDetailShiftForAbsence(detailShift, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences);
+                            if (!SetDetailShiftForAbsence(detailShift, detail.TimeSheetDateType, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences))
+                            {
+                                return null;
+                            }
                         }
                     }
                 }
@@ -673,7 +674,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    SetDetailShiftForAbsence(detailShift, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences);
+                    if(!SetDetailShiftForAbsence(detailShift, detail.TimeSheetDateType, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences))
+                    {
+                        return null;
+                    }
                 }
             }
 
@@ -692,6 +696,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 else
                 {
+                    SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
+
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
                         //(X/2)
@@ -700,16 +706,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                         detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.HalfWorkOnTimeSymbol));
 
-                        SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
                     }
                     else
                     {
-                        if ((shift.ExitTime - timeOutRaw) <= shift.MaxEarlyMins * 60
-                            || ((shift.ExitTime - timeOutRaw) > shift.MaxEarlyMins * 60 && (shift.ExceededEarlyAbsenceTypeId == null || shift.ExceededEarlyAbsenceTypeId == 0)))
+                        if ((shift.ExitTime - timeOutRaw) <= shift.MaxEarlyMins * 60)
                         {
                             //Sớm (SM)
-                            SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
-
                             if (shift.IsSubtractionForEarly)
                             {
                                 detailShift.WorkCounted -= shift.ConfirmationUnit * ((decimal)detailShift.MinsEarly / shift.ConvertToMins);
@@ -726,7 +728,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            SetDetailShiftForAbsence(detailShift, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences);
+                            if (!SetDetailShiftForAbsence(detailShift, detail.TimeSheetDateType, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences))
+                            {
+                                return null;
+                            }
                         }
                     }
                 }
@@ -750,27 +755,18 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    SetDetailShiftForAbsence(detailShift, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences);
+                    if (!SetDetailShiftForAbsence(detailShift, detail.TimeSheetDateType, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences))
+                    {
+                        return null;
+                    }
                 }
             }
 
             if (timeInRaw == null && timeOutRaw == null)
             {
-                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
-                {
-                    //Đủ công (X)
-                    detailShift.WorkCounted = shift.ConfirmationUnit;
-                    detailShift.ActualWorkMins = shift.ConvertToMins;
-                    detailShift.TimeSheetDetailShiftCounted.Clear();
-                    detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
-                }
-                else if ((detail.TimeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift) || (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsSkipHolidayWithShift))
+                if(!SetDetailShiftForAbsence(detailShift, detail.TimeSheetDateType, null, shift, countedSymbols, absences))
                 {
                     return null;
-                }
-                else
-                {
-                    SetDetailShiftForAbsence(detailShift, null, shift, countedSymbols, absences);
                 }
             }
 
@@ -857,23 +853,41 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
         }
 
-        private void SetDetailShiftForAbsence(TimeSheetDetailShiftModel detailShift, int? absenceTypeSymbolId, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, List<AbsenceTypeSymbolModel> absences)
+        private bool SetDetailShiftForAbsence(TimeSheetDetailShiftModel detailShift, EnumTimeSheetDateType timeSheetDateType, int? absenceTypeSymbolId, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, List<AbsenceTypeSymbolModel> absences)
         {
-            var absence = absenceTypeSymbolId != null ? absences.FirstOrDefault(a => a.AbsenceTypeSymbolId == absenceTypeSymbolId) : absences.FirstOrDefault(a => a.IsUnpaidLeave);
-            if (absence == null)
+            if (timeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
             {
-                detailShift.WorkCounted = 0;
-                detailShift.ActualWorkMins = 0;
+                //Đủ công (X)
+                detailShift.WorkCounted = shift.ConfirmationUnit;
+                detailShift.ActualWorkMins = shift.ConvertToMins;
+                detailShift.AbsenceTypeSymbolId = null;
+                detailShift.TimeSheetDetailShiftCounted.Clear();
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.FullCountedSymbol));
+            }
+            else if ((timeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift) || (timeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsSkipHolidayWithShift))
+            {
+                return false;
             }
             else
             {
-                detailShift.AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId;
-                detailShift.WorkCounted = absence.IsCounted ? shift.ConfirmationUnit * (decimal)absence.SalaryRate : 0;
-                detailShift.ActualWorkMins = absence.IsCounted ? (long)(shift.ConvertToMins * absence.SalaryRate) : 0;
+                var absence = absenceTypeSymbolId != null ? absences.FirstOrDefault(a => a.AbsenceTypeSymbolId == absenceTypeSymbolId) : absences.FirstOrDefault(a => a.IsUnpaidLeave);
+                if (absence == null)
+                {
+                    detailShift.WorkCounted = 0;
+                    detailShift.ActualWorkMins = 0;
+                }
+                else
+                {
+                    detailShift.AbsenceTypeSymbolId = absence.AbsenceTypeSymbolId;
+                    detailShift.WorkCounted = absence.IsCounted ? shift.ConfirmationUnit * (decimal)absence.SalaryRate : 0;
+                    detailShift.ActualWorkMins = absence.IsCounted ? (long)(shift.ConvertToMins * absence.SalaryRate) : 0;
+                }
+
+                detailShift.TimeSheetDetailShiftCounted.Clear();
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
             }
 
-            detailShift.TimeSheetDetailShiftCounted.Clear();
-            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
+            return true;
         }
 
         private TimeSheetDetailShiftCountedModel GetCountedSymbolModel(ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, EnumCountedSymbol symbol)

@@ -68,6 +68,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (absenceTypeSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
+            var shift = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(s => s.ExceededEarlyAbsenceTypeId == absenceTypeSymbolId
+                    || s.ExceededLateAbsenceTypeId == absenceTypeSymbolId
+                    || s.NoEntryTimeAbsenceTypeId == absenceTypeSymbolId
+                    || s.NoExitTimeAbsenceTypeId == absenceTypeSymbolId);
+
+
+            if (shift != null)
+            {
+                throw new BadRequestException(GeneralCode.ItemInUsed, $"Ký hiệu này đang được sử dụng ở ca làm việc {shift.ShiftCode}");
+            }
             absenceTypeSymbol.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
 
