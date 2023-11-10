@@ -32,5 +32,7 @@ public partial class TargetProductivityDetail
     /// </summary>
     public int WorkLoadTypeId { get; set; }
 
+    public decimal MinAssignHours { get; set; }
+
     public virtual TargetProductivity TargetProductivityNavigation { get; set; }
 }

@@ -368,6 +368,7 @@ public partial class ManufacturingDBContext : DbContext
 
             entity.HasOne(d => d.FromProductionStep).WithMany(p => p.ProductionHandoverFromProductionStep)
                 .HasForeignKey(d => d.FromProductionStepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_FromProductionStep");
 
             entity.HasOne(d => d.ProductionHandoverReceipt).WithMany(p => p.ProductionHandover)
@@ -381,6 +382,7 @@ public partial class ManufacturingDBContext : DbContext
 
             entity.HasOne(d => d.ToProductionStep).WithMany(p => p.ProductionHandoverToProductionStep)
                 .HasForeignKey(d => d.ToProductionStepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_ToProductionStep");
         });
 
@@ -1001,6 +1003,7 @@ public partial class ManufacturingDBContext : DbContext
 
         modelBuilder.Entity<TargetProductivityDetail>(entity =>
         {
+            entity.Property(e => e.MinAssignHours).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.ProductivityResourceTypeId).HasDefaultValueSql("((1))");
             entity.Property(e => e.ProductivityTimeTypeId).HasDefaultValueSql("((2))");
             entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");
