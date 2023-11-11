@@ -391,16 +391,30 @@ namespace VErp.Services.Organization.Service.HrConfig
 
             var whereCondition = new StringBuilder("1 = 1");
             var sqlParams = new List<SqlParameter>();
+
+            var dateField = "CreatedDatetimeUtc";
+            if (mainColumn.ToString().Contains("ngay_ct"))
+            {
+                dateField = "ngay_ct";
+            }
+
             if (fromDate.HasValue && toDate.HasValue)
             {
-                var dateField = "CreatedDatetimeUtc";
-                if (mainColumn.ToString().Contains("ngay_ct"))
-                {
-                    dateField = "ngay_ct";
-                }
-                whereCondition.Append($" AND r.{dateField} BETWEEN @FromDate AND @ToDate");
+                whereCondition.Append($" AND bill.{dateField} BETWEEN @FromDate AND @ToDate");
 
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+                sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
+            }
+            else if(fromDate.HasValue)
+            {
+                whereCondition.Append($" AND bill.{dateField} > @FromDate");
+
+                sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
+            }
+            else if (toDate.HasValue)
+            {
+                whereCondition.Append($" AND bill.{dateField} < @ToDate");
+
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
 
@@ -500,6 +514,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {mainJoin}
                     JOIN tmp ON bill.F_Id = tmp.{HR_BILL_ID_FIELD_IN_AREA}
                     WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow)
+                    ORDER BY RowNumber
                 ";
 
             var singleRowData = (await _organizationDBContext.QueryDataTableRaw(dataSql, sqlParams.Select(p => p.CloneSqlParam()).ToArray())).ConvertData();
