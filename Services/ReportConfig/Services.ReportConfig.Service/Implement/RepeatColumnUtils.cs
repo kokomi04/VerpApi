@@ -214,6 +214,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
                             if (firstRow.ContainsKey(nameColumn) && !firstRow[nameColumn].IsNullOrEmptyObject())
                             {
                                 newColumn.Name = firstRow[nameColumn]?.ToString();
+                                newColumn.IsRepeatGroup = true;
                             }
                         }
 
