@@ -392,28 +392,28 @@ namespace VErp.Services.Organization.Service.HrConfig
             var whereCondition = new StringBuilder("1 = 1");
             var sqlParams = new List<SqlParameter>();
 
-            var dateField = "CreatedDatetimeUtc";
-            if (mainColumn.ToString().Contains("ngay_ct"))
+            var dateField = "bill.CreatedDatetimeUtc";
+            if (mainColumn.ToString().Contains("ngay_tao"))
             {
-                dateField = "ngay_ct";
+                dateField = "vGeneral_Info.ngay_tao";
             }
 
             if (fromDate.HasValue && toDate.HasValue)
             {
-                whereCondition.Append($" AND bill.{dateField} BETWEEN @FromDate AND @ToDate");
+                whereCondition.Append($" AND {dateField} BETWEEN @FromDate AND @ToDate");
 
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
             else if(fromDate.HasValue)
             {
-                whereCondition.Append($" AND bill.{dateField} > @FromDate");
+                whereCondition.Append($" AND {dateField} > @FromDate");
 
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
             }
             else if (toDate.HasValue)
             {
-                whereCondition.Append($" AND bill.{dateField} < @ToDate");
+                whereCondition.Append($" AND {dateField} < @ToDate");
 
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
@@ -513,7 +513,7 @@ namespace VErp.Services.Organization.Service.HrConfig
                     {mainColumn}
                     {mainJoin}
                     JOIN tmp ON bill.F_Id = tmp.{HR_BILL_ID_FIELD_IN_AREA}
-                    WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow)
+                    WHERE @Size <=0 OR (RowNumber BETWEEN @FromRow AND @ToRow) {(whereCondition.Length > 0 ? $" AND ({whereCondition})" : "")}
                     ORDER BY RowNumber
                 ";
 
