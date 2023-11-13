@@ -22,6 +22,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.OrganizationDB;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Organization.Model.Calendar;
+using VErp.Services.Organization.Service.Department;
 using VErp.Services.Organization.Service.DepartmentCalendar;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using static VErp.Commons.Library.ExcelReader;
@@ -50,6 +51,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     {
         private readonly OrganizationDBContext _organizationDBContext;
         private readonly IDepartmentCalendarService _departmentCalendarService;
+        private readonly IDepartmentService _departmentService;
         private readonly IShiftScheduleService _shiftScheduleService;
         private readonly ITimeSheetRawService _timeSheetRawService;
         private readonly IMapper _mapper;
@@ -58,13 +60,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             , IMapper mapper
             , IDepartmentCalendarService departmentCalendarService
             , IShiftScheduleService shiftScheduleService
-            , ITimeSheetRawService timeSheetRawService)
+            , ITimeSheetRawService timeSheetRawService
+            , IDepartmentService departmentService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
             _departmentCalendarService = departmentCalendarService;
             _shiftScheduleService = shiftScheduleService;
             _timeSheetRawService = timeSheetRawService;
+            _departmentService = departmentService;
         }
 
         public async Task<long> AddTimeSheet(TimeSheetModel model)
@@ -76,6 +80,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 {
                     throw new BadRequestException("Tên bảng chấm công đã tồn tại");
                 }
+
+                await ValidateOverlap(model);
 
                 model.IsApprove = false;
 
@@ -118,6 +124,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 if (_organizationDBContext.TimeSheet.Any(t => t.Title != timeSheet.Title && t.Title == model.Title))
                     throw new BadRequestException("Tên bảng chấm công đã tồn tại");
+
+                await ValidateOverlap(model);
 
                 var timeSheetDetails = await _organizationDBContext.TimeSheetDetail.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
                 var timeSheetAggregates = await _organizationDBContext.TimeSheetAggregate.Where(x => x.TimeSheetId == timeSheet.TimeSheetId).ToListAsync();
@@ -214,7 +222,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     if (eAggregateIds.Contains(mAggregate.TimeSheetAggregateId))
                     {
                         var eAggregateToUpdate = timeSheetAggregates.FirstOrDefault(e => e.TimeSheetAggregateId == mAggregate.TimeSheetAggregateId);
-                        
+
                         mAggregate.TimeSheetId = eAggregateToUpdate.TimeSheetId;
                         _mapper.Map(mAggregate, eAggregateToUpdate);
                     }
@@ -372,11 +380,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     foreach (var shift in shiftsWithoutNight)
                     {
                         var detailShift = model.TimeSheetDetail.TimeSheetDetailShift.FirstOrDefault(s => s.ShiftConfigurationId == shift.ShiftConfigurationId);
-                        if(shiftsWithoutNight.Count() == 1 || (earliestShift != null && lastestShift != null && earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId && earliestShift.ShiftConfigurationId == lastestShift.ShiftConfigurationId))
+                        if (shiftsWithoutNight.Count() == 1 || (earliestShift != null && lastestShift != null && earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId && earliestShift.ShiftConfigurationId == lastestShift.ShiftConfigurationId))
                         {
                             detailShift = CreateDetailShift(shift, model.TimeSheetDetail, timeIn, timeOut, countedSymbols, absences);
                         }
-                        else 
+                        else
                         {
                             if (earliestShift != null && earliestShift.ShiftConfigurationId == shift.ShiftConfigurationId)
                             {
@@ -649,7 +657,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             {
                                 detailShift.WorkCounted = shift.ConfirmationUnit;
                                 detailShift.ActualWorkMins = shift.ConvertToMins;
-                            }    
+                            }
                         }
                         else
                         {
@@ -1408,14 +1416,34 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         public async Task<bool> ApproveTimeSheet(long timeSheetId)
         {
-            var timeSheet = await _organizationDBContext.TimeSheet
-            .FirstOrDefaultAsync(x => x.TimeSheetId == timeSheetId);
+            var timeSheet = await _organizationDBContext.TimeSheet.FirstOrDefaultAsync(x => x.TimeSheetId == timeSheetId);
             if (timeSheet == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, $"Không tồn tại bảng chấm công có ID {timeSheetId}");
+
+            if (!await _organizationDBContext.TimeSheetAggregate.AnyAsync(d => d.TimeSheetId == timeSheetId))
+            {
+                throw new BadRequestException("Lưu bảng chấm công trước khi duyệt");
+            }
 
             timeSheet.IsApprove = true;
             await _organizationDBContext.SaveChangesAsync();
             return true;
+        }
+
+        private async Task ValidateOverlap(TimeSheetModel model)
+        {
+            var existTimeSheets = _organizationDBContext.TimeSheet.Where(t => t.Month == model.Month && t.Year == model.Year && t.TimeSheetId != model.TimeSheetId).AsNoTracking();
+            var existTimeSheetDepartments = await _organizationDBContext.TimeSheetDepartment.Where(d => existTimeSheets.Select(t => t.TimeSheetId).Contains(d.TimeSheetId)).ToListAsync();
+
+            foreach (var item in model.TimeSheetDepartment)
+            {
+                var violationDepartments = existTimeSheetDepartments.FirstOrDefault(d => item.DepartmentId == d.DepartmentId);
+                if (violationDepartments != null)
+                {
+                    var department = await _departmentService.GetDepartmentInfo(item.DepartmentId);
+                    throw new BadRequestException($"Đã tồn tại BCC tháng {model.Month}/{model.Year} cho bộ phận \"{department.DepartmentCode} - {department.DepartmentName}\"");
+                }
+            }
         }
 
         private async Task RemoveTimeSheetDepartment(long timeSheetId)
