@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using VErp.Commons.Constants;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.EF.OrganizationDB;
@@ -23,12 +24,14 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     public class OvertimePlanService : IOvertimePlanService
     {
         private readonly OrganizationDBContext _organizationDBContext;
+        private readonly IShiftScheduleService _shiftScheduleService;
         private readonly IMapper _mapper;
 
-        public OvertimePlanService(OrganizationDBContext organizationDBContext, IMapper mapper)
+        public OvertimePlanService(OrganizationDBContext organizationDBContext, IMapper mapper, IShiftScheduleService shiftScheduleService)
         {
             _organizationDBContext = organizationDBContext;
             _mapper = mapper;
+            _shiftScheduleService = shiftScheduleService;
         }
 
         public async Task<bool> AddOvertimePlan(OvertimePlanRequestModel model)
@@ -89,10 +92,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
         public async Task<IList<OvertimePlanModel>> GetListOvertimePlan(OvertimePlanRequestModel model)
         {
-            return await _organizationDBContext.OvertimePlan
-                .Where(p => p.AssignedDate >= model.FromDate.UnixToDateTime() && p.AssignedDate <= model.ToDate.UnixToDateTime())
-                .ProjectTo<OvertimePlanModel>(_mapper.ConfigurationProvider)
-                .ToArrayAsync();
+            var entity = _organizationDBContext.OvertimePlan
+                .Where(p => p.AssignedDate >= model.FromDate.UnixToDateTime() && p.AssignedDate <= model.ToDate.UnixToDateTime()).AsNoTracking();
+
+            if (model.DepartmentIds.Any())
+            {
+                var lstEmployees = await _shiftScheduleService.GetEmployeesByDepartments(model.DepartmentIds);
+                entity = entity.Where(p => lstEmployees.Select(e => e[EmployeeConstants.EMPLOYEE_ID]).ToList().Contains(p.EmployeeId));
+            }
+            return await entity.ProjectTo<OvertimePlanModel>(_mapper.ConfigurationProvider).ToArrayAsync();
         }
 
     }

@@ -33,5 +33,6 @@ namespace Services.Organization.Model.TimeKeeping
         public List<OvertimePlanModel> OvertimePlans { get; set; } = new List<OvertimePlanModel> ();
         public long FromDate { get; set; }
         public long ToDate { get; set; }
+        public List<int> DepartmentIds { get; set; } = new List<int>();
     }
 }
