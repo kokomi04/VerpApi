@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.Accountant;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Infrastructure.ApiCore;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.ProgramingFunction;
 using VErp.Services.Master.Service.ProgramingFunction;
@@ -14,9 +16,12 @@ namespace VErpApi.Controllers.System.Config
     public class UserProgramingFunctionController : VErpBaseController
     {
         public readonly IUserProgramingFunctionService _programingFunctionForUserService;
-        public UserProgramingFunctionController(IUserProgramingFunctionService programingFunctionForUserService) 
+        private readonly IProgramingFunctionHelperService _programingFunctionHelperService;
+        public UserProgramingFunctionController(IUserProgramingFunctionService programingFunctionForUserService, IProgramingFunctionHelperService programingFunctionHelperService) 
         {
             _programingFunctionForUserService = programingFunctionForUserService;
+            _programingFunctionHelperService = programingFunctionHelperService;
+
         }
         [HttpGet("List")]
         public Task<PageData<UserProgramingFunctionOutputList>> GetListFunctions([FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size)
@@ -52,6 +57,12 @@ namespace VErpApi.Controllers.System.Config
         public Task<IList<NonCamelCaseDictionary>> ExecSQLFunction([FromRoute] string programingFunctionName, [FromBody] NonCamelCaseDictionary<FuncParameter> inputData)
         {
             return _programingFunctionForUserService.ExecSQLFunction(programingFunctionName, inputData);
+        }
+
+        [HttpGet("GetAllSqlsFunctions")]
+        public async Task<PageData<ProgramingFunctionBaseModel>> GetAllListFunction()
+        {
+            return await _programingFunctionForUserService.GetAllSqls();
         }
     }
 }

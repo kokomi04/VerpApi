@@ -13,17 +13,22 @@ using VErp.Infrastructure.EF.EFExtensions;
 using AutoMapper.QueryableExtensions;
 using Microsoft.Data.SqlClient;
 using VErp.Commons.Library;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
+
 namespace VErp.Services.Master.Service.ProgramingFunction.Implement
 {
     public class UserProgramingFunctionService : IUserProgramingFunctionService
     {
         private readonly IMapper _mapper;
         private readonly MasterDBContext _masterDbContext;
+        private readonly IProgramingFunctionHelperService _programingFunctionHelperService;
 
-        public UserProgramingFunctionService(IMapper mapper, MasterDBContext masterDbContext)
+        public UserProgramingFunctionService(IMapper mapper, MasterDBContext masterDbContext, IProgramingFunctionHelperService programingFunctionHelperService)
         {
             _mapper = mapper;
             _masterDbContext = masterDbContext;
+            _programingFunctionHelperService = programingFunctionHelperService;
         }
         public async Task<int> AddFunction(UserProgramingFunctionModel model)
         {
@@ -104,7 +109,11 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
 
             return (lst, total);
         }
-
+        public async Task<PageData<ProgramingFunctionBaseModel>> GetAllSqls(string keyword)
+        {
+            var lst = (await _programingFunctionHelperService.GetAllSqls());
+            return (lst, lst.Count);
+        }
         public async Task<bool> UpdateFunction(int userProgramingFunctionId, UserProgramingFunctionModel model)
         {
             var info = await _masterDbContext.UserProgramingFunction.FirstOrDefaultAsync(f => f.UserProgramingFunctionId == userProgramingFunctionId);
@@ -117,5 +126,7 @@ namespace VErp.Services.Master.Service.ProgramingFunction.Implement
             await _masterDbContext.SaveChangesAsync();
             return true;
         }
+
+
     }
 }

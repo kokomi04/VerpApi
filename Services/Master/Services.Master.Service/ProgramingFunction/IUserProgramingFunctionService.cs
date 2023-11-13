@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum.Accountant;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.System;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Master.Model.ProgramingFunction;
 
@@ -23,5 +24,9 @@ namespace VErp.Services.Master.Service.ProgramingFunction
         Task<bool> DeleteFunction(int programingFunctionId);
 
         Task<IList<NonCamelCaseDictionary>> ExecSQLFunction(string programingFunctionName, NonCamelCaseDictionary<FuncParameter> inputData);
+
+        Task<PageData<ProgramingFunctionBaseModel>> GetAllSqls(string keyword = null);
+
+
     }
 }
