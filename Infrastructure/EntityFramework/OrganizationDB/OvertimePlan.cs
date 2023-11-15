@@ -11,7 +11,7 @@ public partial class OvertimePlan
 
     public int OvertimeLevelId { get; set; }
 
-    public int OvertimeMins { get; set; }
+    public decimal OvertimeHours { get; set; }
 
     public virtual OvertimeLevel OvertimeLevel { get; set; }
 }

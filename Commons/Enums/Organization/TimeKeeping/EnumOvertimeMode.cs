@@ -11,8 +11,8 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
     {
         [Description("Theo thời gian vào ra")]
         ByWorkingTime = 0,
-        [Description("Theo đơn tăng ca")]
-        ByOvertimeOrder = 1,
+        [Description("Theo kế hoạch tăng ca")]
+        ByOvertimePlan = 1,
         [Description("Theo cả hai")]
         ByAll = 2,
     }

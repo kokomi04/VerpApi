@@ -26,6 +26,9 @@ namespace VErp.Commons.Enums.Organization.TimeKeeping
 
         [Description("Tăng ca sau giờ làm việc")]
         AfterWork = 2,
+
+        [Description("Ngày tăng ca")]
+        DateAsOvertime = 3,
     }
     public enum EnumTimeSheetMode
     {

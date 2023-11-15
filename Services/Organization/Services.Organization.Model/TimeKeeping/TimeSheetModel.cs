@@ -78,6 +78,7 @@ namespace Services.Organization.Model.TimeKeeping
         public int[] DepartmentIds { get; set; }
         public long BeginDate { get; set; }
         public long EndDate { get; set; }
+        public bool IgnoreOvertimePlan { get; set; } = false;
     }
 
     public class TimeSheetDetailRequestModel
