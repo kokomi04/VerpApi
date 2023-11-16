@@ -41,6 +41,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         private IList<StepSimpleInfo> _steps;
 
         private IDictionary<string, bool> _productCodeMaterials;
+        private IDictionary<string, bool> _productIgnoreStep;
         private IDictionary<string, HashSet<int>> _productCodeProperties;
 
         private IDictionary<string, List<ProductBomImportModel>> _bomByProductCodes;
@@ -154,6 +155,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
+                    case nameof(ProductBomImportModel.IsIgnoreStep):
+                            entity.IsIgnoreStep = value.IsRangeOfAllowValueForBooleanTrueValue();
+                        return true;
                     case nameof(ProductBomImportModel.IsMaterial):
                         if (value.IsRangeOfAllowValueForBooleanTrueValue())
                         {
@@ -209,12 +213,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
 
 
+
         private void FindMaterial(SimpleProduct rootProduct, string parentProductCode, IList<int> paths, IList<string> pathCodes, ProductBomUpdateInfoModel model)
         {
             _existedProducts.TryGetValue(parentProductCode, out var parentInfo);
 
             if (_productCodeProperties.TryGetValue(parentProductCode, out var props) && rootProduct.ProductId != parentInfo.ProductId)
             {
+                
                 foreach (var propertyId in props)
                 {
                     var propData = new ProductPropertyModel()
@@ -229,6 +235,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }
             }
 
+            if (_productIgnoreStep.TryGetValue(parentProductCode, out var isIgnoreProcess) && isIgnoreProcess)
+            {
+                model.IgnoreStepInfo.BomIgnoreSteps.Add(new ProductIgnoreStepModel()
+                {
+                    RootProductId = rootProduct.ProductId,
+                    ProductId = parentInfo.ProductId,
+                    PathProductIds = paths.ToArray(),
+                    PathProductCodes = pathCodes.ToArray()
+                });
+            }
 
             if (_productCodeMaterials.TryGetValue(parentProductCode, out var isMaterial) && isMaterial)
             {
@@ -268,6 +284,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             _productCodeProperties = _importData.GroupBy(c => c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c => c.Key, c => c.SelectMany(m => m.Properties ?? new HashSet<int>()).Distinct().ToHashSet());
 
+            _productIgnoreStep = _importData.GroupBy(c=> c.ChildProductCode.NormalizeAsInternalName()).ToDictionary(c=> c.Key, c=> c.Max(m=> m.IsIgnoreStep));
 
             var bomData = new List<ProductBomInput>();
 
@@ -304,13 +321,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 var productMaterials = new List<ProductMaterialModel>();
 
                 var productProperties = new List<ProductPropertyModel>();
-
+                
                 var updateModel = new ProductBomUpdateInfoModel()
                 {
                     BomInfo = new ProductBomUpdateInfo(productBoms),
                     MaterialsInfo = new ProductBomMaterialUpdateInfo(new List<ProductMaterialModel>(), false),
                     PropertiesInfo = new ProductBomPropertyUpdateInfo(new List<ProductPropertyModel>(), false),
-                    IgnoreStepInfo = new ProductBomIgnoreStepUpdateInfo(new List<ProductIgnoreStepModel>(), false)
+                    IgnoreStepInfo = new ProductBomIgnoreStepUpdateInfo(new List<ProductIgnoreStepModel>(), true)
                 };
 
                 FindMaterial(rootProductInfo, bom.Key, new List<int>(), new List<string>(), updateModel);
@@ -340,7 +357,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 LoadPreviewData(bomData);
             }
         }
-
+   
         private void LoadPreviewData(IList<ProductBomInput> boms)
         {
             var rootProductIds = boms.Select(b => b.ProductId)

@@ -52,6 +52,8 @@ namespace VErp.Services.Manafacturing.Model
         public string Note { get; set; }
         [Display(Name = "Cách tính KLCV")]
         public EnumWorkloadType WorkLoadTypeId { get; set; }
+        [Display(Name = "Số giờ phân công tối thiểu")]
+        public decimal MinAssignHours { get; set; }
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<TargetProductivityDetail, TargetProductivityDetailModel>()

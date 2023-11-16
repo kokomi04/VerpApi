@@ -844,12 +844,30 @@ namespace VErp.Services.Organization.Service.Salary.Implement
             var additionValues = await PeriodAdditionValues(year, month);
 
             var additionBillFields = await _organizationDBContext.SalaryPeriodAdditionField.AsNoTracking().ToListAsync();
+
+            var duplicateData = new Dictionary<long, NonCamelCaseDictionary>();
             foreach (var item in lstData)
             {
                 long employeeId = 0;
                 if (item.ContainsKey(OrganizationConstants.HR_TABLE_F_IDENTITY))
                 {
                     employeeId = Convert.ToInt64(item[OrganizationConstants.HR_TABLE_F_IDENTITY]);
+                }
+                if (duplicateData.TryGetValue(employeeId, out var existedItem))
+                {
+
+                    foreach (var (fieldName, v1) in item)
+                    {
+                        existedItem.TryGetValue(fieldName, out var v2);
+                        if (v1?.ToString() != v2?.ToString())
+                        {
+                            throw GeneralCode.InternalError.BadRequest($"Ambiguous value for employee ID {employeeId}, FieldName ({fieldName}): {v1}, {v2}");
+                        }
+                    }
+                }
+                else
+                {
+                    duplicateData.Add(employeeId, item);
                 }
 
                 if (additionValues.TryGetValue(employeeId, out var fieldValues))
@@ -949,13 +967,13 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                 e => e.GroupBy(f => f.FieldName).ToDictionary(f => f.Key, f => f.Sum(v => v.Value.Value))
                 );
         }
-        private async Task NormalizeFieldNameInClause(Clause clause, IList<ProgramingFunctionBaseModel> sqls = null, long fromDate = 0, long toDate =0, int month =0, int year =0)
+        private async Task NormalizeFieldNameInClause(Clause clause, IList<ProgramingFunctionBaseModel> sqls = null, long fromDate = 0, long toDate = 0, int month = 0, int year = 0)
         {
             if (clause is SingleClause single)
             {
                 single.FieldName = EscaseFieldName(single.FieldName);
 
-                if (sqls != null && sqls.Any(x=>single.Value != null && single.Value.ToString().Contains(x.ProgramingFunctionName)))
+                if (sqls != null && sqls.Any(x => single.Value != null && single.Value.ToString().Contains(x.ProgramingFunctionName)))
                 {
                     var paramsData = new NonCamelCaseDictionary();
                     paramsData.Add($"{SALARY_PARAM_PREFIX}FromDate", fromDate);
