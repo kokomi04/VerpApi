@@ -100,6 +100,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var lstEmployees = await _shiftScheduleService.GetEmployeesByDepartments(model.DepartmentIds);
                 entity = entity.Where(p => lstEmployees.Select(e => e[EmployeeConstants.EMPLOYEE_ID]).ToList().Contains(p.EmployeeId));
             }
+            if (model.EmployeeIds.Any())
+            {
+                entity = entity.Where(p => model.EmployeeIds.Contains(p.EmployeeId));
+            }
+
             return await entity.ProjectTo<OvertimePlanModel>(_mapper.ConfigurationProvider).ToArrayAsync();
         }
 

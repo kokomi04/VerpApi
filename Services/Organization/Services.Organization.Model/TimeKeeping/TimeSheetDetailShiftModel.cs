@@ -28,7 +28,7 @@ namespace Services.Organization.Model.TimeKeeping
 
         public int? DateAsOvertimeLevelId { get; set; }
 
-        public bool HasOvertimePlan { get; set; }
+        public bool NonAbsentScheduled { get; set; }
 
         public IList<TimeSheetDetailShiftCountedModel> TimeSheetDetailShiftCounted { get; set; } = new List<TimeSheetDetailShiftCountedModel>();
 

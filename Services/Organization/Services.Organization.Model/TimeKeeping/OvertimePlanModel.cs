@@ -17,7 +17,7 @@ namespace Services.Organization.Model.TimeKeeping
 
         public int OvertimeLevelId { get; set; }
 
-        public int OvertimeMins { get; set; }
+        public decimal OvertimeHours { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -34,5 +34,6 @@ namespace Services.Organization.Model.TimeKeeping
         public long FromDate { get; set; }
         public long ToDate { get; set; }
         public List<int> DepartmentIds { get; set; } = new List<int>();
+        public List<long> EmployeeIds { get; set; } = new List<long>();
     }
 }

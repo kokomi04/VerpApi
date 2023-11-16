@@ -85,7 +85,7 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
         [VErpAction(EnumActionType.View)]
         public async Task<List<TimeSheetByEmployeeModel>> GenerateTimeSheet([FromBody] TimeSheetByEmployeeRequestModel model)
         {
-            return await _timeSheetService.GenerateTimeSheet(model.TimeSheetId, model.DepartmentIds, model.BeginDate, model.EndDate);
+            return await _timeSheetService.GenerateTimeSheet(model.TimeSheetId, model.DepartmentIds, model.BeginDate, model.EndDate, model.IgnoreOvertimePlan);
         }
 
         

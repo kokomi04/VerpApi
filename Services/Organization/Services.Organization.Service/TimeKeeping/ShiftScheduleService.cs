@@ -34,8 +34,9 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         Task<ShiftScheduleModel> GetShiftSchedule(long shiftScheduleId);
         Task<bool> UpdateShiftSchedule(long shiftScheduleId, ShiftScheduleModel model);
         Task<IList<NonCamelCaseDictionary>> GetEmployeesByDepartments(List<int> departmentIds);
-        Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees();
-        Task<List<EmployeeViolationModel>> GetListEmployeeViolations();
+        Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees(long? fromDate, long? toDate);
+        Task<List<EmployeeScheduleModel>> GetListEmployeeViolations();
+        Task<IList<EmployeeScheduleModel>> GetAssignedDateEmployees(long? fromDate, long? toDate);
         Task<CategoryNameModel> GetFieldDataForMapping();
         Task<List<ShiftScheduleDetailModel>> ImportShiftScheduleFromMapping(long shiftScheduleId, long fromDate, long toDate, ImportExcelMapping mapping, Stream stream);
     }
@@ -171,7 +172,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
             if (filter.DepartmentIds != null && filter.DepartmentIds.Count > 0)
             {
-                var employeeIds = (await GetEmployeesByDepartments(filter.DepartmentIds)).Select(e => e["F_Id"]).ToList();
+                var employeeIds = (await GetEmployeesByDepartments(filter.DepartmentIds)).Select(e => e[EmployeeConstants.EMPLOYEE_ID]).ToList();
 
                 query = query.Where(t => t.ShiftScheduleDetail.Any(e => employeeIds.Contains(e.EmployeeId)));
             }
@@ -217,16 +218,23 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return lstData;
         }
 
-        public async Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees()
+        public async Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees(long? fromDate, long? toDate)
         {
             var employees = await GetEmployeesByDepartments(new List<int>());
 
-            var scheduledEmployeeIds = _organizationDBContext.ShiftScheduleDetail.Select(d => (long)d.EmployeeId).Distinct().ToList();
+            var scheduleDetails = _organizationDBContext.ShiftScheduleDetail.AsNoTracking();
 
-            return employees.Where(e => !scheduledEmployeeIds.Contains((long)e["F_Id"])).ToList();
+            if(fromDate.HasValue && toDate.HasValue)
+            {
+                scheduleDetails = scheduleDetails.Where(s => s.AssignedDate >= fromDate.UnixToDateTime() && s.AssignedDate <= toDate.UnixToDateTime());
+            }
+
+            var scheduledEmployeeIds = scheduleDetails.Select(d => (long)d.EmployeeId).Distinct().ToList();
+
+            return employees.Where(e => !scheduledEmployeeIds.Contains((long)e[EmployeeConstants.EMPLOYEE_ID])).ToList();
         }
 
-        public async Task<List<EmployeeViolationModel>> GetListEmployeeViolations()
+        public async Task<List<EmployeeScheduleModel>> GetListEmployeeViolations()
         {
             var query = _organizationDBContext.ShiftSchedule
                 .Include(s => s.ShiftScheduleDetail)
@@ -236,7 +244,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
 
             var shifts = await _organizationDBContext.ShiftConfiguration.ToDictionaryAsync(s => s.ShiftConfigurationId);
-            var allViolations = new Dictionary<(long EmployeeId, long AssignedDate), EmployeeViolationModel>();
+            var allViolations = new Dictionary<(long EmployeeId, long AssignedDate), EmployeeScheduleModel>();
 
             foreach (var schedule in shiftSchedules)
             {
@@ -271,7 +279,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                                     var violationKey = (key.EmployeeId, key.AssignedDate);
                                     if (!allViolations.ContainsKey(violationKey))
                                     {
-                                        allViolations[violationKey] = new EmployeeViolationModel
+                                        allViolations[violationKey] = new EmployeeScheduleModel
                                         {
                                             EmployeeId = key.EmployeeId,
                                             AssignedDate = key.AssignedDate,
@@ -290,6 +298,28 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
             return allViolations.Values.ToList();
+        }
+
+        public async Task<IList<EmployeeScheduleModel>> GetAssignedDateEmployees(long? fromDate, long? toDate)
+        {
+            var scheduleDetails = _organizationDBContext.ShiftScheduleDetail.AsNoTracking();
+
+            if (fromDate.HasValue && toDate.HasValue)
+            {
+                scheduleDetails = scheduleDetails.Where(s => s.AssignedDate >= fromDate.UnixToDateTime() && s.AssignedDate <= toDate.UnixToDateTime());
+            }
+
+            var result = new List<EmployeeScheduleModel>();
+
+            foreach (var detail in scheduleDetails)
+            {
+                result.Add( new EmployeeScheduleModel() {
+                    EmployeeId = detail.EmployeeId, 
+                    AssignedDate = detail.AssignedDate.GetUnix()
+                    });
+            }
+
+            return result;
         }
 
         //private async Task<List<EmployeeViolationModel>> CheckForViolations(ShiftScheduleModel model)
