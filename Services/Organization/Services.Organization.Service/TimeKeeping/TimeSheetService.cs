@@ -608,10 +608,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                             var detailShift = CreateDetailShift(shift, detail, timeInRaw, timeOutRaw, countedSymbols, absences, (EnumOvertimeMode)schedule.OvertimeMode, overtimePlans, ignoreOvertimePlan);
 
-                            if (detailShift != null)
-                            {
-                                detailShifts.Add(detailShift);
-                            }
+                            detailShifts.Add(detailShift);
                         }
                         detail.TimeSheetDetailShift = detailShifts;
                         details.Add(detail);
@@ -638,6 +635,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         {
             var detailShift = new TimeSheetDetailShiftModel();
             detailShift.ShiftConfigurationId = shift.ShiftConfigurationId;
+            if (overtimeMode == EnumOvertimeMode.ByOvertimePlan)
+            {
+                SetOvertimeByPlan(detailShift, detail, shift, countedSymbols, overtimePlans);
+            } 
 
             if (timeInRaw.HasValue)
             {
@@ -697,7 +698,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             //Vắng (V)
                             if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
                             {
-                                return null;
+                                return detailShift;
                             }
                         }
                     }
@@ -717,7 +718,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     //(V)
                     if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
                     {
-                        return null;
+                        return detailShift;
                     }
                 }
             }
@@ -773,7 +774,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             //Vắng (V)
                             if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
                             {
-                                return null;
+                                return detailShift;
                             }
                         }
                     }
@@ -800,7 +801,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     //(V)
                     if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
                     {
-                        return null;
+                        return detailShift;
                     }
                 }
             }
@@ -816,7 +817,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 else if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
                 {
-                    return null;
+                    return detailShift;
                 }
             }
 
@@ -834,7 +835,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 detailShift.TimeSheetDetailShiftCounted = detailShift.TimeSheetDetailShiftCounted.Where(c => c.CountedSymbolId != GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol).CountedSymbolId).ToIList();
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeDateSymbol));
-                detailShift.TimeSheetDetailShiftOvertime.Clear();
                 detailShift.TimeSheetDetailShiftOvertime.Add(new TimeSheetDetailShiftOvertimeModel()
                 {
                     ShiftConfigurationId = shift.ShiftConfigurationId,
@@ -877,8 +877,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 return;
             }
-
-            detailShift.HasOvertimePlan = true;
 
             var overtime = new TimeSheetDetailShiftOvertimeModel()
             {
@@ -950,10 +948,20 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
         }
 
-        private bool SetDetailShiftForAbsence(EnumTimeSheetDateType timeSheetDateType, TimeSheetDetailShiftModel detailShift, int? absenceTypeSymbolId, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, List<AbsenceTypeSymbolModel> absences)
+        private bool SetDetailShiftForAbsence(EnumTimeSheetDateType timeSheetDateType
+            , TimeSheetDetailShiftModel detailShift
+            , int? absenceTypeSymbolId
+            , ShiftConfigurationModel shift
+            , List<CountedSymbolModel> countedSymbols
+            , List<AbsenceTypeSymbolModel> absences)
         {
             if ((timeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift) || (timeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsSkipHolidayWithShift))
             {
+                detailShift.NonAbsentScheduled = true;
+                detailShift.WorkCounted = 0;
+                detailShift.ActualWorkMins = 0;
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OffSymbol));
+
                 return false;
             }
 
@@ -1040,6 +1048,29 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     break;
             }
             return overTimeLevelId;
+        }
+
+        private void SetOvertimeByPlan(TimeSheetDetailShiftModel detailShift, TimeSheetDetailModel detail, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, IList<OvertimePlanModel> overtimePlans)
+        {
+            detailShift.TimeSheetDetailShiftOvertime.Clear();
+
+            var overtimePlan = overtimePlans.Where(p => p.AssignedDate == detail.Date && p.EmployeeId == detail.EmployeeId && p.OvertimeHours > 0);
+
+            if (overtimePlan.Any())
+            {
+                foreach (var plan in overtimePlan)
+                {
+                    detailShift.TimeSheetDetailShiftOvertime.Add(new TimeSheetDetailShiftOvertimeModel()
+                    {
+                        ShiftConfigurationId = detailShift.ShiftConfigurationId,
+                        OvertimeLevelId = plan.OvertimeLevelId,
+                        OvertimeType = EnumTimeSheetOvertimeType.DateAsOvertime,
+                        MinsOvertime = (long)(plan.OvertimeHours * 60)
+                    });
+                }
+
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
+            }
         }
 
         private void SetsMinsLate(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeInRaw)

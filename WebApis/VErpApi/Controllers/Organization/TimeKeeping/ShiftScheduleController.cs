@@ -78,16 +78,23 @@ namespace VErpApi.Controllers.Organization.TimeKeeping
 
         [HttpPost("notAssignedEmployees")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees()
+        public async Task<IList<NonCamelCaseDictionary>> GetNotAssignedEmployees([FromQuery] long? fromDate, [FromQuery] long? toDate)
         {
-            return await _shiftScheduleService.GetNotAssignedEmployees();
+            return await _shiftScheduleService.GetNotAssignedEmployees(fromDate, toDate);
         }
 
         [HttpPost("warnings")]
         [VErpAction(EnumActionType.View)]
-        public async Task<IList<EmployeeViolationModel>> GetListEmployeeViolations()
+        public async Task<IList<EmployeeScheduleModel>> GetListEmployeeViolations()
         {
             return await _shiftScheduleService.GetListEmployeeViolations();
+        }
+
+        [HttpPost("assignedEmployees")]
+        [VErpAction(EnumActionType.View)]
+        public async Task<IList<EmployeeScheduleModel>> GetAssignedDateEmployees([FromQuery] long? fromDate, [FromQuery] long? toDate)
+        {
+            return await _shiftScheduleService.GetAssignedDateEmployees(fromDate, toDate);
         }
 
         [HttpGet]

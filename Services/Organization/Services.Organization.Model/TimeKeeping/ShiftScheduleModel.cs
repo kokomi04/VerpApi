@@ -55,7 +55,7 @@ public class ShiftScheduleRequestModel : ShiftScheduleFilterModel
     public int Size { get; set; }
 }
 
-public class EmployeeViolationModel
+public class EmployeeScheduleModel
 {
     public long EmployeeId { get; set; }
     public long AssignedDate { get; set; }
