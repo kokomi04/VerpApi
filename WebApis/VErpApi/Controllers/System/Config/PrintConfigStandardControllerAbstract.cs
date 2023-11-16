@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
@@ -24,9 +25,26 @@ namespace VErpApi.Controllers.System.Config
         [HttpPost]
         [Route("search")]
         [VErpAction(EnumActionType.View)]
-        public Task<PageData<TModel>> Search([FromQuery] int moduleTypeId, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByField, [FromQuery] bool asc)
+        public Task<PageData<TModel>> Search([FromQuery] int? moduleTypeId, [FromQuery] IList<int> printConfigIds, [FromQuery] string keyword, [FromQuery] int page, [FromQuery] int size, [FromQuery] string orderByField, [FromQuery] bool asc)
         {
-            return _printConfigService.Search(moduleTypeId, keyword, page, size, orderByField, asc);
+            return _printConfigService.Search(moduleTypeId, printConfigIds, keyword, page, size, orderByField, asc);
+        }
+
+        [HttpPost]
+        [Route("GetByIds")]
+        [VErpAction(EnumActionType.View)]
+        [GlobalApi]
+        public async Task<IList<TModel>> GetByIds([FromBody] IList<int> printConfigIds)
+        {
+            return (await _printConfigService.Search(null, printConfigIds, null, 1, 0, null, true)).List;
+        }
+
+        [HttpGet]
+        [Route("GetByName")]
+        [GlobalApi]
+        public async Task<TModel> GetByName([FromQuery] string name)
+        {
+            return await _printConfigService.GetPrintConfigByName(name);
         }
 
         [HttpGet]
