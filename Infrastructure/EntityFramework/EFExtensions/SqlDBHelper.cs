@@ -739,7 +739,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         //    values = lst;
                         //}
                         var type = clause.Value.GetType();
-                        if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                        if (type != typeof(string) && (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                         {
                             foreach (object v in (dynamic)clause.Value)
                             {
@@ -925,7 +925,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                             //    values = lst;
                             //}
                             var type = clause.Value.GetType();
-                            if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                            if (type != typeof(string) && (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                             {
                                 foreach (object v in (dynamic)clause.Value)
                                 {
