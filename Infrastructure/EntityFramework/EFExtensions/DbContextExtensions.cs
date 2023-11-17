@@ -493,11 +493,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 Expression toDate = null;
                 if (clause.DataType == EnumDataType.Date)
                 {
-                    if (clause.Value.IsNullOrEmptyObject() )
+                    if (clause.Value.IsNullOrEmptyObject())
                     {
                         fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
                         toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
-                    } 
+                    }
                     else
                     {
                         var date = ((long)clause.Value).UnixToDateTime(timeZoneOffset);
@@ -507,12 +507,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)fDate }), "p");
                             toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)tDate }), "p");
-                        } else
+                        }
+                        else
                         {
                             fromDate = Expression.PropertyOrField(Expression.Constant(new { p = fDate }), "p");
                             toDate = Expression.PropertyOrField(Expression.Constant(new { p = tDate }), "p");
                         }
-                        
+
                     }
 
                 }
@@ -583,7 +584,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         //    values = lst;
                         //}
                         var type = clause.Value.GetType();
-                        if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                        if (type != typeof(string) && (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                         {
                             foreach (object v in (dynamic)clause.Value)
                             {
