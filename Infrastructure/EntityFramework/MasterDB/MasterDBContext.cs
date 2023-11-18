@@ -389,8 +389,6 @@ public partial class MasterDBContext : DbContext
                 .HasMaxLength(255)
                 .HasDefaultValueSql("('{}')")
                 .HasComment("");
-            entity.Property(e => e.WorkingFromDate).HasColumnType("datetime");
-            entity.Property(e => e.WorkingToDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<EmailConfiguration>(entity =>

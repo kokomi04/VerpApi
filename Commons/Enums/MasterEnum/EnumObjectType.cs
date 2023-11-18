@@ -318,6 +318,7 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionMaterialsRequirement = 102,
         [Description("Vật tư tiêu hao của mặt hàng")]
         ProductMaterialsConsumption = 321,
+       
         [Description("Bán thành phẩm")]
         ProductSemi = 322,
         [Description("Bán thành phẩm chuyển đổi")]
@@ -326,7 +327,8 @@ namespace VErp.Commons.Enums.MasterEnum
         ProductionProcessMold = 324,
         [Description("Nhóm vật tư tiêu hao")]
         ConsumptionGroup = 325,
-
+        [Description("Thiết lập ngày làm việc")]
+        WorkingDateConfig = 229,
 
         [Description("Kế hoạch sản xuất")]
         ProductionPlan = 400,
