@@ -162,6 +162,8 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<WorkScheduleMark> WorkScheduleMark { get; set; }
 
+    public virtual DbSet<WorkingDate> WorkingDate { get; set; }
+
     public virtual DbSet<WorkingHourInfo> WorkingHourInfo { get; set; }
 
     public virtual DbSet<WorkingWeekInfo> WorkingWeekInfo { get; set; }
@@ -1115,6 +1117,12 @@ public partial class OrganizationDBContext : DbContext
                 .HasForeignKey(d => d.WorkScheduleId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_WorkScheduleMark_WorkSchedule");
+        });
+
+        modelBuilder.Entity<WorkingDate>(entity =>
+        {
+            entity.Property(e => e.WorkingFromDate).HasColumnType("datetime");
+            entity.Property(e => e.WorkingToDate).HasColumnType("datetime");
         });
 
         modelBuilder.Entity<WorkingHourInfo>(entity =>

@@ -12,12 +12,4 @@ public partial class DataConfig
     public bool AutoClosingDate { get; set; }
 
     public string FreqClosingDate { get; set; }
-
-    public DateTime? WorkingFromDate { get; set; }
-
-    public DateTime? WorkingToDate { get; set; }
-
-    public bool? IsIgnoreAccountant { get; set; }
-
-    public bool? IsAutoUpdateWorkingDate { get; set; }
 }
