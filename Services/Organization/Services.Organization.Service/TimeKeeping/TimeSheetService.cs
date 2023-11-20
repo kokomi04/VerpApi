@@ -468,7 +468,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                             TimeIn = null,
                             TimeOut = null
                         };
-                        SetDetailShiftForAbsence(EnumTimeSheetDateType.Weekday, detailShift, null, shift, countedSymbols, absences);
+                        SetDetailShiftForAbsence(EnumTimeSheetDateType.Weekday, detailShift, absenceTypeSymbolId, shift, countedSymbols, absences);
 
                         lstDetailShift.Add(detailShift);
                     }
@@ -702,7 +702,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
+                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences))
                             {
                                 return detailShift;
                             }
@@ -722,7 +722,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
+                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences))
                     {
                         return detailShift;
                     }
@@ -776,7 +776,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
+                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences))
                             {
                                 return detailShift;
                             }
@@ -803,7 +803,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
+                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences))
                     {
                         return detailShift;
                     }
