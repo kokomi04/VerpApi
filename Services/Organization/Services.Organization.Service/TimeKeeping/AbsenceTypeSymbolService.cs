@@ -54,6 +54,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (absenceTypeSymbol.SymbolCode != model.SymbolCode && await _organizationDBContext.AbsenceTypeSymbol.AnyAsync(a => a.SymbolCode == model.SymbolCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu loại vắng đã tồn tại");
 
+            if (!model.IsUsed)
+            {
+                await ValidateWithShiftConfig(absenceTypeSymbolId);
+            }
+
             model.AbsenceTypeSymbolId = absenceTypeSymbolId;
             _mapper.Map(model, absenceTypeSymbol);
 
@@ -68,16 +73,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (absenceTypeSymbol == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            var shift = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(s => s.ExceededEarlyAbsenceTypeId == absenceTypeSymbolId
-                    || s.ExceededLateAbsenceTypeId == absenceTypeSymbolId
-                    || s.NoEntryTimeAbsenceTypeId == absenceTypeSymbolId
-                    || s.NoExitTimeAbsenceTypeId == absenceTypeSymbolId);
+            await ValidateWithShiftConfig(absenceTypeSymbolId);
 
-
-            if (shift != null)
-            {
-                throw new BadRequestException(GeneralCode.ItemInUsed, $"Ký hiệu này đang được sử dụng ở ca làm việc {shift.ShiftCode}");
-            }
             absenceTypeSymbol.IsDeleted = true;
             await _organizationDBContext.SaveChangesAsync();
 
@@ -99,6 +96,20 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 .OrderBy(o => !o.IsAnnualLeave).ThenBy(o => !o.IsUnpaidLeave)
                 .ThenBy(o => o.CreatedDatetimeUtc)
                 .ProjectTo<AbsenceTypeSymbolModel>(_mapper.ConfigurationProvider).ToListAsync();
+        }
+
+        private async Task ValidateWithShiftConfig(long absenceTypeSymbolId)
+        {
+            var shift = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(s => s.ExceededEarlyAbsenceTypeId == absenceTypeSymbolId
+                    || s.ExceededLateAbsenceTypeId == absenceTypeSymbolId
+                    || s.NoEntryTimeAbsenceTypeId == absenceTypeSymbolId
+                    || s.NoExitTimeAbsenceTypeId == absenceTypeSymbolId);
+
+
+            if (shift != null)
+            {
+                throw new BadRequestException(GeneralCode.ItemInUsed, $"Ký hiệu này đang được sử dụng ở ca làm việc {shift.ShiftCode}");
+            }
         }
     }
 }
