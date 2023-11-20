@@ -37,10 +37,8 @@ namespace VErpApi.Controllers.System.Config
             return _printConfigCustomService.RollbackPrintConfigCustom(printConfigId);
         }
 
-
-        [HttpPost]
+        [HttpGet]
         [Route("GetByObject")]
-        [VErpAction(EnumActionType.View)]
         [GlobalApi]
         public async Task<IList<PrintConfigCustomModel>> GetByObject([FromQuery] EnumObjectType objectTypeId, [FromQuery] int objectId)
         {
