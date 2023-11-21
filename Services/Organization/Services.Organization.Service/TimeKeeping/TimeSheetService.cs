@@ -1544,7 +1544,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var violationDepartments = existTimeSheetDepartments.FirstOrDefault(d => item.DepartmentId == d.DepartmentId);
                 if (violationDepartments != null)
                 {
-                    var department = await _departmentService.GetDepartmentInfo(item.DepartmentId);
+                    var department = await _organizationDBContext.Department.FindAsync(item.DepartmentId);
                     throw new BadRequestException($"Đã tồn tại BCC tháng {model.Month}/{model.Year} cho bộ phận \"{department.DepartmentCode} - {department.DepartmentName}\"");
                 }
             }
