@@ -36,6 +36,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public EnumAssignedProgressStatus? AssignedInputStatus { get; set; }
 
+        public bool IsUseMinAssignHours { get; set; }
+
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
         public ProductionAssignmentModel()
@@ -109,6 +111,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public decimal? WorkloadPerDay { get; set; }
         public decimal? WorkHourPerDay { get; set; }
+        public decimal? MinAssignHours { get; set; }
+        public bool IsUseMinAssignHours { get; set; }
 
         //public void SetWorkloadPerDay(decimal? workloadPerDay)
         //{

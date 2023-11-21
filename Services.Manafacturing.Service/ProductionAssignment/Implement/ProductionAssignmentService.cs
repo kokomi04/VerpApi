@@ -357,9 +357,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Tổng số lượng phân công từng ngày phải bằng số lượng phân công, {step.Title}");
                     }
 
+                    
                     if (d.AssignmentQuantity <= 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phân công phải lớn hơn 0, {step.Title}");
-
+                    d.IsUseMinAssignHours = d.ProductionAssignmentDetail?.Any(d => d.IsUseMinAssignHours) == true;
 
                     var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == d.DepartmentId);
                     if (entity == null)

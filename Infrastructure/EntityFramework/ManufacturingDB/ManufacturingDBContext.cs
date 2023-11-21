@@ -304,6 +304,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.WorkDate, e.ProductionOrderId }).HasName("PK_ProductionAssignment_copy2");
 
             entity.Property(e => e.HoursPerDay).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.MinAssignHours).HasColumnType("decimal(32, 21)");
             entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.WorkloadPerDay).HasColumnType("decimal(32, 12)");
 
