@@ -36,7 +36,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
 
         public EnumAssignedProgressStatus? AssignedInputStatus { get; set; }
 
-        public bool IsUseMinAssignHours { get; set; }
+        public bool? IsUseMinAssignHours { get; set; }
 
         public virtual ICollection<ProductionAssignmentDetailModel> ProductionAssignmentDetail { get; set; }
 
@@ -99,11 +99,13 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
                 .ForMember(s => s.QuantityPerDay, d => d.MapFrom(m => m.QuantityPerDay))
                 .ForMember(s => s.WorkloadPerDay, d => d.MapFrom(m => m.WorkloadPerDay))
                 .ForMember(s => s.WorkHourPerDay, d => d.MapFrom(m => m.HoursPerDay))
+                .ForMember(s => s.DetailLinkDatas, d => d.MapFrom(m => m.ProductionAssignmentDetailLinkData))
                 .ReverseMapCustom()
                 .ForMember(s => s.WorkDate, d => d.MapFrom(m => m.WorkDate.UnixToDateTime()))
                 .ForMember(s => s.QuantityPerDay, d => d.MapFrom(m => m.QuantityPerDay))
                 .ForMember(s => s.WorkloadPerDay, d => d.MapFrom(m => m.WorkloadPerDay))
-                .ForMember(s => s.HoursPerDay, d => d.MapFrom(m => m.WorkHourPerDay));
+                .ForMember(s => s.HoursPerDay, d => d.MapFrom(m => m.WorkHourPerDay))
+                .ForMember(s => s.ProductionAssignmentDetailLinkData, d => d.MapFrom(m => m.DetailLinkDatas));
         }
 
         //private decimal? _workloadPerDay;
@@ -112,7 +114,7 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public decimal? WorkloadPerDay { get; set; }
         public decimal? WorkHourPerDay { get; set; }
         public decimal? MinAssignHours { get; set; }
-        public bool IsUseMinAssignHours { get; set; }
+        public bool? IsUseMinAssignHours { get; set; }
 
         //public void SetWorkloadPerDay(decimal? workloadPerDay)
         //{
@@ -123,6 +125,22 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         //{
         //    _workHourPerDay = workHourPerDay;
         //}
+        public IList<ProductionAssignmentDetailLinkDataModel> DetailLinkDatas { get; set; }
+    }
+
+    public class ProductionAssignmentDetailLinkDataModel : IMapFrom<ProductionAssignmentDetailLinkData>
+    {
+        public long ProductionStepLinkDataId { get; set; }
+
+        public decimal QuantityPerDay { get; set; }
+
+        public decimal WorkloadPerDay { get; set; }
+
+        public decimal HoursPerDay { get; set; }
+
+        public decimal MinAssignHours { get; set; }
+
+        public bool IsUseMinAssignHours { get; set; }
     }
 
     public class ProductionAssignmentInputModel
@@ -166,6 +184,8 @@ namespace VErp.Services.Manafacturing.Model.ProductionAssignment
         public long? StartDate { get; set; }
         public long? EndDate { get; set; }
         public bool IsSelectionAssign { get; set; }
+        public bool? IsUseMinAssignHours { get; set; }
+        
         public bool IsManualSetStartDate { get; set; }
         public bool IsManualSetEndDate { get; set; }
         public decimal? RateInPercent { get; set; }

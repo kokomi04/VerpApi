@@ -21,7 +21,9 @@ public partial class ProductionAssignmentDetail
 
     public decimal? MinAssignHours { get; set; }
 
-    public bool IsUseMinAssignHours { get; set; }
+    public bool? IsUseMinAssignHours { get; set; }
 
     public virtual ProductionAssignment ProductionAssignment { get; set; }
+
+    public virtual ICollection<ProductionAssignmentDetailLinkData> ProductionAssignmentDetailLinkData { get; set; } = new List<ProductionAssignmentDetailLinkData>();
 }
