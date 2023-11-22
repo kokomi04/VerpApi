@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 
 namespace VErp.Services.Accountancy.Model.Input
 {
@@ -19,6 +20,7 @@ namespace VErp.Services.Accountancy.Model.Input
         public bool IsMultirow { get; set; }
         public int Page { get; set; }
         public int Size { get; set; }
+        public BaseWorkingDateModel WorkingDate { get; set; }
     }
 
     public class InputTypeBillsExportFilterModel : InputTypeBillsRequestFilterModel

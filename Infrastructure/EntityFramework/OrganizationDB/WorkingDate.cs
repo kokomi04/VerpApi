@@ -11,11 +11,9 @@ public partial class WorkingDate
 
     public int SubsidiaryId { get; set; }
 
-    public bool? IsIgnoreAccountant { get; set; }
-
-    public bool? IsAutoUpdateWorkingDate { get; set; }
-
     public DateTime? WorkingFromDate { get; set; }
 
     public DateTime? WorkingToDate { get; set; }
+
+    public string WorkingDateConfig { get; set; }
 }
