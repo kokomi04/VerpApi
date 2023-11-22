@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -25,7 +26,7 @@ namespace VErp.Services.Accountancy.Service.Input
 
     public interface IInputDataServiceBase
     {
-        Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size);
+        Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size, BaseWorkingDateModel baseWorkingDateModel = null);
 
         Task<PageDataTable> GetBillInfoRows(int inputTypeId, long fId, string orderByFieldName, bool asc, int page, int size);
 

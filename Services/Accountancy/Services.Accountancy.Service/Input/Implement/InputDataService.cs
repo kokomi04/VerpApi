@@ -24,6 +24,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -225,7 +226,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size, BaseWorkingDateModel workingDate = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -257,6 +258,21 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var whereCondition = new StringBuilder();
 
             whereCondition.Append($"r.InputTypeId = @InputTypeId AND {GlobalFilter()}");
+            if (workingDate != null)
+            {
+                if ((!workingDate.IsIgnoreFilterAccountant.HasValue || !workingDate.IsIgnoreFilterAccountant.Value)
+                    && workingDate.WorkingFromDate != null && workingDate.WorkingToDate != null)
+                {
+                    if (!fromDate.HasValue || fromDate.Value < workingDate.WorkingFromDate)
+                    {
+                        fromDate = workingDate.WorkingFromDate;
+                    }
+                    if (!toDate.HasValue || toDate.Value > workingDate.WorkingToDate)
+                    {
+                        toDate = workingDate.WorkingToDate;
+                    }
+                }
+            }
             if (fromDate.HasValue && toDate.HasValue)
             {
                 whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
