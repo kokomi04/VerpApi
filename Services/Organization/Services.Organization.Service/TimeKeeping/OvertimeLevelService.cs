@@ -80,6 +80,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             await UpdateSortOrder(overtimeLevel.SortOrder, null);
 
             overtimeLevel.IsDeleted = true;
+
+            var overtimePlansToRemove = _organizationDBContext.OvertimePlan.Where(p => p.OvertimeLevelId == overtimeLevelId);
+            _organizationDBContext.OvertimePlan.RemoveRange(overtimePlansToRemove);
+
             await _organizationDBContext.SaveChangesAsync();
 
             return true;
