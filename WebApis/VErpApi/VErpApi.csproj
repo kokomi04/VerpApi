@@ -11,14 +11,14 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>bin\Debug\netcoreapp3.1\VErpApi.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\net7.0\VErpApi.xml</DocumentationFile>
     <OutputPath></OutputPath>
     <NoWarn>1701;1702;1705;1591</NoWarn>
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <DocumentationFile>bin\Release\netcoreapp3.1\VErpApi.xml</DocumentationFile>
+    <DocumentationFile>bin\Release\net7.0\VErpApi.xml</DocumentationFile>
     <NoWarn>1701;1702;1705;1591</NoWarn>
     <Optimize>false</Optimize>
   </PropertyGroup>
