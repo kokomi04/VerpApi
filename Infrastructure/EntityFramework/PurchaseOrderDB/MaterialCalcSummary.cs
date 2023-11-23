@@ -19,6 +19,8 @@ public partial class MaterialCalcSummary
 
     public bool IsSubCalculation { get; set; }
 
+    public string? OrdersQuantity { get; set; }
+
     public virtual MaterialCalc MaterialCalc { get; set; }
 
     public virtual ICollection<MaterialCalcSummarySubCalculation> MaterialCalcSummarySubCalculation { get; set; } = new List<MaterialCalcSummarySubCalculation>();
