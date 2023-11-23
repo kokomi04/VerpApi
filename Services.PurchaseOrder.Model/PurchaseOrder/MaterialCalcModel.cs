@@ -100,6 +100,8 @@ namespace VErp.Services.PurchaseOrder.Model.PurchaseOrder
 
         public bool IsSubCalculation { get; set; }
 
+        public string? OrdersQuantity { get; set; }
+
         public IList<MaterialCalcSummarySubCalculationModel> SubCalculations { get; set; }
 
         public void Mapping(Profile profile)
