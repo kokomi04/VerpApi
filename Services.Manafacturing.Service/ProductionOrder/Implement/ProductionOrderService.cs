@@ -1137,7 +1137,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
                             var assignInfos = new List<CapacityAssignInfo>();
-                            var totalHours = 0M;
+                            //var totalHours = 0M;
                             foreach (var depId in departmentIds)
                             {
                                 //decimal assignQuantity = 0;
@@ -1224,7 +1224,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 var (assignWorkHour, assignIsUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, wokloadQuantiy);
                                 
-                                totalHours += assignWorkHour;
+                               // totalHours += assignWorkHour;
 
                                 assignInfos.Add(new CapacityAssignInfo()
                                 {
@@ -1249,6 +1249,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
 
+                            var (totalHours, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, totalWorkloadQuantity);
 
                             return new ProductionStepWorkloadAssignModel
                             {
