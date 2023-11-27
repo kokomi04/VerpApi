@@ -16,7 +16,7 @@ namespace Verp.Services.ReportConfig.Model
         public int? DecimalPlace { get; set; }
         public bool? IsArray { get; set; }
         public bool? IsRepeat { get; set; }
-        public bool? IsNotRepeatGroupCol { get; set; }
+        public bool? IsRepeatGroupCol { get; set; }
         public bool IsCalcSum { get; set; }
         public string CalcSumConditionCol { get; set; }
         public bool IsHidden { get; set; }
