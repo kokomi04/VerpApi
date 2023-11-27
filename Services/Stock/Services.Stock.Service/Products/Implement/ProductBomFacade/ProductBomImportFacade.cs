@@ -588,6 +588,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         }
                         importProducts.Add(productImport);
                         break;
+                    default:
+                        break;
                 }
             }
             _importData = importProducts;

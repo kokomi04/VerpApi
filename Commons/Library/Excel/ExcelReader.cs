@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using VErp.Commons.Constants;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.Attributes;
@@ -627,13 +628,31 @@ namespace VErp.Commons.Library
                         if(mapping.HandleFilterOptionId != null)
                         {
                             var handleFilterOption = field.GetCustomAttribute<RequireWhenHandleFilterAttribute>();
-                            if(handleFilterOption != null &&  handleFilterOption.EnumHandleFilterOption !=null && handleFilterOption.EnumHandleFilterOption.Contains(mapping.HandleFilterOptionId.Value)
-                                && string.IsNullOrEmpty(value))
+                            var errmess = string.Empty;
+                            if(handleFilterOption != null)
                             {
-                                if (handleFilterOption.IsNotNull)
+                                if (mapping.HandleFilterOptionId == EnumHandleFilterOption.FitlerByNameAndSpecification)
                                 {
-                                    throw new BadRequestException($"Lỗi dòng {rowNumber} cột {mappingField.Column} \"{fieldDisplay}\" {handleFilterOption.ErrorMessage}");
+                                    if ((handleFilterOption.EnumHandleFilterOption == EnumHandleFilterOption.FilterByName
+                                        || handleFilterOption.EnumHandleFilterOption == EnumHandleFilterOption.FitlerByNameAndSpecification) && string.IsNullOrEmpty(value)
+                                        && handleFilterOption.IsNotNull)
+                                    {
+                                        errmess = $"Lỗi dòng {rowNumber} cột {mappingField.Column} \"{fieldDisplay}\" {handleFilterOption.ErrorMessage}";
+                                    }
                                 }
+                                else
+                                {
+                                    if (handleFilterOption.EnumHandleFilterOption == mapping.HandleFilterOptionId.Value
+                                   && string.IsNullOrEmpty(value) && handleFilterOption.IsNotNull)
+                                    {
+                                        errmess = $"Lỗi dòng {rowNumber} cột {mappingField.Column} \"{fieldDisplay}\" {handleFilterOption.ErrorMessage}";
+                                    }
+                                }
+                            }
+                            
+                            if (!string.IsNullOrEmpty(errmess))
+                            {
+                                throw new BadRequestException(errmess);
                             }
                         }
 
