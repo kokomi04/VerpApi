@@ -540,20 +540,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
 
         }
-        private bool CheckExistByFilterOption(string productCode, string productName, string specification)
-        {
-            switch (_mapping.HandleFilterOptionId)
-            {
-                case EnumHandleFilterOption.Default:
-                    return _existedProducts.ContainsKey(productCode);
-                case EnumHandleFilterOption.FitlerByNameAndSpecification:
-                    return _existedProducts.Any(x => x.Value.ProductName == productName && x.Value.Specification == specification);
-                case EnumHandleFilterOption.FilterByName:
-                    return _existedProducts.Any(x => x.Value.ProductName == productName);
-                default:
-                    return false;
-            }
-        }
 
         private  void ValidateProducts()
         {
