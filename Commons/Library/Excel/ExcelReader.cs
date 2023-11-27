@@ -624,7 +624,18 @@ namespace VErp.Commons.Library
                             };
                         });
 
-
+                        if(mapping.HandleFilterOptionId != null)
+                        {
+                            var handleFilterOption = field.GetCustomAttribute<RequireWhenHandleFilterAttribute>();
+                            if(handleFilterOption != null &&  handleFilterOption.EnumHandleFilterOption !=null && handleFilterOption.EnumHandleFilterOption.Contains(mapping.HandleFilterOptionId.Value)
+                                && string.IsNullOrEmpty(value))
+                            {
+                                if (handleFilterOption.IsNotNull)
+                                {
+                                    throw new BadRequestException($"Lỗi dòng {rowNumber} cột {mappingField.Column} \"{fieldDisplay}\" {handleFilterOption.ErrorMessage}");
+                                }
+                            }
+                        }
 
                         var isAutoSet = true;
                         if (OnAssignProperty != null)
