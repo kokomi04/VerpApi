@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;

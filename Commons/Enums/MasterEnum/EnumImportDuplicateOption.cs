@@ -7,4 +7,10 @@
         Denied = 2,
         IgnoreDetail = 3,
     }
+    public enum EnumHandleFilterOption
+    {
+        Default=0,
+        FitlerByNameAndSpecification = 1,
+        FilterByName =2
+    }
 }

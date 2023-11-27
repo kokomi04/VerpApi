@@ -234,7 +234,59 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             reader.RegisterLongTaskEvent(longTask);
             _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping);
         }
-
+        private void ValidateImportData()
+        {
+            var importProducts = new List<ImportProductMaterialsConsumptionExcelMapping>();
+            foreach (var productImport in _importData)
+            {
+                var productCodes = new List<string>();
+                switch (_mapping.HandleFilterOptionId)
+                {
+                    case EnumHandleFilterOption.Default:
+                        if (productImport.ProductCode == null)
+                        {
+                            throw new BadRequestException("Vui lòng nhập mã mặt hàng!");
+                        }
+                        importProducts.Add(productImport);
+                        break;
+                    case EnumHandleFilterOption.FitlerByNameAndSpecification:
+                        productCodes = _existedProducts.Where(x => x.Value.ProductName == productImport.ProductName && x.Value.Specification == productImport.Specification).Select(x => x.Value.ProductCode).ToList();
+                        if (productCodes.Count > 1)
+                        {
+                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productImport.ProductName} và quy cách: {productImport.Specification}");
+                        }
+                        if (productCodes.Count == 0 && string.IsNullOrEmpty(productImport.ProductCode))
+                        {
+                            throw new BadRequestException($"Không tìm thấy mặt hàng có tên {productImport.ProductName} và quy cách {productImport.Specification}! Vui lòng nhập mã mặt hàng để tạo mặt hàng mới!");
+                        }
+                        if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
+                        {
+                            productImport.ProductCode = productCodes.FirstOrDefault();
+                        }
+                        importProducts.Add(productImport);
+                        break;
+                    case EnumHandleFilterOption.FilterByName:
+                        productCodes = _existedProducts.Where(x => x.Value.ProductName == productImport.ProductName).Select(x => x.Value.ProductCode).ToList();
+                        if (productCodes.Count > 1)
+                        {
+                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productImport.ProductName}");
+                        }
+                        if (productCodes.Count == 0 && string.IsNullOrEmpty(productImport.ProductCode))
+                        {
+                            throw new BadRequestException($"Không tìm thấy mặt hàng có tên {productImport.ProductName}! Vui lòng nhập mã mặt hàng để tạo mặt hàng mới!");
+                        }
+                        if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
+                        {
+                            productImport.ProductCode = productCodes.FirstOrDefault();
+                        }
+                        importProducts.Add(productImport);
+                        break;
+                    default:
+                        break;
+                }
+            }
+            _importData = importProducts;
+        }
         private async Task ImportProcess(LongTaskResourceLock longTask)
         {
             var data = _importData.GroupBy(x => x.GroupTitle.NormalizeAsInternalName());
@@ -659,7 +711,6 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                                 select new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId, UnitName = u?.UnitName })
             .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
             .ToDictionary(p => p.Key, p => p.FirstOrDefault());
-
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
