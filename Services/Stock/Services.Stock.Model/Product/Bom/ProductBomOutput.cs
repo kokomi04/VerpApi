@@ -106,10 +106,11 @@ namespace VErp.Services.Stock.Model.Product
    
 
         [Display(Name = "Mã chi tiết", GroupName = ChildProductGroup)]
-        [Required(ErrorMessage = "Vui lòng nhập mã chi tiết")]
+        [RequireWhenHandleFilter("Vui lòng nhập mã chi tiết", EnumHandleFilterOption.Default, true)]
         public string ChildProductCode { get; set; }
 
         [Display(Name = "Tên chi tiết", GroupName = ChildProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập tên chi tiết", EnumHandleFilterOption.FilterByName, true)]
         public string ChildProductName { get; set; }
 
         [Display(Name = "Đơn vị chi tiết", GroupName = ChildProductGroup)]
@@ -120,7 +121,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Danh mục chi tiết (Nếu có)", GroupName = ChildProductGroup)]
         public string ChildProductCateName { get; set; }
 
-        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = ChildProductGroup)]
+        [Display(Name = "Quy cách chi tiết ", GroupName = ChildProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập quy cách chi tiết", EnumHandleFilterOption.FitlerByNameAndSpecification, false)]
         public string ChildSpecification { get; set; }
 
 

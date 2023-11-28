@@ -19,6 +19,7 @@ using VErp.Infrastructure.AppSettings.Model;
 using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -42,6 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly ObjectActivityLogFacade _productActivityLog;
         private readonly ICurrentContextService _currentContextService;
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         public ProductBomService(StockDBContext stockContext
             , IOptions<AppSetting> appSetting
@@ -54,6 +56,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IPropertyService propertyService
             , ICurrentContextService currentContextService
             , ILongTaskResourceLockService longTaskResourceLockService
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _stockDbContext = stockContext;
@@ -65,6 +68,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _manufacturingHelperService = manufacturingHelperService;
             _propertyService = propertyService;
             _currentContextService = currentContextService;
+            _customGenCodeHelperService = customGenCodeHelperService;
             this.longTaskResourceLockService = longTaskResourceLockService;
             _productActivityLog = activityLogService.CreateObjectTypeActivityLog(EnumObjectType.Product);
         }
@@ -403,6 +407,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                .SetService(_unitService)
                .SetService(_productActivityLog)
                .SetService(_manufacturingHelperService)
+               .SetService(_customGenCodeHelperService)
                .SetService(this);
         }
     }

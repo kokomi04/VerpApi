@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Elastic.Apm.Api.Kubernetes;
+using Microsoft.EntityFrameworkCore;
 using OpenXmlPowerTools;
 using System.Collections.Generic;
 using System.IO;
@@ -15,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
@@ -52,7 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         private bool IsPreview = false;
         public IList<ProductBomByProduct> PreviewData { get; private set; }
-
+        private ICustomGenCodeHelperService _customGenCodeHelperService;
         public ProductBomImportFacade(bool isPreview)
         {
             IsPreview = isPreview;
@@ -94,6 +96,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return this;
         }
 
+        public ProductBomImportFacade SetService(ICustomGenCodeHelperService customGenCodeHelperService)
+        {
+            _customGenCodeHelperService = customGenCodeHelperService;
+            return this;
+        }
 
         private int _id = -1000;
         public int GetNewId()
@@ -541,58 +548,139 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         }
 
-        private  void ValidateProducts()
+        private async Task<ProductBomImportModel> ValidateProductBOM(IList<ProductBomImportModel> importProducts, IDictionary<string, int> baseValueChains, List<IGenerateCodeContext> ctxs, ProductBomImportModel productBom, bool isValidateSpecification = false)
+        {
+            // validateProducts
+            if (string.IsNullOrEmpty(productBom.ProductCode))
+            {
+                var productCodesExis = importProducts.Where(x => x.ProductCode == productBom.ProductName && x.ProductCode == productBom.Specification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode).ToList();
+                productCodesExis.AddRange(importProducts.Where(x => x.ChildProductName == productBom.ProductName && x.ChildSpecification == productBom.Specification && !string.IsNullOrEmpty(x.ChildProductCode)).Select(x => x.ChildProductCode));
+                if (productCodesExis.Count > 0)
+                {
+                    productBom.ProductCode = productCodesExis.FirstOrDefault();
+                }
+                else
+                {
+                    var productCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ProductName && x.Value.Specification == productBom.Specification).Select(x => x.Value.ProductCode).ToList()
+                    : _existedProducts.Where(x => x.Value.ProductName == productBom.ProductName).Select(x => x.Value.ProductCode).ToList();
+                    if (productCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ProductName} và quy cách: {productBom.Specification}");
+                    }
+                    if (productCodes.Count == 0 && string.IsNullOrEmpty(productBom.ProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productBom, baseValueChains);
+                        productBom.ProductCode = code;
+                        ctxs.Add(ctx);
+                    }
+                    if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
+                    {
+                        productBom.ProductCode = productCodes.FirstOrDefault();
+                    }
+                }
+            }
+            // Validate ChildProducts
+            if (string.IsNullOrEmpty(productBom.ChildProductCode))
+            {
+                var childProductCodesExis = importProducts.Where(x => x.ChildProductName == productBom.ChildProductName && x.ChildSpecification == productBom.ChildSpecification && !string.IsNullOrEmpty(x.ChildProductCode)).Select(x => x.ChildProductCode).ToList();
+                childProductCodesExis.AddRange(importProducts.Where(x => x.ProductName == productBom.ChildProductName && x.Specification == productBom.ChildSpecification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode));
+                if (childProductCodesExis.Count > 0)
+                {
+                    productBom.ChildProductCode = childProductCodesExis.FirstOrDefault();
+                }
+                else
+                {
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName && x.Value.Specification == productBom.Specification).Select(x => x.Value.ProductCode).ToList()
+                   : _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName).Select(x => x.Value.ProductCode).ToList();
+                    if (childProductCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ChildProductName} và quy cách: {productBom.ChildSpecification}");
+                    }
+                    if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productBom.ChildProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productBom, baseValueChains, true);
+                        productBom.ChildProductCode = code;
+                        ctxs.Add(ctx);
+                    }
+                    if (!string.IsNullOrEmpty(childProductCodes.FirstOrDefault()))
+                    {
+                        productBom.ChildProductCode = childProductCodes.FirstOrDefault();
+                    }
+                }
+            }
+            return productBom;
+        }
+
+        private  async Task<IList<IGenerateCodeContext>> ValidateProductBOMs()
         {
             var importProducts = new List<ProductBomImportModel>();
+            var ctxs = new List<IGenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
             foreach (var productImport in _importData)
             {
-                var productCodes = new List<string>(); 
                 switch (_mapping.HandleFilterOptionId)
                 {
                     case EnumHandleFilterOption.Default:
-                        if (productImport.ProductCode == null)
+                        if (productImport.ProductCode == null || productImport.ChildProductCode == null)
                         {
                             throw new BadRequestException("Vui lòng nhập mã mặt hàng!");
                         }
                         importProducts.Add(productImport);
                         break;
                     case EnumHandleFilterOption.FitlerByNameAndSpecification:
-                         productCodes = _existedProducts.Where(x => x.Value.ProductName == productImport.ProductName && x.Value.Specification == productImport.Specification).Select(x=> x.Value.ProductCode).ToList();
-                        if (productCodes.Count > 1)
-                        {
-                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productImport.ProductName} và quy cách: {productImport.Specification}");
-                        }
-                        if (productCodes.Count == 0 && string.IsNullOrEmpty( productImport.ProductCode))
-                        {
-                            throw new BadRequestException($"Không tìm thấy mặt hàng có tên {productImport.ProductName} và quy cách {productImport.Specification}! Vui lòng nhập mã mặt hàng để tạo mặt hàng mới!");
-                        }
-                        if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
-                        {
-                            productImport.ProductCode = productCodes.FirstOrDefault();
-                        }
-                        importProducts.Add(productImport);
+                        importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport, true));
                         break;
                     case EnumHandleFilterOption.FilterByName:
-                        productCodes = _existedProducts.Where(x => x.Value.ProductName == productImport.ProductName).Select(x => x.Value.ProductCode).ToList();
-                        if (productCodes.Count > 1)
-                        {
-                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productImport.ProductName}");
-                        }
-                        if (productCodes.Count == 0 && string.IsNullOrEmpty(productImport.ProductCode))
-                        {
-                            throw new BadRequestException($"Không tìm thấy mặt hàng có tên {productImport.ProductName}! Vui lòng nhập mã mặt hàng để tạo mặt hàng mới!");
-                        }
-                        if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
-                        {
-                            productImport.ProductCode = productCodes.FirstOrDefault();
-                        }
-                        importProducts.Add(productImport);
+                        importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport));
                         break;
                     default:
                         break;
                 }
             }
             _importData = importProducts;
+            return ctxs;
+        }
+        private async Task<(IGenerateCodeContext,string)> CustomGenCode(ProductBomImportModel productBom, IDictionary<string, int> baseValueChains = null, bool isChildProduct = false )
+        {
+            ProductType type = null;
+            if (!isChildProduct)
+            {
+                if (string.IsNullOrWhiteSpace(productBom.ProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productBom.ProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productBom.ProductTypeCode, productBom.ProductName);
+                    }
+                }
+            } else
+            {
+                if (string.IsNullOrWhiteSpace(productBom.ChildProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productBom.ChildProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productBom.ChildProductTypeCode, productBom.ChildProductName);
+                    }
+                }
+            }
+           
+            var productTypeInfo = await _stockDbContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == type.ProductTypeId);
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, type.ProductTypeId, productTypeInfo?.ProductTypeName)
+                .SetConfigData(0, null,productTypeInfo?.IdentityCode)
+                .TryValidateAndGenerateCode(_stockDbContext.Product, isChildProduct? productBom.ChildProductCode : productBom.ProductCode, (s, code) => s.ProductId != 0 && s.ProductCode == code);
+            return (ctx,code);
         }
         private async Task AddMissingProduct()
         {
@@ -614,7 +702,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductCateId = p.ProductCateId
                 }).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
-            ValidateProducts();
+            var ctxs = await ValidateProductBOMs();
             var importProducts = _importData.SelectMany(p => new[]
                     {
                     new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification, IsProduct=  true, IsSemi =false },
@@ -732,7 +820,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductTypeId = product.ProductTypeId
                 });
             }
-
+            foreach (var ctx in ctxs)
+            {
+                await ctx.ConfirmCode();
+            }
         }
 
         private bool TryGetStepId(string key, out int? value)

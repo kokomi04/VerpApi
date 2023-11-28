@@ -19,6 +19,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Service.Dictionay;
@@ -40,6 +41,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
         private readonly ILongTaskResourceLockService longTaskResourceLockService;
         private readonly IProductService _productService;
         private readonly IUnitService _unitService;
+        private readonly ICustomGenCodeHelperService _customGenCodeHelperService;
 
         private readonly ObjectActivityLogFacade _productActivityLog;
 
@@ -52,6 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             , IOrganizationHelperService organizationHelperService
             , IManufacturingHelperService manufacturingHelperService
             , ILongTaskResourceLockService longTaskResourceLockService
+            , ICustomGenCodeHelperService customGenCodeHelperService
             )
         {
             _stockDbContext = stockContext;
@@ -60,6 +63,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
             _productBomService = productBomService;
             _organizationHelperService = organizationHelperService;
             _manufacturingHelperService = manufacturingHelperService;
+            _customGenCodeHelperService = customGenCodeHelperService;
             this.longTaskResourceLockService = longTaskResourceLockService;
             _productService = productService;
             _unitService = unitService;
@@ -502,6 +506,7 @@ namespace VErp.Services.Stock.Service.Products.Implement
                 .SetService(_activityLogService)
                 .SetService(_productService)
                 .SetService(_productBomService)
+                .SetService(_customGenCodeHelperService)
                 .SetService(_unitService)
                 .SetService(this);
         }
