@@ -132,10 +132,10 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Thể tích (m3)", GroupName = "Thông số")]
         public decimal? Measurement { get; set; }
 
-        [Display(Name = "Trọng lượng tịnh (g)", GroupName = "Thông số")]
+        [Display(Name = "TL tịnh (N.W) (g)", GroupName = "Thông số")]
         public decimal? NetWeight { get; set; }
 
-        [Display(Name = "Tổng trọng lượng (g)", GroupName = "Thông số")]
+        [Display(Name = "TL cả bì (G.W) (g)", GroupName = "Thông số")]
         public decimal? GrossWeight { get; set; }
 
         [Display(Name = "Tải trọng (g)", GroupName = "Thông số")]
