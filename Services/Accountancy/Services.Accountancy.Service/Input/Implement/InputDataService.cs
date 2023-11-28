@@ -258,21 +258,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var whereCondition = new StringBuilder();
 
             whereCondition.Append($"r.InputTypeId = @InputTypeId AND {GlobalFilter()}");
-            if (workingDate != null)
-            {
-                if ((!workingDate.IsIgnoreFilterAccountant.HasValue || !workingDate.IsIgnoreFilterAccountant.Value)
-                    && workingDate.WorkingFromDate != null && workingDate.WorkingToDate != null)
-                {
-                    if (!fromDate.HasValue || fromDate.Value < workingDate.WorkingFromDate)
-                    {
-                        fromDate = workingDate.WorkingFromDate;
-                    }
-                    if (!toDate.HasValue || toDate.Value > workingDate.WorkingToDate)
-                    {
-                        toDate = workingDate.WorkingToDate;
-                    }
-                }
-            }
+
             if (fromDate.HasValue && toDate.HasValue)
             {
                 whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
@@ -280,7 +266,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
-
+            if (workingDate != null && (!workingDate.IsIgnoreFilterAccountant.HasValue || !workingDate.IsIgnoreFilterAccountant.Value)
+                && workingDate.WorkingFromDate != null && workingDate.WorkingToDate != null)
+            {
+                whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @WorkingFromDate AND @WorkingToDate");
+                sqlParams.Add(new SqlParameter("@WorkingFromDate", EnumDataType.Date.GetSqlValue(workingDate.WorkingFromDate.Value)));
+                sqlParams.Add(new SqlParameter("@WorkingToDate", EnumDataType.Date.GetSqlValue(workingDate.WorkingToDate.Value)));
+           
+            }
 
             int suffix = 0;
             if (filters != null)
