@@ -128,6 +128,8 @@ namespace VErp.Services.Manafacturing.Service.Facade
                             ProductivityTimeTypeId = (EnumProductivityTimeType)detail.ProductivityTimeTypeId,
                             ProductivityResourceTypeId = (EnumProductivityResourceType)detail.ProductivityResourceTypeId,
 
+                            MinAssignHours = detail.MinAssignHours,
+
                             WorkLoadTypeId = workloadType,
 
                             Rate = rate ?? 1
@@ -181,6 +183,7 @@ namespace VErp.Services.Manafacturing.Service.Facade
             public EnumProductivityResourceType ProductivityResourceTypeId { get; set; }
 
             public EnumWorkloadType WorkLoadTypeId { get; set; }
+            public decimal MinAssignHours { get; set; }
 
             public decimal? Rate { get; set; }
         }

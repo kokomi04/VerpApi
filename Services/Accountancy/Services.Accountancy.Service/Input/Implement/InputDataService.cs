@@ -24,6 +24,7 @@ using VErp.Commons.Enums.StandardEnum;
 using VErp.Commons.GlobalObject;
 using VErp.Commons.GlobalObject.DynamicBill;
 using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
+using VErp.Commons.GlobalObject.InternalDataInterface.Organization;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.AccountancyDB;
@@ -225,7 +226,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
         }
 
 
-        public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size)
+        public async Task<PageDataTable> GetBills(int inputTypeId, bool isMultirow, long? fromDate, long? toDate, string keyword, Dictionary<int, object> filters, Clause columnsFilters, string orderByFieldName, bool asc, int page, int size, BaseWorkingDateModel workingDate = null)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -257,6 +258,7 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
             var whereCondition = new StringBuilder();
 
             whereCondition.Append($"r.InputTypeId = @InputTypeId AND {GlobalFilter()}");
+
             if (fromDate.HasValue && toDate.HasValue)
             {
                 whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @FromDate AND @ToDate");
@@ -264,7 +266,14 @@ namespace VErp.Services.Accountancy.Service.Input.Implement
                 sqlParams.Add(new SqlParameter("@FromDate", EnumDataType.Date.GetSqlValue(fromDate.Value)));
                 sqlParams.Add(new SqlParameter("@ToDate", EnumDataType.Date.GetSqlValue(toDate.Value)));
             }
-
+            if (workingDate != null && (!workingDate.IsIgnoreFilterAccountant.HasValue || !workingDate.IsIgnoreFilterAccountant.Value)
+                && workingDate.WorkingFromDate != null && workingDate.WorkingToDate != null)
+            {
+                whereCondition.Append($" AND r.{AccountantConstants.BILL_DATE} BETWEEN @WorkingFromDate AND @WorkingToDate");
+                sqlParams.Add(new SqlParameter("@WorkingFromDate", EnumDataType.Date.GetSqlValue(workingDate.WorkingFromDate.Value)));
+                sqlParams.Add(new SqlParameter("@WorkingToDate", EnumDataType.Date.GetSqlValue(workingDate.WorkingToDate.Value)));
+           
+            }
 
             int suffix = 0;
             if (filters != null)

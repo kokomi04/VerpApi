@@ -189,7 +189,7 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
                         if (column.ColGroupName?.StartsWith('[') == true)
                         {
-                            var nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}{suffixKey}";
+                            var nameGroupColumn = $"{column.ColGroupName.Trim('[')?.Trim(']')}{suffixKey.Split("_")[0]}";
 
                             if (firstRow.ContainsKey(nameGroupColumn))
                             {

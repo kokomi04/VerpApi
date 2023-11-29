@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Elastic.Apm.Api.Kubernetes;
+using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,6 +16,7 @@ using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
 using VErp.Services.Master.Model.Dictionary;
@@ -51,7 +54,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         private bool IsPreview = false;
         public IList<ProductBomByProduct> PreviewData { get; private set; }
-
+        private ICustomGenCodeHelperService _customGenCodeHelperService;
         public ProductBomImportFacade(bool isPreview)
         {
             IsPreview = isPreview;
@@ -93,6 +96,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             return this;
         }
 
+        public ProductBomImportFacade SetService(ICustomGenCodeHelperService customGenCodeHelperService)
+        {
+            _customGenCodeHelperService = customGenCodeHelperService;
+            return this;
+        }
 
         private int _id = -1000;
         public int GetNewId()
@@ -112,6 +120,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 longTask.SetCurrentStep("Đọc dữ liệu từ tệp excel");
 
                 ReadExcelData(mapping, stream);
+
 
                 longTask.SetCurrentStep("Xử lý dữ liệu");
                 longTask.SetTotalRows(_importData.Count);
@@ -152,6 +161,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
             _importData = reader.ReadSheetEntity<ProductBomImportModel>(mapping, (entity, propertyName, value) =>
             {
+                if (propertyName == nameof(ProductBomImportModel.ProductCode))
+                {
+                    entity.ProductCode = value;
+                    return true;
+                }
                 if (string.IsNullOrWhiteSpace(value)) return true;
                 switch (propertyName)
                 {
@@ -534,29 +548,142 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
 
         }
 
+        private async Task<ProductBomImportModel> ValidateProductBOM(IList<ProductBomImportModel> importProducts, IDictionary<string, int> baseValueChains, List<IGenerateCodeContext> ctxs, ProductBomImportModel productBom, bool isValidateSpecification = false)
+        {
+            // validateProducts
+            if (string.IsNullOrEmpty(productBom.ProductCode))
+            {
+                var productCodesExis = importProducts.Where(x => x.ProductCode == productBom.ProductName && x.ProductCode == productBom.Specification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode).ToList();
+                productCodesExis.AddRange(importProducts.Where(x => x.ChildProductName == productBom.ProductName && x.ChildSpecification == productBom.Specification && !string.IsNullOrEmpty(x.ChildProductCode)).Select(x => x.ChildProductCode));
+                if (productCodesExis.Count > 0)
+                {
+                    productBom.ProductCode = productCodesExis.FirstOrDefault();
+                }
+                else
+                {
+                    var productCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ProductName && x.Value.Specification == productBom.Specification).Select(x => x.Value.ProductCode).ToList()
+                    : _existedProducts.Where(x => x.Value.ProductName == productBom.ProductName).Select(x => x.Value.ProductCode).ToList();
+                    if (productCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ProductName} và quy cách: {productBom.Specification}");
+                    }
+                    if (productCodes.Count == 0 && string.IsNullOrEmpty(productBom.ProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productBom, baseValueChains);
+                        productBom.ProductCode = code;
+                        ctxs.Add(ctx);
+                    }
+                    if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
+                    {
+                        productBom.ProductCode = productCodes.FirstOrDefault();
+                    }
+                }
+            }
+            // Validate ChildProducts
+            if (string.IsNullOrEmpty(productBom.ChildProductCode))
+            {
+                var childProductCodesExis = importProducts.Where(x => x.ChildProductName == productBom.ChildProductName && x.ChildSpecification == productBom.ChildSpecification && !string.IsNullOrEmpty(x.ChildProductCode)).Select(x => x.ChildProductCode).ToList();
+                childProductCodesExis.AddRange(importProducts.Where(x => x.ProductName == productBom.ChildProductName && x.Specification == productBom.ChildSpecification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode));
+                if (childProductCodesExis.Count > 0)
+                {
+                    productBom.ChildProductCode = childProductCodesExis.FirstOrDefault();
+                }
+                else
+                {
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName && x.Value.Specification == productBom.Specification).Select(x => x.Value.ProductCode).ToList()
+                   : _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName).Select(x => x.Value.ProductCode).ToList();
+                    if (childProductCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ChildProductName} và quy cách: {productBom.ChildSpecification}");
+                    }
+                    if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productBom.ChildProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productBom, baseValueChains, true);
+                        productBom.ChildProductCode = code;
+                        ctxs.Add(ctx);
+                    }
+                    if (!string.IsNullOrEmpty(childProductCodes.FirstOrDefault()))
+                    {
+                        productBom.ChildProductCode = childProductCodes.FirstOrDefault();
+                    }
+                }
+            }
+            return productBom;
+        }
+
+        private  async Task<IList<IGenerateCodeContext>> ValidateProductBOMs()
+        {
+            var importProducts = new List<ProductBomImportModel>();
+            var ctxs = new List<IGenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+            foreach (var productImport in _importData)
+            {
+                switch (_mapping.HandleFilterOptionId)
+                {
+                    case EnumHandleFilterOption.Default:
+                        if (productImport.ProductCode == null || productImport.ChildProductCode == null)
+                        {
+                            throw new BadRequestException("Vui lòng nhập mã mặt hàng!");
+                        }
+                        importProducts.Add(productImport);
+                        break;
+                    case EnumHandleFilterOption.FitlerByNameAndSpecification:
+                        importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport, true));
+                        break;
+                    case EnumHandleFilterOption.FilterByName:
+                        importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            _importData = importProducts;
+            return ctxs;
+        }
+        private async Task<(IGenerateCodeContext,string)> CustomGenCode(ProductBomImportModel productBom, IDictionary<string, int> baseValueChains = null, bool isChildProduct = false )
+        {
+            ProductType type = null;
+            if (!isChildProduct)
+            {
+                if (string.IsNullOrWhiteSpace(productBom.ProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productBom.ProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productBom.ProductTypeCode, productBom.ProductName);
+                    }
+                }
+            } else
+            {
+                if (string.IsNullOrWhiteSpace(productBom.ChildProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productBom.ChildProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productBom.ChildProductTypeCode, productBom.ChildProductName);
+                    }
+                }
+            }
+           
+            var productTypeInfo = await _stockDbContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == type.ProductTypeId);
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, type.ProductTypeId, productTypeInfo?.ProductTypeName)
+                .SetConfigData(0, null,productTypeInfo?.IdentityCode)
+                .TryValidateAndGenerateCode(_stockDbContext.Product, isChildProduct? productBom.ChildProductCode : productBom.ProductCode, (s, code) => s.ProductId != 0 && s.ProductCode == code);
+            return (ctx,code);
+        }
         private async Task AddMissingProduct()
         {
-            var importProducts = _importData.SelectMany(p => new[]
-                    {
-                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification, IsProduct=  true, IsSemi =false },
-                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification,IsProduct=false, IsSemi=true } }
-                    ).Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
-                    .Distinct()
-                    .ToList()
-                    .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-                    .ToDictionary(p => p.Key, p => new
-                    {
-
-                        ProductCode = p.First().ProductCode,
-                        ProductName = p.First().ProductName,
-                        ProductTypeCode = p.First().ProductTypeCode,
-                        ProductCateName = p.First().ProductCateName,
-                        UnitName = p.First().UnitName,
-                        Specification = p.First().Specification,
-                        IsProduct = p.Max(d => d.IsProduct),
-                        IsSemi = p.Max(d => d.IsSemi)
-                    });
-
             _existedProducts = (await (
                 from p in _stockDbContext.Product
                 join e in _stockDbContext.ProductExtraInfo on p.ProductId equals e.ProductId into es
@@ -575,56 +702,79 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductCateId = p.ProductCateId
                 }).GroupBy(p => p.ProductCode.NormalizeAsInternalName())
                 .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+            var ctxs = await ValidateProductBOMs();
+            var importProducts = _importData.SelectMany(p => new[]
+                    {
+                    new { p.ProductCode, p.ProductName, p.ProductTypeCode, p.ProductCateName, p.UnitName, p.Specification, IsProduct=  true, IsSemi =false },
+                    new { ProductCode = p.ChildProductCode, ProductName = p.ChildProductName, ProductTypeCode= p.ChildProductTypeCode,ProductCateName=p.ChildProductCateName, UnitName = p.ChildUnitName, Specification=p.ChildSpecification,IsProduct=false, IsSemi=true } }
+                    ).Where(p => !string.IsNullOrWhiteSpace(p.ProductCode))
+                    .Distinct()
+                    .ToList()
+                    .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
+                    .ToDictionary(p => p.Key, p => new
+                    {
+
+                        ProductCode = p.First().ProductCode,
+                        ProductName = p.First().ProductName,
+                        ProductTypeCode = p.First().ProductTypeCode,
+                        ProductCateName = p.First().ProductCateName,
+                        UnitName = p.First().UnitName,
+                        Specification = p.First().Specification,
+                        IsProduct = p.Max(d => d.IsProduct),
+                        IsSemi = p.Max(d => d.IsSemi)   
+                    });
+
+            
 
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
+                        var productTitle = $"{p.Value.ProductCode} {p.Value.ProductName}";
 
-                    var productTitle = $"{p.Value.ProductCode} {p.Value.ProductName}";
+                        ProductType type = null;
 
-                    ProductType type = null;
-
-                    if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
-                    {
-                        type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
-                    }
-                    else
-                    {
-                        _productTypes.TryGetValue(p.Value.ProductTypeCode.NormalizeAsInternalName(), out type);
-
-                        if (type == null)
+                        if (string.IsNullOrWhiteSpace(p.Value.ProductTypeCode.NormalizeAsInternalName()))
                         {
-                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductTypeCode, productTitle);
+                            type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
                         }
-                    }
-
-
-                    ProductCate cate = null;
-                    if (string.IsNullOrWhiteSpace(p.Value.ProductCateName.NormalizeAsInternalName()))
-                    {
-                        cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
-                        if (cate == null)
+                        else
                         {
-                            throw ImportProductCateDefaultOfProductNotFound.BadRequestFormat(productTitle);
+                            _productTypes.TryGetValue(p.Value.ProductTypeCode.NormalizeAsInternalName(), out type);
 
+                            if (type == null)
+                            {
+                                throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductTypeCode, productTitle);
+                            }
                         }
-                    }
-                    else
-                    {
-                        _productCates.TryGetValue(p.Value.ProductCateName.NormalizeAsInternalName(), out cate);
 
-                        if (cate == null)
+
+                        ProductCate cate = null;
+                        if (string.IsNullOrWhiteSpace(p.Value.ProductCateName.NormalizeAsInternalName()))
                         {
-                            throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);
+                            cate = _productCates.FirstOrDefault(c => c.Value.IsDefault).Value;
+                            if (cate == null)
+                            {
+                                throw ImportProductCateDefaultOfProductNotFound.BadRequestFormat(productTitle);
+
+                            }
                         }
-                    }
+                        else
+                        {
+                            _productCates.TryGetValue(p.Value.ProductCateName.NormalizeAsInternalName(), out cate);
+
+                            if (cate == null)
+                            {
+                                throw ImportProductCateOfProductNotFound.BadRequestFormat(p.Value.ProductCateName, productTitle);
+                            }
+                        }
 
 
-                    _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
-                    if (unit == null || unit.Length <= 0)
-                    {
-                        throw UnitOfProductNotFound.BadRequestFormat(productTitle);
-                    }
+                        _units.TryGetValue(p.Value.UnitName.NormalizeAsInternalName(), out var unit);
+                        if (unit == null || unit.Length <= 0)
+                        {
+                            throw UnitOfProductNotFound.BadRequestFormat(productTitle);
+                        }
+                   
 
                     return new ProductModel
                     {
@@ -670,7 +820,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     ProductTypeId = product.ProductTypeId
                 });
             }
-
+            foreach (var ctx in ctxs)
+            {
+                await ctx.ConfirmCode();
+            }
         }
 
         private bool TryGetStepId(string key, out int? value)

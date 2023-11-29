@@ -25,7 +25,7 @@ public partial class TimeSheetDetailShift
 
     public int? DateAsOvertimeLevelId { get; set; }
 
-    public bool HasOvertimePlan { get; set; }
+    public bool NonAbsentScheduled { get; set; }
 
     public virtual TimeSheetDetail TimeSheetDetail { get; set; }
 

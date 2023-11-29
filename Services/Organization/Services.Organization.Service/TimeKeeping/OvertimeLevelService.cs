@@ -15,10 +15,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
     public interface IOvertimeLevelService
     {
         Task<int> AddOvertimeLevel(OvertimeLevelModel model);
-        Task<bool> DeleteOvertimeLevel(long countedSymbolId);
+        Task<bool> DeleteOvertimeLevel(int overtimeLevelId);
         Task<IList<OvertimeLevelModel>> GetListOvertimeLevel();
-        Task<OvertimeLevelModel> GetOvertimeLevel(long countedSymbolId);
-        Task<bool> UpdateOvertimeLevel(int countedSymbolId, OvertimeLevelModel model);
+        Task<OvertimeLevelModel> GetOvertimeLevel(int overtimeLevelId);
+        Task<bool> UpdateOvertimeLevel(int overtimeLevelId, OvertimeLevelModel model);
         Task<bool> UpdateOvertimeLevelSortOrder(IList<OvertimeLevelModel> model);
     }
 
@@ -50,46 +50,52 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             return entity.OvertimeLevelId;
         }
 
-        public async Task<bool> UpdateOvertimeLevel(int countedSymbolId, OvertimeLevelModel model)
+        public async Task<bool> UpdateOvertimeLevel(int overtimeLevelId, OvertimeLevelModel model)
         {
-            var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
-            if (countedSymbol == null)
+            var overtimeLevel = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == overtimeLevelId);
+            if (overtimeLevel == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            if (countedSymbol.OvertimeCode != model.OvertimeCode && await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
+            if (overtimeLevel.OvertimeCode != model.OvertimeCode && await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
-            await UpdateSortOrder(countedSymbol.SortOrder, model.SortOrder);
+            await UpdateSortOrder(overtimeLevel.SortOrder, model.SortOrder);
 
-            model.OvertimeLevelId = countedSymbolId;
-            _mapper.Map(model, countedSymbol);
+            model.OvertimeLevelId = overtimeLevelId;
+            _mapper.Map(model, overtimeLevel);
 
             await _organizationDBContext.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<bool> DeleteOvertimeLevel(long countedSymbolId)
+        public async Task<bool> DeleteOvertimeLevel(int overtimeLevelId)
         {
-            var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
-            if (countedSymbol == null)
+            var overtimeLevel = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == overtimeLevelId);
+            if (overtimeLevel == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            await UpdateSortOrder(countedSymbol.SortOrder, null);
+            await ValidateWithShiftConfig(overtimeLevelId);
 
-            countedSymbol.IsDeleted = true;
+            await UpdateSortOrder(overtimeLevel.SortOrder, null);
+
+            overtimeLevel.IsDeleted = true;
+
+            var overtimePlansToRemove = _organizationDBContext.OvertimePlan.Where(p => p.OvertimeLevelId == overtimeLevelId);
+            _organizationDBContext.OvertimePlan.RemoveRange(overtimePlansToRemove);
+
             await _organizationDBContext.SaveChangesAsync();
 
             return true;
         }
 
-        public async Task<OvertimeLevelModel> GetOvertimeLevel(long countedSymbolId)
+        public async Task<OvertimeLevelModel> GetOvertimeLevel(int overtimeLevelId)
         {
-            var countedSymbol = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == countedSymbolId);
-            if (countedSymbol == null)
+            var overtimeLevel = await _organizationDBContext.OvertimeLevel.FirstOrDefaultAsync(x => x.OvertimeLevelId == overtimeLevelId);
+            if (overtimeLevel == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound);
 
-            return _mapper.Map<OvertimeLevelModel>(countedSymbol);
+            return _mapper.Map<OvertimeLevelModel>(overtimeLevel);
         }
 
         public async Task<IList<OvertimeLevelModel>> GetListOvertimeLevel()
@@ -142,6 +148,24 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 var behindOvertimeLevels = await _organizationDBContext.OvertimeLevel.Where(x => x.SortOrder > entitySortOrder).ToListAsync();
                 if (behindOvertimeLevels.Any())
                     behindOvertimeLevels.ForEach(x => x.SortOrder--);
+            }
+        }
+
+        private async Task ValidateWithShiftConfig(int overtimeLevelId)
+        {
+            var overtimeConfig = await _organizationDBContext.OvertimeConfiguration.Include(o => o.OvertimeConfigurationMapping).FirstOrDefaultAsync(s => (s.IsWeekdayLevel && s.WeekdayLevel == overtimeLevelId)
+                    || (s.IsWeekendLevel && s.WeekendLevel == overtimeLevelId)
+                    || (s.IsHolidayLevel && s.HolidayLevel == overtimeLevelId)
+                    || (s.IsWeekdayOvertimeLevel && s.WeekdayOvertimeLevel == overtimeLevelId)
+                    || (s.IsWeekendOvertimeLevel && s.WeekendOvertimeLevel == overtimeLevelId)
+                    || (s.IsHolidayOvertimeLevel && s.HolidayOvertimeLevel == overtimeLevelId)
+                    || (s.OvertimeConfigurationMapping.Any(m => m.OvertimeLevelId == overtimeLevelId)));
+
+
+            if (overtimeConfig != null)
+            {
+                var shift = await _organizationDBContext.ShiftConfiguration.FirstOrDefaultAsync(s => s.OvertimeConfigurationId == overtimeConfig.OvertimeConfigurationId);
+                throw new BadRequestException(GeneralCode.ItemInUsed, $"Ký hiệu này đang được sử dụng ở ca làm việc {shift.ShiftCode}");
             }
         }
     }

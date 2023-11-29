@@ -28,4 +28,6 @@ public partial class OvertimeLevel
     public DateTime? DeletedDatetimeUtc { get; set; }
 
     public virtual ICollection<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; } = new List<OvertimeConfigurationMapping>();
+
+    public virtual ICollection<OvertimePlan> OvertimePlan { get; set; } = new List<OvertimePlan>();
 }

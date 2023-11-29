@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.MasterEnum;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.GlobalObject.DataAnnotationsExtensions;
 using VErp.Commons.Library;
 using VErp.Commons.Library.Model;
@@ -12,10 +14,11 @@ namespace VErp.Services.Stock.Model.Product
     {
 
         [Display(Name = "Mã Nvl tiêu hao", GroupName = "Nvl tiêu hao")]
-        [Required(ErrorMessage = "Vui lòng nhập mã Nvl tiêu hao")]
+        [RequireWhenHandleFilter("Vui lòng nhập mã mặt hàng chính", EnumHandleFilterOption.Default, true)]
         public string ProductCode { get; set; }
 
-        [Display(Name = "Tên Nvl tiêu hao (Nếu có)", GroupName = "Nvl tiêu hao")]
+        [Display(Name = "Tên Nvl tiêu hao", GroupName = "Nvl tiêu hao")]
+        [RequireWhenHandleFilter("Vui lòng nhập tên nvl tiêu hao", EnumHandleFilterOption.FilterByName, true)]
         public string ProductName { get; set; }
 
         [Display(Name = "Đơn vị Nvl tiêu hao (Nếu có)", GroupName = "Nvl tiêu hao")]
@@ -24,7 +27,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Định danh loại mã mặt hàng Nvl tiêu hao (Nếu có)", GroupName = "Nvl tiêu hao")]
         public string ProductTypeCode { get; set; }
 
-        [Display(Name = "Quy cách Nvl tiêu hao (Nếu có)", GroupName = "Nvl tiêu hao")]
+        [Display(Name = "Quy cách Nvl tiêu hao", GroupName = "Nvl tiêu hao")]
+        [RequireWhenHandleFilter("Vui lòng nhập quy cách nvl tiêu hao", EnumHandleFilterOption.FitlerByNameAndSpecification, false)]
         public string Specification { get; set; }
 
         [Display(Name = "Danh mục Nvl tiêu hao (Nếu có)", GroupName = "Nvl tiêu hao")]
@@ -32,10 +36,11 @@ namespace VErp.Services.Stock.Model.Product
 
 
         [Display(Name = "Mã chi tiết sử dụng", GroupName = "Chi tiết sử dụng")]
-        [Required(ErrorMessage = "Vui lòng nhập mã chi tiết sử dụng")]
+        [RequireWhenHandleFilter("Vui lòng nhập mã mặt hàng chính", EnumHandleFilterOption.Default, true)]
         public string UsageProductCode { get; set; }
 
-        [Display(Name = "Tên chi tiết sử dụng (Nếu có)", GroupName = "Chi tiết sử dụng")]
+        [Display(Name = "Tên chi tiết sử dụng", GroupName = "Chi tiết sử dụng")]
+        [RequireWhenHandleFilter("Vui lòng nhập tên chi tiết", EnumHandleFilterOption.FilterByName, true)]
         public string UsageProductName { get; set; }
 
         [Display(Name = "Đơn vị chi tiết sử dụng (Nếu có)", GroupName = "Chi tiết sử dụng")]
@@ -44,7 +49,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Định danh loại mã mặt hàng của chi tiết sử dụng (Nếu có)", GroupName = "Chi tiết sử dụng")]
         public string UsageProductTypeCode { get; set; }
 
-        [Display(Name = "Quy cách chi tiết sử dụng (Nếu có)", GroupName = "Chi tiết sử dụng")]
+        [Display(Name = "Quy cách chi tiết sử dụng", GroupName = "Chi tiết sử dụng")]
+        [RequireWhenHandleFilter("Vui lòng nhập quy cách chi tiết", EnumHandleFilterOption.FitlerByNameAndSpecification, false)]
         public string UsageSpecification { get; set; }
 
         [Display(Name = "Danh mục chi tiết sử dụng (Nếu có)", GroupName = "Chi tiết sử dụng")]

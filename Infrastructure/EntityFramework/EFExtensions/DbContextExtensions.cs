@@ -493,11 +493,11 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 Expression toDate = null;
                 if (clause.DataType == EnumDataType.Date)
                 {
-                    if (clause.Value.IsNullOrEmptyObject() )
+                    if (clause.Value.IsNullOrEmptyObject())
                     {
                         fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
                         toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)null }), "p");
-                    } 
+                    }
                     else
                     {
                         var date = ((long)clause.Value).UnixToDateTime(timeZoneOffset);
@@ -507,12 +507,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         {
                             fromDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)fDate }), "p");
                             toDate = Expression.PropertyOrField(Expression.Constant(new { p = (DateTime?)tDate }), "p");
-                        } else
+                        }
+                        else
                         {
                             fromDate = Expression.PropertyOrField(Expression.Constant(new { p = fDate }), "p");
                             toDate = Expression.PropertyOrField(Expression.Constant(new { p = tDate }), "p");
                         }
-                        
+
                     }
 
                 }
@@ -574,13 +575,37 @@ namespace VErp.Infrastructure.EF.EFExtensions
 
                         break;
                     case EnumOperator.InList:
+
+                        // int inSuffix = 0;
+                        // var paramNames = new StringBuilder();
+                        IList<object> values = new List<object>();
+                        //if (clause.Value is IList<string> lst)
+                        //{
+                        //    values = lst;
+                        //}
+                        var type = clause.Value.GetType();
+                        if (type != typeof(string) && (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
+                        {
+                            foreach (object v in (dynamic)clause.Value)
+                            {
+                                if (!values.Contains(v))
+                                    values.Add(v);
+                            }
+                        }
+
+                        if (clause.Value is string str)
+                        {
+                            values = (str ?? "").Split(",").Distinct().Select(v => (object)v.Trim()).ToList();
+                        }
+
+
                         Type listType = typeof(List<>);
                         Type constructedListType = listType.MakeGenericType(prop.Type);
                         var instance = Activator.CreateInstance(constructedListType);
-                        foreach (var item in ((string)clause.Value).Split(','))
+                        foreach (var item in values)//((string)clause.Value).Split(','))
                         {
                             //var v = clause.DataType.GetSqlValue(item);
-                            if (!string.IsNullOrWhiteSpace(item))
+                            if (!item.IsNullOrEmptyObject())
                             {
                                 MethodInfo addMethod = constructedListType.GetMethod("Add");
                                 addMethod.Invoke(instance, new object[] { clause.DataType.GetSqlValue(item) });

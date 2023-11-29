@@ -357,9 +357,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Tổng số lượng phân công từng ngày phải bằng số lượng phân công, {step.Title}");
                     }
 
+
                     if (d.AssignmentQuantity <= 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phân công phải lớn hơn 0, {step.Title}");
-
+                    d.IsUseMinAssignHours = d.ProductionAssignmentDetail?.Any(d => d.IsUseMinAssignHours == true) == true;
 
                     var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == d.DepartmentId);
                     if (entity == null)
@@ -905,6 +906,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         assign.IsManualSetStartDate = updateInfo.IsManualSetStartDate;
                         assign.IsManualSetEndDate = updateInfo.IsManualSetEndDate;
                         assign.RateInPercent = updateInfo.RateInPercent;
+                        assign.IsUseMinAssignHours = updateInfo?.Details?.Any(d => d.IsUseMinAssignHours == true) == true;
 
                         removingDetails.AddRange(assign.ProductionAssignmentDetail);
                         var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
@@ -1438,7 +1440,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
 
                 _manufacturingDBContext.SaveChanges();
-                
+
 
                 var productionOrderInfo = await _manufacturingDBContext.ProductionOrder.FirstOrDefaultAsync(p => p.ProductionOrderId == productionOrderId);
                 var step = await _manufacturingDBContext.ProductionStep.FirstOrDefaultAsync(s => s.ProductionStepId == assignment.ProductionStepId);

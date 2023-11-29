@@ -41,6 +41,8 @@ public partial class ProductionAssignment
 
     public decimal RateInPercent { get; set; }
 
+    public bool? IsUseMinAssignHours { get; set; }
+
     public virtual ICollection<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; } = new List<ProductionAssignmentDetail>();
 
     public virtual ICollection<ProductionConsumMaterial> ProductionConsumMaterial { get; set; } = new List<ProductionConsumMaterial>();

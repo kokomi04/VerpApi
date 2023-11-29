@@ -1025,13 +1025,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             // Lấy thông tin đầu ra và số giờ công cần
             // var productionCapacityDetail = new CapacityStepByProduction();
 
-            Dictionary<string, decimal?> ProductivitiesCaches = new Dictionary<string, decimal?>();
-            Func<EnumProductionStepLinkDataObjectType, long, int, decimal?> getProductivity = (EnumProductionStepLinkDataObjectType objectTypeId, long objectId, int stepId) =>
+            Dictionary<string, (decimal? targetProductivity, decimal? minAssignHour)> ProductivitiesCaches = new Dictionary<string, (decimal? targetProductivity, decimal? minAssignHour)>();
+            Func<EnumProductionStepLinkDataObjectType, long, int, (decimal? targetProductivity, decimal? minAssignHour)> getProductivity = (EnumProductionStepLinkDataObjectType objectTypeId, long objectId, int stepId) =>
             {
                 var key = $"{objectTypeId}|{objectId}|{stepId}";
                 if (ProductivitiesCaches.ContainsKey(key)) return ProductivitiesCaches[key];
 
                 decimal? productivityByStep = null;
+                decimal? minAssignHour = null;
 
                 ProductTargetProductivityByStep target = null;
                 if (objectTypeId == EnumProductionStepLinkDataObjectType.ProductSemi)
@@ -1050,6 +1051,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 {
 
                     productivityByStep = targetByStep.TargetProductivity;
+                    minAssignHour = targetByStep.MinAssignHours;
+
                     if (targetByStep.ProductivityTimeTypeId == EnumProductivityTimeType.Day)
                     {
                         productivityByStep /= (decimal)OrganizationConstants.WORKING_HOUR_PER_DAY;
@@ -1057,8 +1060,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 }
 
-                ProductivitiesCaches.Add(key, productivityByStep);
-                return productivityByStep;
+
+                ProductivitiesCaches.Add(key, (productivityByStep, minAssignHour));
+                return (productivityByStep, minAssignHour);
+            };
+
+
+            Func<decimal?, decimal?, decimal?, (decimal hour, bool isUseMinAssignHours)> getWorkHour = (decimal? targetProductivity, decimal? minAssignHour, decimal? workload) =>
+            {
+                var workHour = targetProductivity > 0 ? workload / targetProductivity.Value : 0;
+                var isUseMinAssignHours = false;
+                if (minAssignHour.HasValue && workHour < minAssignHour)
+                {
+                    workHour = minAssignHour.Value;
+
+                }
+                return (workHour ?? 0, isUseMinAssignHours);
             };
 
             var assignmentsByStep = productionAssignments1.GroupBy(a => a.ProductionStepId)
@@ -1074,14 +1091,22 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     w.ProductionOrderId,
                     w.StepId,
                     w.ObjectId,
-                    w.ObjectTypeId
+                    w.ObjectTypeId                    
                 })
                 .Select(g =>
                 {
 
-                    decimal? productivityByStep = getProductivity(g.Key.ObjectTypeId, g.Key.ObjectId, g.Key.StepId);
+                    var (productivityByStep, minAssignHour) = getProductivity(g.Key.ObjectTypeId, g.Key.ObjectId, g.Key.StepId);
 
                     var totalWorkloadQuantity = g.Sum(w => w.Quantity * w.WorkloadConvertRate.Value);
+
+                    var totalWorkHour = g.Sum(w =>
+                    {
+                        var wl = w.Quantity * w.WorkloadConvertRate.Value;
+                        var (workHour, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, totalWorkloadQuantity);
+                        return workHour;
+                    });
+
                     return new ProductionCapacityDetailModel
                     {
                         ProductionOrderId = g.Key.ProductionOrderId,
@@ -1091,7 +1116,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         Quantity = g.Sum(w => w.Quantity),
                         WorkloadQuantity = totalWorkloadQuantity,
                         TargetProductivity = productivityByStep ?? 0,
-                        WorkHour = productivityByStep > 0 ? totalWorkloadQuantity / productivityByStep.Value : 0,
+                        MinAssignHours = minAssignHour ?? 0,
+                        WorkHour = totalWorkHour,
                         Details = g.Select(d =>
                         {
 
@@ -1111,9 +1137,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
                             var assignInfos = new List<CapacityAssignInfo>();
+                            //var totalHours = 0M;
                             foreach (var depId in departmentIds)
                             {
-                                decimal assignQuantity = 0;
+                                //decimal assignQuantity = 0;
+                                decimal wokloadQuantiy = 0;
                                 bool isSelectionAssign = false;
 
                                 var assignStep = assignmentStep.FirstOrDefault(w => w.DepartmentId == depId);
@@ -1123,12 +1151,18 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 //var assignWorkInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId);
                                 workloadInfosByLinkedData.TryGetValue(assignStep.ProductionStepLinkDataId, out var assignWorkInfo);
                                 var byDateAssign = _mapper.Map<List<ProductionAssignmentDetailModel>>(assignStep.ProductionAssignmentDetail);
+
+                                var rateQuantiy = assignWorkInfo?.Quantity > 0 ? d.Quantity / assignWorkInfo.Quantity : 0;
+                                //workloadInfosByLinkedData.TryGetValue(d.ProductionStepLinkDataId, out var workloadInfo);
+
                                 if (assignWorkInfo != null)
                                 {
 
-                                    var rateQuantiy = assignWorkInfo.Quantity > 0 ? d.Quantity / assignWorkInfo.Quantity : 0;
+                                    // assignQuantity = assignStep.AssignmentQuantity * rateQuantiy;
 
-                                    assignQuantity = assignStep.AssignmentQuantity * rateQuantiy;
+                                    // wokloadQuantiy = assignQuantity * d.WorkloadConvertRate.Value;
+
+                                    //var hour = getWorkHour(productivityByStep, minAssignHour, wokloadQuantiy);
 
                                     byDates = byDateAssign.Select(a =>
                                     {
@@ -1156,23 +1190,26 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         //=> Only one
 
                                         //var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-                                        workloadInfosByLinkedData.TryGetValue(d.ProductionStepLinkDataId, out var workloadInfo);
+                                   
+                                        // decimal? totalWorkload = 0;
+                                        //decimal? totalHours = 0;
 
-                                        decimal? totalWorkload = 0;
-                                        decimal? totalHours = 0;
+                                        var byDateAssignQuantity = a.QuantityPerDay * rateQuantiy;
+                                        var workload = byDateAssignQuantity * (d.WorkloadConvertRate??1);
 
-                                        var assignQuantity = a.QuantityPerDay * rateQuantiy;
-                                        var workload = assignQuantity * workloadInfo.WorkloadConvertRate;
-                                        var hour = productivityByStep > 0 ? workload / productivityByStep : 0;
-                                        totalWorkload += workload;
-                                        totalHours += hour;
+
+                                        var (workHour, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, workload);// productivityByStep > 0 ? workload / productivityByStep : 0;
+
+                                        // totalWorkload += workload;
+                                        //totalHours += hour;
 
 
                                         //byDate.SetWorkHourPerDay(totalHours);
                                         //byDate.SetWorkloadPerDay(totalWorkload);
 
-                                        byDate.WorkloadPerDay = byDate.WorkloadPerDay ?? totalWorkload;
-                                        byDate.WorkHourPerDay = byDate.WorkHourPerDay ?? totalHours;
+                                        byDate.WorkloadPerDay = byDate.WorkloadPerDay ?? workload;
+                                        byDate.WorkHourPerDay = byDate.WorkHourPerDay ?? workHour;
+                                        byDate.IsUseMinAssignHours = byDate.IsUseMinAssignHours ?? isUseMinAssignHours;
 
                                         return byDate;
 
@@ -1182,19 +1219,27 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                                 isSelectionAssign = d.ProductionStepLinkDataId == assignStep.ProductionStepLinkDataId;
 
-                                var wokloadQuantiy = assignQuantity * d.WorkloadConvertRate.Value;
+                                var assignQuantity = assignStep.AssignmentQuantity * rateQuantiy;
+                                wokloadQuantiy = assignQuantity * (d.WorkloadConvertRate ?? 1);
+
+                                var (assignWorkHour, assignIsUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, wokloadQuantiy);
+                                
+                               // totalHours += assignWorkHour;
+
                                 assignInfos.Add(new CapacityAssignInfo()
                                 {
                                     DepartmentId = depId,
                                     AssignQuantity = assignQuantity,
                                     AssignWorkloadQuantity = wokloadQuantiy,
-                                    AssignWorkHour = productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
+                                    AssignWorkHour = assignWorkHour,//productivityByStep > 0 ? wokloadQuantiy / productivityByStep.Value : 0,
                                     StartDate = assignStep?.StartDate?.GetUnix(),
                                     EndDate = assignStep?.EndDate?.GetUnix(),
                                     IsManualSetStartDate = assignStep.IsManualSetStartDate,
                                     IsManualSetEndDate = assignStep.IsManualSetEndDate,
                                     RateInPercent = assignStep.RateInPercent,
+                                    IsUseMinAssignHours = assignIsUseMinAssignHours,
                                     IsSelectionAssign = isSelectionAssign,
+
                                     ByDates = byDates
                                 });
                             }
@@ -1203,6 +1248,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                             //var currentDepartmentAssign = assignInfos.FirstOrDefault(a => a.DepartmentId == assignDepartmentId);
 
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
+
+                            var (totalHours, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, totalWorkloadQuantity);
+
                             return new ProductionStepWorkloadAssignModel
                             {
                                 StepId = d.StepId,
@@ -1215,8 +1263,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 WorkloadQuantity = workloadQuantity,
 
                                 Productivity = productivityByStep ?? 0,
-
-                                WorkHour = productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
+                                MinAssignHours = minAssignHour ?? 0,
+                                WorkHour = totalHours,// productivityByStep > 0 ? workloadQuantity / productivityByStep.Value : 0,
                                 OutsourceQuantity = d.OutsourceQuantity,
                                 //AssignQuantity = currentDepartmentAssign?.AssignQuantity,
                                 //AssignWorkloadQuantity = currentDepartmentAssign?.AssignWorkloadQuantity,

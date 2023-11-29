@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using OpenXmlPowerTools;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,7 @@ using VErp.Commons.Library.Model;
 using VErp.Infrastructure.EF.StockDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Manufacture;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.Extensions;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -41,7 +43,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
         private IUnitService _unitService;
         private IProductService _productService;
         private IProductMaterialsConsumptionService _productMaterialsConsumptionService;
-
+        private ICustomGenCodeHelperService _customGenCodeHelperService;
 
         private IList<ImportProductMaterialsConsumptionExcelMapping> _importData;
         private IDictionary<string, UnitOutput> _units;
@@ -112,6 +114,11 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             return this;
         }
 
+        public ProductMaterialsConsumptionImportFacade SetService(ICustomGenCodeHelperService customGenCodeHelperService)
+        {
+            _customGenCodeHelperService = customGenCodeHelperService;
+            return this;
+        }
 
         private ImportExcelMapping _mapping = null;
         public async Task<bool> ProcessData(ILongTaskResourceLockService longTaskResourceLockService, ImportExcelMapping mapping, Stream stream, int? productId)
@@ -234,7 +241,145 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             reader.RegisterLongTaskEvent(longTask);
             _importData = reader.ReadSheetEntity<ImportProductMaterialsConsumptionExcelMapping>(mapping);
         }
+        private async Task<ImportProductMaterialsConsumptionExcelMapping> ValidateProductMaterial(IList<ImportProductMaterialsConsumptionExcelMapping> importProducts, IDictionary<string, int> baseValueChains, List<IGenerateCodeContext> ctxs, ImportProductMaterialsConsumptionExcelMapping productMaterial, bool isValidateSpecification = false)
+        {
+           
+            // validateProducts
+            if (string.IsNullOrEmpty(productMaterial.ProductCode))
+            {
+                var productCodesExis = importProducts.Where(x => x.ProductName == productMaterial.ProductName && x.Specification == productMaterial.Specification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode).ToList();
+                productCodesExis.AddRange(importProducts.Where(x => x.UsageProductName == productMaterial.ProductName && x.UsageSpecification == productMaterial.Specification && !string.IsNullOrEmpty(x.UsageProductCode)).Select(x => x.UsageProductCode));
+                if (productCodesExis.Count > 0)
+                {
+                    productMaterial.ProductCode = productCodesExis.FirstOrDefault();
+                }
+                else
+                {
+                    var productCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.ProductName && x.Value.Specification == productMaterial.Specification).Select(x => x.Value.ProductCode).ToList()
+                  : _existedProducts.Where(x => x.Value.ProductName == productMaterial.ProductName).Select(x => x.Value.ProductCode).ToList();
 
+                    if (productCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.ProductName} và quy cách: {productMaterial.Specification}");
+                    }
+                    if (productCodes.Count == 0 && string.IsNullOrEmpty(productMaterial.ProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productMaterial, baseValueChains);
+                        productMaterial.ProductCode = code;
+                    }
+                    if (!string.IsNullOrEmpty(productCodes.FirstOrDefault()))
+                    {
+                        productMaterial.ProductCode = productCodes.FirstOrDefault();
+                    }
+                }
+               
+            }
+            // Validate ChildProducts
+            if (string.IsNullOrEmpty(productMaterial.UsageProductCode))
+            {
+
+                var childProductCodesExis = importProducts.Where(x => x.UsageProductName == productMaterial.UsageProductName && x.UsageSpecification == productMaterial.UsageSpecification && !string.IsNullOrEmpty(x.UsageProductCode)).Select(x => x.UsageProductCode).ToList();
+                childProductCodesExis.AddRange(importProducts.Where(x => x.ProductName == productMaterial.UsageProductName && x.Specification == productMaterial.UsageSpecification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode));
+                if (childProductCodesExis.Count > 0)
+                {
+                    productMaterial.UsageProductCode = childProductCodesExis.FirstOrDefault();
+                    return productMaterial;
+                }
+                else
+                {
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName && x.Value.Specification == productMaterial.Specification).Select(x => x.Value.ProductCode).ToList()
+                    : _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName).Select(x => x.Value.ProductCode).ToList(); ;
+
+                    if (childProductCodes.Count > 1)
+                    {
+                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.UsageProductName} và quy cách: {productMaterial.UsageProductCode}");
+                    }
+                    if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productMaterial.UsageProductCode))
+                    {
+                        var (ctx, code) = await CustomGenCode(productMaterial, baseValueChains, true);
+                        productMaterial.UsageProductCode = code;
+                    }
+                    if (!string.IsNullOrEmpty(childProductCodes.FirstOrDefault()))
+                    {
+                        productMaterial.UsageProductCode = childProductCodes.FirstOrDefault();
+                    }
+                }
+                
+            }
+            return productMaterial;
+        }
+        private async Task<(IGenerateCodeContext, string)> CustomGenCode(ImportProductMaterialsConsumptionExcelMapping productMaterial, IDictionary<string, int> baseValueChains = null, bool isChildProduct = false)
+        {
+            ProductType type = null;
+            if (!isChildProduct)
+            {
+                if (string.IsNullOrWhiteSpace(productMaterial.ProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productMaterial.ProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productMaterial.ProductTypeCode, productMaterial.ProductName);
+                    }
+                }
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(productMaterial.UsageProductTypeCode.NormalizeAsInternalName()))
+                {
+                    type = _productTypes.FirstOrDefault(c => c.Value.IsDefault).Value;
+                }
+                else
+                {
+                    _productTypes.TryGetValue(productMaterial.UsageProductTypeCode.NormalizeAsInternalName(), out type);
+                    if (type == null)
+                    {
+                        throw ImportProductCateOfProductNotFound.BadRequestFormat(productMaterial.UsageProductTypeCode, productMaterial.UsageProductName);
+                    }
+                }
+            }
+
+            var productTypeInfo = await _stockDbContext.ProductType.FirstOrDefaultAsync(t => t.ProductTypeId == type.ProductTypeId);
+
+            var ctx = _customGenCodeHelperService.CreateGenerateCodeContext(baseValueChains);
+            var code = await ctx
+                .SetConfig(EnumObjectType.Product, EnumObjectType.ProductType, type.ProductTypeId, productTypeInfo?.ProductTypeName)
+                .SetConfigData(0, null, productTypeInfo?.IdentityCode)
+                .TryValidateAndGenerateCode(_stockDbContext.Product, isChildProduct ? productMaterial.UsageProductCode : productMaterial.ProductCode, (s, code) => s.ProductId != 0 && s.ProductCode == code);
+            return (ctx, code);
+        }
+        private async Task<IList<IGenerateCodeContext>> ValidateProductMaterials()
+        {
+            var importProducts = new List<ImportProductMaterialsConsumptionExcelMapping>();
+            var ctxs = new List<IGenerateCodeContext>();
+            var baseValueChains = new Dictionary<string, int>();
+            foreach (var productImport in _importData)
+            {
+                switch (_mapping.HandleFilterOptionId)
+                {
+                    case EnumHandleFilterOption.Default:
+                        if (productImport.ProductCode == null || productImport.UsageProductCode == null)
+                        {
+                            throw new BadRequestException("Vui lòng nhập mã mặt hàng!");
+                        }
+                        importProducts.Add(productImport);
+                        break;
+                    case EnumHandleFilterOption.FitlerByNameAndSpecification:
+                        importProducts.Add(await ValidateProductMaterial(importProducts, baseValueChains, ctxs, productImport, true));
+                        break;
+                    case EnumHandleFilterOption.FilterByName:
+                        importProducts.Add(await ValidateProductMaterial(importProducts, baseValueChains, ctxs, productImport));
+                        break;
+                    default:
+                        break;
+                }
+            }
+            _importData = importProducts;
+            return ctxs;
+        }
         private async Task ImportProcess(LongTaskResourceLock longTask)
         {
             var data = _importData.GroupBy(x => x.GroupTitle.NormalizeAsInternalName());
@@ -620,6 +765,13 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
         private async Task AddMissingProduct()
         {
+            _existedProducts = (from p in (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId }).ToListAsync())
+                                join u in _units.Values on p.UnitId equals u.UnitId into gu
+                                from u in gu.DefaultIfEmpty()
+                                select new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId, UnitName = u?.UnitName })
+           .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
+           .ToDictionary(p => p.Key, p => p.FirstOrDefault());
+            var ctxs = await ValidateProductMaterials();
             var importProducts = _importData.SelectMany(p => new[]{
                     new {
                         p.ProductCode,
@@ -653,13 +805,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         Specification = p.First().Specification,
                     });
 
-            _existedProducts = (from p in (await _stockDbContext.Product.AsNoTracking().Select(p => new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId }).ToListAsync())
-                                join u in _units.Values on p.UnitId equals u.UnitId into gu
-                                from u in gu.DefaultIfEmpty()
-                                select new SimpleProduct { ProductId = p.ProductId, ProductCode = p.ProductCode, ProductName = p.ProductName, UnitId = p.UnitId, UnitName = u?.UnitName })
-            .GroupBy(p => p.ProductCode.NormalizeAsInternalName())
-            .ToDictionary(p => p.Key, p => p.FirstOrDefault());
-
+           
             var newProducts = importProducts.Where(p => !_existedProducts.ContainsKey(p.Key))
                 .Select(p =>
                 {
@@ -741,6 +887,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     unitName = _units.Values.FirstOrDefault(x => x.UnitId == product.UnitId)?.UnitName;
 
                 _existedProducts.Add(product.ProductCode.NormalizeAsInternalName(), new SimpleProduct { ProductId = productId, ProductCode = product.ProductCode, ProductName = product.ProductName, UnitName = unitName });
+            }
+            foreach (var ctx in ctxs)
+            {
+                await ctx.ConfirmCode();
             }
         }
 

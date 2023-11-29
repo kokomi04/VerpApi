@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using VErp.Commons.GlobalObject;
@@ -9,9 +10,11 @@ namespace VErp.Services.Master.Service.PrintConfig
 {
     public interface IPrintConfigService<TModel>
     {
-        Task<PageData<TModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc);
+        Task<PageData<TModel>> Search(int? moduleTypeId, IList<int> printConfigIds, string keyword, int page, int size, string orderByField, bool asc);
 
         Task<TModel> GetPrintConfig(int printConfigId);
+        Task<TModel> GetPrintConfigByName(string name);
+
         Task<int> AddPrintConfig(TModel model, IFormFile template, IFormFile background);
         Task<bool> UpdatePrintConfig(int printConfigId, TModel model, IFormFile template, IFormFile background);
         Task<bool> DeletePrintConfig(int printConfigId);

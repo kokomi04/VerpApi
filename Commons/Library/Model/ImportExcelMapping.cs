@@ -14,6 +14,7 @@ namespace VErp.Commons.Library.Model
         public EnumImportDuplicateOption? ImportDuplicateOptionId { get; set; }
         public IList<ImportExcelMappingField> MappingFields { get; set; }
         public bool? ConfirmFlag { get; set; }
+        public EnumHandleFilterOption? HandleFilterOptionId { get; set;}
     }
 
     public class ImportExcelMappingExtra<T>

@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.Attributes;
 using VErp.Commons.Library.Model;
 
 namespace VErp.Services.Stock.Model.Product
@@ -73,10 +75,11 @@ namespace VErp.Services.Stock.Model.Product
         const string ChildProductGroup = "Chi tiết";
 
         [Display(Name = "Mã mặt hàng", GroupName = MainProductGroup)]
-        [Required(ErrorMessage = "Vui lòng nhập mã mặt hàng chính")]
+        [RequireWhenHandleFilter( "Vui lòng nhập mã mặt hàng chính", EnumHandleFilterOption.Default, true)]
         public string ProductCode { get; set; }
 
-        [Display(Name = "Tên mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        [Display(Name = "Tên mặt hàng", GroupName = MainProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập tên mặt hàng", EnumHandleFilterOption.FilterByName, true)]
         public string ProductName { get; set; }
 
         [Display(Name = "Đơn vị mặt hàng (Nếu có)", GroupName = MainProductGroup)]
@@ -85,19 +88,29 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Định danh loại mã mặt hàng (Nếu có)", GroupName = MainProductGroup)]
         public string ProductTypeCode { get; set; }
 
-        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = MainProductGroup)]
+        [Display(Name = "Quy cách mặt hàng", GroupName = MainProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập quy cách", EnumHandleFilterOption.FitlerByNameAndSpecification, false)]
         public string Specification { get; set; }
 
+        [Display(Name = "Đơn vị tính 2", GroupName = MainProductGroup)]
+        public string UnitName2 { get; set; }
 
+        [Display(Name = "Tỷ lệ", GroupName =MainProductGroup)]
+        public int FactorExpression { get; set; }
+
+        [Display(Name ="Độ chính xác", GroupName =MainProductGroup)]
+        public string DecimalPlace { get; set; }
 
         [Display(Name = "Danh mục mặt hàng (Nếu có)", GroupName = MainProductGroup)]
         public string ProductCateName { get; set; }
+   
 
         [Display(Name = "Mã chi tiết", GroupName = ChildProductGroup)]
-        [Required(ErrorMessage = "Vui lòng nhập mã chi tiết")]
+        [RequireWhenHandleFilter("Vui lòng nhập mã chi tiết", EnumHandleFilterOption.Default, true)]
         public string ChildProductCode { get; set; }
 
         [Display(Name = "Tên chi tiết", GroupName = ChildProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập tên chi tiết", EnumHandleFilterOption.FilterByName, true)]
         public string ChildProductName { get; set; }
 
         [Display(Name = "Đơn vị chi tiết", GroupName = ChildProductGroup)]
@@ -108,7 +121,8 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Danh mục chi tiết (Nếu có)", GroupName = ChildProductGroup)]
         public string ChildProductCateName { get; set; }
 
-        [Display(Name = "Quy cách mặt hàng (Nếu có)", GroupName = ChildProductGroup)]
+        [Display(Name = "Quy cách chi tiết ", GroupName = ChildProductGroup)]
+        [RequireWhenHandleFilter("Vui lòng nhập quy cách chi tiết", EnumHandleFilterOption.FitlerByNameAndSpecification, false)]
         public string ChildSpecification { get; set; }
 
 

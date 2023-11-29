@@ -1179,7 +1179,7 @@ namespace VErp.Services.Organization.Service.Salary.Implement
                     IList<object> values = new List<object>();
 
                     var type = clause.Value.GetType();
-                    if (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type))
+                    if (type != typeof(string) && (type.IsArray || typeof(System.Collections.IEnumerable).IsAssignableFrom(type)))
                     {
                         foreach (object v in (dynamic)y)
                         {

@@ -35,6 +35,8 @@ public partial class ManufacturingDBContext : DbContext
 
     public virtual DbSet<ProductionAssignmentDetail> ProductionAssignmentDetail { get; set; }
 
+    public virtual DbSet<ProductionAssignmentDetailLinkData> ProductionAssignmentDetailLinkData { get; set; }
+
     public virtual DbSet<ProductionConsumMaterial> ProductionConsumMaterial { get; set; }
 
     public virtual DbSet<ProductionConsumMaterialDetail> ProductionConsumMaterialDetail { get; set; }
@@ -304,6 +306,7 @@ public partial class ManufacturingDBContext : DbContext
             entity.HasKey(e => new { e.ProductionStepId, e.DepartmentId, e.WorkDate, e.ProductionOrderId }).HasName("PK_ProductionAssignment_copy2");
 
             entity.Property(e => e.HoursPerDay).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.MinAssignHours).HasColumnType("decimal(32, 21)");
             entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.WorkloadPerDay).HasColumnType("decimal(32, 12)");
 
@@ -311,6 +314,21 @@ public partial class ManufacturingDBContext : DbContext
                 .HasForeignKey(d => new { d.ProductionStepId, d.DepartmentId, d.ProductionOrderId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionAssignmentDetail_ProductionAssignment");
+        });
+
+        modelBuilder.Entity<ProductionAssignmentDetailLinkData>(entity =>
+        {
+            entity.HasKey(e => new { e.ProductionOrderId, e.ProductionStepId, e.DepartmentId, e.WorkDate, e.ProductionStepLinkDataId });
+
+            entity.Property(e => e.HoursPerDay).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.MinAssignHours).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.QuantityPerDay).HasColumnType("decimal(32, 12)");
+            entity.Property(e => e.WorkloadPerDay).HasColumnType("decimal(32, 12)");
+
+            entity.HasOne(d => d.ProductionAssignmentDetail).WithMany(p => p.ProductionAssignmentDetailLinkData)
+                .HasForeignKey(d => new { d.ProductionStepId, d.DepartmentId, d.WorkDate, d.ProductionOrderId })
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_ProductionAssignmentDetailLinkData_ProductionAssignmentDetail");
         });
 
         modelBuilder.Entity<ProductionConsumMaterial>(entity =>
@@ -368,6 +386,7 @@ public partial class ManufacturingDBContext : DbContext
 
             entity.HasOne(d => d.FromProductionStep).WithMany(p => p.ProductionHandoverFromProductionStep)
                 .HasForeignKey(d => d.FromProductionStepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_FromProductionStep");
 
             entity.HasOne(d => d.ProductionHandoverReceipt).WithMany(p => p.ProductionHandover)
@@ -381,6 +400,7 @@ public partial class ManufacturingDBContext : DbContext
 
             entity.HasOne(d => d.ToProductionStep).WithMany(p => p.ProductionHandoverToProductionStep)
                 .HasForeignKey(d => d.ToProductionStepId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductionHandover_ToProductionStep");
         });
 
@@ -1001,6 +1021,7 @@ public partial class ManufacturingDBContext : DbContext
 
         modelBuilder.Entity<TargetProductivityDetail>(entity =>
         {
+            entity.Property(e => e.MinAssignHours).HasColumnType("decimal(32, 12)");
             entity.Property(e => e.ProductivityResourceTypeId).HasDefaultValueSql("((1))");
             entity.Property(e => e.ProductivityTimeTypeId).HasDefaultValueSql("((2))");
             entity.Property(e => e.TargetProductivity).HasColumnType("decimal(32, 12)");

@@ -88,7 +88,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
         protected abstract Task LogUpdatePrintConfig(TModel model, TEntity entity);
         protected abstract Task LogDeletePrintConfig(TEntity entity);
 
-        
+
         public virtual async Task<int> AddPrintConfig(TModel model, IFormFile template, IFormFile background)
         {
             if (long.TryParse(model.Background, out var v))
@@ -161,15 +161,33 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
             if (config == null)
                 throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
 
-            var configId = new SingleClause()
+            return await GetPrintConfig(config);
+        }
+
+        
+
+        public async Task<TModel> GetPrintConfigByName(string name)
+        {
+            var config = await _masterDBContext.Set<TEntity>().FirstOrDefaultAsync(c=>c.PrintConfigName== name);
+            if (config == null)
+                throw new BadRequestException(InputErrorCode.PrintConfigNotFound);
+            return await GetPrintConfig(config);
+        }
+
+        private async Task<TModel> GetPrintConfig(TEntity config)
+        {
+
+            var configId = ConfigId().Compile().Invoke(config);
+
+            var configIdFilter = new SingleClause()
             {
                 DataType = EnumDataType.Int,
                 FieldName = _configIdFieldName,
                 Operator = EnumOperator.Equal,
-                Value = printConfigId
+                Value = configId
             };
 
-            var lstMappings = await MappingSet.InternalFilter(configId).ToListAsync();
+            var lstMappings = await MappingSet.InternalFilter(configIdFilter).ToListAsync();
             var model = _mapper.Map<TModel>(config);
             model.ModuleTypeIds = lstMappings.Select(SelectField<TMappingModuleTypeEntity>(nameof(PrintConfigStandard.ModuleTypeId)).Compile()).ToList();
             return model;
@@ -182,7 +200,7 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
                 return _masterDBContext.Set<TMappingModuleTypeEntity>();
             }
         }
-        public async Task<PageData<TModel>> Search(int moduleTypeId, string keyword, int page, int size, string orderByField, bool asc)
+        public async Task<PageData<TModel>> Search(int? moduleTypeId, IList<int> printConfigIds, string keyword, int page, int size, string orderByField, bool asc)
         {
             keyword = (keyword ?? "").Trim();
 
@@ -203,6 +221,19 @@ namespace VErp.Services.Master.Service.PrintConfig.Implement
 
                 query = query.Join(MappingSet.InternalFilter(moduleTypeIdFilter), ConfigId(), ConfigIdFromMapping(), (q, m) => q);
             }
+            if (printConfigIds?.Count > 0)
+            {
+                var configFilterIds = new SingleClause()
+                {
+                    DataType = EnumDataType.Int,
+                    FieldName = _configIdFieldName,
+                    Operator = EnumOperator.InList,
+                    Value = printConfigIds
+                };
+
+                query = query.InternalFilter(configFilterIds);
+            }
+
 
             var total = await query.CountAsync();
             var lst = await (size > 0 ? (query.Skip((page - 1) * size)).Take(size) : query)
