@@ -255,6 +255,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
 
             var oldProductionAssignments = _manufacturingDBContext.ProductionAssignment
                    .Include(a => a.ProductionAssignmentDetail)
+                   .ThenInclude(d => d.ProductionAssignmentDetailLinkData)
                    .Where(s => s.ProductionOrderId == productionOrderId)
                    .ToList();
 
@@ -618,6 +619,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     r.IsDeleted = true;
                 }
 
+
+                foreach (var d in oldProductionAssignment.ProductionAssignmentDetail)
+                {
+                    d.ProductionAssignmentDetailLinkData.Clear();
+                }
 
                 // Xóa chi tiết phân công
                 oldProductionAssignment.ProductionAssignmentDetail.Clear();
