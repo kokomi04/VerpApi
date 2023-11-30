@@ -274,10 +274,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    .Where(h => h.ProductionOrderId == productionOrderId)
             //    .ToList();
 
-            var mapData = new Dictionary<long,
-                (
-                List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)> UpdateProductionStepAssignments,
-                List<ProductionAssignmentModel> CreateProductionStepAssignments)>();
+            //var mapData = new Dictionary<long,
+            //    (
+            //    List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)> UpdateProductionStepAssignments,
+            //    List<ProductionAssignmentModel> CreateProductionStepAssignments)>();
 
             // Danh sách khai báo chi phí
             //var productionScheduleTurnShifts = _manufacturingDBContext.ProductionScheduleTurnShift
@@ -288,14 +288,14 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
             //    .Where(s => s.ProductionOrderId == productionOrderId)
             //    .ToList();
 
-            // Danh sách phân công của các công đoạn bị xóa
+
             var assignedProductionStepIds = data.ProductionStepAssignment
                 .Select(a => a.ProductionStepId)
                 .ToList();
 
-            var deletedProductionStepAssignments = oldProductionAssignments
-                    .Where(s => !assignedProductionStepIds.Contains(s.ProductionStepId))
-                    .ToList();
+            //var deletedProductionStepAssignments = oldProductionAssignments
+            //        .Where(s => !assignedProductionStepIds.Contains(s.ProductionStepId))
+            //        .ToList();
 
             // Lấy thông tin outsource
             //var outSource = step.ProductionStepLinkDataRole
@@ -342,13 +342,6 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 }
 
 
-                var oldProductionStepAssignments = oldProductionAssignments
-                   .Where(s => s.ProductionStepId == assignmentStep.ProductionStepId)
-                   .ToList();
-
-
-                var updateAssignments = new List<(ProductionAssignmentEntity Entity, ProductionAssignmentModel Model)>();
-                var newAssignments = new List<ProductionAssignmentModel>();
 
                 foreach (var d in assignmentStep.ProductionAssignments)
                 {
@@ -362,25 +355,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     if (d.AssignmentQuantity <= 0)
                         throw new BadRequestException(GeneralCode.InvalidParams, $"Số lượng phân công phải lớn hơn 0, {step.Title}");
                     d.IsUseMinAssignHours = d.ProductionAssignmentDetail?.Any(d => d.IsUseMinAssignHours == true) == true;
-
-                    var entity = oldProductionStepAssignments.FirstOrDefault(a => a.DepartmentId == d.DepartmentId);
-                    if (entity == null)
-                    {
-                        newAssignments.Add(d);
-                    }
-                    else
-                    {
-                        if (d.IsChange(entity))
-                        {
-                            updateAssignments.Add((entity, d));
-                        }
-                        oldProductionStepAssignments.Remove(entity);
-                    }
                 }
-
-                mapData.Add(assignmentStep.ProductionStepId, (updateAssignments, newAssignments));
-
-                deletedProductionStepAssignments.AddRange(oldProductionStepAssignments);
             }
 
 
@@ -411,9 +386,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                     var productionStepWorkInfos = _manufacturingDBContext.ProductionStepWorkInfo.Where(w => assignedProductionStepIds.Contains(w.ProductionStepId)).ToList();
                     // Xóa phân công có công đoạn bị xóa khỏi quy trình
 
-                    await DeleteAssignmentRef(productionOrderId, deletedProductionStepAssignments);
+                    await DeleteAssignmentRef(productionOrderId, oldProductionAssignments);
 
                     _manufacturingDBContext.SaveChanges();
+
+
 
                     foreach (var productionStepAssignments in data.ProductionStepAssignment)
                     {
@@ -430,44 +407,17 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                             _mapper.Map(productionStepAssignments.ProductionStepWorkInfo, productionStepWorkInfo);
                         }
 
-                        // Xóa phân công
-                        //if (mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments.Count > 0)
-                        //{
-                        //    foreach (var oldProductionAssignment in mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments)
-                        //    {
-                        //        // Xóa bàn giao liên quan tới phân công bị xóa
-                        //        var deleteHandovers = handovers
-                        //            .Where(h => (h.FromProductionStepId == oldProductionAssignment.ProductionStepId || h.ToProductionStepId == oldProductionAssignment.ProductionStepId)
-                        //            && (h.FromDepartmentId == oldProductionAssignment.DepartmentId || h.ToDepartmentId == oldProductionAssignment.DepartmentId))
-                        //            .ToList();
-
-                        //        _manufacturingDBContext.ProductionHandover.RemoveRange(deleteHandovers);
-
-                        //        oldProductionAssignment.ProductionAssignmentDetail.Clear();
-                        //    }
-                        //    _manufacturingDBContext.SaveChanges();
-                        //    _manufacturingDBContext.ProductionAssignment.RemoveRange(mapData[productionStepAssignments.ProductionStepId].DeleteProductionStepAssignments);
-                        //}
 
                         // Thêm mới phân công
-                        if (mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.Count > 0)
+                        var newEntities = productionStepAssignments.ProductionAssignments.AsQueryable()
+                           .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
+                           .ToList();
+                        foreach (var newEntitie in newEntities)
                         {
-                            var newEntities = mapData[productionStepAssignments.ProductionStepId].CreateProductionStepAssignments.AsQueryable()
-                               .ProjectTo<ProductionAssignmentEntity>(_mapper.ConfigurationProvider)
-                               .ToList();
-                            foreach (var newEntitie in newEntities)
-                            {
-                                newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
-                            }
-                            _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
+                            newEntitie.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Waiting;
                         }
+                        _manufacturingDBContext.ProductionAssignment.AddRange(newEntities);
 
-                        // Cập nhật phân công
-                        foreach (var tuple in mapData[productionStepAssignments.ProductionStepId].UpdateProductionStepAssignments)
-                        {
-                            tuple.Entity.ProductionAssignmentDetail.Clear();
-                            _mapper.Map(tuple.Model, tuple.Entity);
-                        }
                     }
 
                     // Update reset process status
@@ -891,12 +841,15 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                 var productionStepIds = data.Select(d => d.ProductionStepId).ToList();
                 var assignsByDepartment = await _manufacturingDBContext.ProductionAssignment
                      .Include(a => a.ProductionAssignmentDetail)
+                     .ThenInclude(d => d.ProductionAssignmentDetailLinkData)
                      .Where(a => a.DepartmentId == departmentId && productionStepIds.Contains(a.ProductionStepId))
                      .ToListAsync();
 
                 var productionOrderIds = assignsByDepartment.Select(a => a.ProductionOrderId).Distinct().ToList();
 
                 var removingDetails = new List<ProductionAssignmentDetail>();
+
+                var removingDetailDatas = new List<ProductionAssignmentDetailLinkData>();
 
                 var addingDetails = new List<ProductionAssignmentDetail>();
 
@@ -914,6 +867,10 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         assign.RateInPercent = updateInfo.RateInPercent;
                         assign.IsUseMinAssignHours = updateInfo?.Details?.Any(d => d.IsUseMinAssignHours == true) == true;
 
+                        foreach (var d in assign.ProductionAssignmentDetail)
+                        {
+                            removingDetailDatas.AddRange(d.ProductionAssignmentDetailLinkData);
+                        }
                         removingDetails.AddRange(assign.ProductionAssignmentDetail);
                         var details = _mapper.Map<List<ProductionAssignmentDetail>>(updateInfo.Details);
 
@@ -934,8 +891,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionAssignment.Implement
                         addingDetails.AddRange(details);
                     }
                 }
+                _manufacturingDBContext.ProductionAssignmentDetailLinkData.RemoveRange(removingDetailDatas);
+                await _manufacturingDBContext.SaveChangesAsync();
+
                 _manufacturingDBContext.ProductionAssignmentDetail.RemoveRange(removingDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
+
                 await _manufacturingDBContext.ProductionAssignmentDetail.AddRangeAsync(addingDetails);
                 await _manufacturingDBContext.SaveChangesAsync();
 
