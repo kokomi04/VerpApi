@@ -1249,7 +1249,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                             var workloadQuantity = d.Quantity * d.WorkloadConvertRate.Value;
 
-                            var (totalHours, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, totalWorkloadQuantity);
+                            var (totalHours, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, workloadQuantity);
 
                             return new ProductionStepWorkloadAssignModel
                             {
