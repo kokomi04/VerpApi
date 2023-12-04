@@ -1155,20 +1155,20 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
         }
         private void ValidateTitleProductionProcess(ProductionProcessModel req)
         {
-            var groupTitle = req.ProductionSteps.Where(x=> x.IsGroup.HasValue && x.IsGroup.Value).GroupBy(x => x.Title);
-            var groupProcessTitle = groupTitle.Where(g => g.Count() > 1).Select(x=> x.Key).ToList();
+            var groupTitle = req.ProductionSteps.Where(x => x.IsGroup.HasValue && x.IsGroup.Value).GroupBy(x => x.Title);
+            var groupProcessTitle = groupTitle.Where(g => g.Count() > 1).Select(x => x.Key).ToList();
             if (groupProcessTitle.Count > 0)
             {
-                throw new BadRequestException($"Tên công đoạn {string.Join(",", groupProcessTitle)} bị trùng." );
+                throw new BadRequestException($"Tên công đoạn {string.Join(",", groupProcessTitle)} bị trùng.");
             }
             var groupChild = req.ProductionSteps.Where(x => x.IsGroup.HasValue && !x.IsGroup.Value).GroupBy(x => x.ParentCode);
             foreach (var group in groupChild)
             {
-                var childTitles = group.GroupBy(x => x.Title).Where(x=> x.Count() >1);
+                var childTitles = group.GroupBy(x => x.Title).Where(x => x.Count() > 1);
 
-                if (childTitles.Count() >0)
+                if (childTitles.Count() > 0)
                 {
-                    throw new BadRequestException($"Tên {string.Join(",",childTitles.Select(x=>x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault()?.ParentCode)?.Title}.");
+                    throw new BadRequestException($"Tên {string.Join(",", childTitles.Select(x => x.Key).ToList())} bị trùng trong công đoạn {req.ProductionSteps.FirstOrDefault(x => x.ProductionStepCode == group.FirstOrDefault()?.ParentCode)?.Title}.");
                 }
             }
         }
@@ -1287,7 +1287,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     .Any(x => x.Count() > 1))
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Xuất hiện chi tiết trùng nhau mã code");
 
-                if (req.ProductionStepLinkDataRoles.Any(x=> req.ProductionStepLinkDatas.FirstOrDefault(d=> d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
+                if (req.ProductionStepLinkDataRoles.Any(x => req.ProductionStepLinkDatas.FirstOrDefault(d => d.ProductionStepLinkDataCode == x.ProductionStepLinkDataCode) == null))
                 {
                     throw new BadRequestException(ProductionProcessErrorCode.ValidateProductionStepLinkData, "Trong stepLinkDataRoles tồn tại stepLinkDatas bằng rỗng!");
                 }
@@ -1309,8 +1309,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                     var duplicateLink = outs.GroupBy(o => new
                     {
-                        o.LinkData?.LinkDataObjectTypeId ,
-                        o.LinkData?.LinkDataObjectId ,
+                        o.LinkData?.LinkDataObjectTypeId,
+                        o.LinkData?.LinkDataObjectId,
                         o.FromProductionStepCode,
                         o.ToProductionStepCode
                     }).FirstOrDefault(o => o.Count() > 1);
@@ -1517,6 +1517,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                 // Xóa phân công cho các công đoạn bị xóa khỏi quy trình
                 var deletedProductionStepAssignments = _manufacturingDBContext.ProductionAssignment
                     .Include(a => a.ProductionAssignmentDetail)
+                    .ThenInclude(d => d.ProductionAssignmentDetailLinkData)
                     .Where(s => s.ProductionOrderId == containerId && (!currentProductionStepIds.Contains(s.ProductionStepId) || !lsStepLinkDataId.Contains(s.ProductionStepLinkDataId)))
                     .ToList();
 
@@ -1534,7 +1535,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                     {
                         ProductId = containerId,
                         ProcessStatus = fromProduct.ProductionProcessStatusId
-                    },true);
+                    }, true);
                 }
                 else
                 {
@@ -1552,9 +1553,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
                         ProcessStatus = EnumProductionProcessStatus.CreateButNotYet
                     }, true);
                 }
-               
+
             }
-            
+
         }
         private async Task UpdateStatusValidForProductionOrder(long productionOrderId)
         {
