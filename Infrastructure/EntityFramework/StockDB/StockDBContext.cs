@@ -548,7 +548,10 @@ public partial class StockDBContext : DbContext
 
         modelBuilder.Entity<ProductCustomer>(entity =>
         {
+            entity.Property(e => e.CustomerProductBarcode).HasMaxLength(128);
             entity.Property(e => e.CustomerProductCode).HasMaxLength(128);
+            entity.Property(e => e.CustomerProductDescription).HasMaxLength(512);
+            entity.Property(e => e.CustomerProductModelType).HasMaxLength(128);
             entity.Property(e => e.CustomerProductName).HasMaxLength(128);
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductCustomer)

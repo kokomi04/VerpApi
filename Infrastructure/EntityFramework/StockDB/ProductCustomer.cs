@@ -15,6 +15,12 @@ public partial class ProductCustomer
 
     public string CustomerProductName { get; set; }
 
+    public string CustomerProductBarcode { get; set; }
+
+    public string CustomerProductModelType { get; set; }
+
+    public string CustomerProductDescription { get; set; }
+
     public int CreatedByUserId { get; set; }
 
     public int UpdatedByUserId { get; set; }
