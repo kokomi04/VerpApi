@@ -553,7 +553,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             // validateProducts
             if (string.IsNullOrEmpty(productBom.ProductCode))
             {
-                var productCodesExis = importProducts.Where(x => x.ProductCode == productBom.ProductName && x.ProductCode == productBom.Specification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode).ToList();
+                var productCodesExis = importProducts.Where(x => x.ProductName == productBom.ProductName && x.Specification == productBom.Specification && !string.IsNullOrEmpty(x.ProductCode)).Select(x => x.ProductCode).ToList();
                 productCodesExis.AddRange(importProducts.Where(x => x.ChildProductName == productBom.ProductName && x.ChildSpecification == productBom.Specification && !string.IsNullOrEmpty(x.ChildProductCode)).Select(x => x.ChildProductCode));
                 if (productCodesExis.Count > 0)
                 {
@@ -565,7 +565,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                     : _existedProducts.Where(x => x.Value.ProductName == productBom.ProductName).Select(x => x.Value.ProductCode).ToList();
                     if (productCodes.Count > 1)
                     {
-                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ProductName} và quy cách: {productBom.Specification}");
+                        if (isValidateSpecification)
+                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ProductName} và quy cách: {productBom.Specification}");
+                        else throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ProductName}");
                     }
                     if (productCodes.Count == 0 && string.IsNullOrEmpty(productBom.ProductCode))
                     {
@@ -610,7 +612,15 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
             }
             return productBom;
         }
-
+        private void ValidateWithNameProduct(ProductBomImportModel productBom)
+        {
+            var errorProductNames = _importData.Where(x=> (x.ProductName == productBom.ProductName && x.Specification != productBom.Specification) 
+            || (x.ChildProductName == productBom.ProductName && x.ChildSpecification != productBom.Specification)).ToList();
+            if (errorProductNames.Count >0)
+            {
+                throw new BadRequestException($"Mặt hàng có tên {productBom.ProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
+            }
+        }
         private  async Task<IList<IGenerateCodeContext>> ValidateProductBOMs()
         {
             var importProducts = new List<ProductBomImportModel>();
@@ -631,6 +641,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                         importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport, true));
                         break;
                     case EnumHandleFilterOption.FilterByName:
+                        ValidateWithNameProduct(productImport);
                         importProducts.Add(await ValidateProductBOM(importProducts, baseValueChains, ctxs, productImport));
                         break;
                     default:
