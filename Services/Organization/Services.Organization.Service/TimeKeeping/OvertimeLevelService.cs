@@ -38,9 +38,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
-            var maxSortOrder = await _organizationDBContext.OvertimeLevel.MaxAsync(m => m.SortOrder);
-
-            await UpdateSortOrder(maxSortOrder + 1, model.SortOrder);
+            if (await _organizationDBContext.OvertimeLevel.AnyAsync())
+            {
+                var maxSortOrder = await _organizationDBContext.OvertimeLevel.MaxAsync(m => m.SortOrder);
+                await UpdateSortOrder(maxSortOrder + 1, model.SortOrder);
+            }
 
             var entity = _mapper.Map<OvertimeLevel>(model);
 
