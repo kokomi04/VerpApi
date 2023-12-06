@@ -90,12 +90,18 @@ namespace VErp.Services.Stock.Model.Product
         [Display(Name = "Tên Khách hàng", GroupName = "TT Khách hàng")]
         public string CustomerName { get; set; }
 
-        [Display(Name = "Mã lưu bên k.hàng", GroupName = "TT Khách hàng")]
+        [Display(Name = "Mã mặt hàng phía khách", GroupName = "TT Khách hàng")]
         public string CustomerProductCode { get; set; }
 
-        [Display(Name = "Tên lưu bên k.hàng", GroupName = "TT Khách hàng")]
+        [Display(Name = "Tên mặt hàng phía khách", GroupName = "TT Khách hàng")]
         public string CustomerProductName { get; set; }
 
+        [Display(Name = "Barcode phía khách", GroupName = "TT Khách hàng")]
+        public string CustomerProductBarcode { get; set; }
+        [Display(Name = "Mã dòng hàng phía khách", GroupName = "TT Khách hàng")]
+        public string CustomerProductModelType { get; set; }
+        [Display(Name = "Mô tả thêm phía khách", GroupName = "TT Khách hàng")]
+        public string CustomerProductDescription { get; set; }
 
 
         // Extra info

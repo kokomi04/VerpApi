@@ -685,6 +685,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                 {
                     existedItem.UpdateIfAvaiable(v => v.CustomerProductCode, productCustomer.CustomerProductCode);
                     existedItem.UpdateIfAvaiable(v => v.CustomerProductName, productCustomer.CustomerProductName);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductBarcode, productCustomer.CustomerProductBarcode);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductModelType, productCustomer.CustomerProductModelType);
+                    existedItem.UpdateIfAvaiable(v => v.CustomerProductDescription, productCustomer.CustomerProductDescription);
                 }
             }
 
@@ -763,7 +766,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                                ProductId = productId,
                                CustomerId = row.CustomerId,
                                CustomerProductCode = row.CustomerProductCode,
-                               CustomerProductName = row.CustomerProductName
+                               CustomerProductName = row.CustomerProductName,
+                               CustomerProductBarcode = row.CustomerProductBarcode,
+                               CustomerProductModelType = row.CustomerProductModelType,
+                               CustomerProductDescription = row.CustomerProductDescription,
                            }
                 };
 
