@@ -691,13 +691,17 @@ namespace VErp.Services.Master.Service.Category
 
                 var category = _masterContext.Category.FirstOrDefault(c => c.CategoryId == categoryId);
 
-                for (int indx = 0; indx < fields.Count; indx++)
+                var fieldsSorted = fields.OrderBy(f => f.SortOrder).ToList();
+
+                for (int indx = 0; indx < fieldsSorted.Count; indx++)
                 {
                     var model = fields[indx];
                     if (category == null)
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
                     }
+
+                    model.SortOrder = indx + 1;
 
                     var entity = model.CategoryFieldId > 0 ? _masterContext.CategoryField.FirstOrDefault(f => f.CategoryFieldId == model.CategoryFieldId) : null;
                     ValidateCategoryField(model, entity);
