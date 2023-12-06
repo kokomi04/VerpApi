@@ -72,12 +72,16 @@ namespace Services.Organization.Model.TimeKeeping
 
         public virtual IList<OvertimeConfigurationMappingModel> OvertimeConfigurationMapping { get; set; }
 
+        public virtual IList<OvertimeConfigurationTimeFrameModel> OvertimeConfigurationTimeFrame { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<OvertimeConfiguration, OvertimeConfigurationModel>()
             .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping))
+            .ForMember(m => m.OvertimeConfigurationTimeFrame, v => v.MapFrom(m => m.OvertimeConfigurationTimeFrame))
             .ReverseMapCustom()
-            .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping));
+            .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping))
+            .ForMember(m => m.OvertimeConfigurationTimeFrame, v => v.MapFrom(m => m.OvertimeConfigurationTimeFrame));
         }
     }
 
