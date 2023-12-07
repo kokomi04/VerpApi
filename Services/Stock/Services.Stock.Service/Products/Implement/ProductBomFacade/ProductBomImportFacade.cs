@@ -596,7 +596,9 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                    : _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName).Select(x => x.Value.ProductCode).ToList();
                     if (childProductCodes.Count > 1)
                     {
-                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ChildProductName} và quy cách: {productBom.ChildSpecification}");
+                        if (isValidateSpecification)
+                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ChildProductName} và quy cách: {productBom.ChildSpecification}");
+                        else throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productBom.ChildProductName}");
                     }
                     if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productBom.ChildProductCode))
                     {
@@ -614,12 +616,16 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
         }
         private void ValidateWithNameProduct(ProductBomImportModel productBom)
         {
+            //validate product
             var errorProductNames = _importData.Where(x=> (x.ProductName == productBom.ProductName && x.Specification != productBom.Specification) 
             || (x.ChildProductName == productBom.ProductName && x.ChildSpecification != productBom.Specification)).ToList();
             if (errorProductNames.Count >0)
-            {
                 throw new BadRequestException($"Mặt hàng có tên {productBom.ProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
-            }
+            //validate childProduct
+            var errorChildProductName = _importData.Where(x => ((x.ChildProductName == productBom.ChildProductName && x.ChildSpecification != productBom.ChildSpecification)
+            || (x.ProductName == productBom.ChildProductName && x.Specification != productBom.ChildSpecification))).ToList();
+            if(errorChildProductName.Count >0)
+                throw new BadRequestException($"Mặt hàng con có tên {productBom.ChildProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
         }
         private  async Task<IList<IGenerateCodeContext>> ValidateProductBOMs()
         {
