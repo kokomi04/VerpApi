@@ -695,7 +695,7 @@ namespace VErp.Services.Master.Service.Category
 
                 for (int indx = 0; indx < fieldsSorted.Count; indx++)
                 {
-                    var model = fields[indx];
+                    var model = fieldsSorted[indx];
                     if (category == null)
                     {
                         throw new BadRequestException(CategoryErrorCode.CategoryNotFound);
