@@ -365,6 +365,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             {
                 throw new BadRequestException($"Mặt hàng có tên {productMaterial.ProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
             }
+            var errorChildProduct = _importData.Where(x => (x.ProductName == productMaterial.UsageProductName && x.Specification != productMaterial.UsageProductName)
+            || (x.UsageProductName == productMaterial.UsageProductName && x.UsageSpecification != productMaterial.UsageSpecification)).ToList();
+            if (errorChildProduct.Count >0)
+                throw new BadRequestException($"Mặt hàng con có tên {productMaterial.UsageProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
         }
         private async Task<IList<IGenerateCodeContext>> ValidateProductMaterials()
         {
