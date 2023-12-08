@@ -1823,6 +1823,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (model != null)
                 _mapper.Map(model, productionOrder);
 
+            productionOrder.ProductionOrderStatus = (int)productionOrderStatusId;
             if (isSetManualFinish)
             {
                 productionOrder.IsManualFinish = true;
