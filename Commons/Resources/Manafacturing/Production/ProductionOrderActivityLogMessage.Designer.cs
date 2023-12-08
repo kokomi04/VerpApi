@@ -97,11 +97,20 @@ namespace Verp.Resources.Manafacturing.Production {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Cập nhật thời gian lệch sản xuất  {0} từ kế hoạch.
+        ///   Looks up a localized string similar to Cập nhật thời gian lệnh sản xuất  {0} từ kế hoạch.
         /// </summary>
         public static string UpdateDate {
             get {
                 return ResourceManager.GetString("UpdateDate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cập nhật trạng thái lệnh sản xuất {0}.
+        /// </summary>
+        public static string UpdateStatus {
+            get {
+                return ResourceManager.GetString("UpdateStatus", resourceCulture);
             }
         }
     }
