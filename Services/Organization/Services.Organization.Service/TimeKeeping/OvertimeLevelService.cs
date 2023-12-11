@@ -155,12 +155,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         private async Task ValidateWithShiftConfig(int overtimeLevelId)
         {
-            var overtimeConfig = await _organizationDBContext.OvertimeConfiguration.Include(o => o.OvertimeConfigurationMapping).FirstOrDefaultAsync(s => (s.IsWeekdayLevel && s.WeekdayLevel == overtimeLevelId)
-                    || (s.IsWeekendLevel && s.WeekendLevel == overtimeLevelId)
-                    || (s.IsHolidayLevel && s.HolidayLevel == overtimeLevelId)
-                    || (s.IsWeekdayOvertimeLevel && s.WeekdayOvertimeLevel == overtimeLevelId)
-                    || (s.IsWeekendOvertimeLevel && s.WeekendOvertimeLevel == overtimeLevelId)
-                    || (s.IsHolidayOvertimeLevel && s.HolidayOvertimeLevel == overtimeLevelId)
+            var overtimeConfig = await _organizationDBContext.OvertimeConfiguration
+                .Include(o => o.OvertimeConfigurationTimeFrame)
+                .Include(o => o.OvertimeConfigurationMapping)
+                .FirstOrDefaultAsync(s => s.OvertimeConfigurationTimeFrame.Any(t => t.OvertimeLevelId == overtimeLevelId)
                     || (s.OvertimeConfigurationMapping.Any(m => m.OvertimeLevelId == overtimeLevelId)));
 
 
