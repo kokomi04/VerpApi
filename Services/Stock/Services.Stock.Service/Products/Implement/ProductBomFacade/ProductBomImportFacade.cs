@@ -592,7 +592,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductBomFacade
                 }
                 else
                 {
-                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName && x.Value.Specification == productBom.Specification).Select(x => x.Value.ProductCode).ToList()
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName && x.Value.Specification == productBom.ChildSpecification).Select(x => x.Value.ProductCode).ToList()
                    : _existedProducts.Where(x => x.Value.ProductName == productBom.ChildProductName).Select(x => x.Value.ProductCode).ToList();
                     if (childProductCodes.Count > 1)
                     {
