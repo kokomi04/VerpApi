@@ -881,7 +881,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
             var filteredPlans = overtimePlans.Where(p => p.AssignedDate == detail.Date && p.EmployeeId == detail.EmployeeId && p.OvertimeHours > 0);
-            var planSet = new Dictionary<int, decimal>();
+            var planSet = new Dictionary<TimeFrame, decimal>();
 
             var totalWorkOvertimes = new List<TimeSheetDetailShiftOvertimeModel>();
             var beforeWorkOvertimes = new List<TimeSheetDetailShiftOvertimeModel>();
@@ -896,7 +896,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 if (plan != null)
                 {
-                    planSet.Add((int)frame.Value, plan.OvertimeHours);
+                    planSet.Add(frame.Key.OriginFrame, plan.OvertimeHours);
                 }
 
                 var overtime = new TimeSheetDetailShiftOvertimeModel()
@@ -951,7 +951,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     o.MinsOvertime = LimitedByOvertimeLevel(o.MinsOvertime, shift.OvertimeConfiguration, o.OvertimeLevelId);
                     o.MinsOvertime = RoundValue(o.MinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
 
-                    if (!ignoreOvertimePlan && overtimeMode == EnumOvertimeMode.ByAll && planSet.TryGetValue(o.OvertimeLevelId, out decimal overtimeHours) && o.MinsOvertime > overtimeHours * 60)
+                    if (!ignoreOvertimePlan && overtimeMode == EnumOvertimeMode.ByAll && planSet.TryGetValue(new TimeFrame(o.StartTime, o.EndTime), out decimal overtimeHours) && o.MinsOvertime > overtimeHours * 60)
                     {
                         o.MinsOvertime = (long)(overtimeHours * 60);
                     }
