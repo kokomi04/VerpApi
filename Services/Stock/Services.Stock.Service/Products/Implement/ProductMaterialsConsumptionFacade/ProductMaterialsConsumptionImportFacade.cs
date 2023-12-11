@@ -290,7 +290,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 }
                 else
                 {
-                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName && x.Value.Specification == productMaterial.Specification).Select(x => x.Value.ProductCode).ToList()
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName && x.Value.Specification == productMaterial.UsageSpecification).Select(x => x.Value.ProductCode).ToList()
                     : _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName).Select(x => x.Value.ProductCode).ToList(); ;
 
                     if (childProductCodes.Count > 1)
