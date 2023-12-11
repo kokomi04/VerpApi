@@ -1070,12 +1070,12 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetDetailShiftOvertime>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.OvertimeLevelId, e.OvertimeType }).HasName("PK__TimeShee__19101DA19A46D34C");
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.StartTime, e.EndTime }).HasName("PK__TimeShee__A3D13D7C27520429");
 
             entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftOvertime)
                 .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheetDetailS__6E4C9EDB");
+                .HasConstraintName("FK__TimeSheetDetailS__447660A0");
         });
 
         modelBuilder.Entity<TimeSheetRaw>(entity =>
