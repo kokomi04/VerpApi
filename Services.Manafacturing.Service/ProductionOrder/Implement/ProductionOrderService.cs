@@ -1790,10 +1790,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
             if (productionOrder == null)
                 throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
+            var oldStatus = productionOrder.ProductionOrderStatus;
 
             await UpdateProductionOrderStatus(productionOrder, model.ProductionOrderStatus, null);
 
-            if (productionOrder.ProductionOrderStatus != (int)model.ProductionOrderStatus)
+            if (productionOrder.ProductionOrderStatus != oldStatus)
             {
 
                 await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.UpdateStatus)
