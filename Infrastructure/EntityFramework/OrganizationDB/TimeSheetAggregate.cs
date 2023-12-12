@@ -31,6 +31,8 @@ public partial class TimeSheetAggregate
 
     public int CountedEarly { get; set; }
 
+    public decimal WorkCountedTotal { get; set; }
+
     public bool IsDeleted { get; set; }
 
     public DateTime? DeletedDatetimeUtc { get; set; }
