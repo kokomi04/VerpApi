@@ -256,12 +256,13 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var stockInfos = (await _stockDbContext.Stock.AsNoTracking().Where(s => stockIds.Contains(s.StockId)).ToListAsync()).ToDictionary(s => s.StockId, s => s);
 
-            var inventoryIds = inventoryDataList.Select(iv => iv.InventoryId.ToString()).ToList();
+            var inventoryIds = inventoryDataList.Select(iv => iv.InventoryId).ToList();
             var inventoryCodes = inventoryDataList.Select(iv => iv.InventoryCode).ToList();
 
 
             var inputObjects = await _stockDbContext.RefInputBillSourceBillCode.Where(m => inventoryCodes.Contains(m.SourceBillCode)).ToListAsync();
 
+            var inventoryDetailOutputs = await GetInfosByIds(inventoryIds, type);
 
             var pagedData = new List<InventoryListOutput>();
             foreach (var item in inventoryDataList)
@@ -328,7 +329,8 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
                         }).ToList(),
                     InventoryActionId = (EnumInventoryAction)item.InventoryActionId,
-                    InventoryStatusId = item.InventoryStatusId
+                    InventoryStatusId = item.InventoryStatusId,
+                    InventoryDetailOutputList = inventoryDetailOutputs.FirstOrDefault(x=> x.InventoryId == item.InventoryId)?.InventoryDetailOutputList
                 });
 
             }
