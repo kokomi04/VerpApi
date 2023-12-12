@@ -296,8 +296,8 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                     if (childProductCodes.Count > 1)
                     {
                         if (isValidateSpecification)
-                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.UsageProductName} và quy cách: {productMaterial.UsageProductCode}");
-                        else throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.UsageProductName}");
+                            throw new BadRequestException($"Có nhiều chi tiết giống tên: {productMaterial.UsageProductName} và quy cách: {productMaterial.UsageProductCode}");
+                        else throw new BadRequestException($"Có nhiều chi tiết giống tên: {productMaterial.UsageProductName}");
                     }
                     if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productMaterial.UsageProductCode))
                     {
@@ -368,7 +368,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
             var errorChildProduct = _importData.Where(x => (x.ProductName == productMaterial.UsageProductName && x.Specification != productMaterial.UsageProductName)
             || (x.UsageProductName == productMaterial.UsageProductName && x.UsageSpecification != productMaterial.UsageSpecification)).ToList();
             if (errorChildProduct.Count >0)
-                throw new BadRequestException($"Mặt hàng con có tên {productMaterial.UsageProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
+                throw new BadRequestException($"Chi tiết có tên {productMaterial.UsageProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
         }
         private async Task<IList<IGenerateCodeContext>> ValidateProductMaterials()
         {
