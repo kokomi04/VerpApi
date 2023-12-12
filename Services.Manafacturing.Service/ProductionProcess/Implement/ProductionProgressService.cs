@@ -237,7 +237,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
                 await AutoAllowcation(productionOrder.ProductionOrderId, data);
 
-                await UpdateAssignProgress(productionOrder.ProductionOrderId);
+                var isManualSetFinish = productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Finished && productionOrder.IsManualFinish;
+
+                await UpdateAssignProgress(productionOrder.ProductionOrderId, isManualSetFinish);
 
                 var oldStatus = productionOrder.ProductionOrderStatus;
 
@@ -393,7 +395,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
             return status;
         }
 
-        private async Task UpdateAssignProgress(long productionOrderId)
+        private async Task UpdateAssignProgress(long productionOrderId, bool isManualSetFinish)
         {
             var productionSteps = await _manufacturingDBContext.ProductionStep.Where(p => p.ContainerId == productionOrderId && p.ContainerTypeId == (int)EnumContainerType.ProductionOrder).ToListAsync();
 
@@ -413,6 +415,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionProcess.Implement
 
             foreach (var assign in assignments)
             {
+                if (isManualSetFinish)
+                {
+                    assign.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Finish;
+                    continue;
+                }
+
                 if (assign.IsManualFinish && assign.AssignedProgressStatus == (int)EnumAssignedProgressStatus.Finish)
                     continue;
 
