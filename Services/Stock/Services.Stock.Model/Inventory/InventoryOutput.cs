@@ -69,6 +69,8 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public StockOutput StockOutput { get; set; }
         public IList<MappingInputBillModel> InputBills { get; set; }
+        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
+
     }
 
     public class InventoryListProductOutput: InventoryListOutput
