@@ -262,8 +262,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
 
             var inputObjects = await _stockDbContext.RefInputBillSourceBillCode.Where(m => inventoryCodes.Contains(m.SourceBillCode)).ToListAsync();
 
-            var inventoryDetailOutputs = await GetInfosByIds(inventoryIds, type);
-
             var pagedData = new List<InventoryListOutput>();
             foreach (var item in inventoryDataList)
             {
@@ -330,7 +328,6 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         }).ToList(),
                     InventoryActionId = (EnumInventoryAction)item.InventoryActionId,
                     InventoryStatusId = item.InventoryStatusId,
-                    InventoryDetailOutputList = inventoryDetailOutputs.FirstOrDefault(x=> x.InventoryId == item.InventoryId)?.InventoryDetailOutputList
                 });
 
             }
@@ -582,6 +579,7 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     PoCode = item.Pocode,
                     OrderCode = item.OrderCode,
                     ProductionOrderCode = item.ProductionOrderCode,
+                    Description = item.Description
                 });
 
             }

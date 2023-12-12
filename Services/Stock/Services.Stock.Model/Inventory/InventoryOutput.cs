@@ -69,7 +69,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public StockOutput StockOutput { get; set; }
         public IList<MappingInputBillModel> InputBills { get; set; }
-        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
+
 
     }
 
@@ -79,6 +79,7 @@ namespace VErp.Services.Stock.Model.Inventory
         public int ProductId { get; set; }
         public string ProductCode { get; set; }
         public string ProductName { get; set; }
+        public string Description { get ; set; }
         public int UnitId { get; set; }
         public string UnitName { get; set; }
         public int ProductUnitConversionId { set; get; }
@@ -101,6 +102,7 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public EnumInputType? InputTypeSelectedState { get; set; }
         public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
+        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
         public IList<FileToDownloadInfo> FileList { set; get; }
     }
 
