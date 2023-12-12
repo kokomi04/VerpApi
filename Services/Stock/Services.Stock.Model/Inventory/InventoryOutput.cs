@@ -101,9 +101,6 @@ namespace VErp.Services.Stock.Model.Inventory
 
         public EnumInputType? InputTypeSelectedState { get; set; }
         public EnumInputUnitType? InputUnitTypeSelectedState { get; set; }
-
-        public IList<InventoryDetailOutput> InventoryDetailOutputList { get; set; }
-
         public IList<FileToDownloadInfo> FileList { set; get; }
     }
 
