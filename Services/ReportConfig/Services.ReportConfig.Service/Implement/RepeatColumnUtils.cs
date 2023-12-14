@@ -147,6 +147,25 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     c.ColGroupId = groupIndex;
                 }
+
+                if (c.IsRepeat != true)
+                {
+                    var groupName = c.ColGroupName ?? "";
+                    groupName = groupName?.Trim()?.Trim('[')?.Trim(']');
+
+                    if (c.ColGroupName != null && c.ColGroupName.StartsWith('[') && !string.IsNullOrWhiteSpace(groupName) && firstRow.ContainsKey(groupName) && !firstRow[groupName].IsNullOrEmptyObject())
+                    {
+                        c.ColGroupName = firstRow[groupName]?.ToString();
+                    }
+
+                    var colName = c.Name ?? "";
+                    colName = colName?.Trim()?.Trim('[')?.Trim(']');
+
+                    if (c.Name != null && c.Name.StartsWith('[') && !string.IsNullOrWhiteSpace(colName) && firstRow.ContainsKey(colName) && !firstRow[colName].IsNullOrEmptyObject())
+                    {
+                        c.Name = firstRow[c.Name]?.ToString();
+                    }
+                }
             };
 
 
@@ -162,21 +181,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
                 {
                     if (column.IsRepeat != true)
                     {
-                        var groupName = column.ColGroupName ?? "";
-                        groupName = groupName?.Trim()?.Trim('[')?.Trim(']');
-
-                        if (groupName.StartsWith('[') && !string.IsNullOrWhiteSpace(groupName) && firstRow.ContainsKey(groupName) && !firstRow[groupName].IsNullOrEmptyObject())
-                        {
-                            column.ColGroupName = firstRow[groupName]?.ToString();
-                        }
-
-                        var colName = column.Name ?? "";
-                        colName = colName?.Trim()?.Trim('[')?.Trim(']');
-
-                        if (colName.StartsWith('[') && !string.IsNullOrWhiteSpace(colName) && firstRow.ContainsKey(colName) && !firstRow[colName].IsNullOrEmptyObject())
-                        {
-                            column.Name = firstRow[column.Name]?.ToString();
-                        }
 
                         continue;
                     }
@@ -259,7 +263,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)
                         .ThenBy(c => c.SortOrder)
-                        .ThenBy(c => {
+                        .ThenBy(c =>
+                        {
                             var suffixGroupKey = c.SuffixKey?.Split('_')[0];
                             return !suffixGroupKey.IsNullOrEmpty() && orderGroupDic.TryGetValue((c.ColGroupId, suffixGroupKey), out int groupOrder) ?
                                 groupOrder : int.MaxValue;
