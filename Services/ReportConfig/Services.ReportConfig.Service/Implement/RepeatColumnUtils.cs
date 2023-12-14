@@ -258,13 +258,13 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)
+                        .ThenBy(c => c.SortOrder)
                         .ThenBy(c => {
                             var suffixGroupKey = c.SuffixKey?.Split('_')[0];
                             return !suffixGroupKey.IsNullOrEmpty() && orderGroupDic.TryGetValue((c.ColGroupId, suffixGroupKey), out int groupOrder) ?
                                 groupOrder : int.MaxValue;
                         })
                         .ThenBy(c => orderDic.TryGetValue((colGroupId: c.ColGroupId, suffixKey: c.SuffixKey), out var order) ? order : int.MaxValue)
-                        .ThenBy(c => c.SortOrder)
                         .ToList();
         }
     }
