@@ -10,30 +10,6 @@ namespace Services.Organization.Model.TimeKeeping
     {
         public int OvertimeConfigurationId { get; set; }
 
-        public int? WeekdayLevel { get; set; }
-
-        public bool IsWeekdayLevel { get; set; }
-
-        public int? WeekendLevel { get; set; }
-
-        public bool IsWeekendLevel { get; set; }
-
-        public int? HolidayLevel { get; set; }
-
-        public bool IsHolidayLevel { get; set; }
-
-        public int? WeekdayOvertimeLevel { get; set; }
-
-        public bool IsWeekdayOvertimeLevel { get; set; }
-
-        public int? WeekendOvertimeLevel { get; set; }
-
-        public bool IsWeekendOvertimeLevel { get; set; }
-
-        public int? HolidayOvertimeLevel { get; set; }
-
-        public bool IsHolidayOvertimeLevel { get; set; }
-
         public int? RoundMinutes { get; set; }
 
         public bool IsRoundBack { get; set; }
@@ -43,6 +19,8 @@ namespace Services.Organization.Model.TimeKeeping
         public int? OvertimeThresholdMins { get; set; }
 
         public bool IsOvertimeThresholdMins { get; set; }
+
+        public bool IsCalculationThresholdMins { get; set; }
 
         public int MinsLimitOvertime { get; set; }
 
@@ -58,6 +36,10 @@ namespace Services.Organization.Model.TimeKeeping
 
         public bool IsMinThresholdMinutesAfterWork { get; set; }
 
+        public bool IsCalculationThresholdMinsBeforeWork { get; set; }
+
+        public bool IsCalculationThresholdMinsAfterWork { get; set; }
+
         public int MinsLimitOvertimeBeforeWork { get; set; }
 
         public int MinsLimitOvertimeAfterWork { get; set; }
@@ -72,12 +54,16 @@ namespace Services.Organization.Model.TimeKeeping
 
         public virtual IList<OvertimeConfigurationMappingModel> OvertimeConfigurationMapping { get; set; }
 
+        public virtual IList<OvertimeConfigurationTimeFrameModel> OvertimeConfigurationTimeFrame { get; set; }
+
         public void Mapping(Profile profile)
         {
             profile.CreateMapCustom<OvertimeConfiguration, OvertimeConfigurationModel>()
             .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping))
+            .ForMember(m => m.OvertimeConfigurationTimeFrame, v => v.MapFrom(m => m.OvertimeConfigurationTimeFrame))
             .ReverseMapCustom()
-            .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping));
+            .ForMember(m => m.OvertimeConfigurationMapping, v => v.MapFrom(m => m.OvertimeConfigurationMapping))
+            .ForMember(m => m.OvertimeConfigurationTimeFrame, v => v.MapFrom(m => m.OvertimeConfigurationTimeFrame));
         }
     }
 

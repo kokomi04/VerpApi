@@ -139,7 +139,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                     IsApproved = false,
                     DepartmentId = req.DepartmentId,
                     InventoryActionId = (int)req.InventoryActionId,
-                    InventoryStatusId = (int)EnumInventoryStatus.Draff
+                    InventoryStatusId = (int)EnumInventoryStatus.Draff,
+                    InputTypeSelectedState = req.InputTypeSelectedState.HasValue ? (int)req.InputTypeSelectedState : (int)EnumInputType.Default,
+                    InputUnitTypeSelectedState = req.InputUnitTypeSelectedState.HasValue ? (int)req.InputUnitTypeSelectedState : null,
                 };
 
                 await _stockDbContext.AddAsync(inventoryObj);
@@ -321,6 +323,9 @@ namespace VErp.Services.Stock.Service.Stock.Implement
                         inventoryObj.DepartmentId = req.DepartmentId;
                         inventoryObj.InventoryStatusId = (int)EnumInventoryStatus.Draff;
                         inventoryObj.InventoryActionId = (int)req.InventoryActionId;
+
+                        inventoryObj.InputTypeSelectedState = req.InputTypeSelectedState.HasValue ? (int)req.InputTypeSelectedState : (int)EnumInputType.Default;
+                        inventoryObj.InputUnitTypeSelectedState = req.InputUnitTypeSelectedState.HasValue ? (int)req.InputUnitTypeSelectedState : null;
 
                         var files = await _stockDbContext.InventoryFile.Where(f => f.InventoryId == inventoryId).ToListAsync();
 

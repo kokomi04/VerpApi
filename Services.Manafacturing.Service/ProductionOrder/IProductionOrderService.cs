@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using VErp.Commons.Enums.Manafacturing;
 using VErp.Commons.GlobalObject;
 using VErp.Infrastructure.ServiceCore.Model;
 using VErp.Services.Manafacturing.Model.ProductionOrder;
@@ -30,8 +31,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder
         Task<ProductionOrderDetailOutputModel> GetProductionOrderDetail(long? productionOrderDetailId);
         Task<IList<ProductOrderModel>> GetProductionOrders();
 
-        Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data);
-        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status);
+               
+        Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, UpdateManualProductionOrderStatusInput model);
+
         Task<bool> EditNote(long productionOrderDetailId, string note);
         Task<bool> EditDate(UpdateDatetimeModel data);
 

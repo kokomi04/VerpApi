@@ -287,8 +287,6 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             var groupColumns = visibleColumns
                 .GroupBy(c => new { c.ColGroupId, SuffixKey = c.IsRepeatGroupCol == false || c.SuffixKey == null ? null : c.SuffixKey.Split("_")[0] })
-                .OrderBy(g => g.Key.ColGroupId)
-                .ThenBy(g => g.Key.SuffixKey)
                 .ToList();
             var isGroup = groupColumns.Any(g => g.Count() > 1 || g.First().IsColGroup);
 

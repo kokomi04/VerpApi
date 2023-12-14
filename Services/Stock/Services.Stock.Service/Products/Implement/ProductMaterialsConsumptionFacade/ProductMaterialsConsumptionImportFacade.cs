@@ -260,7 +260,10 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
 
                     if (productCodes.Count > 1)
                     {
-                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.ProductName} và quy cách: {productMaterial.Specification}");
+                        if (isValidateSpecification)
+                            throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.ProductName} và quy cách: {productMaterial.Specification}");
+                        else throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.ProductName}");
+
                     }
                     if (productCodes.Count == 0 && string.IsNullOrEmpty(productMaterial.ProductCode))
                     {
@@ -287,12 +290,14 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 }
                 else
                 {
-                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName && x.Value.Specification == productMaterial.Specification).Select(x => x.Value.ProductCode).ToList()
+                    var childProductCodes = isValidateSpecification ? _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName && x.Value.Specification == productMaterial.UsageSpecification).Select(x => x.Value.ProductCode).ToList()
                     : _existedProducts.Where(x => x.Value.ProductName == productMaterial.UsageProductName).Select(x => x.Value.ProductCode).ToList(); ;
 
                     if (childProductCodes.Count > 1)
                     {
-                        throw new BadRequestException($"Có nhiều mặt hàng giống tên: {productMaterial.UsageProductName} và quy cách: {productMaterial.UsageProductCode}");
+                        if (isValidateSpecification)
+                            throw new BadRequestException($"Có nhiều chi tiết giống tên: {productMaterial.UsageProductName} và quy cách: {productMaterial.UsageProductCode}");
+                        else throw new BadRequestException($"Có nhiều chi tiết giống tên: {productMaterial.UsageProductName}");
                     }
                     if (childProductCodes.Count == 0 && string.IsNullOrEmpty(productMaterial.UsageProductCode))
                     {
@@ -351,6 +356,20 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                 .TryValidateAndGenerateCode(_stockDbContext.Product, isChildProduct ? productMaterial.UsageProductCode : productMaterial.ProductCode, (s, code) => s.ProductId != 0 && s.ProductCode == code);
             return (ctx, code);
         }
+
+        private void ValidateWithNameProduct(ImportProductMaterialsConsumptionExcelMapping productMaterial)
+        {
+            var errorProductNames = _importData.Where(x => (x.ProductName == productMaterial.ProductName && x.Specification != productMaterial.Specification)
+            || (x.UsageProductName == productMaterial.ProductName && x.UsageSpecification != productMaterial.Specification)).ToList();
+            if (errorProductNames.Count > 0)
+            {
+                throw new BadRequestException($"Mặt hàng có tên {productMaterial.ProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
+            }
+            var errorChildProduct = _importData.Where(x => (x.ProductName == productMaterial.UsageProductName && x.Specification != productMaterial.UsageProductName)
+            || (x.UsageProductName == productMaterial.UsageProductName && x.UsageSpecification != productMaterial.UsageSpecification)).ToList();
+            if (errorChildProduct.Count >0)
+                throw new BadRequestException($"Chi tiết có tên {productMaterial.UsageProductName} đang có nhiều quy cách khác nhau! Vui lòng kiểm tra lại!");
+        }
         private async Task<IList<IGenerateCodeContext>> ValidateProductMaterials()
         {
             var importProducts = new List<ImportProductMaterialsConsumptionExcelMapping>();
@@ -371,6 +390,7 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductMaterialsConsump
                         importProducts.Add(await ValidateProductMaterial(importProducts, baseValueChains, ctxs, productImport, true));
                         break;
                     case EnumHandleFilterOption.FilterByName:
+                        ValidateWithNameProduct(productImport);
                         importProducts.Add(await ValidateProductMaterial(importProducts, baseValueChains, ctxs, productImport));
                         break;
                     default:

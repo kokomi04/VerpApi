@@ -647,12 +647,15 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (overtimeMode == EnumOvertimeMode.ByOvertimePlan)
             {
                 SetOvertimeByPlan(detailShift, detail, shift, countedSymbols, overtimePlans);
-            } 
+            }
+
+            detailShift.TimeIn = timeInRaw;
+            detailShift.TimeOut = timeOutRaw;
+            SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
+            SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
 
             if (timeInRaw.HasValue)
             {
-                detailShift.TimeIn = timeInRaw;
-
                 if (timeInRaw <= shift.EntryTime
                     || (shift.MinsAllowToLate * 60 >= (timeInRaw - shift.EntryTime)))
                 {
@@ -672,8 +675,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 else
                 {
-                    SetsMinsLate(detailShift, shift, countedSymbols, timeInRaw);
-
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
                         //(X/2)
@@ -702,10 +703,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences))
-                            {
-                                return detailShift;
-                            }
+                            SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededLateAbsenceTypeId, shift, countedSymbols, absences);
+                            return detailShift;
                         }
                     }
                 }
@@ -722,17 +721,13 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences))
-                    {
-                        return detailShift;
-                    }
+                    SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoEntryTimeAbsenceTypeId, shift, countedSymbols, absences);
+                    return detailShift;
                 }
             }
 
             if (timeOutRaw.HasValue)
             {
-                detailShift.TimeOut = timeOutRaw;
-
                 if (timeOutRaw >= shift.ExitTime
                     || shift.MinsAllowToEarly * 60 >= (shift.ExitTime - timeOutRaw))
                 {
@@ -744,8 +739,6 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 }
                 else
                 {
-                    SetsMinsEarly(detailShift, shift, countedSymbols, timeOutRaw);
-
                     if (shift.PartialShiftCalculationMode == EnumPartialShiftCalculationMode.CalculateByHalfDay)
                     {
                         //(X/2)
@@ -776,10 +769,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                         else
                         {
                             //Vắng (V)
-                            if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences))
-                            {
-                                return detailShift;
-                            }
+                            SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.ExceededEarlyAbsenceTypeId, shift, countedSymbols, absences);
+                            return detailShift;
                         }
                     }
                 }
@@ -803,28 +794,16 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 else
                 {
                     //(V)
-                    if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences))
-                    {
-                        return detailShift;
-                    }
+                    SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, shift.NoExitTimeAbsenceTypeId, shift, countedSymbols, absences);
+                    return detailShift;
                 }
             }
 
             if (timeInRaw == null && timeOutRaw == null)
             {
-                if (detail.TimeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
-                {
-                    //Đủ công (X)
-                    detailShift.WorkCounted = shift.ConfirmationUnit;
-                    detailShift.ActualWorkMins = shift.ConvertToMins;
-                    detailShift.TimeSheetDetailShiftCounted.Clear();
-                }
-                else if (!SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences))
-                {
-                    return detailShift;
-                }
+                SetDetailShiftForAbsence(detail.TimeSheetDateType, detailShift, null, shift, countedSymbols, absences);
+                return detailShift;
             }
-
             if (shift.OvertimeConfiguration.OvertimeCalculationMode == EnumOvertimeCalculationMode.ByActualWorkingHours
                 && ((timeInRaw != null && timeInRaw < shift.EntryTime) || (timeOutRaw != null && timeOutRaw > shift.ExitTime)))
             {
@@ -832,11 +811,12 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 CalcOvertime(detailShift, detail, shift, EnumTimeSheetOvertimeType.Default, countedSymbols, overtimeMode, overtimePlans, ignoreOvertimePlan, timeInRaw, timeOutRaw);
             }
 
-            detailShift.DateAsOvertimeLevelId = GetOverTimeLevelId(detail.TimeSheetDateType, shift.OvertimeConfiguration, false);
-
-            if (detailShift.DateAsOvertimeLevelId != 0
+            //Case Date As Overtime
+            var timeFrames = GetOverTimeLevelByTimeFrame(detail.TimeSheetDateType, shift, true, EnumTimeSheetOvertimeType.DateAsOvertime, timeInRaw, timeOutRaw);
+            if (timeFrames.TryGetValue((new TimeFrame(shift.EntryTime, shift.ExitTime), new TimeFrame(shift.EntryTime, shift.ExitTime)), out int? dateAsOvertimeLevelId)
                 && !detailShift.TimeSheetDetailShiftCounted.Any(c => c.CountedSymbolId == GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol).CountedSymbolId))
             {
+                detailShift.DateAsOvertimeLevelId = dateAsOvertimeLevelId;
                 detailShift.TimeSheetDetailShiftCounted = detailShift.TimeSheetDetailShiftCounted.Where(c => c.CountedSymbolId != GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol).CountedSymbolId).ToIList();
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeDateSymbol));
                 detailShift.TimeSheetDetailShiftOvertime.Add(new TimeSheetDetailShiftOvertimeModel()
@@ -851,6 +831,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.WorkCounted = 0;
             }
 
+            //Add default countedSymbol
             var s = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == EnumCountedSymbol.OvertimeDateSymbol);
             if (!detailShift.TimeSheetDetailShiftCounted.Where(c => c.CountedSymbolId != s.CountedSymbolId).Any())
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
@@ -872,93 +853,261 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (overtimeMode == EnumOvertimeMode.ByOvertimePlan)
                 return;
 
-            var overtimeLevelId = (int)GetOverTimeLevelId(detail.TimeSheetDateType, shift.OvertimeConfiguration, true);
-            if (overtimeLevelId == 0)
-                return;
-
-            var overtimePlan = overtimePlans.FirstOrDefault(p => p.AssignedDate == detail.Date && p.EmployeeId == detail.EmployeeId && p.OvertimeLevelId == overtimeLevelId && p.OvertimeHours > 0);
-            if (overtimeMode == EnumOvertimeMode.ByAll && overtimePlan == null)
+            var overTimeLevelByTimeFrame = GetOverTimeLevelByTimeFrame(detail.TimeSheetDateType, shift, true, overtimeType, timeInRaw, timeOutRaw);
+            if (overTimeLevelByTimeFrame.Count == 0)
             {
                 return;
             }
 
-            var overtime = new TimeSheetDetailShiftOvertimeModel()
+            var filteredPlans = overtimePlans.Where(p => p.AssignedDate == detail.Date && p.EmployeeId == detail.EmployeeId && p.OvertimeHours > 0);
+            var planSet = new Dictionary<TimeFrame, decimal>();
+
+            var totalWorkOvertimes = new List<TimeSheetDetailShiftOvertimeModel>();
+            var beforeWorkOvertimes = new List<TimeSheetDetailShiftOvertimeModel>();
+            var afterWorkOvertimes = new List<TimeSheetDetailShiftOvertimeModel>();
+
+            foreach (var frame in overTimeLevelByTimeFrame)
             {
-                ShiftConfigurationId = shift.ShiftConfigurationId,
-                OvertimeLevelId = overtimeLevelId
-            };
+                var plan = filteredPlans.FirstOrDefault(p => p.OvertimeLevelId == frame.Value);
+                if (overtimeMode == EnumOvertimeMode.ByAll && plan == null)
+                {
+                    continue;
+                }
+                if (plan != null)
+                {
+                    planSet.Add(frame.Key.OriginFrame, plan.OvertimeHours);
+                }
 
-            overtime.OvertimeType = overtimeType;
+                var overtime = new TimeSheetDetailShiftOvertimeModel()
+                {
+                    ShiftConfigurationId = shift.ShiftConfigurationId,
+                    StartTime = frame.Key.OriginFrame.StartTime,
+                    EndTime = frame.Key.OriginFrame.EndTime,
+                    OvertimeLevelId = (int)frame.Value,
+                    OvertimeType = overtimeType,
+                    MinsOvertime = (long)(frame.Key.Frame.EndTime - frame.Key.Frame.StartTime) / 60
+                };
 
-            long minsReaches;
-            long minsBonus;
-            long minsLimit;
-            long actualMinsOvertime;
-
-            switch (overtimeType)
-            {
-                case EnumTimeSheetOvertimeType.BeforeWork:
-                    minsReaches = shift.OvertimeConfiguration.MinsReachesBeforeWork;
-                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
-                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
-                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork
-                                        && (shift.EntryTime - timeInRaw) > shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork * 60 ?
-                                    (shift.EntryTime - timeInRaw) / 60 : 0);
-
-                    break;
-                case EnumTimeSheetOvertimeType.AfterWork:
-                    minsReaches = shift.OvertimeConfiguration.MinsReachesAfterWork;
-                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
-                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
-                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork
-                                        && (timeOutRaw - shift.ExitTime) > shift.OvertimeConfiguration.MinThresholdMinutesAfterWork * 60 ?
-                                    (timeOutRaw - shift.ExitTime) / 60 : 0);
-                    break;
-                default:
-                    minsReaches = shift.OvertimeConfiguration.MinsReaches;
-                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
-                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertime;
-                    var actualTime = timeOutRaw - timeInRaw;
-                    actualMinsOvertime = (long)(shift.OvertimeConfiguration.IsOvertimeThresholdMins
-                                        && (actualTime - shift.ExitTime + shift.EntryTime) > shift.OvertimeConfiguration.OvertimeThresholdMins * 60 ?
-                                    (actualTime - shift.ExitTime + shift.EntryTime) / 60 : 0);
-                    break;
+                if (overtimeType == EnumTimeSheetOvertimeType.Default)
+                {
+                    totalWorkOvertimes.Add(overtime);
+                }
+                else if (overtime.EndTime <= shift.EntryTime)
+                {
+                    beforeWorkOvertimes.Add(overtime);
+                }
+                else
+                {
+                    afterWorkOvertimes.Add(overtime);
+                }
             }
 
-            var roundMinutes = shift.OvertimeConfiguration.RoundMinutes ?? 0;
-            overtime.MinsOvertime = RoundValue(actualMinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+            totalWorkOvertimes = totalWorkOvertimes.OrderByDescending(o => o.StartTime).ToList();
+            beforeWorkOvertimes = beforeWorkOvertimes.OrderBy(o => o.StartTime).ToList();
+            afterWorkOvertimes = afterWorkOvertimes.OrderByDescending(o => o.StartTime).ToList();
 
-            if (overtime.MinsOvertime >= minsReaches)
+            var (minsReaches, minsBonus, minsLimit, isMinThresholdMins, minThresholdMins, isCalculationThresholdMins) = GetOvertimeConfigParas(shift, overtimeType);
+
+            if (totalWorkOvertimes.Any())
             {
-                overtime.MinsOvertime += minsBonus;
+                ApllyConfigParas(ref totalWorkOvertimes, minsReaches, minsBonus, minsLimit, isMinThresholdMins, minThresholdMins, isCalculationThresholdMins);
             }
-
-            if (overtime.MinsOvertime > minsLimit)
+            if (beforeWorkOvertimes.Any())
             {
-                overtime.MinsOvertime = minsLimit;
+                ApllyConfigParas(ref beforeWorkOvertimes, minsReaches, minsBonus, minsLimit, isMinThresholdMins, minThresholdMins, isCalculationThresholdMins);
             }
-
-            overtime.MinsOvertime = CheckOvertimeLevelLimit(overtime.MinsOvertime, shift.OvertimeConfiguration, overtime.OvertimeLevelId);
-
-            if (!ignoreOvertimePlan && overtimeMode == EnumOvertimeMode.ByAll && overtime.MinsOvertime > overtimePlan.OvertimeHours * 60)
+            if (afterWorkOvertimes.Any())
             {
-                overtime.MinsOvertime = (long)(overtimePlan.OvertimeHours * 60);
+                ApllyConfigParas(ref afterWorkOvertimes, minsReaches, minsBonus, minsLimit, isMinThresholdMins, minThresholdMins, isCalculationThresholdMins);
             }
+            var overtimes = overtimeType == EnumTimeSheetOvertimeType.Default ? totalWorkOvertimes : beforeWorkOvertimes.Concat(afterWorkOvertimes).ToList();
 
-            if (overtime.MinsOvertime > 0)
+            if (overtimes.Any())
             {
-                detailShift.TimeSheetDetailShiftOvertime.Add(overtime);
+                var roundMinutes = shift.OvertimeConfiguration.RoundMinutes ?? 0;
+                overtimes.ForEach(o =>
+                {
+                    o.MinsOvertime = LimitedByOvertimeLevel(o.MinsOvertime, shift.OvertimeConfiguration, o.OvertimeLevelId);
+                    o.MinsOvertime = RoundValue(o.MinsOvertime, shift.OvertimeConfiguration.IsRoundBack, (long)roundMinutes);
+
+                    if (!ignoreOvertimePlan && overtimeMode == EnumOvertimeMode.ByAll && planSet.TryGetValue(new TimeFrame(o.StartTime, o.EndTime), out decimal overtimeHours) && o.MinsOvertime > overtimeHours * 60)
+                    {
+                        o.MinsOvertime = (long)(overtimeHours * 60);
+                    }
+
+                    detailShift.TimeSheetDetailShiftOvertime.Add(o);
+                });
+
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OvertimeSymbol));
             }
         }
 
-        private bool SetDetailShiftForAbsence(EnumTimeSheetDateType timeSheetDateType
+        private Dictionary<(TimeFrame OriginFrame, TimeFrame Frame), int?> GetOverTimeLevelByTimeFrame(EnumTimeSheetDateType dateType, ShiftConfigurationModel shift, bool isOvertime, EnumTimeSheetOvertimeType overtimeType, double? timeInRaw, double? timeOutRaw)
+        {
+            var result = new Dictionary<(TimeFrame originFrame, TimeFrame frame), int?>();
+            var timeFrames = shift.OvertimeConfiguration.OvertimeConfigurationTimeFrame
+                    .Where(tf => tf.TimeSheetDateType == dateType && tf.OvertimeLevelId.HasValue);
+
+            var framesWithoutWorkingHours = timeFrames.Where(tf => !tf.IsWorkingHours);
+
+            switch (overtimeType)
+            {
+                case EnumTimeSheetOvertimeType.BeforeWork:
+                    foreach (var frame in framesWithoutWorkingHours)
+                    {
+                        if (timeInRaw > frame.EndTime || shift.EntryTime < frame.EndTime)
+                        {
+                            continue;
+                        }
+                        if (timeInRaw < frame.StartTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame(frame.StartTime, frame.EndTime)), frame.OvertimeLevelId);
+                        }
+                        else if (timeInRaw < frame.EndTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame((double)timeInRaw, frame.EndTime)), frame.OvertimeLevelId);
+                        }
+                    }
+                    break;
+
+                case EnumTimeSheetOvertimeType.AfterWork:
+                    foreach (var frame in framesWithoutWorkingHours)
+                    {
+                        if (timeOutRaw < frame.StartTime || shift.ExitTime > frame.StartTime)
+                        {
+                            continue;
+                        }
+                        if (timeOutRaw > frame.EndTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame(frame.StartTime, frame.EndTime)), frame.OvertimeLevelId);
+                        }
+                        else if (timeOutRaw > frame.StartTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame(frame.StartTime, (double)timeOutRaw)), frame.OvertimeLevelId);
+                        }
+                    }
+                    break;
+
+                case EnumTimeSheetOvertimeType.Default:
+                    foreach (var frame in framesWithoutWorkingHours)
+                    {
+                        if (timeInRaw > frame.EndTime || timeOutRaw < frame.StartTime)
+                        {
+                            continue;
+                        }
+                        if (timeInRaw < frame.StartTime && timeOutRaw > frame.EndTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame(frame.StartTime, frame.EndTime)), frame.OvertimeLevelId);
+                        }
+                        else if (timeInRaw < frame.EndTime && frame.EndTime <= shift.EntryTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame((double)timeInRaw, frame.EndTime)), frame.OvertimeLevelId);
+                        }
+                        else if (timeOutRaw > frame.StartTime && frame.StartTime >= shift.ExitTime)
+                        {
+                            result.Add((new TimeFrame(frame.StartTime, frame.EndTime), new TimeFrame(frame.StartTime, (double)timeOutRaw)), frame.OvertimeLevelId);
+                        }
+                    }
+                    break;
+
+                default:
+                    var workingHoursFrame = timeFrames.FirstOrDefault(tf => tf.IsWorkingHours);
+                    if (workingHoursFrame != null)
+                    {
+                        result.Add((new TimeFrame(workingHoursFrame.StartTime, workingHoursFrame.EndTime), new TimeFrame(workingHoursFrame.StartTime, workingHoursFrame.EndTime)), workingHoursFrame.OvertimeLevelId);
+                    }
+                    break;
+            }
+
+            return result;
+        }
+        private void ApllyConfigParas(ref List<TimeSheetDetailShiftOvertimeModel> overtimes, long minsReaches, long minsBonus, long minsLimit, bool isMinThresholdMins, long minThresholdMins, bool isCalculationThresholdMins)
+        {
+            //Apply MinThreshold Minutes
+            var sumMins = overtimes.Sum(o => o.MinsOvertime);
+            if (!isMinThresholdMins || sumMins <= minThresholdMins)
+            {
+                overtimes.Clear();
+                return;
+            }
+
+            if (minThresholdMins > 0 && !isCalculationThresholdMins)
+            {
+                for (int i = overtimes.Count - 1; i >= 0; i--)
+                {
+                    var overtime = overtimes[i];
+
+                    if (overtime.MinsOvertime > minThresholdMins)
+                    {
+                        overtime.MinsOvertime -= minThresholdMins;
+                        break;
+                    }
+                    else
+                    {
+                        overtimes.RemoveAt(i);
+                        minThresholdMins -= overtime.MinsOvertime;
+                    }
+                }
+            }
+
+            //Apply Bonus Minutes
+            sumMins = overtimes.Sum(o => o.MinsOvertime);
+            if (minsReaches > 0 && sumMins >= minsReaches)
+            {
+                foreach (var overtime in overtimes)
+                {
+                    var frame = (long)(overtime.EndTime - overtime.StartTime) / 60;
+
+                    if (overtime.MinsOvertime + minsBonus < frame)
+                    {
+                        overtime.MinsOvertime += minsBonus;
+                        break;
+                    }
+                    else
+                    {
+                        minsBonus -= frame - overtime.MinsOvertime;
+                        overtime.MinsOvertime = frame;
+                    }
+                }
+            }
+
+            //Apply Limit Minutes
+            sumMins = overtimes.Sum(o => o.MinsOvertime);
+            if (minsLimit == 0 || sumMins <= minsLimit)
+            {
+                return;
+            }
+
+            long minutesToReduce = sumMins - minsLimit;
+            foreach (var overtime in overtimes)
+            {
+                if (minutesToReduce <= 0) break;
+
+                long reduction = Math.Min(overtime.MinsOvertime, minutesToReduce);
+                overtime.MinsOvertime -= reduction;
+                minutesToReduce -= reduction;
+            }
+
+            overtimes = overtimes.Where(o => o.MinsOvertime > 0).ToList();
+        }
+
+        private void SetDetailShiftForAbsence(EnumTimeSheetDateType timeSheetDateType
             , TimeSheetDetailShiftModel detailShift
             , int? absenceTypeSymbolId
             , ShiftConfigurationModel shift
             , List<CountedSymbolModel> countedSymbols
             , List<AbsenceTypeSymbolModel> absences)
         {
+            if (timeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsCountWorkForHoliday)
+            {
+                //Đủ công (X)
+                detailShift.WorkCounted = shift.ConfirmationUnit;
+                detailShift.ActualWorkMins = shift.ConvertToMins;
+                detailShift.TimeSheetDetailShiftCounted.Clear();
+                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
+                return;
+            }
+
             if ((timeSheetDateType == EnumTimeSheetDateType.Weekend && shift.IsSkipWeeklyOffDayWithShift) || (timeSheetDateType == EnumTimeSheetDateType.Holiday && shift.IsSkipHolidayWithShift))
             {
                 detailShift.NonAbsentScheduled = true;
@@ -966,7 +1115,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                 detailShift.ActualWorkMins = 0;
                 detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.OffSymbol));
 
-                return false;
+                return;
             }
 
             var absence = absenceTypeSymbolId != null ? absences.FirstOrDefault(a => a.AbsenceTypeSymbolId == absenceTypeSymbolId) : absences.FirstOrDefault(a => a.IsUnpaidLeave);
@@ -983,8 +1132,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             }
 
             detailShift.TimeSheetDetailShiftCounted.Clear();
+            detailShift.TimeSheetDetailShiftOvertime.Clear();
             detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, EnumCountedSymbol.AbsentSymbol));
-            return true;
         }
 
         private TimeSheetDetailShiftCountedModel GetCountedSymbolModel(ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, EnumCountedSymbol symbol)
@@ -1005,53 +1154,50 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     (long)Math.Ceiling((double)actualValue / roundValue.Value) * roundValue.Value);
         }
 
-        private long CheckOvertimeLevelLimit(long minsOvertime, OvertimeConfigurationModel overtimeConfig, int overtimeLevelId)
+        private long LimitedByOvertimeLevel(long minsOvertime, OvertimeConfigurationModel overtimeConfig, int overtimeLevelId)
         {
             var limitOvertimeLevel = overtimeConfig.OvertimeConfigurationMapping.FirstOrDefault(o => o.OvertimeLevelId == overtimeLevelId);
-            if (limitOvertimeLevel != null && minsOvertime > limitOvertimeLevel.MinsLimit)
-            {
-                return limitOvertimeLevel.MinsLimit;
-            }
-            return minsOvertime;
+            return limitOvertimeLevel != null ? Math.Min(minsOvertime, limitOvertimeLevel.MinsLimit) : minsOvertime;
         }
 
-        private int? GetOverTimeLevelId(EnumTimeSheetDateType dateType, OvertimeConfigurationModel overtimeConfig, bool isOvertime)
+        private (long minsReaches, long minsBonus, long minsLimit, bool isMinThresholdMins, long minThresholdMins, bool isCalculationThresholdMins) GetOvertimeConfigParas(ShiftConfigurationModel shift, EnumTimeSheetOvertimeType overtimeType)
         {
-            int? overTimeLevelId;
-            switch (dateType)
+            long minsReaches;
+            long minsBonus;
+            long minsLimit;
+            bool isMinThresholdMins;
+            long minThresholdMins;
+            bool isCalculationThresholdMins;
+
+            switch (overtimeType)
             {
-                case EnumTimeSheetDateType.Weekend:
-                    if (isOvertime)
-                    {
-                        overTimeLevelId = overtimeConfig.IsWeekendOvertimeLevel ? overtimeConfig.WeekendOvertimeLevel : 0;
-                    }
-                    else
-                    {
-                        overTimeLevelId = overtimeConfig.IsWeekendLevel ? overtimeConfig.WeekendLevel : 0;
-                    }
+                case EnumTimeSheetOvertimeType.BeforeWork:
+                    minsReaches = shift.OvertimeConfiguration.MinsReachesBeforeWork;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
+                    isMinThresholdMins = shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork;
+                    minThresholdMins = (long)shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork;
+                    isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMinsBeforeWork;
                     break;
-                case EnumTimeSheetDateType.Holiday:
-                    if (isOvertime)
-                    {
-                        overTimeLevelId = overtimeConfig.IsHolidayOvertimeLevel ? overtimeConfig.HolidayOvertimeLevel : 0;
-                    }
-                    else
-                    {
-                        overTimeLevelId = overtimeConfig.IsHolidayLevel ? overtimeConfig.HolidayLevel : 0;
-                    }
+                case EnumTimeSheetOvertimeType.AfterWork:
+                    minsReaches = shift.OvertimeConfiguration.MinsReachesAfterWork;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
+                    isMinThresholdMins = shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork;
+                    minThresholdMins = (long)shift.OvertimeConfiguration.MinThresholdMinutesAfterWork;
+                    isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMinsAfterWork;
                     break;
                 default:
-                    if (isOvertime)
-                    {
-                        overTimeLevelId = overtimeConfig.IsWeekdayOvertimeLevel ? overtimeConfig.WeekdayOvertimeLevel : 0;
-                    }
-                    else
-                    {
-                        overTimeLevelId = overtimeConfig.IsWeekdayLevel ? overtimeConfig.WeekdayLevel : 0;
-                    }
+                    minsReaches = shift.OvertimeConfiguration.MinsReaches;
+                    minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
+                    minsLimit = shift.OvertimeConfiguration.MinsLimitOvertime;
+                    isMinThresholdMins = shift.OvertimeConfiguration.IsOvertimeThresholdMins;
+                    minThresholdMins = (long)shift.OvertimeConfiguration.OvertimeThresholdMins;
+                    isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMins;
                     break;
             }
-            return overTimeLevelId;
+
+            return (minsReaches, minsBonus, minsLimit, isMinThresholdMins, minThresholdMins, isCalculationThresholdMins);
         }
 
         private void SetOvertimeByPlan(TimeSheetDetailShiftModel detailShift, TimeSheetDetailModel detail, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, IList<OvertimePlanModel> overtimePlans)
@@ -1079,6 +1225,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         private void SetsMinsLate(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeInRaw)
         {
+            if (timeInRaw == null || timeInRaw <= shift.EntryTime || (shift.MinsAllowToLate * 60 >= (timeInRaw - shift.EntryTime)))
+            {
+                return;
+            }
+
             var actualMinsLate = shift.IsCalculationForLate ? (long)(timeInRaw - shift.EntryTime) : (long)(timeInRaw - shift.EntryTime) - shift.MinsAllowToLate * 60;
 
             if (timeInRaw > shift.LunchTimeFinish)
@@ -1097,6 +1248,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
         }
         private void SetsMinsEarly(TimeSheetDetailShiftModel detailShift, ShiftConfigurationModel shift, List<CountedSymbolModel> countedSymbols, double? timeOutRaw)
         {
+            if (timeOutRaw == null || timeOutRaw >= shift.ExitTime  || shift.MinsAllowToEarly * 60 >= (shift.ExitTime - timeOutRaw))
+            {
+                return;
+            }    
+             
             var actualMinsEarly = shift.IsCalculationForEarly ? (long)(shift.ExitTime - timeOutRaw) : (long)(shift.ExitTime - timeOutRaw) - shift.MinsAllowToEarly * 60;
 
             if (timeOutRaw < shift.LunchTimeStart)
@@ -1577,5 +1733,30 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     .Where(m => timeSheetDetailIds.Contains(m.TimeSheetDetailId)).DeleteByBatch();
         }
 
+    }
+
+    public class TimeFrame
+    {
+        public TimeFrame(double startTime, double endTime)
+        {
+            StartTime = startTime;
+            EndTime = endTime;
+        }
+
+        public double StartTime { get; set; }
+        public double EndTime { get; set; }
+
+        public override int GetHashCode()
+        {
+            return StartTime.GetHashCode() ^ EndTime.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is TimeFrame other))
+                return false;
+
+            return StartTime == other.StartTime && EndTime == other.EndTime;
+        }
     }
 }

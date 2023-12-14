@@ -33,6 +33,7 @@ namespace Services.Organization.Model.TimeKeeping
 
         public int CountedEarly { get; set; }
 
+        public decimal WorkCountedTotal { get; set; }
         public IList<TimeSheetAggregateAbsenceModel> TimeSheetAggregateAbsence { get; set; } = new List<TimeSheetAggregateAbsenceModel>();
 
         public IList<TimeSheetAggregateOvertimeModel> TimeSheetAggregateOvertime { get; set; } = new List<TimeSheetAggregateOvertimeModel>();

@@ -1091,7 +1091,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     w.ProductionOrderId,
                     w.StepId,
                     w.ObjectId,
-                    w.ObjectTypeId                    
+                    w.ObjectTypeId
                 })
                 .Select(g =>
                 {
@@ -1190,12 +1190,12 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                         //=> Only one
 
                                         //var workloadInfo = workloadInfos.FirstOrDefault(w => w.ProductionStepLinkDataId == d.ProductionStepLinkDataId);
-                                   
+
                                         // decimal? totalWorkload = 0;
                                         //decimal? totalHours = 0;
 
                                         var byDateAssignQuantity = a.QuantityPerDay * rateQuantiy;
-                                        var workload = byDateAssignQuantity * (d.WorkloadConvertRate??1);
+                                        var workload = byDateAssignQuantity * (d.WorkloadConvertRate ?? 1);
 
 
                                         var (workHour, isUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, workload);// productivityByStep > 0 ? workload / productivityByStep : 0;
@@ -1223,8 +1223,8 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                                 wokloadQuantiy = assignQuantity * (d.WorkloadConvertRate ?? 1);
 
                                 var (assignWorkHour, assignIsUseMinAssignHours) = getWorkHour(productivityByStep, minAssignHour, wokloadQuantiy);
-                                
-                               // totalHours += assignWorkHour;
+
+                                // totalHours += assignWorkHour;
 
                                 assignInfos.Add(new CapacityAssignInfo()
                                 {
@@ -1610,6 +1610,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 data.ProductionOrderAssignmentStatusId = (EnumProductionOrderAssignmentStatus?)productionOrder.ProductionOrderAssignmentStatusId;
 
+                /*
                 var oldIsManualFinish = productionOrder.IsManualFinish;
 
                 var isSetManualFinish = false;
@@ -1635,8 +1636,9 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         productionOrder.IsManualFinish = oldIsManualFinish;
                     }
 
-                }
+                }*/
 
+                await UpdateProductionOrderStatus(productionOrder, data.ProductionOrderStatus, data);
 
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
@@ -1719,6 +1721,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                     }
                 }
 
+                /*
                 if (isSetManualFinish)//set all assign to finish
                 {
                     var productionAssignments = _manufacturingDBContext.ProductionAssignment
@@ -1729,7 +1732,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                         productionAssignment.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Finish;
                     }
 
-                }
+                }*/
 
                 await _manufacturingDBContext.SaveChangesAsync();
 
@@ -1767,7 +1770,7 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                    .JsonData(data)
                    .CreateLog();
 
-                await SetProductionOrderIsFinish(productionOrder);
+                //await SetProductionOrderIsFinish(productionOrder);
 
                 await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrder?.ProductionOrderCode, $"Cập nhật thông tin lệnh");
 
@@ -1779,6 +1782,81 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
                 _logger.LogError(ex, "UpdateProductOrder");
                 throw;
             }
+        }
+
+        public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, UpdateManualProductionOrderStatusInput model)
+        {
+            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+            if (productionOrder == null)
+                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+
+            var oldStatus = productionOrder.ProductionOrderStatus;
+
+            await UpdateProductionOrderStatus(productionOrder, model.ProductionOrderStatus, null);
+
+            if (productionOrder.ProductionOrderStatus != oldStatus)
+            {
+
+                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.UpdateStatus)
+                            .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+                            .ObjectId(productionOrder.ProductionOrderId)
+                            .JsonData(new { productionOrder, ProductionOrderStatus = model.ProductionOrderStatus, isManual = true })
+                            .CreateLog();
+
+                await _productionOrderQueueHelperService.ProductionOrderStatiticChanges(productionOrder.ProductionOrderCode, $"Cập nhật trạng thái lệnh");
+
+            }
+
+            return true;
+
+        }
+
+        private async Task UpdateProductionOrderStatus(ProductionOrderEntity productionOrder, EnumProductionStatus productionOrderStatusId, ProductionOrderInputModel model)
+        {
+            var oldIsManualFinish = productionOrder.IsManualFinish;
+
+            var isSetManualFinish = false;
+            if ((int)productionOrderStatusId != productionOrder.ProductionOrderStatus && productionOrderStatusId == EnumProductionStatus.Finished)
+            {
+                isSetManualFinish = true;
+            }
+
+            if (model != null)
+                _mapper.Map(model, productionOrder);
+
+            productionOrder.ProductionOrderStatus = (int)productionOrderStatusId;
+            if (isSetManualFinish)
+            {
+                productionOrder.IsManualFinish = true;
+            }
+            else
+            {
+                if (productionOrderStatusId != EnumProductionStatus.Finished)
+                {
+                    productionOrder.IsManualFinish = false;
+                }
+                else
+                {
+                    productionOrder.IsManualFinish = oldIsManualFinish;
+                }
+
+            }
+
+            if (isSetManualFinish)//set all assign to finish
+            {
+                var productionAssignments = await _manufacturingDBContext.ProductionAssignment
+                 .Where(a => a.ProductionOrderId == productionOrder.ProductionOrderId)
+                 .ToListAsync();
+                foreach (var productionAssignment in productionAssignments)
+                {
+                    productionAssignment.AssignedProgressStatus = (int)EnumAssignedProgressStatus.Finish;
+                }
+
+            }
+
+            await SetProductionOrderIsFinish(productionOrder);
+
+            await _manufacturingDBContext.SaveChangesAsync();
         }
 
         public async Task SetProductionOrderIsFinish(ProductionOrderEntity productionOrder)
@@ -1930,109 +2008,111 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
 
 
-        public async Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
-        {
-            var productionOrder = _manufacturingDBContext.ProductionOrder
-                .Include(po => po.ProductionOrderDetail)
-                .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
+        //public async Task<bool> UpdateProductionOrderStatus(ProductionOrderStatusDataModel data)
+        //{
+        //    var productionOrder = _manufacturingDBContext.ProductionOrder
+        //        .Include(po => po.ProductionOrderDetail)
+        //        .FirstOrDefault(po => po.ProductionOrderCode == data.ProductionOrderCode);
 
-            if (productionOrder == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+        //    if (productionOrder == null)
+        //        throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
-            try
-            {
-                if (data.ProductionOrderStatus == EnumProductionStatus.Finished)
-                {
-                    // Check nhận đủ số lượng đầu ra
+        //    try
+        //    {
+        //        if (data.ProductionOrderStatus == EnumProductionStatus.Finished)
+        //        {
+        //            // Check nhận đủ số lượng đầu ra
 
-                    var inputInventories = data.Inventories;
+        //            var inputInventories = data.Inventories;
 
-                    bool isFinish = true;
+        //            bool isFinish = true;
 
-                    foreach (var productionOrderDetail in productionOrder.ProductionOrderDetail)
-                    {
-                        var quantity = inputInventories
-                            .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
-                            .Sum(i => i.ActualQuantity);
+        //            foreach (var productionOrderDetail in productionOrder.ProductionOrderDetail)
+        //            {
+        //                var quantity = inputInventories
+        //                    .Where(i => i.ProductId == productionOrderDetail.ProductId && i.Status != (int)EnumProductionInventoryRequirementStatus.Rejected)
+        //                    .Sum(i => i.ActualQuantity);
 
-                        if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
-                        {
-                            isFinish = false;
-                            break;
-                        }
-                    }
-                    if (isFinish)
-                    {
-                        productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
+        //                if (quantity < (productionOrderDetail.Quantity + productionOrderDetail.ReserveQuantity))
+        //                {
+        //                    isFinish = false;
+        //                    break;
+        //                }
+        //            }
+        //            if (isFinish)
+        //            {
+        //                productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
 
-                        await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
-                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
-                                .ObjectId(productionOrder.ProductionOrderId)
-                                .JsonData(new { productionOrder, data, isManual = false })
-                                .CreateLog();
-                    }
-                }
-                else
-                {
+        //                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+        //                        .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+        //                        .ObjectId(productionOrder.ProductionOrderId)
+        //                        .JsonData(new { productionOrder, data, isManual = false })
+        //                        .CreateLog();
+        //            }
+        //        }
+        //        else
+        //        {
 
-                    if (productionOrder.ProductionOrderStatus < (int)data.ProductionOrderStatus)
-                    {
-                        productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
+        //            if (productionOrder.ProductionOrderStatus < (int)data.ProductionOrderStatus)
+        //            {
+        //                productionOrder.ProductionOrderStatus = (int)data.ProductionOrderStatus;
 
-                        await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
-                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
-                                .ObjectId(productionOrder.ProductionOrderId)
-                                .JsonData(new { productionOrder, data, isManual = false })
-                                .CreateLog();
-                    }
-                }
+        //                await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+        //                        .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+        //                        .ObjectId(productionOrder.ProductionOrderId)
+        //                        .JsonData(new { productionOrder, data, isManual = false })
+        //                        .CreateLog();
+        //            }
+        //        }
 
 
-                await SetProductionOrderIsFinish(productionOrder);
+        //        await SetProductionOrderIsFinish(productionOrder);
 
-                _manufacturingDBContext.SaveChanges();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateProductOrderStatus");
-                throw;
-            }
-        }
+        //        _manufacturingDBContext.SaveChanges();
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "UpdateProductOrderStatus");
+        //        throw;
+        //    }
+        //}
 
-        public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status)
-        {
-            var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
-            if (productionOrder == null)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
+        //public async Task<bool> UpdateManualProductionOrderStatus(long productionOrderId, ProductionOrderStatusDataModel status)
+        //{
+        //    var productionOrder = _manufacturingDBContext.ProductionOrder.FirstOrDefault(po => po.ProductionOrderId == productionOrderId);
+        //    if (productionOrder == null)
+        //        throw new BadRequestException(GeneralCode.ItemNotFound, "Lệnh sản xuất không tồn tại");
 
-            if (productionOrder.ProductionOrderStatus > (int)status.ProductionOrderStatus)
-                throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
+        //    if (productionOrder.ProductionOrderStatus > (int)status.ProductionOrderStatus)
+        //        throw new BadRequestException(GeneralCode.ItemNotFound, "Không được phép cập nhật ngược trạng thái");
 
-            try
-            {
-                if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
-                {
-                    productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
+        //    try
+        //    {
+        //        if (productionOrder.ProductionOrderStatus != (int)status.ProductionOrderStatus)
+        //        {
+        //            productionOrder.ProductionOrderStatus = (int)status.ProductionOrderStatus;
 
-                    await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
-                                .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
-                                .ObjectId(productionOrder.ProductionOrderId)
-                                .JsonData(new { productionOrder, status, isManual = true })
-                                .CreateLog();
-                }
+        //            await _objActivityLogFacade.LogBuilder(() => ProductionOrderActivityLogMessage.Update)
+        //                        .MessageResourceFormatDatas(productionOrder.ProductionOrderCode)
+        //                        .ObjectId(productionOrder.ProductionOrderId)
+        //                        .JsonData(new { productionOrder, status, isManual = true })
+        //                        .CreateLog();
+        //        }
 
-                await SetProductionOrderIsFinish(productionOrder);
+        //        await SetProductionOrderIsFinish(productionOrder);
 
-                _manufacturingDBContext.SaveChanges();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "UpdateProductOrderStatus");
-                throw;
-            }
-        }
+        //        _manufacturingDBContext.SaveChanges();
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "UpdateProductOrderStatus");
+        //        throw;
+        //    }
+        //}
+
+
 
         public async Task<bool> EditNote(long productionOrderDetailId, string note)
         {

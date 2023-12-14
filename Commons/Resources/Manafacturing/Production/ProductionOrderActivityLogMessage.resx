@@ -130,6 +130,9 @@
     <value>Cập nhật dữ liệu lệnh sản xuất {0}</value>
   </data>
   <data name="UpdateDate" xml:space="preserve">
-    <value>Cập nhật thời gian lệch sản xuất  {0} từ kế hoạch</value>
+    <value>Cập nhật thời gian lệnh sản xuất  {0} từ kế hoạch</value>
+  </data>
+  <data name="UpdateStatus" xml:space="preserve">
+    <value>Cập nhật trạng thái lệnh sản xuất {0}</value>
   </data>
 </root>

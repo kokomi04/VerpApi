@@ -175,12 +175,14 @@ namespace VErpApi.Controllers.Manufacturing
             return await _productionOrderService.GetProductionOrders();
         }
 
+
         [HttpPut]
-        [Route("{productionOrderId}/status")]
-        public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] ProductionOrderStatusDataModel status)
+        [Route("{productionOrderId}/ProductionOrderStatus")]
+        public async Task<bool> UpdateManualProductionOrderStatus([FromRoute] long productionOrderId, [FromBody] UpdateManualProductionOrderStatusInput status)
         {
             return await _productionOrderService.UpdateManualProductionOrderStatus(productionOrderId, status);
         }
+
         [HttpPut]
         [Route("multiple")]
         public async Task<bool> UpdateMultipleProductionOrders([FromBody] ProductionOrderMultipleUpdateModel data)

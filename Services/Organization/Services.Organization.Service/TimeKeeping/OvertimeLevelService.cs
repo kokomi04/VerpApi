@@ -38,9 +38,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             if (await _organizationDBContext.OvertimeLevel.AnyAsync(a => a.OvertimeCode == model.OvertimeCode))
                 throw new BadRequestException(GeneralCode.InvalidParams, "Ký hiệu mức tăng ca đã tồn tại");
 
-            var maxSortOrder = await _organizationDBContext.OvertimeLevel.MaxAsync(m => m.SortOrder);
-
-            await UpdateSortOrder(maxSortOrder + 1, model.SortOrder);
+            if (await _organizationDBContext.OvertimeLevel.AnyAsync())
+            {
+                var maxSortOrder = await _organizationDBContext.OvertimeLevel.MaxAsync(m => m.SortOrder);
+                await UpdateSortOrder(maxSortOrder + 1, model.SortOrder);
+            }
 
             var entity = _mapper.Map<OvertimeLevel>(model);
 
@@ -153,12 +155,10 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
         private async Task ValidateWithShiftConfig(int overtimeLevelId)
         {
-            var overtimeConfig = await _organizationDBContext.OvertimeConfiguration.Include(o => o.OvertimeConfigurationMapping).FirstOrDefaultAsync(s => (s.IsWeekdayLevel && s.WeekdayLevel == overtimeLevelId)
-                    || (s.IsWeekendLevel && s.WeekendLevel == overtimeLevelId)
-                    || (s.IsHolidayLevel && s.HolidayLevel == overtimeLevelId)
-                    || (s.IsWeekdayOvertimeLevel && s.WeekdayOvertimeLevel == overtimeLevelId)
-                    || (s.IsWeekendOvertimeLevel && s.WeekendOvertimeLevel == overtimeLevelId)
-                    || (s.IsHolidayOvertimeLevel && s.HolidayOvertimeLevel == overtimeLevelId)
+            var overtimeConfig = await _organizationDBContext.OvertimeConfiguration
+                .Include(o => o.OvertimeConfigurationTimeFrame)
+                .Include(o => o.OvertimeConfigurationMapping)
+                .FirstOrDefaultAsync(s => s.OvertimeConfigurationTimeFrame.Any(t => t.OvertimeLevelId == overtimeLevelId)
                     || (s.OvertimeConfigurationMapping.Any(m => m.OvertimeLevelId == overtimeLevelId)));
 
 

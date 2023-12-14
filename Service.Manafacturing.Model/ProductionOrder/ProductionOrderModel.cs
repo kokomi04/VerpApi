@@ -83,21 +83,26 @@ namespace VErp.Services.Manafacturing.Model.ProductionOrder
         public EnumProductionOrderAssignmentStatus? ProductionOrderAssignmentStatusId { get; set; }
     }
 
-    public class ProductionOrderStatusDataModel
-    {
-        public string ProductionOrderCode { get; set; }
-        public string InventoryCode { get; set; }
-        public EnumProductionStatus ProductionOrderStatus { get; set; }
-        public IList<InternalProductionInventoryRequirementModel> Inventories { get; set; }
+    //public class ProductionOrderStatusDataModel
+    //{
+    //    public string ProductionOrderCode { get; set; }
+    //    public string InventoryCode { get; set; }
+    //    public EnumProductionStatus ProductionOrderStatus { get; set; }
+    //    public IList<InternalProductionInventoryRequirementModel> Inventories { get; set; }
 
-        public string Description { get; set; }
-        public ProductionOrderStatusDataModel()
-        {
-            Inventories = new List<InternalProductionInventoryRequirementModel>();
-        }
+    //    public string Description { get; set; }
+    //    public ProductionOrderStatusDataModel()
+    //    {
+    //        Inventories = new List<InternalProductionInventoryRequirementModel>();
+    //    }
+    //}
+
+    public class UpdateManualProductionOrderStatusInput
+    {
+        public EnumProductionStatus ProductionOrderStatus { get; set; }
     }
 
-  
+
 
     public class OrderProductInfo
     {

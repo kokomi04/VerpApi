@@ -93,6 +93,8 @@ public partial class OrganizationDBContext : DbContext
 
     public virtual DbSet<OvertimeConfigurationMapping> OvertimeConfigurationMapping { get; set; }
 
+    public virtual DbSet<OvertimeConfigurationTimeFrame> OvertimeConfigurationTimeFrame { get; set; }
+
     public virtual DbSet<OvertimeLevel> OvertimeLevel { get; set; }
 
     public virtual DbSet<OvertimePlan> OvertimePlan { get; set; }
@@ -709,6 +711,16 @@ public partial class OrganizationDBContext : DbContext
                 .HasConstraintName("FK__OvertimeC__Overt__4EA972BC");
         });
 
+        modelBuilder.Entity<OvertimeConfigurationTimeFrame>(entity =>
+        {
+            entity.HasKey(e => new { e.OvertimeConfigurationId, e.TimeSheetDateType, e.StartTime, e.EndTime }).HasName("PK__Overtime__0E2F1B96E739A86C");
+
+            entity.HasOne(d => d.OvertimeConfiguration).WithMany(p => p.OvertimeConfigurationTimeFrame)
+                .HasForeignKey(d => d.OvertimeConfigurationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__OvertimeC__Overt__2D92FB48");
+        });
+
         modelBuilder.Entity<OvertimeLevel>(entity =>
         {
             entity.Property(e => e.Description)
@@ -724,6 +736,8 @@ public partial class OrganizationDBContext : DbContext
         modelBuilder.Entity<OvertimePlan>(entity =>
         {
             entity.HasKey(e => new { e.EmployeeId, e.AssignedDate, e.OvertimeLevelId }).HasName("PK_OvertimePlanMapping");
+
+            entity.Property(e => e.OvertimeHours).HasColumnType("decimal(18, 3)");
 
             entity.HasOne(d => d.OvertimeLevel).WithMany(p => p.OvertimePlan)
                 .HasForeignKey(d => d.OvertimeLevelId)
@@ -1056,12 +1070,12 @@ public partial class OrganizationDBContext : DbContext
 
         modelBuilder.Entity<TimeSheetDetailShiftOvertime>(entity =>
         {
-            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.OvertimeLevelId, e.OvertimeType }).HasName("PK__TimeShee__19101DA19A46D34C");
+            entity.HasKey(e => new { e.TimeSheetDetailId, e.ShiftConfigurationId, e.StartTime, e.EndTime }).HasName("PK__TimeShee__A3D13D7C27520429");
 
             entity.HasOne(d => d.TimeSheetDetailShift).WithMany(p => p.TimeSheetDetailShiftOvertime)
                 .HasForeignKey(d => new { d.TimeSheetDetailId, d.ShiftConfigurationId })
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__TimeSheetDetailS__6E4C9EDB");
+                .HasConstraintName("FK__TimeSheetDetailS__447660A0");
         });
 
         modelBuilder.Entity<TimeSheetRaw>(entity =>

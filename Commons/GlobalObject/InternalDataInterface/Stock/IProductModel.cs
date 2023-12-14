@@ -104,6 +104,10 @@ namespace VErp.Commons.GlobalObject.InternalDataInterface.Stock
             public int? CustomerId { get; set; }
             public string CustomerProductCode { get; set; }
             public string CustomerProductName { get; set; }
+            public string CustomerProductBarcode { get; set; }
+            public string CustomerProductModelType { get; set; }
+            public string CustomerProductDescription { get; set; }
+
         }
     }
 

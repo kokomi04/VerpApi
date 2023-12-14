@@ -900,7 +900,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{paramName} IS NULL");
                         condition.Append($" OR {aliasField} LIKE CONCAT('%',{paramName},'%')");
                         if (!isRaw)
-                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
 
                         break;
                     case EnumOperator.NotContains:
@@ -974,7 +974,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{paramName} IS NULL");
                         condition.Append($" OR {aliasField} LIKE CONCAT({paramName},'%')");
                         if (!isRaw)
-                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
 
                         break;
                     case EnumOperator.NotStartsWith:
@@ -991,7 +991,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                         condition.Append($"{paramName} IS NULL");
                         condition.Append($" OR {aliasField} LIKE CONCAT('%',{paramName})");
                         if (!isRaw)
-                            sqlParams.Add(new SqlParameter(paramName, clause.Value));
+                            sqlParams.Add(new SqlParameter(paramName, clause.DataType.GetSqlValue(clause.Value)));
                         break;
                     case EnumOperator.NotEndsWith:
                         condition.Append($"{aliasField} IS NULL AND {paramName} IS NOT NULL");

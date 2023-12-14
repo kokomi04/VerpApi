@@ -80,20 +80,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 _mapper.Map(model.OvertimeConfiguration, overtimeConfiguration);
 
-                await RemoveOvertimeConfigurationMapping(overtimeConfiguration.OvertimeConfigurationId);
-
-                if (model.OvertimeConfiguration.OvertimeConfigurationMapping != null)
-                {
-                    var mappings = new List<OvertimeConfigurationMapping>();
-
-                    foreach (var item in model.OvertimeConfiguration.OvertimeConfigurationMapping)
-                    {
-                        var mappingEntity = _mapper.Map<OvertimeConfigurationMapping>(item);
-                        mappings.Add(mappingEntity);
-                    }
-                    await _organizationDBContext.InsertByBatch(mappings, true, false);
-                    await _organizationDBContext.SaveChangesAsync();
-                }
+                RemoveOvertimeConfigurationMapping(overtimeConfiguration.OvertimeConfigurationId);
+                RemoveOvertimeConfigurationTimeFrame(overtimeConfiguration.OvertimeConfigurationId);
             }
 
             model.ShiftConfigurationId = shiftConfigurationId;
@@ -125,7 +113,8 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             {
                 overtimeConfiguration.IsDeleted = true;
 
-                await RemoveOvertimeConfigurationMapping(overtimeConfiguration.OvertimeConfigurationId);
+                RemoveOvertimeConfigurationMapping(overtimeConfiguration.OvertimeConfigurationId);
+                RemoveOvertimeConfigurationTimeFrame(overtimeConfiguration.OvertimeConfigurationId);
             }
 
             await _organizationDBContext.SaveChangesAsync();
@@ -160,13 +149,20 @@ namespace VErp.Services.Organization.Service.TimeKeeping
             .ToListAsync();
         }
 
-        private async Task RemoveOvertimeConfigurationMapping(int overtimeConfigurationId)
+        private void RemoveOvertimeConfigurationMapping(int overtimeConfigurationId)
         {
             var overtimeConfigurationMappings = _organizationDBContext.OvertimeConfigurationMapping
                     .Where(m => m.OvertimeConfigurationId == overtimeConfigurationId).AsNoTracking();
 
             _organizationDBContext.OvertimeConfigurationMapping.RemoveRange(overtimeConfigurationMappings);
-            await _organizationDBContext.SaveChangesAsync();
+        }
+
+        private void RemoveOvertimeConfigurationTimeFrame(int overtimeConfigurationId)
+        {
+            var overtimeConfigurationTimeFrames = _organizationDBContext.OvertimeConfigurationTimeFrame
+                    .Where(m => m.OvertimeConfigurationId == overtimeConfigurationId).AsNoTracking();
+
+            _organizationDBContext.OvertimeConfigurationTimeFrame.RemoveRange(overtimeConfigurationTimeFrames);
         }
 
         private async Task ValidateModel(ShiftConfigurationModel model)

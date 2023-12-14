@@ -193,6 +193,12 @@ namespace VErp.Services.Stock.Service.Products.Implement.ProductFacade
                     return (EnumDataType.Text, pCustomer?.CustomerProductCode);
                 case nameof(ProductImportModel.CustomerProductName):
                     return (EnumDataType.Text, pCustomer?.CustomerProductName);
+                case nameof(ProductImportModel.CustomerProductBarcode):
+                    return (EnumDataType.Text, pCustomer?.CustomerProductBarcode);
+                case nameof(ProductImportModel.CustomerProductModelType):
+                    return (EnumDataType.Text, pCustomer?.CustomerProductModelType);
+                case nameof(ProductImportModel.CustomerProductDescription):
+                    return (EnumDataType.Text, pCustomer?.CustomerProductDescription);
 
                 case nameof(ProductImportModel.Specification):
                     return (EnumDataType.Text, product.Specification);

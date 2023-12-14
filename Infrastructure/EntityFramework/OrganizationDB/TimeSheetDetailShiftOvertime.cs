@@ -9,6 +9,10 @@ public partial class TimeSheetDetailShiftOvertime
 
     public int ShiftConfigurationId { get; set; }
 
+    public TimeSpan StartTime { get; set; }
+
+    public TimeSpan EndTime { get; set; }
+
     public int OvertimeLevelId { get; set; }
 
     public long MinsOvertime { get; set; }

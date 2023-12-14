@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.IdentityModel.Tokens;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Verp.Services.ReportConfig.Model;
@@ -149,6 +150,8 @@ namespace Verp.Services.ReportConfig.Service.Implement
             };
 
 
+            var orderGroupDic = new Dictionary<(int colGroupId, string suffixKey), int>();
+            var orderDic = new Dictionary<(int colGroupId, string suffixKey), int>();
 
             var dynamicColumns = new List<ReportColumnModel>();
             foreach (var (key, _) in firstRow)
@@ -222,6 +225,16 @@ namespace Verp.Services.ReportConfig.Service.Implement
                         newColumn.SuffixKey = $"{suffixKey}";
                         newColumn.OriginValue = column.Value;
                         dynamicColumns.Add(newColumn);
+
+                        if (!orderGroupDic.ContainsKey((colGroupId: newColumn.ColGroupId, suffixKey: newColumn.SuffixKey.Split("_")[0])))
+                        {
+                            orderGroupDic.Add((colGroupId: newColumn.ColGroupId, suffixKey: newColumn.SuffixKey.Split("_")[0]), orderGroupDic.Count + 1);
+                        }
+
+                        if (!orderDic.ContainsKey((colGroupId: newColumn.ColGroupId, suffixKey: newColumn.SuffixKey)))
+                        {
+                            orderDic.Add((colGroupId: newColumn.ColGroupId, suffixKey: newColumn.SuffixKey), orderDic.Count + 1);
+                        }
                     }
                 };
             };
@@ -245,7 +258,12 @@ namespace Verp.Services.ReportConfig.Service.Implement
 
             //sort column by groupId, suffixkey, then by sortOrder
             return columns.OrderBy(c => c.ColGroupId)
-                        .ThenBy(c => c.SuffixKey)
+                        .ThenBy(c => {
+                            var suffixGroupKey = c.SuffixKey?.Split('_')[0];
+                            return !suffixGroupKey.IsNullOrEmpty() && orderGroupDic.TryGetValue((c.ColGroupId, suffixGroupKey), out int groupOrder) ?
+                                groupOrder : int.MaxValue;
+                        })
+                        .ThenBy(c => orderDic.TryGetValue((colGroupId: c.ColGroupId, suffixKey: c.SuffixKey), out var order) ? order : int.MaxValue)
                         .ThenBy(c => c.SortOrder)
                         .ToList();
         }
