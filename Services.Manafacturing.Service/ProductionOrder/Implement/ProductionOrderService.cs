@@ -1638,31 +1638,32 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
                 }*/
 
-                await UpdateProductionOrderStatus(productionOrder, data.ProductionOrderStatus, data);
 
 
                 // Kiểm tra quy trình sản xuất có đầy đủ đầu ra trong lệnh sản xuất mới chưa => nếu chưa đặt lại trạng thái sản xuất về đang thiết lập
-                var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
-                // Lấy ra thông tin đầu ra nhập kho trong quy trình
-                var processProductIds = (
-                        from ld in _manufacturingDBContext.ProductionStepLinkData
-                        join r in _manufacturingDBContext.ProductionStepLinkDataRole on ld.ProductionStepLinkDataId equals r.ProductionStepLinkDataId
-                        join ps in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals ps.ProductionStepId
-                        where ps.ContainerId == productionOrderId
-                        && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
-                        && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
-                        && productIds.Contains(ld.LinkDataObjectId)
-                        && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
-                        select ld.LinkDataObjectId
-                    )
-                    .Distinct()
-                    .ToList();
-                var includeProductIds = productIds.Where(p => !processProductIds.Any(d => d == p)).ToList();
-                if (includeProductIds.Count > 0)
-                {
-                    productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
-                    productionOrder.IsFinished = false;
-                }
+                //var productIds = data.ProductionOrderDetail.Select(od => (long)od.ProductId).ToList();
+                //// Lấy ra thông tin đầu ra nhập kho trong quy trình
+                //var processProductIds = (
+                //        from ld in _manufacturingDBContext.ProductionStepLinkData
+                //        join r in _manufacturingDBContext.ProductionStepLinkDataRole on ld.ProductionStepLinkDataId equals r.ProductionStepLinkDataId
+                //        join ps in _manufacturingDBContext.ProductionStep on r.ProductionStepId equals ps.ProductionStepId
+                //        where ps.ContainerId == productionOrderId
+                //        && ps.ContainerTypeId == (int)EnumContainerType.ProductionOrder
+                //        && ld.LinkDataObjectTypeId == (int)EnumProductionStepLinkDataObjectType.Product
+                //        && productIds.Contains(ld.LinkDataObjectId)
+                //        && r.ProductionStepLinkDataRoleTypeId == (int)EnumProductionStepLinkDataRoleType.Output
+                //        select ld.LinkDataObjectId
+                //    )
+                //    .Distinct()
+                //    .ToList();
+                //var includeProductIds = productIds.Where(p => !processProductIds.Any(d => d == p)).ToList();
+                //if (includeProductIds.Count > 0)
+                //{
+                //    productionOrder.ProductionOrderStatus = (int)EnumProductionStatus.NotReady;
+                //    productionOrder.IsFinished = false;
+                //}
+
+                await UpdateProductionOrderStatus(productionOrder, data.ProductionOrderStatus, data);
 
                 var oldDetail = _manufacturingDBContext.ProductionOrderDetail.Where(od => od.ProductionOrderId == productionOrderId).ToList();
                 var oldDetailIds = oldDetail.Select(d => d.ProductionOrderDetailId).ToList();
@@ -1813,6 +1814,11 @@ namespace VErp.Services.Manafacturing.Service.ProductionOrder.Implement
 
         private async Task UpdateProductionOrderStatus(ProductionOrderEntity productionOrder, EnumProductionStatus productionOrderStatusId, ProductionOrderInputModel model)
         {
+            if (productionOrder.ProductionOrderStatus == (int)EnumProductionStatus.Completed && productionOrderStatusId == EnumProductionStatus.Finished)
+            {
+                throw new BadRequestException(GeneralCode.InvalidParams, "Không thể cập nhật trạng thái lệnh sản xuất " + productionOrder.ProductionOrderCode + " từ Hoàn thành sang Kết thúc ");
+            }
+
             var oldIsManualFinish = productionOrder.IsManualFinish;
 
             var isSetManualFinish = false;
