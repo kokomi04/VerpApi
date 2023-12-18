@@ -4,16 +4,14 @@ using System.Linq;
 using VErp.Commons.Enums.MasterEnum;
 using VErp.Commons.Enums.Report;
 using VErp.Commons.GlobalObject;
+using VErp.Commons.GlobalObject.InternalDataInterface.DynamicBill;
 using VErp.Commons.Library;
 using VErp.Infrastructure.EF.ReportConfigDB;
 
 namespace Verp.Services.ReportConfig.Model
 {
-    public class ReportTypeListModel : IMapFrom<ReportType>
+    public class ReportTypeListModel : ReportTypeBaseModel, IMapFrom<ReportType>
     {
-        public int? ReportTypeId { get; set; }
-        public int ReportTypeGroupId { get; set; }
-        public string ReportTypeName { get; set; }
         public int SortOrder { get; set; }
         public long UpdatedDatetimeUtc { get; set; }
     }
@@ -89,7 +87,7 @@ namespace Verp.Services.ReportConfig.Model
        .ForMember(m => m.BscConfig, m => m.MapFrom(v => v.BscConfig.JsonSerialize()))
        .ForMember(m => m.DisplayConfig, m => m.MapFrom(v => v.DisplayConfig.JsonSerialize()))
        .ForMember(m => m.ReportTypeGroup, m => m.Ignore())
-       .ForMember(m => m.IsCanCustomReport, m=> m.MapFrom(v => v.IsCanCustomReport.Value));
+       .ForMember(m => m.IsCanCustomReport, m => m.MapFrom(v => v.IsCanCustomReport.Value));
 
     }
 

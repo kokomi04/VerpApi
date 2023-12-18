@@ -19,6 +19,9 @@ namespace VErp.Commons.Enums.MasterEnum
 
         [Description("Kế toán thuế")]
         AccountantPublic = 7,
+
+        [Description("Báo cáo")]
+        Report = 8,
     }
 
 }
