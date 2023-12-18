@@ -15,6 +15,7 @@ using VErp.Infrastructure.EF.EFExtensions;
 using VErp.Infrastructure.EF.MasterDB;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Report;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Facade;
 using VErp.Infrastructure.ServiceCore.Model;
@@ -34,6 +35,7 @@ namespace VErp.Services.Master.Service.Config.Implement
         private readonly IInputPublicTypeHelperService _inputPublicTypeHelperService;
         private readonly IVoucherTypeHelperService _voucherTypeHelperService;
         private readonly IOrganizationHelperService _organizationHelperService;
+        private readonly IReportTypeHelperService _reportTypeHelperService;
 
         private readonly ICurrentContextService _currentContextService;
 
@@ -46,7 +48,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             , IVoucherTypeHelperService voucherTypeHelperService
             , IMapper mapper
             , IActivityLogService activityLogService
-            , ICurrentContextService currentContextService, IOrganizationHelperService organizationHelperService)
+            , ICurrentContextService currentContextService, IOrganizationHelperService organizationHelperService, IReportTypeHelperService reportTypeHelperService)
         {
             _masterDbContext = masterDbContext;
             _mapper = mapper;
@@ -57,6 +59,7 @@ namespace VErp.Services.Master.Service.Config.Implement
             _currentContextService = currentContextService;
             _objectPrintConfigActivityLog = activityLogService.CreateObjectTypeActivityLog(null);
             _organizationHelperService = organizationHelperService;
+            _reportTypeHelperService = reportTypeHelperService;
         }
 
         public async Task<ObjectPrintConfig> GetObjectPrintConfigMapping(EnumObjectType objectTypeId, int objectId)
@@ -173,12 +176,14 @@ namespace VErp.Services.Master.Service.Config.Implement
             var inputPrivateTask = InputPrivateMappingTypeModels();
             var inputPublicTask = InputPublicMappingTypeModels();
             var manufactureTask = ManufactureMappingTypeModels();
+            var reportTypesTask = ReportMappingTypeModels();
 
             result.AddRange(poTask);
             result.AddRange(await vourcherTask);
             result.AddRange(await inputPrivateTask);
             result.AddRange(await inputPublicTask);
             result.AddRange(await hrTask);
+            result.AddRange(await reportTypesTask);
             result.AddRange(manufactureTask);
 
             if (!string.IsNullOrWhiteSpace(keyword))
@@ -359,6 +364,45 @@ namespace VErp.Services.Master.Service.Config.Implement
                         )
                     );
             }
+
+            return result;
+        }
+
+
+        private async Task<IList<ObjectPrintConfigSearch>> ReportMappingTypeModels()
+        {
+            var groups = await _reportTypeHelperService.GetGroups();
+
+            var reportTypes = _reportTypeHelperService.GetReportTypeSimpleList();
+
+            var result = new List<ObjectPrintConfigSearch>();
+
+            result.Add(
+                       GetObjectPrintConfigSearch(
+                       moduleTypeId: EnumModuleType.Report,
+                       objectTypeId: EnumObjectType.ReportType,
+                       objectId: 0,
+                       objectTitle: "Mặc định"
+                       )
+                   );
+
+            foreach (var reportType in (await reportTypes).List)
+            {
+                var groupInfo = groups.FirstOrDefault(g => g.ReportTypeGroupId == reportType.ReportTypeGroupId);
+                var title = reportType.ReportTypeName;
+                if (groupInfo != null)
+                    title = groupInfo.ReportTypeGroupName + " " + title;
+                result.Add(
+                        GetObjectPrintConfigSearch(
+                        moduleTypeId: EnumModuleType.Report,
+                        objectTypeId: EnumObjectType.ReportType,
+                        objectId: reportType.ReportTypeId ?? 0,
+                        objectTitle: title
+                        )
+                    );
+            }
+
+
 
             return result;
         }

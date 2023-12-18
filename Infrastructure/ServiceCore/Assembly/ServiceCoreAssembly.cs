@@ -8,6 +8,7 @@ using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Hr;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Input;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Inv;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Product;
+using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Report;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.System;
 using VErp.Infrastructure.ServiceCore.CrossServiceHelper.Voucher;
 using VErp.Infrastructure.ServiceCore.Service;
@@ -39,7 +40,7 @@ namespace VErp.Infrastructure.ServiceCore
             services.AddScoped<IRoleHelperService, RoleHelperService>();
             services.AddScoped<IOutsideMappingHelperService, OutsideMappingHelperService>();
             services.AddScoped<IBarcodeConfigHelperService, BarcodeConfigHelperService>();
-
+            services.AddScoped<IReportTypeHelperService, ReportTypeHelperService>(); 
 
             services.AddScoped<ICategoryHelperService, CategoryHelperService>();
             services.AddScoped<IMenuHelperService, MenuHelperService>();
