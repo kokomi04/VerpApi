@@ -1176,7 +1176,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesBeforeWork;
                     minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeBeforeWork;
                     isMinThresholdMins = shift.OvertimeConfiguration.IsMinThresholdMinutesBeforeWork;
-                    minThresholdMins = (long)shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork;
+                    minThresholdMins = shift.OvertimeConfiguration.MinThresholdMinutesBeforeWork ?? 0;
                     isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMinsBeforeWork;
                     break;
                 case EnumTimeSheetOvertimeType.AfterWork:
@@ -1184,7 +1184,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReachesAfterWork;
                     minsLimit = shift.OvertimeConfiguration.MinsLimitOvertimeAfterWork;
                     isMinThresholdMins = shift.OvertimeConfiguration.IsMinThresholdMinutesAfterWork;
-                    minThresholdMins = (long)shift.OvertimeConfiguration.MinThresholdMinutesAfterWork;
+                    minThresholdMins = shift.OvertimeConfiguration.MinThresholdMinutesAfterWork ?? 0;
                     isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMinsAfterWork;
                     break;
                 default:
@@ -1192,7 +1192,7 @@ namespace VErp.Services.Organization.Service.TimeKeeping
                     minsBonus = shift.OvertimeConfiguration.MinsBonusWhenMinsReaches;
                     minsLimit = shift.OvertimeConfiguration.MinsLimitOvertime;
                     isMinThresholdMins = shift.OvertimeConfiguration.IsOvertimeThresholdMins;
-                    minThresholdMins = (long)shift.OvertimeConfiguration.OvertimeThresholdMins;
+                    minThresholdMins = shift.OvertimeConfiguration.OvertimeThresholdMins ?? 0;
                     isCalculationThresholdMins = shift.OvertimeConfiguration.IsCalculationThresholdMins;
                     break;
             }
