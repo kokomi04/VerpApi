@@ -829,12 +829,11 @@ namespace VErp.Services.Organization.Service.TimeKeeping
 
                 detailShift.ActualWorkMins = 0;
                 detailShift.WorkCounted = 0;
+                return detailShift;
             }
 
             //Add default countedSymbol
-            var s = countedSymbols.FirstOrDefault(c => c.CountedSymbolType == EnumCountedSymbol.OvertimeDateSymbol);
-            if (!detailShift.TimeSheetDetailShiftCounted.Where(c => c.CountedSymbolId != s.CountedSymbolId).Any())
-                detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
+            detailShift.TimeSheetDetailShiftCounted.Add(GetCountedSymbolModel(shift, countedSymbols, shift.IsNightShift ? EnumCountedSymbol.ShiftNightSymbol : EnumCountedSymbol.FullCountedSymbol));
 
             return detailShift;
         }
