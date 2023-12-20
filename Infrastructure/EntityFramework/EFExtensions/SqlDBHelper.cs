@@ -149,13 +149,13 @@ namespace VErp.Infrastructure.EF.EFExtensions
         {
             if (paramsName == null) paramsName = new string[0];
 
-            var result = new SqlParameter("@Result", DBNull.Value) { Direction = ParameterDirection.Output, Size = 512 };
+            var result = new SqlParameter("@Result", DBNull.Value) { Direction = ParameterDirection.Output};
             var sqlParams = new List<SqlParameter>();
             var idx = 0;
             foreach (var a in args.EvaluateParameters())
             {
                 var name = paramsName.Length > idx ? paramsName[idx] : "Param" + idx;
-                sqlParams.Add(new SqlParameter($"@{name}", a) { Size = 512 });
+                sqlParams.Add(new SqlParameter($"@{name}", a));
                 idx++;
             }
 
@@ -164,7 +164,7 @@ namespace VErp.Infrastructure.EF.EFExtensions
                 for (idx = sqlParams.Count; idx <= paramsName.Length; idx++)
                 {
                     var name = paramsName[idx - 1];
-                    sqlParams.Add(new SqlParameter($"@{name}", DBNull.Value) { Size = 512 });
+                    sqlParams.Add(new SqlParameter($"@{name}", DBNull.Value));
                 }
 
             }
